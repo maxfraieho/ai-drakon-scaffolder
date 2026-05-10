@@ -77,6 +77,12 @@ function readLastGithubRepoSelection() {
 
 export function DiagramsPage() {
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as {
+    autoAnalyze?: string;
+    analyzePath?: string;
+    analyzeRepo?: string;
+    analyzeBranch?: string;
+  };
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const [folders, setFolders] = useState<Folder[]>(() => readFoldersFromStorage());
@@ -102,6 +108,7 @@ export function DiagramsPage() {
   const [githubTargetPath, setGithubTargetPath] = useState("");
   const [diagramForGithubSave, setDiagramForGithubSave] = useState<Diagram | null>(null);
   const [isCommittingToGithub, setIsCommittingToGithub] = useState(false);
+  const autoAnalyzeHandledRef = useRef(false);
 
   const selectedFolder =
     folders.find((folder) => folder.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
