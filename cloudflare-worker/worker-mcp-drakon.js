@@ -1,4 +1,6 @@
 import { validateIrDeterministic } from '../src/lib/htse/ir-validator-core';
+import { convertDiagramToIr } from '../src/lib/htse/diagram-to-ir';
+import { convertIrToDiagram } from '../src/lib/htse/ir-to-diagram';
 import { PRE_ANALYZED_ANALYSIS } from './generated-analysis-cache';
 
 // ============================================
@@ -376,65 +378,11 @@ function formatCacheAge(generatedAtIso) {
 }
 
 function convertDiagramToIrForWorker(diagramPayload) {
-  const diagram = isObject(diagramPayload) ? diagramPayload : {};
-  const diagramItems = isObject(diagram.items) ? diagram.items : {};
-  const irItems = {};
-
-  for (const [id, itemValue] of Object.entries(diagramItems)) {
-    const item = isObject(itemValue) ? itemValue : {};
-    const rawType = String(item.type || '').trim();
-    irItems[id] = {
-      type: IR_ITEM_TYPES.has(rawType) ? rawType : 'action',
-      content: String(item.content || ''),
-      secondary: item.secondary === undefined ? undefined : String(item.secondary),
-      one: item.one === undefined || item.one === null ? undefined : String(item.one),
-      two: item.two === undefined || item.two === null ? undefined : String(item.two),
-      side: item.side === undefined ? undefined : String(item.side),
-      flag1: item.flag1 === undefined ? undefined : Boolean(item.flag1),
-      branchId: item.branchId === undefined ? undefined : String(item.branchId),
-      style: isObject(item.style) ? item.style : undefined,
-    };
-  }
-
-  const paramsRaw = diagram.params;
-  const params = typeof paramsRaw === 'string'
-    ? paramsRaw.split(',').map((p) => p.trim()).filter(Boolean)
-    : safeArray(paramsRaw).map((p) => String(p).trim()).filter(Boolean);
-
-  return {
-    name: String(diagram.name || 'Untitled'),
-    access: String(diagram.access || 'read') === 'write' ? 'private' : 'public',
-    params,
-    items: irItems,
-  };
+  return convertDiagramToIr(isObject(diagramPayload) ? diagramPayload : { name: 'Untitled', access: 'read', params: '', items: {} });
 }
 
 function convertIrToDiagramForWorker(irPayload) {
-  const ir = isObject(irPayload) ? irPayload : {};
-  const irItems = isObject(ir.items) ? ir.items : {};
-  const items = {};
-
-  for (const [id, itemValue] of Object.entries(irItems)) {
-    const item = isObject(itemValue) ? itemValue : {};
-    items[id] = {
-      type: IR_ITEM_TYPES.has(String(item.type || '')) ? String(item.type) : 'action',
-      content: String(item.content || ''),
-      secondary: item.secondary === undefined ? undefined : String(item.secondary),
-      one: item.one === undefined ? undefined : item.one,
-      two: item.two === undefined ? undefined : item.two,
-      side: item.side === undefined ? undefined : String(item.side),
-      flag1: item.flag1 === undefined ? undefined : item.flag1 ? 1 : 0,
-      branchId: item.branchId === undefined ? undefined : Number(item.branchId),
-      style: isObject(item.style) ? item.style : undefined,
-    };
-  }
-
-  return {
-    name: String(ir.name || 'Untitled'),
-    access: String(ir.access || 'public') === 'private' ? 'write' : 'read',
-    params: safeArray(ir.params).map((p) => String(p)).join(', '),
-    items,
-  };
+  return convertIrToDiagram(isObject(irPayload) ? irPayload : { name: 'Untitled', access: 'public', params: [], items: {} });
 }
 
 function handleMcpAnalyzeCodebase(args) {
