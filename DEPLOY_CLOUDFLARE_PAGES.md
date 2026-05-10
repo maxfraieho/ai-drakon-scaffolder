@@ -15,7 +15,7 @@ npm run build:pages
 ## 2) Задеплоїти правильно (SSR через Cloudflare Worker)
 
 ```bash
-npm run deploy:pages -- --project-name <your-pages-project>
+npm run deploy:pages
 ```
 
 Приклад:
