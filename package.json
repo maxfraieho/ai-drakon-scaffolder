@@ -4,8 +4,9 @@
   "scripts": {
     "sync:deps": "npm --prefix .lovable install",
     "dev": "npm run sync:deps && npm --prefix .lovable run dev --",
-    "build": "npm run sync:deps && npm --prefix .lovable run build && npm run prepare:pages-dist",
+    "build": "npm run sync:deps && npm --prefix .lovable run build && npm run prepare:pages-dist && npm run prepare:pages-functions",
     "prepare:pages-dist": "node scripts/prepare-cloudflare-pages.mjs",
+    "prepare:pages-functions": "node scripts/prepare-cloudflare-functions.mjs",
     "dist-check": "npm run build",
     "build:dev": "npm run sync:deps && npm --prefix .lovable run build:dev",
     "preview": "npm run sync:deps && npm --prefix .lovable run preview",
