@@ -1,4 +1,6 @@
 import { validateIrDeterministic } from '../src/lib/htse/ir-validator-core';
+import { convertDiagramToIr } from '../src/lib/htse/diagram-to-ir';
+import { convertIrToDiagram } from '../src/lib/htse/ir-to-diagram';
 import { PRE_ANALYZED_ANALYSIS } from './generated-analysis-cache';
 
 // ============================================
@@ -319,6 +321,28 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+const IR_ITEM_TYPES = new Set([
+  'action',
+  'question',
+  'select',
+  'case',
+  'header',
+  'end',
+  'address',
+  'branch',
+  'insertion',
+  'input',
+  'output',
+  'shelf',
+  'process',
+  'timer',
+  'duration',
+]);
+
 function buildAnalysisSummary(requestBody) {
   const preAnalyzed = PRE_ANALYZED_ANALYSIS?.summary || {};
   const requestedModules = [
@@ -353,130 +377,146 @@ function formatCacheAge(generatedAtIso) {
   return `${days}d ago`;
 }
 
+function convertDiagramToIrForWorker(diagramPayload) {
+  return convertDiagramToIr(isObject(diagramPayload) ? diagramPayload : { name: 'Untitled', access: 'read', params: '', items: {} });
+}
+
+function convertIrToDiagramForWorker(irPayload) {
+  return convertIrToDiagram(isObject(irPayload) ? irPayload : { name: 'Untitled', access: 'public', params: [], items: {} });
+}
+
 function handleMcpAnalyzeCodebase(args) {
+  const repositoryPath = String(args?.repositoryPath || '').trim();
+  if (!repositoryPath) {
+    return { error: 'repositoryPath is required' };
+  }
+
+  const language = ['typescript', 'javascript', 'auto'].includes(String(args?.language || ''))
+    ? String(args.language)
+    : 'auto';
+
   const scope = ['overview', 'modules', 'flows', 'procedures'].includes(String(args?.scope || ''))
     ? String(args.scope)
     : 'overview';
-  const filterRaw = String(args?.filter || '').trim();
-  const filter = toLowerSafe(filterRaw);
 
-  const payload = PRE_ANALYZED_ANALYSIS || {};
-  const summary = payload.summary || {};
-  const modules = safeArray(summary.modules).map((m) => String(m));
-  const detectedFlows = safeArray(summary.detectedFlows).map((f) => String(f));
-  const plannedDiagrams = safeArray(payload.plannedDiagrams);
+  const requestBody = {
+    entryPaths: safeArray(args?.entryPaths).length > 0 ? safeArray(args.entryPaths) : ['src/'],
+    includeGlobs: safeArray(args?.includeGlobs),
+    excludeGlobs: safeArray(args?.excludeGlobs),
+  };
 
-  const filteredModules = filter
-    ? modules.filter((m) => toLowerSafe(m).includes(filter))
-    : modules;
-
-  const filteredFlows = filter
-    ? detectedFlows.filter((f) => toLowerSafe(f).includes(filter))
-    : detectedFlows;
-
-  const filteredPlannedDiagrams = plannedDiagrams.filter((diagram) => {
-    if (!filter) return true;
-    const hay = [diagram?.name, diagram?.description, diagram?.scope].map(toLowerSafe).join(' ');
-    return hay.includes(filter);
-  });
-
-  const includeModules = scope === 'overview' || scope === 'modules' || scope === 'procedures';
-  const includeFlows = scope === 'overview' || scope === 'flows' || scope === 'procedures';
+  const summary = buildAnalysisSummary(requestBody);
+  const jobId = `analysis-${Date.now()}`;
+  const job = {
+    jobId,
+    status: 'completed',
+    projectName: repositoryPath,
+    createdAt: new Date().toISOString(),
+    summary,
+    plannedDiagrams: PRE_ANALYZED_ANALYSIS?.plannedDiagrams || [],
+    request: {
+      repositoryPath,
+      language,
+      scope,
+      entryPaths: requestBody.entryPaths,
+      includeGlobs: requestBody.includeGlobs,
+      excludeGlobs: requestBody.excludeGlobs,
+    },
+  };
+  analysisJobs.set(jobId, job);
 
   return {
-    generatedAt: payload.generatedAt || null,
-    totalFiles: Number(summary.totalFiles || 0),
-    totalFunctions: Number(summary.totalFunctions || 0),
-    totalComponents: Number(summary.totalComponents || 0),
-    modules: includeModules ? filteredModules : [],
-    detectedFlows: includeFlows ? filteredFlows : [],
-    plannedDiagrams: filteredPlannedDiagrams,
-    cacheAge: formatCacheAge(payload.generatedAt),
+    jobId,
+    status: 'completed',
+    summary,
   };
 }
 
 function handleMcpGetAnalysisSummary(args) {
-  const type = String(args?.type || '');
-  const allowed = new Set(['functions', 'components', 'hooks', 'stores', 'apiClients', 'importGraph']);
-  if (!allowed.has(type)) {
-    return {
-      success: false,
-      error: `Unsupported summary type: ${type}`,
-      allowedTypes: Array.from(allowed),
-    };
+  const jobId = String(args?.jobId || '').trim();
+  if (!jobId) {
+    return { error: 'jobId is required' };
   }
 
-  const filter = toLowerSafe(String(args?.filter || '').trim());
-  const summary = PRE_ANALYZED_ANALYSIS?.summary || {};
-  const source = summary[type];
-
-  if (!filter) {
-    return { success: true, type, data: source ?? (type === 'importGraph' ? {} : []) };
+  const job = analysisJobs.get(jobId);
+  if (!job) {
+    return { error: 'not_found' };
   }
 
-  if (type === 'importGraph') {
-    const importGraph = source && typeof source === 'object' ? source : {};
-    const filteredEntries = Object.entries(importGraph).filter(([from, targets]) => {
-      const fromMatch = toLowerSafe(from).includes(filter);
-      const targetMatch = safeArray(targets).some((target) => toLowerSafe(target).includes(filter));
-      return fromMatch || targetMatch;
-    });
-    return { success: true, type, data: Object.fromEntries(filteredEntries) };
-  }
-
-  const arr = safeArray(source);
-  const filtered = arr.filter((item) => toLowerSafe(JSON.stringify(item)).includes(filter));
-  return { success: true, type, data: filtered };
+  return { job };
 }
 
 function cloneObject(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function applyDiagramMutation(items, mutation) {
-  const op = String(mutation?.op || '');
-  const nodeId = String(mutation?.nodeId || '').trim();
+function sanitizeIrItem(input) {
+  const item = isObject(input) ? input : {};
+  const rawType = String(item.type || '').trim();
 
-  if (!nodeId) {
-    return { ok: false, reason: 'nodeId is required' };
-  }
+  return {
+    type: IR_ITEM_TYPES.has(rawType) ? rawType : 'action',
+    content: String(item.content || ''),
+    secondary: item.secondary === undefined ? undefined : String(item.secondary),
+    one: item.one === undefined || item.one === null ? undefined : String(item.one),
+    two: item.two === undefined || item.two === null ? undefined : String(item.two),
+    side: item.side === undefined ? undefined : String(item.side),
+    flag1: item.flag1 === undefined ? undefined : Boolean(item.flag1),
+    branchId: item.branchId === undefined ? undefined : String(item.branchId),
+    style: isObject(item.style) ? item.style : undefined,
+  };
+}
 
-  if (op === 'insertNode') {
-    if (items[nodeId]) return { ok: false, reason: `Node already exists: ${nodeId}` };
-    if (!mutation.node || typeof mutation.node !== 'object' || Array.isArray(mutation.node)) {
-      return { ok: false, reason: 'node must be an object for insertNode' };
-    }
-    items[nodeId] = cloneObject(mutation.node);
+function applyMutationOnIr(workingIr, mutation) {
+  const op = String(mutation?.op || '').trim();
+  const items = workingIr.items;
+
+  if (op === 'renameDiagram') {
+    const newName = String(mutation?.newName || '').trim();
+    if (!newName) return { ok: false, reason: 'newName is required for renameDiagram' };
+    workingIr.name = newName;
     return { ok: true };
   }
 
-  if (!items[nodeId]) {
-    return { ok: false, reason: `Node not found: ${nodeId}` };
+  const nodeId = String(mutation?.nodeId || '').trim();
+  if (!nodeId) return { ok: false, reason: 'nodeId is required' };
+
+  if (op === 'insertNode') {
+    if (items[nodeId]) return { ok: false, reason: `Node already exists: ${nodeId}` };
+    if (!isObject(mutation?.node)) return { ok: false, reason: 'node must be an object for insertNode' };
+    items[nodeId] = sanitizeIrItem(mutation.node);
+    return { ok: true };
   }
 
+  if (!items[nodeId]) return { ok: false, reason: `Node not found: ${nodeId}` };
+
   if (op === 'updateNode') {
-    if (!mutation.fields || typeof mutation.fields !== 'object' || Array.isArray(mutation.fields)) {
-      return { ok: false, reason: 'fields must be an object for updateNode' };
-    }
-    items[nodeId] = { ...items[nodeId], ...cloneObject(mutation.fields) };
+    if (!isObject(mutation?.fields)) return { ok: false, reason: 'fields must be an object for updateNode' };
+    items[nodeId] = sanitizeIrItem({ ...items[nodeId], ...mutation.fields });
     return { ok: true };
   }
 
   if (op === 'deleteNode') {
     delete items[nodeId];
     for (const current of Object.values(items)) {
-      if (!current || typeof current !== 'object') continue;
-      if (current.one === nodeId) current.one = null;
-      if (current.two === nodeId) current.two = null;
+      if (!isObject(current)) continue;
+      if (current.one === nodeId) delete current.one;
+      if (current.two === nodeId) delete current.two;
     }
     return { ok: true };
   }
 
   if (op === 'setOne' || op === 'setTwo') {
     const key = op === 'setOne' ? 'one' : 'two';
-    const target = mutation?.targetId === null ? null : String(mutation?.targetId || '').trim();
-    if (target && !items[target]) return { ok: false, reason: `Target node not found: ${target}` };
-    items[nodeId][key] = target || null;
+    const targetId = mutation?.targetId === null ? null : String(mutation?.targetId || '').trim();
+    if (targetId && !items[targetId]) {
+      return { ok: false, reason: `Target node not found: ${targetId}` };
+    }
+    if (targetId === null || targetId === '') {
+      delete items[nodeId][key];
+    } else {
+      items[nodeId][key] = targetId;
+    }
     return { ok: true };
   }
 
@@ -510,55 +550,60 @@ async function handleMcpMutateDiagram(args, env) {
 
   const stored = JSON.parse(content);
   const working = cloneObject(stored);
-  working.diagram = working.diagram && typeof working.diagram === 'object' ? working.diagram : {};
-  working.diagram.items = working.diagram.items && typeof working.diagram.items === 'object' ? working.diagram.items : {};
+  working.diagram = isObject(working.diagram) ? working.diagram : {};
+  working.diagram.items = isObject(working.diagram.items) ? working.diagram.items : {};
+
+  const ir = convertDiagramToIrForWorker(working.diagram);
 
   const appliedMutations = [];
   const rejectedMutations = [];
 
   for (const mutation of mutations) {
-    const result = applyDiagramMutation(working.diagram.items, mutation || {});
+    const snapshot = cloneObject(ir);
+    const result = applyMutationOnIr(ir, mutation || {});
     if (!result.ok) {
-      rejectedMutations.push({ mutation, reason: result.reason || 'Unknown mutation error' });
+      rejectedMutations.push({ op: mutation, reason: result.reason || 'Unknown mutation error' });
       continue;
     }
+
+    const validationAfterMutation = validateIrDeterministic(ir);
+    if (!validationAfterMutation.valid) {
+      ir.name = snapshot.name;
+      ir.access = snapshot.access;
+      ir.params = snapshot.params;
+      ir.items = snapshot.items;
+      const firstIssue = safeArray(validationAfterMutation.issues)[0];
+      rejectedMutations.push({
+        op: mutation,
+        reason: `Mutation rejected because diagram became invalid: ${firstIssue?.message || 'validation failed'}`,
+      });
+      continue;
+    }
+
     appliedMutations.push(mutation);
   }
 
-  const validationResult = validateIrDeterministic(working.diagram);
-  if (!validationResult.valid) {
-    return {
-      success: false,
-      appliedMutations: [],
-      rejectedMutations: [
-        ...rejectedMutations,
-        ...mutations.map((mutation) => ({ mutation, reason: 'Rejected because resulting diagram failed validation' })),
-      ],
-      validationResult: {
-        valid: validationResult.valid,
-        issues: validationResult.issues || [],
-      },
-      newVersion: Number(stored?.version || stored?.diagram?.version || 0),
-    };
-  }
+  const validationResult = validateIrDeterministic(ir);
 
   const previousVersion = Number(stored?.version || stored?.diagram?.version || 0);
-  const newVersion = previousVersion + 1;
-  working.version = newVersion;
+  const updatedVersion = appliedMutations.length > 0 ? previousVersion + 1 : previousVersion;
+  working.version = updatedVersion;
   working.updatedAt = new Date().toISOString();
-  working.diagram.version = newVersion;
+  working.diagram = convertIrToDiagramForWorker(ir);
+  working.diagram.version = updatedVersion;
 
-  await uploadToMinIO(env, key, JSON.stringify(working, null, 2));
+  if (appliedMutations.length > 0) {
+    await uploadToMinIO(env, key, JSON.stringify(working, null, 2));
+  }
 
   return {
-    success: true,
+    updatedVersion,
     appliedMutations,
     rejectedMutations,
     validationResult: {
       valid: validationResult.valid,
       issues: validationResult.issues || [],
     },
-    newVersion,
   };
 }
 
@@ -712,7 +757,7 @@ function getMcpTools() {
   return [
     {
       name: 'drakon.list_diagrams',
-      description: 'List diagram IDs in a DRAKON folder.',
+      description: 'List all available DRAKON diagram identifiers inside a specific folder namespace in storage so agents can discover existing assets before reading, mutating, validating, diffing, or saving any diagram content.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -723,7 +768,7 @@ function getMcpTools() {
     },
     {
       name: 'drakon.get_diagram',
-      description: 'Read one DRAKON diagram JSON by folder and id.',
+      description: 'Load one stored DRAKON diagram JSON document by folder and diagram id, returning the canonical persisted structure needed for editor hydration, validation checks, mutation planning, and downstream analysis workflows.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -735,7 +780,7 @@ function getMcpTools() {
     },
     {
       name: 'drakon.save_diagram',
-      description: 'Create or update one DRAKON diagram JSON.',
+      description: 'Create or update a full DRAKON diagram JSON payload in storage when a client wants authoritative persistence after edits, preserving compatibility with current diagram CRUD flows and existing integrations.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -748,7 +793,7 @@ function getMcpTools() {
     },
     {
       name: 'drakon.delete_diagram',
-      description: 'Delete one DRAKON diagram JSON.',
+      description: 'Delete one DRAKON diagram JSON object from storage by folder and diagram id, allowing cleanup of obsolete assets while keeping the existing diagram lifecycle API unchanged for current clients.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -760,7 +805,7 @@ function getMcpTools() {
     },
     {
       name: 'drakon.validateir',
-      description: 'Run deterministic validation for Canonical IR before rendering.',
+      description: 'Run deterministic canonical IR validation before rendering or persistence to detect structural issues like dangling pointers, invalid node types, orphan nodes, and malformed transition vectors in AI-generated graphs.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -771,37 +816,52 @@ function getMcpTools() {
     },
     {
       name: 'drakon.analyzecodebase',
-      description: 'Read the pre-analyzed TypeScript project snapshot generated by the local analyzer script. Returns structural summary including files, functions, components, hooks, stores, API clients and planned DRAKON diagrams.',
+      description: 'Analyze a TypeScript or JavaScript project request context and return a structural summary plus planned DRAKON diagrams, including job tracking metadata that can drive AI planning, orchestration, and staged generation flows.',
       inputSchema: {
         type: 'object',
         properties: {
+          repositoryPath: { type: 'string' },
+          language: {
+            type: 'string',
+            enum: ['typescript', 'javascript', 'auto'],
+            default: 'auto',
+          },
           scope: {
             type: 'string',
             enum: ['overview', 'modules', 'flows', 'procedures'],
             default: 'overview',
           },
-          filter: { type: 'string' },
+          entryPaths: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['src/'],
+          },
+          includeGlobs: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          excludeGlobs: {
+            type: 'array',
+            items: { type: 'string' },
+          },
         },
+        required: ['repositoryPath'],
       },
     },
     {
       name: 'drakon.getanalysissummary',
-      description: 'Get detailed analysis data for a specific scope or module from the cached project analysis. Use after drakon.analyzecodebase to drill into specific components, functions or flows.',
+      description: 'Get the result payload of a previously started analysis job by job identifier, returning full job metadata and summary content or an explicit not_found error for missing analysis records.',
       inputSchema: {
         type: 'object',
         properties: {
-          type: {
-            type: 'string',
-            enum: ['functions', 'components', 'hooks', 'stores', 'apiClients', 'importGraph'],
-          },
-          filter: { type: 'string' },
+          jobId: { type: 'string' },
         },
-        required: ['type'],
+        required: ['jobId'],
       },
     },
     {
       name: 'drakon.mutatediagram',
-      description: 'Apply one or more granular patch mutations to an existing diagram without full JSON rewrite. Supports insert, update, delete nodes and pointer changes. Each mutation is validated before saving.',
+      description: 'Apply FIFO granular patch mutations to an existing diagram using IR conversion and deterministic validation after each step, persisting only accepted operations while returning detailed applied and rejected mutation diagnostics.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -816,7 +876,21 @@ function getMcpTools() {
                   properties: {
                     op: { type: 'string', enum: ['insertNode'] },
                     nodeId: { type: 'string' },
-                    node: { type: 'object' },
+                    node: {
+                      type: 'object',
+                      properties: {
+                        type: { type: 'string', enum: Array.from(IR_ITEM_TYPES) },
+                        content: { type: 'string' },
+                        secondary: { type: 'string' },
+                        one: { type: 'string' },
+                        two: { type: 'string' },
+                        side: { type: 'string' },
+                        flag1: { type: 'boolean' },
+                        branchId: { type: 'string' },
+                        style: { type: 'object' },
+                      },
+                      required: ['type', 'content'],
+                    },
                   },
                   required: ['op', 'nodeId', 'node'],
                 },
@@ -825,7 +899,20 @@ function getMcpTools() {
                   properties: {
                     op: { type: 'string', enum: ['updateNode'] },
                     nodeId: { type: 'string' },
-                    fields: { type: 'object' },
+                    fields: {
+                      type: 'object',
+                      properties: {
+                        type: { type: 'string', enum: Array.from(IR_ITEM_TYPES) },
+                        content: { type: 'string' },
+                        secondary: { type: 'string' },
+                        one: { type: 'string' },
+                        two: { type: 'string' },
+                        side: { type: 'string' },
+                        flag1: { type: 'boolean' },
+                        branchId: { type: 'string' },
+                        style: { type: 'object' },
+                      },
+                    },
                   },
                   required: ['op', 'nodeId', 'fields'],
                 },
@@ -846,6 +933,14 @@ function getMcpTools() {
                   },
                   required: ['op', 'nodeId', 'targetId'],
                 },
+                {
+                  type: 'object',
+                  properties: {
+                    op: { type: 'string', enum: ['renameDiagram'] },
+                    newName: { type: 'string' },
+                  },
+                  required: ['op', 'newName'],
+                },
               ],
             },
           },
@@ -855,15 +950,17 @@ function getMcpTools() {
     },
     {
       name: 'drakon.diffcodevsdiagram',
-      description: 'Compare cached code analysis against stored diagrams to find coverage gaps. Returns matched symbols, missing diagrams and orphaned diagrams.',
+      description: 'Compare a completed code analysis job summary with selected existing diagrams to identify coverage gaps and mismatches; currently returns a not_implemented stub reserved for the planned step-9 implementation.',
       inputSchema: {
         type: 'object',
         properties: {
+          analysisJobId: { type: 'string' },
           diagramIds: {
             type: 'array',
             items: { type: 'string' },
           },
         },
+        required: ['analysisJobId', 'diagramIds'],
       },
     },
   ];
