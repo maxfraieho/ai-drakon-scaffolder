@@ -115,6 +115,22 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={150}>
+        <div className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+          <nav className="mx-auto flex w-full max-w-7xl items-center gap-2 px-3 py-2 sm:px-4">
+            <Link
+              to="/github"
+              className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              GitHub Files
+            </Link>
+            <Link
+              to="/settings"
+              className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Settings
+            </Link>
+          </nav>
+        </div>
         <Outlet />
       </TooltipProvider>
     </QueryClientProvider>
