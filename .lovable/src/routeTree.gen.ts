@@ -9,15 +9,27 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as GithubRouteImport } from './routes/github'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IndexIndexRouteImport } from './routes/index.index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GithubRoute = GithubRouteImport.update({
+  id: '/github',
+  path: '/github',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiagramsRoute = DiagramsRouteImport.update({
@@ -44,14 +56,18 @@ const EditorIdRoute = EditorIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/diagrams': typeof DiagramsRoute
+  '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/editor/$id': typeof EditorIdRoute
   '/index/': typeof IndexIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/diagrams': typeof DiagramsRoute
+  '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/editor/$id': typeof EditorIdRoute
   '/index': typeof IndexIndexRoute
 }
@@ -59,33 +75,73 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/diagrams': typeof DiagramsRoute
+  '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
   '/editor/$id': typeof EditorIdRoute
   '/index/': typeof IndexIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/diagrams' | '/login' | '/editor/$id' | '/index/'
+  fullPaths:
+    | '/'
+    | '/diagrams'
+    | '/github'
+    | '/login'
+    | '/settings'
+    | '/editor/$id'
+    | '/index/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/diagrams' | '/login' | '/editor/$id' | '/index'
-  id: '__root__' | '/' | '/diagrams' | '/login' | '/editor/$id' | '/index/'
+  to:
+    | '/'
+    | '/diagrams'
+    | '/github'
+    | '/login'
+    | '/settings'
+    | '/editor/$id'
+    | '/index'
+  id:
+    | '__root__'
+    | '/'
+    | '/diagrams'
+    | '/github'
+    | '/login'
+    | '/settings'
+    | '/editor/$id'
+    | '/index/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DiagramsRoute: typeof DiagramsRoute
+  GithubRoute: typeof GithubRoute
   LoginRoute: typeof LoginRoute
+  SettingsRoute: typeof SettingsRoute
   EditorIdRoute: typeof EditorIdRoute
   IndexIndexRoute: typeof IndexIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/github': {
+      id: '/github'
+      path: '/github'
+      fullPath: '/github'
+      preLoaderRoute: typeof GithubRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/diagrams': {
@@ -122,7 +178,9 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DiagramsRoute: DiagramsRoute,
+  GithubRoute: GithubRoute,
   LoginRoute: LoginRoute,
+  SettingsRoute: SettingsRoute,
   EditorIdRoute: EditorIdRoute,
   IndexIndexRoute: IndexIndexRoute,
 }
