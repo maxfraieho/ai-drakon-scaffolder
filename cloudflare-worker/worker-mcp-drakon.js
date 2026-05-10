@@ -43,6 +43,34 @@ function errorResponse(message, status = 400, details = undefined, code = undefi
 
 const analysisJobs = new Map();
 
+function githubHeaders(env) {
+  if (!env.GITHUB_TOKEN) {
+    throw new Error('GITHUB_TOKEN is not configured');
+  }
+
+  return {
+    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'drakon-mcp-worker',
+  };
+}
+
+async function githubFetch(env, path, options = {}) {
+  const base = 'https://api.github.com';
+  const resp = await fetch(`${base}${path}`, {
+    ...options,
+    headers: { ...githubHeaders(env), ...(options.headers || {}) },
+  });
+
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`GitHub API ${resp.status}: ${err.slice(0, 200)}`);
+  }
+
+  return resp.json();
+}
+
 function b64urlEncodeJson(obj) {
   return btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
@@ -753,6 +781,126 @@ async function handleDrakonList(folderSlug, env) {
   return jsonResponse({ success: true, folderSlug, diagrams });
 }
 
+async function handleGithubListTree(args, env) {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const path = String(args?.path || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo) {
+    return { success: false, error: 'owner and repo required' };
+  }
+
+  const data = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`
+  );
+  const entries = Array.isArray(data) ? data : [data];
+
+  return {
+    success: true,
+    owner,
+    repo,
+    path,
+    branch,
+    entries: entries.map((entry) => ({
+      name: entry.name,
+      path: entry.path,
+      type: entry.type === 'dir' ? 'dir' : 'file',
+      size: entry.size || 0,
+      downloadUrl: entry.download_url || null,
+    })),
+  };
+}
+
+async function handleGithubGetFile(args, env) {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const path = String(args?.path || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo || !path) {
+    return { success: false, error: 'owner, repo, path required' };
+  }
+
+  const data = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`
+  );
+  const content = data.encoding === 'base64' ? atob((data.content || '').replace(/\n/g, '')) : String(data.content || '');
+
+  return {
+    success: true,
+    path: data.path,
+    name: data.name,
+    size: data.size,
+    sha: data.sha,
+    content,
+    encoding: 'utf-8',
+  };
+}
+
+async function handleGithubCommitFile(args, env) {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const path = String(args?.path || '').trim();
+  const content = String(args?.content || '');
+  const message = String(args?.message || 'Update via DRAKON MCP').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo || !path) {
+    return { success: false, error: 'owner, repo, path required' };
+  }
+
+  let sha;
+  try {
+    const existing = await githubFetch(
+      env,
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`
+    );
+    sha = existing.sha;
+  } catch {
+    sha = undefined;
+  }
+
+  const body = {
+    message,
+    content: btoa(unescape(encodeURIComponent(content))),
+    branch,
+    ...(sha ? { sha } : {}),
+  };
+
+  const result = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
+    { method: 'PUT', body: JSON.stringify(body) }
+  );
+
+  return {
+    success: true,
+    path: result.content?.path,
+    sha: result.content?.sha,
+    commitSha: result.commit?.sha,
+    commitUrl: result.commit?.html_url,
+  };
+}
+
+async function handleGithubListBranches(args, env) {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+
+  if (!owner || !repo) {
+    return { success: false, error: 'owner and repo required' };
+  }
+
+  const data = await githubFetch(env, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`);
+
+  return {
+    success: true,
+    branches: Array.isArray(data) ? data.map((branch) => branch.name) : [],
+  };
+}
+
 function getMcpTools() {
   return [
     {
@@ -963,6 +1111,62 @@ function getMcpTools() {
         required: ['analysisJobId', 'diagramIds'],
       },
     },
+    {
+      name: 'github.listtree',
+      description: 'List files and directories for a GitHub repository path so an agent can explore project structure before analysis, select target modules safely, and receive normalized entries with path, type, size, and optional download URL.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string', default: '' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+    {
+      name: 'github.getfile',
+      description: 'Read one specific file from a GitHub repository and return decoded UTF-8 text content with metadata, which should be used when the model needs to inspect implementation details before generating diagrams or analysis artifacts.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo', 'path'],
+      },
+    },
+    {
+      name: 'github.commitfile',
+      description: 'Create or update a repository file in GitHub by committing plain-text content to a branch, useful for writing generated DRAKON outputs or analysis reports back into version control with commit metadata returned.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string' },
+          content: { type: 'string' },
+          message: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo', 'path', 'content', 'message'],
+      },
+    },
+    {
+      name: 'github.listbranches',
+      description: 'List all branch names in a GitHub repository so a user or agent can choose the correct branch context for browsing files, reading code, committing outputs, and running branch-specific analysis workflows.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
   ];
 }
 
@@ -1063,6 +1267,26 @@ async function handleMcp(request, env) {
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
+    if (name === 'github.listtree') {
+      const result = await handleGithubListTree(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.getfile') {
+      const result = await handleGithubGetFile(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.commitfile') {
+      const result = await handleGithubCommitFile(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.listbranches') {
+      const result = await handleGithubListBranches(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
     return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown tool: ${name}` } }, 404);
   }
 
@@ -1132,6 +1356,38 @@ export default {
 
       if (method === 'GET' && path === '/v1/analysis/jobs') {
         return await handleAnalysisListJobs();
+      }
+
+      if (method === 'GET' && path === '/v1/github/tree') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const treePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env));
+      }
+
+      if (method === 'GET' && path === '/v1/github/file') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const filePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env));
+      }
+
+      if (method === 'POST' && path === '/v1/github/commit') {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
+        }
+        return jsonResponse(await handleGithubCommitFile(body, env));
+      }
+
+      if (method === 'GET' && path === '/v1/github/branches') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        return jsonResponse(await handleGithubListBranches({ owner, repo }, env));
       }
 
       const drakonGetMatch = path.match(/^\/v1\/drakon\/([^\/]+)\/([^\/]+)$/);

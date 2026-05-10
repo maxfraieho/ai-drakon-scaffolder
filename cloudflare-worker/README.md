@@ -91,3 +91,9 @@ drakon.save_diagram, drakon.delete_diagram, drakon.validateir
 | MINIO_ACCESS_KEY | Var | Yes | S3 access key |
 | MINIO_SECRET_KEY | Secret | Yes | S3 secret key |
 | MINIO_USE_SSL | Var | No | "true" або "false" (default: "true") |
+
+## GitHub Integration Setup
+
+`wrangler secret put GITHUB_TOKEN`
+
+Введи GitHub Personal Access Token з правами: `repo` (read + write contents).

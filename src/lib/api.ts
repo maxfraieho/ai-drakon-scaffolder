@@ -53,6 +53,37 @@ type AnalyzeCodebaseResponse = {
   status?: "pending" | "analyzing" | "completed" | "failed";
 };
 
+type GithubTreeEntry = {
+  name: string;
+  path: string;
+  type: "file" | "dir";
+  size: number;
+};
+
+type GithubTreeResponse = {
+  success: boolean;
+  entries: GithubTreeEntry[];
+};
+
+type GithubFileResponse = {
+  success: boolean;
+  path: string;
+  content: string;
+  sha: string;
+};
+
+type GithubCommitResponse = {
+  success: boolean;
+  path?: string;
+  commitSha?: string;
+  commitUrl?: string;
+};
+
+type GithubBranchesResponse = {
+  success: boolean;
+  branches: string[];
+};
+
 const headers = () => ({
   Authorization: `Bearer ${localStorage.getItem("jwt")}`,
   "Content-Type": "application/json",
@@ -161,4 +192,49 @@ export const api = {
 
     return parseResponse<AnalysisJob[]>(response);
   },
+
+  githubListTree: (
+    owner: string,
+    repo: string,
+    path = "",
+    branch = "main",
+  ): Promise<GithubTreeResponse> =>
+    fetch(
+      `${BASE}/v1/github/tree?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
+      { headers: headers() },
+    ).then((r) => r.json()),
+
+  githubGetFile: (
+    owner: string,
+    repo: string,
+    path: string,
+    branch = "main",
+  ): Promise<GithubFileResponse> =>
+    fetch(
+      `${BASE}/v1/github/file?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
+      { headers: headers() },
+    ).then((r) => r.json()),
+
+  githubCommitFile: async (
+    owner: string,
+    repo: string,
+    path: string,
+    content: string,
+    message: string,
+    branch = "main",
+  ): Promise<GithubCommitResponse> => {
+    const response = await fetch(`${BASE}/v1/github/commit`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ owner, repo, path, content, message, branch }),
+    });
+
+    return response.json();
+  },
+
+  githubListBranches: (owner: string, repo: string): Promise<GithubBranchesResponse> =>
+    fetch(
+      `${BASE}/v1/github/branches?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
+      { headers: headers() },
+    ).then((r) => r.json()),
 };

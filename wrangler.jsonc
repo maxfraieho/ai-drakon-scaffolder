@@ -12,5 +12,6 @@
     "MINIO_USE_SSL": "true"
   },
   // Secrets встановлюються через: wrangler secret put JWT_SECRET
+  // Secret: wrangler secret put GITHUB_TOKEN
   // або через Cloudflare Workers Dashboard → Settings → Variables and Secrets
 }
