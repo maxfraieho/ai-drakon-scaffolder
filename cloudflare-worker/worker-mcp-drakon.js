@@ -1111,6 +1111,62 @@ function getMcpTools() {
         required: ['analysisJobId', 'diagramIds'],
       },
     },
+    {
+      name: 'github.listtree',
+      description: 'List files and directories for a GitHub repository path so an agent can explore project structure before analysis, select target modules safely, and receive normalized entries with path, type, size, and optional download URL.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string', default: '' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+    {
+      name: 'github.getfile',
+      description: 'Read one specific file from a GitHub repository and return decoded UTF-8 text content with metadata, which should be used when the model needs to inspect implementation details before generating diagrams or analysis artifacts.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo', 'path'],
+      },
+    },
+    {
+      name: 'github.commitfile',
+      description: 'Create or update a repository file in GitHub by committing plain-text content to a branch, useful for writing generated DRAKON outputs or analysis reports back into version control with commit metadata returned.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string' },
+          content: { type: 'string' },
+          message: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo', 'path', 'content', 'message'],
+      },
+    },
+    {
+      name: 'github.listbranches',
+      description: 'List all branch names in a GitHub repository so a user or agent can choose the correct branch context for browsing files, reading code, committing outputs, and running branch-specific analysis workflows.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
   ];
 }
 
