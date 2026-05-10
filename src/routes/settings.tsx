@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Check, Eye, EyeOff, ExternalLink, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -157,6 +157,10 @@ function SettingsRoute() {
     localStorage.removeItem("drakon.diagrams");
     toast.success("Локальний кеш діаграм очищено");
   };
+
+  if (typeof window !== "undefined" && !localStorage.getItem("jwt")) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <div className="mx-auto w-full max-w-4xl px-3 pb-28 pt-4 md:px-6 md:pb-6">
