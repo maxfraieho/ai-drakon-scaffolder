@@ -12,6 +12,6 @@
     "preview": "npm run sync:deps && npm --prefix .lovable run preview",
     "test": "npm run sync:deps && npm --prefix .lovable exec vitest",
     "build:pages": "npm run build",
-    "deploy:pages": "npx wrangler pages deploy dist"
+    "deploy:pages": "npx wrangler pages deploy dist --functions functions"
   }
 }
