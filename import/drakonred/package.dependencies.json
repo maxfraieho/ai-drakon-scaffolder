@@ -1,0 +1,22 @@
+{
+  "runtime": {
+    "react": "^18",
+    "react-dom": "^18",
+    "lucide-react": "^0.462.0",
+    "@tanstack/react-query": "^5.83.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0"
+  },
+  "ui_primitives_used": {
+    "@radix-ui/react-dialog": "used via shadcn/ui dialog",
+    "@radix-ui/react-tooltip": "used via shadcn/ui tooltip",
+    "@radix-ui/react-scroll-area": "used via shadcn/ui scroll-area",
+    "@radix-ui/react-switch": "used via shadcn/ui switch",
+    "@radix-ui/react-collapsible": "used via shadcn/ui collapsible",
+    "@radix-ui/react-select": "used via shadcn/ui select"
+  },
+  "notes": [
+    "If your Lovable project already has shadcn/ui and these deps, no extra install is needed.",
+    "DrakonEditor.tsx uses project-specific hooks: useLocale, useToast, and MCP commit API in useDrakonDiagram.ts."
+  ]
+}

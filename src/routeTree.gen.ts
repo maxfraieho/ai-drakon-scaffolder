@@ -9,38 +9,92 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EditorIdRouteImport } from './routes/editor.$id'
+import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
 
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagramsRoute = DiagramsRouteImport.update({
+  id: '/diagrams',
+  path: '/diagrams',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditorIdRoute = EditorIdRouteImport.update({
+  id: '/editor/$id',
+  path: '/editor/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagramEditorRoute = DiagramEditorRouteImport.update({
+  id: '/diagram/editor',
+  path: '/diagram/editor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/diagrams': typeof DiagramsRoute
+  '/login': typeof LoginRoute
+  '/editor/$id': typeof EditorIdRoute
+  '/diagram/editor': typeof DiagramEditorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/diagrams': typeof DiagramsRoute
+  '/login': typeof LoginRoute
+  '/editor/$id': typeof EditorIdRoute
+  '/diagram/editor': typeof DiagramEditorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/diagrams': typeof DiagramsRoute
+  '/login': typeof LoginRoute
+  '/editor/$id': typeof EditorIdRoute
+  '/diagram/editor': typeof DiagramEditorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/diagrams' | '/login' | '/editor/$id' | '/diagram/editor'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/diagrams' | '/login' | '/editor/$id' | '/diagram/editor'
+  id: '__root__' | '/' | '/diagrams' | '/login' | '/editor/$id' | '/diagram/editor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DiagramsRoute: typeof DiagramsRoute
+  LoginRoute: typeof LoginRoute
+  EditorIdRoute: typeof EditorIdRoute
+  DiagramEditorRoute: typeof DiagramEditorRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagrams': {
+      id: '/diagrams'
+      path: '/diagrams'
+      fullPath: '/diagrams'
+      preLoaderRoute: typeof DiagramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +102,30 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/editor/$id': {
+      id: '/editor/$id'
+      path: '/editor/$id'
+      fullPath: '/editor/$id'
+      preLoaderRoute: typeof EditorIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagram/editor': {
+      id: '/diagram/editor'
+      path: '/diagram/editor'
+      fullPath: '/diagram/editor'
+      preLoaderRoute: typeof DiagramEditorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DiagramsRoute: DiagramsRoute,
+  LoginRoute: LoginRoute,
+  EditorIdRoute: EditorIdRoute,
+  DiagramEditorRoute: DiagramEditorRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -1,0 +1,154 @@
+import type { Diagram } from "@/types/drakon";
+import type { AnalysisJob, CodebaseAnalysisRequest } from "@/types/analysis";
+
+function resolveApiBase() {
+  const envBase = import.meta.env.VITE_WORKER_URL;
+  if (envBase && envBase.trim().length > 0) {
+    return envBase;
+  }
+
+  if (typeof window !== "undefined") {
+    return window.location.origin;
+  }
+
+  return "";
+}
+
+const BASE = resolveApiBase();
+
+type GenerateType = "code" | "text";
+
+type LoginResponse = {
+  token?: string;
+  jwt?: string;
+  error?: string;
+  message?: string;
+};
+
+type GenerateResponse = {
+  diagram?: Diagram["diagram"];
+  error?: string;
+  message?: string;
+};
+
+type ApiResponse = {
+  success?: boolean;
+  error?: string;
+  message?: string;
+};
+
+type DiagramGetResponse = {
+  success?: boolean;
+  diagram?: Diagram;
+  error?: string;
+  message?: string;
+};
+
+type DiagramListResponse = {
+  success?: boolean;
+  folderSlug?: string;
+  diagrams?: string[];
+  error?: string;
+  message?: string;
+};
+
+type AnalyzeCodebaseResponse = {
+  jobId: string;
+  status?: "pending" | "analyzing" | "completed" | "failed";
+};
+
+const headers = () => ({
+  Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+  "Content-Type": "application/json",
+});
+
+async function parseResponse<T>(response: Response): Promise<T> {
+  const data = (await response.json()) as T;
+
+  if (!response.ok) {
+    const maybeError = data as { error?: string; message?: string };
+    throw new Error(maybeError.message || maybeError.error || `HTTP ${response.status}`);
+  }
+
+  return data;
+}
+
+export const api = {
+  login: async (email: string, password: string): Promise<LoginResponse> => {
+    const response = await fetch(`${BASE}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
+    });
+
+    return parseResponse<LoginResponse>(response);
+  },
+
+  generate: async (input: string, type: GenerateType): Promise<GenerateResponse> => {
+    const response = await fetch(`${BASE}/v1/drakon/generate`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ input, type }),
+    });
+
+    return parseResponse<GenerateResponse>(response);
+  },
+
+  commit: async (folderId: string, diagramId: string, data: Diagram): Promise<ApiResponse> => {
+    const response = await fetch(`${BASE}/v1/drakon/commit`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ folderSlug: folderId, diagramId, diagram: data }),
+    });
+
+    return parseResponse<ApiResponse>(response);
+  },
+
+  getDiagram: (folderId: string, diagramId: string): Promise<DiagramGetResponse> =>
+    fetch(`${BASE}/v1/drakon/${folderId}/${diagramId}`, {
+      headers: headers(),
+    }).then((r) => r.json()),
+
+  listDiagrams: (folderId: string): Promise<DiagramListResponse> =>
+    fetch(`${BASE}/v1/drakon/${folderId}`, {
+      headers: headers(),
+    }).then((r) => r.json()),
+
+  deleteDiagram: async (folderId: string, diagramId: string): Promise<ApiResponse> => {
+    const response = await fetch(`${BASE}/v1/drakon/${folderId}/${diagramId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+
+    return parseResponse<ApiResponse>(response);
+  },
+
+  analyzeCodebase: async (request: CodebaseAnalysisRequest): Promise<{ jobId: string }> => {
+    const response = await fetch(`${BASE}/v1/analysis/codebase`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(request),
+    });
+
+    const data = await parseResponse<AnalyzeCodebaseResponse>(response);
+    return { jobId: data.jobId };
+  },
+
+  getAnalysisJob: async (jobId: string): Promise<AnalysisJob> => {
+    const response = await fetch(`${BASE}/v1/analysis/jobs/${encodeURIComponent(jobId)}`, {
+      method: "GET",
+      headers: headers(),
+    });
+
+    return parseResponse<AnalysisJob>(response);
+  },
+
+  listAnalysisJobs: async (): Promise<AnalysisJob[]> => {
+    const response = await fetch(`${BASE}/v1/analysis/jobs`, {
+      method: "GET",
+      headers: headers(),
+    });
+
+    return parseResponse<AnalysisJob[]>(response);
+  },
+};
