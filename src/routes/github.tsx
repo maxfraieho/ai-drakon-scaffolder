@@ -1,5 +1,5 @@
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Copy, FileCode2, FileJson2, FileText, Folder, Github, Settings, Search } from "lucide-react";
+import { FileCode2, FileJson2, FileText, Folder, Github, Settings, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -109,10 +109,10 @@ function GitHubRoute() {
   const holdTimerRef = useRef<number | null>(null);
 
   const githubDefaults = readSettings().github;
-  const [owner, setOwner] = useState(githubDefaults.owner);
-  const [repo, setRepo] = useState(githubDefaults.repo);
+  const owner = githubDefaults.owner;
+  const repo = githubDefaults.repo;
   const [branch, setBranch] = useState(githubDefaults.branch || "main");
-  const [token, setToken] = useState(githubDefaults.token || "");
+  const token = githubDefaults.token || "";
 
   const [branches, setBranches] = useState<string[]>([githubDefaults.branch || "main"]);
   const [isLoadingBranches, setIsLoadingBranches] = useState(false);
@@ -192,7 +192,7 @@ function GitHubRoute() {
 
   useEffect(() => {
     void loadBranches();
-  }, [owner, repo]);
+  }, [owner, repo, token]);
 
   useEffect(() => {
     setCache({});
@@ -201,7 +201,7 @@ function GitHubRoute() {
     if (canLoad) {
       void loadPath("");
     }
-  }, [owner, repo, branch]);
+  }, [owner, repo, branch, token]);
 
   const openFile = async (entry: GithubTreeEntry) => {
     setLoadingPreview(true);
