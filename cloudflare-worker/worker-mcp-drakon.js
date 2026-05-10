@@ -1376,7 +1376,8 @@ export default {
         const repo = url.searchParams.get('repo') || '';
         const treePath = url.searchParams.get('path') || '';
         const branch = url.searchParams.get('branch') || 'main';
-        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env));
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env, requestToken));
       }
 
       if (method === 'GET' && path === '/v1/github/file') {
@@ -1384,23 +1385,26 @@ export default {
         const repo = url.searchParams.get('repo') || '';
         const filePath = url.searchParams.get('path') || '';
         const branch = url.searchParams.get('branch') || 'main';
-        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env));
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env, requestToken));
       }
 
       if (method === 'POST' && path === '/v1/github/commit') {
+        const requestToken = request.headers.get('X-Github-Token') || '';
         let body;
         try {
           body = await request.json();
         } catch {
           return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
         }
-        return jsonResponse(await handleGithubCommitFile(body, env));
+        return jsonResponse(await handleGithubCommitFile(body, env, requestToken));
       }
 
       if (method === 'GET' && path === '/v1/github/branches') {
         const owner = url.searchParams.get('owner') || '';
         const repo = url.searchParams.get('repo') || '';
-        return jsonResponse(await handleGithubListBranches({ owner, repo }, env));
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListBranches({ owner, repo }, env, requestToken));
       }
 
       const drakonGetMatch = path.match(/^\/v1\/drakon\/([^\/]+)\/([^\/]+)$/);
