@@ -30,3 +30,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Lovable — platform-specific lockfile/modules not committed
+.lovable/package-lock.json
+.lovable/node_modules/

@@ -2,7 +2,7 @@
   "name": "workspace-root",
   "private": true,
   "scripts": {
-    "sync:deps": "npm --prefix .lovable install",
+    "sync:deps": "npm --prefix .lovable install --prefer-dedupe",
     "dev": "npm run sync:deps && npm --prefix .lovable run dev --",
     "build": "npm run sync:deps && npm --prefix .lovable run build && npm run prepare:pages-dist && npm run prepare:pages-functions",
     "prepare:pages-dist": "node scripts/prepare-cloudflare-pages.mjs",
