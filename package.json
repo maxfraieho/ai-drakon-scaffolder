@@ -4,12 +4,13 @@
   "scripts": {
     "sync:deps": "npm --prefix .lovable install",
     "dev": "npm run sync:deps && npm --prefix .lovable run dev --",
-    "build": "npm run sync:deps && npm --prefix .lovable run build",
+    "build": "npm run sync:deps && npm --prefix .lovable run build && npm run prepare:pages-dist",
+    "prepare:pages-dist": "node scripts/prepare-cloudflare-pages.mjs",
     "dist-check": "npm run build",
     "build:dev": "npm run sync:deps && npm --prefix .lovable run build:dev",
     "preview": "npm run sync:deps && npm --prefix .lovable run preview",
     "test": "npm run sync:deps && npm --prefix .lovable exec vitest",
     "build:pages": "npm run build",
-    "deploy:pages": "npx wrangler deploy --config .lovable/dist/server/wrangler.json"
+    "deploy:pages": "npx wrangler pages deploy dist"
   }
 }
