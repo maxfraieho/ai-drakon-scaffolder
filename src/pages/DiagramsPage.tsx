@@ -297,6 +297,40 @@ export function DiagramsPage() {
     }
   };
 
+  useEffect(() => {
+    const shouldAutoAnalyze = search.autoAnalyze === "true";
+    const analyzePath = search.analyzePath?.trim();
+
+    if (!shouldAutoAnalyze || !analyzePath || autoAnalyzeHandledRef.current) {
+      return;
+    }
+
+    autoAnalyzeHandledRef.current = true;
+    const projectName = analyzePath.split("/").filter(Boolean).pop() || "github-entry";
+
+    const request: CodebaseAnalysisRequest = {
+      projectName,
+      sourceType: "text-paste",
+      sourceContent: `GitHub entry selected for analysis: ${analyzePath}`,
+      language: "auto",
+      analysisDepth: "modules",
+      entryPaths: [analyzePath],
+      includeGlobs: ["**/*.{ts,tsx,js,jsx,json}"],
+      excludeGlobs: ["node_modules/**", "dist/**"],
+    };
+
+    void (async () => {
+      try {
+        const { jobId } = await api.analyzeCodebase(request);
+        toast.success(`Авто-аналіз запущено (job: ${jobId})`);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Не вдалося запустити авто-аналіз");
+      } finally {
+        navigate({ to: "/diagrams" });
+      }
+    })();
+  }, [navigate, search.analyzePath, search.autoAnalyze]);
+
   const handleSelectGithubPath = async (path: string, type: "file" | "dir") => {
     setSelectedGitHubPath(path);
     setSelectedGitHubType(type);
