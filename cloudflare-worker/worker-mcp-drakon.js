@@ -756,7 +756,7 @@ async function handleDrakonList(folderSlug, env) {
 function getMcpTools() {
   return [
     {
-      name: 'drakon.list_diagrams',
+      name: 'drakon.listdiagrams',
       description: 'List all available DRAKON diagram identifiers inside a specific folder namespace in storage so agents can discover existing assets before reading, mutating, validating, diffing, or saving any diagram content.',
       inputSchema: {
         type: 'object',
@@ -767,7 +767,7 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.get_diagram',
+      name: 'drakon.getdiagram',
       description: 'Load one stored DRAKON diagram JSON document by folder and diagram id, returning the canonical persisted structure needed for editor hydration, validation checks, mutation planning, and downstream analysis workflows.',
       inputSchema: {
         type: 'object',
@@ -779,7 +779,7 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.save_diagram',
+      name: 'drakon.savediagram',
       description: 'Create or update a full DRAKON diagram JSON payload in storage when a client wants authoritative persistence after edits, preserving compatibility with current diagram CRUD flows and existing integrations.',
       inputSchema: {
         type: 'object',
@@ -792,7 +792,7 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.delete_diagram',
+      name: 'drakon.deletediagram',
       description: 'Delete one DRAKON diagram JSON object from storage by folder and diagram id, allowing cleanup of obsolete assets while keeping the existing diagram lifecycle API unchanged for current clients.',
       inputSchema: {
         type: 'object',
@@ -1009,17 +1009,17 @@ async function handleMcp(request, env) {
     const name = params?.name;
     const args = params?.arguments || {};
 
-    if (name === 'drakon.list_diagrams') {
+    if (name === 'drakon.listdiagrams') {
       const result = await handleDrakonList(String(args.folderSlug || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
 
-    if (name === 'drakon.get_diagram') {
+    if (name === 'drakon.getdiagram') {
       const result = await handleDrakonGet(String(args.folderSlug || ''), String(args.diagramId || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
 
-    if (name === 'drakon.save_diagram') {
+    if (name === 'drakon.savediagram') {
       const fakeRequest = new Request('https://internal.local/commit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1033,7 +1033,7 @@ async function handleMcp(request, env) {
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
 
-    if (name === 'drakon.delete_diagram') {
+    if (name === 'drakon.deletediagram') {
       const result = await handleDrakonDelete(String(args.folderSlug || ''), String(args.diagramId || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
