@@ -82,8 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:site", content: "@Lovable" },
       { name: "twitter:title", content: "Lovable App" },
       { name: "twitter:description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/937cdad8-f1ba-473e-8b88-e64af3e83050/id-preview-1a5db546--6d5b12fe-636c-4499-8122-bd23342e53e3.lovable.app-1778351976895.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/937cdad8-f1ba-473e-8b88-e64af3e83050/id-preview-1a5db546--6d5b12fe-636c-4499-8122-bd23342e53e3.lovable.app-1778351976895.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0mMTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0mMTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
     ],
     links: [
       {
