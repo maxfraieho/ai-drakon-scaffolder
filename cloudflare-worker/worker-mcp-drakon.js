@@ -153,6 +153,13 @@ async function verifyOwnerAuth(request, env) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
 
   const token = authHeader.slice(7);
+
+  // Статичний MCP API key (для Claude.ai Dashboard та інших MCP клієнтів)
+  if (env.MCP_API_KEY && token === env.MCP_API_KEY) {
+    return { role: 'owner', sub: 'mcp-agent' };
+  }
+
+  // JWT (для фронтенду)
   const payload = await verifyJWT(token, env.JWT_SECRET);
   if (!payload || payload.role !== 'owner') return null;
 
