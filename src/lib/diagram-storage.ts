@@ -15,6 +15,7 @@ function normalizeDiagram(diagram: Diagram): Diagram {
 const DIAGRAMS_STORAGE_KEY = "drakon.diagrams";
 
 export function readDiagramsFromStorage(): Diagram[] {
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(DIAGRAMS_STORAGE_KEY);
     if (!raw) return [];
@@ -26,6 +27,7 @@ export function readDiagramsFromStorage(): Diagram[] {
 }
 
 export function writeDiagramsToStorage(diagrams: Diagram[]) {
+  if (typeof window === "undefined") return;
   localStorage.setItem(
     DIAGRAMS_STORAGE_KEY,
     JSON.stringify(diagrams.map(normalizeDiagram)),
