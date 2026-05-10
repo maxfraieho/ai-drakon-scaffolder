@@ -1267,6 +1267,26 @@ async function handleMcp(request, env) {
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
+    if (name === 'github.listtree') {
+      const result = await handleGithubListTree(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.getfile') {
+      const result = await handleGithubGetFile(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.commitfile') {
+      const result = await handleGithubCommitFile(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.listbranches') {
+      const result = await handleGithubListBranches(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
     return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown tool: ${name}` } }, 404);
   }
 
@@ -1336,6 +1356,38 @@ export default {
 
       if (method === 'GET' && path === '/v1/analysis/jobs') {
         return await handleAnalysisListJobs();
+      }
+
+      if (method === 'GET' && path === '/v1/github/tree') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const treePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env));
+      }
+
+      if (method === 'GET' && path === '/v1/github/file') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const filePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env));
+      }
+
+      if (method === 'POST' && path === '/v1/github/commit') {
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
+        }
+        return jsonResponse(await handleGithubCommitFile(body, env));
+      }
+
+      if (method === 'GET' && path === '/v1/github/branches') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        return jsonResponse(await handleGithubListBranches({ owner, repo }, env));
       }
 
       const drakonGetMatch = path.match(/^\/v1\/drakon\/([^\/]+)\/([^\/]+)$/);
