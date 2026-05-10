@@ -5,6 +5,7 @@
     "sync:deps": "npm --prefix .lovable install",
     "dev": "npm run sync:deps && npm --prefix .lovable run dev --",
     "build": "npm run sync:deps && npm --prefix .lovable run build",
+    "dist-check": "npm run build",
     "build:dev": "npm run sync:deps && npm --prefix .lovable run build:dev",
     "preview": "npm run sync:deps && npm --prefix .lovable run preview",
     "test": "npm run sync:deps && npm --prefix .lovable exec vitest"
