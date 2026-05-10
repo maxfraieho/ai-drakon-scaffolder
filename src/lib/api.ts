@@ -1,10 +1,17 @@
 import type { Diagram } from "@/types/drakon";
 import type { AnalysisJob, CodebaseAnalysisRequest } from "@/types/analysis";
 import { resolveClientEndpoints } from "@/lib/client-config";
+import { getGithubConfig, readSettings } from "@/lib/settings-storage";
 
-const BASE =
-  import.meta.env.VITE_WORKER_URL ||
-  (typeof window !== "undefined" ? resolveClientEndpoints().apiBaseUrl : "");
+function resolveApiBase() {
+  if (typeof window !== "undefined") {
+    const override = readSettings().app.workerUrl.trim();
+    if (override) return override;
+    return resolveClientEndpoints().apiBaseUrl;
+  }
+
+  return import.meta.env.VITE_WORKER_URL || "";
+}
 
 type GenerateType = "code" | "text";
 
@@ -89,6 +96,11 @@ const headers = () => ({
   "Content-Type": "application/json",
 });
 
+const githubHeaders = (token?: string) => {
+  const cfgToken = token ?? getGithubConfig().token;
+  return cfgToken.trim().length > 0 ? { "X-Github-Token": cfgToken.trim() } : {};
+};
+
 async function parseResponse<T>(response: Response): Promise<T> {
   const data = (await response.json()) as T;
 
@@ -102,7 +114,7 @@ async function parseResponse<T>(response: Response): Promise<T> {
 
 export const api = {
   login: async (email: string, password: string): Promise<LoginResponse> => {
-    const response = await fetch(`${BASE}/auth/login`, {
+    const response = await fetch(`${resolveApiBase()}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -112,7 +124,7 @@ export const api = {
   },
 
   generate: async (input: string, type: GenerateType): Promise<GenerateResponse> => {
-    const response = await fetch(`${BASE}/v1/drakon/generate`, {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/generate`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({ input, type }),
@@ -122,7 +134,7 @@ export const api = {
   },
 
   commit: async (folderId: string, diagramId: string, data: Diagram): Promise<ApiResponse> => {
-    const response = await fetch(`${BASE}/v1/drakon/commit`, {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/commit`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({ folderSlug: folderId, diagramId, diagram: data }),
@@ -136,7 +148,7 @@ export const api = {
     diagramId: string,
     diagram: unknown,
   ): Promise<SaveDiagramResponse> => {
-    const response = await fetch(`${BASE}/v1/drakon/commit`, {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/commit`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({ folderSlug, diagramId, diagram }),
@@ -146,17 +158,17 @@ export const api = {
   },
 
   getDiagram: (folderId: string, diagramId: string): Promise<DiagramGetResponse> =>
-    fetch(`${BASE}/v1/drakon/${folderId}/${diagramId}`, {
+    fetch(`${resolveApiBase()}/v1/drakon/${folderId}/${diagramId}`, {
       headers: headers(),
     }).then((r) => r.json()),
 
   listDiagrams: (folderId: string): Promise<DiagramListResponse> =>
-    fetch(`${BASE}/v1/drakon/${folderId}`, {
+    fetch(`${resolveApiBase()}/v1/drakon/${folderId}`, {
       headers: headers(),
     }).then((r) => r.json()),
 
   deleteDiagram: async (folderId: string, diagramId: string): Promise<ApiResponse> => {
-    const response = await fetch(`${BASE}/v1/drakon/${folderId}/${diagramId}`, {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/${folderId}/${diagramId}`, {
       method: "DELETE",
       headers: headers(),
     });
@@ -165,7 +177,7 @@ export const api = {
   },
 
   analyzeCodebase: async (request: CodebaseAnalysisRequest): Promise<{ jobId: string }> => {
-    const response = await fetch(`${BASE}/v1/analysis/codebase`, {
+    const response = await fetch(`${resolveApiBase()}/v1/analysis/codebase`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify(request),
@@ -176,7 +188,7 @@ export const api = {
   },
 
   getAnalysisJob: async (jobId: string): Promise<AnalysisJob> => {
-    const response = await fetch(`${BASE}/v1/analysis/jobs/${encodeURIComponent(jobId)}`, {
+    const response = await fetch(`${resolveApiBase()}/v1/analysis/jobs/${encodeURIComponent(jobId)}`, {
       method: "GET",
       headers: headers(),
     });
@@ -185,7 +197,7 @@ export const api = {
   },
 
   listAnalysisJobs: async (): Promise<AnalysisJob[]> => {
-    const response = await fetch(`${BASE}/v1/analysis/jobs`, {
+    const response = await fetch(`${resolveApiBase()}/v1/analysis/jobs`, {
       method: "GET",
       headers: headers(),
     });
@@ -198,10 +210,11 @@ export const api = {
     repo: string,
     path = "",
     branch = "main",
+    token?: string,
   ): Promise<GithubTreeResponse> =>
     fetch(
-      `${BASE}/v1/github/tree?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
-      { headers: headers() },
+      `${resolveApiBase()}/v1/github/tree?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
+      { headers: { ...headers(), ...githubHeaders(token) } },
     ).then((r) => r.json()),
 
   githubGetFile: (
@@ -209,10 +222,11 @@ export const api = {
     repo: string,
     path: string,
     branch = "main",
+    token?: string,
   ): Promise<GithubFileResponse> =>
     fetch(
-      `${BASE}/v1/github/file?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
-      { headers: headers() },
+      `${resolveApiBase()}/v1/github/file?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
+      { headers: { ...headers(), ...githubHeaders(token) } },
     ).then((r) => r.json()),
 
   githubCommitFile: async (
@@ -222,19 +236,20 @@ export const api = {
     content: string,
     message: string,
     branch = "main",
+    token?: string,
   ): Promise<GithubCommitResponse> => {
-    const response = await fetch(`${BASE}/v1/github/commit`, {
+    const response = await fetch(`${resolveApiBase()}/v1/github/commit`, {
       method: "POST",
-      headers: headers(),
+      headers: { ...headers(), ...githubHeaders(token) },
       body: JSON.stringify({ owner, repo, path, content, message, branch }),
     });
 
     return response.json();
   },
 
-  githubListBranches: (owner: string, repo: string): Promise<GithubBranchesResponse> =>
+  githubListBranches: (owner: string, repo: string, token?: string): Promise<GithubBranchesResponse> =>
     fetch(
-      `${BASE}/v1/github/branches?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
-      { headers: headers() },
+      `${resolveApiBase()}/v1/github/branches?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
+      { headers: { ...headers(), ...githubHeaders(token) } },
     ).then((r) => r.json()),
 };

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { format } from "date-fns";
 import { Bot, FilePenLine, FolderPlus, GitMerge, Menu } from "lucide-react";
 import { toast } from "sonner";
@@ -77,6 +77,12 @@ function readLastGithubRepoSelection() {
 
 export function DiagramsPage() {
   const navigate = useNavigate();
+  const search = useSearch({ strict: false }) as {
+    autoAnalyze?: string;
+    analyzePath?: string;
+    analyzeRepo?: string;
+    analyzeBranch?: string;
+  };
   const importInputRef = useRef<HTMLInputElement | null>(null);
 
   const [folders, setFolders] = useState<Folder[]>(() => readFoldersFromStorage());
@@ -102,6 +108,18 @@ export function DiagramsPage() {
   const [githubTargetPath, setGithubTargetPath] = useState("");
   const [diagramForGithubSave, setDiagramForGithubSave] = useState<Diagram | null>(null);
   const [isCommittingToGithub, setIsCommittingToGithub] = useState(false);
+  const [isAnalyzeOpen, setIsAnalyzeOpen] = useState(false);
+  const [analyzeDraft, setAnalyzeDraft] = useState<CodebaseAnalysisRequest>({
+    projectName: "",
+    sourceType: "text-paste",
+    sourceContent: "",
+    language: "auto",
+    analysisDepth: "modules",
+    entryPaths: ["src"],
+    includeGlobs: ["**/*.{ts,tsx,js,jsx,json}"],
+    excludeGlobs: ["node_modules/**", "dist/**"],
+  });
+  const autoAnalyzeHandledRef = useRef(false);
 
   const selectedFolder =
     folders.find((folder) => folder.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
@@ -270,21 +288,44 @@ export function DiagramsPage() {
     }
   };
 
-  const handleAnalyzeFolder = async (path: string) => {
-    const request: CodebaseAnalysisRequest = {
-      projectName: path || "github-root",
+  const openAnalyzeDialog = (path: string, sourceContent?: string) => {
+    const cleanPath = path || "src";
+    const projectName = cleanPath.split("/").filter(Boolean).pop() || "github-entry";
+    setAnalyzeDraft({
+      projectName,
       sourceType: "text-paste",
-      sourceContent: `GitHub folder selected for analysis: ${path || "/"}`,
+      sourceContent: sourceContent || `GitHub entry selected for analysis: ${cleanPath}`,
       language: "auto",
       analysisDepth: "modules",
-      entryPaths: [path || "src/"],
+      entryPaths: [cleanPath],
       includeGlobs: ["**/*.{ts,tsx,js,jsx,json}"],
       excludeGlobs: ["node_modules/**", "dist/**"],
-    };
+    });
+    setIsAnalyzeOpen(true);
+  };
 
+  const handleAnalyzeFolder = async (path: string) => {
+    openAnalyzeDialog(path || "src");
+  };
+
+  useEffect(() => {
+    const shouldAutoAnalyze = search.autoAnalyze === "true";
+    const analyzePath = search.analyzePath?.trim();
+
+    if (!shouldAutoAnalyze || !analyzePath || autoAnalyzeHandledRef.current) {
+      return;
+    }
+
+    autoAnalyzeHandledRef.current = true;
+    openAnalyzeDialog(analyzePath, `GitHub entry selected for analysis: ${analyzePath}`);
+    navigate({ to: "/diagrams" });
+  }, [navigate, search.analyzePath, search.autoAnalyze]);
+
+  const submitAnalyzeDraft = async () => {
     try {
-      const { jobId } = await api.analyzeCodebase(request);
+      const { jobId } = await api.analyzeCodebase(analyzeDraft);
       toast.success(`Аналіз запущено (job: ${jobId})`);
+      setIsAnalyzeOpen(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Не вдалося запустити аналіз");
     }
@@ -454,8 +495,14 @@ export function DiagramsPage() {
               <Button type="button" variant="outline" onClick={() => importInputRef.current?.click()}>
                 Import JSON
               </Button>
+              <Button type="button" variant="outline" onClick={() => navigate({ to: "/github" })}>
+                📁 GitHub Files
+              </Button>
+              <Button type="button" variant="outline" onClick={() => navigate({ to: "/settings" })}>
+                ⚙️ Налаштування
+              </Button>
               <Button type="button" variant="outline" onClick={() => setIsGitHubOpen((prev) => !prev)}>
-                📂 GitHub
+                GitHub Panel
               </Button>
               <Button type="button" onClick={openNewDiagram}>
                 + Нова схема
@@ -604,6 +651,50 @@ export function DiagramsPage() {
             <DialogFooter>
               <Button type="button" onClick={createFolder}>
                 Створити
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isAnalyzeOpen} onOpenChange={setIsAnalyzeOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Аналіз коду</DialogTitle>
+              <DialogDescription>Перевірте параметри перед запуском</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              <Input
+                value={analyzeDraft.projectName}
+                onChange={(event) =>
+                  setAnalyzeDraft((prev) => ({
+                    ...prev,
+                    projectName: event.target.value,
+                  }))
+                }
+                placeholder="Project name"
+              />
+
+              <Input value={analyzeDraft.sourceType} readOnly />
+
+              <Input
+                value={analyzeDraft.entryPaths[0] || ""}
+                onChange={(event) =>
+                  setAnalyzeDraft((prev) => ({
+                    ...prev,
+                    entryPaths: [event.target.value],
+                  }))
+                }
+                placeholder="Entry path"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsAnalyzeOpen(false)}>
+                Скасувати
+              </Button>
+              <Button type="button" onClick={submitAnalyzeDraft}>
+                Запустити аналіз
               </Button>
             </DialogFooter>
           </DialogContent>
