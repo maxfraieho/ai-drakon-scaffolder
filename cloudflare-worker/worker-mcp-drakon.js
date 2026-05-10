@@ -319,6 +319,28 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+const IR_ITEM_TYPES = new Set([
+  'action',
+  'question',
+  'select',
+  'case',
+  'header',
+  'end',
+  'address',
+  'branch',
+  'insertion',
+  'input',
+  'output',
+  'shelf',
+  'process',
+  'timer',
+  'duration',
+]);
+
 function buildAnalysisSummary(requestBody) {
   const preAnalyzed = PRE_ANALYZED_ANALYSIS?.summary || {};
   const requestedModules = [
@@ -353,130 +375,200 @@ function formatCacheAge(generatedAtIso) {
   return `${days}d ago`;
 }
 
+function convertDiagramToIrForWorker(diagramPayload) {
+  const diagram = isObject(diagramPayload) ? diagramPayload : {};
+  const diagramItems = isObject(diagram.items) ? diagram.items : {};
+  const irItems = {};
+
+  for (const [id, itemValue] of Object.entries(diagramItems)) {
+    const item = isObject(itemValue) ? itemValue : {};
+    const rawType = String(item.type || '').trim();
+    irItems[id] = {
+      type: IR_ITEM_TYPES.has(rawType) ? rawType : 'action',
+      content: String(item.content || ''),
+      secondary: item.secondary === undefined ? undefined : String(item.secondary),
+      one: item.one === undefined || item.one === null ? undefined : String(item.one),
+      two: item.two === undefined || item.two === null ? undefined : String(item.two),
+      side: item.side === undefined ? undefined : String(item.side),
+      flag1: item.flag1 === undefined ? undefined : Boolean(item.flag1),
+      branchId: item.branchId === undefined ? undefined : String(item.branchId),
+      style: isObject(item.style) ? item.style : undefined,
+    };
+  }
+
+  const paramsRaw = diagram.params;
+  const params = typeof paramsRaw === 'string'
+    ? paramsRaw.split(',').map((p) => p.trim()).filter(Boolean)
+    : safeArray(paramsRaw).map((p) => String(p).trim()).filter(Boolean);
+
+  return {
+    name: String(diagram.name || 'Untitled'),
+    access: String(diagram.access || 'read') === 'write' ? 'private' : 'public',
+    params,
+    items: irItems,
+  };
+}
+
+function convertIrToDiagramForWorker(irPayload) {
+  const ir = isObject(irPayload) ? irPayload : {};
+  const irItems = isObject(ir.items) ? ir.items : {};
+  const items = {};
+
+  for (const [id, itemValue] of Object.entries(irItems)) {
+    const item = isObject(itemValue) ? itemValue : {};
+    items[id] = {
+      type: IR_ITEM_TYPES.has(String(item.type || '')) ? String(item.type) : 'action',
+      content: String(item.content || ''),
+      secondary: item.secondary === undefined ? undefined : String(item.secondary),
+      one: item.one === undefined ? undefined : item.one,
+      two: item.two === undefined ? undefined : item.two,
+      side: item.side === undefined ? undefined : String(item.side),
+      flag1: item.flag1 === undefined ? undefined : item.flag1 ? 1 : 0,
+      branchId: item.branchId === undefined ? undefined : Number(item.branchId),
+      style: isObject(item.style) ? item.style : undefined,
+    };
+  }
+
+  return {
+    name: String(ir.name || 'Untitled'),
+    access: String(ir.access || 'public') === 'private' ? 'write' : 'read',
+    params: safeArray(ir.params).map((p) => String(p)).join(', '),
+    items,
+  };
+}
+
 function handleMcpAnalyzeCodebase(args) {
+  const repositoryPath = String(args?.repositoryPath || '').trim();
+  if (!repositoryPath) {
+    return { error: 'repositoryPath is required' };
+  }
+
+  const language = ['typescript', 'javascript', 'auto'].includes(String(args?.language || ''))
+    ? String(args.language)
+    : 'auto';
+
   const scope = ['overview', 'modules', 'flows', 'procedures'].includes(String(args?.scope || ''))
     ? String(args.scope)
     : 'overview';
-  const filterRaw = String(args?.filter || '').trim();
-  const filter = toLowerSafe(filterRaw);
 
-  const payload = PRE_ANALYZED_ANALYSIS || {};
-  const summary = payload.summary || {};
-  const modules = safeArray(summary.modules).map((m) => String(m));
-  const detectedFlows = safeArray(summary.detectedFlows).map((f) => String(f));
-  const plannedDiagrams = safeArray(payload.plannedDiagrams);
+  const requestBody = {
+    entryPaths: safeArray(args?.entryPaths).length > 0 ? safeArray(args.entryPaths) : ['src/'],
+    includeGlobs: safeArray(args?.includeGlobs),
+    excludeGlobs: safeArray(args?.excludeGlobs),
+  };
 
-  const filteredModules = filter
-    ? modules.filter((m) => toLowerSafe(m).includes(filter))
-    : modules;
-
-  const filteredFlows = filter
-    ? detectedFlows.filter((f) => toLowerSafe(f).includes(filter))
-    : detectedFlows;
-
-  const filteredPlannedDiagrams = plannedDiagrams.filter((diagram) => {
-    if (!filter) return true;
-    const hay = [diagram?.name, diagram?.description, diagram?.scope].map(toLowerSafe).join(' ');
-    return hay.includes(filter);
-  });
-
-  const includeModules = scope === 'overview' || scope === 'modules' || scope === 'procedures';
-  const includeFlows = scope === 'overview' || scope === 'flows' || scope === 'procedures';
+  const summary = buildAnalysisSummary(requestBody);
+  const jobId = `analysis-${Date.now()}`;
+  const job = {
+    jobId,
+    status: 'completed',
+    projectName: repositoryPath,
+    createdAt: new Date().toISOString(),
+    summary,
+    plannedDiagrams: PRE_ANALYZED_ANALYSIS?.plannedDiagrams || [],
+    request: {
+      repositoryPath,
+      language,
+      scope,
+      entryPaths: requestBody.entryPaths,
+      includeGlobs: requestBody.includeGlobs,
+      excludeGlobs: requestBody.excludeGlobs,
+    },
+  };
+  analysisJobs.set(jobId, job);
 
   return {
-    generatedAt: payload.generatedAt || null,
-    totalFiles: Number(summary.totalFiles || 0),
-    totalFunctions: Number(summary.totalFunctions || 0),
-    totalComponents: Number(summary.totalComponents || 0),
-    modules: includeModules ? filteredModules : [],
-    detectedFlows: includeFlows ? filteredFlows : [],
-    plannedDiagrams: filteredPlannedDiagrams,
-    cacheAge: formatCacheAge(payload.generatedAt),
+    jobId,
+    status: 'completed',
+    summary,
   };
 }
 
 function handleMcpGetAnalysisSummary(args) {
-  const type = String(args?.type || '');
-  const allowed = new Set(['functions', 'components', 'hooks', 'stores', 'apiClients', 'importGraph']);
-  if (!allowed.has(type)) {
-    return {
-      success: false,
-      error: `Unsupported summary type: ${type}`,
-      allowedTypes: Array.from(allowed),
-    };
+  const jobId = String(args?.jobId || '').trim();
+  if (!jobId) {
+    return { error: 'jobId is required' };
   }
 
-  const filter = toLowerSafe(String(args?.filter || '').trim());
-  const summary = PRE_ANALYZED_ANALYSIS?.summary || {};
-  const source = summary[type];
-
-  if (!filter) {
-    return { success: true, type, data: source ?? (type === 'importGraph' ? {} : []) };
+  const job = analysisJobs.get(jobId);
+  if (!job) {
+    return { error: 'not_found' };
   }
 
-  if (type === 'importGraph') {
-    const importGraph = source && typeof source === 'object' ? source : {};
-    const filteredEntries = Object.entries(importGraph).filter(([from, targets]) => {
-      const fromMatch = toLowerSafe(from).includes(filter);
-      const targetMatch = safeArray(targets).some((target) => toLowerSafe(target).includes(filter));
-      return fromMatch || targetMatch;
-    });
-    return { success: true, type, data: Object.fromEntries(filteredEntries) };
-  }
-
-  const arr = safeArray(source);
-  const filtered = arr.filter((item) => toLowerSafe(JSON.stringify(item)).includes(filter));
-  return { success: true, type, data: filtered };
+  return { job };
 }
 
 function cloneObject(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function applyDiagramMutation(items, mutation) {
-  const op = String(mutation?.op || '');
-  const nodeId = String(mutation?.nodeId || '').trim();
+function sanitizeIrItem(input) {
+  const item = isObject(input) ? input : {};
+  const rawType = String(item.type || '').trim();
 
-  if (!nodeId) {
-    return { ok: false, reason: 'nodeId is required' };
-  }
+  return {
+    type: IR_ITEM_TYPES.has(rawType) ? rawType : 'action',
+    content: String(item.content || ''),
+    secondary: item.secondary === undefined ? undefined : String(item.secondary),
+    one: item.one === undefined || item.one === null ? undefined : String(item.one),
+    two: item.two === undefined || item.two === null ? undefined : String(item.two),
+    side: item.side === undefined ? undefined : String(item.side),
+    flag1: item.flag1 === undefined ? undefined : Boolean(item.flag1),
+    branchId: item.branchId === undefined ? undefined : String(item.branchId),
+    style: isObject(item.style) ? item.style : undefined,
+  };
+}
 
-  if (op === 'insertNode') {
-    if (items[nodeId]) return { ok: false, reason: `Node already exists: ${nodeId}` };
-    if (!mutation.node || typeof mutation.node !== 'object' || Array.isArray(mutation.node)) {
-      return { ok: false, reason: 'node must be an object for insertNode' };
-    }
-    items[nodeId] = cloneObject(mutation.node);
+function applyMutationOnIr(workingIr, mutation) {
+  const op = String(mutation?.op || '').trim();
+  const items = workingIr.items;
+
+  if (op === 'renameDiagram') {
+    const newName = String(mutation?.newName || '').trim();
+    if (!newName) return { ok: false, reason: 'newName is required for renameDiagram' };
+    workingIr.name = newName;
     return { ok: true };
   }
 
-  if (!items[nodeId]) {
-    return { ok: false, reason: `Node not found: ${nodeId}` };
+  const nodeId = String(mutation?.nodeId || '').trim();
+  if (!nodeId) return { ok: false, reason: 'nodeId is required' };
+
+  if (op === 'insertNode') {
+    if (items[nodeId]) return { ok: false, reason: `Node already exists: ${nodeId}` };
+    if (!isObject(mutation?.node)) return { ok: false, reason: 'node must be an object for insertNode' };
+    items[nodeId] = sanitizeIrItem(mutation.node);
+    return { ok: true };
   }
 
+  if (!items[nodeId]) return { ok: false, reason: `Node not found: ${nodeId}` };
+
   if (op === 'updateNode') {
-    if (!mutation.fields || typeof mutation.fields !== 'object' || Array.isArray(mutation.fields)) {
-      return { ok: false, reason: 'fields must be an object for updateNode' };
-    }
-    items[nodeId] = { ...items[nodeId], ...cloneObject(mutation.fields) };
+    if (!isObject(mutation?.fields)) return { ok: false, reason: 'fields must be an object for updateNode' };
+    items[nodeId] = sanitizeIrItem({ ...items[nodeId], ...mutation.fields });
     return { ok: true };
   }
 
   if (op === 'deleteNode') {
     delete items[nodeId];
     for (const current of Object.values(items)) {
-      if (!current || typeof current !== 'object') continue;
-      if (current.one === nodeId) current.one = null;
-      if (current.two === nodeId) current.two = null;
+      if (!isObject(current)) continue;
+      if (current.one === nodeId) delete current.one;
+      if (current.two === nodeId) delete current.two;
     }
     return { ok: true };
   }
 
   if (op === 'setOne' || op === 'setTwo') {
     const key = op === 'setOne' ? 'one' : 'two';
-    const target = mutation?.targetId === null ? null : String(mutation?.targetId || '').trim();
-    if (target && !items[target]) return { ok: false, reason: `Target node not found: ${target}` };
-    items[nodeId][key] = target || null;
+    const targetId = mutation?.targetId === null ? null : String(mutation?.targetId || '').trim();
+    if (targetId && !items[targetId]) {
+      return { ok: false, reason: `Target node not found: ${targetId}` };
+    }
+    if (targetId === null || targetId === '') {
+      delete items[nodeId][key];
+    } else {
+      items[nodeId][key] = targetId;
+    }
     return { ok: true };
   }
 
@@ -510,55 +602,60 @@ async function handleMcpMutateDiagram(args, env) {
 
   const stored = JSON.parse(content);
   const working = cloneObject(stored);
-  working.diagram = working.diagram && typeof working.diagram === 'object' ? working.diagram : {};
-  working.diagram.items = working.diagram.items && typeof working.diagram.items === 'object' ? working.diagram.items : {};
+  working.diagram = isObject(working.diagram) ? working.diagram : {};
+  working.diagram.items = isObject(working.diagram.items) ? working.diagram.items : {};
+
+  const ir = convertDiagramToIrForWorker(working.diagram);
 
   const appliedMutations = [];
   const rejectedMutations = [];
 
   for (const mutation of mutations) {
-    const result = applyDiagramMutation(working.diagram.items, mutation || {});
+    const snapshot = cloneObject(ir);
+    const result = applyMutationOnIr(ir, mutation || {});
     if (!result.ok) {
-      rejectedMutations.push({ mutation, reason: result.reason || 'Unknown mutation error' });
+      rejectedMutations.push({ op: mutation, reason: result.reason || 'Unknown mutation error' });
       continue;
     }
+
+    const validationAfterMutation = validateIrDeterministic(ir);
+    if (!validationAfterMutation.valid) {
+      ir.name = snapshot.name;
+      ir.access = snapshot.access;
+      ir.params = snapshot.params;
+      ir.items = snapshot.items;
+      const firstIssue = safeArray(validationAfterMutation.issues)[0];
+      rejectedMutations.push({
+        op: mutation,
+        reason: `Mutation rejected because diagram became invalid: ${firstIssue?.message || 'validation failed'}`,
+      });
+      continue;
+    }
+
     appliedMutations.push(mutation);
   }
 
-  const validationResult = validateIrDeterministic(working.diagram);
-  if (!validationResult.valid) {
-    return {
-      success: false,
-      appliedMutations: [],
-      rejectedMutations: [
-        ...rejectedMutations,
-        ...mutations.map((mutation) => ({ mutation, reason: 'Rejected because resulting diagram failed validation' })),
-      ],
-      validationResult: {
-        valid: validationResult.valid,
-        issues: validationResult.issues || [],
-      },
-      newVersion: Number(stored?.version || stored?.diagram?.version || 0),
-    };
-  }
+  const validationResult = validateIrDeterministic(ir);
 
   const previousVersion = Number(stored?.version || stored?.diagram?.version || 0);
-  const newVersion = previousVersion + 1;
-  working.version = newVersion;
+  const updatedVersion = appliedMutations.length > 0 ? previousVersion + 1 : previousVersion;
+  working.version = updatedVersion;
   working.updatedAt = new Date().toISOString();
-  working.diagram.version = newVersion;
+  working.diagram = convertIrToDiagramForWorker(ir);
+  working.diagram.version = updatedVersion;
 
-  await uploadToMinIO(env, key, JSON.stringify(working, null, 2));
+  if (appliedMutations.length > 0) {
+    await uploadToMinIO(env, key, JSON.stringify(working, null, 2));
+  }
 
   return {
-    success: true,
+    updatedVersion,
     appliedMutations,
     rejectedMutations,
     validationResult: {
       valid: validationResult.valid,
       issues: validationResult.issues || [],
     },
-    newVersion,
   };
 }
 
