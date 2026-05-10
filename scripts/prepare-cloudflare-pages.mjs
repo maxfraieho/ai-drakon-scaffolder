@@ -27,30 +27,4 @@ if (!fs.existsSync(sourceDir)) {
 fs.rmSync(targetDir, { recursive: true, force: true });
 copyRecursive(sourceDir, targetDir);
 
-const nestedIndexPath = path.join(targetDir, "index", "index.html");
-const rootIndexPath = path.join(targetDir, "index.html");
-if (fs.existsSync(nestedIndexPath) && !fs.existsSync(rootIndexPath)) {
-  fs.copyFileSync(nestedIndexPath, rootIndexPath);
-}
-
-const fallbackHtml = `<!doctype html>
-<html lang="uk">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <meta http-equiv="refresh" content="0;url=/" />
-    <title>Redirecting…</title>
-  </head>
-  <body>
-    <script>location.replace('/')</script>
-  </body>
-</html>`;
-
-for (const filePath of ["404.html", "index.html"]) {
-  const absolutePath = path.join(targetDir, filePath);
-  if (!fs.existsSync(absolutePath)) {
-    fs.writeFileSync(absolutePath, fallbackHtml, "utf8");
-  }
-}
-
-console.log(`Prepared Cloudflare Pages static output at ${targetDir}`);
+console.log(`Prepared Cloudflare Pages assets at ${targetDir}`);
