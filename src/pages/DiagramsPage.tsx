@@ -650,6 +650,50 @@ export function DiagramsPage() {
           </DialogContent>
         </Dialog>
 
+        <Dialog open={isAnalyzeOpen} onOpenChange={setIsAnalyzeOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Аналіз коду</DialogTitle>
+              <DialogDescription>Перевірте параметри перед запуском</DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-3">
+              <Input
+                value={analyzeDraft.projectName}
+                onChange={(event) =>
+                  setAnalyzeDraft((prev) => ({
+                    ...prev,
+                    projectName: event.target.value,
+                  }))
+                }
+                placeholder="Project name"
+              />
+
+              <Input value={analyzeDraft.sourceType} readOnly />
+
+              <Input
+                value={analyzeDraft.entryPaths[0] || ""}
+                onChange={(event) =>
+                  setAnalyzeDraft((prev) => ({
+                    ...prev,
+                    entryPaths: [event.target.value],
+                  }))
+                }
+                placeholder="Entry path"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" type="button" onClick={() => setIsAnalyzeOpen(false)}>
+                Скасувати
+              </Button>
+              <Button type="button" onClick={submitAnalyzeDraft}>
+                Запустити аналіз
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={isSaveToGithubOpen} onOpenChange={setIsSaveToGithubOpen}>
           <DialogContent>
             <DialogHeader>
