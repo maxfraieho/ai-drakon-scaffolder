@@ -26,11 +26,17 @@ if (!workerFileNameMatch) {
 
 const workerFileName = workerFileNameMatch[1];
 
-// 🔧 FIX: створюємо обгортку з onRequest замість прямого копіювання
-const wrapperCode = `import handler from "./assets/${workerFileName}";
+const wrapperCode = `import * as entry from "./assets/${workerFileName}";
 
 export async function onRequest(context) {
-  return handler.fetch(context.request, context.env, context.context);
+  const handler = entry.default || entry;
+  if (typeof handler.fetch === 'function') {
+    return handler.fetch(context.request, context.env, context.context);
+  }
+  if (typeof entry.fetch === 'function') {
+    return entry.fetch(context.request, context.env, context.context);
+  }
+  throw new Error('No fetch handler found in worker entry');
 }
 `;
 fs.writeFileSync(path.join(targetDir, "[[path]].js"), wrapperCode, "utf8");
