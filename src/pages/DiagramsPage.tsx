@@ -108,6 +108,17 @@ export function DiagramsPage() {
   const [githubTargetPath, setGithubTargetPath] = useState("");
   const [diagramForGithubSave, setDiagramForGithubSave] = useState<Diagram | null>(null);
   const [isCommittingToGithub, setIsCommittingToGithub] = useState(false);
+  const [isAnalyzeOpen, setIsAnalyzeOpen] = useState(false);
+  const [analyzeDraft, setAnalyzeDraft] = useState<CodebaseAnalysisRequest>({
+    projectName: "",
+    sourceType: "text-paste",
+    sourceContent: "",
+    language: "auto",
+    analysisDepth: "modules",
+    entryPaths: ["src"],
+    includeGlobs: ["**/*.{ts,tsx,js,jsx,json}"],
+    excludeGlobs: ["node_modules/**", "dist/**"],
+  });
   const autoAnalyzeHandledRef = useRef(false);
 
   const selectedFolder =
@@ -277,24 +288,24 @@ export function DiagramsPage() {
     }
   };
 
-  const handleAnalyzeFolder = async (path: string) => {
-    const request: CodebaseAnalysisRequest = {
-      projectName: path || "github-root",
+  const openAnalyzeDialog = (path: string, sourceContent?: string) => {
+    const cleanPath = path || "src";
+    const projectName = cleanPath.split("/").filter(Boolean).pop() || "github-entry";
+    setAnalyzeDraft({
+      projectName,
       sourceType: "text-paste",
-      sourceContent: `GitHub folder selected for analysis: ${path || "/"}`,
+      sourceContent: sourceContent || `GitHub entry selected for analysis: ${cleanPath}`,
       language: "auto",
       analysisDepth: "modules",
-      entryPaths: [path || "src/"],
+      entryPaths: [cleanPath],
       includeGlobs: ["**/*.{ts,tsx,js,jsx,json}"],
       excludeGlobs: ["node_modules/**", "dist/**"],
-    };
+    });
+    setIsAnalyzeOpen(true);
+  };
 
-    try {
-      const { jobId } = await api.analyzeCodebase(request);
-      toast.success(`Аналіз запущено (job: ${jobId})`);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Не вдалося запустити аналіз");
-    }
+  const handleAnalyzeFolder = async (path: string) => {
+    openAnalyzeDialog(path || "src");
   };
 
   useEffect(() => {
