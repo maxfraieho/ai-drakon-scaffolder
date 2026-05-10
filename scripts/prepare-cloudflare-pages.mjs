@@ -27,6 +27,12 @@ if (!fs.existsSync(sourceDir)) {
 fs.rmSync(targetDir, { recursive: true, force: true });
 copyRecursive(sourceDir, targetDir);
 
+const nestedIndexPath = path.join(targetDir, "index", "index.html");
+const rootIndexPath = path.join(targetDir, "index.html");
+if (fs.existsSync(nestedIndexPath) && !fs.existsSync(rootIndexPath)) {
+  fs.copyFileSync(nestedIndexPath, rootIndexPath);
+}
+
 const fallbackHtml = `<!doctype html>
 <html lang="uk">
   <head>
