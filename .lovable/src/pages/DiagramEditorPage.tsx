@@ -1,7 +1,7 @@
 import { Link, useSearch } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
-import { DrakonEditor } from "@/components/drakon/DrakonEditor";
+import { DrakonEditor } from "@/components/DrakonEditor";
 import { Button } from "@/components/ui/button";
 
 export default function DiagramEditorPage() {
