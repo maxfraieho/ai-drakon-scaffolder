@@ -495,8 +495,14 @@ export function DiagramsPage() {
               <Button type="button" variant="outline" onClick={() => importInputRef.current?.click()}>
                 Import JSON
               </Button>
+              <Button type="button" variant="outline" onClick={() => navigate({ to: "/github" })}>
+                📁 GitHub Files
+              </Button>
+              <Button type="button" variant="outline" onClick={() => navigate({ to: "/settings" })}>
+                ⚙️ Налаштування
+              </Button>
               <Button type="button" variant="outline" onClick={() => setIsGitHubOpen((prev) => !prev)}>
-                📂 GitHub
+                GitHub Panel
               </Button>
               <Button type="button" onClick={openNewDiagram}>
                 + Нова схема
