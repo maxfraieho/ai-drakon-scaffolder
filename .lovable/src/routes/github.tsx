@@ -492,7 +492,7 @@ function GitHubRoute() {
         <div className="space-y-3">{listView}</div>
       ) : (
         <div className="h-[calc(100vh-190px)] min-h-[520px] rounded-md border border-border">
-          <ResizablePanelGroup direction="horizontal">
+          <ResizablePanelGroup orientation="horizontal">
             <ResizablePanel defaultSize={28} minSize={20} maxSize={45}>
               <div className="h-full overflow-auto p-3">{listView}</div>
             </ResizablePanel>
