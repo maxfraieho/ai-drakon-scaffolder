@@ -13,6 +13,7 @@ export function slugifyFolderName(name: string) {
 }
 
 export function readFoldersFromStorage(): Folder[] {
+  if (typeof window === "undefined") return [DEFAULT_FOLDER];
   try {
     const raw = localStorage.getItem(FOLDERS_STORAGE_KEY);
     if (!raw) return [DEFAULT_FOLDER];
@@ -28,5 +29,6 @@ export function readFoldersFromStorage(): Folder[] {
 }
 
 export function writeFoldersToStorage(folders: Folder[]) {
+  if (typeof window === "undefined") return;
   localStorage.setItem(FOLDERS_STORAGE_KEY, JSON.stringify(folders));
 }
