@@ -25,9 +25,15 @@ if (!workerFileNameMatch) {
 }
 
 const workerFileName = workerFileNameMatch[1];
-const workerSourcePath = path.join(serverDir, "assets", workerFileName);
-const workerTargetPath = path.join(targetDir, "[[path]].js");
-fs.copyFileSync(workerSourcePath, workerTargetPath);
+
+// 🔧 FIX: створюємо обгортку з onRequest замість прямого копіювання
+const wrapperCode = `import handler from "./assets/${workerFileName}";
+
+export async function onRequest(context) {
+  return handler.fetch(context.request, context.env, context.context);
+}
+`;
+fs.writeFileSync(path.join(targetDir, "[[path]].js"), wrapperCode, "utf8");
 
 const staticFallbackPath = path.join(root, "dist", "404.html");
 const fallbackHtml = `<!doctype html>
