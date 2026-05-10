@@ -22,8 +22,10 @@ npm run deploy:pages -- --project-name <your-project-name>
 
 - **Build command:** `npm run build:pages`
 - **Build output directory:** `dist`
+- **Functions directory:** `functions`
 - **Node version:** 20+
 
 ## Примітка
 
 - Повідомлення `npm notice operation is not supported` у логах — не критична помилка.
+- Якщо `functions` не вказати, сайт може відкриватися як порожній/редіректний HTML без SSR-рендеру.
