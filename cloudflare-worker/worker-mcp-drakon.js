@@ -1009,17 +1009,17 @@ async function handleMcp(request, env) {
     const name = params?.name;
     const args = params?.arguments || {};
 
-    if (name === 'drakon.list_diagrams') {
+    if (name === 'drakon.listdiagrams') {
       const result = await handleDrakonList(String(args.folderSlug || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
 
-    if (name === 'drakon.get_diagram') {
+    if (name === 'drakon.getdiagram') {
       const result = await handleDrakonGet(String(args.folderSlug || ''), String(args.diagramId || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
 
-    if (name === 'drakon.save_diagram') {
+    if (name === 'drakon.savediagram') {
       const fakeRequest = new Request('https://internal.local/commit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1033,7 +1033,7 @@ async function handleMcp(request, env) {
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
 
-    if (name === 'drakon.delete_diagram') {
+    if (name === 'drakon.deletediagram') {
       const result = await handleDrakonDelete(String(args.folderSlug || ''), String(args.diagramId || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
