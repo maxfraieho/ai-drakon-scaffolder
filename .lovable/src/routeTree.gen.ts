@@ -16,6 +16,7 @@ import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IndexIndexRouteImport } from './routes/index.index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
+import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
 
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
@@ -52,6 +53,11 @@ const EditorIdRoute = EditorIdRouteImport.update({
   path: '/editor/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DiagramEditorRoute = DiagramEditorRouteImport.update({
+  id: '/diagram/editor',
+  path: '/diagram/editor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
+  '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
   '/index/': typeof IndexIndexRoute
 }
@@ -68,6 +75,7 @@ export interface FileRoutesByTo {
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
+  '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
   '/index': typeof IndexIndexRoute
 }
@@ -78,6 +86,7 @@ export interface FileRoutesById {
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
+  '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
   '/index/': typeof IndexIndexRoute
 }
@@ -89,6 +98,7 @@ export interface FileRouteTypes {
     | '/github'
     | '/login'
     | '/settings'
+    | '/diagram/editor'
     | '/editor/$id'
     | '/index/'
   fileRoutesByTo: FileRoutesByTo
@@ -98,6 +108,7 @@ export interface FileRouteTypes {
     | '/github'
     | '/login'
     | '/settings'
+    | '/diagram/editor'
     | '/editor/$id'
     | '/index'
   id:
@@ -107,6 +118,7 @@ export interface FileRouteTypes {
     | '/github'
     | '/login'
     | '/settings'
+    | '/diagram/editor'
     | '/editor/$id'
     | '/index/'
   fileRoutesById: FileRoutesById
@@ -117,6 +129,7 @@ export interface RootRouteChildren {
   GithubRoute: typeof GithubRoute
   LoginRoute: typeof LoginRoute
   SettingsRoute: typeof SettingsRoute
+  DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
   IndexIndexRoute: typeof IndexIndexRoute
 }
@@ -172,6 +185,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EditorIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/diagram/editor': {
+      id: '/diagram/editor'
+      path: '/diagram/editor'
+      fullPath: '/diagram/editor'
+      preLoaderRoute: typeof DiagramEditorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -181,6 +201,7 @@ const rootRouteChildren: RootRouteChildren = {
   GithubRoute: GithubRoute,
   LoginRoute: LoginRoute,
   SettingsRoute: SettingsRoute,
+  DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,
   IndexIndexRoute: IndexIndexRoute,
 }
