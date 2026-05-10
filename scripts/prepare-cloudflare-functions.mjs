@@ -48,10 +48,27 @@ if (!workerFileName) {
 const STATIC_EXT_RE = /\.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webmanifest|map|txt|xml)$/i;
 
 // Створюємо _worker.js
+// worker-entry експортує handler як named export (напр. `w`),
+// а index.js re-експортує його як default. Імпортуємо ВСІ named exports
+// і шукаємо той, у якого є .fetch().
 const workerCode = `import * as entry from "./assets/${workerFileName}";
 
 const STATIC_PATH_RE = /^\\/assets\\//;
 const STATIC_EXT_RE = /\\.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webmanifest|map|txt|xml)$/i;
+
+function resolveHandler(mod) {
+  if (mod && typeof mod === 'object') {
+    if (mod.default && typeof mod.default.fetch === 'function') return mod.default;
+    if (typeof mod.fetch === 'function') return mod;
+    for (const key of Object.keys(mod)) {
+      const v = mod[key];
+      if (v && typeof v === 'object' && typeof v.fetch === 'function') return v;
+    }
+  }
+  return null;
+}
+
+const handler = resolveHandler(entry);
 
 export default {
   async fetch(request, env, ctx) {
@@ -65,16 +82,12 @@ export default {
     }
 
     // SSR handler
-    try {
-      const handler = entry.default || entry;
-      if (typeof handler.fetch === 'function') {
+    if (handler) {
+      try {
         return await handler.fetch(request, env, ctx);
+      } catch (e) {
+        return new Response('Internal Server Error: ' + (e && e.message || e), { status: 500 });
       }
-      if (typeof entry.fetch === 'function') {
-        return await entry.fetch(request, env, ctx);
-      }
-    } catch (e) {
-      return new Response('Internal Server Error: ' + e.message, { status: 500 });
     }
 
     // Fallback — спробувати знайти статичний файл (наприклад favicon.ico з кореня)
