@@ -756,7 +756,7 @@ async function handleDrakonList(folderSlug, env) {
 function getMcpTools() {
   return [
     {
-      name: 'drakon.list_diagrams',
+      name: 'drakon.listdiagrams',
       description: 'List all available DRAKON diagram identifiers inside a specific folder namespace in storage so agents can discover existing assets before reading, mutating, validating, diffing, or saving any diagram content.',
       inputSchema: {
         type: 'object',
@@ -767,7 +767,7 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.get_diagram',
+      name: 'drakon.getdiagram',
       description: 'Load one stored DRAKON diagram JSON document by folder and diagram id, returning the canonical persisted structure needed for editor hydration, validation checks, mutation planning, and downstream analysis workflows.',
       inputSchema: {
         type: 'object',
@@ -779,7 +779,7 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.save_diagram',
+      name: 'drakon.savediagram',
       description: 'Create or update a full DRAKON diagram JSON payload in storage when a client wants authoritative persistence after edits, preserving compatibility with current diagram CRUD flows and existing integrations.',
       inputSchema: {
         type: 'object',
@@ -792,7 +792,7 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.delete_diagram',
+      name: 'drakon.deletediagram',
       description: 'Delete one DRAKON diagram JSON object from storage by folder and diagram id, allowing cleanup of obsolete assets while keeping the existing diagram lifecycle API unchanged for current clients.',
       inputSchema: {
         type: 'object',
