@@ -54,7 +54,7 @@ const STATIC_PATH_RE = /^\\/assets\\//;
 const STATIC_EXT_RE = /\\.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webmanifest|map|txt|xml)$/i;
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
@@ -68,10 +68,10 @@ export default {
     try {
       const handler = entry.default || entry;
       if (typeof handler.fetch === 'function') {
-        return await handler.fetch(request, env);
+        return await handler.fetch(request, env, ctx);
       }
       if (typeof entry.fetch === 'function') {
-        return await entry.fetch(request, env);
+        return await entry.fetch(request, env, ctx);
       }
     } catch (e) {
       return new Response('Internal Server Error: ' + e.message, { status: 500 });
