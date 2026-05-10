@@ -1,3 +1,5 @@
+import type { DiagramMetadata } from "@/types/diagram-metadata";
+
 export interface DrakonItem {
   type:
     | "header"
@@ -18,6 +20,7 @@ export interface DrakonItem {
 export interface DrakonDiagram {
   name: string;
   items: Record<string, DrakonItem>;
+  metadata?: DiagramMetadata;
 }
 
 export interface Diagram {

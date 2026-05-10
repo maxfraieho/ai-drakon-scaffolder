@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { api } from "@/lib/api";
 import { readDiagramsFromStorage, removeDiagramFromStorage, upsertDiagramInStorage } from "@/lib/diagram-storage";
 import { useDiagramStore } from "@/store/useDiagramStore";
+import { withDiagramMetadataDefaults } from "@/types/diagram-metadata";
 import type { Diagram } from "@/types/drakon";
 
 type SaveInput = {
@@ -33,6 +34,7 @@ function normalizeDiagram(folderSlug: string | undefined, data: SaveInput): Diag
       ...nested,
       name,
       items: nested?.items ?? {},
+      metadata: withDiagramMetadataDefaults(nested?.metadata),
     },
   };
 }

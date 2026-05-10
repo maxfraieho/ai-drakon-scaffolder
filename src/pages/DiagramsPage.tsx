@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { FolderPlus, Menu } from "lucide-react";
+import { Bot, FilePenLine, FolderPlus, GitMerge, Menu } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -25,8 +26,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { api } from "@/lib/api";
+import { findDiagramsByFilePath } from "@/lib/htse/diagram-context";
 import {
   readDiagramsFromStorage,
   removeDiagramFromStorage,
@@ -55,6 +64,9 @@ export function DiagramsPage() {
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isMobileFoldersOpen, setIsMobileFoldersOpen] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
+  const [levelFilter, setLevelFilter] = useState<"all" | "L0" | "L1" | "L2" | "L3">("all");
+  const [sourceFilter, setSourceFilter] = useState<"all" | "human" | "ai" | "hybrid">("all");
+  const [filePathFilter, setFilePathFilter] = useState("");
 
   const selectedFolder =
     folders.find((folder) => folder.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
@@ -63,6 +75,24 @@ export function DiagramsPage() {
     () => diagrams.filter((diagram) => diagram.folderId === selectedFolder.slug),
     [diagrams, selectedFolder.slug],
   );
+
+  const filteredDiagrams = useMemo(() => {
+    let next = [...folderDiagrams];
+
+    if (levelFilter !== "all") {
+      next = next.filter((diagram) => diagram.diagram.metadata?.diagramLevel === levelFilter);
+    }
+
+    if (sourceFilter !== "all") {
+      next = next.filter((diagram) => (diagram.diagram.metadata?.sourceType ?? "human") === sourceFilter);
+    }
+
+    if (filePathFilter.trim()) {
+      next = findDiagramsByFilePath(filePathFilter, next);
+    }
+
+    return next;
+  }, [filePathFilter, folderDiagrams, levelFilter, sourceFilter]);
 
   const loadDiagrams = async (folderSlug: string) => {
     const local = readDiagramsFromStorage().filter((d) => d.folderId === folderSlug);
@@ -300,17 +330,63 @@ export function DiagramsPage() {
           </div>
         </div>
 
-        {folderDiagrams.length === 0 && !isLoadingDiagrams ? (
+        <div className="mb-4 grid gap-2 md:grid-cols-3">
+          <Select value={levelFilter} onValueChange={(value) => setLevelFilter(value as typeof levelFilter)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Level" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All levels</SelectItem>
+              <SelectItem value="L0">L0</SelectItem>
+              <SelectItem value="L1">L1</SelectItem>
+              <SelectItem value="L2">L2</SelectItem>
+              <SelectItem value="L3">L3</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sourceFilter} onValueChange={(value) => setSourceFilter(value as typeof sourceFilter)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Source" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All sources</SelectItem>
+              <SelectItem value="human">human</SelectItem>
+              <SelectItem value="ai">ai</SelectItem>
+              <SelectItem value="hybrid">hybrid</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Input
+            value={filePathFilter}
+            onChange={(event) => setFilePathFilter(event.target.value)}
+            placeholder="Filter by file path"
+          />
+        </div>
+
+        {filteredDiagrams.length === 0 && !isLoadingDiagrams ? (
           <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
             <p className="text-lg">Схем поки немає</p>
             <p className="mt-1 text-sm">Натисніть "+ Нова схема" щоб створити першу</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {folderDiagrams.map((diagram) => (
+            {filteredDiagrams.map((diagram) => (
               <Card key={diagram.id} className="border-border bg-card">
                 <CardHeader>
                   <CardTitle className="text-base">{diagram.name}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline">{diagram.diagram.metadata?.diagramLevel ?? "unknown"}</Badge>
+                    <Badge variant="secondary" className="gap-1">
+                      {(diagram.diagram.metadata?.sourceType ?? "human") === "human" ? (
+                        <FilePenLine className="h-3.5 w-3.5" />
+                      ) : (diagram.diagram.metadata?.sourceType ?? "human") === "ai" ? (
+                        <Bot className="h-3.5 w-3.5" />
+                      ) : (
+                        <GitMerge className="h-3.5 w-3.5" />
+                      )}
+                      {diagram.diagram.metadata?.sourceType ?? "human"}
+                    </Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">
