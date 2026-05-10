@@ -12,28 +12,32 @@ npm run build:pages
 .lovable/dist/client
 ```
 
-## 2) Задеплоїти в Cloudflare Pages
+## 2) Задеплоїти правильно (SSR через Cloudflare Worker)
 
 ```bash
-npm run deploy:pages -- --project-name <your-pages-project>
+npm run deploy:pages
 ```
 
 Приклад:
 
 ```bash
-npm run deploy:pages -- --project-name drakon-ui
+npm run deploy:pages
 ```
 
 > Якщо ще не залогінені у Cloudflare, спочатку виконайте `npx wrangler login`.
 
-## 3) Налаштування в Cloudflare Pages (якщо деплоїте через Git інтеграцію)
+## 3) Чому був 404 на pages.dev
 
-- **Framework preset:** None
-- **Build command:** `npm run build:pages`
-- **Build output directory:** `.lovable/dist/client`
-- **Node version:** 20+
+У цього проєкту TanStack Start SSR, і в `.lovable/dist/client` **немає `index.html`** (тільки assets).  
+Тому деплой як суто статичного Pages-сайту (`wrangler pages deploy .lovable/dist/client`) успішно заливає файли, але на `/` дає 404.
+
+Правильний сценарій: деплоїти згенерований Worker-конфіг з `dist/server/wrangler.json`, який підхоплює і SSR, і assets.
+
+## 4) Якщо потрібен саме Git-based деплой у Pages UI
+
+- Для цього проєкту не рекомендується, бо він SSR.
+- Краще деплоїти через CLI команду `npm run deploy:pages` (вона вже налаштована правильно).
 
 ## Важливо
 
-- Це деплой саме фронтенду (статичний output) на Pages.
-- Worker-файл `cloudflare-worker/worker-mcp-drakon.js` лишається окремим воркером і не ламається цим сценарієм.
+- `cloudflare-worker/worker-mcp-drakon.js` лишається окремим воркером і не ламається цим сценарієм.

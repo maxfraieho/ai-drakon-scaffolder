@@ -10,6 +10,6 @@
     "preview": "npm run sync:deps && npm --prefix .lovable run preview",
     "test": "npm run sync:deps && npm --prefix .lovable exec vitest",
     "build:pages": "npm run build",
-    "deploy:pages": "wrangler pages deploy .lovable/dist/client"
+    "deploy:pages": "npx wrangler deploy --config .lovable/dist/server/wrangler.json"
   }
 }
