@@ -4,7 +4,6 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
-  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -115,30 +114,9 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const location = useLocation();
-  const showQuickNav =
-    typeof window !== "undefined" &&
-    Boolean(localStorage.getItem("jwt")) &&
-    location.pathname !== "/login";
 
   return (
     <QueryClientProvider client={queryClient}>
-      {showQuickNav ? (
-        <div className="sticky top-0 z-40 flex items-center justify-end gap-2 border-b border-border bg-background/95 px-3 py-2 backdrop-blur">
-          <Link
-            to="/github"
-            className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-accent"
-          >
-            📁 GitHub Files
-          </Link>
-          <Link
-            to="/settings"
-            className="rounded-md border border-border px-3 py-1 text-sm text-foreground hover:bg-accent"
-          >
-            ⚙️ Налаштування
-          </Link>
-        </div>
-      ) : null}
       <Outlet />
     </QueryClientProvider>
   );
