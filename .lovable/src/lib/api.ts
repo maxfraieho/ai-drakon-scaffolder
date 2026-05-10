@@ -96,7 +96,7 @@ const headers = () => ({
   "Content-Type": "application/json",
 });
 
-const githubHeaders = (token?: string) => {
+const githubHeaders = (token?: string): Record<string, string> => {
   const cfgToken = token ?? getGithubConfig().token;
   return cfgToken.trim().length > 0 ? { "X-Github-Token": cfgToken.trim() } : {};
 };
