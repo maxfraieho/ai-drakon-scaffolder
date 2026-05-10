@@ -16,7 +16,7 @@ function jsonResponse(data, status = 200, extraHeaders = {}) {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Github-Token',
       ...extraHeaders,
     },
   });
@@ -28,7 +28,7 @@ function corsResponse() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Github-Token',
       'Access-Control-Max-Age': '86400',
     },
   });
@@ -43,24 +43,25 @@ function errorResponse(message, status = 400, details = undefined, code = undefi
 
 const analysisJobs = new Map();
 
-function githubHeaders(env) {
-  if (!env.GITHUB_TOKEN) {
+function githubHeaders(env, requestToken = '') {
+  const token = String(requestToken || env.GITHUB_TOKEN || '').trim();
+  if (!token) {
     throw new Error('GITHUB_TOKEN is not configured');
   }
 
   return {
-    Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+    Authorization: `Bearer ${token}`,
     Accept: 'application/vnd.github+json',
     'X-GitHub-Api-Version': '2022-11-28',
     'User-Agent': 'drakon-mcp-worker',
   };
 }
 
-async function githubFetch(env, path, options = {}) {
+async function githubFetch(env, path, options = {}, requestToken = '') {
   const base = 'https://api.github.com';
   const resp = await fetch(`${base}${path}`, {
     ...options,
-    headers: { ...githubHeaders(env), ...(options.headers || {}) },
+    headers: { ...githubHeaders(env, requestToken), ...(options.headers || {}) },
   });
 
   if (!resp.ok) {
@@ -781,7 +782,7 @@ async function handleDrakonList(folderSlug, env) {
   return jsonResponse({ success: true, folderSlug, diagrams });
 }
 
-async function handleGithubListTree(args, env) {
+async function handleGithubListTree(args, env, requestToken = '') {
   const owner = String(args?.owner || '').trim();
   const repo = String(args?.repo || '').trim();
   const path = String(args?.path || '').trim();
@@ -793,7 +794,9 @@ async function handleGithubListTree(args, env) {
 
   const data = await githubFetch(
     env,
-    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+    {},
+    requestToken,
   );
   const entries = Array.isArray(data) ? data : [data];
 
@@ -813,7 +816,7 @@ async function handleGithubListTree(args, env) {
   };
 }
 
-async function handleGithubGetFile(args, env) {
+async function handleGithubGetFile(args, env, requestToken = '') {
   const owner = String(args?.owner || '').trim();
   const repo = String(args?.repo || '').trim();
   const path = String(args?.path || '').trim();
@@ -825,7 +828,9 @@ async function handleGithubGetFile(args, env) {
 
   const data = await githubFetch(
     env,
-    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+    {},
+    requestToken,
   );
   const content = data.encoding === 'base64' ? atob((data.content || '').replace(/\n/g, '')) : String(data.content || '');
 
@@ -840,7 +845,7 @@ async function handleGithubGetFile(args, env) {
   };
 }
 
-async function handleGithubCommitFile(args, env) {
+async function handleGithubCommitFile(args, env, requestToken = '') {
   const owner = String(args?.owner || '').trim();
   const repo = String(args?.repo || '').trim();
   const path = String(args?.path || '').trim();
@@ -856,7 +861,9 @@ async function handleGithubCommitFile(args, env) {
   try {
     const existing = await githubFetch(
       env,
-      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+      {},
+      requestToken,
     );
     sha = existing.sha;
   } catch {
@@ -873,7 +880,8 @@ async function handleGithubCommitFile(args, env) {
   const result = await githubFetch(
     env,
     `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
-    { method: 'PUT', body: JSON.stringify(body) }
+    { method: 'PUT', body: JSON.stringify(body) },
+    requestToken,
   );
 
   return {
@@ -885,7 +893,7 @@ async function handleGithubCommitFile(args, env) {
   };
 }
 
-async function handleGithubListBranches(args, env) {
+async function handleGithubListBranches(args, env, requestToken = '') {
   const owner = String(args?.owner || '').trim();
   const repo = String(args?.repo || '').trim();
 
@@ -893,7 +901,12 @@ async function handleGithubListBranches(args, env) {
     return { success: false, error: 'owner and repo required' };
   }
 
-  const data = await githubFetch(env, `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`);
+  const data = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`,
+    {},
+    requestToken,
+  );
 
   return {
     success: true,
