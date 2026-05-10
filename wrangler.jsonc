@@ -3,7 +3,7 @@
   "name": "drakon-mcp-worker",
   "pages_build_output_dir": "dist",
   "main": "cloudflare-worker/worker-mcp-drakon.js",
-  "compatibility_date": "2024-01-01",
+  "compatibility_date": "2025-09-24",
   "compatibility_flags": ["nodejs_compat"],
   "vars": {
     "MINIO_ENDPOINT": "",
