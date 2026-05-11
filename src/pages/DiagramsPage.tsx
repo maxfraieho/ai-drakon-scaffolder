@@ -844,6 +844,54 @@ export function DiagramsPage() {
                             <span>{updatedRel}</span>
                           </div>
 
+                          {/* Always-visible bottom actions */}
+                          <div
+                            className="mt-3 flex items-center gap-2"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              aria-label={`Download ${diagram.name} as JSON`}
+                              title="Завантажити JSON"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                downloadDiagramJson(diagram);
+                              }}
+                              className="inline-flex h-7 items-center gap-1 rounded-[var(--radius-sm)] border border-[var(--border-default)] bg-[var(--bg-overlay)] px-2 text-[11px] font-mono uppercase tracking-wider text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+                            >
+                              <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                              JSON
+                            </button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={`Delete ${diagram.name}`}
+                                  title="Видалити схему"
+                                  onClick={(event) => event.stopPropagation()}
+                                  className="inline-flex h-7 items-center gap-1 rounded-[var(--radius-sm)] border border-red-500/30 bg-red-500/5 px-2 text-[11px] font-mono uppercase tracking-wider text-red-400 hover:bg-red-500/10 hover:border-red-500/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                  Видалити
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Видалити схему?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Цю дію не можна скасувати. Схема "{diagram.name}" буде видалена.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Скасувати</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteDiagram(diagram)}>
+                                    Видалити
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+
                           {/* Hover actions */}
                           <div
                             className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100"
