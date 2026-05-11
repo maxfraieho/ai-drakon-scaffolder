@@ -182,11 +182,14 @@ function SettingsRoute() {
           },
         }));
         setMinioStatus({ type: "success", text: "Дані отримано з Worker" });
+        toast.success("MinIO: дані отримано з Worker");
       } else {
         setMinioStatus({ type: "idle", text: "MinIO не налаштовано у Worker" });
+        toast.message("MinIO ще не налаштовано у Worker");
       }
     } catch {
       setMinioStatus({ type: "error", text: "Не вдалося підключитись до Worker" });
+      toast.error("Не вдалося підключитись до Worker");
     } finally {
       setIsLoadingMinio(false);
     }
