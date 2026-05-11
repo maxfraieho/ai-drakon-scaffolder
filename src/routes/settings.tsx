@@ -78,8 +78,16 @@ function SettingsRoute() {
   };
 
   const saveSettings = () => {
-    writeSettings(settings);
-    toast.success("Налаштування збережено");
+    try {
+      writeSettings(settings);
+      toast.success("Налаштування збережено", {
+        description: "Конфігурацію оновлено локально.",
+      });
+    } catch (error) {
+      toast.error("Не вдалося зберегти налаштування", {
+        description: error instanceof Error ? error.message : "Невідома помилка",
+      });
+    }
   };
 
   const verifyGithub = async () => {
