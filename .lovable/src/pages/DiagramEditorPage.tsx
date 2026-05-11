@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, FolderTree, PanelLeftClose, PanelLeftOpen, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -9,6 +9,7 @@ import { ValidationPanel } from "@/components/htse/ValidationPanel";
 import { MutationLogPanel } from "@/components/htse/MutationLogPanel";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useDiagramStore } from "@/store/useDiagramStore";
+import { readDiagramsFromStorage } from "@/lib/diagram-storage";
 import { cn } from "@/lib/utils";
 
 export default function DiagramEditorPage() {
@@ -22,6 +23,12 @@ export default function DiagramEditorPage() {
   const diagramId = search.diagramId || "";
   const folderId = search.folderId || "general";
   const isNew = search.isNew === "true";
+
+  const diagramData = useMemo(() => {
+    if (isNew || !diagramId) return undefined;
+    const stored = readDiagramsFromStorage().find((d) => d.id === diagramId);
+    return stored?.diagram;
+  }, [isNew, diagramId]);
 
   const [validationOpen, setValidationOpen] = useState(false);
   const [filesOpen, setFilesOpen] = useState(false); // desktop left rail
@@ -180,6 +187,7 @@ export default function DiagramEditorPage() {
             diagramId={diagramId}
             folderSlug={folderId}
             isNew={isNew}
+            diagram={diagramData as never}
             height={600}
             onSaved={() => {}}
           />
