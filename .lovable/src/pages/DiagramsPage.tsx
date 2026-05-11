@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { format } from "date-fns";
-import { Wrench } from "lucide-react";
+import { Trash2, Wrench } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -811,41 +811,61 @@ export function DiagramsPage() {
         </div>
 
         {folderDiagrams.length === 0 && !isLoadingDiagrams ? (
-          <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
-            <p className="text-lg">Схем поки немає</p>
-            <p className="mt-1 text-sm">Натисніть "+ Нова схема" щоб згенерувати першу</p>
+          <div className="flex flex-col items-center justify-center gap-4 py-24">
+            <span className="font-mono text-xs uppercase tracking-[0.15em] text-[var(--text-muted)]">
+              Схем поки немає
+            </span>
+            <p className="text-sm text-[var(--text-muted)]" style={{ textWrap: "pretty" }}>
+              Натисніть «+ Нова схема» щоб згенерувати першу
+            </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            {folderDiagrams.map((diagram) => (
-              <Card key={diagram.id} className="border-border bg-card">
-                <CardHeader>
-                  <CardTitle className="text-base">{diagram.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Створено: {format(new Date(diagram.createdAt), "dd.MM.yyyy HH:mm")}
-                  </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {folderDiagrams.map((diagram) => {
+              const openDiagram = () =>
+                navigate({ to: "/editor/$id", params: { id: diagram.id } });
 
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      onClick={() => navigate({ to: "/editor/$id", params: { id: diagram.id } })}
+              return (
+                <div
+                  key={diagram.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Відкрити схему ${diagram.name}`}
+                  onClick={openDiagram}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openDiagram();
+                    }
+                  }}
+                  className="group relative cursor-pointer rounded-[var(--radius-md)] bg-[var(--bg-surface)] p-4 transition-colors duration-150 hover:bg-[var(--bg-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-amber)]/50"
+                  style={{ boxShadow: "var(--shadow-card)", touchAction: "manipulation" }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <h3
+                      className="font-mono text-sm font-medium leading-snug text-[var(--text-primary)]"
+                      style={{ textWrap: "balance" }}
                     >
-                      Відкрити
-                    </Button>
+                      {diagram.name}
+                    </h3>
 
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="destructive" type="button">
-                          Видалити
-                        </Button>
+                        <button
+                          type="button"
+                          aria-label={`Видалити ${diagram.name}`}
+                          onClick={(event) => event.stopPropagation()}
+                          className="flex-shrink-0 rounded-[var(--radius-md)] p-1.5 text-[var(--text-muted)] opacity-0 transition-all duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50 active:scale-[0.96] group-hover:opacity-100 md:opacity-0"
+                          style={{ touchAction: "manipulation" }}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent onClick={(event) => event.stopPropagation()}>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Видалити схему?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Цю дію неможливо скасувати.
+                            «{diagram.name}» буде видалено. Цю дію неможливо скасувати.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -857,9 +877,16 @@ export function DiagramsPage() {
                       </AlertDialogContent>
                     </AlertDialog>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                  <div
+                    className="mt-2 flex items-center gap-3 font-mono text-xs text-[var(--text-muted)]"
+                    style={{ fontVariantNumeric: "tabular-nums" }}
+                  >
+                    <span>{format(new Date(diagram.createdAt), "dd.MM.yyyy HH:mm")}</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </main>
