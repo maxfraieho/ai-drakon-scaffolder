@@ -424,10 +424,15 @@ function SettingsRoute() {
                 </Select>
               </div>
 
-              <Button type="button" variant="destructive" onClick={clearDiagramCache}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Очистити локальний кеш діаграм
-              </Button>
+              <button
+                type="button"
+                onClick={clearDiagramCache}
+                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-400 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                style={{ touchAction: "manipulation" }}
+              >
+                <Trash2 className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+                Очистити кеш
+              </button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -440,6 +445,7 @@ function SettingsRoute() {
           </Button>
           <Button onClick={saveSettings}>Зберегти</Button>
         </div>
+      </div>
       </div>
     </div>
   );
