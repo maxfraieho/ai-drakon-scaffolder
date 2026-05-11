@@ -63,8 +63,10 @@ function SettingsRoute() {
   const [showN8nToken, setShowN8nToken] = useState(false);
   const [isCheckingGithub, setIsCheckingGithub] = useState(false);
   const [isCheckingN8n, setIsCheckingN8n] = useState(false);
+  const [isLoadingMinio, setIsLoadingMinio] = useState(false);
   const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
   const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+  const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 
   const normalizedN8nUrl = useMemo(
     () => settings.n8n.baseUrl.trim().replace(/\/+$/, ""),
