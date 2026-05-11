@@ -313,6 +313,32 @@ export function DiagramsPage() {
     }
   };
 
+  const downloadDiagramJson = (diagram: Diagram) => {
+    try {
+      const payload = {
+        name: diagram.diagram.name ?? diagram.name,
+        items: diagram.diagram.items ?? {},
+        ...(diagram.diagram.metadata ? { metadata: diagram.diagram.metadata } : {}),
+      };
+      const json = JSON.stringify(payload, null, 2);
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const safeName = (diagram.name || "diagram")
+        .replace(/[^\w\-.]+/g, "_")
+        .replace(/^_+|_+$/g, "") || "diagram";
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safeName}.drakon.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("JSON завантажено");
+    } catch {
+      toast.error("Не вдалося завантажити JSON");
+    }
+  };
+
   const openAnalyzeDialog = (path: string, sourceContent?: string) => {
     const cleanPath = path || "src";
     const projectName = cleanPath.split("/").filter(Boolean).pop() || "github-entry";
