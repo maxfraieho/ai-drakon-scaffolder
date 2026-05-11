@@ -1,8 +1,20 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { format } from "date-fns";
-import { Bot, FilePenLine, FolderPlus, GitMerge, Menu } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
+import {
+  Bot,
+  FilePenLine,
+  FolderPlus,
+  GitBranch,
+  GitMerge,
+  Menu,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 import { GitHubPanel } from "@/components/github/GitHubPanel";
 import {
