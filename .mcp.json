@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "drakon": {
+      "type": "http",
+      "url": "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+      "headers": {
+        "Authorization": "Bearer ${DRAKON_MCP_API_KEY}"
+      }
+    }
+  }
+}

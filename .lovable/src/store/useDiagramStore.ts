@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { api } from "@/lib/api";
 import { upsertDiagramInStorage } from "@/lib/diagram-storage";
 import type { Diagram, EditDelta, GenerateResult } from "@/types/drakon";
+import { notifyDiagramChanged } from "@/lib/n8n-client";
 
 interface DiagramStore {
   currentDiagram: Diagram | null;
@@ -74,6 +75,14 @@ export const useDiagramStore = create<DiagramStore>((set, get) => ({
       await api.commit(currentDiagram.folderId, currentDiagram.id, currentDiagram);
       upsertDiagramInStorage({ ...currentDiagram, updatedAt: new Date().toISOString() });
       set({ isDirty: false });
+      void notifyDiagramChanged({
+        event: "diagram_saved",
+        diagramId: currentDiagram.id,
+        diagramName: currentDiagram.name,
+        folderId: currentDiagram.folderId,
+        timestamp: new Date().toISOString(),
+        changedBy: "human",
+      });
     } finally {
       set({ isSaving: false });
     }

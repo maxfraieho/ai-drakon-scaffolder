@@ -1313,13 +1313,18 @@ async function handleMcp(request, env) {
   return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown method: ${method}` } }, 404);
 }
 
-async function handleHealth() {
+async function handleHealth(env) {
   return jsonResponse({
     success: true,
     status: 'ok',
     service: 'drakon-mcp-worker',
     timestamp: new Date().toISOString(),
     features: ['auth', 'minio-s3', 'drakon-rest', 'mcp-jsonrpc'],
+    storage: {
+      endpoint: env && env.MINIO_ENDPOINT ? env.MINIO_ENDPOINT : 'not configured',
+      bucket: env && env.MINIO_BUCKET ? env.MINIO_BUCKET : 'not configured',
+      ssl: env && env.MINIO_USE_SSL ? env.MINIO_USE_SSL : 'true',
+    },
   });
 }
 
@@ -1339,7 +1344,7 @@ export default {
       }
 
       if (method === 'GET' && path === '/health') {
-        return await handleHealth();
+        return await handleHealth(env);
       }
 
       if (method === 'POST' && path === '/auth/login') {
