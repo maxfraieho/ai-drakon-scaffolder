@@ -102,8 +102,14 @@ function RootShell({ children }: { children: React.ReactNode }) {
     <html lang="en" className="dark">
       <head>
         <HeadContent />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
+        />
       </head>
-      <body className="bg-background text-foreground">
+      <body>
         {children}
         <Scripts />
       </body>
@@ -114,25 +120,20 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
+  useEffect(() => {
+    try {
+      const theme = readSettings().app.theme ?? "dark";
+      const resolved = theme === "light" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", resolved);
+      document.documentElement.classList.toggle("dark", resolved === "dark");
+    } catch {
+      // ignore
+    }
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={150}>
-        <div className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
-          <nav className="mx-auto flex w-full max-w-7xl items-center gap-2 px-3 py-2 sm:px-4">
-            <Link
-              to="/github"
-              className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              GitHub Files
-            </Link>
-            <Link
-              to="/settings"
-              className="inline-flex items-center justify-center rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent"
-            >
-              Settings
-            </Link>
-          </nav>
-        </div>
         <Outlet />
       </TooltipProvider>
     </QueryClientProvider>
