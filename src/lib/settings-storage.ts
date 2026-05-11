@@ -94,6 +94,11 @@ export function readSettings(): AppSettings {
             ? app.theme
             : DEFAULT_SETTINGS.app.theme,
       },
+      minio: {
+        endpoint: typeof minio.endpoint === "string" ? minio.endpoint : DEFAULT_SETTINGS.minio.endpoint,
+        bucket: typeof minio.bucket === "string" ? minio.bucket : DEFAULT_SETTINGS.minio.bucket,
+        accessKey: typeof minio.accessKey === "string" ? minio.accessKey : DEFAULT_SETTINGS.minio.accessKey,
+      },
     };
   } catch {
     return DEFAULT_SETTINGS;
