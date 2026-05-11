@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
   Bot,
+  Download,
   FilePenLine,
   FolderPlus,
   GitBranch,
