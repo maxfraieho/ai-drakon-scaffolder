@@ -8,10 +8,7 @@
     "MINIO_ENDPOINT": "",
     "MINIO_BUCKET": "",
     "MINIO_ACCESS_KEY": "",
-    "MINIO_SECRET_KEY": "",
-    "MINIO_USE_SSL": "true"
+    "MINIO_USE_SSL": "true",
+    "OWNER_USERNAME": "owner"
   }
-  // Secrets встановлюються через: wrangler secret put JWT_SECRET
-  // Secret: wrangler secret put GITHUB_TOKEN
-  // або через Cloudflare Workers Dashboard → Settings → Variables and Secrets
 }
