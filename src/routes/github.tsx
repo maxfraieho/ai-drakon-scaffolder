@@ -482,16 +482,13 @@ function GitHubRoute() {
       {isMobile ? (
         <div className="space-y-3">{listView}</div>
       ) : (
-        <div className="h-[calc(100vh-190px)] min-h-[520px] rounded-md border border-border">
-          <ResizablePanelGroup direction="horizontal">
-            <ResizablePanel defaultSize={28} minSize={20} maxSize={45}>
-              <div className="h-full overflow-auto p-3">{listView}</div>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={72} minSize={55}>
-              <div className="h-full overflow-auto p-3">{previewView}</div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+        <div className="flex h-[calc(100vh-190px)] min-h-[520px] gap-3">
+          <div className="h-full w-[280px] min-w-[240px] max-w-[420px] shrink-0 overflow-auto rounded-md border border-border p-3">
+            {listView}
+          </div>
+          <div className="h-full min-w-0 flex-1 overflow-auto rounded-md border border-border p-3">
+            {previewView}
+          </div>
         </div>
       )}
 
