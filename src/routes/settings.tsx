@@ -182,6 +182,7 @@ function SettingsRoute() {
     }
   };
 
+  const clearDiagramCache = () => {
     if (typeof window === "undefined") return;
     const ok = window.confirm("Видалити локальний кеш діаграм (drakon.diagrams)?");
     if (!ok) return;
