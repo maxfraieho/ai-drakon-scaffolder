@@ -481,53 +481,73 @@ export function DiagramsPage() {
         </SheetContent>
 
         {/* Desktop sidebar */}
-        <aside className="hidden w-60 shrink-0 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] md:block">
-          <div className="sticky top-0 flex h-12 items-center border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4">
-            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-              Folders
-            </span>
-          </div>
+        <aside
+          className={cn(
+            "hidden shrink-0 overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] md:block",
+            foldersCollapsed ? "w-0 border-r-0" : "w-60",
+          )}
+          style={{ transitionProperty: "width", transitionDuration: "200ms" }}
+          aria-hidden={foldersCollapsed}
+        >
+          {!foldersCollapsed && (
+            <>
+              <div className="sticky top-0 flex h-12 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
+                <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Folders
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setFoldersCollapsed(true)}
+                  aria-label="Згорнути папки"
+                  title="Згорнути"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]"
+                >
+                  <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
 
-          <nav className="p-2">
-            <ul className="space-y-0.5" role="list">
-              {folders.map((folder) => {
-                const isActive = folder.slug === selectedFolder.slug;
-                return (
-                  <li key={folder.id}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedFolderSlug(folder.slug)}
-                      aria-current={isActive ? "page" : undefined}
-                      className={cn(
-                        "group relative flex w-full items-center rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm transition-colors duration-150",
-                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50",
-                        isActive
-                          ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
-                          : "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
-                      )}
-                    >
-                      {isActive && (
-                        <span
-                          aria-hidden="true"
-                          className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r bg-[var(--accent-amber)]"
-                        />
-                      )}
-                      <span className="ml-1 truncate">{folder.name}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+              <nav className="p-2">
+                <ul className="space-y-0.5" role="list">
+                  {folders.map((folder) => {
+                    const isActive = folder.slug === selectedFolder.slug;
+                    return (
+                      <li key={folder.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelectedFolderSlug(folder.slug)}
+                          aria-current={isActive ? "page" : undefined}
+                          className={cn(
+                            "group relative flex w-full items-center rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm transition-colors duration-150",
+                            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50",
+                            isActive
+                              ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+                              : "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                          )}
+                        >
+                          {isActive && (
+                            <span
+                              aria-hidden="true"
+                              className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r bg-[var(--accent-amber)]"
+                            />
+                          )}
+                          <span className="ml-1 truncate">{folder.name}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
 
-            <button
-              type="button"
-              onClick={() => setIsCreateFolderOpen(true)}
-              className="mt-2 flex w-full items-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-default)] px-3 py-2 text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)]"
-            >
-              <Plus className="h-3 w-3" aria-hidden="true" />
-              New folder
-            </button>
-          </nav>
+                <button
+                  type="button"
+                  onClick={() => setIsCreateFolderOpen(true)}
+                  className="mt-2 flex w-full items-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-default)] px-3 py-2 text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)]"
+                >
+                  <Plus className="h-3 w-3" aria-hidden="true" />
+                  New folder
+                </button>
+              </nav>
+            </>
+          )}
         </aside>
 
         <main className="flex min-w-0 flex-1 flex-col">
