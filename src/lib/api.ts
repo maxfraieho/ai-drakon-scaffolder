@@ -10,7 +10,7 @@ function resolveApiBase() {
     return resolveClientEndpoints().apiBaseUrl;
   }
 
-  return import.meta.env.VITE_WORKER_URL || "";
+  return import.meta.env.VITE_WORKER_URL || "https://drakon-mcp-worker.maxfraieho.workers.dev";
 }
 
 type GenerateType = "code" | "text";
