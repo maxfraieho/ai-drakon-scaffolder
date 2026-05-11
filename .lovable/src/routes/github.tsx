@@ -334,16 +334,34 @@ function GitHubRoute() {
       {error ? (
         <div className="flex flex-col items-center gap-3 px-3 py-8 text-center">
           <AlertCircle className="h-5 w-5 flex-shrink-0 text-destructive" aria-hidden="true" />
-          <p className="text-xs text-muted-foreground" style={{ textWrap: "balance" }}>
-            Не вдалося завантажити дерево файлів
-          </p>
-          <button
-            type="button"
-            onClick={() => void loadPath(currentPath)}
-            className="rounded-sm text-xs text-[var(--accent-amber)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-          >
-            Спробувати знову
-          </button>
+          {!token ? (
+            <>
+              <p className="text-xs font-medium text-destructive">⚠️ GitHub token не налаштований</p>
+              <p className="text-xs text-muted-foreground" style={{ textWrap: "balance" }}>
+                Для доступу до приватних репо потрібний Personal Access Token
+              </p>
+              <button
+                type="button"
+                onClick={() => void navigate({ to: "/settings" })}
+                className="rounded-sm text-xs text-[var(--accent-amber)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              >
+                Додати токен в Налаштування
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-muted-foreground" style={{ textWrap: "balance" }}>
+                Не вдалося завантажити дерево файлів
+              </p>
+              <button
+                type="button"
+                onClick={() => void loadPath(currentPath)}
+                className="rounded-sm text-xs text-[var(--accent-amber)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+              >
+                Спробувати знову
+              </button>
+            </>
+          )}
         </div>
       ) : null}
 
