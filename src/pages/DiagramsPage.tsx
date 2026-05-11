@@ -835,29 +835,6 @@ export function DiagramsPage() {
             </section>
           </div>
 
-          {/* Bottom utility bar — secondary actions */}
-          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2 md:px-6">
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/settings" })}
-              className="rounded-[var(--radius-sm)] px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
-            >
-              Settings
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsGitHubOpen((prev) => !prev)}
-              aria-pressed={isGitHubOpen}
-              className={cn(
-                "rounded-[var(--radius-sm)] px-2 py-1 font-mono text-[10px] uppercase tracking-wider",
-                isGitHubOpen
-                  ? "text-[var(--accent-amber)]"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
-              )}
-            >
-              GitHub Panel
-            </button>
-          </div>
         </main>
 
         <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
