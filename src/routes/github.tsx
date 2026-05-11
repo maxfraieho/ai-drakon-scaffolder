@@ -353,39 +353,71 @@ function GitHubRoute() {
         <ul className="space-y-1">
           {filteredEntries.map((entry) => {
             const dirCount = cache[entry.path]?.length;
+            const isDir = entry.type === "dir";
 
             return (
               <li key={entry.path}>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-3 rounded-md border border-border px-3 py-2 text-left hover:bg-accent"
-                  onClick={() => handleEntryClick(entry)}
-                  onContextMenu={(event) => {
-                    if (entry.type !== "dir") return;
-                    event.preventDefault();
-                    setContextTarget({ path: entry.path, type: entry.type, name: entry.name });
-                  }}
-                  onTouchStart={() => startHold(entry)}
-                  onTouchEnd={cancelHold}
-                  onTouchCancel={cancelHold}
-                >
-                  <span className="text-muted-foreground">
-                    {entry.type === "dir" ? <Folder className="h-4 w-4" /> : fileIcon(entry.name)}
-                  </span>
-
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{entry.name}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {entry.type === "dir"
-                        ? typeof dirCount === "number"
-                          ? `Елементів: ${dirCount}`
-                          : "Папка"
-                        : formatSize(entry.size)}
+                <div className="flex w-full items-stretch gap-1 rounded-md border border-border hover:bg-accent/40">
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-l-md px-3 py-2 text-left"
+                    onClick={() => handleEntryClick(entry)}
+                    onContextMenu={(event) => {
+                      if (!isDir) return;
+                      event.preventDefault();
+                      setContextTarget({ path: entry.path, type: entry.type, name: entry.name });
+                    }}
+                    onTouchStart={() => startHold(entry)}
+                    onTouchEnd={cancelHold}
+                    onTouchCancel={cancelHold}
+                  >
+                    <span className="text-muted-foreground">
+                      {isDir ? <Folder className="h-4 w-4" /> : fileIcon(entry.name)}
                     </span>
-                  </span>
 
-                  <span className="text-sm text-muted-foreground">›</span>
-                </button>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{entry.name}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {isDir
+                          ? typeof dirCount === "number"
+                            ? `Елементів: ${dirCount}`
+                            : "Папка"
+                          : formatSize(entry.size)}
+                      </span>
+                    </span>
+                  </button>
+
+                  {isDir ? (
+                    <div className="flex shrink-0 items-center gap-0.5 pr-1">
+                      <button
+                        type="button"
+                        title="Аналізувати структуру папки"
+                        aria-label="Аналізувати структуру папки"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          analyzePath(entry.path);
+                        }}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Експортувати папку в набір DRAKON схем"
+                        aria-label="Експорт у набір DRAKON"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          exportFolderAsDrakonSet(entry.path);
+                        }}
+                      >
+                        <FileDown className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="flex w-3 items-center pr-2 text-sm text-muted-foreground">›</span>
+                  )}
+                </div>
               </li>
             );
           })}
