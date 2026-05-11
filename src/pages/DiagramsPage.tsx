@@ -8,6 +8,8 @@ import {
   GitBranch,
   GitMerge,
   Menu,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pencil,
   Plus,
   Search,
