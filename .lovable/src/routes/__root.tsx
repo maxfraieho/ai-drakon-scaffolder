@@ -5,6 +5,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -12,6 +13,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 
 import appCss from "../styles.css?url";
 import { readSettings } from "@/lib/settings-storage";
+import { AppHeader } from "@/components/app/AppHeader";
 
 function NotFoundComponent() {
   return (
@@ -131,10 +133,18 @@ function RootComponent() {
     }
   }, []);
 
+  const location = useLocation();
+  const hideChrome = location.pathname === "/login";
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={150}>
-        <Outlet />
+        <div className="flex min-h-screen flex-col bg-[var(--bg-base)]">
+          {!hideChrome && <AppHeader />}
+          <div className="flex-1">
+            <Outlet />
+          </div>
+        </div>
       </TooltipProvider>
     </QueryClientProvider>
   );
