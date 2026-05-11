@@ -170,6 +170,6 @@ export type CreateDrakonWidgetFn = () => DrakonWidget;
 
 declare global {
   interface Window {
-    createDrakonWidget: CreateDrakonWidgetFn;
+    createDrakonWidget?: CreateDrakonWidgetFn;
   }
 }
