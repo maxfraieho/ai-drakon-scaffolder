@@ -127,3 +127,7 @@ export function getGithubConfig(): AppSettings["github"] {
 export function getN8nConfig(): AppSettings["n8n"] {
   return readSettings().n8n;
 }
+
+export function getMinioConfig(): AppSettings["minio"] {
+  return readSettings().minio;
+}
