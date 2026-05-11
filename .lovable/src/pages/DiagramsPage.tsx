@@ -416,7 +416,7 @@ export function DiagramsPage() {
       .trim()
       .toLowerCase()
       .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9а-яіїєґ-_]/gi, "")}.json`;
+      .replace(/[^a-z0-9а-яіїєґ_-]/gi, "")}.json`;
 
     setDiagramForGithubSave(diagram);
     setGithubTargetPath(defaultPath);
