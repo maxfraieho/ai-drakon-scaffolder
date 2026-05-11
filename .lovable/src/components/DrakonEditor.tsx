@@ -588,9 +588,9 @@ export function DrakonEditor({
   }
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("flex min-h-0 flex-1 flex-col gap-3 overflow-hidden", className)}>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
         <div className="flex items-center gap-2">
           <Label htmlFor="diagram-name" className="sr-only">
             {t.drakonEditor.diagramName}
@@ -750,10 +750,10 @@ export function DrakonEditor({
       </div>
 
       {/* Editor layout with toolbar at bottom */}
-      <div className="flex flex-col gap-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden">
         {/* Widget container */}
         <div
-          className="relative flex min-h-0 flex-1 flex-col"
+          className="relative flex min-h-0 flex-1 flex-col overflow-hidden"
           onClick={(e) => {
             // Don't interfere when context menu is open
             if (uiStateRef.current === "contextMenuOpen") return;
@@ -776,7 +776,6 @@ export function DrakonEditor({
           {isLoading && (
             <div
               className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg z-10"
-              style={{ height }}
             >
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
@@ -784,7 +783,7 @@ export function DrakonEditor({
           <div
             ref={containerRef}
             className="drakon-container flex-1 min-h-0 rounded-lg border overflow-hidden"
-            style={typeof height === "number" ? { height, minHeight: 300 } : { height, minHeight: 300 }}
+            style={typeof height === "number" ? { height, minHeight: 300 } : { height: "100%", minHeight: 300 }}
           />
 
           {/* Context menu */}
@@ -848,7 +847,7 @@ export function DrakonEditor({
         </div>
 
         {/* Bottom toolbar with icon buttons */}
-        <div className="w-full overflow-x-auto border rounded-lg bg-background">
+        <div className="w-full flex-shrink-0 overflow-x-auto border rounded-lg bg-background">
           <div className="flex items-center gap-1 p-1.5">
             {iconButtons.map(({ type, img, label }) => (
               <Tooltip key={type}>

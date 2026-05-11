@@ -437,8 +437,11 @@ function GitHubRoute() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-3 pb-6 pt-3 text-foreground md:px-6">
-      <header className="mb-3 flex items-center justify-between gap-2">
+    <div
+      className="flex flex-col overflow-hidden bg-background text-foreground"
+      style={{ height: "100dvh" }}
+    >
+      <header className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-3 md:px-6">
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/diagrams" })}>
           ← Діаграми
         </Button>
@@ -468,7 +471,7 @@ function GitHubRoute() {
       </header>
 
       {isMobile ? (
-        <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+        <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
           <Button
             variant="ghost"
             size="sm"
@@ -489,7 +492,7 @@ function GitHubRoute() {
         </div>
       ) : null}
 
-      <div className="mb-3 flex flex-wrap items-center gap-1 text-sm">
+      <div className="flex flex-shrink-0 flex-wrap items-center gap-1 border-b border-border px-3 py-2 text-sm md:px-6">
         {breadcrumbs.map((crumb, index) => (
           <button
             key={`${crumb.path}-${index}`}
@@ -503,9 +506,9 @@ function GitHubRoute() {
       </div>
 
       {isMobile ? (
-        <div className="space-y-3">{listView}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-auto p-3">{listView}</div>
       ) : (
-        <div className="h-[calc(100vh-190px)] min-h-[520px] rounded-md border border-border">
+        <div className="flex min-h-0 flex-1 overflow-hidden">
           <ResizablePanelGroup orientation="horizontal">
             <ResizablePanel defaultSize={28} minSize={20} maxSize={45}>
               <div className="h-full overflow-auto p-3">{listView}</div>

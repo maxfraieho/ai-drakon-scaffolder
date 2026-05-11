@@ -17,7 +17,7 @@ export default function DiagramEditorPage() {
 
   return (
     <div
-      className="flex flex-col bg-background text-foreground"
+      className="flex flex-col overflow-hidden bg-background text-foreground"
       style={{ height: "100dvh" }}
     >
       <div
