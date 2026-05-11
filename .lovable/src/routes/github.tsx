@@ -1,5 +1,5 @@
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AlertCircle, FileCode2, FileJson2, FileText, Folder, Github, Settings, Search } from "lucide-react";
+import { FileCode2, FileDown, FileJson2, FileText, Folder, Github, Search, Sparkles } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -250,6 +250,7 @@ function GitHubRoute() {
 
   const analyzePath = (path: string) => {
     const cleaned = path || currentPath || "src";
+    toast.message("Запускаю аналіз структури", { description: `/${cleaned}` });
     navigate({
       to: "/diagrams",
       search: {
@@ -257,6 +258,21 @@ function GitHubRoute() {
         analyzePath: cleaned,
         analyzeRepo: `${owner.trim()}/${repo.trim()}`,
         analyzeBranch: branch,
+      },
+    });
+  };
+
+  const exportFolderAsDrakonSet = (path: string) => {
+    const cleaned = path || currentPath || "src";
+    toast.message("Експортую папку в набір DRAKON", { description: `/${cleaned}` });
+    navigate({
+      to: "/diagrams",
+      search: {
+        autoAnalyze: "true",
+        analyzePath: cleaned,
+        analyzeRepo: `${owner.trim()}/${repo.trim()}`,
+        analyzeBranch: branch,
+        exportDrakonSet: "true",
       },
     });
   };
@@ -331,77 +347,77 @@ function GitHubRoute() {
         </div>
       ) : null}
 
-      {error ? (
-        <div className="flex flex-col items-center gap-3 px-3 py-8 text-center">
-          <AlertCircle className="h-5 w-5 flex-shrink-0 text-destructive" aria-hidden="true" />
-          {!token ? (
-            <>
-              <p className="text-xs font-medium text-destructive">⚠️ GitHub token не налаштований</p>
-              <p className="text-xs text-muted-foreground" style={{ textWrap: "balance" }}>
-                Для доступу до приватних репо потрібний Personal Access Token
-              </p>
-              <button
-                type="button"
-                onClick={() => void navigate({ to: "/settings" })}
-                className="rounded-sm text-xs text-[var(--accent-amber)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-              >
-                Додати токен в Налаштування
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-xs text-muted-foreground" style={{ textWrap: "balance" }}>
-                Не вдалося завантажити дерево файлів
-              </p>
-              <button
-                type="button"
-                onClick={() => void loadPath(currentPath)}
-                className="rounded-sm text-xs text-[var(--accent-amber)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
-              >
-                Спробувати знову
-              </button>
-            </>
-          )}
-        </div>
-      ) : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
       {!loading && !error ? (
         <ul className="space-y-1">
           {filteredEntries.map((entry) => {
             const dirCount = cache[entry.path]?.length;
+            const isDir = entry.type === "dir";
 
             return (
               <li key={entry.path}>
-                <button
-                  type="button"
-                  className="flex w-full items-center gap-3 rounded-md border border-border px-3 py-2 text-left hover:bg-accent"
-                  onClick={() => handleEntryClick(entry)}
-                  onContextMenu={(event) => {
-                    if (entry.type !== "dir") return;
-                    event.preventDefault();
-                    setContextTarget({ path: entry.path, type: entry.type, name: entry.name });
-                  }}
-                  onTouchStart={() => startHold(entry)}
-                  onTouchEnd={cancelHold}
-                  onTouchCancel={cancelHold}
-                >
-                  <span className="text-muted-foreground">
-                    {entry.type === "dir" ? <Folder className="h-4 w-4" /> : fileIcon(entry.name)}
-                  </span>
-
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">{entry.name}</span>
-                    <span className="block text-xs text-muted-foreground">
-                      {entry.type === "dir"
-                        ? typeof dirCount === "number"
-                          ? `Елементів: ${dirCount}`
-                          : "Папка"
-                        : formatSize(entry.size)}
+                <div className="flex w-full items-stretch gap-1 rounded-md border border-border hover:bg-accent/40">
+                  <button
+                    type="button"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-l-md px-3 py-2 text-left"
+                    onClick={() => handleEntryClick(entry)}
+                    onContextMenu={(event) => {
+                      if (!isDir) return;
+                      event.preventDefault();
+                      setContextTarget({ path: entry.path, type: entry.type, name: entry.name });
+                    }}
+                    onTouchStart={() => startHold(entry)}
+                    onTouchEnd={cancelHold}
+                    onTouchCancel={cancelHold}
+                  >
+                    <span className="text-muted-foreground">
+                      {isDir ? <Folder className="h-4 w-4" /> : fileIcon(entry.name)}
                     </span>
-                  </span>
 
-                  <span className="text-sm text-muted-foreground">›</span>
-                </button>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{entry.name}</span>
+                      <span className="block text-xs text-muted-foreground">
+                        {isDir
+                          ? typeof dirCount === "number"
+                            ? `Елементів: ${dirCount}`
+                            : "Папка"
+                          : formatSize(entry.size)}
+                      </span>
+                    </span>
+                  </button>
+
+                  {isDir ? (
+                    <div className="flex shrink-0 items-center gap-0.5 pr-1">
+                      <button
+                        type="button"
+                        title="Аналізувати структуру папки"
+                        aria-label="Аналізувати структуру папки"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          analyzePath(entry.path);
+                        }}
+                      >
+                        <Sparkles className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        title="Експортувати папку в набір DRAKON схем"
+                        aria-label="Експорт у набір DRAKON"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          exportFolderAsDrakonSet(entry.path);
+                        }}
+                      >
+                        <FileDown className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="flex w-3 items-center pr-2 text-sm text-muted-foreground">›</span>
+                  )}
+                </div>
               </li>
             );
           })}
@@ -455,15 +471,8 @@ function GitHubRoute() {
   }
 
   return (
-    <div
-      className="flex flex-col overflow-hidden bg-background text-foreground"
-      style={{ height: "100dvh" }}
-    >
-      <header className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-3 md:px-6">
-        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/diagrams" })}>
-          ← Діаграми
-        </Button>
-
+    <div className="min-h-screen bg-background px-3 pb-6 pt-3 text-foreground md:px-6">
+      <header className="mb-3 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <Github className="h-4 w-4 text-muted-foreground" />
           <p className="truncate text-sm font-medium md:text-base">{owner}/{repo}</p>
@@ -482,14 +491,11 @@ function GitHubRoute() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" onClick={() => navigate({ to: "/settings" })}>
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
       </header>
 
       {isMobile ? (
-        <div className="flex flex-shrink-0 items-center justify-between gap-2 border-b border-border px-3 py-2">
+        <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
           <Button
             variant="ghost"
             size="sm"
@@ -504,13 +510,11 @@ function GitHubRoute() {
             ← Назад
           </Button>
           <p className="truncate text-sm text-muted-foreground">/{currentPath || ""}</p>
-          <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/settings" })}>
-            <Settings className="h-4 w-4" />
-          </Button>
+          <span className="w-[60px]" />
         </div>
       ) : null}
 
-      <div className="flex flex-shrink-0 flex-wrap items-center gap-1 border-b border-border px-3 py-2 text-sm md:px-6">
+      <div className="mb-3 flex flex-wrap items-center gap-1 text-sm">
         {breadcrumbs.map((crumb, index) => (
           <button
             key={`${crumb.path}-${index}`}
@@ -524,18 +528,15 @@ function GitHubRoute() {
       </div>
 
       {isMobile ? (
-        <div className="flex min-h-0 flex-1 flex-col overflow-auto p-3">{listView}</div>
+        <div className="space-y-3">{listView}</div>
       ) : (
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <ResizablePanelGroup orientation="horizontal">
-            <ResizablePanel defaultSize={28} minSize={20} maxSize={45}>
-              <div className="h-full overflow-auto p-3">{listView}</div>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={72} minSize={55}>
-              <div className="h-full overflow-auto p-3">{previewView}</div>
-            </ResizablePanel>
-          </ResizablePanelGroup>
+        <div className="flex h-[calc(100vh-190px)] min-h-[520px] gap-3">
+          <div className="h-full w-[280px] min-w-[240px] max-w-[420px] shrink-0 overflow-auto rounded-md border border-border p-3">
+            {listView}
+          </div>
+          <div className="h-full min-w-0 flex-1 overflow-auto rounded-md border border-border p-3">
+            {previewView}
+          </div>
         </div>
       )}
 

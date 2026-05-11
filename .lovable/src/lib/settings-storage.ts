@@ -5,7 +5,7 @@ export const SETTINGS_STORAGE_KEY = "drakon.settings";
 export const DEFAULT_SETTINGS: AppSettings = {
   github: {
     owner: "maxfraieho",
-    repo: "ai-drakon-setup",
+    repo: "drakon-setup-hub",
     branch: "main",
     token: "",
   },
@@ -27,6 +27,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
+const LEGACY_GITHUB_STORAGE_KEY = "github.lastRepo";
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -37,9 +39,19 @@ export function readSettings(): AppSettings {
   }
 
   try {
+    const legacyRaw = localStorage.getItem(LEGACY_GITHUB_STORAGE_KEY);
+    const legacyGithub = legacyRaw ? JSON.parse(legacyRaw) as Partial<AppSettings["github"]> : {};
     const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (!raw) {
-      return DEFAULT_SETTINGS;
+      return {
+        ...DEFAULT_SETTINGS,
+        github: {
+          ...DEFAULT_SETTINGS.github,
+          owner: typeof legacyGithub.owner === "string" ? legacyGithub.owner : DEFAULT_SETTINGS.github.owner,
+          repo: typeof legacyGithub.repo === "string" ? legacyGithub.repo : DEFAULT_SETTINGS.github.repo,
+          branch: typeof legacyGithub.branch === "string" ? legacyGithub.branch : DEFAULT_SETTINGS.github.branch,
+        },
+      };
     }
 
     const parsed = JSON.parse(raw) as unknown;
@@ -54,9 +66,9 @@ export function readSettings(): AppSettings {
 
     return {
       github: {
-        owner: typeof github.owner === "string" ? github.owner : DEFAULT_SETTINGS.github.owner,
-        repo: typeof github.repo === "string" ? github.repo : DEFAULT_SETTINGS.github.repo,
-        branch: typeof github.branch === "string" ? github.branch : DEFAULT_SETTINGS.github.branch,
+        owner: typeof github.owner === "string" ? github.owner : typeof legacyGithub.owner === "string" ? legacyGithub.owner : DEFAULT_SETTINGS.github.owner,
+        repo: typeof github.repo === "string" ? github.repo : typeof legacyGithub.repo === "string" ? legacyGithub.repo : DEFAULT_SETTINGS.github.repo,
+        branch: typeof github.branch === "string" ? github.branch : typeof legacyGithub.branch === "string" ? legacyGithub.branch : DEFAULT_SETTINGS.github.branch,
         token: typeof github.token === "string" ? github.token : DEFAULT_SETTINGS.github.token,
       },
       n8n: {
@@ -99,6 +111,13 @@ export function writeSettings(settings: AppSettings): void {
   }
 
   localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  localStorage.removeItem(LEGACY_GITHUB_STORAGE_KEY);
+}
+
+export function updateSettings(updater: (settings: AppSettings) => AppSettings): AppSettings {
+  const next = updater(readSettings());
+  writeSettings(next);
+  return next;
 }
 
 export function getGithubConfig(): AppSettings["github"] {
