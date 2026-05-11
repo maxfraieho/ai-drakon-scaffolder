@@ -421,10 +421,104 @@ function convertIrToDiagramForWorker(irPayload) {
   return convertIrToDiagram(isObject(irPayload) ? irPayload : { name: 'Untitled', access: 'public', params: [], items: {} });
 }
 
-function handleMcpAnalyzeCodebase(args) {
+
+async function analyzeGithubRepo(owner, repo, branch, env) {
+  const treeResult = await handleGithubListTree(
+    { owner, repo, branch: branch || 'main', path: '' }, env, ''
+  );
+  if (!treeResult.success) {
+    return { error: 'Failed to list repo tree: ' + (treeResult.error || 'unknown') };
+  }
+
+  const files = [];
+  const collect = (entries) => {
+    for (const e of entries) {
+      if (e.type === 'file' && /\.(ts|tsx|js|jsx)$/i.test(e.name)) {
+        files.push(e);
+        if (files.length >= 50) break;
+      }
+    }
+  };
+  collect(treeResult.entries || []);
+
+  const summary = {
+    totalFiles: files.length,
+    totalFunctions: 0,
+    totalComponents: 0,
+    modules: [...new Set(files.map(f => f.path.split('/')[0]))],
+    detectedFlows: [],
+    functions: [],
+    components: [],
+  };
+
+  for (const file of files.slice(0, 20)) {
+    const fileResult = await handleGithubGetFile(
+      { owner, repo, path: file.path, branch: branch || 'main' }, env, ''
+    );
+    if (!fileResult.success) continue;
+
+    const raw = fileResult.content || '';
+    const c = raw.startsWith('data:') ? atob(raw.split(',')[1] || '') : raw;
+
+    const funcMatches = c.match(/(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s*)?\()/g) || [];
+    summary.totalFunctions += funcMatches.length;
+
+    const compMatches = c.match(/(?:export\s+(?:default\s+)?function\s+[A-Z]\w+|const\s+[A-Z]\w+\s*=)/g) || [];
+    summary.totalComponents += compMatches.length;
+    compMatches.forEach(m => {
+      const name = (m.match(/[A-Z]\w+/) || [])[0];
+      if (name) summary.components.push({ name, filePath: file.path });
+    });
+
+    if (c.includes('useEffect') || c.includes('useState')) {
+      const routeName = file.path.split('/').pop().replace(/\.[^.]+$/, '');
+      if (routeName) summary.detectedFlows.push(routeName + '-flow');
+    }
+  }
+
+  const plannedDiagrams = summary.components.slice(0, 8).map(c => ({
+    name: 'flow.' + c.name.replace(/([A-Z])/g, m => '-' + m.toLowerCase()).replace(/^-/, ''),
+    description: 'Flow diagram for ' + c.name + ' component',
+    scope: 'flow',
+    estimatedComplexity: 'medium',
+  }));
+
+  return {
+    generatedAt: new Date().toISOString(),
+    summary,
+    plannedDiagrams,
+    sourceRepo: owner + '/' + repo,
+  };
+}
+
+async function handleMcpAnalyzeCodebase(args, env) {
   const repositoryPath = String(args?.repositoryPath || '').trim();
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  // Real GitHub analysis mode
+  if (owner && repo) {
+    const ghResult = await analyzeGithubRepo(owner, repo, branch, env);
+    if (ghResult.error) {
+      return { error: ghResult.error };
+    }
+    const jobId = 'analysis-' + Date.now();
+    const job = {
+      jobId,
+      status: 'completed',
+      projectName: owner + '/' + repo,
+      createdAt: new Date().toISOString(),
+      summary: ghResult.summary,
+      plannedDiagrams: ghResult.plannedDiagrams,
+      sourceRepo: ghResult.sourceRepo,
+    };
+    analysisJobs.set(jobId, job);
+    return { jobId, status: 'completed', summary: ghResult.summary, plannedDiagrams: ghResult.plannedDiagrams };
+  }
+
   if (!repositoryPath) {
-    return { error: 'repositoryPath is required' };
+    return { error: 'repositoryPath or (owner + repo) is required' };
   }
 
   const language = ['typescript', 'javascript', 'auto'].includes(String(args?.language || ''))
@@ -1012,8 +1106,11 @@ function getMcpTools() {
             type: 'array',
             items: { type: 'string' },
           },
+          owner: { type: 'string', description: 'GitHub owner for live repo analysis' },
+          repo: { type: 'string', description: 'GitHub repo name for live analysis' },
+          branch: { type: 'string', default: 'main' },
         },
-        required: ['repositoryPath'],
+        required: [],
       },
     },
     {
@@ -1268,7 +1365,7 @@ async function handleMcp(request, env) {
     }
 
     if (name === 'drakon.analyzecodebase') {
-      const result = handleMcpAnalyzeCodebase(args);
+      const result = await handleMcpAnalyzeCodebase(args, env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
