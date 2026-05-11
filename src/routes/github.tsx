@@ -1,5 +1,5 @@
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { FileCode2, FileJson2, FileText, Folder, Github, Settings, Search } from "lucide-react";
+import { FileCode2, FileJson2, FileText, Folder, Github, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
