@@ -250,6 +250,7 @@ function GitHubRoute() {
 
   const analyzePath = (path: string) => {
     const cleaned = path || currentPath || "src";
+    toast.message("Запускаю аналіз структури", { description: `/${cleaned}` });
     navigate({
       to: "/diagrams",
       search: {
@@ -257,6 +258,21 @@ function GitHubRoute() {
         analyzePath: cleaned,
         analyzeRepo: `${owner.trim()}/${repo.trim()}`,
         analyzeBranch: branch,
+      },
+    });
+  };
+
+  const exportFolderAsDrakonSet = (path: string) => {
+    const cleaned = path || currentPath || "src";
+    toast.message("Експортую папку в набір DRAKON", { description: `/${cleaned}` });
+    navigate({
+      to: "/diagrams",
+      search: {
+        autoAnalyze: "true",
+        analyzePath: cleaned,
+        analyzeRepo: `${owner.trim()}/${repo.trim()}`,
+        analyzeBranch: branch,
+        exportDrakonSet: "true",
       },
     });
   };
