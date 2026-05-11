@@ -1,36 +1,51 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { toast } from "sonner";
+import { Moon, Sun } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { api } from "@/lib/api";
+import { readSettings, writeSettings } from "@/lib/settings-storage";
+
+const DEFAULT_WORKER_URL = "https://drakon-mcp-worker.maxfraieho.workers.dev";
 
 export function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window === "undefined") return "dark";
+    const t = readSettings().app.theme;
+    return t === "light" ? "light" : "dark";
+  });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (localStorage.getItem("jwt")) return;
-
-    const host = window.location.hostname;
-    const isPreviewHost = host.includes("lovableproject.com") || host.includes("lovable.app");
-
-    if (isPreviewHost) {
-      localStorage.setItem("jwt", "preview-bypass-token");
-      toast.success("Preview auth bypass увімкнено тимчасово");
-      navigate({ to: "/diagrams", replace: true });
+    const settings = readSettings();
+    if (!settings.app.workerUrl) {
+      writeSettings({
+        ...settings,
+        app: { ...settings.app, workerUrl: DEFAULT_WORKER_URL },
+      });
     }
-  }, [navigate]);
+  }, []);
+
+  const toggleTheme = () => {
+    const next = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    const settings = readSettings();
+    writeSettings({ ...settings, app: { ...settings.app, theme: next } });
+    document.documentElement.setAttribute("data-theme", next);
+    document.documentElement.classList.toggle("dark", next === "dark");
+  };
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
+    setErrorMsg(null);
 
     try {
       const response = await api.login(email, password);
@@ -43,14 +58,28 @@ export function LoginPage() {
       localStorage.setItem("jwt", token);
       navigate({ to: "/diagrams", replace: true });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Помилка входу");
+      setErrorMsg(error instanceof Error ? error.message : "Невірний email або пароль");
+      setPassword("");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-background px-4">
+      <button
+        type="button"
+        onClick={toggleTheme}
+        aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+        className="absolute right-4 top-4 rounded-[var(--radius-sm)] p-2 text-[var(--text-muted)] transition-colors duration-150 hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)] active:scale-[0.96]"
+      >
+        {theme === "dark" ? (
+          <Sun className="h-4 w-4" aria-hidden="true" />
+        ) : (
+          <Moon className="h-4 w-4" aria-hidden="true" />
+        )}
+      </button>
+
       <Card className="w-full max-w-sm border-border bg-card">
         <CardHeader>
           <CardTitle>Вхід</CardTitle>
@@ -79,6 +108,12 @@ export function LoginPage() {
                 required
               />
             </div>
+
+            {errorMsg ? (
+              <p role="alert" className="text-sm text-[var(--color-error)]">
+                {errorMsg}
+              </p>
+            ) : null}
 
             <Button className="w-full" type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Вхід..." : "Увійти"}

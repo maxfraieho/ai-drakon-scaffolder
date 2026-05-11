@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     enabled: false,
   },
   app: {
-    workerUrl: "",
+    workerUrl: "https://drakon-mcp-worker.maxfraieho.workers.dev",
     defaultFolder: "general",
     theme: "system",
   },
@@ -64,7 +64,9 @@ export function readSettings(): AppSettings {
       },
       app: {
         workerUrl:
-          typeof app.workerUrl === "string" ? app.workerUrl : DEFAULT_SETTINGS.app.workerUrl,
+          typeof app.workerUrl === "string" && app.workerUrl.trim()
+            ? app.workerUrl
+            : DEFAULT_SETTINGS.app.workerUrl,
         defaultFolder:
           typeof app.defaultFolder === "string"
             ? app.defaultFolder

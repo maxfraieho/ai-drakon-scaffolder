@@ -1,16 +1,15 @@
 import type { Diagram } from "@/types/drakon";
 import type { AnalysisJob, CodebaseAnalysisRequest } from "@/types/analysis";
-import { resolveClientEndpoints } from "@/lib/client-config";
 import { getGithubConfig, readSettings } from "@/lib/settings-storage";
 
 function resolveApiBase() {
   if (typeof window !== "undefined") {
     const override = readSettings().app.workerUrl.trim();
     if (override) return override;
-    return resolveClientEndpoints().apiBaseUrl;
+    return "https://drakon-mcp-worker.maxfraieho.workers.dev";
   }
 
-  return import.meta.env.VITE_WORKER_URL || "";
+  return import.meta.env.VITE_WORKER_URL || "https://drakon-mcp-worker.maxfraieho.workers.dev";
 }
 
 type GenerateType = "code" | "text";

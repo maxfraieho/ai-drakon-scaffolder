@@ -64,7 +64,9 @@ export function readSettings(): AppSettings {
       },
       app: {
         workerUrl:
-          typeof app.workerUrl === "string" ? app.workerUrl : DEFAULT_SETTINGS.app.workerUrl,
+          typeof app.workerUrl === "string" && app.workerUrl.trim()
+            ? app.workerUrl
+            : DEFAULT_SETTINGS.app.workerUrl,
         defaultFolder:
           typeof app.defaultFolder === "string"
             ? app.defaultFolder
