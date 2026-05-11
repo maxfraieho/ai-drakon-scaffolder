@@ -16,4 +16,9 @@ export type AppSettings = {
     defaultFolder: string;
     theme: "light" | "dark" | "system";
   };
+  minio: {
+    endpoint: string;
+    bucket: string;
+    accessKey: string;
+  };
 };

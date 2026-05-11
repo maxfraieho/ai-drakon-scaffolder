@@ -63,8 +63,10 @@ function SettingsRoute() {
   const [showN8nToken, setShowN8nToken] = useState(false);
   const [isCheckingGithub, setIsCheckingGithub] = useState(false);
   const [isCheckingN8n, setIsCheckingN8n] = useState(false);
+  const [isLoadingMinio, setIsLoadingMinio] = useState(false);
   const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
   const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+  const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 
   const normalizedN8nUrl = useMemo(
     () => settings.n8n.baseUrl.trim().replace(/\/+$/, ""),
@@ -150,6 +152,36 @@ function SettingsRoute() {
     }
   };
 
+  const fetchWorkerHealth = async () => {
+    setIsLoadingMinio(true);
+    setMinioStatus({ type: "idle", text: "Завантажую..." });
+    try {
+      const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+      const resp = await fetch(`${workerUrl}/health`);
+      const data = (await resp.json()) as { storage?: { endpoint?: string; bucket?: string } };
+      if (data.storage?.endpoint && data.storage.endpoint !== "not configured") {
+        updateSettings((prev) => ({
+          ...prev,
+          minio: {
+            ...prev.minio,
+            endpoint: data.storage!.endpoint ?? prev.minio.endpoint,
+            bucket:
+              data.storage?.bucket && data.storage.bucket !== "not configured"
+                ? data.storage.bucket
+                : prev.minio.bucket,
+          },
+        }));
+        setMinioStatus({ type: "success", text: "Дані отримано з Worker" });
+      } else {
+        setMinioStatus({ type: "idle", text: "MinIO не налаштовано у Worker" });
+      }
+    } catch {
+      setMinioStatus({ type: "error", text: "Не вдалося підключитись до Worker" });
+    } finally {
+      setIsLoadingMinio(false);
+    }
+  };
+
   const clearDiagramCache = () => {
     if (typeof window === "undefined") return;
     const ok = window.confirm("Видалити локальний кеш діаграм (drakon.diagrams)?");
@@ -163,17 +195,19 @@ function SettingsRoute() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-3 pb-28 pt-4 md:px-6 md:pb-6">
-      <header className="mb-4">
-        <h1 className="text-lg font-semibold md:text-2xl">Налаштування</h1>
-      </header>
+    <div className="min-h-[100dvh] bg-background">
+      <div className="mx-auto w-full max-w-4xl px-3 pb-28 pt-4 md:px-6 md:pb-6">
+        <header className="mb-4">
+          <h1 className="text-lg font-semibold md:text-2xl">Налаштування</h1>
+        </header>
 
-      <Tabs defaultValue="github" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="github">GitHub</TabsTrigger>
-          <TabsTrigger value="n8n">n8n</TabsTrigger>
-          <TabsTrigger value="app">Додаток</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="github" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="github">GitHub</TabsTrigger>
+            <TabsTrigger value="n8n">n8n</TabsTrigger>
+            <TabsTrigger value="minio">MinIO</TabsTrigger>
+            <TabsTrigger value="app">Додаток</TabsTrigger>
+          </TabsList>
 
         <TabsContent value="github">
           <Card>
@@ -361,6 +395,87 @@ function SettingsRoute() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="minio">
+          <Card>
+            <CardHeader>
+              <CardTitle>MinIO Storage</CardTitle>
+              <CardDescription>
+                S3-сумісне сховище для діаграм. Параметри зберігаються локально для довідки.
+                Для зміни конфігурації — оновіть secrets у Cloudflare Workers Dashboard.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="minio-endpoint">Endpoint</Label>
+                <Input
+                  id="minio-endpoint"
+                  value={settings.minio?.endpoint || ""}
+                  onChange={(e) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      minio: { ...prev.minio, endpoint: e.target.value },
+                    }))
+                  }
+                  placeholder="https://your-minio-host"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="minio-bucket">Bucket</Label>
+                <Input
+                  id="minio-bucket"
+                  value={settings.minio?.bucket || ""}
+                  onChange={(e) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      minio: { ...prev.minio, bucket: e.target.value },
+                    }))
+                  }
+                  placeholder="drakon-diagrams"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="minio-access-key">Access Key</Label>
+                <Input
+                  id="minio-access-key"
+                  value={settings.minio?.accessKey || ""}
+                  onChange={(e) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      minio: { ...prev.minio, accessKey: e.target.value },
+                    }))
+                  }
+                  placeholder="minioadmin"
+                />
+              </div>
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                Secret Key та повна конфігурація зберігаються у{" "}
+                <a
+                  href="https://dash.cloudflare.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary underline"
+                >
+                  Cloudflare Workers Dashboard
+                </a>
+                {" "}→ drakon-mcp-worker → Settings → Variables and Secrets.
+                Access Key тут — лише для довідки.
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fetchWorkerHealth}
+                  disabled={isLoadingMinio}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {isLoadingMinio ? "Завантажую..." : "Завантажити з Worker"}
+                </Button>
+                {statusBadge(minioStatus)}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="app">
           <Card>
             <CardHeader>
@@ -419,10 +534,15 @@ function SettingsRoute() {
                 </Select>
               </div>
 
-              <Button type="button" variant="destructive" onClick={clearDiagramCache}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Очистити локальний кеш діаграм
-              </Button>
+              <button
+                type="button"
+                onClick={clearDiagramCache}
+                className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500 transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:ring-2 focus-visible:ring-red-400/50 active:scale-[0.96]"
+                style={{ touchAction: "manipulation" }}
+              >
+                <Trash2 className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
+                Очистити кеш
+              </button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -435,6 +555,7 @@ function SettingsRoute() {
           </Button>
           <Button onClick={saveSettings}>Зберегти</Button>
         </div>
+      </div>
       </div>
     </div>
   );
