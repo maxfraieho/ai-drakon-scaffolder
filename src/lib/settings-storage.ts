@@ -20,6 +20,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     defaultFolder: "general",
     theme: "system",
   },
+  minio: {
+    endpoint: "",
+    bucket: "",
+    accessKey: "",
+  },
 };
 
 const LEGACY_GITHUB_STORAGE_KEY = "github.lastRepo";
