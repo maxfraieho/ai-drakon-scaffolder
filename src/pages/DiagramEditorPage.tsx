@@ -202,6 +202,10 @@ export default function DiagramEditorPage() {
         </aside>
 
         <div className="min-w-0 flex-1 overflow-hidden p-3 md:p-4">
+          {/* DEBUG */}
+          <pre style={{fontSize: 10, background: '#1a1a2e', color: '#00ff00', padding: 8, margin: '0 0 8px 0', borderRadius: 4, whiteSpace: 'pre-wrap', wordBreak: 'break-all'}}>
+            DEP debug: {debugInfo}
+          </pre>
           <DrakonEditor
             diagramId={diagramId}
             folderSlug={folderId}
