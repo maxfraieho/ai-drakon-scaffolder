@@ -1,6 +1,5 @@
 import type { Diagram } from "@/types/drakon";
 import type { AnalysisJob, CodebaseAnalysisRequest } from "@/types/analysis";
-import { resolveClientEndpoints } from "@/lib/client-config";
 import { getGithubConfig, readSettings } from "@/lib/settings-storage";
 
 function resolveApiBase() {
