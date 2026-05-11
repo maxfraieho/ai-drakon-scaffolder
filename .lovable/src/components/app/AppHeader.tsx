@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  GitCompare,
   Github,
   LayoutGrid,
   LogOut,
@@ -30,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
 type NavItem = {
-  to: "/diagrams" | "/github" | "/sync" | "/settings";
+  to: "/diagrams" | "/github" | "/settings";
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 };
@@ -38,7 +37,6 @@ type NavItem = {
 const NAV: NavItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutGrid },
   { to: "/github", label: "Файли", icon: Github },
-  { to: "/sync", label: "Синхронізація", icon: GitCompare },
   { to: "/settings", label: "Налаштування", icon: SettingsIcon },
 ];
 
