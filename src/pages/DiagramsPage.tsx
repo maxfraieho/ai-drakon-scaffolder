@@ -418,27 +418,39 @@ export function DiagramsPage() {
     }
   };
 
+  const totalInFolder = folderDiagrams.length;
+  const visibleCount = filteredDiagrams.length;
+
+  const levelTabs: Array<"all" | "L1" | "L2" | "L3"> = ["all", "L1", "L2", "L3"];
+
   return (
     <Sheet open={isMobileFoldersOpen} onOpenChange={setIsMobileFoldersOpen}>
-      <div className="flex min-h-screen bg-background text-foreground">
-        <SheetContent side="left" className="w-72 p-4">
+      <div className="flex min-h-screen bg-[var(--bg-base)] text-[var(--text-primary)]">
+        <SheetContent side="left" className="w-72 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-4">
           <SheetHeader>
-            <SheetTitle>Проєктні папки</SheetTitle>
+            <SheetTitle className="font-mono text-xs uppercase tracking-[0.12em] text-[var(--text-muted)]">
+              Folders
+            </SheetTitle>
           </SheetHeader>
 
-          <div className="mt-4 space-y-2">
+          <div className="mt-4 space-y-1">
             {folders.map((folder) => (
-              <Button
+              <button
                 key={folder.id}
-                variant={folder.slug === selectedFolder.slug ? "secondary" : "ghost"}
-                className="w-full justify-start"
+                type="button"
                 onClick={() => {
                   setSelectedFolderSlug(folder.slug);
                   setIsMobileFoldersOpen(false);
                 }}
+                className={cn(
+                  "w-full rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm transition-colors",
+                  folder.slug === selectedFolder.slug
+                    ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] border-l-2 border-[var(--accent-amber)]"
+                    : "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                )}
               >
                 {folder.name}
-              </Button>
+              </button>
             ))}
           </div>
 
@@ -451,52 +463,109 @@ export function DiagramsPage() {
               setIsMobileFoldersOpen(false);
             }}
           >
-            <FolderPlus className="mr-2 h-4 w-4" />
-            Нова папка
+            <FolderPlus className="mr-2 h-4 w-4" aria-hidden="true" />
+            New folder
           </Button>
         </SheetContent>
 
-        <aside className="hidden w-64 border-r border-border bg-card p-4 md:block">
-          <h2 className="text-base font-semibold">Папки</h2>
-
-          <div className="mt-4 space-y-2">
-            {folders.map((folder) => (
-              <Button
-                key={folder.id}
-                variant={folder.slug === selectedFolder.slug ? "secondary" : "ghost"}
-                className="w-full justify-start"
-                onClick={() => setSelectedFolderSlug(folder.slug)}
-              >
-                {folder.name}
-              </Button>
-            ))}
+        {/* Desktop sidebar */}
+        <aside className="hidden w-60 shrink-0 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] md:block">
+          <div className="sticky top-0 flex h-12 items-center border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4">
+            <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+              Folders
+            </span>
           </div>
 
-          <Button
-            variant="outline"
-            className="mt-4 w-full"
-            type="button"
-            onClick={() => setIsCreateFolderOpen(true)}
-          >
-            + Нова папка
-          </Button>
+          <nav className="p-2">
+            <ul className="space-y-0.5" role="list">
+              {folders.map((folder) => {
+                const isActive = folder.slug === selectedFolder.slug;
+                return (
+                  <li key={folder.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedFolderSlug(folder.slug)}
+                      aria-current={isActive ? "page" : undefined}
+                      className={cn(
+                        "group relative flex w-full items-center rounded-[var(--radius-sm)] px-3 py-2 text-left text-sm transition-colors duration-150",
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50",
+                        isActive
+                          ? "bg-[var(--bg-elevated)] text-[var(--text-primary)]"
+                          : "text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]",
+                      )}
+                    >
+                      {isActive && (
+                        <span
+                          aria-hidden="true"
+                          className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r bg-[var(--accent-amber)]"
+                        />
+                      )}
+                      <span className="ml-1 truncate">{folder.name}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <button
+              type="button"
+              onClick={() => setIsCreateFolderOpen(true)}
+              className="mt-2 flex w-full items-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-default)] px-3 py-2 text-xs font-mono uppercase tracking-wider text-[var(--text-muted)] hover:border-[var(--border-strong)] hover:text-[var(--text-secondary)]"
+            >
+              <Plus className="h-3 w-3" aria-hidden="true" />
+              New folder
+            </button>
+          </nav>
         </aside>
 
-        <main className="flex-1 p-4 md:p-6">
-          <div className="mb-4 flex items-center gap-2 md:hidden">
+        <main className="flex min-w-0 flex-1 flex-col">
+          {/* HEADER BAR */}
+          <header
+            className="sticky top-0 z-10 flex h-14 items-center gap-3 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-4 md:px-6"
+            style={{ boxShadow: "var(--shadow-card)" }}
+          >
             <SheetTrigger asChild>
-              <Button variant="outline" size="sm" type="button">
-                <Menu className="mr-2 h-4 w-4" />
-                Меню папок
-              </Button>
+              <button
+                type="button"
+                aria-label="Open folders menu"
+                className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]"
+              >
+                <Menu className="h-4 w-4" aria-hidden="true" />
+              </button>
             </SheetTrigger>
-            <p className="text-sm text-muted-foreground">{selectedFolder.name}</p>
-          </div>
 
-          <div className="mb-6 flex items-center justify-between gap-3">
-            <h1 className="text-2xl font-semibold">{selectedFolder.name}</h1>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                Diagrams
+              </span>
+              <span className="hidden font-mono text-xs text-[var(--text-muted)] md:inline">/</span>
+              <span className="hidden truncate font-mono text-xs text-[var(--text-secondary)] md:inline">
+                {selectedFolder.name}
+              </span>
+            </div>
 
-            <div className="flex items-center gap-2">
+            <div className="relative ml-auto hidden md:block">
+              <Search
+                aria-hidden="true"
+                className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[var(--text-muted)]"
+              />
+              <input
+                value={filePathFilter}
+                onChange={(event) => setFilePathFilter(event.target.value)}
+                placeholder="Search by file path…"
+                aria-label="Search diagrams"
+                className="w-56 border-0 border-b border-[var(--border-default)] bg-transparent py-1 pl-7 pr-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--accent-amber)] focus:outline-none"
+              />
+            </div>
+
+            <div className="flex items-center gap-3 ml-auto md:ml-0">
+              <span
+                className="hidden font-mono text-[11px] tabular-nums text-[var(--text-muted)] sm:inline"
+                data-numeric="true"
+              >
+                {visibleCount} / {totalInFolder}
+              </span>
+
               <input
                 ref={importInputRef}
                 type="file"
@@ -504,73 +573,100 @@ export function DiagramsPage() {
                 className="hidden"
                 onChange={handleImportJson}
               />
-              <Button type="button" variant="outline" onClick={() => importInputRef.current?.click()}>
-                Import JSON
-              </Button>
-              <Button type="button" variant="outline" onClick={() => navigate({ to: "/github" })}>
-                📁 GitHub Files
-              </Button>
-              <Button type="button" variant="outline" onClick={() => navigate({ to: "/settings" })}>
-                ⚙️ Налаштування
-              </Button>
-              <Button type="button" variant="outline" onClick={() => setIsGitHubOpen((prev) => !prev)}>
-                GitHub Panel
-              </Button>
-              <Button type="button" onClick={openNewDiagram}>
-                + Нова схема
-              </Button>
+              <button
+                type="button"
+                onClick={() => importInputRef.current?.click()}
+                className="hidden rounded-[var(--radius-sm)] border border-[var(--border-default)] bg-transparent px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex"
+              >
+                Import
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate({ to: "/github" })}
+                aria-label="Open GitHub files"
+                className="hidden h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex"
+              >
+                <GitBranch className="h-3.5 w-3.5" aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                onClick={openNewDiagram}
+                aria-label="Create new diagram"
+                className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--accent-amber)] px-3 py-1.5 text-[11px] font-mono font-medium uppercase tracking-wider text-black active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                style={{ transition: "transform 100ms, box-shadow 150ms" }}
+              >
+                <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                New
+              </button>
+            </div>
+          </header>
+
+          {/* LEVEL TABS */}
+          <div className="flex items-center gap-1 border-b border-[var(--border-subtle)] bg-[var(--bg-base)] px-4 md:px-6">
+            {levelTabs.map((level) => {
+              const label = level === "all" ? "ALL" : level;
+              const isActive = levelFilter === level;
+              return (
+                <button
+                  key={level}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setLevelFilter(level)}
+                  className={cn(
+                    "relative -mb-px border-b-2 px-3 py-2 font-mono text-[11px] uppercase tracking-wider transition-colors duration-150",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:rounded-sm",
+                    isActive
+                      ? "border-[var(--accent-amber)] text-[var(--text-primary)]"
+                      : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
+
+            {/* Source filter (compact) */}
+            <div className="ml-auto flex items-center gap-2 py-1.5">
+              <span className="hidden font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)] sm:inline">
+                Source
+              </span>
+              <Select
+                value={sourceFilter}
+                onValueChange={(value) => setSourceFilter(value as typeof sourceFilter)}
+              >
+                <SelectTrigger className="h-7 w-[110px] border-[var(--border-default)] bg-transparent text-xs">
+                  <SelectValue placeholder="Source" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="human">human</SelectItem>
+                  <SelectItem value="ai">ai</SelectItem>
+                  <SelectItem value="hybrid">hybrid</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          <div className="mb-4 grid gap-2 md:grid-cols-3">
-            <Select value={levelFilter} onValueChange={(value) => setLevelFilter(value as typeof levelFilter)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Level" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All levels</SelectItem>
-                <SelectItem value="L0">L0</SelectItem>
-                <SelectItem value="L1">L1</SelectItem>
-                <SelectItem value="L2">L2</SelectItem>
-                <SelectItem value="L3">L3</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={sourceFilter} onValueChange={(value) => setSourceFilter(value as typeof sourceFilter)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Source" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All sources</SelectItem>
-                <SelectItem value="human">human</SelectItem>
-                <SelectItem value="ai">ai</SelectItem>
-                <SelectItem value="hybrid">hybrid</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input
-              value={filePathFilter}
-              onChange={(event) => setFilePathFilter(event.target.value)}
-              placeholder="Filter by file path"
-            />
-          </div>
-
-          <div className="flex flex-col gap-4 xl:flex-row">
+          {/* CONTENT */}
+          <div className="flex flex-1 flex-col gap-4 p-4 md:p-6 xl:flex-row">
             {isGitHubOpen ? (
               <aside className="w-full xl:max-w-sm">
                 <GitHubPanel onSelectPath={handleSelectGithubPath} onAnalyzeFolder={handleAnalyzeFolder} />
 
                 {selectedGitHubPath ? (
-                  <Card className="mt-3 border-border bg-card">
+                  <Card
+                    className="mt-3 border-0 bg-[var(--bg-surface)]"
+                    style={{ boxShadow: "var(--shadow-card)" }}
+                  >
                     <CardHeader>
-                      <CardTitle className="text-sm">Вибраний шлях</CardTitle>
+                      <CardTitle className="text-sm">Selected path</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <p className="text-sm text-muted-foreground">
-                        {selectedGitHubType}: <span className="text-foreground">{selectedGitHubPath}</span>
+                      <p className="font-mono text-xs text-[var(--text-secondary)]">
+                        {selectedGitHubType}: <span className="text-[var(--text-primary)]">{selectedGitHubPath}</span>
                       </p>
                       {selectedGitHubPreview ? (
-                        <pre className="max-h-56 overflow-auto rounded-md border border-border bg-muted/50 p-2 text-xs">
+                        <pre className="max-h-56 overflow-auto rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] p-2 text-xs">
                           {selectedGitHubPreview}
                         </pre>
                       ) : null}
@@ -582,87 +678,201 @@ export function DiagramsPage() {
 
             <section className="min-w-0 flex-1">
               {filteredDiagrams.length === 0 && !isLoadingDiagrams ? (
-                <div className="flex h-64 flex-col items-center justify-center text-muted-foreground">
-                  <p className="text-lg">Схем поки немає</p>
-                  <p className="mt-1 text-sm">Натисніть "+ Нова схема" щоб створити першу</p>
+                <div className="flex flex-col items-center justify-center gap-4 py-24">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    No diagrams found
+                  </span>
+                  <p className="text-sm text-[var(--text-muted)]">
+                    Create your first diagram to begin
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openNewDiagram}
+                    className="inline-flex items-center gap-1.5 rounded-[var(--radius-md)] bg-[var(--accent-amber)] px-4 py-2 text-sm font-medium text-black active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                    style={{ transition: "transform 100ms" }}
+                  >
+                    <Plus className="h-4 w-4" aria-hidden="true" />
+                    Create diagram
+                  </button>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-                  {filteredDiagrams.map((diagram) => (
-                    <Card key={diagram.id} className="border-border bg-card">
-                      <CardHeader>
-                        <CardTitle className="text-base">{diagram.name}</CardTitle>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{diagram.diagram.metadata?.diagramLevel ?? "unknown"}</Badge>
-                          <Badge variant="secondary" className="gap-1">
-                            {(diagram.diagram.metadata?.sourceType ?? "human") === "human" ? (
-                              <FilePenLine className="h-3.5 w-3.5" />
-                            ) : (diagram.diagram.metadata?.sourceType ?? "human") === "ai" ? (
-                              <Bot className="h-3.5 w-3.5" />
-                            ) : (
-                              <GitMerge className="h-3.5 w-3.5" />
-                            )}
-                            {diagram.diagram.metadata?.sourceType ?? "human"}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <p className="text-sm text-muted-foreground">
-                          Створено: {format(new Date(diagram.createdAt), "dd.MM.yyyy HH:mm")}
-                        </p>
+                <ul
+                  role="list"
+                  className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
+                >
+                  {filteredDiagrams.map((diagram, index) => {
+                    const level = diagram.diagram.metadata?.diagramLevel ?? "unknown";
+                    const source = diagram.diagram.metadata?.sourceType ?? "human";
+                    const itemCount = diagram.diagram.items
+                      ? Object.keys(diagram.diagram.items).length
+                      : 0;
+                    const updatedRel = formatDistanceToNow(new Date(diagram.updatedAt), {
+                      addSuffix: true,
+                    });
 
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button type="button" onClick={() => openDiagram(diagram)}>
-                            Відкрити
-                          </Button>
-                          <Button type="button" variant="outline" onClick={() => openSaveToGithubDialog(diagram)}>
-                            Зберегти в GitHub
-                          </Button>
+                    return (
+                      <li
+                        key={diagram.id}
+                        className="animate-in fade-in slide-in-from-bottom-2 fill-mode-both duration-300"
+                        style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
+                      >
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => openDiagram(diagram)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Enter" || event.key === " ") {
+                              event.preventDefault();
+                              openDiagram(diagram);
+                            }
+                          }}
+                          aria-label={`Open ${diagram.name}`}
+                          className="group relative cursor-pointer rounded-[var(--radius-md)] bg-[var(--bg-surface)] p-4 transition-colors duration-150 hover:bg-[var(--bg-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
+                          style={{ boxShadow: "var(--shadow-card)" }}
+                        >
+                          {/* Top row: level + source */}
+                          <div className="flex items-center gap-2">
+                            <span className="level-badge" data-level={level}>
+                              {level}
+                            </span>
+                            <span
+                              className="inline-flex items-center gap-1 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-overlay)] px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]"
+                              aria-label={`Source: ${source}`}
+                            >
+                              {source === "human" ? (
+                                <FilePenLine className="h-3 w-3" aria-hidden="true" />
+                              ) : source === "ai" ? (
+                                <Bot className="h-3 w-3" aria-hidden="true" />
+                              ) : (
+                                <GitMerge className="h-3 w-3" aria-hidden="true" />
+                              )}
+                              {source}
+                            </span>
+                          </div>
 
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="destructive" type="button">
-                                Видалити
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Видалити схему?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Цю дію неможливо скасувати.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Скасувати</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteDiagram(diagram)}>
-                                  Видалити
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          {/* Name */}
+                          <h3
+                            className="mt-3 truncate font-mono text-sm font-medium text-[var(--text-primary)]"
+                            style={{ textWrap: "balance" }}
+                            title={diagram.name}
+                          >
+                            {diagram.name}
+                          </h3>
+
+                          {/* Metadata row */}
+                          <div
+                            className="mt-2 flex items-center gap-3 font-mono text-[11px] text-[var(--text-muted)]"
+                            data-numeric="true"
+                          >
+                            <span title={diagram.id}>{diagram.id.slice(0, 8)}</span>
+                            <span aria-label={`${itemCount} nodes`}>{itemCount}n</span>
+                            <span>{updatedRel}</span>
+                          </div>
+
+                          {/* Hover actions */}
+                          <div
+                            className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100 focus-within:opacity-100"
+                            onClick={(event) => event.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              aria-label={`Edit ${diagram.name}`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openDiagram(diagram);
+                              }}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+                              style={{ transition: "transform 100ms, background-color 150ms" }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={`Save ${diagram.name} to GitHub`}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openSaveToGithubDialog(diagram);
+                              }}
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+                              style={{ transition: "transform 100ms, background-color 150ms" }}
+                            >
+                              <GitBranch className="h-3.5 w-3.5" aria-hidden="true" />
+                            </button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <button
+                                  type="button"
+                                  aria-label={`Delete ${diagram.name}`}
+                                  onClick={(event) => event.stopPropagation()}
+                                  className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] text-red-400 hover:bg-red-500/10 active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/50"
+                                  style={{ transition: "transform 100ms, background-color 150ms" }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                                </button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Delete diagram?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteDiagram(diagram)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
+                      </li>
+                    );
+                  })}
+                </ul>
               )}
             </section>
+          </div>
+
+          {/* Bottom utility bar — secondary actions */}
+          <div className="flex flex-wrap items-center gap-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4 py-2 md:px-6">
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/settings" })}
+              className="rounded-[var(--radius-sm)] px-2 py-1 font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            >
+              Settings
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsGitHubOpen((prev) => !prev)}
+              aria-pressed={isGitHubOpen}
+              className={cn(
+                "rounded-[var(--radius-sm)] px-2 py-1 font-mono text-[10px] uppercase tracking-wider",
+                isGitHubOpen
+                  ? "text-[var(--accent-amber)]"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+              )}
+            >
+              GitHub Panel
+            </button>
           </div>
         </main>
 
         <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Створити папку</DialogTitle>
+              <DialogTitle>Create folder</DialogTitle>
             </DialogHeader>
             <Input
               value={newFolderName}
               onChange={(event) => setNewFolderName(event.target.value)}
-              placeholder="Назва папки"
+              placeholder="Folder name"
             />
             <DialogFooter>
               <Button type="button" onClick={createFolder}>
-                Створити
+                Create
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -671,8 +881,8 @@ export function DiagramsPage() {
         <Dialog open={isAnalyzeOpen} onOpenChange={setIsAnalyzeOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Аналіз коду</DialogTitle>
-              <DialogDescription>Перевірте параметри перед запуском</DialogDescription>
+              <DialogTitle>Code analysis</DialogTitle>
+              <DialogDescription>Verify parameters before launch</DialogDescription>
             </DialogHeader>
 
             <div className="space-y-3">
@@ -703,10 +913,10 @@ export function DiagramsPage() {
 
             <DialogFooter>
               <Button variant="outline" type="button" onClick={() => setIsAnalyzeOpen(false)}>
-                Скасувати
+                Cancel
               </Button>
               <Button type="button" onClick={submitAnalyzeDraft}>
-                Запустити аналіз
+                Run analysis
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -715,9 +925,9 @@ export function DiagramsPage() {
         <Dialog open={isSaveToGithubOpen} onOpenChange={setIsSaveToGithubOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Зберегти схему в GitHub</DialogTitle>
+              <DialogTitle>Save diagram to GitHub</DialogTitle>
               <DialogDescription>
-                Вкажіть шлях у репозиторії, наприклад: diagrams/flow-name.json
+                Specify a repository path, e.g. diagrams/flow-name.json
               </DialogDescription>
             </DialogHeader>
             <Input
@@ -727,7 +937,7 @@ export function DiagramsPage() {
             />
             <DialogFooter>
               <Button type="button" onClick={commitDiagramToGithub} disabled={isCommittingToGithub}>
-                {isCommittingToGithub ? "Збереження..." : "Підтвердити"}
+                {isCommittingToGithub ? "Saving…" : "Confirm"}
               </Button>
             </DialogFooter>
           </DialogContent>
