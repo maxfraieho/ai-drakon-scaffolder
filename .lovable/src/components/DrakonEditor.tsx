@@ -753,7 +753,7 @@ export function DrakonEditor({
       <div className="flex flex-col gap-2">
         {/* Widget container */}
         <div
-          className="relative"
+          className="relative flex min-h-0 flex-1 flex-col"
           onClick={(e) => {
             // Don't interfere when context menu is open
             if (uiStateRef.current === "contextMenuOpen") return;
@@ -783,8 +783,8 @@ export function DrakonEditor({
           )}
           <div
             ref={containerRef}
-            className="drakon-container rounded-lg border overflow-hidden"
-            style={{ height, minHeight: 300 }}
+            className="drakon-container flex-1 min-h-0 rounded-lg border overflow-hidden"
+            style={typeof height === "number" ? { height, minHeight: 300 } : { height, minHeight: 300 }}
           />
 
           {/* Context menu */}
