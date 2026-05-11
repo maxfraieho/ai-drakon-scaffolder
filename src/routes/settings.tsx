@@ -152,7 +152,36 @@ function SettingsRoute() {
     }
   };
 
-  const clearDiagramCache = () => {
+  const fetchWorkerHealth = async () => {
+    setIsLoadingMinio(true);
+    setMinioStatus({ type: "idle", text: "Завантажую..." });
+    try {
+      const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+      const resp = await fetch(`${workerUrl}/health`);
+      const data = (await resp.json()) as { storage?: { endpoint?: string; bucket?: string } };
+      if (data.storage?.endpoint && data.storage.endpoint !== "not configured") {
+        updateSettings((prev) => ({
+          ...prev,
+          minio: {
+            ...prev.minio,
+            endpoint: data.storage!.endpoint ?? prev.minio.endpoint,
+            bucket:
+              data.storage?.bucket && data.storage.bucket !== "not configured"
+                ? data.storage.bucket
+                : prev.minio.bucket,
+          },
+        }));
+        setMinioStatus({ type: "success", text: "Дані отримано з Worker" });
+      } else {
+        setMinioStatus({ type: "idle", text: "MinIO не налаштовано у Worker" });
+      }
+    } catch {
+      setMinioStatus({ type: "error", text: "Не вдалося підключитись до Worker" });
+    } finally {
+      setIsLoadingMinio(false);
+    }
+  };
+
     if (typeof window === "undefined") return;
     const ok = window.confirm("Видалити локальний кеш діаграм (drakon.diagrams)?");
     if (!ok) return;
