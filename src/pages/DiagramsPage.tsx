@@ -566,6 +566,22 @@ export function DiagramsPage() {
               </button>
             </SheetTrigger>
 
+            {/* Desktop: collapse/expand folders sidebar */}
+            <button
+              type="button"
+              onClick={() => setFoldersCollapsed((v) => !v)}
+              aria-label={foldersCollapsed ? "Показати папки" : "Сховати папки"}
+              aria-pressed={!foldersCollapsed}
+              title={foldersCollapsed ? "Показати папки" : "Сховати папки"}
+              className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]"
+            >
+              {foldersCollapsed ? (
+                <PanelLeftOpen className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
+
             <div className="flex min-w-0 items-center gap-2">
               <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
                 Diagrams
