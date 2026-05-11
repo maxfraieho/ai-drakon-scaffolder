@@ -232,29 +232,44 @@ export function DrakonEditor({
     let mounted = true;
 
     async function init() {
-      if (!containerRef.current) return;
+      if (!containerRef.current) {
+        console.error('[DRK-INIT] containerRef is null — component not mounted?');
+        return;
+      }
+      console.log('[DRK-INIT] start, diagramId:', diagramId, 'isNew:', isNew, 'diagram prop present:', !!diagram);
       try {
+        console.log('[DRK-INIT] loading widget script...');
         await loadDrakonWidget();
+        console.log('[DRK-INIT] widget script loaded OK');
         if (!mounted) return;
 
         const widget = createWidget();
+        console.log('[DRK-INIT] createWidget OK');
         widgetRef.current = widget;
         const container = containerRef.current;
         const rect = container.getBoundingClientRect();
+        console.log('[DRK-INIT] container rect:', rect.width, 'x', rect.height);
         container.innerHTML = '';
 
         const config = buildConfig();
-        const element = widget.render(rect.width, rect.height, config);
+        const renderW = Math.max(rect.width, 400);
+        const renderH = Math.max(rect.height, height);
+        const element = widget.render(renderW, renderH, config);
+        console.log('[DRK-INIT] widget.render OK, element:', (element as HTMLElement)?.tagName);
         container.appendChild(element);
 
         // Use provided diagram or empty template for new
         const diagramToLoad = diagram || createEmptyDiagram(t);
         const effectiveId = diagramId || 'new-diagram';
+        console.log('[DRK-INIT] setDiagram, id:', effectiveId, 'items count:',
+          Object.keys(diagramToLoad?.items || {}).length, 'name:', diagramToLoad?.name);
         await widget.setDiagram(effectiveId, diagramToLoad, editSender);
+        console.log('[DRK-INIT] setDiagram OK');
         widget.setZoom(5000); // 50% zoom for editor
-        
+
         setIsLoading(false);
       } catch (err) {
+        console.error('[DRK-INIT] FAILED:', err);
         if (!mounted) return;
         setError(err instanceof Error ? err.message : 'Failed to load editor');
         setIsLoading(false);
