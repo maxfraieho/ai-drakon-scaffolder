@@ -425,10 +425,6 @@ function GitHubRoute() {
   return (
     <div className="min-h-screen bg-background px-3 pb-6 pt-3 text-foreground md:px-6">
       <header className="mb-3 flex items-center justify-between gap-2">
-        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/diagrams" })}>
-          ← Діаграми
-        </Button>
-
         <div className="flex min-w-0 items-center gap-2">
           <Github className="h-4 w-4 text-muted-foreground" />
           <p className="truncate text-sm font-medium md:text-base">{owner}/{repo}</p>
@@ -447,9 +443,6 @@ function GitHubRoute() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" onClick={() => navigate({ to: "/settings" })}>
-            <Settings className="h-4 w-4" />
-          </Button>
         </div>
       </header>
 
@@ -469,9 +462,7 @@ function GitHubRoute() {
             ← Назад
           </Button>
           <p className="truncate text-sm text-muted-foreground">/{currentPath || ""}</p>
-          <Button variant="ghost" size="icon" onClick={() => navigate({ to: "/settings" })}>
-            <Settings className="h-4 w-4" />
-          </Button>
+          <span className="w-[60px]" />
         </div>
       ) : null}
 

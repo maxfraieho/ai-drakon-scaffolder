@@ -164,12 +164,8 @@ function SettingsRoute() {
 
   return (
     <div className="mx-auto w-full max-w-4xl px-3 pb-28 pt-4 md:px-6 md:pb-6">
-      <header className="mb-4 flex items-center justify-between gap-2">
-        <Button variant="outline" size="sm" onClick={() => navigate({ to: "/diagrams" })}>
-          ← Діаграми
-        </Button>
+      <header className="mb-4">
         <h1 className="text-lg font-semibold md:text-2xl">Налаштування</h1>
-        <div className="w-[90px]" />
       </header>
 
       <Tabs defaultValue="github" className="space-y-4">
