@@ -1,5 +1,5 @@
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { FileCode2, FileJson2, FileText, Folder, Github, Settings, Search } from "lucide-react";
+import { AlertCircle, FileCode2, FileJson2, FileText, Folder, Github, Settings, Search } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -331,7 +331,21 @@ function GitHubRoute() {
         </div>
       ) : null}
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <div className="flex flex-col items-center gap-3 px-3 py-8 text-center">
+          <AlertCircle className="h-5 w-5 flex-shrink-0 text-destructive" aria-hidden="true" />
+          <p className="text-xs text-muted-foreground" style={{ textWrap: "balance" }}>
+            Не вдалося завантажити дерево файлів
+          </p>
+          <button
+            type="button"
+            onClick={() => void loadPath(currentPath)}
+            className="rounded-sm text-xs text-[var(--accent-amber)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
+          >
+            Спробувати знову
+          </button>
+        </div>
+      ) : null}
 
       {!loading && !error ? (
         <ul className="space-y-1">
