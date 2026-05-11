@@ -58,7 +58,7 @@ export const useDiagramStore = create<DiagramStore>((set, get) => ({
 
   // Legacy sync path — wraps as an enqueueMutation for backward compat
   applyDelta: (delta) => {
-    const op: MutationOp =
+    const op = (
       delta.type === "delete"
         ? { op: "deleteNode", nodeId: delta.itemId }
         : delta.type === "insert"
@@ -69,13 +69,10 @@ export const useDiagramStore = create<DiagramStore>((set, get) => ({
                 type: (delta.data as { type?: string })?.type ?? "action",
                 content: (delta.data as { content?: string })?.content ?? "",
                 ...delta.data,
-              } as Parameters<DiagramStore["enqueueMutation"]>[0] extends {
-                node: infer N;
-              }
-                ? N
-                : never,
+              },
             }
-          : { op: "updateNode", nodeId: delta.itemId, fields: delta.data ?? {} };
+          : { op: "updateNode", nodeId: delta.itemId, fields: delta.data ?? {} }
+    ) as MutationOp;
     get().enqueueMutation(op);
   },
 
