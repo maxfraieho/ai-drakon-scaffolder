@@ -588,9 +588,9 @@ export function DrakonEditor({
   }
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("flex min-h-0 flex-1 flex-col gap-3 overflow-hidden", className)}>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
         <div className="flex items-center gap-2">
           <Label htmlFor="diagram-name" className="sr-only">
             {t.drakonEditor.diagramName}
