@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, FolderTree, PanelLeftClose, PanelLeftOpen, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -30,24 +30,6 @@ export default function DiagramEditorPage() {
     return stored?.diagram;
   }, [isNew, diagramId]);
 
-  // DEBUG START — temporary instrumentation
-  const [debugInfo, setDebugInfo] = useState<string>("initializing...");
-  useEffect(() => {
-    const stored = readDiagramsFromStorage().find((d) => d.id === diagramId);
-    const info = {
-      url: typeof window !== "undefined" ? window.location.pathname + window.location.search : "ssr",
-      diagramId,
-      folderId,
-      isNew,
-      foundInStorage: !!stored,
-      storedName: stored?.name,
-      diagramKeys: stored?.diagram ? Object.keys(stored.diagram) : null,
-      itemCount: stored?.diagram?.items ? Object.keys(stored.diagram.items).length : null,
-    };
-    setDebugInfo(JSON.stringify(info, null, 2));
-    console.log("[DEP] DiagramEditorPage mounted", info);
-  }, [diagramId, folderId, isNew]);
-  // DEBUG END
 
   const [validationOpen, setValidationOpen] = useState(false);
   const [filesOpen, setFilesOpen] = useState(false); // desktop left rail
@@ -202,10 +184,6 @@ export default function DiagramEditorPage() {
         </aside>
 
         <div className="min-w-0 flex-1 overflow-hidden p-3 md:p-4">
-          {/* DEBUG */}
-          <pre style={{fontSize: 10, background: '#1a1a2e', color: '#00ff00', padding: 8, margin: '0 0 8px 0', borderRadius: 4, whiteSpace: 'pre-wrap', wordBreak: 'break-all'}}>
-            DEP debug: {debugInfo}
-          </pre>
           <DrakonEditor
             diagramId={diagramId}
             folderSlug={folderId}
