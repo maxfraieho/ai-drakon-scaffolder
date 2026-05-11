@@ -847,7 +847,7 @@ export function DrakonEditor({
         </div>
 
         {/* Bottom toolbar with icon buttons */}
-        <div className="w-full overflow-x-auto border rounded-lg bg-background">
+        <div className="w-full flex-shrink-0 overflow-x-auto border rounded-lg bg-background">
           <div className="flex items-center gap-1 p-1.5">
             {iconButtons.map(({ type, img, label }) => (
               <Tooltip key={type}>
