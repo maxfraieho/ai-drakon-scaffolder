@@ -50,6 +50,7 @@ export function readSettings(): AppSettings {
     const github = isObject(parsed.github) ? parsed.github : {};
     const n8n = isObject(parsed.n8n) ? parsed.n8n : {};
     const app = isObject(parsed.app) ? parsed.app : {};
+    const minio = isObject(parsed.minio) ? parsed.minio : {};
 
     return {
       github: {
@@ -80,6 +81,11 @@ export function readSettings(): AppSettings {
           app.theme === "light" || app.theme === "dark" || app.theme === "system"
             ? app.theme
             : DEFAULT_SETTINGS.app.theme,
+      },
+      minio: {
+        endpoint: typeof minio.endpoint === "string" ? minio.endpoint : DEFAULT_SETTINGS.minio.endpoint,
+        bucket: typeof minio.bucket === "string" ? minio.bucket : DEFAULT_SETTINGS.minio.bucket,
+        accessKey: typeof minio.accessKey === "string" ? minio.accessKey : DEFAULT_SETTINGS.minio.accessKey,
       },
     };
   } catch {
