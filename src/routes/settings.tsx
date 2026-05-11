@@ -109,11 +109,13 @@ function SettingsRoute() {
         type: "success",
         text: `Знайдено гілок: ${response.branches.length}`,
       });
-    } catch (error) {
-      setGithubStatus({
-        type: "error",
-        text: error instanceof Error ? error.message : "Помилка підключення",
+      toast.success("GitHub підключено", {
+        description: `Знайдено гілок: ${response.branches.length}`,
       });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Помилка підключення";
+      setGithubStatus({ type: "error", text: message });
+      toast.error("GitHub: помилка підключення", { description: message });
     } finally {
       setIsCheckingGithub(false);
     }
