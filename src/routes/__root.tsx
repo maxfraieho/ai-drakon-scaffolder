@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { readSettings } from "@/lib/settings-storage";
 import { AppHeader } from "@/components/app/AppHeader";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 function NotFoundComponent() {
   return (
@@ -142,13 +143,15 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="flex min-h-screen flex-col bg-[var(--bg-base)]">
-        {!hideChrome && <AppHeader />}
-        <div className="flex-1">
-          <Outlet />
+      <TooltipProvider delayDuration={200}>
+        <div className="flex min-h-screen flex-col bg-[var(--bg-base)]">
+          {!hideChrome && <AppHeader />}
+          <div className="flex-1">
+            <Outlet />
+          </div>
         </div>
-      </div>
-      <Toaster position="top-center" richColors closeButton />
+        <Toaster position="top-center" richColors closeButton />
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }
