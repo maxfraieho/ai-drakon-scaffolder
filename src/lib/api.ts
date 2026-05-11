@@ -7,7 +7,7 @@ function resolveApiBase() {
   if (typeof window !== "undefined") {
     const override = readSettings().app.workerUrl.trim();
     if (override) return override;
-    return resolveClientEndpoints().apiBaseUrl;
+    return "https://drakon-mcp-worker.maxfraieho.workers.dev";
   }
 
   return import.meta.env.VITE_WORKER_URL || "https://drakon-mcp-worker.maxfraieho.workers.dev";
