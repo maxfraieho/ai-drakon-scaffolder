@@ -395,6 +395,87 @@ function SettingsRoute() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="minio">
+          <Card>
+            <CardHeader>
+              <CardTitle>MinIO Storage</CardTitle>
+              <CardDescription>
+                S3-сумісне сховище для діаграм. Параметри зберігаються локально для довідки.
+                Для зміни конфігурації — оновіть secrets у Cloudflare Workers Dashboard.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="minio-endpoint">Endpoint</Label>
+                <Input
+                  id="minio-endpoint"
+                  value={settings.minio?.endpoint || ""}
+                  onChange={(e) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      minio: { ...prev.minio, endpoint: e.target.value },
+                    }))
+                  }
+                  placeholder="https://your-minio-host"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="minio-bucket">Bucket</Label>
+                <Input
+                  id="minio-bucket"
+                  value={settings.minio?.bucket || ""}
+                  onChange={(e) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      minio: { ...prev.minio, bucket: e.target.value },
+                    }))
+                  }
+                  placeholder="drakon-diagrams"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="minio-access-key">Access Key</Label>
+                <Input
+                  id="minio-access-key"
+                  value={settings.minio?.accessKey || ""}
+                  onChange={(e) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      minio: { ...prev.minio, accessKey: e.target.value },
+                    }))
+                  }
+                  placeholder="minioadmin"
+                />
+              </div>
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                Secret Key та повна конфігурація зберігаються у{" "}
+                <a
+                  href="https://dash.cloudflare.com"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-primary underline"
+                >
+                  Cloudflare Workers Dashboard
+                </a>
+                {" "}→ drakon-mcp-worker → Settings → Variables and Secrets.
+                Access Key тут — лише для довідки.
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={fetchWorkerHealth}
+                  disabled={isLoadingMinio}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {isLoadingMinio ? "Завантажую..." : "Завантажити з Worker"}
+                </Button>
+                {statusBadge(minioStatus)}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="app">
           <Card>
             <CardHeader>
