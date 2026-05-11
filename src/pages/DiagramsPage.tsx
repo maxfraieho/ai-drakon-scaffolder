@@ -108,6 +108,16 @@ export function DiagramsPage() {
 
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isMobileFoldersOpen, setIsMobileFoldersOpen] = useState(false);
+  const [foldersCollapsed, setFoldersCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("drakon.foldersCollapsed") === "1";
+  });
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("drakon.foldersCollapsed", foldersCollapsed ? "1" : "0");
+    }
+  }, [foldersCollapsed]);
   const [newFolderName, setNewFolderName] = useState("");
   const [levelFilter, setLevelFilter] = useState<"all" | "L0" | "L1" | "L2" | "L3">("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "human" | "ai" | "hybrid">("all");
