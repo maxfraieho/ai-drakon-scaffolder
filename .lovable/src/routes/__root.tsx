@@ -9,11 +9,11 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { TooltipProvider } from "@/components/ui/tooltip";
 
 import appCss from "../styles.css?url";
 import { readSettings } from "@/lib/settings-storage";
 import { AppHeader } from "@/components/app/AppHeader";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
@@ -78,13 +78,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { name: "description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Lovable App" },
+      { name: "twitter:description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0mMTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0mMTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
     ],
     links: [
       {
@@ -138,14 +142,13 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={150}>
-        <div className="flex min-h-screen flex-col bg-[var(--bg-base)]">
-          {!hideChrome && <AppHeader />}
-          <div className="flex-1">
-            <Outlet />
-          </div>
+      <div className="flex min-h-screen flex-col bg-[var(--bg-base)]">
+        {!hideChrome && <AppHeader />}
+        <div className="flex-1">
+          <Outlet />
         </div>
-      </TooltipProvider>
+      </div>
+      <Toaster position="top-center" richColors closeButton />
     </QueryClientProvider>
   );
 }
