@@ -81,7 +81,7 @@ interface DrakonEditorProps {
   diagram?: DrakonDiagram;
   diagramId: string;
   folderSlug?: string;
-  height?: number;
+  height?: number | string;
   isNew?: boolean;
   onSaved?: (diagramId: string) => void;
   className?: string;
