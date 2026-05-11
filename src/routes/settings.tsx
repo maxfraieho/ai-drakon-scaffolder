@@ -152,11 +152,11 @@ function SettingsRoute() {
           ? data
           : [];
       setN8nStatus({ type: "success", text: `Workflows: ${workflows.length}` });
+      toast.success("n8n підключено", { description: `Workflows: ${workflows.length}` });
     } catch (error) {
-      setN8nStatus({
-        type: "error",
-        text: error instanceof Error ? error.message : "Помилка підключення",
-      });
+      const message = error instanceof Error ? error.message : "Помилка підключення";
+      setN8nStatus({ type: "error", text: message });
+      toast.error("n8n: помилка підключення", { description: message });
     } finally {
       setIsCheckingN8n(false);
     }
