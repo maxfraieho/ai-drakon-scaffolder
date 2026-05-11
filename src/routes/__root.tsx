@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -9,6 +10,7 @@ import {
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import { readSettings } from "@/lib/settings-storage";
 
 function NotFoundComponent() {
   return (
@@ -120,6 +122,17 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    try {
+      const theme = readSettings().app.theme ?? "dark";
+      const resolved = theme === "light" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", resolved);
+      document.documentElement.classList.toggle("dark", resolved === "dark");
+    } catch {
+      // ignore
+    }
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
