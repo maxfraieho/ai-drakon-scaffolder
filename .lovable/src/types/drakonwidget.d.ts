@@ -21,7 +21,7 @@ export interface DrakonItem {
 
 export interface DrakonDiagram {
   name: string;
-  access: 'read' | 'write';
+  access?: 'read' | 'write';
   params?: string;
   style?: string;
   items: Record<string, DrakonItem>;
@@ -170,6 +170,6 @@ export type CreateDrakonWidgetFn = () => DrakonWidget;
 
 declare global {
   interface Window {
-    createDrakonWidget: CreateDrakonWidgetFn;
+    createDrakonWidget?: CreateDrakonWidgetFn;
   }
 }

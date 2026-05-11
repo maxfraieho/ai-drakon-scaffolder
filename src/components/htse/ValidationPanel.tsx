@@ -43,7 +43,7 @@ export function ValidationPanel({ className, onApplySafe }: ValidationPanelProps
 
   const runValidation = useCallback(async () => {
     if (!currentDiagram) return;
-    const ir = convertDiagramToIr(currentDiagram.diagram);
+    const ir = convertDiagramToIr(currentDiagram.diagram as never);
     setIsValidating(true);
     try {
       const res = await validateIrRemote(ir);
