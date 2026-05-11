@@ -13,6 +13,7 @@ import {
 import appCss from "../styles.css?url";
 import { readSettings } from "@/lib/settings-storage";
 import { AppHeader } from "@/components/app/AppHeader";
+import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
