@@ -195,17 +195,19 @@ function SettingsRoute() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-3 pb-28 pt-4 md:px-6 md:pb-6">
-      <header className="mb-4">
-        <h1 className="text-lg font-semibold md:text-2xl">Налаштування</h1>
-      </header>
+    <div className="min-h-[100dvh] bg-background">
+      <div className="mx-auto w-full max-w-4xl px-3 pb-28 pt-4 md:px-6 md:pb-6">
+        <header className="mb-4">
+          <h1 className="text-lg font-semibold md:text-2xl">Налаштування</h1>
+        </header>
 
-      <Tabs defaultValue="github" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="github">GitHub</TabsTrigger>
-          <TabsTrigger value="n8n">n8n</TabsTrigger>
-          <TabsTrigger value="app">Додаток</TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="github" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="github">GitHub</TabsTrigger>
+            <TabsTrigger value="n8n">n8n</TabsTrigger>
+            <TabsTrigger value="minio">MinIO</TabsTrigger>
+            <TabsTrigger value="app">Додаток</TabsTrigger>
+          </TabsList>
 
         <TabsContent value="github">
           <Card>
