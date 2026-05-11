@@ -119,7 +119,7 @@ export const useDiagramStore = create<DiagramStore>((set, get) => ({
     const timestamp = new Date().toISOString();
 
     try {
-      const ir = convertDiagramToIr(currentDiagram.diagram);
+      const ir = convertDiagramToIr(currentDiagram.diagram as never);
 
       if (op.op === "insertNode") ir.items[op.nodeId] = op.node;
       else if (op.op === "updateNode" && ir.items[op.nodeId])
