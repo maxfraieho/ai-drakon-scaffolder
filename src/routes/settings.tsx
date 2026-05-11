@@ -475,6 +475,7 @@ function SettingsRoute() {
           <Button onClick={saveSettings}>Зберегти</Button>
         </div>
       </div>
+      </div>
     </div>
   );
 }
