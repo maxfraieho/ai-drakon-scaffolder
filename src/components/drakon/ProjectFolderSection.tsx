@@ -54,6 +54,14 @@ export function ProjectFolderSection({
 }: Props) {
   const [showToken, setShowToken] = useState(false);
   const [tokenStatus, setTokenStatus] = useState<"idle" | "checking" | "valid" | "invalid" | "error">("idle");
+  const [repoOpen, setRepoOpen] = useState(false);
+
+  const repoOwner = value.repo.includes("/") ? value.repo.split("/")[0] : "maxfraieho";
+  const { repos, loading: reposLoading } = useGithubRepos(repoOwner, value.githubToken);
+  const allRepos = mergeWithKnown(repos);
+  const filteredRepos = allRepos.filter((r) =>
+    r.full_name.toLowerCase().includes(value.repo.toLowerCase()),
+  );
 
   const validateToken = async (token: string) => {
     if (!token.trim()) {
