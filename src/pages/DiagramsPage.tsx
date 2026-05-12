@@ -713,8 +713,23 @@ export function DiagramsPage() {
               );
             })}
 
-            {/* Source filter (compact) */}
+            {/* Project + Source filters (compact) */}
             <div className="ml-auto flex items-center gap-2 py-1.5">
+              <span className="hidden font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)] sm:inline">
+                Project
+              </span>
+              <Select value={projectFilter} onValueChange={(v) => setProjectFilter(v)}>
+                <SelectTrigger className="h-7 w-[140px] border-[var(--border-default)] bg-transparent text-xs">
+                  <SelectValue placeholder="Project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All projects</SelectItem>
+                  {knownProjects.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <span className="hidden font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)] sm:inline">
                 Source
               </span>
