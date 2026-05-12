@@ -1,6 +1,7 @@
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Eye, EyeOff, ExternalLink, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
+import { Check, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useGithubRepos, mergeWithKnown } from "@/hooks/useGithubRepos";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -64,9 +65,18 @@ function SettingsRoute() {
   const [isCheckingGithub, setIsCheckingGithub] = useState(false);
   const [isCheckingN8n, setIsCheckingN8n] = useState(false);
   const [isLoadingMinio, setIsLoadingMinio] = useState(false);
+  const [repoOpen, setRepoOpen] = useState(false);
   const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
   const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
   const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+
+  const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner, settings.github.token);
+  const allRepos = mergeWithKnown(repos);
+  const filteredRepos = allRepos.filter(
+    (r) =>
+      r.full_name.toLowerCase().includes(settings.github.repo.toLowerCase()) ||
+      r.name.toLowerCase().includes(settings.github.repo.toLowerCase()),
+  );
 
   const normalizedN8nUrl = useMemo(
     () => settings.n8n.baseUrl.trim().replace(/\/+$/, ""),
@@ -245,16 +255,55 @@ function SettingsRoute() {
 
               <div className="grid gap-2">
                 <Label htmlFor="gh-repo">Repository Name</Label>
-                <Input
-                  id="gh-repo"
-                  value={settings.github.repo}
-                  onChange={(event) =>
-                    updateSettings((prev) => ({
-                      ...prev,
-                      github: { ...prev.github, repo: event.target.value },
-                    }))
-                  }
-                />
+                <div className="relative">
+                  <Input
+                    id="gh-repo"
+                    value={settings.github.repo}
+                    onChange={(event) =>
+                      updateSettings((prev) => ({
+                        ...prev,
+                        github: { ...prev.github, repo: event.target.value },
+                      }))
+                    }
+                    onFocus={() => setRepoOpen(true)}
+                    onBlur={() => setTimeout(() => setRepoOpen(false), 150)}
+                  />
+                  {repoOpen && (
+                    <div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border border-border rounded-md shadow-md">
+                      {reposLoading && (
+                        <div className="px-3 py-2 text-sm text-muted-foreground flex items-center">
+                          <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+                          Loading repos…
+                        </div>
+                      )}
+                      {!reposLoading && filteredRepos.length === 0 && (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">
+                          No repos found — type to enter manually
+                        </div>
+                      )}
+                      {filteredRepos.map((r) => (
+                        <button
+                          key={r.full_name}
+                          type="button"
+                          onMouseDown={() => {
+                            updateSettings((prev) => ({
+                              ...prev,
+                              github: { ...prev.github, repo: r.name, owner: r.owner },
+                            }));
+                            setRepoOpen(false);
+                          }}
+                          className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
+                        >
+                          <span className="font-medium">{r.name}</span>
+                          {r.private && (
+                            <span className="ml-2 text-[10px] text-muted-foreground">private</span>
+                          )}
+                          <span className="ml-2 text-[10px] text-muted-foreground">{r.owner}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="grid gap-2">
