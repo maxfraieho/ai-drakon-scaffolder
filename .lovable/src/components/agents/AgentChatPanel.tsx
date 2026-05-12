@@ -121,7 +121,7 @@ export function AgentChatPanel({ className }: Props) {
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1" viewportRef={scrollRef}>
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="flex flex-col gap-3 p-3">
           {messages.length === 0 && (
             <AssistantBubble text={WELCOME[activeAgent]} />
@@ -147,7 +147,7 @@ export function AgentChatPanel({ className }: Props) {
             </div>
           )}
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Composer */}
       <div className="border-t p-3 space-y-2">
