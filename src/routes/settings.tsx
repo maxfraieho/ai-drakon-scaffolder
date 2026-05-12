@@ -602,6 +602,31 @@ function SettingsRoute() {
                 </Select>
               </div>
 
+              <div className="grid gap-2">
+                <Label htmlFor="agent-base-url">Agent Server URL</Label>
+                <Input
+                  id="agent-base-url"
+                  placeholder="http://192.168.3.184"
+                  defaultValue={
+                    (typeof window !== "undefined" &&
+                      localStorage.getItem("drakon_agent_base_url")) ||
+                    ""
+                  }
+                  onChange={(event) => {
+                    try {
+                      const v = event.target.value.trim();
+                      if (v) localStorage.setItem("drakon_agent_base_url", v);
+                      else localStorage.removeItem("drakon_agent_base_url");
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Base URL for AI agents (drakon:8765, architect:8766, docs:8767)
+                </p>
+              </div>
+
               <button
                 type="button"
                 onClick={clearDiagramCache}
