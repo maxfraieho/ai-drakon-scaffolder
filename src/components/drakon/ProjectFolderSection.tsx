@@ -168,11 +168,29 @@ export function ProjectFolderSection({
               id="pf-token"
               type={showToken ? "text" : "password"}
               value={value.githubToken}
-              onChange={(e) => set("githubToken", e.target.value)}
+              onChange={(e) => {
+                set("githubToken", e.target.value);
+                setTokenStatus("idle");
+              }}
+              onBlur={(e) => void validateToken(e.target.value)}
               placeholder="ghp_…"
-              className="h-8 text-sm pr-8 font-mono"
+              className="h-8 text-sm pr-16 font-mono"
               autoComplete="off"
             />
+            <div className="absolute inset-y-0 right-8 flex items-center justify-center w-5 text-[var(--text-muted)]">
+              {tokenStatus === "checking" && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="Validating token" />
+              )}
+              {tokenStatus === "valid" && (
+                <Check className="h-3.5 w-3.5 text-green-500" aria-label="Token valid" />
+              )}
+              {tokenStatus === "invalid" && (
+                <X className="h-3.5 w-3.5 text-red-500" aria-label="Token invalid or missing repo scope" />
+              )}
+              {tokenStatus === "error" && (
+                <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" aria-label="Could not validate" />
+              )}
+            </div>
             <button
               type="button"
               onClick={() => setShowToken((v) => !v)}
