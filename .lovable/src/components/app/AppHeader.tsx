@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
+  Bot,
   Github,
   LayoutGrid,
   LogOut,
@@ -25,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { cn } from "@/lib/utils";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
@@ -49,6 +51,7 @@ export function AppHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [agentsOpen, setAgentsOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
@@ -187,6 +190,34 @@ export function AppHeader() {
         </nav>
 
         <div className="ml-auto flex items-center gap-1">
+          <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 gap-1.5 px-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                aria-label="Агенти"
+                title="AI-агенти"
+              >
+                <Bot className="h-4 w-4" />
+                <span className="hidden sm:inline text-sm">Агенти</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side="right"
+              className="w-full p-0 sm:max-w-[480px] sm:w-[480px]"
+            >
+              <SheetHeader className="border-b px-4 py-3">
+                <SheetTitle className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  AI-агенти
+                </SheetTitle>
+              </SheetHeader>
+              <div className="h-[calc(100%-3.25rem)]">
+                <AgentChatPanel className="h-full" />
+              </div>
+            </SheetContent>
+          </Sheet>
+
           <button
             type="button"
             onClick={toggleTheme}
