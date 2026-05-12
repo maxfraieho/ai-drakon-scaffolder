@@ -224,6 +224,8 @@ function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [summary, setSummary] = useState<{ minio: number; git: number; failed: number } | null>(null);
+  const [failures, setFailures] = useState<Array<{ id: string; error: string }>>([]);
+  const [showFailures, setShowFailures] = useState(false);
 
   const targetFolder = useMemo(
     () => (folder.trim() || pf.folderSlug || "general"),
