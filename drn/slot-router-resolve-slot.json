@@ -1,77 +1,73 @@
 {
   "name": "SlotRouter — resolve_slot(model_name)",
-  "access": "public",
-  "params": [
-    "model_name: str"
-  ],
+  "params": "model_name: str",
   "items": {
+    "end": {
+      "type": "end"
+    },
+    "b0": {
+      "type": "branch",
+      "branchId": 0,
+      "one": "n1"
+    },
     "n1": {
-      "type": "input",
-      "content": "model_name string\n(e.g. \"claude-sonnet-4-6\", \"coding\")",
+      "type": "action",
+      "content": "normalized = model_name.strip()",
       "one": "n2"
     },
     "n2": {
+      "type": "question",
+      "content": "\"/\" in normalized?",
+      "one": "n2a",
+      "two": "n3"
+    },
+    "n2a": {
       "type": "action",
-      "content": "normalized = model_name.strip()",
+      "content": "normalized = suffix after last \"/\"",
       "one": "n3"
     },
     "n3": {
-      "type": "question",
-      "content": "\"/\" in normalized?",
-      "one": "n3a",
-      "two": "n4"
-    },
-    "n3a": {
       "type": "action",
-      "content": "normalized = suffix after last \"/\"",
+      "content": "normalized = ALIASES.get(normalized, normalized)",
       "one": "n4"
     },
     "n4": {
       "type": "action",
-      "content": "normalized = ALIASES.get(normalized, normalized)\ne.g. \"claude-sonnet-4-6\" → \"standard-proxy\"",
+      "content": "Iterate slots from slots_loader()",
       "one": "n5"
     },
     "n5": {
-      "type": "action",
-      "content": "Iterate slots from slots_loader()",
-      "one": "n6"
+      "type": "question",
+      "content": "slot.slot_id\n== normalized?",
+      "one": "n6",
+      "two": "n8"
     },
     "n6": {
       "type": "question",
-      "content": "slot.slot_id\n== normalized?",
-      "one": "n7",
+      "content": "slot.mode\n== \"disabled\"?",
+      "one": "n6a",
+      "two": "n6b"
+    },
+    "n6a": {
+      "type": "action",
+      "content": "return None\n(slot disabled)",
+      "one": "end"
+    },
+    "n6b": {
+      "type": "action",
+      "content": "return slot: ProxySlotConfig",
+      "one": "end"
+    },
+    "n8": {
+      "type": "question",
+      "content": "More slots?",
+      "one": "n4",
       "two": "n9"
     },
-    "n7": {
-      "type": "question",
-      "content": "slot.mode\n== \"disabled\"?",
-      "one": "n8a",
-      "two": "n8b"
-    },
-    "n8a": {
-      "type": "output",
-      "content": "return None\n(slot disabled)",
-      "one": "nEnd"
-    },
-    "n8b": {
-      "type": "output",
-      "content": "return slot: ProxySlotConfig\n(mode, candidates, pinned_*)",
-      "one": "nEnd"
-    },
     "n9": {
-      "type": "question",
-      "content": "More slots\nto check?",
-      "one": "n5",
-      "two": "n10"
-    },
-    "n10": {
-      "type": "output",
+      "type": "action",
       "content": "return None\n(no matching slot)",
-      "one": "nEnd"
-    },
-    "nEnd": {
-      "type": "end",
-      "content": "Done"
+      "one": "end"
     }
   }
 }
