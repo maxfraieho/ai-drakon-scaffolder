@@ -60,6 +60,10 @@ export interface AgentReply {
   diagrams?: Array<{ name: string; items: Record<string, unknown> }>;
 }
 
+function isPythonCode(message: string): boolean {
+  return /\bdef\s+\w+\s*\(|class\s+\w+[\s:(]|^import\s+\w+|^from\s+\w+\s+import|async\s+def\s+\w+/m.test(message);
+}
+
 export async function sendToAgent(
   agentId: AgentId,
   message: string,
@@ -68,22 +72,34 @@ export async function sendToAgent(
   const url = getAgentUrl(agentId);
 
   if (agentId === "drakon") {
-    const resp = await fetch(`${url}/analyze`, {
+    if (isPythonCode(message)) {
+      const resp = await fetch(`${url}/analyze`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: message, refine: true }),
+      });
+      if (!resp.ok) throw new Error(`DRAKON agent error: ${resp.status}`);
+      const data = await resp.json();
+      const diagrams: Array<{ name: string; items: Record<string, unknown> }> =
+        data.diagrams ?? [];
+      const names = diagrams.map((d) => d.name).join(", ");
+      return {
+        reply: diagrams.length
+          ? `Згенеровано ${diagrams.length} схем(и): **${names}**`
+          : "Схеми не згенеровано. Переконайтесь, що код містить Python-функцію.",
+        diagrams,
+      };
+    }
+
+    // Non-code message → /chat endpoint
+    const resp = await fetch(`${url}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: message, refine: true }),
+      body: JSON.stringify({ message, context }),
     });
     if (!resp.ok) throw new Error(`DRAKON agent error: ${resp.status}`);
     const data = await resp.json();
-    const diagrams: Array<{ name: string; items: Record<string, unknown> }> =
-      data.diagrams ?? [];
-    const names = diagrams.map((d) => d.name).join(", ");
-    return {
-      reply: diagrams.length
-        ? `Generated ${diagrams.length} diagram(s): **${names}**`
-        : "No diagrams generated. Is the code a valid Python function?",
-      diagrams,
-    };
+    return { reply: data.reply ?? data.message ?? JSON.stringify(data) };
   }
 
   const resp = await fetch(`${url}/chat`, {

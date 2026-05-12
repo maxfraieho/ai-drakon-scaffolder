@@ -11,6 +11,7 @@ from typing import Optional
 load_dotenv()
 
 # Add drakon-agent to path AFTER module-level imports so uvicorn doesn't shadow "main"
+from files_route import router as files_router
 _DRAKON_AGENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "drakon-agent"))
 if _DRAKON_AGENT not in sys.path:
     sys.path.append(_DRAKON_AGENT)
@@ -32,6 +33,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="architect-agent", version="0.1.0", lifespan=lifespan)
+app.include_router(files_router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
