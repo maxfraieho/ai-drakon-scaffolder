@@ -74,8 +74,26 @@ export const useAgentChatStore = create<AgentChatState>()(
             },
           }));
         } catch (e) {
+          const raw = e instanceof Error ? e.message : String(e);
+          let friendly = raw;
+          if (
+            raw.includes("Failed to fetch") ||
+            raw.includes("NetworkError") ||
+            raw.includes("Load failed")
+          ) {
+            friendly =
+              "Не вдалося підключитися до агента. Перевірте мережу або спробуйте пізніше.";
+          } else if (raw.includes("400")) {
+            friendly =
+              "Агент повернув помилку (400). Спробуйте переформулювати повідомлення.";
+          } else if (raw.includes("502") || raw.includes("503")) {
+            friendly = "Агент тимчасово недоступний. Зачекайте хвилину та спробуйте.";
+          } else if (raw.includes("timeout") || raw.includes("AbortError")) {
+            friendly =
+              "Агент не відповів вчасно. LLM-запити можуть тривати до 60с — спробуйте ще раз.";
+          }
           set((s) => ({
-            error: { ...s.error, [agentId]: e instanceof Error ? e.message : String(e) },
+            error: { ...s.error, [agentId]: friendly },
           }));
         } finally {
           set((s) => ({ loading: { ...s.loading, [agentId]: false } }));
