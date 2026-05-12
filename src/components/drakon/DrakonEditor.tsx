@@ -49,6 +49,18 @@ import { useLocale } from '@/hooks/useLocale';
 import { diagramToPseudocode, pseudocodeToMarkdown } from '@/lib/drakon/pseudocode';
 import { createDrakonTranslate, getDrakonLabels } from '@/lib/drakon/i18n';
 import { FormatInspector } from '@/components/drakon/FormatInspector';
+import {
+  ProjectFolderSection,
+  readProjectFolderDefaults,
+  type ProjectFolderValue,
+} from '@/components/drakon/ProjectFolderSection';
+import {
+  listProjects,
+  parseOwnerRepo,
+  saveDiagramToGit,
+  saveDiagramToMinio,
+} from '@/lib/mcp/projects';
+import { toast } from 'sonner';
 import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender, DrakonConfig } from '@/types/drakonwidget';
 
 interface DrakonEditorProps {
