@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 import { GitHubFileTree } from "@/components/github/GitHubFileTree";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
+import { useGithubRepos, mergeWithKnown } from "@/hooks/useGithubRepos";
 
 type GitHubPanelProps = {
   onSelectPath: (path: string, type: "file" | "dir") => void;
@@ -51,6 +53,17 @@ export function GitHubPanel({ onSelectPath, onAnalyzeFolder }: GitHubPanelProps)
   const [repo, setRepo] = useState(() => readSavedRepo().repo);
   const [branch, setBranch] = useState(() => readSavedRepo().branch);
   const [branches, setBranches] = useState<string[]>(["main"]);
+  const [repoOpen, setRepoOpen] = useState(false);
+
+  const token =
+    typeof window !== "undefined" ? sessionStorage.getItem("drakon_gh_write_token") || "" : "";
+  const { repos, loading } = useGithubRepos(owner, token);
+  const allRepos = mergeWithKnown(repos);
+  const filteredRepos = allRepos.filter(
+    (r) =>
+      r.full_name.toLowerCase().includes(repo.toLowerCase()) ||
+      r.name.toLowerCase().includes(repo.toLowerCase()),
+  );
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ owner, repo, branch }));
@@ -80,7 +93,50 @@ export function GitHubPanel({ onSelectPath, onAnalyzeFolder }: GitHubPanelProps)
     <div className="space-y-4 rounded-md border border-border bg-card p-3">
       <div className="grid grid-cols-1 gap-2">
         <Input value={owner} onChange={(event) => setOwner(event.target.value)} placeholder="owner" />
-        <Input value={repo} onChange={(event) => setRepo(event.target.value)} placeholder="repo" />
+
+        <div className="relative">
+          <Input
+            value={repo}
+            onChange={(e) => setRepo(e.target.value)}
+            onFocus={() => setRepoOpen(true)}
+            onBlur={() => setTimeout(() => setRepoOpen(false), 150)}
+            placeholder="repo-name"
+          />
+          {repoOpen && (
+            <div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border border-border rounded-md shadow-md">
+              {loading && (
+                <div className="px-3 py-2 text-sm text-muted-foreground flex items-center">
+                  <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+                  Loading repos…
+                </div>
+              )}
+              {!loading && filteredRepos.length === 0 && (
+                <div className="px-3 py-2 text-sm text-muted-foreground">
+                  No repos found — type to enter manually
+                </div>
+              )}
+              {filteredRepos.map((r) => (
+                <button
+                  key={r.full_name}
+                  type="button"
+                  onMouseDown={() => {
+                    setRepo(r.name);
+                    setOwner(r.owner);
+                    setRepoOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
+                >
+                  <span className="font-medium">{r.name}</span>
+                  {r.private && (
+                    <span className="ml-2 text-[10px] text-muted-foreground">private</span>
+                  )}
+                  <span className="ml-2 text-[10px] text-muted-foreground">{r.owner}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <Select value={branch} onValueChange={setBranch}>
           <SelectTrigger>
             <SelectValue placeholder="branch" />
