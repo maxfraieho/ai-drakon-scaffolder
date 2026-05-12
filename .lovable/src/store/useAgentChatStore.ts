@@ -1,0 +1,93 @@
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { AgentId, AgentMessage } from "@/types/agent-chat";
+import { sendToAgent } from "@/lib/agent-api";
+
+function nextId(): string {
+  try {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+      return crypto.randomUUID();
+    }
+  } catch {
+    // ignore
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+interface AgentChatState {
+  sessions: Record<AgentId, AgentMessage[]>;
+  activeAgent: AgentId;
+  loading: Record<AgentId, boolean>;
+  error: Record<AgentId, string | null>;
+  setActiveAgent: (id: AgentId) => void;
+  sendMessage: (
+    agentId: AgentId,
+    content: string,
+    context?: Record<string, unknown>,
+  ) => Promise<void>;
+  clearHistory: (agentId: AgentId) => void;
+}
+
+export const useAgentChatStore = create<AgentChatState>()(
+  persist(
+    (set) => ({
+      sessions: { drakon: [], architect: [], docs: [] },
+      activeAgent: "drakon",
+      loading: { drakon: false, architect: false, docs: false },
+      error: { drakon: null, architect: null, docs: null },
+
+      setActiveAgent: (id) => set({ activeAgent: id }),
+
+      sendMessage: async (agentId, content, context) => {
+        const userMsg: AgentMessage = {
+          id: nextId(),
+          agentId,
+          role: "user",
+          content,
+          timestamp: new Date().toISOString(),
+        };
+        set((s) => ({
+          sessions: {
+            ...s.sessions,
+            [agentId]: [...s.sessions[agentId], userMsg],
+          },
+          loading: { ...s.loading, [agentId]: true },
+          error: { ...s.error, [agentId]: null },
+        }));
+
+        try {
+          const result = await sendToAgent(agentId, content, context);
+          const assistantMsg: AgentMessage = {
+            id: nextId(),
+            agentId,
+            role: "assistant",
+            content: result.reply,
+            timestamp: new Date().toISOString(),
+            metadata: result.diagrams?.length
+              ? { diagrams: result.diagrams }
+              : undefined,
+          };
+          set((s) => ({
+            sessions: {
+              ...s.sessions,
+              [agentId]: [...s.sessions[agentId], assistantMsg],
+            },
+          }));
+        } catch (e) {
+          set((s) => ({
+            error: { ...s.error, [agentId]: e instanceof Error ? e.message : String(e) },
+          }));
+        } finally {
+          set((s) => ({ loading: { ...s.loading, [agentId]: false } }));
+        }
+      },
+
+      clearHistory: (agentId) =>
+        set((s) => ({ sessions: { ...s.sessions, [agentId]: [] } })),
+    }),
+    {
+      name: "agent_chat_history",
+      partialize: (s) => ({ sessions: s.sessions, activeAgent: s.activeAgent }),
+    },
+  ),
+);
