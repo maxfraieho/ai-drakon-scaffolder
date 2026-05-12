@@ -862,6 +862,14 @@ export function DiagramsPage() {
                             {diagram.name}
                           </h3>
 
+                          {/* Project / id subtitle */}
+                          <p
+                            className="mt-1 truncate font-mono text-[10px] text-[var(--text-muted)]"
+                            title={`${diagram.folderId} / ${diagram.id}`}
+                          >
+                            {diagram.folderId} / {diagram.id}
+                          </p>
+
                           {/* Metadata row */}
                           <div
                             className="mt-2 flex items-center gap-3 font-mono text-[11px] text-[var(--text-muted)]"
