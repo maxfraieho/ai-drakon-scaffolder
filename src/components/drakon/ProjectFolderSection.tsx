@@ -131,13 +131,48 @@ export function ProjectFolderSection({
 
         <div className="space-y-1">
           <Label htmlFor="pf-repo" className="text-xs">GitHub repo</Label>
-          <Input
-            id="pf-repo"
-            value={value.repo}
-            onChange={(e) => set("repo", e.target.value)}
-            placeholder="owner/repo"
-            className="h-8 text-sm"
-          />
+          <div className="relative">
+            <Input
+              id="pf-repo"
+              value={value.repo}
+              onChange={(e) => set("repo", e.target.value)}
+              onFocus={() => setRepoOpen(true)}
+              onBlur={() => setTimeout(() => setRepoOpen(false), 150)}
+              placeholder="owner/repo"
+              className="h-8 text-sm"
+            />
+            {repoOpen && (
+              <div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border border-border rounded-md shadow-md">
+                {reposLoading && (
+                  <div className="px-3 py-2 text-xs text-muted-foreground flex items-center">
+                    <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
+                    Loading repos…
+                  </div>
+                )}
+                {!reposLoading && filteredRepos.length === 0 && (
+                  <div className="px-3 py-2 text-xs text-muted-foreground">
+                    No repos found — type to enter manually
+                  </div>
+                )}
+                {filteredRepos.map((r) => (
+                  <button
+                    key={r.full_name}
+                    type="button"
+                    onMouseDown={() => {
+                      set("repo", r.full_name);
+                      setRepoOpen(false);
+                    }}
+                    className="block w-full text-left px-3 py-1.5 text-xs hover:bg-accent"
+                  >
+                    <span className="font-medium">{r.full_name}</span>
+                    {r.private && (
+                      <span className="ml-2 text-[10px] text-muted-foreground">private</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="space-y-1">
