@@ -215,6 +215,14 @@ export function DiagramsPage() {
     void loadDiagrams(selectedFolder.slug);
   }, [selectedFolder.slug]);
 
+  useEffect(() => {
+    let alive = true;
+    listProjects().then((list) => {
+      if (alive) setKnownProjects(list);
+    });
+    return () => { alive = false; };
+  }, []);
+
   const createFolder = () => {
     const trimmed = newFolderName.trim();
     if (!trimmed) {
