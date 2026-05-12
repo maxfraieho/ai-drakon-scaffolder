@@ -347,6 +347,27 @@ function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
           </div>
         )}
 
+        {failures.length > 0 && (
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setShowFailures((v) => !v)}
+              className="text-xs text-red-500 hover:underline"
+            >
+              {showFailures ? "Hide" : "Show"} failures ({failures.length})
+            </button>
+            {showFailures && (
+              <div className="max-h-[200px] overflow-y-auto rounded-md border border-red-500/40 bg-black/40 p-2 font-mono text-[11px] text-red-300 space-y-1">
+                {failures.map((f, i) => (
+                  <div key={i} className="break-all">
+                    <span className="text-red-200">{f.id}</span>: {f.error.slice(0, 100)}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="flex flex-wrap items-center gap-2">
           <Button onClick={() => void runSaveAll()} disabled={isSaving || items.length === 0}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
