@@ -2,7 +2,7 @@
 // the analysis bind-to-folder card. Persists last values to local/session storage.
 
 import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
