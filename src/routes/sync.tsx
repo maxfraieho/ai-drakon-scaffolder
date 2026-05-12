@@ -236,11 +236,14 @@ function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
     if (items.length === 0) return;
     setIsSaving(true);
     setSummary(null);
+    setFailures([]);
+    setShowFailures(false);
     setProgress({ done: 0, total: items.length });
 
     let okMinio = 0;
     let okGit = 0;
     let failed = 0;
+    const fails: Array<{ id: string; error: string }> = [];
 
     const ownerRepo = pf.saveToGit && pf.repo.trim() && pf.githubToken.trim()
       ? parseOwnerRepo(pf.repo)
@@ -275,16 +278,19 @@ function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
           } catch (err) {
             console.warn("git save failed", id, err);
             failed++;
+            fails.push({ id, error: `git: ${err instanceof Error ? err.message : String(err)}` });
           }
         }
       } catch (err) {
         console.warn("minio save failed", id, err);
         failed++;
+        fails.push({ id, error: `minio: ${err instanceof Error ? err.message : String(err)}` });
       }
       setProgress({ done: i + 1, total: items.length });
     }
 
     setSummary({ minio: okMinio, git: okGit, failed });
+    setFailures(fails);
     setIsSaving(false);
     if (failed === 0) {
       toast.success(`✓ ${okMinio} diagrams → MinIO \`${targetFolder}\``);
