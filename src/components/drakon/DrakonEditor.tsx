@@ -86,10 +86,9 @@ function createEmptyDiagram(t: ReturnType<typeof useLocale>['t']): DrakonDiagram
   };
 }
 
-function normWidgetDiagram<T extends Record<string, unknown>>(d: T | null | undefined): T | null | undefined {
+function normWidgetDiagram<T extends { params?: unknown }>(d: T | null | undefined): T | null | undefined {
   if (!d) return d;
-  const p = (d as Record<string, unknown>).params;
-  if (Array.isArray(p)) return { ...d, params: (p as string[]).join(', ') };
+  if (Array.isArray(d.params)) return { ...d, params: (d.params as string[]).join(', ') };
   return d;
 }
 
