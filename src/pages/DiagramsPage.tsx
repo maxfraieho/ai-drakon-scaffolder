@@ -152,10 +152,12 @@ export function DiagramsPage() {
   const selectedFolder =
     folders.find((folder) => folder.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
 
-  const folderDiagrams = useMemo(
-    () => diagrams.filter((diagram) => diagram.folderId === selectedFolder.slug),
-    [diagrams, selectedFolder.slug],
-  );
+  const folderDiagrams = useMemo(() => {
+    if (projectFilter !== "__all__") {
+      return diagrams.filter((d) => d.folderId === projectFilter);
+    }
+    return diagrams.filter((diagram) => diagram.folderId === selectedFolder.slug);
+  }, [diagrams, selectedFolder.slug, projectFilter]);
 
   const filteredDiagrams = useMemo(() => {
     let next = [...folderDiagrams];
