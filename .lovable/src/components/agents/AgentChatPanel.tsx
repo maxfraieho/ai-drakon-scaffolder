@@ -342,36 +342,102 @@ function AssistantBubble({ text }: { text: string }) {
 }
 
 function TypingDots() {
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
   return (
     <div className="flex justify-start">
-      <div className="flex items-center gap-1 rounded-lg border bg-card px-3 py-2">
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
-        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
+      <div className="flex flex-col gap-1 rounded-lg border bg-card px-3 py-2">
+        <div className="flex items-center gap-1">
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
+          <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
+          {elapsed > 0 && (
+            <span className="ml-2 text-xs text-muted-foreground tabular-nums">
+              {elapsed}с
+            </span>
+          )}
+        </div>
+        {elapsed >= 10 && (
+          <p className="text-xs text-muted-foreground">
+            Агент думає, LLM може тривати до 60с…
+          </p>
+        )}
       </div>
     </div>
   );
 }
 
-// Minimal markdown: renders **bold** and preserves line breaks. Avoids extra deps.
+function escHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function MarkdownLite({ text }: { text: string }) {
-  const nodes = useMemo(() => {
-    const out: React.ReactNode[] = [];
-    const lines = text.split("\n");
-    lines.forEach((line, li) => {
-      const parts = line.split(/(\*\*[^*]+\*\*)/g);
-      parts.forEach((part, pi) => {
-        if (/^\*\*[^*]+\*\*$/.test(part)) {
-          out.push(
-            <strong key={`${li}-${pi}`}>{part.slice(2, -2)}</strong>,
-          );
-        } else if (part) {
-          out.push(<span key={`${li}-${pi}`}>{part}</span>);
+  const html = useMemo(() => {
+    let t = text;
+    t = t.replace(
+      /```[\w]*\n([\s\S]*?)```/g,
+      (_, c) =>
+        `<pre class="my-2 overflow-x-auto rounded bg-muted px-3 py-2 text-xs font-mono">${escHtml(c)}</pre>`,
+    );
+    t = t.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+    t = t.replace(/\*([^*\n]+)\*/g, "<em>$1</em>");
+    const lines = t.split("\n");
+    const out: string[] = [];
+    let listType = "";
+    const closeList = () => {
+      if (listType) {
+        out.push(`</${listType}>`);
+        listType = "";
+      }
+    };
+    for (const line of lines) {
+      const h3 = line.match(/^### (.+)/);
+      const h2 = line.match(/^## (.+)/);
+      const h1 = line.match(/^# (.+)/);
+      const ul = line.match(/^[-*] (.+)/);
+      const ol = line.match(/^\d+\. (.+)/);
+      if (h3) {
+        closeList();
+        out.push(`<h3 class="mt-3 mb-1 text-sm font-semibold">${h3[1]}</h3>`);
+      } else if (h2) {
+        closeList();
+        out.push(`<h2 class="mt-4 mb-1 text-sm font-bold">${h2[1]}</h2>`);
+      } else if (h1) {
+        closeList();
+        out.push(`<h1 class="mt-4 mb-1 text-base font-bold">${h1[1]}</h1>`);
+      } else if (ul) {
+        if (listType !== "ul") {
+          closeList();
+          out.push('<ul class="my-1 ml-4 list-disc space-y-0.5">');
+          listType = "ul";
         }
-      });
-      if (li < lines.length - 1) out.push(<br key={`br-${li}`} />);
-    });
-    return out;
+        out.push(`<li class="text-sm">${ul[1]}</li>`);
+      } else if (ol) {
+        if (listType !== "ol") {
+          closeList();
+          out.push('<ol class="my-1 ml-4 list-decimal space-y-0.5">');
+          listType = "ol";
+        }
+        out.push(`<li class="text-sm">${ol[1]}</li>`);
+      } else {
+        closeList();
+        out.push(line === "" ? "<br />" : `<p class="text-sm leading-relaxed">${line}</p>`);
+      }
+    }
+    closeList();
+    return out.join("\n");
   }, [text]);
-  return <div className="whitespace-pre-wrap break-words">{nodes}</div>;
+  return (
+    <div
+      className="prose-sm max-w-none break-words"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
 }
