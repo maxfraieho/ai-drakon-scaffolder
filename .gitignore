@@ -38,3 +38,9 @@ dist-ssr
 # Environment secrets (never commit)
 .env
 .env.local
+
+# Python caches
+**/__pycache__/
+*.pyc
+*.pyo
+services/**/.env
