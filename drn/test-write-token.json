@@ -1,0 +1,10 @@
+{
+  "name": "test",
+  "items": {
+    "1": {
+      "type": "terminator",
+      "text": "START",
+      "next": null
+    }
+  }
+}
