@@ -423,26 +423,29 @@ function convertIrToDiagramForWorker(irPayload) {
 
 
 async function analyzeGithubRepo(owner, repo, branch, env) {
-  const treeResult = await handleGithubListTree(
-    { owner, repo, branch: branch || 'main', path: '' }, env, ''
-  );
-  if (!treeResult.success) {
-    return { error: 'Failed to list repo tree: ' + (treeResult.error || 'unknown') };
-  }
-
+  const githubToken = env.GITHUB_TOKEN || '';
+  const branchRef = branch || 'main';
+  const ghHdrs = { 'User-Agent': 'drakon-mcp-worker' };
+  if (githubToken) ghHdrs['Authorization'] = 'Bearer ' + githubToken;
+  const branchR = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branchRef}`, { headers: ghHdrs });
+  if (!branchR.ok) return { error: 'branch: ' + branchR.status };
+  const branchD = await branchR.json();
+  const sha = branchD?.commit?.commit?.tree?.sha;
+  if (!sha) return { error: 'no tree sha' };
+  const treeR = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${sha}?recursive=1`, { headers: ghHdrs });
+  if (!treeR.ok) return { error: 'tree: ' + treeR.status };
+  const treeD = await treeR.json();
   const files = [];
-  const collect = (entries) => {
-    for (const e of entries) {
-      if (e.type === 'file' && /\.(ts|tsx|js|jsx)$/i.test(e.name)) {
-        files.push(e);
-        if (files.length >= 50) break;
-      }
+  for (const item of (treeD.tree || [])) {
+    if (item.type === 'blob' && /\.(ts|tsx|js|jsx|py)$/i.test(item.path)) {
+      files.push({ name: item.path.split('/').pop(), path: item.path, type: 'file' });
+      if (files.length >= 50) break;
     }
-  };
-  collect(treeResult.entries || []);
+  }
 
   const summary = {
     totalFiles: files.length,
+    _debug: { hasToken: !!githubToken, treeSize: (treeD.tree||[]).length, sha: sha||'none' },
     totalFunctions: 0,
     totalComponents: 0,
     modules: [...new Set(files.map(f => f.path.split('/')[0]))],
@@ -460,10 +463,10 @@ async function analyzeGithubRepo(owner, repo, branch, env) {
     const raw = fileResult.content || '';
     const c = raw.startsWith('data:') ? atob(raw.split(',')[1] || '') : raw;
 
-    const funcMatches = c.match(/(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s*)?\()/g) || [];
+    const funcMatches = c.match(/(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s*)?\(|def\s+\w+|async\s+def\s+\w+)/g) || [];
     summary.totalFunctions += funcMatches.length;
 
-    const compMatches = c.match(/(?:export\s+(?:default\s+)?function\s+[A-Z]\w+|const\s+[A-Z]\w+\s*=)/g) || [];
+    const compMatches = c.match(/(?:export\s+(?:default\s+)?function\s+[A-Z]\w+|const\s+[A-Z]\w+\s*=|class\s+[A-Z]\w+)/g) || [];
     summary.totalComponents += compMatches.length;
     compMatches.forEach(m => {
       const name = (m.match(/[A-Z]\w+/) || [])[0];
@@ -488,6 +491,7 @@ async function analyzeGithubRepo(owner, repo, branch, env) {
     summary,
     plannedDiagrams,
     sourceRepo: owner + '/' + repo,
+    _debug: { filesFound: files.length, hasToken: !!githubToken, sha: sha || 'none', treeSize: (treeD.tree || []).length },
   };
 }
 
