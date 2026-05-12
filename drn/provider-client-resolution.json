@@ -1,50 +1,49 @@
 {
   "name": "Provider — get_client_for_provider(provider_name, settings)",
-  "access": "public",
-  "params": [
-    "provider_name: str",
-    "settings: Settings"
-  ],
+  "params": "provider_name: str, settings: Settings",
   "items": {
+    "end": {
+      "type": "end"
+    },
+    "b0": {
+      "type": "branch",
+      "branchId": 0,
+      "one": "n1"
+    },
     "n1": {
-      "type": "input",
-      "content": "provider_name string\n(e.g. \"nvidia_nim\", \"open_router\")",
+      "type": "action",
+      "content": "descriptor = PROVIDER_DESCRIPTORS.get(provider_name)",
       "one": "n2"
     },
     "n2": {
-      "type": "action",
-      "content": "descriptor = PROVIDER_DESCRIPTORS.get(provider_name)",
-      "one": "n3"
+      "type": "question",
+      "content": "descriptor\nfound?",
+      "one": "n3",
+      "two": "n8"
     },
     "n3": {
       "type": "question",
-      "content": "descriptor\nfound?",
-      "one": "n4",
-      "two": "n9"
-    },
-    "n4": {
-      "type": "question",
       "content": "credential_attr\nset?",
-      "one": "n4a",
-      "two": "n4b"
+      "one": "n3a",
+      "two": "n3b"
     },
-    "n4a": {
+    "n3a": {
       "type": "action",
       "content": "api_key = getattr(settings, credential_attr)\nor \"none\"",
       "one": "n5"
     },
-    "n4b": {
+    "n3b": {
       "type": "question",
       "content": "static_credential\nset?",
-      "one": "n4c",
-      "two": "n4d"
+      "one": "n3c",
+      "two": "n3d"
     },
-    "n4c": {
+    "n3c": {
       "type": "action",
-      "content": "api_key = descriptor.static_credential\n(e.g. \"lm-studio\")",
+      "content": "api_key = descriptor.static_credential",
       "one": "n5"
     },
-    "n4d": {
+    "n3d": {
       "type": "action",
       "content": "api_key = \"none\"",
       "one": "n5"
@@ -77,34 +76,30 @@
       "one": "n7"
     },
     "n7": {
-      "type": "output",
+      "type": "action",
       "content": "return AsyncOpenAI(\n  api_key=api_key,\n  base_url=base_url,\n  timeout=25.0\n)",
-      "one": "nEnd"
+      "one": "end"
     },
-    "n9": {
+    "n8": {
       "type": "action",
       "content": "Try custom_provider_store.find_by_provider(name)",
-      "one": "n10"
+      "one": "n9"
     },
-    "n10": {
+    "n9": {
       "type": "question",
       "content": "Custom entry\nfound?",
-      "one": "n11",
-      "two": "n12"
+      "one": "n10",
+      "two": "n11"
+    },
+    "n10": {
+      "type": "action",
+      "content": "return AsyncOpenAI(\n  api_key=entry.api_key,\n  base_url=entry.base_url\n)",
+      "one": "end"
     },
     "n11": {
-      "type": "output",
-      "content": "return AsyncOpenAI(\n  api_key=entry.api_key,\n  base_url=entry.base_url\n)",
-      "one": "nEnd"
-    },
-    "n12": {
-      "type": "output",
+      "type": "action",
       "content": "return None\n(unknown provider)",
-      "one": "nEnd"
-    },
-    "nEnd": {
-      "type": "end",
-      "content": "Done"
+      "one": "end"
     }
   }
 }
