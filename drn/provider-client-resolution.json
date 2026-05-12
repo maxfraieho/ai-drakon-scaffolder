@@ -1,0 +1,110 @@
+{
+  "name": "Provider — get_client_for_provider(provider_name, settings)",
+  "access": "public",
+  "params": [
+    "provider_name: str",
+    "settings: Settings"
+  ],
+  "items": {
+    "n1": {
+      "type": "input",
+      "content": "provider_name string\n(e.g. \"nvidia_nim\", \"open_router\")",
+      "one": "n2"
+    },
+    "n2": {
+      "type": "action",
+      "content": "descriptor = PROVIDER_DESCRIPTORS.get(provider_name)",
+      "one": "n3"
+    },
+    "n3": {
+      "type": "question",
+      "content": "descriptor\nfound?",
+      "one": "n4",
+      "two": "n9"
+    },
+    "n4": {
+      "type": "question",
+      "content": "credential_attr\nset?",
+      "one": "n4a",
+      "two": "n4b"
+    },
+    "n4a": {
+      "type": "action",
+      "content": "api_key = getattr(settings, credential_attr)\nor \"none\"",
+      "one": "n5"
+    },
+    "n4b": {
+      "type": "question",
+      "content": "static_credential\nset?",
+      "one": "n4c",
+      "two": "n4d"
+    },
+    "n4c": {
+      "type": "action",
+      "content": "api_key = descriptor.static_credential\n(e.g. \"lm-studio\")",
+      "one": "n5"
+    },
+    "n4d": {
+      "type": "action",
+      "content": "api_key = \"none\"",
+      "one": "n5"
+    },
+    "n5": {
+      "type": "question",
+      "content": "base_url_attr\nset?",
+      "one": "n5a",
+      "two": "n5b"
+    },
+    "n5a": {
+      "type": "action",
+      "content": "base_url = getattr(settings, base_url_attr)\nor descriptor.default_base_url",
+      "one": "n6"
+    },
+    "n5b": {
+      "type": "action",
+      "content": "base_url = descriptor.default_base_url",
+      "one": "n6"
+    },
+    "n6": {
+      "type": "question",
+      "content": "provider == \"ollama\"\nand url not ending /v1?",
+      "one": "n6a",
+      "two": "n7"
+    },
+    "n6a": {
+      "type": "action",
+      "content": "base_url = base_url.rstrip(\"/\") + \"/v1\"",
+      "one": "n7"
+    },
+    "n7": {
+      "type": "output",
+      "content": "return AsyncOpenAI(\n  api_key=api_key,\n  base_url=base_url,\n  timeout=25.0\n)",
+      "one": "nEnd"
+    },
+    "n9": {
+      "type": "action",
+      "content": "Try custom_provider_store.find_by_provider(name)",
+      "one": "n10"
+    },
+    "n10": {
+      "type": "question",
+      "content": "Custom entry\nfound?",
+      "one": "n11",
+      "two": "n12"
+    },
+    "n11": {
+      "type": "output",
+      "content": "return AsyncOpenAI(\n  api_key=entry.api_key,\n  base_url=entry.base_url\n)",
+      "one": "nEnd"
+    },
+    "n12": {
+      "type": "output",
+      "content": "return None\n(unknown provider)",
+      "one": "nEnd"
+    },
+    "nEnd": {
+      "type": "end",
+      "content": "Done"
+    }
+  }
+}
