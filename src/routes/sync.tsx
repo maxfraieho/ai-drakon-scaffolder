@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ChevronDown, ChevronRight, FilePlus, GitCompare, Loader2, RefreshCw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, FilePlus, GitCompare, Loader2, RefreshCw, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Separator } from "@/components/ui/separator";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api";
 import {
   compareAnalysisToDiagram,
@@ -17,6 +20,17 @@ import {
   type MissingInCode,
 } from "@/lib/htse/code-diagram-diff";
 import { readDiagramsFromStorage } from "@/lib/diagram-storage";
+import {
+  ProjectFolderSection,
+  readProjectFolderDefaults,
+  type ProjectFolderValue,
+} from "@/components/drakon/ProjectFolderSection";
+import {
+  parseOwnerRepo,
+  sanitizeDiagramId,
+  saveDiagramToGit,
+  saveDiagramToMinio,
+} from "@/lib/mcp/projects";
 import type { AnalysisJob } from "@/types/analysis";
 
 export const Route = createFileRoute("/sync")({
