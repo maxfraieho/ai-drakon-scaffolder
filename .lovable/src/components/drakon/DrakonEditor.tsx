@@ -49,6 +49,18 @@ import { useLocale } from '@/hooks/useLocale';
 import { diagramToPseudocode, pseudocodeToMarkdown } from '@/lib/drakon/pseudocode';
 import { createDrakonTranslate, getDrakonLabels } from '@/lib/drakon/i18n';
 import { FormatInspector } from '@/components/drakon/FormatInspector';
+import {
+  ProjectFolderSection,
+  readProjectFolderDefaults,
+  type ProjectFolderValue,
+} from '@/components/drakon/ProjectFolderSection';
+import {
+  listProjects,
+  parseOwnerRepo,
+  saveDiagramToGit,
+  saveDiagramToMinio,
+} from '@/lib/mcp/projects';
+import { toast } from 'sonner';
 import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender, DrakonConfig } from '@/types/drakonwidget';
 
 interface DrakonEditorProps {
@@ -113,6 +125,19 @@ export function DrakonEditor({
   }>({ open: false, title: '', style: {}, onConfirm: () => {} });
 
   const [isSaving, setIsSaving] = useState(false);
+
+  const [projectFolder, setProjectFolder] = useState<ProjectFolderValue>(() => {
+    const d = readProjectFolderDefaults();
+    return { ...d, folderSlug: d.folderSlug || folderSlug || '' };
+  });
+  const [knownFolders, setKnownFolders] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    listProjects().then((list) => {
+      if (alive) setKnownFolders(list);
+    });
+    return () => { alive = false; };
+  }, []);
 
   const editSender: DrakonEditSender = {
     pushEdit: (edit) => {
@@ -382,15 +407,57 @@ export function DrakonEditor({
     const diagramData = JSON.parse(jsonString);
     diagramData.name = diagramName;
 
+    const targetFolder =
+      (projectFolder.folderSlug || '').trim() || folderSlug || 'general';
+
     setIsSaving(true);
     try {
-      await api.saveDiagram(folderSlug || 'general', effectiveId, diagramData);
+      // 1) MinIO save (always)
+      try {
+        await saveDiagramToMinio(targetFolder, effectiveId, diagramData);
+        toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
+      } catch (err) {
+        // legacy fallback for environments without the MCP tool
+        try {
+          await api.saveDiagram(targetFolder, effectiveId, diagramData);
+          toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
+        } catch {
+          toast.error(
+            `MinIO save failed: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+
+      // 2) Optional git save
+      if (projectFolder.saveToGit && projectFolder.repo.trim() && projectFolder.githubToken.trim()) {
+        const ownerRepo = parseOwnerRepo(projectFolder.repo);
+        if (!ownerRepo) {
+          toast.error('Git save: repo must be in "owner/repo" form');
+        } else {
+          try {
+            await saveDiagramToGit({
+              owner: ownerRepo.owner,
+              repo: ownerRepo.repo,
+              branch: projectFolder.branch.trim() || 'main',
+              diagramId: effectiveId,
+              diagram: diagramData,
+              token: projectFolder.githubToken,
+            });
+            toast.success(`✓ Saved to git: drn/${effectiveId}.json`);
+          } catch (err) {
+            toast.error(
+              `Git save failed: ${err instanceof Error ? err.message : String(err)}`,
+            );
+          }
+        }
+      }
+
       setHasChanges(false);
       onSaved?.(effectiveId);
     } finally {
       setIsSaving(false);
     }
-  }, [diagramId, diagramName, folderSlug, isNew, onSaved]);
+  }, [diagramId, diagramName, folderSlug, isNew, onSaved, projectFolder]);
 
   const handleUndo = useCallback(() => {
     widgetRef.current?.undo();
@@ -780,6 +847,13 @@ export function DrakonEditor({
             </div>
           )}
         </div>
+
+        {/* Project folder + git binding */}
+        <ProjectFolderSection
+          value={projectFolder}
+          onChange={setProjectFolder}
+          knownFolders={knownFolders}
+        />
 
         {/* Bottom toolbar with icon buttons */}
         <div className="w-full overflow-x-auto border rounded-lg bg-background">

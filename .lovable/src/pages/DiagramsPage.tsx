@@ -67,6 +67,7 @@ import {
 } from "@/lib/folder-storage";
 import type { CodebaseAnalysisRequest } from "@/types/analysis";
 import type { Diagram } from "@/types/drakon";
+import { listProjects } from "@/lib/mcp/projects";
 
 function readLastGithubRepoSelection() {
   if (typeof window === "undefined") {
@@ -123,6 +124,8 @@ export function DiagramsPage() {
   const [levelFilter, setLevelFilter] = useState<"all" | "L0" | "L1" | "L2" | "L3">("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "human" | "ai" | "hybrid">("all");
   const [filePathFilter, setFilePathFilter] = useState("");
+  const [projectFilter, setProjectFilter] = useState<string>("__all__");
+  const [knownProjects, setKnownProjects] = useState<string[]>([]);
 
   const [isGitHubOpen, setIsGitHubOpen] = useState(false);
   const [selectedGitHubPath, setSelectedGitHubPath] = useState<string>("");
@@ -149,10 +152,12 @@ export function DiagramsPage() {
   const selectedFolder =
     folders.find((folder) => folder.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
 
-  const folderDiagrams = useMemo(
-    () => diagrams.filter((diagram) => diagram.folderId === selectedFolder.slug),
-    [diagrams, selectedFolder.slug],
-  );
+  const folderDiagrams = useMemo(() => {
+    if (projectFilter !== "__all__") {
+      return diagrams.filter((d) => d.folderId === projectFilter);
+    }
+    return diagrams.filter((diagram) => diagram.folderId === selectedFolder.slug);
+  }, [diagrams, selectedFolder.slug, projectFilter]);
 
   const filteredDiagrams = useMemo(() => {
     let next = [...folderDiagrams];
@@ -209,6 +214,14 @@ export function DiagramsPage() {
   useEffect(() => {
     void loadDiagrams(selectedFolder.slug);
   }, [selectedFolder.slug]);
+
+  useEffect(() => {
+    let alive = true;
+    listProjects().then((list) => {
+      if (alive) setKnownProjects(list);
+    });
+    return () => { alive = false; };
+  }, []);
 
   const createFolder = () => {
     const trimmed = newFolderName.trim();
@@ -700,8 +713,23 @@ export function DiagramsPage() {
               );
             })}
 
-            {/* Source filter (compact) */}
+            {/* Project + Source filters (compact) */}
             <div className="ml-auto flex items-center gap-2 py-1.5">
+              <span className="hidden font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)] sm:inline">
+                Project
+              </span>
+              <Select value={projectFilter} onValueChange={(v) => setProjectFilter(v)}>
+                <SelectTrigger className="h-7 w-[140px] border-[var(--border-default)] bg-transparent text-xs">
+                  <SelectValue placeholder="Project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="__all__">All projects</SelectItem>
+                  {knownProjects.map((p) => (
+                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
               <span className="hidden font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)] sm:inline">
                 Source
               </span>
@@ -833,6 +861,14 @@ export function DiagramsPage() {
                           >
                             {diagram.name}
                           </h3>
+
+                          {/* Project / id subtitle */}
+                          <p
+                            className="mt-1 truncate font-mono text-[10px] text-[var(--text-muted)]"
+                            title={`${diagram.folderId} / ${diagram.id}`}
+                          >
+                            {diagram.folderId} / {diagram.id}
+                          </p>
 
                           {/* Metadata row */}
                           <div
