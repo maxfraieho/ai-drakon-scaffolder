@@ -59,11 +59,17 @@ export function GitHubPanel({ onSelectPath, onAnalyzeFolder }: GitHubPanelProps)
     typeof window !== "undefined" ? sessionStorage.getItem("drakon_gh_write_token") || "" : "";
   const { repos, loading } = useGithubRepos(owner, token);
   const allRepos = mergeWithKnown(repos);
-  const filteredRepos = allRepos.filter(
-    (r) =>
-      r.full_name.toLowerCase().includes(repo.toLowerCase()) ||
-      r.name.toLowerCase().includes(repo.toLowerCase()),
+  const repoQuery = repo.toLowerCase().trim();
+  const repoExactMatch = allRepos.some(
+    (r) => r.name.toLowerCase() === repoQuery || r.full_name.toLowerCase() === repoQuery,
   );
+  const filteredRepos = !repoQuery || repoExactMatch
+    ? allRepos
+    : allRepos.filter(
+        (r) =>
+          r.name.toLowerCase().includes(repoQuery) ||
+          r.full_name.toLowerCase().includes(repoQuery),
+      );
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ owner, repo, branch }));

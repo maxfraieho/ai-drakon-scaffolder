@@ -59,9 +59,17 @@ export function ProjectFolderSection({
   const repoOwner = value.repo.includes("/") ? value.repo.split("/")[0] : "maxfraieho";
   const { repos, loading: reposLoading } = useGithubRepos(repoOwner, value.githubToken);
   const allRepos = mergeWithKnown(repos);
-  const filteredRepos = allRepos.filter((r) =>
-    r.full_name.toLowerCase().includes(value.repo.toLowerCase()),
+  const repoQuery = value.repo.toLowerCase().trim();
+  const repoExactMatch = allRepos.some(
+    (r) => r.name.toLowerCase() === repoQuery || r.full_name.toLowerCase() === repoQuery,
   );
+  const filteredRepos = !repoQuery || repoExactMatch
+    ? allRepos
+    : allRepos.filter(
+        (r) =>
+          r.name.toLowerCase().includes(repoQuery) ||
+          r.full_name.toLowerCase().includes(repoQuery),
+      );
 
   const validateToken = async (token: string) => {
     if (!token.trim()) {
