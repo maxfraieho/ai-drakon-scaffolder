@@ -65,9 +65,18 @@ function SettingsRoute() {
   const [isCheckingGithub, setIsCheckingGithub] = useState(false);
   const [isCheckingN8n, setIsCheckingN8n] = useState(false);
   const [isLoadingMinio, setIsLoadingMinio] = useState(false);
+  const [repoOpen, setRepoOpen] = useState(false);
   const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
   const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
   const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+
+  const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner, settings.github.token);
+  const allRepos = mergeWithKnown(repos);
+  const filteredRepos = allRepos.filter(
+    (r) =>
+      r.full_name.toLowerCase().includes(settings.github.repo.toLowerCase()) ||
+      r.name.toLowerCase().includes(settings.github.repo.toLowerCase()),
+  );
 
   const normalizedN8nUrl = useMemo(
     () => settings.n8n.baseUrl.trim().replace(/\/+$/, ""),
