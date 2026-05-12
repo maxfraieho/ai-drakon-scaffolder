@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
+  Bot,
   Github,
   LayoutGrid,
   LogOut,
@@ -25,6 +26,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { cn } from "@/lib/utils";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
