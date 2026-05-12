@@ -124,7 +124,14 @@ export function DiagramsPage() {
   const [levelFilter, setLevelFilter] = useState<"all" | "L0" | "L1" | "L2" | "L3">("all");
   const [sourceFilter, setSourceFilter] = useState<"all" | "human" | "ai" | "hybrid">("all");
   const [filePathFilter, setFilePathFilter] = useState("");
-  const [projectFilter, setProjectFilter] = useState<string>("__all__");
+  const [projectFilter, setProjectFilter] = useState<string>(() => {
+    if (typeof window === "undefined") return "__all__";
+    return localStorage.getItem("drakon_project_filter") || "__all__";
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem("drakon_project_filter", projectFilter);
+  }, [projectFilter]);
   const [knownProjects, setKnownProjects] = useState<string[]>([]);
 
   const [isGitHubOpen, setIsGitHubOpen] = useState(false);

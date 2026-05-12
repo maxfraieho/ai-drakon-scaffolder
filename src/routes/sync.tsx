@@ -224,6 +224,8 @@ function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [summary, setSummary] = useState<{ minio: number; git: number; failed: number } | null>(null);
+  const [failures, setFailures] = useState<Array<{ id: string; error: string }>>([]);
+  const [showFailures, setShowFailures] = useState(false);
 
   const targetFolder = useMemo(
     () => (folder.trim() || pf.folderSlug || "general"),
@@ -234,11 +236,14 @@ function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
     if (items.length === 0) return;
     setIsSaving(true);
     setSummary(null);
+    setFailures([]);
+    setShowFailures(false);
     setProgress({ done: 0, total: items.length });
 
     let okMinio = 0;
     let okGit = 0;
     let failed = 0;
+    const fails: Array<{ id: string; error: string }> = [];
 
     const ownerRepo = pf.saveToGit && pf.repo.trim() && pf.githubToken.trim()
       ? parseOwnerRepo(pf.repo)
@@ -273,16 +278,19 @@ function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
           } catch (err) {
             console.warn("git save failed", id, err);
             failed++;
+            fails.push({ id, error: `git: ${err instanceof Error ? err.message : String(err)}` });
           }
         }
       } catch (err) {
         console.warn("minio save failed", id, err);
         failed++;
+        fails.push({ id, error: `minio: ${err instanceof Error ? err.message : String(err)}` });
       }
       setProgress({ done: i + 1, total: items.length });
     }
 
     setSummary({ minio: okMinio, git: okGit, failed });
+    setFailures(fails);
     setIsSaving(false);
     if (failed === 0) {
       toast.success(`✓ ${okMinio} diagrams → MinIO \`${targetFolder}\``);
@@ -336,6 +344,27 @@ function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
             ✓ {summary.minio} diagrams → MinIO <code className="font-mono">{targetFolder}</code>
             {summary.git > 0 && <> · ✓ git drn/ updated ({summary.git})</>}
             {summary.failed > 0 && <> · ✗ {summary.failed} failed</>}
+          </div>
+        )}
+
+        {failures.length > 0 && (
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={() => setShowFailures((v) => !v)}
+              className="text-xs text-red-500 hover:underline"
+            >
+              {showFailures ? "Hide" : "Show"} failures ({failures.length})
+            </button>
+            {showFailures && (
+              <div className="max-h-[200px] overflow-y-auto rounded-md border border-red-500/40 bg-black/40 p-2 font-mono text-[11px] text-red-300 space-y-1">
+                {failures.map((f, i) => (
+                  <div key={i} className="break-all">
+                    <span className="text-red-200">{f.id}</span>: {f.error.slice(0, 100)}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
