@@ -13,6 +13,10 @@ jobs:
           fetch-depth: 0
 
       - name: Push mirror to ai-drakon-setup
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
-          git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/maxfraieho/ai-drakon-setup.git
-          git push mirror main --force
+          git config --global credential.helper store
+          echo "https://x-access-token:${MIRROR_TOKEN}@github.com" > ~/.git-credentials
+          git remote add mirror https://github.com/maxfraieho/ai-drakon-setup.git
+          git -c credential.helper=store push mirror main --force
