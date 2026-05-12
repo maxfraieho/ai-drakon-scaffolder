@@ -848,6 +848,13 @@ export function DrakonEditor({
           )}
         </div>
 
+        {/* Project folder + git binding */}
+        <ProjectFolderSection
+          value={projectFolder}
+          onChange={setProjectFolder}
+          knownFolders={knownFolders}
+        />
+
         {/* Bottom toolbar with icon buttons */}
         <div className="w-full overflow-x-auto border rounded-lg bg-background">
           <div className="flex items-center gap-1 p-1.5">
