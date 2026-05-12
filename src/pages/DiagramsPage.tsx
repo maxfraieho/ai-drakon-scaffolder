@@ -67,6 +67,7 @@ import {
 } from "@/lib/folder-storage";
 import type { CodebaseAnalysisRequest } from "@/types/analysis";
 import type { Diagram } from "@/types/drakon";
+import { listProjects } from "@/lib/mcp/projects";
 
 function readLastGithubRepoSelection() {
   if (typeof window === "undefined") {
