@@ -52,6 +52,25 @@ export function ProjectFolderSection({
   hideFolder = false,
 }: Props) {
   const [showToken, setShowToken] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<"idle" | "checking" | "valid" | "invalid" | "error">("idle");
+
+  const validateToken = async (token: string) => {
+    if (!token.trim()) {
+      setTokenStatus("idle");
+      return;
+    }
+    setTokenStatus("checking");
+    try {
+      const res = await fetch("https://api.github.com/user", {
+        headers: { Authorization: `token ${token}` },
+      });
+      if (res.status === 200) setTokenStatus("valid");
+      else if (res.status === 401 || res.status === 403) setTokenStatus("invalid");
+      else setTokenStatus("error");
+    } catch {
+      setTokenStatus("error");
+    }
+  };
 
   // Persist on change
   useEffect(() => {
