@@ -43,6 +43,26 @@ function errorResponse(message, status = 400, details = undefined, code = undefi
 
 const analysisJobs = new Map();
 
+// Structured logger — output visible via `wrangler tail`
+function log(level, msg, data = {}) {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level, msg, ...data }));
+}
+
+// Save a single log entry to MinIO at logs/{date}/{ts}-{tool}.json
+// Never throws — logging failures are silent (to avoid infinite loops)
+async function saveLogToMinio(env, entry) {
+  if (!env.MINIO_SECRET_KEY || !env.MINIO_ENDPOINT) return;
+  try {
+    const date = (entry.ts || new Date().toISOString()).slice(0, 10);
+    const safeTs = (entry.ts || new Date().toISOString()).replace(/[:.]/g, '-');
+    const safeTool = (entry.tool || entry.msg || 'req').replace(/[^a-z0-9._-]/gi, '-').slice(0, 30);
+    const key = `logs/${date}/${safeTs}-${safeTool}.json`;
+    await uploadToMinIO(env, key, JSON.stringify(entry));
+  } catch (_) {
+    // silent — don't recurse
+  }
+}
+
 function githubHeaders(env, requestToken = '') {
   const token = String(requestToken || env.GITHUB_TOKEN || '').trim();
   if (!token) {
@@ -906,7 +926,7 @@ async function handleDrakonCommit(request, env) {
     return errorResponse('folderSlug and diagramId are required', 400, undefined, 'BAD_REQUEST');
   }
 
-  const normalized = normalizeDiagramPayload(body.diagram || body, folderSlug, diagramId);
+  const normalized = normalizeDiagramPayload(body, folderSlug, diagramId);
   const key = `${folderSlug}/${diagramId}.json`;
   await uploadToMinIO(env, key, JSON.stringify(normalized, null, 2));
 
@@ -1467,7 +1487,7 @@ function toolResultJson(data) {
   };
 }
 
-async function handleMcp(request, env) {
+async function handleMcp(request, env, ctx) {
   let body;
   try {
     body = await request.json();
@@ -1504,6 +1524,9 @@ async function handleMcp(request, env) {
     const name = params?.name;
     const args = params?.arguments || {};
     const requestToken = request.headers.get('X-Github-Token') || '';
+    const t0 = Date.now();
+    log('info', 'tool.call', { tool: name, hasGhToken: !!requestToken, folderSlug: args.folderSlug, diagramId: args.diagramId, owner: args.owner, repo: args.repo });
+    try {
 
     if (name === 'drakon.listdiagrams') {
       const result = await handleDrakonList(String(args.folderSlug || ''), env);
@@ -1606,7 +1629,15 @@ async function handleMcp(request, env) {
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
+    log('warn', 'tool.unknown', { tool: name, ms: Date.now() - t0 });
     return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown tool: ${name}` } }, 404);
+
+    } catch (err) {
+      const entry = { ts: new Date().toISOString(), level: 'error', tool: name, ms: Date.now() - t0, error: err.message, stack: (err.stack || '').slice(0, 400) };
+      log('error', 'tool.error', entry);
+      if (ctx) ctx.waitUntil(saveLogToMinio(env, entry));
+      return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32603, message: err.message } }, 500);
+    }
   }
 
   return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown method: ${method}` } }, 404);
@@ -1628,7 +1659,7 @@ async function handleHealth(env) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
@@ -1653,7 +1684,23 @@ export default {
       if (method === 'POST' && path === '/mcp') {
         const owner = await verifyOwnerAuth(request, env);
         if (!owner) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
-        return await handleMcp(request, env);
+        // Clone to read tool name without consuming the body
+        let toolName = 'unknown';
+        try {
+          const cloned = await request.clone().json();
+          if (cloned?.method === 'tools/call') toolName = cloned?.params?.name || 'unknown';
+          else toolName = cloned?.method || 'unknown';
+        } catch (_) {}
+        const t0mcp = Date.now();
+        const resp = await handleMcp(request, env, ctx);
+        ctx.waitUntil(saveLogToMinio(env, {
+          ts: new Date().toISOString(),
+          level: resp.status < 400 ? 'info' : 'error',
+          tool: toolName,
+          httpStatus: resp.status,
+          ms: Date.now() - t0mcp,
+        }));
+        return resp;
       }
 
       const ownerPayload = await verifyOwnerAuth(request, env);
