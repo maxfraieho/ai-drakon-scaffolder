@@ -1,0 +1,77 @@
+{
+  "name": "SlotRouter — resolve_slot(model_name)",
+  "access": "public",
+  "params": [
+    "model_name: str"
+  ],
+  "items": {
+    "n1": {
+      "type": "input",
+      "content": "model_name string\n(e.g. \"claude-sonnet-4-6\", \"coding\")",
+      "one": "n2"
+    },
+    "n2": {
+      "type": "action",
+      "content": "normalized = model_name.strip()",
+      "one": "n3"
+    },
+    "n3": {
+      "type": "question",
+      "content": "\"/\" in normalized?",
+      "one": "n3a",
+      "two": "n4"
+    },
+    "n3a": {
+      "type": "action",
+      "content": "normalized = suffix after last \"/\"",
+      "one": "n4"
+    },
+    "n4": {
+      "type": "action",
+      "content": "normalized = ALIASES.get(normalized, normalized)\ne.g. \"claude-sonnet-4-6\" → \"standard-proxy\"",
+      "one": "n5"
+    },
+    "n5": {
+      "type": "action",
+      "content": "Iterate slots from slots_loader()",
+      "one": "n6"
+    },
+    "n6": {
+      "type": "question",
+      "content": "slot.slot_id\n== normalized?",
+      "one": "n7",
+      "two": "n9"
+    },
+    "n7": {
+      "type": "question",
+      "content": "slot.mode\n== \"disabled\"?",
+      "one": "n8a",
+      "two": "n8b"
+    },
+    "n8a": {
+      "type": "output",
+      "content": "return None\n(slot disabled)",
+      "one": "nEnd"
+    },
+    "n8b": {
+      "type": "output",
+      "content": "return slot: ProxySlotConfig\n(mode, candidates, pinned_*)",
+      "one": "nEnd"
+    },
+    "n9": {
+      "type": "question",
+      "content": "More slots\nto check?",
+      "one": "n5",
+      "two": "n10"
+    },
+    "n10": {
+      "type": "output",
+      "content": "return None\n(no matching slot)",
+      "one": "nEnd"
+    },
+    "nEnd": {
+      "type": "end",
+      "content": "Done"
+    }
+  }
+}
