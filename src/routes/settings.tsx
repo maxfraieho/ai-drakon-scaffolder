@@ -1,6 +1,7 @@
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Eye, EyeOff, ExternalLink, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
+import { Check, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, ShieldAlert, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useGithubRepos, mergeWithKnown } from "@/hooks/useGithubRepos";
 import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
