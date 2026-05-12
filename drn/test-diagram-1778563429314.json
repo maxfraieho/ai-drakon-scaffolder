@@ -1,0 +1,11 @@
+{
+  "title": "Test Diagram",
+  "nodes": [
+    {
+      "id": "1",
+      "type": "action",
+      "text": "Hello"
+    }
+  ],
+  "edges": []
+}
