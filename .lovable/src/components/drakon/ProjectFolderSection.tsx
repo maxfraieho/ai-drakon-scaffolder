@@ -2,7 +2,7 @@
 // the analysis bind-to-folder card. Persists last values to local/session storage.
 
 import { useEffect, useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { AlertTriangle, Check, Eye, EyeOff, Loader2, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -52,6 +52,25 @@ export function ProjectFolderSection({
   hideFolder = false,
 }: Props) {
   const [showToken, setShowToken] = useState(false);
+  const [tokenStatus, setTokenStatus] = useState<"idle" | "checking" | "valid" | "invalid" | "error">("idle");
+
+  const validateToken = async (token: string) => {
+    if (!token.trim()) {
+      setTokenStatus("idle");
+      return;
+    }
+    setTokenStatus("checking");
+    try {
+      const res = await fetch("https://api.github.com/user", {
+        headers: { Authorization: `token ${token}` },
+      });
+      if (res.status === 200) setTokenStatus("valid");
+      else if (res.status === 401 || res.status === 403) setTokenStatus("invalid");
+      else setTokenStatus("error");
+    } catch {
+      setTokenStatus("error");
+    }
+  };
 
   // Persist on change
   useEffect(() => {
@@ -149,11 +168,29 @@ export function ProjectFolderSection({
               id="pf-token"
               type={showToken ? "text" : "password"}
               value={value.githubToken}
-              onChange={(e) => set("githubToken", e.target.value)}
+              onChange={(e) => {
+                set("githubToken", e.target.value);
+                setTokenStatus("idle");
+              }}
+              onBlur={(e) => void validateToken(e.target.value)}
               placeholder="ghp_…"
-              className="h-8 text-sm pr-8 font-mono"
+              className="h-8 text-sm pr-16 font-mono"
               autoComplete="off"
             />
+            <div className="absolute inset-y-0 right-8 flex items-center justify-center w-5 text-[var(--text-muted)]">
+              {tokenStatus === "checking" && (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="Validating token" />
+              )}
+              {tokenStatus === "valid" && (
+                <Check className="h-3.5 w-3.5 text-green-500" aria-label="Token valid" />
+              )}
+              {tokenStatus === "invalid" && (
+                <X className="h-3.5 w-3.5 text-red-500" aria-label="Token invalid or missing repo scope" />
+              )}
+              {tokenStatus === "error" && (
+                <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" aria-label="Could not validate" />
+              )}
+            </div>
             <button
               type="button"
               onClick={() => setShowToken((v) => !v)}
