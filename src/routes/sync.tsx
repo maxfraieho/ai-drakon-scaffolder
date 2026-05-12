@@ -193,8 +193,173 @@ function SyncPage() {
             )}
           </div>
         )}
+
+        {diff && diff.missingInDiagram.length > 0 && (
+          <BindAnalysisToFolderCard items={diff.missingInDiagram} />
+        )}
       </div>
     </div>
+  );
+}
+
+function defaultMinioFolder(): string {
+  if (typeof window === "undefined") return "";
+  try {
+    const raw = localStorage.getItem("github.lastRepo");
+    if (raw) {
+      const parsed = JSON.parse(raw) as { owner?: string; repo?: string };
+      if (parsed.owner && parsed.repo) return `${parsed.owner}--${parsed.repo}`;
+    }
+  } catch { /* ignore */ }
+  return "";
+}
+
+function BindAnalysisToFolderCard({ items }: { items: MissingInDiagram[] }) {
+  const navigate = useNavigate();
+  const [folder, setFolder] = useState<string>(() => defaultMinioFolder());
+  const [pf, setPf] = useState<ProjectFolderValue>(() => {
+    const d = readProjectFolderDefaults();
+    return { ...d, folderSlug: d.folderSlug || defaultMinioFolder() };
+  });
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [summary, setSummary] = useState<{ minio: number; git: number; failed: number } | null>(null);
+
+  const targetFolder = useMemo(
+    () => (folder.trim() || pf.folderSlug || "general"),
+    [folder, pf.folderSlug],
+  );
+
+  const runSaveAll = async () => {
+    if (items.length === 0) return;
+    setIsSaving(true);
+    setSummary(null);
+    setProgress({ done: 0, total: items.length });
+
+    let okMinio = 0;
+    let okGit = 0;
+    let failed = 0;
+
+    const ownerRepo = pf.saveToGit && pf.repo.trim() && pf.githubToken.trim()
+      ? parseOwnerRepo(pf.repo)
+      : null;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const id = sanitizeDiagramId(item.suggestedDiagramName || item.symbolName);
+      const diagram = {
+        name: item.suggestedDiagramName || item.symbolName,
+        access: "write" as const,
+        items: {
+          "1": { type: "end" },
+          "2": { type: "branch", branchId: 0, one: "3" },
+          "3": { type: "action", content: item.symbolName, one: "1" },
+        },
+      };
+      try {
+        await saveDiagramToMinio(targetFolder, id, diagram);
+        okMinio++;
+        if (ownerRepo) {
+          try {
+            await saveDiagramToGit({
+              owner: ownerRepo.owner,
+              repo: ownerRepo.repo,
+              branch: pf.branch.trim() || "main",
+              diagramId: id,
+              diagram,
+              token: pf.githubToken,
+            });
+            okGit++;
+          } catch (err) {
+            console.warn("git save failed", id, err);
+            failed++;
+          }
+        }
+      } catch (err) {
+        console.warn("minio save failed", id, err);
+        failed++;
+      }
+      setProgress({ done: i + 1, total: items.length });
+    }
+
+    setSummary({ minio: okMinio, git: okGit, failed });
+    setIsSaving(false);
+    if (failed === 0) {
+      toast.success(`✓ ${okMinio} diagrams → MinIO \`${targetFolder}\``);
+      if (ownerRepo) toast.success("✓ git drn/ updated");
+    } else {
+      toast.error(`Completed with ${failed} failure(s)`);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base">Bind analysis to project folder</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="space-y-1">
+          <Label htmlFor="bind-folder" className="text-xs">MinIO folder</Label>
+          <Input
+            id="bind-folder"
+            value={folder}
+            onChange={(e) => setFolder(e.target.value)}
+            placeholder="owner--repo"
+            className="h-8 text-sm font-mono"
+          />
+        </div>
+
+        <ProjectFolderSection
+          value={pf}
+          onChange={setPf}
+          hideFolder
+          compact
+        />
+
+        {progress && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between font-mono text-[11px] text-muted-foreground">
+              <span>Saving {progress.done}/{progress.total} diagrams…</span>
+              <span>{Math.round((progress.done / progress.total) * 100)}%</span>
+            </div>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className="h-full bg-primary transition-[width] duration-150"
+                style={{ width: `${(progress.done / progress.total) * 100}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {summary && (
+          <div className="rounded-md border bg-muted/30 p-2 text-xs">
+            ✓ {summary.minio} diagrams → MinIO <code className="font-mono">{targetFolder}</code>
+            {summary.git > 0 && <> · ✓ git drn/ updated ({summary.git})</>}
+            {summary.failed > 0 && <> · ✗ {summary.failed} failed</>}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={() => void runSaveAll()} disabled={isSaving || items.length === 0}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            Save all to MinIO + git
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() =>
+              navigate({
+                to: "/diagrams",
+                search: { autoAnalyze: undefined, analyzePath: undefined },
+              })
+            }
+            disabled={!summary}
+          >
+            <FolderOpen className="mr-2 h-4 w-4" />
+            Open in Editor
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
