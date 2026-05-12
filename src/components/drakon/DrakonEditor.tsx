@@ -86,6 +86,13 @@ function createEmptyDiagram(t: ReturnType<typeof useLocale>['t']): DrakonDiagram
   };
 }
 
+function normWidgetDiagram<T extends Record<string, unknown>>(d: T | null | undefined): T | null | undefined {
+  if (!d) return d;
+  const p = (d as Record<string, unknown>).params;
+  if (Array.isArray(p)) return { ...d, params: (p as string[]).join(', ') };
+  return d;
+}
+
 export function DrakonEditor({
   diagram,
   diagramId,
@@ -283,15 +290,9 @@ export function DrakonEditor({
         console.log('[DRK-INIT] widget.render OK, element:', (element as HTMLElement)?.tagName);
         container.appendChild(element);
 
-        // Normalize IR params (string[]) → widget params (string)
-        const normDiag = <T extends { params?: unknown }>(d: T | null | undefined): T | null | undefined => {
-          if (!d) return d;
-          const p = (d as Record<string, unknown>).params;
-          if (Array.isArray(p)) return { ...d, params: p.join(", ") };
-          return d;
-        };
+
         // Use provided diagram or empty template for new
-        const diagramToLoad = normDiag(diagram) || createEmptyDiagram(t);
+        const diagramToLoad = normWidgetDiagram(diagram) || createEmptyDiagram(t);
         const effectiveId = diagramId || 'new-diagram';
         console.log('[DRK-INIT] setDiagram, id:', effectiveId, 'items count:',
           Object.keys(diagramToLoad?.items || {}).length, 'name:', diagramToLoad?.name);
@@ -380,7 +381,7 @@ export function DrakonEditor({
 
     // Re-set diagram to restart mouse behavior state machine
     if (currentDiagramJson) {
-      const diagramData = normDiag(JSON.parse(currentDiagramJson) as Record<string, unknown>);
+      const diagramData = normWidgetDiagram(JSON.parse(currentDiagramJson) as Record<string, unknown>);
       widget.setDiagram(diagramId, diagramData, editSender).then(() => {
         widget.setZoom(currentZoom);
       });
