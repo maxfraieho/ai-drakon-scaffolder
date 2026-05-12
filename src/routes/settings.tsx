@@ -72,11 +72,17 @@ function SettingsRoute() {
 
   const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner, settings.github.token);
   const allRepos = mergeWithKnown(repos);
-  const filteredRepos = allRepos.filter(
-    (r) =>
-      r.full_name.toLowerCase().includes(settings.github.repo.toLowerCase()) ||
-      r.name.toLowerCase().includes(settings.github.repo.toLowerCase()),
+  const repoQuery = settings.github.repo.toLowerCase().trim();
+  const repoExactMatch = allRepos.some(
+    (r) => r.name.toLowerCase() === repoQuery || r.full_name.toLowerCase() === repoQuery,
   );
+  const filteredRepos = !repoQuery || repoExactMatch
+    ? allRepos
+    : allRepos.filter(
+        (r) =>
+          r.name.toLowerCase().includes(repoQuery) ||
+          r.full_name.toLowerCase().includes(repoQuery),
+      );
 
   const normalizedN8nUrl = useMemo(
     () => settings.n8n.baseUrl.trim().replace(/\/+$/, ""),
