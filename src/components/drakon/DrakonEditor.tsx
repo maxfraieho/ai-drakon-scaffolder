@@ -126,6 +126,19 @@ export function DrakonEditor({
 
   const [isSaving, setIsSaving] = useState(false);
 
+  const [projectFolder, setProjectFolder] = useState<ProjectFolderValue>(() => {
+    const d = readProjectFolderDefaults();
+    return { ...d, folderSlug: d.folderSlug || folderSlug || '' };
+  });
+  const [knownFolders, setKnownFolders] = useState<string[]>([]);
+  useEffect(() => {
+    let alive = true;
+    listProjects().then((list) => {
+      if (alive) setKnownFolders(list);
+    });
+    return () => { alive = false; };
+  }, []);
+
   const editSender: DrakonEditSender = {
     pushEdit: (edit) => {
       setHasChanges(true);
