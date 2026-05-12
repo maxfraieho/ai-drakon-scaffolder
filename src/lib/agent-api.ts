@@ -6,29 +6,38 @@ const AGENT_LABELS: Record<AgentId, string> = {
   docs: "Docs",
 };
 
+// Default tunnel URLs (HTTPS via cloudflared)
+const AGENT_TUNNEL_URLS: Record<AgentId, string> = {
+  drakon: "https://drakon-agent.exodus.pp.ua",
+  architect: "https://architect-agent.exodus.pp.ua",
+  docs: "https://docs-agent.exodus.pp.ua",
+};
+
+// Per-agent localStorage override keys (e.g. "drakon_agent_url_drakon")
+const STORAGE_KEY_PREFIX = "drakon_agent_url_";
+// Legacy single base URL key (still supported for backward compat)
+const LEGACY_KEY = "drakon_agent_base_url";
+
 const AGENT_PORTS: Record<AgentId, number> = {
   drakon: 8765,
   architect: 8766,
   docs: 8767,
 };
 
-const DEFAULT_BASE = "http://192.168.3.184";
-const STORAGE_KEY = "drakon_agent_base_url";
-
-function getBaseUrl(): string {
+export function getAgentUrl(agentId: AgentId): string {
   try {
     if (typeof localStorage !== "undefined") {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) return stored.replace(/\/+$/, "");
+      // Per-agent override
+      const perAgent = localStorage.getItem(`${STORAGE_KEY_PREFIX}${agentId}`);
+      if (perAgent) return perAgent.replace(/\/+$/, "");
+      // Legacy single base URL
+      const base = localStorage.getItem(LEGACY_KEY);
+      if (base) return `${base.replace(/\/+$/, "")}:${AGENT_PORTS[agentId]}`;
     }
   } catch {
-    // ignore
+    // ignore SSR / storage errors
   }
-  return DEFAULT_BASE;
-}
-
-export function getAgentUrl(agentId: AgentId): string {
-  return `${getBaseUrl()}:${AGENT_PORTS[agentId]}`;
+  return AGENT_TUNNEL_URLS[agentId];
 }
 
 export function getAgentLabel(agentId: AgentId): string {
