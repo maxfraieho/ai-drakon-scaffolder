@@ -1,14 +1,17 @@
 {
   "name": "OpenAI Proxy — Chat Completion Request",
-  "access": "public",
-  "params": [
-    "POST /v1/chat/completions",
-    "model",
-    "messages"
-  ],
+  "params": "POST /v1/chat/completions, model, messages",
   "items": {
+    "end": {
+      "type": "end"
+    },
+    "b0": {
+      "type": "branch",
+      "branchId": 0,
+      "one": "n1"
+    },
     "n1": {
-      "type": "input",
+      "type": "action",
       "content": "Receive POST /v1/chat/completions\nmodel, messages, stream?",
       "one": "n2"
     },
@@ -19,14 +22,14 @@
     },
     "n3": {
       "type": "question",
-      "content": "Token matches\nexpected proxy token?",
+      "content": "Token matches\nproxy token?",
       "one": "n4",
       "two": "n3e"
     },
     "n3e": {
-      "type": "output",
+      "type": "action",
       "content": "HTTP 401 Unauthorized",
-      "one": "nEnd"
+      "one": "end"
     },
     "n4": {
       "type": "action",
@@ -40,13 +43,13 @@
       "two": "n5e"
     },
     "n5e": {
-      "type": "output",
+      "type": "action",
       "content": "HTTP 404 model_not_found",
-      "one": "nEnd"
+      "one": "end"
     },
     "n6": {
       "type": "action",
-      "content": "get_task_type(messages) → coding/reasoning/…\nSlotRouter.get_candidates(slot, task_type)",
+      "content": "get_task_type(messages)\nSlotRouter.get_candidates(slot, task_type)",
       "one": "n7"
     },
     "n7": {
@@ -56,9 +59,9 @@
       "two": "n7e"
     },
     "n7e": {
-      "type": "output",
+      "type": "action",
       "content": "HTTP 503 no_available_backend",
-      "one": "nEnd"
+      "one": "end"
     },
     "n8": {
       "type": "action",
@@ -88,18 +91,14 @@
       "two": "n13"
     },
     "n12": {
-      "type": "output",
+      "type": "action",
       "content": "StreamingResponse\nSSE chunks: data: {...}\\n\\n",
-      "one": "nEnd"
+      "one": "end"
     },
     "n13": {
-      "type": "output",
+      "type": "action",
       "content": "JSONResponse\n{ choices, usage, model }",
-      "one": "nEnd"
-    },
-    "nEnd": {
-      "type": "end",
-      "content": "Done"
+      "one": "end"
     }
   }
 }
