@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import sys
 from typing import Optional
 
 import httpx
@@ -9,20 +10,7 @@ PROXY_URL = os.getenv("PROXY_URL", "http://localhost:18880/v1")
 PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc")
 PROXY_MODEL = os.getenv("PROXY_MODEL", "coding-proxy")
 
-SYSTEM_PROMPT = """You are the Docs agent for an AI-DRAKON platform.
-Your role: manage documentation, generate API docs, create documentation
-DRAKON diagrams, track documentation coverage.
-
-You have access to:
-- Project documentation files (from GitHub)
-- Your memory (memory/docs/*.md) with documentation state
-- DRAKON IR format rules from the knowledge base
-
-When suggesting document updates, output a JSON array in a ```json``` block:
-[{"file": "path/to/doc.md", "section": "Section Name", "content": "New content"}]
-
-When answering questions, reference specific files and endpoints.
-"""
+from prompts import DOCS_SYSTEM_PROMPT
 
 _JSON_BLOCK_RE = re.compile(r"```json\s*(\[.*?\])\s*```", re.DOTALL)
 
@@ -46,7 +34,7 @@ def docs_chat(
     parts.append(f"## User Message\n{message}")
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": DOCS_SYSTEM_PROMPT},
         {"role": "user", "content": "\n\n".join(parts)},
     ]
 

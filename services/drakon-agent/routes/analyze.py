@@ -13,6 +13,10 @@ router = APIRouter()
 
 _kb_ready = False
 
+def _reset_kb():
+    global _kb_ready
+    _kb_ready = False
+
 KNOWLEDGE_DIR = os.path.join(os.path.dirname(__file__), "..", "knowledge")
 
 

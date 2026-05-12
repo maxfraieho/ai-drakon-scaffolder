@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import sys
 from typing import Optional
 
 import httpx
@@ -9,27 +10,31 @@ PROXY_URL = os.getenv("PROXY_URL", "http://localhost:18880/v1")
 PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc")
 PROXY_MODEL = os.getenv("PROXY_MODEL", "coding-proxy")
 
-SYSTEM_PROMPT = """You are the Architect agent for an AI-DRAKON platform.
-Your role: analyze project structure, create DRAKON architecture diagrams,
-suggest structural improvements, answer architecture questions.
+_DRAKON_AGENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "drakon-agent"))
+if _DRAKON_AGENT not in sys.path:
+    sys.path.append(_DRAKON_AGENT)
 
-You have access to:
-- The project file tree (GitHub repo contents)
-- Existing DRAKON diagrams in the "architecture/" folder
-- Your memory (memory/architect/*.md) with previous decisions
-- DRAKON IR format rules from the knowledge base
-
-When suggesting diagram changes, output MutationOp[] in a ```json``` block.
-When answering questions, be concise and reference specific files.
-
-DRAKON IR quick reference:
-- b0: {type:"branch",branchId:0,one:"<first_node>"} MANDATORY
-- end: {type:"end"} MANDATORY
-- action: {type:"action",content:"<text>",one:"<next>"}
-- question: {type:"question",content:"<cond>?",one:"<yes>",two:"<no>"}
-"""
+from prompts import ARCHITECT_SYSTEM_PROMPT
 
 _JSON_BLOCK_RE = re.compile(r"```json\s*(\[.*?\])\s*```", re.DOTALL)
+
+_KB_SNIPPET: str = ""
+
+
+def _load_kb_snippet() -> str:
+    """Load first section of DRAKON rules KB for context."""
+    global _KB_SNIPPET
+    if _KB_SNIPPET:
+        return _KB_SNIPPET
+    try:
+        kb_path = os.path.join(_DRAKON_AGENT, "knowledge", "00-drakon-rules.md")
+        if os.path.exists(kb_path):
+            text = open(kb_path, encoding="utf-8").read()
+            # Take the first 2000 chars (naming + node types section)
+            _KB_SNIPPET = text[:2000]
+    except Exception:
+        pass
+    return _KB_SNIPPET
 
 
 def architect_chat(
@@ -42,8 +47,11 @@ def architect_chat(
     parts = []
     if memory_context:
         parts.append(f"## My Memory\n{memory_context}")
-    if kb_context:
-        parts.append(f"## DRAKON Rules\n{kb_context}")
+
+    drakon_rules = kb_context or _load_kb_snippet()
+    if drakon_rules:
+        parts.append(f"## DRAKON Rules (reference)\n{drakon_rules[:1500]}")
+
     if file_tree:
         parts.append(f"## Project File Tree\n{json.dumps(file_tree, indent=2)[:3000]}")
     if current_diagram:
@@ -51,7 +59,7 @@ def architect_chat(
     parts.append(f"## User Message\n{message}")
 
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": ARCHITECT_SYSTEM_PROMPT},
         {"role": "user", "content": "\n\n".join(parts)},
     ]
 
