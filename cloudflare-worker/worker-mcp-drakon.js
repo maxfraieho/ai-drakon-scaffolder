@@ -937,6 +937,84 @@ async function handleDrakonList(folderSlug, env) {
   return jsonResponse({ success: true, folderSlug, diagrams });
 }
 
+// ─── Git drn/ folder helpers ─────────────────────────────────────────────────
+
+async function gitGetFileSha(env, owner, repo, path, branch, requestToken) {
+  try {
+    const data = await githubFetch(env, `/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`, {}, requestToken);
+    return data.sha || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function handleSaveDiagramToGit(args, env, requestToken) {
+  const owner = String(args.owner || '').trim();
+  const repo = String(args.repo || '').trim();
+  const branch = String(args.branch || 'main').trim();
+  const diagramId = String(args.diagramId || '').trim().replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 80);
+  const diagram = args.diagram || {};
+
+  if (!owner || !repo || !diagramId) {
+    return { success: false, error: 'owner, repo, diagramId are required' };
+  }
+
+  const path = `drn/${diagramId}.json`;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(diagram, null, 2))));
+  const sha = await gitGetFileSha(env, owner, repo, path, branch, requestToken);
+
+  const body = {
+    message: `drakon: save diagram ${diagramId}`,
+    content,
+    branch,
+  };
+  if (sha) body.sha = sha;
+
+  await githubFetch(env, `/repos/${owner}/${repo}/contents/${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }, requestToken);
+
+  return { success: true, owner, repo, branch, path, diagramId };
+}
+
+async function handleListGitDiagrams(args, env, requestToken) {
+  const owner = String(args.owner || '').trim();
+  const repo = String(args.repo || '').trim();
+  const branch = String(args.branch || 'main').trim();
+
+  if (!owner || !repo) return { success: false, error: 'owner, repo required' };
+
+  let items = [];
+  try {
+    const data = await githubFetch(env, `/repos/${owner}/${repo}/contents/drn?ref=${encodeURIComponent(branch)}`, {}, requestToken);
+    items = Array.isArray(data) ? data : [data];
+  } catch (_) {
+    return { success: true, owner, repo, branch, diagrams: [] };
+  }
+
+  const diagrams = items
+    .filter((f) => f.type === 'file' && f.name.endsWith('.json'))
+    .map((f) => f.name.replace('.json', ''));
+
+  return { success: true, owner, repo, branch, diagrams };
+}
+
+async function handleGetGitDiagram(args, env, requestToken) {
+  const owner = String(args.owner || '').trim();
+  const repo = String(args.repo || '').trim();
+  const branch = String(args.branch || 'main').trim();
+  const diagramId = String(args.diagramId || '').trim();
+
+  if (!owner || !repo || !diagramId) return { success: false, error: 'owner, repo, diagramId required' };
+
+  const path = `drn/${diagramId}.json`;
+  const data = await githubFetch(env, `/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`, {}, requestToken);
+  const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+  return { success: true, owner, repo, branch, diagramId, diagram: content };
+}
+
 async function handleGithubListTree(args, env, requestToken = '') {
   const owner = String(args?.owner || '').trim();
   const repo = String(args?.repo || '').trim();
@@ -1283,6 +1361,48 @@ function getMcpTools() {
       },
     },
     {
+      name: 'drakon.savetogit',
+      description: 'Save a DRAKON diagram JSON to the drn/ folder in a GitHub repository (creates or updates drn/{diagramId}.json). Requires a GitHub token with write access passed via X-Github-Token header or env.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+          diagramId: { type: 'string' },
+          diagram: { type: 'object' },
+        },
+        required: ['owner', 'repo', 'diagramId', 'diagram'],
+      },
+    },
+    {
+      name: 'drakon.listgitdiagrams',
+      description: 'List DRAKON diagrams saved in the drn/ folder of a GitHub repository.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+    {
+      name: 'drakon.getgitdiagram',
+      description: 'Fetch a single DRAKON diagram from drn/{diagramId}.json in a GitHub repository.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+          diagramId: { type: 'string' },
+        },
+        required: ['owner', 'repo', 'diagramId'],
+      },
+    },
+    {
       name: 'github.listtree',
       description: 'List files and directories for a GitHub repository path so an agent can explore project structure before analysis, select target modules safely, and receive normalized entries with path, type, size, and optional download URL.',
       inputSchema: {
@@ -1383,6 +1503,7 @@ async function handleMcp(request, env) {
   if (method === 'tools/call') {
     const name = params?.name;
     const args = params?.arguments || {};
+    const requestToken = request.headers.get('X-Github-Token') || '';
 
     if (name === 'drakon.listdiagrams') {
       const result = await handleDrakonList(String(args.folderSlug || ''), env);
@@ -1404,8 +1525,20 @@ async function handleMcp(request, env) {
           diagram: args.diagram || {},
         }),
       });
-      const result = await handleDrakonCommit(fakeRequest, env);
-      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
+      const minioResult = await handleDrakonCommit(fakeRequest, env);
+      const minioData = await minioResult.json();
+      // Also save to git drn/ if owner+repo provided
+      let gitResult = null;
+      if (args.owner && args.repo) {
+        gitResult = await handleSaveDiagramToGit({
+          owner: args.owner,
+          repo: args.repo,
+          branch: args.branch || 'main',
+          diagramId: String(args.diagramId || ''),
+          diagram: args.diagram || {},
+        }, env, requestToken);
+      }
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson({ ...minioData, git: gitResult }) });
     }
 
     if (name === 'drakon.deletediagram') {
@@ -1435,6 +1568,21 @@ async function handleMcp(request, env) {
 
     if (name === 'drakon.diffcodevsdiagram') {
       const result = handleMcpDiffCodeVsDiagram(args);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'drakon.savetogit') {
+      const result = await handleSaveDiagramToGit(args, env, requestToken);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'drakon.listgitdiagrams') {
+      const result = await handleListGitDiagrams(args, env, requestToken);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'drakon.getgitdiagram') {
+      const result = await handleGetGitDiagram(args, env, requestToken);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
