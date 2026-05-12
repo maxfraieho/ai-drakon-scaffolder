@@ -1,0 +1,105 @@
+{
+  "name": "OpenAI Proxy — Chat Completion Request",
+  "access": "public",
+  "params": [
+    "POST /v1/chat/completions",
+    "model",
+    "messages"
+  ],
+  "items": {
+    "n1": {
+      "type": "input",
+      "content": "Receive POST /v1/chat/completions\nmodel, messages, stream?",
+      "one": "n2"
+    },
+    "n2": {
+      "type": "action",
+      "content": "Extract x-api-key / Authorization header",
+      "one": "n3"
+    },
+    "n3": {
+      "type": "question",
+      "content": "Token matches\nexpected proxy token?",
+      "one": "n4",
+      "two": "n3e"
+    },
+    "n3e": {
+      "type": "output",
+      "content": "HTTP 401 Unauthorized",
+      "one": "nEnd"
+    },
+    "n4": {
+      "type": "action",
+      "content": "SlotRouter.resolve_slot(model)\nNormalize alias → slot_id",
+      "one": "n5"
+    },
+    "n5": {
+      "type": "question",
+      "content": "Slot found\nand not disabled?",
+      "one": "n6",
+      "two": "n5e"
+    },
+    "n5e": {
+      "type": "output",
+      "content": "HTTP 404 model_not_found",
+      "one": "nEnd"
+    },
+    "n6": {
+      "type": "action",
+      "content": "get_task_type(messages) → coding/reasoning/…\nSlotRouter.get_candidates(slot, task_type)",
+      "one": "n7"
+    },
+    "n7": {
+      "type": "question",
+      "content": "Has available\ncandidates?",
+      "one": "n8",
+      "two": "n7e"
+    },
+    "n7e": {
+      "type": "output",
+      "content": "HTTP 503 no_available_backend",
+      "one": "nEnd"
+    },
+    "n8": {
+      "type": "action",
+      "content": "Pick first candidate (provider, model)\nBuild AsyncOpenAI client",
+      "one": "n9"
+    },
+    "n9": {
+      "type": "action",
+      "content": "Call provider.chat.completions.create()\nstream=True/False",
+      "one": "n10"
+    },
+    "n10": {
+      "type": "question",
+      "content": "Provider returned\nsuccessful response?",
+      "one": "n11",
+      "two": "n10f"
+    },
+    "n10f": {
+      "type": "action",
+      "content": "Mark provider degraded\nPop candidate from list",
+      "one": "n7"
+    },
+    "n11": {
+      "type": "question",
+      "content": "stream requested?",
+      "one": "n12",
+      "two": "n13"
+    },
+    "n12": {
+      "type": "output",
+      "content": "StreamingResponse\nSSE chunks: data: {...}\\n\\n",
+      "one": "nEnd"
+    },
+    "n13": {
+      "type": "output",
+      "content": "JSONResponse\n{ choices, usage, model }",
+      "one": "nEnd"
+    },
+    "nEnd": {
+      "type": "end",
+      "content": "Done"
+    }
+  }
+}
