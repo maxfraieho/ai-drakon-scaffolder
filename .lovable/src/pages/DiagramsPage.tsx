@@ -538,19 +538,10 @@ export function DiagramsPage() {
         >
           {!foldersCollapsed && (
             <>
-              <div className="sticky top-0 flex h-12 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
+              <div className="sticky top-0 flex h-12 items-center border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
                 <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
                   Folders
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setFoldersCollapsed(true)}
-                  aria-label="Згорнути папки"
-                  title="Згорнути"
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]"
-                >
-                  <PanelLeftClose className="h-4 w-4" aria-hidden="true" />
-                </button>
               </div>
 
               <nav className="p-2">
