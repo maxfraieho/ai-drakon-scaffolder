@@ -204,7 +204,7 @@ async function signS3Request(env, method, canonicalUri, queryString, payloadHash
     .join('\n') + '\n';
 
   const signedHeaders = canonicalHeaderKeys.join(';');
-  const canonicalRequest = [method, canonicalUri, queryString, canonicalHeaders, '', signedHeaders, payloadHash].join('\n');
+  const canonicalRequest = [method, canonicalUri, queryString, canonicalHeaders, signedHeaders, payloadHash].join('\n');
 
   const algorithm = 'AWS4-HMAC-SHA256';
   const region = 'us-east-1';
@@ -313,12 +313,13 @@ async function listMinioKeys(env, prefix) {
 
   const endpoint = String(env.MINIO_ENDPOINT).replace(/\/+$/, '');
   const bucket = env.MINIO_BUCKET;
-  const queryString = `delimiter=%2F&list-type=2&prefix=${encodeURIComponent(prefix)}`;
+  const encodedPrefix = encodeURIComponent(prefix);
+  const queryString = `delimiter=%2F&list-type=2&prefix=${encodedPrefix}`;
   const canonicalUri = `/${bucket}`;
   const payloadHash = await sha256Hex('');
   const headers = await signS3Request(env, 'GET', canonicalUri, queryString, payloadHash);
 
-  const response = await fetch(`${endpoint}/${bucket}?list-type=2&prefix=${encodeURIComponent(prefix)}&delimiter=/`, {
+  const response = await fetch(`${endpoint}/${bucket}?delimiter=%2F&list-type=2&prefix=${encodedPrefix}`, {
     method: 'GET',
     headers,
   });
@@ -423,67 +424,117 @@ function convertIrToDiagramForWorker(irPayload) {
 
 
 async function analyzeGithubRepo(owner, repo, branch, env) {
-  const githubToken = env.GITHUB_TOKEN || '';
+  const ghToken = String(env.GITHUB_TOKEN || '').trim();
   const branchRef = branch || 'main';
-  const ghHdrs = { 'User-Agent': 'drakon-mcp-worker' };
-  if (githubToken) ghHdrs['Authorization'] = 'Bearer ' + githubToken;
+  const ghHdrs = { 'User-Agent': 'drakon-mcp-worker', 'Accept': 'application/vnd.github+json' };
+  if (ghToken) ghHdrs['Authorization'] = 'Bearer ' + ghToken;
+
+  // 1. Resolve branch → tree SHA
   const branchR = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branchRef}`, { headers: ghHdrs });
-  if (!branchR.ok) return { error: 'branch: ' + branchR.status };
+  if (!branchR.ok) return { error: 'branch API: ' + branchR.status };
   const branchD = await branchR.json();
   const sha = branchD?.commit?.commit?.tree?.sha;
-  if (!sha) return { error: 'no tree sha' };
+  if (!sha) return { error: 'no tree sha in branch response' };
+
+  // 2. Recursive tree — all files at once
   const treeR = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${sha}?recursive=1`, { headers: ghHdrs });
-  if (!treeR.ok) return { error: 'tree: ' + treeR.status };
+  if (!treeR.ok) return { error: 'tree API: ' + treeR.status };
   const treeD = await treeR.json();
-  const files = [];
+
+  const pyFiles = [], tsFiles = [];
   for (const item of (treeD.tree || [])) {
-    if (item.type === 'blob' && /\.(ts|tsx|js|jsx|py)$/i.test(item.path)) {
-      files.push({ name: item.path.split('/').pop(), path: item.path, type: 'file' });
-      if (files.length >= 50) break;
+    if (item.type !== 'blob') continue;
+    if (/\.py$/i.test(item.path)) {
+      pyFiles.push(item.path);
+      if (pyFiles.length >= 30) break;
+    } else if (/\.(ts|tsx|js|jsx)$/i.test(item.path)) {
+      tsFiles.push(item.path);
     }
   }
 
   const summary = {
-    totalFiles: files.length,
-    _debug: { hasToken: !!githubToken, treeSize: (treeD.tree||[]).length, sha: sha||'none' },
+    totalFiles: pyFiles.length + tsFiles.length,
     totalFunctions: 0,
     totalComponents: 0,
-    modules: [...new Set(files.map(f => f.path.split('/')[0]))],
+    pythonFiles: pyFiles.length,
+    tsFiles: tsFiles.length,
+    modules: [],
     detectedFlows: [],
     functions: [],
     components: [],
+    diagrams: [],
+    _debug: { hasToken: !!ghToken, treeSize: (treeD.tree || []).length, sha, truncated: !!treeD.truncated },
   };
 
-  for (const file of files.slice(0, 20)) {
-    const fileResult = await handleGithubGetFile(
-      { owner, repo, path: file.path, branch: branch || 'main' }, env, ''
-    );
-    if (!fileResult.success) continue;
+  // 3. Fetch Python files and call AST analyzer microservice
+  if (pyFiles.length > 0) {
+    const filesToAnalyze = [];
+    for (const path of pyFiles.slice(0, 15)) {
+      const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branchRef}/${path}`;
+      const rawR = await fetch(rawUrl, { headers: { 'User-Agent': 'drakon-mcp-worker' } });
+      if (!rawR.ok) continue;
+      const source = await rawR.text();
+      filesToAnalyze.push({ path, source });
+    }
 
-    const raw = fileResult.content || '';
-    const c = raw.startsWith('data:') ? atob(raw.split(',')[1] || '') : raw;
+    if (filesToAnalyze.length > 0) {
+      try {
+        const astR = await fetch('https://research.exodus.pp.ua/analyze-files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: filesToAnalyze }),
+        });
+        if (astR.ok) {
+          const astData = await astR.json();
+          for (const fileResult of (astData.files || [])) {
+            for (const diagram of (fileResult.diagrams || [])) {
+              if (!diagram.error) {
+                summary.diagrams.push({
+                  name: diagram.name,
+                  filePath: fileResult.path,
+                  nodes: Object.keys(diagram.items || {}).length,
+                  complexity: diagram.complexity || 1,
+                  ir: diagram,
+                });
+                summary.totalFunctions += 1;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        summary._astError = e.message;
+      }
+    }
+  }
 
-    const funcMatches = c.match(/(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s*)?\(|def\s+\w+|async\s+def\s+\w+)/g) || [];
+  // 4. Quick TS/JS regex scan (existing approach)
+  for (const path of tsFiles.slice(0, 10)) {
+    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branchRef}/${path}`;
+    const rawR = await fetch(rawUrl, { headers: { 'User-Agent': 'drakon-mcp-worker' } });
+    if (!rawR.ok) continue;
+    const c = await rawR.text();
+    const funcMatches = c.match(/(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s*)?\()/g) || [];
     summary.totalFunctions += funcMatches.length;
-
-    const compMatches = c.match(/(?:export\s+(?:default\s+)?function\s+[A-Z]\w+|const\s+[A-Z]\w+\s*=|class\s+[A-Z]\w+)/g) || [];
+    const compMatches = c.match(/(?:export\s+(?:default\s+)?function\s+[A-Z]\w+|const\s+[A-Z]\w+\s*=)/g) || [];
     summary.totalComponents += compMatches.length;
     compMatches.forEach(m => {
       const name = (m.match(/[A-Z]\w+/) || [])[0];
-      if (name) summary.components.push({ name, filePath: file.path });
+      if (name) summary.components.push({ name, filePath: path });
     });
-
     if (c.includes('useEffect') || c.includes('useState')) {
-      const routeName = file.path.split('/').pop().replace(/\.[^.]+$/, '');
+      const routeName = path.split('/').pop().replace(/\.[^.]+$/, '');
       if (routeName) summary.detectedFlows.push(routeName + '-flow');
     }
   }
 
-  const plannedDiagrams = summary.components.slice(0, 8).map(c => ({
-    name: 'flow.' + c.name.replace(/([A-Z])/g, m => '-' + m.toLowerCase()).replace(/^-/, ''),
-    description: 'Flow diagram for ' + c.name + ' component',
-    scope: 'flow',
-    estimatedComplexity: 'medium',
+  summary.modules = [...new Set([...pyFiles, ...tsFiles].map(f => f.split('/')[0]))];
+
+  const plannedDiagrams = summary.diagrams.slice(0, 8).map(d => ({
+    name: d.name,
+    description: `DRAKON diagram for ${d.name} (${d.nodes} nodes, complexity ${d.complexity})`,
+    scope: 'function',
+    estimatedComplexity: d.complexity > 5 ? 'high' : d.complexity > 2 ? 'medium' : 'low',
+    ir: d.ir,
   }));
 
   return {
@@ -491,7 +542,6 @@ async function analyzeGithubRepo(owner, repo, branch, env) {
     summary,
     plannedDiagrams,
     sourceRepo: owner + '/' + repo,
-    _debug: { filesFound: files.length, hasToken: !!githubToken, sha: sha || 'none', treeSize: (treeD.tree || []).length },
   };
 }
 
@@ -671,7 +721,7 @@ async function handleMcpMutateDiagram(args, env) {
     };
   }
 
-  const key = `drakon/${folderId}/${diagramId}.json`;
+  const key = `${folderId}/${diagramId}.json`;
   const content = await getFromMinIO(env, key);
   if (!content) {
     return {
@@ -857,14 +907,14 @@ async function handleDrakonCommit(request, env) {
   }
 
   const normalized = normalizeDiagramPayload(body.diagram || body, folderSlug, diagramId);
-  const key = `drakon/${folderSlug}/${diagramId}.json`;
+  const key = `${folderSlug}/${diagramId}.json`;
   await uploadToMinIO(env, key, JSON.stringify(normalized, null, 2));
 
   return jsonResponse({ success: true, folderSlug, diagramId, diagram: normalized });
 }
 
 async function handleDrakonGet(folderSlug, diagramId, env) {
-  const key = `drakon/${folderSlug}/${diagramId}.json`;
+  const key = `${folderSlug}/${diagramId}.json`;
   const content = await getFromMinIO(env, key);
   if (!content) return errorResponse('Diagram not found', 404, { folderSlug, diagramId }, 'NOT_FOUND');
 
@@ -872,13 +922,13 @@ async function handleDrakonGet(folderSlug, diagramId, env) {
 }
 
 async function handleDrakonDelete(folderSlug, diagramId, env) {
-  const key = `drakon/${folderSlug}/${diagramId}.json`;
+  const key = `${folderSlug}/${diagramId}.json`;
   await deleteFromMinIO(env, key);
   return jsonResponse({ success: true, folderSlug, diagramId });
 }
 
 async function handleDrakonList(folderSlug, env) {
-  const prefix = `drakon/${folderSlug}/`;
+  const prefix = folderSlug ? `${folderSlug}/` : '';
   const keys = await listMinioKeys(env, prefix);
   const diagrams = keys
     .filter((k) => k.endsWith('.json') && !k.endsWith('meta.json'))
