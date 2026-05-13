@@ -21,4 +21,9 @@ export type AppSettings = {
     bucket: string;
     accessKey: string;
   };
+  agents: {
+    drakonUrl: string;
+    architectUrl: string;
+    docsUrl: string;
+  };
 };
