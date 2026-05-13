@@ -127,10 +127,9 @@ function DocsRoute() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Docs Generator (Davia)</CardTitle>
+            <CardTitle>Генератор документації</CardTitle>
             <CardDescription>
-              Запускає генерацію документації по поточному репозиторію через docs-агент.
-              Параметри Davia беруться з вкладки <strong>Налаштування → Документація</strong>.
+              Налаштування LLM беруться з вкладки Налаштування → Агенти
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -148,7 +147,6 @@ function DocsRoute() {
               />
             </div>
 
-            <DaviaSettingsPanel settings={davia} onSave={saveDavia} onReset={resetDavia} />
             <DocsVersionPanel settings={davia} onSave={saveDavia} />
 
             <div className="flex flex-wrap items-center gap-2">
