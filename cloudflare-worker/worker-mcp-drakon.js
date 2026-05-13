@@ -1658,6 +1658,108 @@ async function handleHealth(env) {
   });
 }
 
+// ============================================
+// AGENT PROXY — /v1/agents/:agentId/chat
+// Proxies chat requests to the configured agent URL.
+// Logs each request to MinIO (agent, ms, status).
+// ============================================
+
+const VALID_AGENT_IDS = ['drakon', 'architect', 'docs'];
+
+function isPythonCode(msg) {
+  return /\bdef\s+\w+\s*\(|class\s+\w+[\s:(]|^import\s+\w+|^from\s+\w+\s+import|async\s+def\s+\w+/m.test(msg);
+}
+
+async function handleAgentChat(agentId, request, env, ctx) {
+  if (!VALID_AGENT_IDS.includes(agentId)) {
+    return errorResponse('Unknown agent: ' + agentId, 404, undefined, 'NOT_FOUND');
+  }
+
+  let body;
+  try { body = await request.json(); } catch {
+    return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
+  }
+
+  const { message, context, agentUrl } = body;
+  if (!message || typeof message !== 'string') {
+    return errorResponse('message is required', 400, undefined, 'MISSING_FIELD');
+  }
+
+  // agentUrl from client (from Settings), fallback to env vars
+  const defaultUrls = {
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+  };
+  const targetUrl = (typeof agentUrl === 'string' && agentUrl.startsWith('https://'))
+    ? agentUrl
+    : defaultUrls[agentId];
+
+  // Route: DRAKON + Python code → /analyze, otherwise → /chat
+  const usesAnalyze = agentId === 'drakon' && isPythonCode(message);
+  const endpoint = usesAnalyze ? '/analyze' : '/chat';
+  const agentBody = usesAnalyze
+    ? JSON.stringify({ code: message, refine: true })
+    : JSON.stringify({ message, context: context || null });
+
+  const t0 = Date.now();
+  let agentResp;
+  try {
+    agentResp = await fetch(targetUrl + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: agentBody,
+      signal: AbortSignal.timeout(90_000),
+    });
+  } catch (e) {
+    ctx.waitUntil(saveLogToMinio(env, {
+      ts: new Date().toISOString(), level: 'error',
+      tool: 'agent.' + agentId + '.chat',
+      agentUrl: targetUrl, endpoint, error: String(e.message),
+    }));
+    return errorResponse('Agent unreachable: ' + e.message, 502, undefined, 'AGENT_UNREACHABLE');
+  }
+
+  const ms = Date.now() - t0;
+  let data;
+  try { data = await agentResp.json(); } catch {
+    return errorResponse('Agent returned non-JSON', 502, undefined, 'AGENT_BAD_RESPONSE');
+  }
+
+  ctx.waitUntil(saveLogToMinio(env, {
+    ts: new Date().toISOString(),
+    level: agentResp.ok ? 'info' : 'warn',
+    tool: 'agent.' + agentId + '.chat',
+    agentUrl: targetUrl, endpoint,
+    httpStatus: agentResp.status, ms,
+    replyLen: typeof data.reply === 'string' ? data.reply.length : 0,
+    hasDiagrams: Array.isArray(data.diagrams) && data.diagrams.length > 0,
+  }));
+
+  return jsonResponse(data, agentResp.status);
+}
+
+async function handleAgentHealth(agentId, env) {
+  if (!VALID_AGENT_IDS.includes(agentId)) {
+    return errorResponse('Unknown agent: ' + agentId, 404, undefined, 'NOT_FOUND');
+  }
+  const defaultUrls = {
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+  };
+  try {
+    const resp = await fetch(defaultUrls[agentId] + '/health', {
+      signal: AbortSignal.timeout(5_000),
+    });
+    const data = await resp.json().catch(() => ({}));
+    return jsonResponse({ ok: resp.ok, status: resp.status, agent: agentId, ...data });
+  } catch (e) {
+    return jsonResponse({ ok: false, agent: agentId, error: e.message }, 503);
+  }
+}
+
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -1790,6 +1892,19 @@ export default {
           env
         );
       }
+
+
+      // ─── Agent proxy ──────────────────────────────────────────────────
+      const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);
+      if (method === 'POST' && agentChatMatch) {
+        return await handleAgentChat(agentChatMatch[1], request, env, ctx);
+      }
+
+      const agentHealthMatch = path.match(/^\/v1\/agents\/([^\/]+)\/health$/);
+      if (method === 'GET' && agentHealthMatch) {
+        return await handleAgentHealth(agentHealthMatch[1], env);
+      }
+      // ──────────────────────────────────────────────────────────────────
 
       return errorResponse('Not found', 404, { method, path }, 'NOT_FOUND');
     } catch (e) {
