@@ -22,9 +22,21 @@ function getAgentUrlFor(agentId: AgentId): string {
 }
 
 export async function checkAgentHealth(agentId: AgentId): Promise<boolean> {
+  // Try Worker proxy first
   try {
     const resp = await fetch(`${getWorkerUrl()}/v1/agents/${agentId}/health`, {
       signal: AbortSignal.timeout(4000),
+    });
+    if (resp.ok) return true;
+  } catch {
+    /* fall through */
+  }
+  // Fallback: ping agent directly
+  try {
+    const direct = getAgentUrlFor(agentId).replace(/\/+$/, "");
+    const resp = await fetch(`${direct}/health`, {
+      signal: AbortSignal.timeout(4000),
+      mode: "cors",
     });
     return resp.ok;
   } catch {
