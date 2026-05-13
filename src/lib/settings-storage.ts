@@ -68,6 +68,7 @@ export function readSettings(): AppSettings {
     const n8n = isObject(parsed.n8n) ? parsed.n8n : {};
     const app = isObject(parsed.app) ? parsed.app : {};
     const minio = isObject(parsed.minio) ? parsed.minio : {};
+    const agents = isObject(parsed.agents) ? parsed.agents : {};
 
     return {
       github: {
