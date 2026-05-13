@@ -380,7 +380,7 @@ export function DrakonEditor({
 
     // Re-set diagram to restart mouse behavior state machine
     if (currentDiagramJson) {
-      const diagramData = normWidgetDiagram(JSON.parse(currentDiagramJson) as Record<string, unknown>);
+      const diagramData = normWidgetDiagram(JSON.parse(currentDiagramJson) as Record<string, unknown>) as unknown as DrakonDiagram;
       widget.setDiagram(diagramId, diagramData, editSender).then(() => {
         widget.setZoom(currentZoom);
       });
