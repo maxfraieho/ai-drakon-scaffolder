@@ -70,6 +70,38 @@ function SettingsRoute() {
   const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
   const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 
+  const [daviaUrl, setDaviaUrl] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("davia_proxy_url") || "https://openai-proxy.exodus.pp.ua/v1"
+      : "https://openai-proxy.exodus.pp.ua/v1",
+  );
+  const [daviaKey, setDaviaKey] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("davia_api_key") || "freecc" : "freecc",
+  );
+  const [daviaModel, setDaviaModel] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("davia_model") || "agent-proxy"
+      : "agent-proxy",
+  );
+  const [daviaRepoPath, setDaviaRepoPath] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("davia_repo_path") || "" : "",
+  );
+  const [daviaRepoName, setDaviaRepoName] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("davia_repo_name") || "ai-drakon-setup"
+      : "ai-drakon-setup",
+  );
+  const [showDaviaKey, setShowDaviaKey] = useState(false);
+
+  const handleSaveDavia = () => {
+    localStorage.setItem("davia_proxy_url", daviaUrl);
+    localStorage.setItem("davia_api_key", daviaKey);
+    localStorage.setItem("davia_model", daviaModel);
+    localStorage.setItem("davia_repo_path", daviaRepoPath);
+    localStorage.setItem("davia_repo_name", daviaRepoName);
+    toast.success("Davia збережено");
+  };
+
   const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner, settings.github.token);
   const allRepos = mergeWithKnown(repos);
   const repoQuery = settings.github.repo.toLowerCase().trim();
