@@ -38,21 +38,37 @@ export type DocsVersionItem = {
   modified?: number;
 };
 
-function readDocsConfig() {
+function readDavia() {
   if (typeof window === "undefined") {
-    return { protocol: "anthropic", baseUrl: "", apiKey: "", model: "", repoPath: "", repoName: "" };
+    return {
+      protocol: "openai",
+      baseUrl: "",
+      apiKey: "",
+      model: "",
+      maxTokens: 6000,
+      repoPath: "",
+      repoName: "",
+    };
+  }
+  let s: Record<string, unknown> = {};
+  try {
+    s = JSON.parse(localStorage.getItem("daviaSettings") || "{}") as Record<string, unknown>;
+  } catch {
+    /* ignore */
   }
   return {
-    protocol: localStorage.getItem("agent_llm_protocol") || "anthropic",
-    baseUrl: localStorage.getItem("agent_llm_base_url") || "",
-    apiKey: localStorage.getItem("agent_llm_api_key") || "",
-    model: localStorage.getItem("agent_llm_model") || "",
+    protocol: (s.protocol as string) || "openai",
+    baseUrl: (s.baseUrl as string) || "https://openai-proxy.exodus.pp.ua/v1",
+    apiKey: (s.apiKey as string) || "freecc",
+    model: (s.model as string) || "docs-assistant-proxy",
+    maxTokens: (s.maxTokens as number) || 6000,
     repoPath: localStorage.getItem("docs_repo_path") || "",
     repoName: localStorage.getItem("docs_repo_name") || "ai-drakon-setup",
   };
 }
 
 export interface GenerateOverrides {
+  protocol?: string;
   baseUrl?: string;
   apiKey?: string;
   model?: string;
@@ -65,20 +81,20 @@ export interface GenerateOverrides {
 export const docsApi = {
   async generate(instructions?: string, overrides?: GenerateOverrides): Promise<DocsGenerateResponse> {
     const base = getDocsAgentUrl();
-    const cfg = readDocsConfig();
+    const davia = readDavia();
     const body: Record<string, unknown> = {
-      repo_path: overrides?.repoPath ?? cfg.repoPath,
-      repo_name: overrides?.repoName ?? cfg.repoName,
+      repo_path: overrides?.repoPath ?? davia.repoPath ?? undefined,
+      repo_name: overrides?.repoName ?? davia.repoName ?? undefined,
       instructions: instructions || undefined,
-      protocol: cfg.protocol,
-      base_url: overrides?.baseUrl || cfg.baseUrl,
-      api_key: overrides?.apiKey || cfg.apiKey,
-      model: overrides?.model || cfg.model,
+      protocol: overrides?.protocol ?? davia.protocol,
+      base_url: overrides?.baseUrl || davia.baseUrl,
+      api_key: overrides?.apiKey || davia.apiKey,
+      model: overrides?.model || davia.model,
+      max_tokens: overrides?.maxTokens || davia.maxTokens,
     };
-    if (overrides?.maxTokens) body.max_tokens = overrides.maxTokens;
     if (overrides?.outputVersion) body.output_version = overrides.outputVersion;
 
-    const res = await fetch(`${base}/docs/generate`, {
+    const res = await fetch(`${base}/docs/generate/md`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -89,7 +105,10 @@ export const docsApi = {
 
   async status(jobId: string): Promise<DocsStatusResponse> {
     const base = getDocsAgentUrl();
-    const res = await fetch(`${base}/docs/status/${encodeURIComponent(jobId)}`);
+    const endpoint = jobId.startsWith("md-")
+      ? `/docs/status/md/${encodeURIComponent(jobId)}`
+      : `/docs/status/${encodeURIComponent(jobId)}`;
+    const res = await fetch(`${base}${endpoint}`);
     if (!res.ok) throw new Error(`Docs status failed: HTTP ${res.status}`);
     return res.json();
   },
