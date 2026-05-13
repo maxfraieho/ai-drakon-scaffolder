@@ -134,7 +134,13 @@ export function AgentLlmCard({
     setConnected(false);
     try {
       const preset = PROTOCOL_PRESETS[protocol];
-      const url = `${baseUrl.replace(/\/$/, "")}${preset.modelsPath}`;
+      let normalized = baseUrl.replace(/\/+$/, "");
+      // For OpenAI-compatible proxies ensure /v1 suffix
+      if (protocol === "openai" && !/\/v\d+$/.test(normalized)) {
+        normalized = `${normalized}/v1`;
+        setBaseUrl(normalized);
+      }
+      const url = `${normalized}${preset.modelsPath}`;
       const res = await fetch(url, { headers: preset.authHeader(apiKey) });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { data?: Array<{ id: string }> };
