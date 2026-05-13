@@ -122,13 +122,10 @@ function SettingsRoute() {
     toast.success("Конфігурацію LLM збережено");
   };
 
-  const handleSaveDavia = () => {
-    localStorage.setItem("davia_proxy_url", daviaUrl);
-    localStorage.setItem("davia_api_key", daviaKey);
-    localStorage.setItem("davia_model", daviaModel);
-    localStorage.setItem("davia_repo_path", daviaRepoPath);
-    localStorage.setItem("davia_repo_name", daviaRepoName);
-    toast.success("Davia збережено");
+  const handleSaveDocs = () => {
+    localStorage.setItem("docs_repo_path", docsRepoPath);
+    localStorage.setItem("docs_repo_name", docsRepoName);
+    toast.success("Налаштування документації збережено");
   };
 
   const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner, settings.github.token);
