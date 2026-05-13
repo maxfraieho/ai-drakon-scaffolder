@@ -3,6 +3,7 @@
 // Optional X-Github-Token header for tools that write to git.
 
 import { readSettings } from "@/lib/settings-storage";
+import { getAccessToken } from "@/lib/auth";
 
 function resolveWorkerUrl(): string {
   if (typeof window !== "undefined") {
@@ -39,7 +40,7 @@ export async function mcpCall<T = unknown>(
   opts: McpCallOptions = {},
 ): Promise<T> {
   const url = `${resolveWorkerUrl().replace(/\/$/, "")}/mcp`;
-  const jwt = typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+  const jwt = getAccessToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
