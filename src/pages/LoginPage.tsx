@@ -33,10 +33,6 @@ export function LoginPage() {
         throw new Error(((data as { error?: string }).error) || "Невірний логін або пароль");
       }
       setAccessToken(token);
-      // Compatibility: rest of app reads "jwt" localStorage key
-      if (typeof window !== "undefined") {
-        localStorage.setItem("jwt", token);
-      }
       navigate({ to: "/diagrams", replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Невірний логін або пароль");

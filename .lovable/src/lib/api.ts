@@ -1,5 +1,6 @@
 import type { Diagram } from "@/types/drakon";
 import type { AnalysisJob, CodebaseAnalysisRequest } from "@/types/analysis";
+import { getAccessToken } from "@/lib/auth";
 import { getGithubConfig, readSettings } from "@/lib/settings-storage";
 
 function resolveApiBase() {
@@ -91,7 +92,7 @@ type GithubBranchesResponse = {
 };
 
 const headers = () => ({
-  Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+  Authorization: `Bearer ${getAccessToken() ?? ""}`,
   "Content-Type": "application/json",
 });
 

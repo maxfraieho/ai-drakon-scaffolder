@@ -1,4 +1,5 @@
 import type { IrDiagram } from "./ir-types";
+import { getAccessToken } from "@/lib/auth";
 
 const BASE = import.meta.env.VITE_WORKER_URL;
 
@@ -26,7 +27,7 @@ export type ValidationResult = {
 
 function headers() {
   return {
-    Authorization: `Bearer ${localStorage.getItem("jwt")}`,
+    Authorization: `Bearer ${getAccessToken() ?? ""}`,
     "Content-Type": "application/json",
   };
 }
