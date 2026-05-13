@@ -1,4 +1,6 @@
 import type { AgentId } from "@/types/agent-chat";
+import { readSettings } from "@/lib/settings-storage";
+import { getAccessToken } from "@/lib/auth";
 
 const AGENT_LABELS: Record<AgentId, string> = {
   drakon: "DRAKON",
@@ -6,48 +8,23 @@ const AGENT_LABELS: Record<AgentId, string> = {
   docs: "Docs",
 };
 
-// Default tunnel URLs (HTTPS via cloudflared)
-const AGENT_TUNNEL_URLS: Record<AgentId, string> = {
-  drakon: "https://drakon-agent.exodus.pp.ua",
-  architect: "https://architect-agent.exodus.pp.ua",
-  docs: "https://docs-agent.exodus.pp.ua",
-};
-
-// Per-agent localStorage override keys (e.g. "drakon_agent_url_drakon")
-const STORAGE_KEY_PREFIX = "drakon_agent_url_";
-// Legacy single base URL key (still supported for backward compat)
-const LEGACY_KEY = "drakon_agent_base_url";
-
-const AGENT_PORTS: Record<AgentId, number> = {
-  drakon: 8765,
-  architect: 8766,
-  docs: 8767,
-};
-
-export function getAgentUrl(agentId: AgentId): string {
-  try {
-    if (typeof localStorage !== "undefined") {
-      // Per-agent override
-      const perAgent = localStorage.getItem(`${STORAGE_KEY_PREFIX}${agentId}`);
-      if (perAgent) return perAgent.replace(/\/+$/, "");
-      // Legacy single base URL
-      const base = localStorage.getItem(LEGACY_KEY);
-      if (base) return `${base.replace(/\/+$/, "")}:${AGENT_PORTS[agentId]}`;
-    }
-  } catch {
-    // ignore SSR / storage errors
-  }
-  return AGENT_TUNNEL_URLS[agentId];
-}
-
 export function getAgentLabel(agentId: AgentId): string {
   return AGENT_LABELS[agentId];
 }
 
+function getWorkerUrl(): string {
+  return readSettings().app.workerUrl.replace(/\/+$/, "");
+}
+
+function getAgentUrlFor(agentId: AgentId): string {
+  const a = readSettings().agents;
+  return agentId === "drakon" ? a.drakonUrl : agentId === "architect" ? a.architectUrl : a.docsUrl;
+}
+
 export async function checkAgentHealth(agentId: AgentId): Promise<boolean> {
   try {
-    const resp = await fetch(`${getAgentUrl(agentId)}/health`, {
-      signal: AbortSignal.timeout(3000),
+    const resp = await fetch(`${getWorkerUrl()}/v1/agents/${agentId}/health`, {
+      signal: AbortSignal.timeout(4000),
     });
     return resp.ok;
   } catch {
@@ -60,58 +37,32 @@ export interface AgentReply {
   diagrams?: Array<{ name: string; items: Record<string, unknown> }>;
 }
 
-function isPythonCode(message: string): boolean {
-  return /\bdef\s+\w+\s*\(|class\s+\w+[\s:(]|^import\s+\w+|^from\s+\w+\s+import|async\s+def\s+\w+/m.test(message);
-}
-
 export async function sendToAgent(
   agentId: AgentId,
   message: string,
   context?: Record<string, unknown>,
 ): Promise<AgentReply> {
-  const url = getAgentUrl(agentId);
+  const workerUrl = getWorkerUrl();
+  const agentUrl = getAgentUrlFor(agentId);
+  const token = getAccessToken();
 
-  if (agentId === "drakon") {
-    if (isPythonCode(message)) {
-      const resp = await fetch(`${url}/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: message, refine: true }),
-      });
-      if (!resp.ok) throw new Error(`DRAKON agent error: ${resp.status}`);
-      const data = await resp.json();
-      const diagrams: Array<{ name: string; items: Record<string, unknown> }> =
-        data.diagrams ?? [];
-      const names = diagrams.map((d) => d.name).join(", ");
-      return {
-        reply: diagrams.length
-          ? `Згенеровано ${diagrams.length} схем(и): **${names}**`
-          : "Схеми не згенеровано. Переконайтесь, що код містить Python-функцію.",
-        diagrams,
-      };
-    }
-
-    // Non-code message → /chat endpoint
-    const resp = await fetch(`${url}/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message, context }),
-    });
-    if (!resp.ok) throw new Error(`DRAKON agent error: ${resp.status}`);
-    const data = await resp.json();
-    return { reply: data.reply ?? data.message ?? JSON.stringify(data) };
-  }
-
-  const resp = await fetch(`${url}/chat`, {
+  const resp = await fetch(`${workerUrl}/v1/agents/${agentId}/chat`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, context }),
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ message, context, agentUrl }),
   });
+
   if (!resp.ok) {
     throw new Error(`${AGENT_LABELS[agentId]} agent error: ${resp.status}`);
   }
   const data = await resp.json();
-  return { reply: data.reply ?? data.message ?? JSON.stringify(data) };
+  return {
+    reply: data.reply ?? data.message ?? JSON.stringify(data),
+    diagrams: data.diagrams,
+  };
 }
 
 export async function sendFeedback(
@@ -120,10 +71,16 @@ export async function sendFeedback(
   feedback: string,
   correctedIr?: Record<string, unknown>,
 ): Promise<void> {
-  await fetch(`${getAgentUrl(agentId)}/feedback`, {
+  const workerUrl = getWorkerUrl();
+  const token = getAccessToken();
+  await fetch(`${workerUrl}/v1/agents/${agentId}/feedback`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     body: JSON.stringify({
+      agentUrl: getAgentUrlFor(agentId),
       diagram_name: diagramName,
       feedback,
       corrected_ir: correctedIr ?? null,
