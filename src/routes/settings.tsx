@@ -394,186 +394,137 @@ function SettingsRoute() {
         </TabsContent>
 
         <TabsContent value="agents">
-          <Card>
-            <CardHeader>
-              <CardTitle>AI-Агенти</CardTitle>
-              <CardDescription>
-                HTTPS-адреси трьох локальних агентів. Запити йдуть через Cloudflare Worker, який проксіює їх на ці URL.
-                Кожен URL повинен починатися з <code>https://</code>.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-2">
-                <Label htmlFor="agent-drakon">Агент DRAKON (порт 8765)</Label>
-                <Input
-                  id="agent-drakon"
-                  value={settings.agents.drakonUrl}
-                  onChange={(event) =>
-                    updateSettings((prev) => ({
-                      ...prev,
-                      agents: { ...prev.agents, drakonUrl: event.target.value },
-                    }))
-                  }
-                  placeholder="https://drakon-agent.example.com"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="agent-architect">Агент Архітектор (порт 8766)</Label>
-                <Input
-                  id="agent-architect"
-                  value={settings.agents.architectUrl}
-                  onChange={(event) =>
-                    updateSettings((prev) => ({
-                      ...prev,
-                      agents: { ...prev.agents, architectUrl: event.target.value },
-                    }))
-                  }
-                  placeholder="https://architect-agent.example.com"
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="agent-docs">Агент Документознавець (порт 8767)</Label>
-                <Input
-                  id="agent-docs"
-                  value={settings.agents.docsUrl}
-                  onChange={(event) =>
-                    updateSettings((prev) => ({
-                      ...prev,
-                      agents: { ...prev.agents, docsUrl: event.target.value },
-                    }))
-                  }
-                  placeholder="https://docs-agent.example.com"
-                />
-              </div>
-
-              <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
-                Ці адреси передаються в Worker як <code>agentUrl</code> при кожному запиті
-                <code> POST {`{workerUrl}/v1/agents/{agentId}/chat`}</code>.
-                Worker сам додає JWT та проксіює запит до відповідного локального агента.
-              </div>
-
-              <Button
-                type="button"
-                onClick={() => {
-                  const urls = [
-                    settings.agents.drakonUrl,
-                    settings.agents.architectUrl,
-                    settings.agents.docsUrl,
-                  ];
-                  if (urls.some((u) => !u.startsWith("https://"))) {
-                    toast.error("Усі адреси агентів мають починатися з https://");
-                    return;
-                  }
-                  try {
-                    writeSettings(settings);
-                    toast.success("Налаштування агентів збережено");
-                  } catch (error) {
-                    toast.error("Не вдалося зберегти", {
-                      description: error instanceof Error ? error.message : "Невідома помилка",
-                    });
-                  }
-                }}
-              >
-                Зберегти агентів
-              </Button>
-
-              <div className="mt-6 border-t border-border pt-4 space-y-4">
-                <h3 className="text-sm font-medium">Модель для аналізу агентів</h3>
-
-                <div className="grid gap-2">
-                  <Label>Протокол</Label>
-                  <Select
-                    value={llmProtocol}
-                    onValueChange={(v) => {
-                      setLlmProtocol(v);
-                      if (v === "anthropic") fetchLlmModels();
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="openai">OpenAI-сумісний</SelectItem>
-                      <SelectItem value="anthropic">Anthropic</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Base URL</Label>
-                  <Input
-                    value={llmBaseUrl}
-                    onChange={(e) => setLlmBaseUrl(e.target.value)}
-                    placeholder={
-                      llmProtocol === "anthropic"
-                        ? "https://claude-proxy.exodus.pp.ua"
-                        : "https://openai-proxy.exodus.pp.ua/v1"
-                    }
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>API Key</Label>
-                  <Input
-                    type="password"
-                    value={llmApiKey}
-                    onChange={(e) => setLlmApiKey(e.target.value)}
-                    placeholder="freecc"
-                  />
-                </div>
-
-                {llmProtocol === "anthropic" ? (
-                  <div className="grid gap-2">
-                    <Label>Модель</Label>
-                    <div className="flex gap-2">
-                      <Select
-                        value={llmModel}
-                        onValueChange={setLlmModel}
-                        disabled={llmModels.length === 0}
-                      >
-                        <SelectTrigger className="flex-1">
-                          <SelectValue
-                            placeholder={llmModelsLoading ? "Завантаження..." : "Виберіть модель"}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {llmModels.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.display_name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        onClick={fetchLlmModels}
-                        disabled={llmModelsLoading}
-                      >
-                        <RefreshCw className={`h-4 w-4 ${llmModelsLoading ? "animate-spin" : ""}`} />
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid gap-2">
-                    <Label>Модель</Label>
+          <div className="space-y-4">
+            {/* Section 1: Agent URLs (compact) */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">Адреси агентів</CardTitle>
+                <CardDescription className="text-xs">
+                  HTTPS-URL трьох локальних агентів. Запити йдуть через Cloudflare Worker.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="agent-drakon" className="text-xs flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                      DRAKON · 8765
+                    </Label>
                     <Input
-                      value={llmModel}
-                      onChange={(e) => setLlmModel(e.target.value)}
-                      placeholder="coding-proxy"
+                      id="agent-drakon"
+                      value={settings.agents.drakonUrl}
+                      onChange={(event) =>
+                        updateSettings((prev) => ({
+                          ...prev,
+                          agents: { ...prev.agents, drakonUrl: event.target.value },
+                        }))
+                      }
+                      placeholder="https://drakon-agent..."
+                      className="h-8 text-xs"
                     />
                   </div>
-                )}
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="agent-architect" className="text-xs flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-violet-500" />
+                      Архітектор · 8766
+                    </Label>
+                    <Input
+                      id="agent-architect"
+                      value={settings.agents.architectUrl}
+                      onChange={(event) =>
+                        updateSettings((prev) => ({
+                          ...prev,
+                          agents: { ...prev.agents, architectUrl: event.target.value },
+                        }))
+                      }
+                      placeholder="https://architect-agent..."
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="agent-docs" className="text-xs flex items-center gap-1.5">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      Документаліст · 8767
+                    </Label>
+                    <Input
+                      id="agent-docs"
+                      value={settings.agents.docsUrl}
+                      onChange={(event) =>
+                        updateSettings((prev) => ({
+                          ...prev,
+                          agents: { ...prev.agents, docsUrl: event.target.value },
+                        }))
+                      }
+                      placeholder="https://docs-agent..."
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                </div>
 
-                <Button type="button" onClick={saveLlmConfig}>
-                  Зберегти модель
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={() => {
+                    const urls = [
+                      settings.agents.drakonUrl,
+                      settings.agents.architectUrl,
+                      settings.agents.docsUrl,
+                    ];
+                    if (urls.some((u) => !u.startsWith("https://"))) {
+                      toast.error("Усі адреси агентів мають починатися з https://");
+                      return;
+                    }
+                    try {
+                      writeSettings(settings);
+                      toast.success("Адреси агентів збережено");
+                    } catch (error) {
+                      toast.error("Не вдалося зберегти", {
+                        description: error instanceof Error ? error.message : "Невідома помилка",
+                      });
+                    }
+                  }}
+                >
+                  Зберегти адреси
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Section 2: Per-agent LLM cards */}
+            <div className="space-y-2">
+              <div className="px-1">
+                <h3 className="text-sm font-semibold">LLM-провайдер для кожного агента</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Кожен агент може мати власну модель. Натисни «Підключити» — перевірить
+                  з&apos;єднання та завантажить список доступних слотів.
+                </p>
               </div>
-            </CardContent>
-          </Card>
+
+              <div className="grid gap-3 lg:grid-cols-3">
+                <AgentLlmCard
+                  agentId="drakon"
+                  agentLabel="DRAKON"
+                  agentColor="blue"
+                  agentIcon="D"
+                  agentDescription="Аналіз Python → DRAKON IR. Coding-модель."
+                />
+                <AgentLlmCard
+                  agentId="architect"
+                  agentLabel="Архітектор"
+                  agentColor="violet"
+                  agentIcon="A"
+                  agentDescription="Дерево DRAKON-схем. Reasoning-модель."
+                />
+                <AgentLlmCard
+                  agentId="docs"
+                  agentLabel="Документаліст"
+                  agentColor="emerald"
+                  agentIcon="D"
+                  agentDescription="Генерація документації. Long-context."
+                />
+              </div>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="docs">
