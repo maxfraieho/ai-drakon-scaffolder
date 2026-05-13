@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, FilePlus, GitCompare, Loader2, RefreshCw, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 
@@ -71,10 +71,6 @@ function SyncPage() {
     }
   };
 
-  useEffect(() => {
-    void runSync();
-  }, []);
-
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="mx-auto max-w-4xl space-y-6">
@@ -95,6 +91,11 @@ function SyncPage() {
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             Run Sync Check
           </Button>
+        </div>
+
+        <div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-4 text-sm text-blue-800 dark:text-blue-300">
+          <strong>Code ⇄ Diagram Sync</strong> порівнює результати аналізу коду з DRAKON-діаграмами у сховищі.
+          Спочатку запусти аналіз коду у вкладці <strong>Аналіз</strong>, потім натисни кнопку нижче.
         </div>
 
         {/* Stats row */}
