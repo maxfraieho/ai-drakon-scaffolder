@@ -105,6 +105,20 @@ export function readSettings(): AppSettings {
         bucket: typeof minio.bucket === "string" ? minio.bucket : DEFAULT_SETTINGS.minio.bucket,
         accessKey: typeof minio.accessKey === "string" ? minio.accessKey : DEFAULT_SETTINGS.minio.accessKey,
       },
+      agents: {
+        drakonUrl:
+          typeof agents.drakonUrl === "string" && agents.drakonUrl.startsWith("https://")
+            ? agents.drakonUrl
+            : DEFAULT_SETTINGS.agents.drakonUrl,
+        architectUrl:
+          typeof agents.architectUrl === "string" && agents.architectUrl.startsWith("https://")
+            ? agents.architectUrl
+            : DEFAULT_SETTINGS.agents.architectUrl,
+        docsUrl:
+          typeof agents.docsUrl === "string" && agents.docsUrl.startsWith("https://")
+            ? agents.docsUrl
+            : DEFAULT_SETTINGS.agents.docsUrl,
+      },
     };
   } catch {
     return DEFAULT_SETTINGS;
