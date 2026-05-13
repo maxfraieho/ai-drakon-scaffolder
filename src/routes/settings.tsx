@@ -289,14 +289,16 @@ function SettingsRoute() {
         </header>
 
         <Tabs defaultValue="github" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="github">GitHub</TabsTrigger>
-            <TabsTrigger value="agents">Агенти</TabsTrigger>
-            <TabsTrigger value="docs">Документація</TabsTrigger>
-            <TabsTrigger value="n8n">n8n</TabsTrigger>
-            <TabsTrigger value="minio">MinIO</TabsTrigger>
-            <TabsTrigger value="app">Додаток</TabsTrigger>
-          </TabsList>
+          <div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:grid md:grid-cols-6 md:gap-0 md:px-0">
+              <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>
+              <TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>
+              <TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>
+              <TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>
+              <TabsTrigger value="minio" className="shrink-0 whitespace-nowrap">MinIO</TabsTrigger>
+              <TabsTrigger value="app" className="shrink-0 whitespace-nowrap">Додаток</TabsTrigger>
+            </TabsList>
+          </div>
 
         <TabsContent value="github">
           <Card>
