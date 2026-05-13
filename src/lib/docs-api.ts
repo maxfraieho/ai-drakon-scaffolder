@@ -65,20 +65,16 @@ export interface GenerateOverrides {
 export const docsApi = {
   async generate(instructions?: string, overrides?: GenerateOverrides): Promise<DocsGenerateResponse> {
     const base = getDocsAgentUrl();
-    const davia = readDavia();
+    const cfg = readDocsConfig();
     const body: Record<string, unknown> = {
-      repo_path: davia.repoPath,
-      repo_name: davia.repoName,
+      repo_path: overrides?.repoPath ?? cfg.repoPath,
+      repo_name: overrides?.repoName ?? cfg.repoName,
       instructions: instructions || undefined,
-      davia: {
-        proxy_url: overrides?.baseUrl || davia.proxyUrl,
-        api_key: overrides?.apiKey || davia.apiKey,
-        model: overrides?.model || davia.model,
-      },
+      protocol: cfg.protocol,
+      base_url: overrides?.baseUrl || cfg.baseUrl,
+      api_key: overrides?.apiKey || cfg.apiKey,
+      model: overrides?.model || cfg.model,
     };
-    if (overrides?.baseUrl) body.base_url = overrides.baseUrl;
-    if (overrides?.apiKey) body.api_key = overrides.apiKey;
-    if (overrides?.model) body.model = overrides.model;
     if (overrides?.maxTokens) body.max_tokens = overrides.maxTokens;
     if (overrides?.outputVersion) body.output_version = overrides.outputVersion;
 
