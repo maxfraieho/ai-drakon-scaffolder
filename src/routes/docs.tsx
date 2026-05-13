@@ -102,6 +102,7 @@ function DocsRoute() {
     setAnalyses([]);
     try {
       const resp = await docsApi.generate(instructions.trim() || undefined, {
+        protocol: davia.protocol,
         baseUrl: davia.baseUrl,
         apiKey: davia.apiKey,
         model: davia.model,
