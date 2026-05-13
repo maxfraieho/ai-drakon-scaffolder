@@ -93,6 +93,51 @@ function SettingsRoute() {
   );
   const [showDaviaKey, setShowDaviaKey] = useState(false);
 
+  const [llmProtocol, setLlmProtocol] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("agent_llm_protocol") || "openai" : "openai",
+  );
+  const [llmBaseUrl, setLlmBaseUrl] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("agent_llm_base_url") || "" : "",
+  );
+  const [llmApiKey, setLlmApiKey] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("agent_llm_api_key") || "freecc" : "freecc",
+  );
+  const [llmModel, setLlmModel] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("agent_llm_model") || "" : "",
+  );
+  const [llmModels, setLlmModels] = useState<Array<{ id: string; display_name: string }>>([]);
+  const [llmModelsLoading, setLlmModelsLoading] = useState(false);
+
+  const fetchLlmModels = async () => {
+    setLlmModelsLoading(true);
+    try {
+      const url = (llmBaseUrl || "https://claude-proxy.exodus.pp.ua").replace(/\/$/, "");
+      const resp = await fetch(`${url}/v1/models`, {
+        headers: { "x-api-key": llmApiKey || "freecc" },
+      });
+      const data = (await resp.json()) as { data?: Array<{ id: string; display_name?: string }> };
+      const models = (data.data || []).map((m) => ({
+        id: m.id,
+        display_name: m.display_name || m.id,
+      }));
+      setLlmModels(models);
+      if (models.length > 0 && !llmModel) setLlmModel(models[0].id);
+      toast.success(`Завантажено ${models.length} моделей`);
+    } catch {
+      toast.error("Не вдалося завантажити моделі");
+    } finally {
+      setLlmModelsLoading(false);
+    }
+  };
+
+  const saveLlmConfig = () => {
+    localStorage.setItem("agent_llm_protocol", llmProtocol);
+    localStorage.setItem("agent_llm_base_url", llmBaseUrl);
+    localStorage.setItem("agent_llm_api_key", llmApiKey);
+    localStorage.setItem("agent_llm_model", llmModel);
+    toast.success("Конфігурацію LLM збережено");
+  };
+
   const handleSaveDavia = () => {
     localStorage.setItem("davia_proxy_url", daviaUrl);
     localStorage.setItem("davia_api_key", daviaKey);
@@ -492,6 +537,100 @@ function SettingsRoute() {
               >
                 Зберегти агентів
               </Button>
+
+              <div className="mt-6 border-t border-border pt-4 space-y-4">
+                <h3 className="text-sm font-medium">Модель для аналізу агентів</h3>
+
+                <div className="grid gap-2">
+                  <Label>Протокол</Label>
+                  <Select
+                    value={llmProtocol}
+                    onValueChange={(v) => {
+                      setLlmProtocol(v);
+                      if (v === "anthropic") fetchLlmModels();
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openai">OpenAI-сумісний</SelectItem>
+                      <SelectItem value="anthropic">Anthropic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Base URL</Label>
+                  <Input
+                    value={llmBaseUrl}
+                    onChange={(e) => setLlmBaseUrl(e.target.value)}
+                    placeholder={
+                      llmProtocol === "anthropic"
+                        ? "https://claude-proxy.exodus.pp.ua"
+                        : "https://openai-proxy.exodus.pp.ua/v1"
+                    }
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>API Key</Label>
+                  <Input
+                    type="password"
+                    value={llmApiKey}
+                    onChange={(e) => setLlmApiKey(e.target.value)}
+                    placeholder="freecc"
+                  />
+                </div>
+
+                {llmProtocol === "anthropic" ? (
+                  <div className="grid gap-2">
+                    <Label>Модель</Label>
+                    <div className="flex gap-2">
+                      <Select
+                        value={llmModel}
+                        onValueChange={setLlmModel}
+                        disabled={llmModels.length === 0}
+                      >
+                        <SelectTrigger className="flex-1">
+                          <SelectValue
+                            placeholder={llmModelsLoading ? "Завантаження..." : "Виберіть модель"}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {llmModels.map((m) => (
+                            <SelectItem key={m.id} value={m.id}>
+                              {m.display_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={fetchLlmModels}
+                        disabled={llmModelsLoading}
+                      >
+                        <RefreshCw className={`h-4 w-4 ${llmModelsLoading ? "animate-spin" : ""}`} />
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-2">
+                    <Label>Модель</Label>
+                    <Input
+                      value={llmModel}
+                      onChange={(e) => setLlmModel(e.target.value)}
+                      placeholder="coding-proxy"
+                    />
+                  </div>
+                )}
+
+                <Button type="button" onClick={saveLlmConfig}>
+                  Зберегти модель
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
