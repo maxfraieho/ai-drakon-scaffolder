@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, FilePlus, GitCompare, Loader2, RefreshCw, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 
