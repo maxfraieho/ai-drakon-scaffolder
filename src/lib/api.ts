@@ -112,11 +112,11 @@ async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 export const api = {
-  login: async (email: string, password: string): Promise<LoginResponse> => {
+  login: async (username: string, password: string): Promise<LoginResponse> => {
     const response = await fetch(`${resolveApiBase()}/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ username, password }),
     });
 
     return parseResponse<LoginResponse>(response);
