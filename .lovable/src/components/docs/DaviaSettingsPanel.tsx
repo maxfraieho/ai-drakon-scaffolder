@@ -23,11 +23,32 @@ interface ModelInfo {
   owned_by?: string;
 }
 
-const RECOMMENDED: ModelInfo[] = [
-  { id: "free/standard-proxy", owned_by: "free-proxy" },
-  { id: "free/fast-proxy", owned_by: "free-proxy" },
-  { id: "free/coding-proxy", owned_by: "free-proxy" },
-  { id: "free/docs-assistant-proxy", owned_by: "free-proxy" },
+const PROTOCOL_PRESETS = {
+  openai: {
+    baseUrl: "https://openai-proxy.exodus.pp.ua/v1",
+    apiKey: "freecc",
+    placeholder: "https://openai-proxy.exodus.pp.ua/v1",
+    hint: "OpenAI-сумісний ендпоінт (Bearer токен)",
+  },
+  anthropic: {
+    baseUrl: "https://claude-proxy.exodus.pp.ua",
+    apiKey: "freecc",
+    placeholder: "https://claude-proxy.exodus.pp.ua",
+    hint: "Anthropic ендпоінт (x-api-key заголовок)",
+  },
+} as const;
+
+const RECOMMENDED_ANTHROPIC: ModelInfo[] = [
+  { id: "claude-opus-4-20250514", owned_by: "anthropic" },
+  { id: "claude-sonnet-4-20250514", owned_by: "anthropic" },
+  { id: "claude-haiku-4-20250514", owned_by: "anthropic" },
+];
+
+const RECOMMENDED_OPENAI: ModelInfo[] = [
+  { id: "docs-assistant-proxy", owned_by: "free-proxy" },
+  { id: "coding-proxy", owned_by: "free-proxy" },
+  { id: "standard-proxy", owned_by: "free-proxy" },
+  { id: "fast-proxy", owned_by: "free-proxy" },
 ];
 
 const SLIDER_HINTS = [
@@ -47,18 +68,28 @@ export function DaviaSettingsPanel({ settings, onSave, onReset }: Props) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<DaviaSettings>(settings);
   const [showKey, setShowKey] = useState(false);
-  const [models, setModels] = useState<ModelInfo[]>(RECOMMENDED);
+  const [models, setModels] = useState<ModelInfo[]>(
+    settings.protocol === "anthropic" ? RECOMMENDED_ANTHROPIC : RECOMMENDED_OPENAI,
+  );
   const [testing, setTesting] = useState(false);
   const [loadingModels, setLoadingModels] = useState(false);
 
   const update = (patch: Partial<DaviaSettings>) => setDraft((p) => ({ ...p, ...patch }));
 
+  const buildModelsUrl = () => {
+    const base = draft.baseUrl.replace(/\/+$/, "");
+    return draft.protocol === "anthropic" ? `${base}/v1/models` : `${base}/models`;
+  };
+
+  const buildHeaders = (): Record<string, string> =>
+    draft.protocol === "anthropic"
+      ? { "x-api-key": draft.apiKey, "anthropic-version": "2023-06-01" }
+      : { Authorization: `Bearer ${draft.apiKey}` };
+
   const handleTest = async () => {
     setTesting(true);
     try {
-      const res = await fetch(`${draft.baseUrl.replace(/\/+$/, "")}/models`, {
-        headers: draft.apiKey ? { Authorization: `Bearer ${draft.apiKey}` } : {},
-      });
+      const res = await fetch(buildModelsUrl(), { headers: buildHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       toast.success("✓ Проксі доступне");
     } catch (e) {
@@ -71,17 +102,17 @@ export function DaviaSettingsPanel({ settings, onSave, onReset }: Props) {
   const handleLoadModels = async () => {
     setLoadingModels(true);
     try {
-      const res = await fetch(`${draft.baseUrl.replace(/\/+$/, "")}/models`, {
-        headers: draft.apiKey ? { Authorization: `Bearer ${draft.apiKey}` } : {},
-      });
+      const res = await fetch(buildModelsUrl(), { headers: buildHeaders() });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = (await res.json()) as { data?: ModelInfo[] };
+      const recommended = draft.protocol === "anthropic" ? RECOMMENDED_ANTHROPIC : RECOMMENDED_OPENAI;
       const list = Array.isArray(data.data) ? data.data : [];
-      const merged = [...RECOMMENDED, ...list.filter((m) => !RECOMMENDED.some((r) => r.id === m.id))];
-      setModels(merged);
-      toast.success(`Завантажено моделей: ${list.length}`);
+      setModels([...recommended, ...list.filter((m) => !recommended.some((r) => r.id === m.id))]);
+      toast.success(`✓ Завантажено ${list.length} моделей`);
     } catch (e) {
-      toast.error("Помилка завантаження моделей", { description: e instanceof Error ? e.message : "" });
+      toast.error("✗ Не вдалося завантажити моделі", {
+        description: e instanceof Error ? e.message : "",
+      });
     } finally {
       setLoadingModels(false);
     }
@@ -112,20 +143,50 @@ export function DaviaSettingsPanel({ settings, onSave, onReset }: Props) {
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-4 border-t border-border p-3">
         <div className="grid gap-2">
+          <Label>Протокол</Label>
+          <Select
+            value={draft.protocol}
+            onValueChange={(v: "openai" | "anthropic") => {
+              const preset = PROTOCOL_PRESETS[v];
+              update({
+                protocol: v,
+                baseUrl: preset.baseUrl,
+                apiKey: preset.apiKey,
+                model: v === "anthropic" ? RECOMMENDED_ANTHROPIC[0].id : RECOMMENDED_OPENAI[0].id,
+              });
+              setModels(v === "anthropic" ? RECOMMENDED_ANTHROPIC : RECOMMENDED_OPENAI);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="openai">OpenAI-сумісний</SelectItem>
+              <SelectItem value="anthropic">Anthropic</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{PROTOCOL_PRESETS[draft.protocol].hint}</p>
+        </div>
+
+        <div className="grid gap-2">
           <Label htmlFor="davia-url">URL проксі</Label>
           <div className="flex gap-2">
             <Input
               id="davia-url"
               value={draft.baseUrl}
               onChange={(e) => update({ baseUrl: e.target.value })}
-              placeholder="https://claude2.exodus.pp.ua/v1"
+              placeholder={PROTOCOL_PRESETS[draft.protocol].placeholder}
             />
             <Button type="button" variant="outline" size="sm" onClick={handleTest} disabled={testing}>
               <Play className="mr-1 h-3 w-3" />
               {testing ? "..." : "Тест"}
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">OpenAI-сумісний ендпоінт</p>
+          <p className="text-xs text-muted-foreground">
+            {draft.protocol === "anthropic"
+              ? "Базовий URL без /v1 (додається автоматично)"
+              : "Повний URL з /v1"}
+          </p>
         </div>
 
         <div className="grid gap-2">
