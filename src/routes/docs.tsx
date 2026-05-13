@@ -17,7 +17,7 @@ export const Route = createFileRoute("/docs")({
 type JobStatus = "idle" | "running" | "done" | "error";
 
 function DocsRoute() {
-  const { settings: davia, save: saveDavia, reset: resetDavia } = useDaviaSettings();
+  const { settings: davia, save: saveDavia } = useDaviaSettings();
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [log, setLog] = useState<string[]>([]);
