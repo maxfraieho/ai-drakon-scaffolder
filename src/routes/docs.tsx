@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { DaviaSettingsPanel } from "@/components/docs/DaviaSettingsPanel";
 import { DocsVersionPanel } from "@/components/docs/DocsVersionPanel";
 import { useDaviaSettings } from "@/hooks/useDaviaSettings";
 import { docsApi, type DocsAnalysisItem } from "@/lib/docs-api";
@@ -18,7 +17,7 @@ export const Route = createFileRoute("/docs")({
 type JobStatus = "idle" | "running" | "done" | "error";
 
 function DocsRoute() {
-  const { settings: davia, save: saveDavia, reset: resetDavia } = useDaviaSettings();
+  const { settings: davia, save: saveDavia } = useDaviaSettings();
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [log, setLog] = useState<string[]>([]);
@@ -128,10 +127,9 @@ function DocsRoute() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Docs Generator (Davia)</CardTitle>
+            <CardTitle>Генератор документації</CardTitle>
             <CardDescription>
-              Запускає генерацію документації по поточному репозиторію через docs-агент.
-              Параметри Davia беруться з вкладки <strong>Налаштування → Документація</strong>.
+              Налаштування LLM беруться з вкладки Налаштування → Агенти
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -149,7 +147,6 @@ function DocsRoute() {
               />
             </div>
 
-            <DaviaSettingsPanel settings={davia} onSave={saveDavia} onReset={resetDavia} />
             <DocsVersionPanel settings={davia} onSave={saveDavia} />
 
             <div className="flex flex-wrap items-center gap-2">
