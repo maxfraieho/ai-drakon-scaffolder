@@ -37,6 +37,36 @@ export interface AgentReply {
   diagrams?: Array<{ name: string; items: Record<string, unknown> }>;
 }
 
+function getLlmConfig(agentId: AgentId): Record<string, unknown> | null {
+  if (typeof window === "undefined") return null;
+  const protocol =
+    localStorage.getItem(`${agentId}_llm_protocol`) ||
+    localStorage.getItem("agent_llm_protocol") ||
+    null;
+  const baseUrl =
+    localStorage.getItem(`${agentId}_llm_base_url`) ||
+    localStorage.getItem("agent_llm_base_url") ||
+    null;
+  const apiKey =
+    localStorage.getItem(`${agentId}_llm_api_key`) ||
+    localStorage.getItem("agent_llm_api_key") ||
+    null;
+  const model =
+    localStorage.getItem(`${agentId}_llm_model`) ||
+    localStorage.getItem("agent_llm_model") ||
+    null;
+  const maxTokensRaw = localStorage.getItem(`${agentId}_llm_max_tokens`);
+  const maxTokens = maxTokensRaw ? parseInt(maxTokensRaw, 10) : null;
+  if (!protocol && !baseUrl && !apiKey && !model) return null;
+  return {
+    protocol: protocol ?? "openai",
+    baseUrl,
+    apiKey,
+    model,
+    ...(maxTokens ? { maxTokens } : {}),
+  };
+}
+
 export async function sendToAgent(
   agentId: AgentId,
   message: string,
@@ -52,7 +82,12 @@ export async function sendToAgent(
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ message, context, agentUrl }),
+    body: JSON.stringify({
+      message,
+      context,
+      agentUrl,
+      llmConfig: getLlmConfig(agentId),
+    }),
   });
 
   if (!resp.ok) {
