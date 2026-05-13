@@ -70,6 +70,38 @@ function SettingsRoute() {
   const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
   const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 
+  const [daviaUrl, setDaviaUrl] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("davia_proxy_url") || "https://openai-proxy.exodus.pp.ua/v1"
+      : "https://openai-proxy.exodus.pp.ua/v1",
+  );
+  const [daviaKey, setDaviaKey] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("davia_api_key") || "freecc" : "freecc",
+  );
+  const [daviaModel, setDaviaModel] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("davia_model") || "agent-proxy"
+      : "agent-proxy",
+  );
+  const [daviaRepoPath, setDaviaRepoPath] = useState(() =>
+    typeof window !== "undefined" ? localStorage.getItem("davia_repo_path") || "" : "",
+  );
+  const [daviaRepoName, setDaviaRepoName] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("davia_repo_name") || "ai-drakon-setup"
+      : "ai-drakon-setup",
+  );
+  const [showDaviaKey, setShowDaviaKey] = useState(false);
+
+  const handleSaveDavia = () => {
+    localStorage.setItem("davia_proxy_url", daviaUrl);
+    localStorage.setItem("davia_api_key", daviaKey);
+    localStorage.setItem("davia_model", daviaModel);
+    localStorage.setItem("davia_repo_path", daviaRepoPath);
+    localStorage.setItem("davia_repo_name", daviaRepoName);
+    toast.success("Davia збережено");
+  };
+
   const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner, settings.github.token);
   const allRepos = mergeWithKnown(repos);
   const repoQuery = settings.github.repo.toLowerCase().trim();
@@ -231,9 +263,10 @@ function SettingsRoute() {
         </header>
 
         <Tabs defaultValue="github" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="github">GitHub</TabsTrigger>
             <TabsTrigger value="agents">Агенти</TabsTrigger>
+            <TabsTrigger value="docs">Документація</TabsTrigger>
             <TabsTrigger value="n8n">n8n</TabsTrigger>
             <TabsTrigger value="minio">MinIO</TabsTrigger>
             <TabsTrigger value="app">Додаток</TabsTrigger>
@@ -458,6 +491,79 @@ function SettingsRoute() {
                 }}
               >
                 Зберегти агентів
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="docs">
+          <Card>
+            <CardHeader>
+              <CardTitle>Генератор документації (Davia)</CardTitle>
+              <CardDescription>
+                Параметри Davia-інтеграції для docs-агента. Зберігаються локально у браузері.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="davia-url">Proxy URL</Label>
+                <Input
+                  id="davia-url"
+                  value={daviaUrl}
+                  onChange={(e) => setDaviaUrl(e.target.value)}
+                  placeholder="https://openai-proxy.exodus.pp.ua/v1"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="davia-key">API Key</Label>
+                <div className="relative">
+                  <Input
+                    id="davia-key"
+                    type={showDaviaKey ? "text" : "password"}
+                    value={daviaKey}
+                    onChange={(e) => setDaviaKey(e.target.value)}
+                    placeholder="freecc"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowDaviaKey((p) => !p)}
+                    aria-label="Toggle key visibility"
+                  >
+                    {showDaviaKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="davia-model">Модель</Label>
+                <Input
+                  id="davia-model"
+                  value={daviaModel}
+                  onChange={(e) => setDaviaModel(e.target.value)}
+                  placeholder="agent-proxy"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="davia-repo-path">Шлях до репо (на сервері)</Label>
+                <Input
+                  id="davia-repo-path"
+                  value={daviaRepoPath}
+                  onChange={(e) => setDaviaRepoPath(e.target.value)}
+                  placeholder="залиш пусто для поточного"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="davia-repo-name">Назва репо (для папки результатів)</Label>
+                <Input
+                  id="davia-repo-name"
+                  value={daviaRepoName}
+                  onChange={(e) => setDaviaRepoName(e.target.value)}
+                  placeholder="ai-drakon-setup"
+                />
+              </div>
+              <Button type="button" onClick={handleSaveDavia}>
+                Зберегти
               </Button>
             </CardContent>
           </Card>
