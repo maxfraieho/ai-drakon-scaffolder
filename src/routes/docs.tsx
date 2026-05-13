@@ -131,7 +131,7 @@ function DocsRoute() {
           <CardHeader>
             <CardTitle>Генератор документації</CardTitle>
             <CardDescription>
-              Налаштування LLM беруться з вкладки Налаштування → Агенти
+              Вкажи провайдера та генеруй документацію
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
