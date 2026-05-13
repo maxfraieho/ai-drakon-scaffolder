@@ -38,16 +38,17 @@ export type DocsVersionItem = {
   modified?: number;
 };
 
-function readDavia() {
+function readDocsConfig() {
   if (typeof window === "undefined") {
-    return { proxyUrl: "", apiKey: "", model: "", repoPath: "", repoName: "" };
+    return { protocol: "anthropic", baseUrl: "", apiKey: "", model: "", repoPath: "", repoName: "" };
   }
   return {
-    proxyUrl: localStorage.getItem("davia_proxy_url") || "https://openai-proxy.exodus.pp.ua/v1",
-    apiKey: localStorage.getItem("davia_api_key") || "freecc",
-    model: localStorage.getItem("davia_model") || "agent-proxy",
-    repoPath: localStorage.getItem("davia_repo_path") || "",
-    repoName: localStorage.getItem("davia_repo_name") || "ai-drakon-setup",
+    protocol: localStorage.getItem("agent_llm_protocol") || "anthropic",
+    baseUrl: localStorage.getItem("agent_llm_base_url") || "",
+    apiKey: localStorage.getItem("agent_llm_api_key") || "",
+    model: localStorage.getItem("agent_llm_model") || "",
+    repoPath: localStorage.getItem("docs_repo_path") || "",
+    repoName: localStorage.getItem("docs_repo_name") || "ai-drakon-setup",
   };
 }
 
@@ -57,6 +58,8 @@ export interface GenerateOverrides {
   model?: string;
   maxTokens?: number;
   outputVersion?: string;
+  repoPath?: string;
+  repoName?: string;
 }
 
 export const docsApi = {
