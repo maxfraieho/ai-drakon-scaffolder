@@ -149,6 +149,8 @@ function DocsRoute() {
               />
             </div>
 
+            <DaviaSettingsPanel settings={davia} onSave={saveDavia} onReset={resetDavia} />
+
             <DocsVersionPanel settings={davia} onSave={saveDavia} />
 
             <div className="flex flex-wrap items-center gap-2">
