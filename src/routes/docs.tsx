@@ -91,11 +91,23 @@ function DocsRoute() {
   }, [log]);
 
   const handleGenerate = async () => {
+    if (!davia.outputVersion.trim()) {
+      toast.error("Вкажіть назву версії", {
+        description: "Розгорніть «Версія документації» та задайте папку.",
+      });
+      return;
+    }
     setJobStatus("running");
     setLog([]);
     setAnalyses([]);
     try {
-      const resp = await docsApi.generate(instructions.trim() || undefined);
+      const resp = await docsApi.generate(instructions.trim() || undefined, {
+        baseUrl: davia.baseUrl,
+        apiKey: davia.apiKey,
+        model: davia.model,
+        maxTokens: davia.maxTokens,
+        outputVersion: davia.outputVersion.trim(),
+      });
       setJobId(resp.job_id);
       toast.message("Генерацію запущено", { description: `Job: ${resp.job_id}` });
     } catch (e) {
