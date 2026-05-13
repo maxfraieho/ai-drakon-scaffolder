@@ -496,6 +496,79 @@ function SettingsRoute() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="docs">
+          <Card>
+            <CardHeader>
+              <CardTitle>Генератор документації (Davia)</CardTitle>
+              <CardDescription>
+                Параметри Davia-інтеграції для docs-агента. Зберігаються локально у браузері.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="davia-url">Proxy URL</Label>
+                <Input
+                  id="davia-url"
+                  value={daviaUrl}
+                  onChange={(e) => setDaviaUrl(e.target.value)}
+                  placeholder="https://openai-proxy.exodus.pp.ua/v1"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="davia-key">API Key</Label>
+                <div className="relative">
+                  <Input
+                    id="davia-key"
+                    type={showDaviaKey ? "text" : "password"}
+                    value={daviaKey}
+                    onChange={(e) => setDaviaKey(e.target.value)}
+                    placeholder="freecc"
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    onClick={() => setShowDaviaKey((p) => !p)}
+                    aria-label="Toggle key visibility"
+                  >
+                    {showDaviaKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="davia-model">Модель</Label>
+                <Input
+                  id="davia-model"
+                  value={daviaModel}
+                  onChange={(e) => setDaviaModel(e.target.value)}
+                  placeholder="agent-proxy"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="davia-repo-path">Шлях до репо (на сервері)</Label>
+                <Input
+                  id="davia-repo-path"
+                  value={daviaRepoPath}
+                  onChange={(e) => setDaviaRepoPath(e.target.value)}
+                  placeholder="залиш пусто для поточного"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="davia-repo-name">Назва репо (для папки результатів)</Label>
+                <Input
+                  id="davia-repo-name"
+                  value={daviaRepoName}
+                  onChange={(e) => setDaviaRepoName(e.target.value)}
+                  placeholder="ai-drakon-setup"
+                />
+              </div>
+              <Button type="button" onClick={handleSaveDavia}>
+                Зберегти
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="n8n">
           <Card>
             <CardHeader>
