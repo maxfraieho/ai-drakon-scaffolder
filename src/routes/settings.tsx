@@ -231,8 +231,9 @@ function SettingsRoute() {
         </header>
 
         <Tabs defaultValue="github" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="github">GitHub</TabsTrigger>
+            <TabsTrigger value="agents">Агенти</TabsTrigger>
             <TabsTrigger value="n8n">n8n</TabsTrigger>
             <TabsTrigger value="minio">MinIO</TabsTrigger>
             <TabsTrigger value="app">Додаток</TabsTrigger>
