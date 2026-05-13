@@ -25,6 +25,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     bucket: "",
     accessKey: "",
   },
+  agents: {
+    drakonUrl: "https://drakon-agent.exodus.pp.ua",
+    architectUrl: "https://architect-agent.exodus.pp.ua",
+    docsUrl: "https://docs-agent.exodus.pp.ua",
+  },
 };
 
 const LEGACY_GITHUB_STORAGE_KEY = "github.lastRepo";
