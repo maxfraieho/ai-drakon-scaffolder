@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 
 export interface DaviaSettings {
+  protocol: "openai" | "anthropic";
   baseUrl: string;
   apiKey: string;
   model: string;
@@ -9,10 +10,11 @@ export interface DaviaSettings {
 }
 
 export const DEFAULT_DAVIA_SETTINGS: DaviaSettings = {
-  baseUrl: "https://claude2.exodus.pp.ua/v1",
-  apiKey: "sk-2e690b95180b8cf8619c5661eb2908ccad5fd907c0a4f3fa0248e842c7d62e8e",
-  model: "free/standard-proxy",
-  maxTokens: 3000,
+  protocol: "openai",
+  baseUrl: "https://openai-proxy.exodus.pp.ua/v1",
+  apiKey: "freecc",
+  model: "docs-assistant-proxy",
+  maxTokens: 6000,
   outputVersion: "",
 };
 
