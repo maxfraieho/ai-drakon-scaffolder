@@ -231,8 +231,9 @@ function SettingsRoute() {
         </header>
 
         <Tabs defaultValue="github" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="github">GitHub</TabsTrigger>
+            <TabsTrigger value="agents">Агенти</TabsTrigger>
             <TabsTrigger value="n8n">n8n</TabsTrigger>
             <TabsTrigger value="minio">MinIO</TabsTrigger>
             <TabsTrigger value="app">Додаток</TabsTrigger>
@@ -369,6 +370,95 @@ function SettingsRoute() {
                 </Button>
                 {statusBadge(githubStatus)}
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="agents">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI-Агенти</CardTitle>
+              <CardDescription>
+                HTTPS-адреси трьох локальних агентів. Запити йдуть через Cloudflare Worker, який проксіює їх на ці URL.
+                Кожен URL повинен починатися з <code>https://</code>.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="agent-drakon">Агент DRAKON (порт 8765)</Label>
+                <Input
+                  id="agent-drakon"
+                  value={settings.agents.drakonUrl}
+                  onChange={(event) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      agents: { ...prev.agents, drakonUrl: event.target.value },
+                    }))
+                  }
+                  placeholder="https://drakon-agent.example.com"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="agent-architect">Агент Архітектор (порт 8766)</Label>
+                <Input
+                  id="agent-architect"
+                  value={settings.agents.architectUrl}
+                  onChange={(event) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      agents: { ...prev.agents, architectUrl: event.target.value },
+                    }))
+                  }
+                  placeholder="https://architect-agent.example.com"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="agent-docs">Агент Документознавець (порт 8767)</Label>
+                <Input
+                  id="agent-docs"
+                  value={settings.agents.docsUrl}
+                  onChange={(event) =>
+                    updateSettings((prev) => ({
+                      ...prev,
+                      agents: { ...prev.agents, docsUrl: event.target.value },
+                    }))
+                  }
+                  placeholder="https://docs-agent.example.com"
+                />
+              </div>
+
+              <div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+                Ці адреси передаються в Worker як <code>agentUrl</code> при кожному запиті
+                <code> POST {`{workerUrl}/v1/agents/{agentId}/chat`}</code>.
+                Worker сам додає JWT та проксіює запит до відповідного локального агента.
+              </div>
+
+              <Button
+                type="button"
+                onClick={() => {
+                  const urls = [
+                    settings.agents.drakonUrl,
+                    settings.agents.architectUrl,
+                    settings.agents.docsUrl,
+                  ];
+                  if (urls.some((u) => !u.startsWith("https://"))) {
+                    toast.error("Усі адреси агентів мають починатися з https://");
+                    return;
+                  }
+                  try {
+                    writeSettings(settings);
+                    toast.success("Налаштування агентів збережено");
+                  } catch (error) {
+                    toast.error("Не вдалося зберегти", {
+                      description: error instanceof Error ? error.message : "Невідома помилка",
+                    });
+                  }
+                }}
+              >
+                Зберегти агентів
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -601,32 +691,6 @@ function SettingsRoute() {
                   </SelectContent>
                 </Select>
               </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="agent-base-url">Agent Server URL</Label>
-                <Input
-                  id="agent-base-url"
-                  placeholder="http://192.168.3.184"
-                  defaultValue={
-                    (typeof window !== "undefined" &&
-                      localStorage.getItem("drakon_agent_base_url")) ||
-                    ""
-                  }
-                  onChange={(event) => {
-                    try {
-                      const v = event.target.value.trim();
-                      if (v) localStorage.setItem("drakon_agent_base_url", v);
-                      else localStorage.removeItem("drakon_agent_base_url");
-                    } catch {
-                      // ignore
-                    }
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Base URL for AI agents (drakon:8765, architect:8766, docs:8767)
-                </p>
-              </div>
-
               <button
                 type="button"
                 onClick={clearDiagramCache}

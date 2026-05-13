@@ -25,6 +25,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
     bucket: "",
     accessKey: "",
   },
+  agents: {
+    drakonUrl: "https://drakon-agent.exodus.pp.ua",
+    architectUrl: "https://architect-agent.exodus.pp.ua",
+    docsUrl: "https://docs-agent.exodus.pp.ua",
+  },
 };
 
 const LEGACY_GITHUB_STORAGE_KEY = "github.lastRepo";
@@ -63,6 +68,7 @@ export function readSettings(): AppSettings {
     const n8n = isObject(parsed.n8n) ? parsed.n8n : {};
     const app = isObject(parsed.app) ? parsed.app : {};
     const minio = isObject(parsed.minio) ? parsed.minio : {};
+    const agents = isObject(parsed.agents) ? parsed.agents : {};
 
     return {
       github: {
@@ -99,6 +105,20 @@ export function readSettings(): AppSettings {
         bucket: typeof minio.bucket === "string" ? minio.bucket : DEFAULT_SETTINGS.minio.bucket,
         accessKey: typeof minio.accessKey === "string" ? minio.accessKey : DEFAULT_SETTINGS.minio.accessKey,
       },
+      agents: {
+        drakonUrl:
+          typeof agents.drakonUrl === "string" && agents.drakonUrl.startsWith("https://")
+            ? agents.drakonUrl
+            : DEFAULT_SETTINGS.agents.drakonUrl,
+        architectUrl:
+          typeof agents.architectUrl === "string" && agents.architectUrl.startsWith("https://")
+            ? agents.architectUrl
+            : DEFAULT_SETTINGS.agents.architectUrl,
+        docsUrl:
+          typeof agents.docsUrl === "string" && agents.docsUrl.startsWith("https://")
+            ? agents.docsUrl
+            : DEFAULT_SETTINGS.agents.docsUrl,
+      },
     };
   } catch {
     return DEFAULT_SETTINGS;
@@ -130,4 +150,8 @@ export function getN8nConfig(): AppSettings["n8n"] {
 
 export function getMinioConfig(): AppSettings["minio"] {
   return readSettings().minio;
+}
+
+export function getAgentsConfig(): AppSettings["agents"] {
+  return readSettings().agents;
 }
