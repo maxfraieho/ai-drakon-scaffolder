@@ -151,3 +151,7 @@ export function getN8nConfig(): AppSettings["n8n"] {
 export function getMinioConfig(): AppSettings["minio"] {
   return readSettings().minio;
 }
+
+export function getAgentsConfig(): AppSettings["agents"] {
+  return readSettings().agents;
+}
