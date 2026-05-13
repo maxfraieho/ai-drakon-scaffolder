@@ -31,6 +31,13 @@ export type DocsAnalysisResponse = {
   analyses: DocsAnalysisItem[];
 };
 
+export type DocsVersionItem = {
+  name: string;
+  path: string;
+  files: number;
+  modified?: number;
+};
+
 function readDavia() {
   if (typeof window === "undefined") {
     return { proxyUrl: "", apiKey: "", model: "", repoPath: "", repoName: "" };
@@ -44,23 +51,38 @@ function readDavia() {
   };
 }
 
+export interface GenerateOverrides {
+  baseUrl?: string;
+  apiKey?: string;
+  model?: string;
+  maxTokens?: number;
+  outputVersion?: string;
+}
+
 export const docsApi = {
-  async generate(instructions?: string): Promise<DocsGenerateResponse> {
+  async generate(instructions?: string, overrides?: GenerateOverrides): Promise<DocsGenerateResponse> {
     const base = getDocsAgentUrl();
     const davia = readDavia();
+    const body: Record<string, unknown> = {
+      repo_path: davia.repoPath,
+      repo_name: davia.repoName,
+      instructions: instructions || undefined,
+      davia: {
+        proxy_url: overrides?.baseUrl || davia.proxyUrl,
+        api_key: overrides?.apiKey || davia.apiKey,
+        model: overrides?.model || davia.model,
+      },
+    };
+    if (overrides?.baseUrl) body.base_url = overrides.baseUrl;
+    if (overrides?.apiKey) body.api_key = overrides.apiKey;
+    if (overrides?.model) body.model = overrides.model;
+    if (overrides?.maxTokens) body.max_tokens = overrides.maxTokens;
+    if (overrides?.outputVersion) body.output_version = overrides.outputVersion;
+
     const res = await fetch(`${base}/docs/generate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        repo_path: davia.repoPath,
-        repo_name: davia.repoName,
-        instructions: instructions || undefined,
-        davia: {
-          proxy_url: davia.proxyUrl,
-          api_key: davia.apiKey,
-          model: davia.model,
-        },
-      }),
+      body: JSON.stringify(body),
     });
     if (!res.ok) throw new Error(`Docs generate failed: HTTP ${res.status}`);
     return res.json();
@@ -78,6 +100,22 @@ export const docsApi = {
     const res = await fetch(`${base}/docs/analysis`);
     if (!res.ok) throw new Error(`Docs analysis failed: HTTP ${res.status}`);
     return res.json();
+  },
+
+  async listVersions(): Promise<DocsVersionItem[]> {
+    const base = getDocsAgentUrl();
+    const res = await fetch(`${base}/docs/analysis`);
+    if (!res.ok) throw new Error(`Docs versions failed: HTTP ${res.status}`);
+    const data = (await res.json()) as { versions?: DocsVersionItem[]; analyses?: DocsAnalysisItem[] };
+    if (Array.isArray(data.versions)) return data.versions;
+    if (Array.isArray(data.analyses)) {
+      return data.analyses.map((a) => ({
+        name: a.name,
+        path: a.path,
+        files: a.file_count,
+      }));
+    }
+    return [];
   },
 };
 

@@ -6,6 +6,9 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { DaviaSettingsPanel } from "@/components/docs/DaviaSettingsPanel";
+import { DocsVersionPanel } from "@/components/docs/DocsVersionPanel";
+import { useDaviaSettings } from "@/hooks/useDaviaSettings";
 import { docsApi, type DocsAnalysisItem } from "@/lib/docs-api";
 
 export const Route = createFileRoute("/docs")({
@@ -15,6 +18,7 @@ export const Route = createFileRoute("/docs")({
 type JobStatus = "idle" | "running" | "done" | "error";
 
 function DocsRoute() {
+  const { settings: davia, save: saveDavia, reset: resetDavia } = useDaviaSettings();
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [log, setLog] = useState<string[]>([]);
@@ -87,11 +91,23 @@ function DocsRoute() {
   }, [log]);
 
   const handleGenerate = async () => {
+    if (!davia.outputVersion.trim()) {
+      toast.error("Вкажіть назву версії", {
+        description: "Розгорніть «Версія документації» та задайте папку.",
+      });
+      return;
+    }
     setJobStatus("running");
     setLog([]);
     setAnalyses([]);
     try {
-      const resp = await docsApi.generate(instructions.trim() || undefined);
+      const resp = await docsApi.generate(instructions.trim() || undefined, {
+        baseUrl: davia.baseUrl,
+        apiKey: davia.apiKey,
+        model: davia.model,
+        maxTokens: davia.maxTokens,
+        outputVersion: davia.outputVersion.trim(),
+      });
       setJobId(resp.job_id);
       toast.message("Генерацію запущено", { description: `Job: ${resp.job_id}` });
     } catch (e) {
@@ -132,6 +148,9 @@ function DocsRoute() {
                 disabled={running}
               />
             </div>
+
+            <DaviaSettingsPanel settings={davia} onSave={saveDavia} onReset={resetDavia} />
+            <DocsVersionPanel settings={davia} onSave={saveDavia} />
 
             <div className="flex flex-wrap items-center gap-2">
               <Button onClick={handleGenerate} disabled={running}>
