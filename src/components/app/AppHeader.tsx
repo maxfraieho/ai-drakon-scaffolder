@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Bot,
+  FileText,
   GitCompare,
   Github,
   LayoutGrid,
