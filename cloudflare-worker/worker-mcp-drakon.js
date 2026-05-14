@@ -1665,6 +1665,7 @@ async function handleHealth(env) {
 // ============================================
 
 const VALID_AGENT_IDS = ['drakon', 'architect', 'docs'];
+const DOCS_AGENT_URL = 'https://docs-agent.exodus.pp.ua';
 
 function isPythonCode(msg) {
   return /\bdef\s+\w+\s*\(|class\s+\w+[\s:(]|^import\s+\w+|^from\s+\w+\s+import|async\s+def\s+\w+/m.test(msg);
@@ -1914,12 +1915,11 @@ export default {
 
 
 // ── Notes API (docs-agent proxy) ─────────────────────────────────────────────
-const DOCS_AGENT = 'https://docs-agent.exodus.pp.ua';
 
 async function handleNotesList(request) {
   const url = new URL(request.url);
   const flat = url.searchParams.get('flat') ?? 'true';
-  const res = await fetch(`${DOCS_AGENT}/notes/list?flat=${flat}`, {
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/list?flat=${flat}`, {
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return errorResponse(`docs-agent /notes/list ${res.status}`, 502);
@@ -1929,7 +1929,7 @@ async function handleNotesList(request) {
 async function handleNotesGet(request) {
   const slug = new URL(request.url).searchParams.get('slug') || '';
   if (!slug) return errorResponse('slug required', 400);
-  const res = await fetch(`${DOCS_AGENT}/notes/read?slug=${encodeURIComponent(slug)}`, {
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/read?slug=${encodeURIComponent(slug)}`, {
     signal: AbortSignal.timeout(10_000),
   });
   if (res.status === 404) return errorResponse(`Note not found: ${slug}`, 404);
@@ -1938,7 +1938,7 @@ async function handleNotesGet(request) {
 }
 
 async function handleNotesGraph() {
-  const res = await fetch(`${DOCS_AGENT}/notes/graph`, {
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/graph`, {
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) return errorResponse(`docs-agent /notes/graph ${res.status}`, 502);
@@ -1986,7 +1986,7 @@ async function handleNotesCommit(request, env) {
   if (!slug) return errorResponse('slug required', 400);
   if (!title) title = slug.split('/').pop() || slug;
 
-  const res = await fetch(`${DOCS_AGENT}/notes/write`, {
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/write`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ slug, title, content: bodyContent, tags }),
@@ -2014,7 +2014,7 @@ async function handleNotesDelete(request, env) {
   const slug = body.slug || '';
   if (!slug) return errorResponse('slug required', 400);
 
-  const res = await fetch(`${DOCS_AGENT}/notes/delete`, {
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/delete`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ slug }),
