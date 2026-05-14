@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Save, Loader2, Eye, Edit3, RotateCcw, Trash2 } from "lucide-react";
+import { Save, Loader2, Eye, Edit3, RotateCcw, Trash2, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,6 +25,7 @@ interface NoteEditorProps {
   onDiscardDraft: () => void;
   wikilinkSuggestions: WikilinkSuggestion[];
   insertAtCursor: (text: string, opts?: { selectInside?: boolean }) => void;
+  currentSlug?: string;
 }
 
 type Mode = "edit" | "preview";
