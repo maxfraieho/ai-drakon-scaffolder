@@ -283,8 +283,8 @@ export function NoteEditor(props: NoteEditorProps) {
           </div>
         </div>
       ) : (
-        <ScrollArea className="flex-1">
-          <div className="p-4">
+        <ScrollArea className="min-w-0 flex-1 overflow-x-hidden">
+          <div className="min-w-0 max-w-full overflow-x-hidden p-4 text-[15px] leading-relaxed md:text-sm">
             {content.trim() ? (
               <NoteRenderer content={content} />
             ) : (
