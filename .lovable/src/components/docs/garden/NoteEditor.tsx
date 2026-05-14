@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Save, Loader2, Eye, Edit3, RotateCcw, Trash2, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { EditorToolbar } from "./EditorToolbar";
 import { TagEditor } from "./TagEditor";
