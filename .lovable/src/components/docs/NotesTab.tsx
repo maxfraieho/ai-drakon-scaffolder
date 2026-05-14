@@ -155,8 +155,8 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   }));
 
   return (
-    <div className="flex h-[calc(100vh-220px)] min-h-[500px] gap-0 overflow-hidden rounded-lg border border-border">
-      <div className="flex w-52 shrink-0 flex-col border-r border-border bg-muted/20">
+    <div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col gap-0 overflow-hidden rounded-lg border border-border md:flex-row">
+      <div className="flex max-h-[40vh] w-full shrink-0 flex-col border-b border-border bg-muted/20 md:max-h-none md:w-52 md:border-b-0 md:border-r">
         <div className="flex items-center justify-between border-b border-border p-2">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Документи
