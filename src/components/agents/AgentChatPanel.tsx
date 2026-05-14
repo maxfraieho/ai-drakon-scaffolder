@@ -33,6 +33,48 @@ const WELCOME: Record<AgentId, string> = {
   docs: "Готово. Запитайте про документацію та контекст.",
 };
 
+interface SlotInfo {
+  active_model: string | null;
+  display_name: string;
+  health: string;
+}
+
+function useSlotInfo(slotName: string | null) {
+  const [info, setInfo] = useState<SlotInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!slotName) {
+      setInfo(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    const workerUrl = (
+      typeof window !== "undefined"
+        ? localStorage.getItem("app_worker_url") ||
+          "https://drakon-mcp-worker.maxfraieho.workers.dev"
+        : "https://drakon-mcp-worker.maxfraieho.workers.dev"
+    ).replace(/\/+$/, "");
+    fetch(`${workerUrl}/v1/proxy/slot-info?slot=${encodeURIComponent(slotName)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setInfo(data as SlotInfo);
+      })
+      .catch(() => {
+        if (!cancelled) setInfo(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slotName]);
+
+  return { info, loading };
+}
+
 interface Props {
   className?: string;
 }
