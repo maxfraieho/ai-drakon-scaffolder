@@ -139,7 +139,7 @@ function DocsRoute() {
         </header>
 
         <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="w-full">
-          <TabsList className="mb-3 flex w-full justify-start overflow-x-auto whitespace-nowrap md:w-auto md:inline-flex">
+          <TabsList className="no-scrollbar mb-3 flex w-full justify-start overflow-x-auto whitespace-nowrap md:w-auto md:inline-flex">
             <TabsTrigger value="generator">
               <Play className="mr-1.5 h-3.5 w-3.5" />
               Генератор
