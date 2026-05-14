@@ -1,3 +1,4 @@
+import type React from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useMemo } from "react";
@@ -25,7 +26,7 @@ export function NoteRenderer({ content, onNavigate }: NoteRendererProps) {
   const renderText = (text: string) => {
     const parts = text.split(/\u0000WIKI(\d+)\u0000/);
     if (parts.length === 1) return text;
-    const out: (string | JSX.Element)[] = [];
+    const out: (string | React.ReactElement)[] = [];
     for (let i = 0; i < parts.length; i++) {
       if (i % 2 === 0) {
         if (parts[i]) out.push(parts[i]);
