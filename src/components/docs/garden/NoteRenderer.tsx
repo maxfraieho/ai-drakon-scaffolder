@@ -62,6 +62,18 @@ export function NoteRenderer({ content, onNavigate }: NoteRendererProps) {
               {children}
             </a>
           ),
+          pre: ({ children }) => (
+            <pre className="max-w-full overflow-x-auto whitespace-pre-wrap break-words rounded-md bg-muted/40 p-3 text-xs">
+              {children}
+            </pre>
+          ),
+          table: ({ children }) => (
+            <div className="my-4 max-w-full overflow-x-auto">
+              <table className="w-full table-auto border-collapse text-sm">{children}</table>
+            </div>
+          ),
+          th: ({ children }) => <th className="break-words border border-border px-2 py-1 text-left align-top">{children}</th>,
+          td: ({ children }) => <td className="break-words border border-border px-2 py-1 align-top">{children}</td>,
           code: ({ children, className }) => (
             <code className={className}>{children}</code>
           ),
