@@ -19,7 +19,7 @@ function slugify(s: string): string {
     .slice(0, 80);
 }
 
-export function useNotesEditor({ slug }: UseNotesEditorOptions) {
+export function useNotesEditor({ slug, folder }: UseNotesEditorOptions) {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [tags, setTags] = useState<string[]>([]);
