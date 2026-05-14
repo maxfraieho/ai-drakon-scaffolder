@@ -96,23 +96,20 @@ export function AgentChatPanel({ className }: Props) {
   const isLoading = loading[activeAgent];
   const currentError = error[activeAgent];
 
+  const _agentKey = activeAgent;
   const llmProtocol =
-    (typeof window !== "undefined"
-      ? localStorage.getItem(`${activeAgent}_llm_protocol`) ||
-        localStorage.getItem("agent_llm_protocol")
-      : null) || "openai";
+    typeof window !== "undefined"
+      ? localStorage.getItem(`${_agentKey}_llm_protocol`) ||
+        localStorage.getItem("agent_llm_protocol") ||
+        null
+      : null;
   const llmModel =
-    (typeof window !== "undefined"
-      ? localStorage.getItem(`${activeAgent}_llm_model`) ||
-        localStorage.getItem("agent_llm_model")
-      : null) ||
-    (llmProtocol === "anthropic"
-      ? "claude-3-haiku-20240307"
-      : "docs-assistant-proxy");
+    typeof window !== "undefined"
+      ? localStorage.getItem(`${_agentKey}_llm_model`) ||
+        localStorage.getItem("agent_llm_model") ||
+        null
+      : null;
   const isOpenAiProtocol = llmProtocol === "openai";
-  const llmConfigured =
-    typeof window !== "undefined" &&
-    !!localStorage.getItem(`${activeAgent}_llm_protocol`);
   const { info: slotInfo, loading: slotLoading } = useSlotInfo(
     isOpenAiProtocol ? llmModel : null,
   );
