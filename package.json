@@ -13,5 +13,9 @@
     "test": "npm run sync:deps && npm --prefix .lovable exec vitest",
     "build:pages": "npm run build",
     "deploy:pages": "npx wrangler pages deploy dist --functions functions"
+  },
+  "dependencies": {
+    "react-markdown": "^10.1.0",
+    "remark-gfm": "^4.0.1"
   }
 }
