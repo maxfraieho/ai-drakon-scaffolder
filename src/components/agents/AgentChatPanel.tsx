@@ -33,6 +33,48 @@ const WELCOME: Record<AgentId, string> = {
   docs: "Готово. Запитайте про документацію та контекст.",
 };
 
+interface SlotInfo {
+  active_model: string | null;
+  display_name: string;
+  health: string;
+}
+
+function useSlotInfo(slotName: string | null) {
+  const [info, setInfo] = useState<SlotInfo | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!slotName) {
+      setInfo(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    const workerUrl = (
+      typeof window !== "undefined"
+        ? localStorage.getItem("app_worker_url") ||
+          "https://drakon-mcp-worker.maxfraieho.workers.dev"
+        : "https://drakon-mcp-worker.maxfraieho.workers.dev"
+    ).replace(/\/+$/, "");
+    fetch(`${workerUrl}/v1/proxy/slot-info?slot=${encodeURIComponent(slotName)}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled) setInfo(data as SlotInfo);
+      })
+      .catch(() => {
+        if (!cancelled) setInfo(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [slotName]);
+
+  return { info, loading };
+}
+
 interface Props {
   className?: string;
 }
@@ -53,6 +95,23 @@ export function AgentChatPanel({ className }: Props) {
   const messages = sessions[activeAgent] ?? [];
   const isLoading = loading[activeAgent];
   const currentError = error[activeAgent];
+
+  const llmProtocol =
+    typeof window !== "undefined"
+      ? localStorage.getItem(`${activeAgent}_llm_protocol`) ||
+        localStorage.getItem("agent_llm_protocol") ||
+        null
+      : null;
+  const llmModel =
+    typeof window !== "undefined"
+      ? localStorage.getItem(`${activeAgent}_llm_model`) ||
+        localStorage.getItem("agent_llm_model") ||
+        null
+      : null;
+  const isOpenAiProtocol = llmProtocol === "openai";
+  const { info: slotInfo, loading: slotLoading } = useSlotInfo(
+    isOpenAiProtocol ? llmModel : null,
+  );
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -148,6 +207,38 @@ export function AgentChatPanel({ className }: Props) {
           )}
         </div>
       </div>
+
+      {/* LLM status bar */}
+      {llmProtocol && (
+        <div className="border-t px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 flex-wrap">
+          <span className="font-medium text-foreground/70">
+            {llmProtocol === "anthropic" ? "Anthropic" : "OpenAI"}
+          </span>
+          {llmModel && (
+            <>
+              <span className="opacity-40">·</span>
+              <span className="font-mono">{llmModel}</span>
+            </>
+          )}
+          {isOpenAiProtocol && (
+            <>
+              <span className="opacity-40">→</span>
+              {slotLoading ? (
+                <span className="opacity-50">…</span>
+              ) : slotInfo?.active_model ? (
+                <span
+                  className="font-mono text-emerald-600 dark:text-emerald-400"
+                  title={`Health: ${slotInfo.health}`}
+                >
+                  {slotInfo.active_model.split("/").pop()}
+                </span>
+              ) : (
+                <span className="opacity-40 italic">модель невідома</span>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Composer */}
       <div className="border-t p-3 space-y-2">
