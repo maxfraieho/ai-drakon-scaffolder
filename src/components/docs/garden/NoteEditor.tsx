@@ -167,41 +167,43 @@ export function NoteEditor(props: NoteEditorProps) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-border bg-muted/10 px-3 py-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/10 px-3 py-2">
         <Input
           value={title}
           onChange={(e) => onTitleChange(e.target.value)}
           placeholder="Заголовок нотатки"
-          className="h-8 flex-1 border-0 bg-transparent px-0 text-base font-medium shadow-none focus-visible:ring-0"
+          className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-base font-medium shadow-none focus-visible:ring-0"
         />
         {props.currentSlug && props.currentSlug.includes("/") && (
-          <div className="flex shrink-0 items-center gap-1 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-xs text-muted-foreground" title="Папка документа">
-            <Folder className="h-3 w-3" />
-            <span>{props.currentSlug.split("/").slice(0, -1).join("/")}</span>
+          <div className="flex max-w-full shrink-0 items-center gap-1 overflow-hidden rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-xs text-muted-foreground" title="Папка документа">
+            <Folder className="h-3 w-3 shrink-0" />
+            <span className="truncate">{props.currentSlug.split("/").slice(0, -1).join("/")}</span>
           </div>
         )}
         <div className="flex items-center gap-1">
           <Button
             size="sm"
             variant={mode === "edit" ? "secondary" : "ghost"}
-            className="h-7"
+            className="h-7 px-2"
             onClick={() => setMode("edit")}
+            title="Редагувати"
           >
-            <Edit3 className="mr-1 h-3 w-3" />
-            Редагувати
+            <Edit3 className="h-3.5 w-3.5 md:mr-1" />
+            <span className="hidden md:inline">Редагувати</span>
           </Button>
           <Button
             size="sm"
             variant={mode === "preview" ? "secondary" : "ghost"}
-            className="h-7"
+            className="h-7 px-2"
             onClick={() => setMode("preview")}
+            title="Перегляд"
           >
-            <Eye className="mr-1 h-3 w-3" />
-            Перегляд
+            <Eye className="h-3.5 w-3.5 md:mr-1" />
+            <span className="hidden md:inline">Перегляд</span>
           </Button>
-          <Button size="sm" className="h-7" onClick={() => void onSave()} disabled={isSaving || !isDirty}>
-            {isSaving ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Save className="mr-1 h-3 w-3" />}
-            Зберегти
+          <Button size="sm" className="h-7 px-2" onClick={() => void onSave()} disabled={isSaving || !isDirty} title="Зберегти">
+            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin md:mr-1" /> : <Save className="h-3.5 w-3.5 md:mr-1" />}
+            <span className="hidden md:inline">Зберегти</span>
           </Button>
         </div>
       </div>
@@ -228,7 +230,7 @@ export function NoteEditor(props: NoteEditorProps) {
       {mode === "edit" ? (
         <div className="relative flex flex-1 flex-col overflow-hidden">
           <EditorToolbar onWrap={wrap} onInsert={insertAtCursor} />
-          <div className="flex flex-wrap gap-x-3 border-b border-border/50 bg-muted/5 px-3 py-1 text-[10px] text-muted-foreground">
+          <div className="hidden md:flex flex-wrap gap-x-3 border-b border-border/50 bg-muted/5 px-3 py-1 text-[10px] text-muted-foreground">
             <span><kbd className="font-mono">Ctrl+S</kbd> зберегти</span>
             <span><kbd className="font-mono">Ctrl+B</kbd> жирний</span>
             <span><kbd className="font-mono">Ctrl+I</kbd> курсив</span>

@@ -1,35 +1,65 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Plus, Loader2, RefreshCw, FileText, Folder, FolderOpen,
-  ChevronDown, ChevronRight, Trash2,
+  ChevronDown, ChevronRight, Trash2, FolderPlus, FilePlus,
+  PanelLeftOpen, PanelLeftClose,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { NoteEditor } from "@/components/docs/garden/NoteEditor";
 import { useNotesEditor } from "@/hooks/useNotesEditor";
-import { fetchNotesTree, deleteNote, type TreeNode } from "@/lib/garden/notesApi";
+import { fetchNotesTree, deleteNote, commitNote, type TreeNode } from "@/lib/garden/notesApi";
 import { toast } from "sonner";
 
 const NEW_SLUG = "__new__";
+const LOCAL_FOLDERS_KEY = "docs.localFolders";
 
 interface NotesTabProps {
   focusSlug?: string | null;
   onFocusClear?: () => void;
 }
 
+function slugifySegment(s: string): string {
+  return s.toLowerCase().trim()
+    .replace(/[^a-z0-9\u0400-\u04ff\s-]/g, "")
+    .replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 60);
+}
+
+function readLocalFolders(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(LOCAL_FOLDERS_KEY);
+    return raw ? (JSON.parse(raw) as string[]) : [];
+  } catch { return []; }
+}
+function writeLocalFolders(list: string[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(LOCAL_FOLDERS_KEY, JSON.stringify(list));
+}
+
+function mergeLocalFolders(tree: TreeNode[], local: string[]): TreeNode[] {
+  const existing = new Set(tree.filter((n) => n.type === "folder").map((n) => n.name));
+  const extras: TreeNode[] = local
+    .filter((n) => !existing.has(n))
+    .map((name) => ({ type: "folder" as const, name, path: name, children: [] }));
+  return [...tree, ...extras];
+}
+
+function flattenTree(nodes: TreeNode[]): TreeNode[] {
+  return nodes.flatMap((n) => (n.type === "note" ? [n] : flattenTree(n.children ?? [])));
+}
+
 function SidebarTreeNode({
-  node,
-  level,
-  activeSlug,
-  onNoteClick,
-  onDeleteNote,
+  node, level, activeSlug, onNoteClick, onDeleteNote, onAddInFolder, onDeleteFolder,
 }: {
   node: TreeNode;
   level: number;
   activeSlug: string | null;
   onNoteClick: (slug: string) => void;
   onDeleteNote: (slug: string) => void;
+  onAddInFolder: (folderPath: string) => void;
+  onDeleteFolder: (folderPath: string, hasChildren: boolean) => void;
 }) {
   const [open, setOpen] = useState(true);
 
@@ -46,7 +76,7 @@ function SidebarTreeNode({
         <button
           onClick={() => onNoteClick(node.slug!)}
           className={cn(
-            "flex flex-1 items-center gap-1.5 py-1.5 text-left text-xs",
+            "flex flex-1 items-center gap-1.5 py-1.5 text-left text-xs min-w-0",
             isActive && "font-medium",
           )}
         >
@@ -54,11 +84,8 @@ function SidebarTreeNode({
           <span className="truncate">{node.title ?? node.slug}</span>
         </button>
         <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDeleteNote(node.slug!);
-          }}
-          className="mr-1 h-5 w-5 shrink-0 rounded p-0.5 opacity-0 transition-opacity hover:bg-destructive/10 hover:text-destructive group-hover:opacity-100"
+          onClick={(e) => { e.stopPropagation(); onDeleteNote(node.slug!); }}
+          className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground transition-opacity hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
           title="Видалити"
         >
           <Trash2 className="h-3 w-3" />
@@ -67,17 +94,36 @@ function SidebarTreeNode({
     );
   }
 
+  const childCount = (node.children ?? []).length;
   return (
     <div>
-      <button
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-xs font-medium transition-colors hover:bg-muted/60 text-muted-foreground"
-        style={{ paddingLeft: `${8 + level * 14}px` }}
+      <div
+        className="group flex items-center rounded hover:bg-muted/60"
+        style={{ paddingLeft: `${4 + level * 14}px` }}
       >
-        {open ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
-        {open ? <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/60" /> : <Folder className="h-3.5 w-3.5 shrink-0 text-primary/60" />}
-        <span className="truncate">{node.name}</span>
-      </button>
+        <button
+          onClick={() => setOpen((o) => !o)}
+          className="flex flex-1 items-center gap-1.5 py-1 text-left text-xs font-medium text-muted-foreground min-w-0"
+        >
+          {open ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
+          {open ? <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/60" /> : <Folder className="h-3.5 w-3.5 shrink-0 text-primary/60" />}
+          <span className="truncate">{node.name}</span>
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onAddInFolder(node.path); }}
+          className="h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary md:opacity-0 md:group-hover:opacity-100"
+          title="Новий документ у цій папці"
+        >
+          <FilePlus className="h-3 w-3" />
+        </button>
+        <button
+          onClick={(e) => { e.stopPropagation(); onDeleteFolder(node.path, childCount > 0); }}
+          className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
+          title="Видалити папку"
+        >
+          <Trash2 className="h-3 w-3" />
+        </button>
+      </div>
       {open && (node.children ?? []).map((child, i) => (
         <SidebarTreeNode
           key={child.slug ?? child.path ?? i}
@@ -86,20 +132,24 @@ function SidebarTreeNode({
           activeSlug={activeSlug}
           onNoteClick={onNoteClick}
           onDeleteNote={onDeleteNote}
+          onAddInFolder={onAddInFolder}
+          onDeleteFolder={onDeleteFolder}
         />
       ))}
     </div>
   );
 }
 
-function flattenTree(nodes: TreeNode[]): TreeNode[] {
-  return nodes.flatMap((n) => (n.type === "note" ? [n] : flattenTree(n.children ?? [])));
-}
-
 export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
-  const [tree, setTree] = useState<TreeNode[]>([]);
+  const [rawTree, setRawTree] = useState<TreeNode[]>([]);
+  const [localFolders, setLocalFolders] = useState<string[]>(() => readLocalFolders());
   const [loading, setLoading] = useState(false);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [pendingFolder, setPendingFolder] = useState<string | null>(null);
+  // Mobile sidebar drawer
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const tree = useMemo(() => mergeLocalFolders(rawTree, localFolders), [rawTree, localFolders]);
 
   const editorSlug = activeSlug === NEW_SLUG ? undefined : activeSlug ?? undefined;
   const editor = useNotesEditor({ slug: editorSlug });
@@ -107,6 +157,7 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   useEffect(() => {
     if (focusSlug) {
       setActiveSlug(focusSlug);
+      setSidebarOpen(false);
       onFocusClear?.();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -115,7 +166,15 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   const loadTree = async () => {
     setLoading(true);
     try {
-      setTree(await fetchNotesTree());
+      const t = await fetchNotesTree();
+      setRawTree(t);
+      // Cleanup local folders that now exist on server
+      const serverFolders = new Set(t.filter((n) => n.type === "folder").map((n) => n.name));
+      setLocalFolders((prev) => {
+        const next = prev.filter((n) => !serverFolders.has(n));
+        if (next.length !== prev.length) writeLocalFolders(next);
+        return next;
+      });
     } catch (e) {
       console.error("notes tree error", e);
     } finally {
@@ -123,16 +182,54 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
     }
   };
 
-  useEffect(() => {
-    void loadTree();
-  }, []);
+  useEffect(() => { void loadTree(); }, []);
 
   const handleSave = async () => {
     const savedSlug = await editor.save();
     if (savedSlug) {
       await loadTree();
       setActiveSlug(savedSlug);
+      setPendingFolder(null);
     }
+  };
+
+  const handleNewNote = (folder: string | null) => {
+    setPendingFolder(folder);
+    setActiveSlug(NEW_SLUG);
+    setSidebarOpen(false);
+  };
+
+  // Pre-set title with folder prefix hint via the slug system in useNotesEditor:
+  // We override slug at save time by injecting folder. Simpler: set initial title to "" and on save prefix slug.
+  // Implementation: when pendingFolder set, intercept editor.save by wrapping it in handleSave.
+  // We do it by passing `currentSlug` and syncing title -> editor will slugify title; we then prepend folder.
+  // For this, override editor.save here using a quick monkeypatch via wrapper:
+  const wrappedSave = async () => {
+    if (pendingFolder && !editor.title.trim()) {
+      toast.error("Вкажіть заголовок");
+      return;
+    }
+    if (pendingFolder) {
+      // Use commitNote directly to control slug
+      const slugBase = slugifySegment(editor.title) || `note-${Date.now()}`;
+      const finalSlug = `${pendingFolder}/${slugBase}`;
+      try {
+        await commitNote({
+          slug: finalSlug,
+          title: editor.title.trim(),
+          content: editor.content,
+          tags: editor.tags,
+        });
+        toast.success("Документ створено");
+        await loadTree();
+        setActiveSlug(finalSlug);
+        setPendingFolder(null);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Помилка збереження");
+      }
+      return;
+    }
+    await handleSave();
   };
 
   const handleDeleteNote = async (slug: string) => {
@@ -149,24 +246,77 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
     }
   };
 
+  const handleAddFolder = () => {
+    const name = window.prompt("Назва нової папки:");
+    if (!name) return;
+    const slug = slugifySegment(name);
+    if (!slug) { toast.error("Некоректна назва"); return; }
+    if (localFolders.includes(slug) || rawTree.some((n) => n.type === "folder" && n.name === slug)) {
+      toast.error("Така папка вже існує");
+      return;
+    }
+    const next = [...localFolders, slug];
+    setLocalFolders(next);
+    writeLocalFolders(next);
+    toast.success(`Папку «${slug}» створено. Додайте до неї документ, щоб зберегти.`);
+  };
+
+  const handleDeleteFolder = async (folderPath: string, hasChildren: boolean) => {
+    if (hasChildren) {
+      if (!window.confirm(`Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із усіма документами?`)) return;
+      const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
+      try {
+        for (const n of notes) {
+          if (n.slug) await deleteNote(n.slug);
+        }
+        toast.success("Папку видалено");
+        await loadTree();
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Помилка видалення");
+      }
+    } else {
+      // local-only empty folder
+      const next = localFolders.filter((n) => n !== folderPath);
+      setLocalFolders(next);
+      writeLocalFolders(next);
+      toast.success("Папку видалено");
+    }
+  };
+
   const wikilinkSuggestions = flattenTree(tree).map((n) => ({
     title: (n.slug?.split("/").pop() ?? n.slug ?? "").replace(/\.md$/, ""),
     slug: n.slug!,
   }));
 
   return (
-    <div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col gap-0 overflow-hidden rounded-lg border border-border md:flex-row">
-      <div className="flex max-h-[40vh] w-full shrink-0 flex-col border-b border-border bg-muted/20 md:max-h-none md:w-52 md:border-b-0 md:border-r">
+    <div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] overflow-hidden rounded-lg border border-border">
+      {/* Sidebar — desktop static, mobile drawer */}
+      <aside
+        className={cn(
+          "flex flex-col border-r border-border bg-muted/20 transition-transform duration-200 ease-out",
+          // Mobile: absolute drawer
+          "absolute inset-y-0 left-0 z-20 w-[78%] max-w-[300px]",
+          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          // Desktop: static side panel
+          "md:relative md:z-0 md:w-56 md:max-w-none md:translate-x-0",
+        )}
+      >
         <div className="flex items-center justify-between border-b border-border p-2">
           <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
             Документи
           </span>
-          <div className="flex gap-1">
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={loadTree} disabled={loading} title="Оновити">
-              <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
+          <div className="flex gap-0.5">
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={loadTree} disabled={loading} title="Оновити">
+              <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
             </Button>
-            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setActiveSlug(NEW_SLUG)} title="Новий документ">
-              <Plus className="h-3 w-3" />
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={handleAddFolder} title="Нова папка">
+              <FolderPlus className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleNewNote(null)} title="Новий документ">
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7 md:hidden" onClick={() => setSidebarOpen(false)} title="Сховати">
+              <PanelLeftClose className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
@@ -187,24 +337,52 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
                   node={node}
                   level={0}
                   activeSlug={activeSlug}
-                  onNoteClick={setActiveSlug}
+                  onNoteClick={(s) => { setActiveSlug(s); setPendingFolder(null); setSidebarOpen(false); }}
                   onDeleteNote={handleDeleteNote}
+                  onAddInFolder={(p) => handleNewNote(p)}
+                  onDeleteFolder={handleDeleteFolder}
                 />
               ))}
             </div>
           )}
         </ScrollArea>
-      </div>
+      </aside>
 
-      <div className="flex flex-1 flex-col overflow-hidden">
+      {/* Backdrop for mobile drawer */}
+      {sidebarOpen && (
+        <button
+          aria-label="Закрити панель"
+          onClick={() => setSidebarOpen(false)}
+          className="absolute inset-0 z-10 bg-black/40 md:hidden"
+        />
+      )}
+
+      {/* Editor area */}
+      <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+        {/* Mobile bar with sidebar toggle */}
+        <div className="flex items-center gap-2 border-b border-border bg-muted/10 px-2 py-1 md:hidden">
+          <Button
+            size="icon" variant="ghost" className="h-8 w-8"
+            onClick={() => setSidebarOpen((o) => !o)}
+            title="Список документів"
+          >
+            {sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+          </Button>
+          <span className="truncate text-xs text-muted-foreground">
+            {activeSlug === NEW_SLUG
+              ? (pendingFolder ? `Новий у /${pendingFolder}` : "Новий документ")
+              : activeSlug ?? "Оберіть документ"}
+          </span>
+        </div>
+
         {activeSlug === null ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-3 text-muted-foreground">
+          <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground">
             <FileText className="h-10 w-10 opacity-20" />
             <p className="text-sm">
               Оберіть документ або{" "}
               <button
                 className="underline transition-colors hover:text-foreground"
-                onClick={() => setActiveSlug(NEW_SLUG)}
+                onClick={() => handleNewNote(null)}
               >
                 створіть новий
               </button>
@@ -215,14 +393,14 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
             title={editor.title}
             content={editor.content}
             tags={editor.tags}
-            isDirty={editor.isDirty}
+            isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)}
             isSaving={editor.isSaving}
             hasDraft={editor.hasDraft}
-            currentSlug={activeSlug === NEW_SLUG ? undefined : activeSlug}
+            currentSlug={activeSlug === NEW_SLUG ? (pendingFolder ? `${pendingFolder}/…` : undefined) : activeSlug}
             onTitleChange={editor.setTitle}
             onContentChange={editor.setContent}
             onTagsChange={editor.setTags}
-            onSave={handleSave}
+            onSave={wrappedSave}
             onRestoreDraft={editor.restoreDraft}
             onDiscardDraft={editor.discardDraft}
             wikilinkSuggestions={wikilinkSuggestions}

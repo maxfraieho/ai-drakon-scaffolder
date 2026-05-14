@@ -301,3 +301,7 @@
   color: var(--text-muted);
   border: 1px solid var(--border-subtle);
 }
+
+/* Hide scrollbars but keep scroll */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
