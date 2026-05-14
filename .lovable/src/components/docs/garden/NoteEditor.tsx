@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { Save, Loader2, Eye, Edit3, RotateCcw, Trash2 } from "lucide-react";
+import { Save, Loader2, Eye, Edit3, RotateCcw, Trash2, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,6 +25,7 @@ interface NoteEditorProps {
   onDiscardDraft: () => void;
   wikilinkSuggestions: WikilinkSuggestion[];
   insertAtCursor: (text: string, opts?: { selectInside?: boolean }) => void;
+  currentSlug?: string;
 }
 
 type Mode = "edit" | "preview";
@@ -112,6 +113,36 @@ export function NoteEditor(props: NoteEditorProps) {
         return;
       }
     }
+    if ((e.metaKey || e.ctrlKey) && e.key === "b" && !e.shiftKey) {
+      e.preventDefault();
+      wrap("**", "**", "bold text");
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === "i" && !e.shiftKey) {
+      e.preventDefault();
+      wrap("*", "*", "italic text");
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+      e.preventDefault();
+      wrap("[", "](url)", "link text");
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "C") {
+      e.preventDefault();
+      wrap("```\n", "\n```", "code");
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === "e") {
+      e.preventDefault();
+      wrap("`", "`", "code");
+      return;
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === "p") {
+      e.preventDefault();
+      setMode((m) => (m === "edit" ? "preview" : "edit"));
+      return;
+    }
     if ((e.metaKey || e.ctrlKey) && e.key === "s") {
       e.preventDefault();
       void onSave();
@@ -143,6 +174,12 @@ export function NoteEditor(props: NoteEditorProps) {
           placeholder="Заголовок нотатки"
           className="h-8 flex-1 border-0 bg-transparent px-0 text-base font-medium shadow-none focus-visible:ring-0"
         />
+        {props.currentSlug && props.currentSlug.includes("/") && (
+          <div className="flex shrink-0 items-center gap-1 rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-xs text-muted-foreground" title="Папка документа">
+            <Folder className="h-3 w-3" />
+            <span>{props.currentSlug.split("/").slice(0, -1).join("/")}</span>
+          </div>
+        )}
         <div className="flex items-center gap-1">
           <Button
             size="sm"
@@ -191,6 +228,15 @@ export function NoteEditor(props: NoteEditorProps) {
       {mode === "edit" ? (
         <div className="relative flex flex-1 flex-col overflow-hidden">
           <EditorToolbar onWrap={wrap} onInsert={insertAtCursor} />
+          <div className="flex flex-wrap gap-x-3 border-b border-border/50 bg-muted/5 px-3 py-1 text-[10px] text-muted-foreground">
+            <span><kbd className="font-mono">Ctrl+S</kbd> зберегти</span>
+            <span><kbd className="font-mono">Ctrl+B</kbd> жирний</span>
+            <span><kbd className="font-mono">Ctrl+I</kbd> курсив</span>
+            <span><kbd className="font-mono">Ctrl+K</kbd> посилання</span>
+            <span><kbd className="font-mono">Ctrl+E</kbd> код</span>
+            <span><kbd className="font-mono">Ctrl+P</kbd> перегляд</span>
+            <span><kbd className="font-mono">[[</kbd> wiki-посилання</span>
+          </div>
           <div className="relative flex-1">
             <textarea
               ref={taRef}
