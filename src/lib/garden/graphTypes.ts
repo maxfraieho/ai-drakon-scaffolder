@@ -35,3 +35,8 @@ export interface NoteLink {
   target: string;
   alias?: string;
 }
+
+export function getRootFolder(slug: string): string {
+  const idx = slug.indexOf("/");
+  return idx === -1 ? "_root" : slug.slice(0, idx);
+}

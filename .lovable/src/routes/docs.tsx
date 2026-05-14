@@ -1,6 +1,6 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, FileText, Loader2, Network, Play } from "lucide-react";
+import { BookOpen, FileText, FolderTree, Loader2, Network, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { DaviaSettingsPanel } from "@/components/docs/DaviaSettingsPanel";
 import { DocsVersionPanel } from "@/components/docs/DocsVersionPanel";
 import { NotesTab } from "@/components/docs/NotesTab";
 import { NotesGraphTab } from "@/components/docs/NotesGraphTab";
+import { DocsFilesTab } from "@/components/docs/DocsFilesTab";
 import { useDaviaSettings } from "@/hooks/useDaviaSettings";
 import { docsApi, type DocsAnalysisItem } from "@/lib/docs-api";
 
@@ -26,7 +27,7 @@ function DocsRoute() {
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [log, setLog] = useState<string[]>([]);
   const [instructions, setInstructions] = useState("");
-  const [docsTab, setDocsTab] = useState<"generator" | "notes" | "graph">("generator");
+  const [docsTab, setDocsTab] = useState<"generator" | "notes" | "files" | "graph">("generator");
   const [focusedSlug, setFocusedSlug] = useState<string | null>(null);
 
   const handleGraphNodeClick = (slug: string) => {
@@ -145,7 +146,11 @@ function DocsRoute() {
             </TabsTrigger>
             <TabsTrigger value="notes">
               <BookOpen className="mr-1.5 h-3.5 w-3.5" />
-              Нотатки
+              Документи
+            </TabsTrigger>
+            <TabsTrigger value="files">
+              <FolderTree className="mr-1.5 h-3.5 w-3.5" />
+              Файли
             </TabsTrigger>
             <TabsTrigger value="graph">
               <Network className="mr-1.5 h-3.5 w-3.5" />
@@ -260,6 +265,10 @@ function DocsRoute() {
 
           <TabsContent value="notes">
             <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
+          </TabsContent>
+
+          <TabsContent value="files">
+            <DocsFilesTab onNoteOpen={(slug) => { setFocusedSlug(slug); setDocsTab("notes"); }} />
           </TabsContent>
 
           <TabsContent value="graph">

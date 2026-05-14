@@ -115,6 +115,40 @@ function parseFrontmatter(raw: string): { title?: string; tags: string[]; body: 
 
 export type { NoteListItem, NoteContent };
 
+export interface TreeNode {
+  type: 'folder' | 'note';
+  name?: string;
+  path: string;
+  children?: TreeNode[];
+  slug?: string;
+  title?: string;
+  size?: number;
+}
+
+export async function fetchNotesTree(): Promise<TreeNode[]> {
+  const res = await fetch(`${workerUrl()}/v1/notes/list?flat=false`, { headers: authHeaders() });
+  if (!res.ok) throw new Error(`notes/tree HTTP ${res.status}`);
+  const data = (await res.json()) as { tree?: TreeNode[] };
+  return data.tree ?? [];
+}
+
+export async function deleteNote(slug: string): Promise<void> {
+  const token = jwt();
+  if (!token) throw new Error("Не авторизовано (JWT відсутній)");
+  const res = await fetch(`${workerUrl()}/v1/notes/delete`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ slug }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`delete HTTP ${res.status}: ${txt}`);
+  }
+}
+
 export async function fetchNotesGraph(): Promise<{
   nodes: Array<{ slug: string; title: string; exists: boolean }>;
   edges: Array<{ source: string; target: string; type: string }>;
