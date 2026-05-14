@@ -210,11 +210,8 @@ export function AgentChatPanel({ className }: Props) {
       </div>
 
       {/* LLM status bar */}
-      {(
+      {llmProtocol ? (
         <div className="border-t px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 flex-wrap">
-          {!llmConfigured && (
-            <span className="opacity-50 italic">за замовчуванням:</span>
-          )}
           <span className="font-medium text-foreground/70">
             {llmProtocol === "anthropic" ? "Anthropic" : "OpenAI"}
           </span>
@@ -229,20 +226,26 @@ export function AgentChatPanel({ className }: Props) {
               <span className="opacity-40">→</span>
               {slotLoading ? (
                 <span className="opacity-50">…</span>
-              ) : slotInfo?.active_model ? (
+              ) : slotInfo?.active_model || slotInfo?.top_candidate ? (
                 <span
                   className="font-mono text-emerald-600 dark:text-emerald-400"
-                  title={`Health: ${slotInfo.health}`}
+                  title={
+                    slotInfo.active_model
+                      ? `Active: ${slotInfo.active_model}`
+                      : `Top candidate: ${slotInfo.top_candidate}`
+                  }
                 >
-                  {slotInfo.active_model.split("/").pop()}
+                  {(slotInfo.active_model || slotInfo.top_candidate || "")
+                    .split("/")
+                    .pop()}
                 </span>
               ) : (
-                <span className="opacity-40 italic">модель невідома</span>
+                <span className="opacity-40 italic">невідома</span>
               )}
             </>
           )}
         </div>
-      )}
+      ) : null}
 
       {/* Composer */}
       <div className="border-t p-3 space-y-2">
