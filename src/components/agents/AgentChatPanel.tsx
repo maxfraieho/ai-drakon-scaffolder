@@ -96,6 +96,23 @@ export function AgentChatPanel({ className }: Props) {
   const isLoading = loading[activeAgent];
   const currentError = error[activeAgent];
 
+  const llmProtocol =
+    typeof window !== "undefined"
+      ? localStorage.getItem(`${activeAgent}_llm_protocol`) ||
+        localStorage.getItem("agent_llm_protocol") ||
+        null
+      : null;
+  const llmModel =
+    typeof window !== "undefined"
+      ? localStorage.getItem(`${activeAgent}_llm_model`) ||
+        localStorage.getItem("agent_llm_model") ||
+        null
+      : null;
+  const isOpenAiProtocol = llmProtocol === "openai";
+  const { info: slotInfo, loading: slotLoading } = useSlotInfo(
+    isOpenAiProtocol ? llmModel : null,
+  );
+
   useEffect(() => {
     const el = scrollRef.current;
     if (!el) return;
