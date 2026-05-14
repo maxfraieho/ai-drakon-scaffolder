@@ -146,7 +146,7 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   const [loading, setLoading] = useState(false);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
   const [pendingFolder, setPendingFolder] = useState<string | null>(null);
-  // Mobile sidebar drawer
+  // Mobile document list panel
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const tree = useMemo(() => mergeLocalFolders(rawTree, localFolders), [rawTree, localFolders]);
@@ -289,16 +289,13 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   }));
 
   return (
-    <div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] overflow-hidden rounded-lg border border-border">
-      {/* Sidebar — desktop static, mobile drawer */}
+    <div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] flex-col overflow-hidden rounded-lg border border-border md:flex-row">
+      {/* Sidebar — mobile stacked panel, desktop side panel */}
       <aside
         className={cn(
-          "flex flex-col border-r border-border bg-muted/20 transition-transform duration-200 ease-out",
-          // Mobile: absolute drawer
-          "absolute inset-y-0 left-0 z-20 w-[78%] max-w-[300px]",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-          // Desktop: static side panel
-          "md:relative md:z-0 md:w-56 md:max-w-none md:translate-x-0",
+          "min-w-0 flex-col border-border bg-muted/20",
+          sidebarOpen ? "flex max-h-[38dvh] border-b" : "hidden",
+          "md:flex md:h-full md:max-h-none md:w-56 md:shrink-0 md:border-b-0 md:border-r",
         )}
       >
         <div className="flex items-center justify-between border-b border-border p-2">
@@ -347,15 +344,6 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
           )}
         </ScrollArea>
       </aside>
-
-      {/* Backdrop for mobile drawer */}
-      {sidebarOpen && (
-        <button
-          aria-label="Закрити панель"
-          onClick={() => setSidebarOpen(false)}
-          className="absolute inset-0 z-10 bg-black/40 md:hidden"
-        />
-      )}
 
       {/* Editor area */}
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
