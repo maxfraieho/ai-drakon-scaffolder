@@ -3,7 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-import { DrakonEditor } from "@/components/DrakonEditor";
+import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
