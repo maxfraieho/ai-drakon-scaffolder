@@ -37,6 +37,7 @@ interface SlotInfo {
   active_model: string | null;
   display_name: string;
   health: string;
+  top_candidate?: string | null;
 }
 
 function useSlotInfo(slotName: string | null) {
