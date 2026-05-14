@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { Save, Loader2, Eye, Edit3, RotateCcw, Trash2, Folder } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { EditorToolbar } from "./EditorToolbar";
 import { TagEditor } from "./TagEditor";
@@ -283,15 +282,15 @@ export function NoteEditor(props: NoteEditorProps) {
           </div>
         </div>
       ) : (
-        <ScrollArea className="min-w-0 flex-1 overflow-x-hidden">
-          <div className="min-w-0 max-w-full overflow-x-hidden p-4 text-[15px] leading-relaxed md:text-sm">
+        <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="w-full min-w-0 max-w-full overflow-x-hidden p-4 text-[15px] leading-relaxed md:text-sm">
             {content.trim() ? (
               <NoteRenderer content={content} />
             ) : (
               <p className="text-sm italic text-muted-foreground">Порожня нотатка</p>
             )}
           </div>
-        </ScrollArea>
+        </div>
       )}
     </div>
   );
