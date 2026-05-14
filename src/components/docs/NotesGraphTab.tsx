@@ -2,8 +2,7 @@ import { useState, useEffect } from "react";
 import { Loader2, RefreshCw, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExecutionGraph } from "@/components/docs/garden/ExecutionGraph";
-import { fetchNotesList, fetchNoteContent } from "@/lib/garden/notesApi";
-import { toNoteLinks } from "@/lib/garden/wikilinkParser";
+import { fetchNotesGraph } from "@/lib/garden/notesApi";
 import type { GraphNode, GraphEdge } from "@/lib/garden/graphTypes";
 
 interface NotesGraphTabProps {
@@ -15,46 +14,14 @@ export function NotesGraphTab({ onNodeClick }: NotesGraphTabProps) {
   const [edges, setEdges] = useState<GraphEdge[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [noteCount, setNoteCount] = useState(0);
 
   const loadGraph = async () => {
     setLoading(true);
     setError(null);
     try {
-      const notesList = await fetchNotesList();
-      setNoteCount(notesList.length);
-
-      const graphNodes: GraphNode[] = notesList.map((n) => ({
-        slug: n.slug,
-        title: (n.slug.split("/").pop() ?? n.slug).replace(/\.md$/, ""),
-        exists: true,
-      }));
-
-      const slugSet = new Set(notesList.map((n) => n.slug));
-      const graphEdges: GraphEdge[] = [];
-
-      await Promise.all(
-        notesList.map(async (note) => {
-          try {
-            const content = await fetchNoteContent(note.slug);
-            const links = toNoteLinks(content);
-            for (const link of links) {
-              if (slugSet.has(link.target)) {
-                graphEdges.push({
-                  source: note.slug,
-                  target: link.target,
-                  type: "navigational",
-                });
-              }
-            }
-          } catch {
-            // skip unreachable notes
-          }
-        }),
-      );
-
-      setNodes(graphNodes);
-      setEdges(graphEdges);
+      const data = await fetchNotesGraph();
+      setNodes(data.nodes);
+      setEdges(data.edges);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Помилка завантаження графу");
     } finally {
@@ -70,10 +37,7 @@ export function NotesGraphTab({ onNodeClick }: NotesGraphTabProps) {
     return (
       <div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/10 text-muted-foreground">
         <Loader2 className="h-8 w-8 animate-spin" />
-        <div className="text-center text-sm">
-          Завантаження графу знань
-          {noteCount > 0 && <span className="ml-1 opacity-70">({noteCount} нотаток)</span>}…
-        </div>
+        <div className="text-center text-sm">Завантаження графу знань…</div>
       </div>
     );
   }

@@ -126,7 +126,7 @@ async function hashPassword(password, secret) {
   return [...new Uint8Array(hashBuffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function generateJWT(payload, secret, ttlMs = 24 * 60 * 60 * 1000) {
+async function generateJWT(payload, secret, ttlMs = 7 * 24 * 60 * 60 * 1000) {
   const now = Date.now();
   const fullPayload = { ...payload, iat: now, exp: now + ttlMs };
   const header = b64urlEncodeJson({ alg: 'HS256', typ: 'JWT' });
@@ -909,7 +909,7 @@ async function handleAuthLogin(request, env) {
   }
 
   const token = await generateJWT({ role: 'owner', sub: ownerUsername }, env.JWT_SECRET, 24 * 60 * 60 * 1000);
-  return jsonResponse({ success: true, token, jwt: token, expiresInMs: 24 * 60 * 60 * 1000 });
+  return jsonResponse({ success: true, token, jwt: token, expiresInMs: 7 * 24 * 60 * 60 * 1000 });
 }
 
 async function handleDrakonCommit(request, env) {
@@ -1893,6 +1893,137 @@ export default {
         );
       }
 
+
+
+// ── Notes API (docs-agent proxy) ─────────────────────────────────────────────
+const DOCS_AGENT = 'https://docs-agent.exodus.pp.ua';
+
+async function handleNotesList(request) {
+  const url = new URL(request.url);
+  const flat = url.searchParams.get('flat') ?? 'true';
+  const res = await fetch(`${DOCS_AGENT}/notes/list?flat=${flat}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) return errorResponse(`docs-agent /notes/list ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesGet(request) {
+  const slug = new URL(request.url).searchParams.get('slug') || '';
+  if (!slug) return errorResponse('slug required', 400);
+  const res = await fetch(`${DOCS_AGENT}/notes/read?slug=${encodeURIComponent(slug)}`, {
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (res.status === 404) return errorResponse(`Note not found: ${slug}`, 404);
+  if (!res.ok) return errorResponse(`docs-agent /notes/read ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesGraph() {
+  const res = await fetch(`${DOCS_AGENT}/notes/graph`, {
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) return errorResponse(`docs-agent /notes/graph ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesCommit(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  if (!token) return errorResponse('Authorization required', 401);
+  try {
+    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
+  } catch {
+    return errorResponse('Invalid or expired token', 401);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
+
+  // Lovable sends: { slug, path, content (full markdown with FM), sha, message }
+  // Our format: { slug, title, content (body only), tags }
+  // Handle both formats
+  let slug = body.slug || '';
+  let title = body.title;
+  let bodyContent = body.content || '';
+  let tags = body.tags || [];
+
+  if (!title && bodyContent.startsWith('---')) {
+    // Parse frontmatter from content
+    const end = bodyContent.indexOf('\n---', 3);
+    if (end !== -1) {
+      const fm = bodyContent.slice(3, end).trim();
+      bodyContent = bodyContent.slice(end + 4).replace(/^\n/, '');
+      for (const line of fm.split('\n')) {
+        const tm = line.match(/^title:\s*(.*)$/);
+        if (tm) title = tm[1].replace(/^["']|["']$/g, '').trim();
+        const tagsMatch = line.match(/^tags:\s*\[(.*)\]/);
+        if (tagsMatch) {
+          tags = tagsMatch[1].split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+        }
+      }
+    }
+  }
+
+  if (!slug) return errorResponse('slug required', 400);
+  if (!title) title = slug.split('/').pop() || slug;
+
+  const res = await fetch(`${DOCS_AGENT}/notes/write`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug, title, content: bodyContent, tags }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return errorResponse(`docs-agent /notes/write ${res.status}: ${errText}`, 502);
+  }
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesDelete(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  if (!token) return errorResponse('Authorization required', 401);
+  try {
+    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
+  } catch {
+    return errorResponse('Invalid or expired token', 401);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
+  const slug = body.slug || '';
+  if (!slug) return errorResponse('slug required', 400);
+
+  const res = await fetch(`${DOCS_AGENT}/notes/delete`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) return errorResponse(`docs-agent /notes/delete ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+      // ─── Notes API ────────────────────────────────────────────────────────
+      if (method === 'GET' && path === '/v1/notes/list') {
+        return await handleNotesList(request);
+      }
+      if (method === 'GET' && (path === '/v1/notes/get' || path === '/v1/notes/read')) {
+        return await handleNotesGet(request);
+      }
+      if (method === 'GET' && path === '/v1/notes/graph') {
+        return await handleNotesGraph();
+      }
+      if (method === 'POST' && path === '/v1/notes/commit') {
+        return await handleNotesCommit(request, env);
+      }
+      if (method === 'DELETE' && path === '/v1/notes/delete') {
+        return await handleNotesDelete(request, env);
+      }
+      // ──────────────────────────────────────────────────────────────────────────
 
       // ─── Agent proxy ──────────────────────────────────────────────────
       const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);

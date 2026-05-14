@@ -17,6 +17,7 @@ if _DRAKON_AGENT not in sys.path:
 from memory_manager import ensure_agent_memory, save_memory, get_memory, list_memory
 from ai_chat.docs_chat import docs_chat
 from docs_route import router as docs_router
+from notes_route import router as notes_router
 
 AGENT_NAME = os.getenv("AGENT_NAME", "docs")
 PORT = int(os.getenv("PORT", "8767"))
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="docs-agent", version="0.1.0", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 app.include_router(docs_router)
+app.include_router(notes_router)
 
 
 class ChatRequest(BaseModel):

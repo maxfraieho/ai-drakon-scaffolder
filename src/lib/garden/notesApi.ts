@@ -114,3 +114,13 @@ function parseFrontmatter(raw: string): { title?: string; tags: string[]; body: 
 }
 
 export type { NoteListItem, NoteContent };
+
+export async function fetchNotesGraph(): Promise<{
+  nodes: Array<{ slug: string; title: string; exists: boolean }>;
+  edges: Array<{ source: string; target: string; type: string }>;
+  stats: { notes: number; links: number };
+}> {
+  const res = await fetch(workerUrl() + '/v1/notes/graph');
+  if (!res.ok) throw new Error('notes/graph HTTP ' + res.status);
+  return res.json() as Promise<{nodes: Array<{slug: string; title: string; exists: boolean}>; edges: Array<{source: string; target: string; type: string}>; stats: {notes: number; links: number}}>;
+}
