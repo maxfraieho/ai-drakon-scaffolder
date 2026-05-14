@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { checkAgentHealth } from "@/lib/agent-api";
 import { ChevronDown, ChevronRight, Eye, EyeOff, Plug, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
