@@ -40,7 +40,7 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutGrid },
-  { to: "/github", label: "Файли", icon: Github },
+  { to: "/github", label: "Git", icon: Github },
   { to: "/sync", label: "Синхронізація", icon: GitCompare },
   { to: "/docs", label: "Документація", icon: FileText },
   { to: "/settings", label: "Налаштування", icon: SettingsIcon },
