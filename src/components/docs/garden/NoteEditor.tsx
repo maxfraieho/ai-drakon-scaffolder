@@ -228,6 +228,15 @@ export function NoteEditor(props: NoteEditorProps) {
       {mode === "edit" ? (
         <div className="relative flex flex-1 flex-col overflow-hidden">
           <EditorToolbar onWrap={wrap} onInsert={insertAtCursor} />
+          <div className="flex flex-wrap gap-x-3 border-b border-border/50 bg-muted/5 px-3 py-1 text-[10px] text-muted-foreground">
+            <span><kbd className="font-mono">Ctrl+S</kbd> зберегти</span>
+            <span><kbd className="font-mono">Ctrl+B</kbd> жирний</span>
+            <span><kbd className="font-mono">Ctrl+I</kbd> курсив</span>
+            <span><kbd className="font-mono">Ctrl+K</kbd> посилання</span>
+            <span><kbd className="font-mono">Ctrl+E</kbd> код</span>
+            <span><kbd className="font-mono">Ctrl+P</kbd> перегляд</span>
+            <span><kbd className="font-mono">[[</kbd> wiki-посилання</span>
+          </div>
           <div className="relative flex-1">
             <textarea
               ref={taRef}
