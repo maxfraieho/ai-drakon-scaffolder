@@ -13,15 +13,22 @@ function jwt(): string | null {
   return localStorage.getItem("jwt");
 }
 
+function authHeaders(): Record<string, string> {
+  const token = jwt();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 export async function fetchNotesList(): Promise<NoteListItem[]> {
-  const res = await fetch(`${workerUrl()}/v1/notes/list`);
+  const res = await fetch(`${workerUrl()}/v1/notes/list`, { headers: authHeaders() });
   if (!res.ok) throw new Error(`notes/list HTTP ${res.status}`);
   const data = (await res.json()) as { notes?: NoteListItem[] };
   return data.notes ?? [];
 }
 
 export async function fetchNote(slug: string): Promise<NoteContent | null> {
-  const res = await fetch(`${workerUrl()}/v1/notes/get?slug=${encodeURIComponent(slug)}`);
+  const res = await fetch(`${workerUrl()}/v1/notes/get?slug=${encodeURIComponent(slug)}`, {
+    headers: authHeaders(),
+  });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`notes/get HTTP ${res.status}`);
   const data = (await res.json()) as Partial<NoteContent> & { content?: string; raw?: string };
