@@ -98,22 +98,31 @@ export function AgentChatPanel({ className }: Props) {
   const currentError = error[activeAgent];
 
   const _agentKey = activeAgent;
-  const llmProtocol =
+  const DEFAULT_SLOT: Record<AgentId, string> = {
+    drakon: "drakon-assistant-proxy",
+    architect: "architect-assistant-proxy",
+    docs: "docs-assistant-proxy",
+  };
+  const DEFAULT_MODEL: Record<AgentId, string> = {
+    drakon: DEFAULT_SLOT.drakon,
+    architect: "claude-3-haiku-20240307",
+    docs: "claude-3-haiku-20240307",
+  };
+  const savedProtocol =
     typeof window !== "undefined"
-      ? localStorage.getItem(`${_agentKey}_llm_protocol`) ||
-        localStorage.getItem("agent_llm_protocol") ||
-        null
+      ? localStorage.getItem(`${_agentKey}_llm_protocol`)
       : null;
-  const llmModel =
+  const savedModel =
     typeof window !== "undefined"
-      ? localStorage.getItem(`${_agentKey}_llm_model`) ||
-        localStorage.getItem("agent_llm_model") ||
-        null
+      ? localStorage.getItem(`${_agentKey}_llm_model`)
       : null;
-  const isOpenAiProtocol = llmProtocol === "openai";
-  const { info: slotInfo, loading: slotLoading } = useSlotInfo(
-    isOpenAiProtocol ? llmModel : null,
-  );
+  const llmProtocol = (savedProtocol || "openai") as "openai" | "anthropic";
+  const llmModel = savedModel || DEFAULT_MODEL[activeAgent];
+  const isConfigured = !!savedProtocol;
+  // Slot lookup: для обох протоколів — модель/слот резолвиться через worker proxy.
+  const slotName =
+    llmProtocol === "openai" ? llmModel : (savedModel || DEFAULT_SLOT[activeAgent]);
+  const { info: slotInfo, loading: slotLoading } = useSlotInfo(slotName);
 
   useEffect(() => {
     const el = scrollRef.current;
