@@ -4,6 +4,7 @@ import { commitNote, fetchNote } from "@/lib/garden/notesApi";
 
 interface UseNotesEditorOptions {
   slug?: string;
+  folder?: string;
 }
 
 const DRAFT_PREFIX = "garden_draft_";
