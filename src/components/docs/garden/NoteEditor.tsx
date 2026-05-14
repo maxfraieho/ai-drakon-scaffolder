@@ -283,15 +283,15 @@ export function NoteEditor(props: NoteEditorProps) {
           </div>
         </div>
       ) : (
-        <ScrollArea className="min-w-0 flex-1 overflow-x-hidden">
-          <div className="min-w-0 max-w-full overflow-x-hidden p-4 text-[15px] leading-relaxed md:text-sm">
+        <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
+          <div className="w-full min-w-0 max-w-full overflow-x-hidden p-4 text-[15px] leading-relaxed md:text-sm">
             {content.trim() ? (
               <NoteRenderer content={content} />
             ) : (
               <p className="text-sm italic text-muted-foreground">Порожня нотатка</p>
             )}
           </div>
-        </ScrollArea>
+        </div>
       )}
     </div>
   );
