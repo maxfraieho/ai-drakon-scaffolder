@@ -48,7 +48,7 @@ export function NoteRenderer({ content, onNavigate }: NoteRendererProps) {
   };
 
   return (
-    <div className="prose prose-sm prose-invert max-w-none break-words">
+    <div className="prose prose-sm prose-invert min-w-0 max-w-full overflow-x-hidden break-words [overflow-wrap:anywhere] [&_*]:max-w-full [&_a]:break-words [&_code]:whitespace-pre-wrap [&_pre]:overflow-x-auto [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
