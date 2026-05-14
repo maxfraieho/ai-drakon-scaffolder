@@ -1,6 +1,6 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, FileText, Loader2, Play } from "lucide-react";
+import { BookOpen, FileText, Loader2, Network, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DaviaSettingsPanel } from "@/components/docs/DaviaSettingsPanel";
 import { DocsVersionPanel } from "@/components/docs/DocsVersionPanel";
 import { NotesTab } from "@/components/docs/NotesTab";
+import { NotesGraphTab } from "@/components/docs/NotesGraphTab";
 import { useDaviaSettings } from "@/hooks/useDaviaSettings";
 import { docsApi, type DocsAnalysisItem } from "@/lib/docs-api";
 
@@ -25,6 +26,13 @@ function DocsRoute() {
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [log, setLog] = useState<string[]>([]);
   const [instructions, setInstructions] = useState("");
+  const [docsTab, setDocsTab] = useState<"generator" | "notes" | "graph">("generator");
+  const [focusedSlug, setFocusedSlug] = useState<string | null>(null);
+
+  const handleGraphNodeClick = (slug: string) => {
+    setFocusedSlug(slug);
+    setDocsTab("notes");
+  };
   const [analyses, setAnalyses] = useState<DocsAnalysisItem[]>([]);
   const [elapsed, setElapsed] = useState(0);
   const startedAtRef = useRef<number | null>(null);
@@ -129,7 +137,7 @@ function DocsRoute() {
           <h1 className="text-lg font-semibold md:text-2xl">Документація</h1>
         </header>
 
-        <Tabs defaultValue="generator" className="w-full">
+        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="w-full">
           <TabsList className="mb-3">
             <TabsTrigger value="generator">
               <Play className="mr-1.5 h-3.5 w-3.5" />
@@ -138,6 +146,10 @@ function DocsRoute() {
             <TabsTrigger value="notes">
               <BookOpen className="mr-1.5 h-3.5 w-3.5" />
               Нотатки
+            </TabsTrigger>
+            <TabsTrigger value="graph">
+              <Network className="mr-1.5 h-3.5 w-3.5" />
+              Граф
             </TabsTrigger>
           </TabsList>
 
@@ -247,7 +259,11 @@ function DocsRoute() {
           </TabsContent>
 
           <TabsContent value="notes">
-            <NotesTab />
+            <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
+          </TabsContent>
+
+          <TabsContent value="graph">
+            <NotesGraphTab onNodeClick={handleGraphNodeClick} />
           </TabsContent>
         </Tabs>
       </div>

@@ -18,3 +18,20 @@ export interface WikilinkSuggestion {
   title: string;
   slug: string;
 }
+
+export interface GraphNode {
+  slug: string;
+  title: string;
+  exists: boolean;
+}
+
+export interface GraphEdge {
+  source: string;
+  target: string;
+  type?: "navigational" | "tag" | string;
+}
+
+export interface NoteLink {
+  target: string;
+  alias?: string;
+}

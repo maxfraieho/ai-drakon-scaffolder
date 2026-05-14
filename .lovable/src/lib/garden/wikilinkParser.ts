@@ -1,4 +1,6 @@
 // Parse [[wiki-link]] or [[wiki-link|alias]] syntax
+import type { NoteLink } from "./graphTypes";
+
 export interface ParsedWikilink {
   raw: string;
   slug: string;
@@ -33,4 +35,10 @@ export function detectWikilinkTrigger(text: string, cursor: number): { query: st
   const between = before.slice(open + 2);
   if (/[\n\]]/.test(between)) return null;
   return { query: between, start: open };
+}
+
+// Convert raw note content to outgoing note links
+export function toNoteLinks(content: string | null | undefined): NoteLink[] {
+  if (!content) return [];
+  return parseWikilinks(content).map((w) => ({ target: w.slug, alias: w.alias }));
 }
