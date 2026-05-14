@@ -1805,6 +1805,24 @@ export default {
         return resp;
       }
 
+      // ─── Public Notes routes (no auth needed for reads) ─────────────────
+      if (method === 'GET' && path === '/v1/notes/list') {
+        return await handleNotesList(request);
+      }
+      if (method === 'GET' && (path === '/v1/notes/get' || path === '/v1/notes/read')) {
+        return await handleNotesGet(request);
+      }
+      if (method === 'GET' && path === '/v1/notes/graph') {
+        return await handleNotesGraph();
+      }
+      if (method === 'POST' && path === '/v1/notes/commit') {
+        return await handleNotesCommit(request, env);
+      }
+      if (method === 'DELETE' && path === '/v1/notes/delete') {
+        return await handleNotesDelete(request, env);
+      }
+      // ──────────────────────────────────────────────────────────────────────
+
       const ownerPayload = await verifyOwnerAuth(request, env);
       if (!ownerPayload) {
         return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
@@ -2006,24 +2024,6 @@ async function handleNotesDelete(request, env) {
   return jsonResponse(await res.json());
 }
 // ─────────────────────────────────────────────────────────────────────────────
-
-      // ─── Notes API ────────────────────────────────────────────────────────
-      if (method === 'GET' && path === '/v1/notes/list') {
-        return await handleNotesList(request);
-      }
-      if (method === 'GET' && (path === '/v1/notes/get' || path === '/v1/notes/read')) {
-        return await handleNotesGet(request);
-      }
-      if (method === 'GET' && path === '/v1/notes/graph') {
-        return await handleNotesGraph();
-      }
-      if (method === 'POST' && path === '/v1/notes/commit') {
-        return await handleNotesCommit(request, env);
-      }
-      if (method === 'DELETE' && path === '/v1/notes/delete') {
-        return await handleNotesDelete(request, env);
-      }
-      // ──────────────────────────────────────────────────────────────────────────
 
       // ─── Agent proxy ──────────────────────────────────────────────────
       const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);
