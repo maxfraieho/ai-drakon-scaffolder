@@ -9,13 +9,27 @@ import { fetchNotesList, type NoteListItem } from "@/lib/garden/notesApi";
 
 const NEW_SLUG = "__new__";
 
-export function NotesTab() {
+interface NotesTabProps {
+  focusSlug?: string | null;
+  onFocusClear?: () => void;
+}
+
+export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   const [notes, setNotes] = useState<NoteListItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeSlug, setActiveSlug] = useState<string | null>(null);
 
   const editorSlug = activeSlug === NEW_SLUG ? undefined : activeSlug ?? undefined;
   const editor = useNotesEditor({ slug: editorSlug });
+
+  // Respond to external navigation (e.g., click from graph)
+  useEffect(() => {
+    if (focusSlug) {
+      setActiveSlug(focusSlug);
+      onFocusClear?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusSlug]);
 
   const loadNotes = async () => {
     setLoading(true);

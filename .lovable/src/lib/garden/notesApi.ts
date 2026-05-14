@@ -37,6 +37,12 @@ export async function fetchNote(slug: string): Promise<NoteContent | null> {
   };
 }
 
+// Convenience: returns just the markdown body for a slug, or "" if missing
+export async function fetchNoteContent(slug: string): Promise<string> {
+  const note = await fetchNote(slug);
+  return note?.content ?? "";
+}
+
 export interface CommitNotePayload {
   slug: string;
   title: string;
