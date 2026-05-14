@@ -688,36 +688,38 @@ export function DiagramsPage() {
           </header>
 
           {/* LEVEL TABS */}
-          <div className="flex items-center gap-1 border-b border-[var(--border-subtle)] bg-[var(--bg-base)] px-4 md:px-6">
-            {levelTabs.map((level) => {
-              const label = level === "all" ? "ALL" : level;
-              const isActive = levelFilter === level;
-              return (
-                <button
-                  key={level}
-                  type="button"
-                  aria-pressed={isActive}
-                  onClick={() => setLevelFilter(level)}
-                  className={cn(
-                    "relative -mb-px border-b-2 px-3 py-2 font-mono text-[11px] uppercase tracking-wider transition-colors duration-150",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:rounded-sm",
-                    isActive
-                      ? "border-[var(--accent-amber)] text-[var(--text-primary)]"
-                      : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
-                  )}
-                >
-                  {label}
-                </button>
-              );
-            })}
+          <div className="flex flex-wrap items-center gap-x-1 gap-y-2 border-b border-[var(--border-subtle)] bg-[var(--bg-base)] px-4 py-2 md:flex-nowrap md:gap-1 md:py-0 md:px-6">
+            <div className="flex items-center gap-1">
+              {levelTabs.map((level) => {
+                const label = level === "all" ? "ALL" : level;
+                const isActive = levelFilter === level;
+                return (
+                  <button
+                    key={level}
+                    type="button"
+                    aria-pressed={isActive}
+                    onClick={() => setLevelFilter(level)}
+                    className={cn(
+                      "relative -mb-px border-b-2 px-3 py-2 font-mono text-[11px] uppercase tracking-wider transition-colors duration-150",
+                      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 focus-visible:rounded-sm",
+                      isActive
+                        ? "border-[var(--accent-amber)] text-[var(--text-primary)]"
+                        : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]",
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
 
             {/* Project + Source filters (compact) */}
-            <div className="ml-auto flex items-center gap-2 py-1.5">
+            <div className="flex min-w-0 flex-1 items-center justify-end gap-2 py-1.5 md:ml-auto md:flex-none">
               <span className="hidden font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)] sm:inline">
                 Project
               </span>
               <Select value={projectFilter} onValueChange={(v) => setProjectFilter(v)}>
-                <SelectTrigger className="h-7 w-[140px] border-[var(--border-default)] bg-transparent text-xs">
+                <SelectTrigger className="h-7 w-full min-w-0 max-w-[160px] border-[var(--border-default)] bg-transparent text-xs md:w-[140px]">
                   <SelectValue placeholder="Project" />
                 </SelectTrigger>
                 <SelectContent>
@@ -735,7 +737,7 @@ export function DiagramsPage() {
                 value={sourceFilter}
                 onValueChange={(value) => setSourceFilter(value as typeof sourceFilter)}
               >
-                <SelectTrigger className="h-7 w-[110px] border-[var(--border-default)] bg-transparent text-xs">
+                <SelectTrigger className="h-7 w-auto min-w-[80px] max-w-[120px] border-[var(--border-default)] bg-transparent text-xs md:w-[110px]">
                   <SelectValue placeholder="Source" />
                 </SelectTrigger>
                 <SelectContent>
