@@ -40,7 +40,7 @@ const DAMPING = 0.85;
 const CENTER_GRAVITY = 0.01;
 const MIN_DIST = 30;
 
-const IS_DEV = import.meta.env.DEV;
+const IS_DEV = (import.meta as any).env?.DEV ?? false;
 
 const FOLDER_COLORS: string[] = [
   'hsl(var(--primary))',
