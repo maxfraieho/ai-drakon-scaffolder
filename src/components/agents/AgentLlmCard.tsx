@@ -201,12 +201,43 @@ export function AgentLlmCard({
             </p>
           </div>
         </div>
-        <Badge variant={connected ? "default" : "secondary"} className="text-[10px] shrink-0 gap-1">
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Agent service health */}
           <span
-            className={`h-1.5 w-1.5 rounded-full ${connected ? styles.dot : "bg-muted-foreground/50"}`}
-          />
-          {connected ? "Готово" : "Off"}
-        </Badge>
+            title={agentAlive === null ? "Перевірка..." : agentAlive ? "Агент онлайн" : "Агент офлайн"}
+            className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+              agentAlive === null
+                ? "bg-muted text-muted-foreground"
+                : agentAlive
+                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "bg-red-500/10 text-red-600 dark:text-red-400"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                agentAlive === null
+                  ? "bg-muted-foreground/40"
+                  : agentAlive
+                  ? "bg-emerald-500"
+                  : "bg-red-500"
+              }`}
+            />
+            {agentAlive === null ? "…" : agentAlive ? "Online" : "Offline"}
+          </span>
+          {/* LLM connection */}
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+              connected
+                ? `${styles.chipBg} ${styles.chipText}`
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${connected ? styles.dot : "bg-muted-foreground/50"}`}
+            />
+            {connected ? "LLM ок" : "LLM ?"}
+          </span>
+        </div>
       </div>
 
       {/* Grid: protocol + URL */}
