@@ -118,7 +118,17 @@ export function AgentLlmCard({
   const [models, setModels] = useState<string[]>(RECOMMENDED[initialProtocol]);
   const [connecting, setConnecting] = useState(false);
   const [connected, setConnected] = useState(false);
+  const [agentAlive, setAgentAlive] = useState<boolean | null>(null);
 
+  useEffect(() => {
+    let cancelled = false;
+    checkAgentHealth(agentId).then((ok) => {
+      if (!cancelled) setAgentAlive(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [agentId]);
   const styles = COLOR_STYLES[agentColor];
 
   const handleProtocolChange = (p: "openai" | "anthropic") => {
