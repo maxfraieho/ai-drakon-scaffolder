@@ -123,114 +123,133 @@ function DocsRoute() {
 
   return (
     <div className="min-h-[100dvh] bg-background">
-      <div className="mx-auto w-full max-w-4xl px-3 py-4 md:px-6">
+      <div className="mx-auto w-full max-w-5xl px-3 py-4 md:px-6">
         <header className="mb-4 flex items-center gap-2">
           <FileText className="h-5 w-5 text-[var(--accent-amber)]" />
           <h1 className="text-lg font-semibold md:text-2xl">Документація</h1>
         </header>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Генератор документації</CardTitle>
-            <CardDescription>
-              Вкажи провайдера та генеруй документацію
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2">
-              <label className="text-sm font-medium" htmlFor="docs-instructions">
-                Інструкції (необов'язково)
-              </label>
-              <Textarea
-                id="docs-instructions"
-                value={instructions}
-                onChange={(e) => setInstructions(e.target.value)}
-                placeholder="Необов'язкові інструкції для генерації..."
-                rows={3}
-                disabled={running}
-              />
-            </div>
+        <Tabs defaultValue="generator" className="w-full">
+          <TabsList className="mb-3">
+            <TabsTrigger value="generator">
+              <Play className="mr-1.5 h-3.5 w-3.5" />
+              Генератор
+            </TabsTrigger>
+            <TabsTrigger value="notes">
+              <BookOpen className="mr-1.5 h-3.5 w-3.5" />
+              Нотатки
+            </TabsTrigger>
+          </TabsList>
 
-            <DaviaSettingsPanel settings={davia} onSave={saveDavia} onReset={resetDavia} />
+          <TabsContent value="generator" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Генератор документації</CardTitle>
+                <CardDescription>
+                  Вкажи провайдера та генеруй документацію
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid gap-2">
+                  <label className="text-sm font-medium" htmlFor="docs-instructions">
+                    Інструкції (необов'язково)
+                  </label>
+                  <Textarea
+                    id="docs-instructions"
+                    value={instructions}
+                    onChange={(e) => setInstructions(e.target.value)}
+                    placeholder="Необов'язкові інструкції для генерації..."
+                    rows={3}
+                    disabled={running}
+                  />
+                </div>
 
-            <DocsVersionPanel settings={davia} onSave={saveDavia} />
+                <DaviaSettingsPanel settings={davia} onSave={saveDavia} onReset={resetDavia} />
 
-            <div className="flex flex-wrap items-center gap-2">
-              <Button onClick={handleGenerate} disabled={running}>
-                {running ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Генерація… {elapsed}s
-                  </>
-                ) : (
-                  <>
-                    <Play className="mr-2 h-4 w-4" />
-                    Генерувати документацію
-                  </>
-                )}
-              </Button>
-              {jobId && (
-                <span className="font-mono text-xs text-muted-foreground">job: {jobId}</span>
-              )}
-              {jobStatus === "done" && (
-                <span className="text-xs text-emerald-500">✓ Готово</span>
-              )}
-              {jobStatus === "error" && (
-                <span className="text-xs text-red-500">✗ Помилка</span>
-              )}
-            </div>
+                <DocsVersionPanel settings={davia} onSave={saveDavia} />
 
-            <div
-              ref={logRef}
-              className="log-area h-72 overflow-y-auto rounded-md border border-border bg-black p-3 font-mono text-xs text-green-300"
-            >
-              {log.length === 0 ? (
-                <div className="text-muted-foreground">Лог порожній…</div>
-              ) : (
-                log.map((line, i) => (
-                  <div key={i} className="whitespace-pre-wrap break-words">
-                    {line}
-                  </div>
-                ))
-              )}
-            </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button onClick={handleGenerate} disabled={running}>
+                    {running ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Генерація… {elapsed}s
+                      </>
+                    ) : (
+                      <>
+                        <Play className="mr-2 h-4 w-4" />
+                        Генерувати документацію
+                      </>
+                    )}
+                  </Button>
+                  {jobId && (
+                    <span className="font-mono text-xs text-muted-foreground">job: {jobId}</span>
+                  )}
+                  {jobStatus === "done" && (
+                    <span className="text-xs text-emerald-500">✓ Готово</span>
+                  )}
+                  {jobStatus === "error" && (
+                    <span className="text-xs text-red-500">✗ Помилка</span>
+                  )}
+                </div>
 
-            {analyses.length > 0 && (
-              <div className="space-y-2">
-                <h2 className="text-sm font-semibold">Згенеровані файли</h2>
-                <ul className="space-y-2">
-                  {analyses.map((a) => (
-                    <li key={a.path} className="rounded-md border border-border p-3">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium">{a.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {a.file_count} файлів
-                        </div>
+                <div
+                  ref={logRef}
+                  className="log-area h-72 overflow-y-auto rounded-md border border-border bg-black p-3 font-mono text-xs text-green-300"
+                >
+                  {log.length === 0 ? (
+                    <div className="text-muted-foreground">Лог порожній…</div>
+                  ) : (
+                    log.map((line, i) => (
+                      <div key={i} className="whitespace-pre-wrap break-words">
+                        {line}
                       </div>
-                      <div className="mt-1 font-mono text-[11px] text-muted-foreground">
-                        {a.path}
-                      </div>
-                      {a.files?.length > 0 && (
-                        <ul className="mt-2 list-inside list-disc space-y-0.5 text-xs">
-                          {a.files.slice(0, 20).map((f) => (
-                            <li key={f} className="font-mono">
-                              {f}
-                            </li>
-                          ))}
-                          {a.files.length > 20 && (
-                            <li className="text-muted-foreground">
-                              …та ще {a.files.length - 20}
-                            </li>
+                    ))
+                  )}
+                </div>
+
+                {analyses.length > 0 && (
+                  <div className="space-y-2">
+                    <h2 className="text-sm font-semibold">Згенеровані файли</h2>
+                    <ul className="space-y-2">
+                      {analyses.map((a) => (
+                        <li key={a.path} className="rounded-md border border-border p-3">
+                          <div className="flex items-center justify-between">
+                            <div className="font-medium">{a.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {a.file_count} файлів
+                            </div>
+                          </div>
+                          <div className="mt-1 font-mono text-[11px] text-muted-foreground">
+                            {a.path}
+                          </div>
+                          {a.files?.length > 0 && (
+                            <ul className="mt-2 list-inside list-disc space-y-0.5 text-xs">
+                              {a.files.slice(0, 20).map((f) => (
+                                <li key={f} className="font-mono">
+                                  {f}
+                                </li>
+                              ))}
+                              {a.files.length > 20 && (
+                                <li className="text-muted-foreground">
+                                  …та ще {a.files.length - 20}
+                                </li>
+                              )}
+                            </ul>
                           )}
-                        </ul>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="notes">
+            <NotesTab />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
