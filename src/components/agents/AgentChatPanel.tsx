@@ -213,8 +213,11 @@ export function AgentChatPanel({ className }: Props) {
       </div>
 
       {/* LLM status bar */}
-      {llmProtocol && (
+      {(
         <div className="border-t px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 flex-wrap">
+          {!llmConfigured && (
+            <span className="opacity-50 italic">за замовчуванням:</span>
+          )}
           <span className="font-medium text-foreground/70">
             {llmProtocol === "anthropic" ? "Anthropic" : "OpenAI"}
           </span>
