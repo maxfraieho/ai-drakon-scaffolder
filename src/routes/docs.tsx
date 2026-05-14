@@ -1,6 +1,6 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, FileText, Loader2, Play } from "lucide-react";
+import { BookOpen, FileText, Loader2, Network, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { DaviaSettingsPanel } from "@/components/docs/DaviaSettingsPanel";
 import { DocsVersionPanel } from "@/components/docs/DocsVersionPanel";
 import { NotesTab } from "@/components/docs/NotesTab";
+import { NotesGraphTab } from "@/components/docs/NotesGraphTab";
 import { useDaviaSettings } from "@/hooks/useDaviaSettings";
 import { docsApi, type DocsAnalysisItem } from "@/lib/docs-api";
 
