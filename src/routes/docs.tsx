@@ -137,7 +137,7 @@ function DocsRoute() {
           <h1 className="text-lg font-semibold md:text-2xl">Документація</h1>
         </header>
 
-        <Tabs defaultValue="generator" className="w-full">
+        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="w-full">
           <TabsList className="mb-3">
             <TabsTrigger value="generator">
               <Play className="mr-1.5 h-3.5 w-3.5" />
@@ -146,6 +146,10 @@ function DocsRoute() {
             <TabsTrigger value="notes">
               <BookOpen className="mr-1.5 h-3.5 w-3.5" />
               Нотатки
+            </TabsTrigger>
+            <TabsTrigger value="graph">
+              <Network className="mr-1.5 h-3.5 w-3.5" />
+              Граф
             </TabsTrigger>
           </TabsList>
 
@@ -255,7 +259,11 @@ function DocsRoute() {
           </TabsContent>
 
           <TabsContent value="notes">
-            <NotesTab />
+            <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
+          </TabsContent>
+
+          <TabsContent value="graph">
+            <NotesGraphTab onNodeClick={handleGraphNodeClick} />
           </TabsContent>
         </Tabs>
       </div>
