@@ -98,22 +98,31 @@ export function AgentChatPanel({ className }: Props) {
   const currentError = error[activeAgent];
 
   const _agentKey = activeAgent;
-  const llmProtocol =
+  const DEFAULT_SLOT: Record<AgentId, string> = {
+    drakon: "drakon-assistant-proxy",
+    architect: "architect-assistant-proxy",
+    docs: "docs-assistant-proxy",
+  };
+  const DEFAULT_MODEL: Record<AgentId, string> = {
+    drakon: DEFAULT_SLOT.drakon,
+    architect: "claude-3-haiku-20240307",
+    docs: "claude-3-haiku-20240307",
+  };
+  const savedProtocol =
     typeof window !== "undefined"
-      ? localStorage.getItem(`${_agentKey}_llm_protocol`) ||
-        localStorage.getItem("agent_llm_protocol") ||
-        null
+      ? localStorage.getItem(`${_agentKey}_llm_protocol`)
       : null;
-  const llmModel =
+  const savedModel =
     typeof window !== "undefined"
-      ? localStorage.getItem(`${_agentKey}_llm_model`) ||
-        localStorage.getItem("agent_llm_model") ||
-        null
+      ? localStorage.getItem(`${_agentKey}_llm_model`)
       : null;
-  const isOpenAiProtocol = llmProtocol === "openai";
-  const { info: slotInfo, loading: slotLoading } = useSlotInfo(
-    isOpenAiProtocol ? llmModel : null,
-  );
+  const llmProtocol = (savedProtocol || "openai") as "openai" | "anthropic";
+  const llmModel = savedModel || DEFAULT_MODEL[activeAgent];
+  const isConfigured = !!savedProtocol;
+  // Slot lookup: для обох протоколів — модель/слот резолвиться через worker proxy.
+  const slotName =
+    llmProtocol === "openai" ? llmModel : (savedModel || DEFAULT_SLOT[activeAgent]);
+  const { info: slotInfo, loading: slotLoading } = useSlotInfo(slotName);
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -210,43 +219,45 @@ export function AgentChatPanel({ className }: Props) {
         </div>
       </div>
 
-      {/* LLM status bar */}
-      {llmProtocol ? (
-        <div className="border-t px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 flex-wrap">
-          <span className="font-medium text-foreground/70">
-            {llmProtocol === "anthropic" ? "Anthropic" : "OpenAI"}
+      {/* LLM status bar — завжди показується */}
+      <div className="border-t px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 flex-wrap">
+        {!isConfigured && (
+          <span className="opacity-60 italic">за замовчуванням:</span>
+        )}
+        <span className="font-medium text-foreground/70">
+          {llmProtocol === "anthropic" ? "Anthropic" : "OpenAI"}
+        </span>
+        <span className="opacity-40">·</span>
+        <span className="font-mono" title={`slot/model: ${llmModel}`}>
+          {llmModel}
+        </span>
+        <span className="opacity-40">→</span>
+        {slotLoading ? (
+          <span className="opacity-50">…</span>
+        ) : slotInfo?.active_model || slotInfo?.top_candidate ? (
+          <span
+            className="font-mono text-emerald-600 dark:text-emerald-400"
+            title={
+              slotInfo.active_model
+                ? `Active: ${slotInfo.active_model}`
+                : `Top candidate: ${slotInfo.top_candidate}`
+            }
+          >
+            {(slotInfo.active_model || slotInfo.top_candidate || "")
+              .split("/")
+              .pop()}
           </span>
-          {llmModel && (
-            <>
-              <span className="opacity-40">·</span>
-              <span className="font-mono">{llmModel}</span>
-            </>
-          )}
-          {isOpenAiProtocol && (
-            <>
-              <span className="opacity-40">→</span>
-              {slotLoading ? (
-                <span className="opacity-50">…</span>
-              ) : slotInfo?.active_model || slotInfo?.top_candidate ? (
-                <span
-                  className="font-mono text-emerald-600 dark:text-emerald-400"
-                  title={
-                    slotInfo.active_model
-                      ? `Active: ${slotInfo.active_model}`
-                      : `Top candidate: ${slotInfo.top_candidate}`
-                  }
-                >
-                  {(slotInfo.active_model || slotInfo.top_candidate || "")
-                    .split("/")
-                    .pop()}
-                </span>
-              ) : (
-                <span className="opacity-40 italic">невідома</span>
-              )}
-            </>
-          )}
-        </div>
-      ) : null}
+        ) : llmProtocol === "anthropic" ? (
+          <span
+            className="font-mono text-emerald-600 dark:text-emerald-400"
+            title={`Direct Anthropic model: ${llmModel}`}
+          >
+            {llmModel}
+          </span>
+        ) : (
+          <span className="opacity-40 italic">модель невідома</span>
+        )}
+      </div>
 
       {/* Composer */}
       <div className="border-t p-3 space-y-2">
