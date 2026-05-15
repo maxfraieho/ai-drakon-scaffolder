@@ -1914,6 +1914,51 @@ export default {
 
 
 
+
+// ── Pipeline proxy (architect-agent LangGraph endpoints) ─────────────────────
+async function handlePipeline(pipelinePath, request, env, ctx) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const targetUrl = architectUrl + '/pipeline/' + pipelinePath;
+
+  const init = {
+    method: request.method,
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(120_000),
+  };
+  if (request.method === 'POST') {
+    let body;
+    try { body = await request.text(); } catch { body = '{}'; }
+    init.body = body;
+  }
+
+  let agentResp;
+  try {
+    agentResp = await fetch(targetUrl, init);
+  } catch (e) {
+    ctx.waitUntil(saveLogToMinio(env, {
+      ts: new Date().toISOString(), level: 'error',
+      tool: 'pipeline.' + pipelinePath,
+      agentUrl: targetUrl, error: String(e.message),
+    }));
+    return errorResponse('Pipeline agent unreachable: ' + e.message, 502, undefined, 'AGENT_UNREACHABLE');
+  }
+
+  const ms = Date.now();
+  let data;
+  try { data = await agentResp.json(); } catch {
+    return errorResponse('Pipeline agent returned non-JSON', 502, undefined, 'AGENT_BAD_RESPONSE');
+  }
+
+  ctx.waitUntil(saveLogToMinio(env, {
+    ts: new Date().toISOString(),
+    level: agentResp.ok ? 'info' : 'warn',
+    tool: 'pipeline.' + pipelinePath,
+    agentUrl: targetUrl, httpStatus: agentResp.status,
+  }));
+
+  return jsonResponse(data, agentResp.status);
+}
+// ─────────────────────────────────────────────────────────────────────────────
 // ── Notes API (docs-agent proxy) ─────────────────────────────────────────────
 
 async function handleNotesList(request) {
@@ -2024,6 +2069,19 @@ async function handleNotesDelete(request, env) {
   return jsonResponse(await res.json());
 }
 // ─────────────────────────────────────────────────────────────────────────────
+
+      // ─── Pipeline proxy (/v1/pipeline/* → architect-agent) ─────────────
+      if (method === 'POST' && path === '/v1/pipeline/analyze') {
+        return await handlePipeline('analyze', request, env, ctx);
+      }
+      if (method === 'POST' && path === '/v1/pipeline/generate') {
+        return await handlePipeline('generate', request, env, ctx);
+      }
+      const pipelineStatusMatch = path.match(/^\/v1\/pipeline\/status\/([^\/]+)$/);
+      if (method === 'GET' && pipelineStatusMatch) {
+        return await handlePipeline('status/' + decodeURIComponent(pipelineStatusMatch[1]), request, env, ctx);
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       // ─── Agent proxy ──────────────────────────────────────────────────
       const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);
