@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
   Bot,
+  Code2,
   Download,
   FilePenLine,
   FolderPlus,
@@ -13,9 +14,12 @@ import {
   PanelLeftOpen,
   Pencil,
   Plus,
+  ScanSearch,
   Search,
   Trash2,
 } from "lucide-react";
+import { CodeAnalysisPanel } from "@/components/pipeline/CodeAnalysisPanel";
+import { CodeGenerationPanel } from "@/components/pipeline/CodeGenerationPanel";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
