@@ -1031,7 +1031,40 @@ export function DiagramsPage() {
             </section>
           </div>
 
+          <CodeGenerationPanel
+            open={pipelineGenerationOpen}
+            onClose={() => setPipelineGenerationOpen(false)}
+            diagramIr={
+              (selectedDiagramForGen ?? filteredDiagrams[0])?.diagram.items
+                ? { items: (selectedDiagramForGen ?? filteredDiagrams[0])!.diagram.items }
+                : null
+            }
+          />
         </main>
+
+        <CodeAnalysisPanel
+          open={pipelineAnalysisOpen}
+          onClose={() => setPipelineAnalysisOpen(false)}
+          onImportIr={(ir) => {
+            const id = crypto.randomUUID();
+            const now = new Date().toISOString();
+            const stored: Diagram = {
+              id,
+              folderId: selectedFolder.slug,
+              name: ir.name || "imported",
+              createdAt: now,
+              updatedAt: now,
+              diagram: {
+                name: ir.name || "imported",
+                items: ir.items ?? {},
+              },
+            };
+            upsertDiagramInStorage(stored);
+            setDiagrams((prev) => [stored, ...prev]);
+            setSelectedDiagramForGen(stored);
+            toast.success(`IR імпортовано: ${ir.name}`);
+          }}
+        />
 
         <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
           <DialogContent>
