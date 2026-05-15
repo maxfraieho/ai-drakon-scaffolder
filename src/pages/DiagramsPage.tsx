@@ -278,7 +278,8 @@ export function DiagramsPage() {
             updatedAt: now,
             diagram: {
               name: ir.name || "imported",
-              items: (ir.items ?? {}) as unknown as Record<string, DrakonItem>,
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              items: (ir.items ?? {}) as any,
             },
           };
           upsertDiagramInStorage(stored);
