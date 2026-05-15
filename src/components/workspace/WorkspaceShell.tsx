@@ -14,7 +14,6 @@ import {
   Terminal,
 } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -285,8 +284,6 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
         </main>
       </div>
 
-      {/* Replaced Button reference to prevent unused warning */}
-      <Button className="hidden" />
     </div>
   );
 }
