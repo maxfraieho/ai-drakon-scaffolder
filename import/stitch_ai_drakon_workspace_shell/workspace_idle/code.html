@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "on-tertiary": "#00344a",
+                "surface-container": "#1f1f23",
+                "on-primary-fixed-variant": "#653e00",
+                "secondary-fixed-dim": "#c3c6d0",
+                "error": "#ffb4ab",
+                "surface-container-highest": "#343538",
+                "background": "#121316",
+                "surface-container-high": "#292a2d",
+                "surface-bright": "#38393c",
+                "on-secondary-container": "#b2b5be",
+                "surface-dim": "#121316",
+                "on-secondary-fixed-variant": "#43474f",
+                "primary-container": "#f59e0b",
+                "tertiary-fixed": "#c5e7ff",
+                "on-tertiary-fixed-variant": "#004c6a",
+                "tertiary-container": "#1abdff",
+                "tertiary": "#8fd5ff",
+                "secondary": "#c3c6d0",
+                "on-background": "#e3e2e6",
+                "tertiary-fixed-dim": "#7fd0ff",
+                "outline": "#a08e7a",
+                "on-surface-variant": "#d8c3ad",
+                "error-container": "#93000a",
+                "on-secondary-fixed": "#181c23",
+                "surface-variant": "#343538",
+                "on-primary": "#472a00",
+                "inverse-primary": "#855300",
+                "on-primary-fixed": "#2a1700",
+                "secondary-fixed": "#dfe2ec",
+                "inverse-surface": "#e3e2e6",
+                "on-secondary": "#2d3138",
+                "inverse-on-surface": "#303034",
+                "primary-fixed": "#ffddb8",
+                "on-tertiary-fixed": "#001e2d",
+                "primary-fixed-dim": "#ffb95f",
+                "on-surface": "#e3e2e6",
+                "primary": "#ffc174",
+                "secondary-container": "#43474f",
+                "on-primary-container": "#613b00",
+                "on-tertiary-container": "#004966",
+                "outline-variant": "#534434",
+                "surface-container-lowest": "#0d0e11",
+                "on-error": "#690005",
+                "surface": "#121316",
+                "on-error-container": "#ffdad6",
+                "surface-tint": "#ffb95f",
+                "surface-container-low": "#1b1b1f"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "toolbar-height": "40px",
+                "container-margin": "16px",
+                "unit": "4px",
+                "sidebar-width": "260px",
+                "panel-gap": "1px"
+        },
+        "fontFamily": {
+                "label-caps": [
+                        "IBM Plex Sans"
+                ],
+                "code-sm": [
+                        "JetBrains Mono"
+                ],
+                "body-md": [
+                        "IBM Plex Sans"
+                ],
+                "body-sm": [
+                        "IBM Plex Sans"
+                ],
+                "code-md": [
+                        "JetBrains Mono"
+                ],
+                "headline-sm": [
+                        "IBM Plex Sans"
+                ]
+        },
+        "fontSize": {
+                "label-caps": [
+                        "10px",
+                        {
+                                "lineHeight": "12px",
+                                "letterSpacing": "0.08em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "code-sm": [
+                        "11px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-md": [
+                        "13px",
+                        {
+                                "lineHeight": "18px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "code-md": [
+                        "12px",
+                        {
+                                "lineHeight": "18px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-sm": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+  body {
+    background-color: #0a0b0e;
+    color: #e3e2e6;
+  }
+</style>
+</head>
+<body class="h-screen w-full flex overflow-hidden font-body-md text-body-md">
+<!-- TopNavBar (App Level) -->
+<div class="fixed top-0 left-0 w-full z-50 bg-surface-container dark:bg-surface-container-high border-b border-outline-variant flex justify-between items-center px-container-margin h-toolbar-height">
+<div class="flex items-center">
+<div class="font-code-md text-code-md font-bold text-primary flex items-center gap-2 mr-6">
+<span class="material-symbols-outlined" data-weight="fill" style="font-variation-settings: 'FILL' 1;">terminal</span>
+            AI-DRAKON
+        </div>
+<nav class="flex h-full items-center gap-4">
+<a class="font-code-md text-code-md uppercase text-primary border-b-2 border-primary h-full flex items-center cursor-pointer hover:bg-surface-container-highest transition-colors px-2" href="#">Diagrams</a>
+<a class="font-code-md text-code-md uppercase text-on-surface-variant h-full flex items-center cursor-pointer hover:text-primary hover:bg-surface-container-highest transition-colors px-2" href="#">Git</a>
+<a class="font-code-md text-code-md uppercase text-on-surface-variant h-full flex items-center cursor-pointer hover:text-primary hover:bg-surface-container-highest transition-colors px-2" href="#">Sync</a>
+<a class="font-code-md text-code-md uppercase text-on-surface-variant h-full flex items-center cursor-pointer hover:text-primary hover:bg-surface-container-highest transition-colors px-2" href="#">Docs</a>
+<a class="font-code-md text-code-md uppercase text-on-surface-variant h-full flex items-center cursor-pointer hover:text-primary hover:bg-surface-container-highest transition-colors px-2" href="#">Settings</a>
+</nav>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">smart_toy</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">light_mode</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+</button>
+</div>
+</div>
+<div class="flex flex-1 w-full mt-toolbar-height h-[calc(100vh-40px)]">
+<!-- SideNavBar (Icon Rail) -->
+<div class="bg-surface-container-low dark:bg-surface-container-low border-r border-outline-variant h-full w-[40px] flex flex-col items-center py-unit gap-2 z-40 shrink-0">
+<button class="w-8 h-8 rounded flex items-center justify-center text-primary bg-surface-container-highest border-l-2 border-primary transition-all duration-150 group" title="Diagrams">
+<span class="material-symbols-outlined text-[20px]">account_tree</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 group" title="Notes">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 group" title="Graph">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 group" title="GitHub">
+<span class="material-symbols-outlined text-[20px]">terminal</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 group" title="Agent">
+<span class="material-symbols-outlined text-[20px]">memory</span>
+</button>
+<div class="flex-1"></div>
+<button class="w-8 h-8 rounded flex items-center justify-center text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 group mb-2" title="Settings">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</div>
+<!-- Left Panel (Diagrams List) -->
+<div class="bg-surface-container-lowest dark:bg-surface-container-lowest border-r border-outline-variant h-full w-[220px] flex flex-col overflow-hidden z-30 shrink-0">
+<div class="h-8 flex items-center justify-between px-3 border-b border-outline-variant bg-[#111318]">
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">DIAGRAMS</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">main</span>
+</div>
+<div class="flex px-2 py-1 gap-1 border-b border-outline-variant bg-[#111318]">
+<button class="flex-1 py-1 text-center font-code-sm text-code-sm bg-secondary-container text-on-secondary-container rounded-sm transition-colors cursor-pointer">Files</button>
+<button class="flex-1 py-1 text-center font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-container rounded-sm transition-colors cursor-pointer">Explorer</button>
+<button class="flex-1 py-1 text-center font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-container rounded-sm transition-colors cursor-pointer">History</button>
+</div>
+<div class="flex-1 overflow-y-auto py-2">
+<!-- List Items -->
+<div class="flex items-center px-3 h-[28px] hover:bg-[#191c23] cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant mr-2 group-hover:text-primary transition-colors">folder</span>
+<span class="font-code-sm text-code-sm text-on-surface truncate">core_logic</span>
+</div>
+<div class="flex items-center px-3 pl-6 h-[28px] hover:bg-[#191c23] cursor-pointer group">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant mr-2">description</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant truncate">init_system.drk</span>
+</div>
+<!-- Selected Item -->
+<div class="flex items-center px-3 pl-6 h-[28px] bg-[#191c23] cursor-pointer relative">
+<div class="absolute left-0 top-0 bottom-0 w-[2px] bg-primary-container"></div>
+<span class="material-symbols-outlined text-[14px] text-primary mr-2">account_tree</span>
+<span class="font-code-sm text-code-sm text-primary truncate">calculate_path</span>
+</div>
+<div class="flex items-center px-3 pl-6 h-[28px] hover:bg-[#191c23] cursor-pointer group">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant mr-2">account_tree</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant truncate">validate_nodes</span>
+</div>
+<div class="flex items-center px-3 h-[28px] hover:bg-[#191c23] cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant mr-2 group-hover:text-primary transition-colors">folder</span>
+<span class="font-code-sm text-code-sm text-on-surface truncate">ui_components</span>
+</div>
+</div>
+</div>
+<!-- Main Canvas Area -->
+<div class="flex-1 flex flex-col h-full relative bg-[#0a0b0e] overflow-hidden">
+<!-- Canvas Toolbar -->
+<div class="absolute top-2 left-2 right-2 h-8 bg-surface-container-high border border-outline-variant rounded z-20 flex items-center justify-between px-2 gap-unit shadow-sm">
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-primary font-bold">calculate_path</span>
+<span class="text-outline-variant">·</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">Primitive</span>
+<span class="text-outline-variant">·</span>
+<span class="font-code-sm text-code-sm text-on-surface-variant">CC:4</span>
+</div>
+<div class="flex items-center gap-2">
+<button class="h-6 px-3 bg-primary-container text-[#0a0b0e] font-code-sm text-code-sm rounded hover:bg-primary transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">psychiatry</span>
+                    Аналізувати код
+                </button>
+<button class="h-6 px-3 bg-[#191c23] text-on-surface border border-[rgba(255,255,255,0.1)] font-code-sm text-code-sm rounded hover:bg-surface-container-highest transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">code</span>
+                    Генерувати код
+                </button>
+<div class="w-px h-4 bg-outline-variant mx-1"></div>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:text-primary rounded hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[16px]">zoom_out</span>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:text-primary rounded hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[16px]">zoom_in</span>
+</button>
+</div>
+</div>
+<!-- Drakon Widget Canvas Placeholder -->
+<div class="w-full h-full flex items-center justify-center relative bg-[radial-gradient(#1e2229_1px,transparent_1px)] [background-size:24px_24px] opacity-80">
+<!-- Diagram Mockup -->
+<div class="flex flex-col items-center gap-4">
+<!-- Start Node -->
+<div class="w-48 py-2 px-4 border border-[#a08e7a] bg-[#111318] rounded-t-[16px] rounded-b-none text-center">
+<span class="font-code-sm text-code-sm text-on-surface">calculate_path(start, end)</span>
+</div>
+<div class="w-px h-8 bg-[#a08e7a]"></div>
+<!-- Action Node -->
+<div class="w-56 py-3 px-4 border border-[#a08e7a] bg-[#111318] text-center">
+<span class="font-code-sm text-code-sm text-on-surface">init_visited_set()</span>
+</div>
+<div class="w-px h-8 bg-[#a08e7a]"></div>
+<!-- Condition Node -->
+<div class="w-64 py-3 px-4 border border-primary-container bg-[#191c23] text-center relative shadow-[0_0_0_1px_#f59e0b_inset]">
+<span class="font-code-sm text-code-sm text-primary">queue.is_empty() == False</span>
+<div class="absolute -right-8 top-1/2 -translate-y-1/2 font-code-sm text-code-sm text-on-surface-variant">Yes</div>
+<div class="absolute -bottom-6 left-1/2 transform -translate-x-1/2 font-code-sm text-code-sm text-on-surface-variant bg-[#0a0b0e] px-1">No</div>
+</div>
+<div class="w-px h-8 bg-[#a08e7a]"></div>
+<!-- End Node -->
+<div class="w-48 py-2 px-4 border border-[#a08e7a] bg-[#111318] rounded-b-[16px] rounded-t-none text-center">
+<span class="font-code-sm text-code-sm text-on-surface">return path</span>
+</div>
+</div>
+<!-- Corner minimap placeholder -->
+<div class="absolute bottom-4 right-4 w-32 h-24 border border-outline-variant bg-[#111318] opacity-50 flex items-center justify-center p-2">
+<div class="w-full h-full border border-primary-container bg-surface-container-highest relative">
+<div class="absolute top-2 left-[40%] w-[20%] h-2 bg-on-surface-variant"></div>
+<div class="absolute top-5 left-[35%] w-[30%] h-3 bg-on-surface-variant"></div>
+<div class="absolute top-9 left-[30%] w-[40%] h-4 bg-primary-container"></div>
+<div class="absolute top-14 left-[40%] w-[20%] h-2 bg-on-surface-variant"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>

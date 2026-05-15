@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-DRAKON — Workspace Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    /* Synced with src/styles.css (Precision Dark) */
+    --bg-base:     #0a0b0e;
+    --bg-surface:  #111318;
+    --bg-elevated: #191c23;
+    --bg-overlay:  #1e2229;
+    --border-subtle: rgba(255,255,255,0.06);
+    --border-default: rgba(255,255,255,0.10);
+    --border-strong:  rgba(255,255,255,0.18);
+    --text-primary: rgba(255,255,255,0.92);
+    --text-secondary: rgba(255,255,255,0.55);
+    --text-muted: rgba(255,255,255,0.30);
+    --amber: #f59e0b;
+    --amber-dim: rgba(245,158,11,0.15);
+    --amber-border: rgba(245,158,11,0.40);
+    --error: #ef4444;
+    --success: #22c55e;
+    --code-text: rgba(180,220,160,0.90);
+    --font-ui: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  html, body { height: 100%; background: var(--bg-base); color: var(--text-primary); font-family: var(--font-ui); font-size: 13px; overflow: hidden; }
+
+  /* SCENE SWITCHER */
+  .scene-nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 9999;
+    background: rgba(10,11,14,0.97); border-bottom: 1px solid rgba(245,158,11,0.25);
+    display: flex; align-items: center; gap: 4px; padding: 5px 12px; flex-wrap: wrap;
+  }
+  .scene-nav span { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); margin-right: 4px; }
+  .scene-btn {
+    font-family: var(--font-mono); font-size: 10px; padding: 3px 9px; border-radius: 3px;
+    border: 1px solid var(--border-default); background: transparent; color: var(--text-secondary);
+    cursor: pointer; transition: all 0.15s;
+  }
+  .scene-btn:hover { border-color: var(--amber); color: var(--text-primary); }
+  .scene-btn.active { background: var(--amber); color: #000; border-color: var(--amber); font-weight: 600; }
+
+  /* APP WRAPPER */
+  .app { display: flex; flex-direction: column; height: 100vh; padding-top: 34px; }
+
+  /* TOP BAR */
+  .topbar {
+    height: 32px; background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    display: flex; align-items: center; padding: 0 12px; flex-shrink: 0; gap: 8px;
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 6px; }
+  .amber-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); }
+  .brand-name { font-family: var(--font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.08em; }
+  .topbar-sep { width: 1px; height: 14px; background: var(--border-subtle); }
+  .breadcrumb { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+  .breadcrumb span { color: var(--text-secondary); }
+  .topbar-right { margin-left: auto; display: flex; gap: 4px; }
+  .icon-btn { width: 24px; height: 24px; border-radius: 3px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.12s; }
+  .icon-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+
+  /* WORKSPACE BODY */
+  .workspace { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+
+  /* ICON RAIL */
+  .icon-rail {
+    width: 40px; flex-shrink: 0;
+    background: var(--bg-surface); border-right: 1px solid var(--border-subtle);
+    display: flex; flex-direction: column; align-items: center; padding: 6px 0; gap: 2px;
+  }
+  .rail-icon { width: 32px; height: 32px; border-radius: 4px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 15px; transition: all 0.12s; }
+  .rail-icon:hover { background: rgba(255,255,255,0.06); color: var(--text-secondary); }
+  .rail-icon.active { color: var(--amber); background: var(--amber-dim); }
+  .rail-sep { width: 20px; height: 1px; background: var(--border-subtle); margin: 4px 0; }
+  .rail-bottom { margin-top: auto; }
+
+  /* LEFT PANEL */
+  .left-panel {
+    width: 220px; flex-shrink: 0; background: var(--bg-surface);
+    border-right: 1px solid var(--border-subtle);
+    display: flex; flex-direction: column; overflow: hidden; transition: width 0.18s ease;
+  }
+  .left-panel.collapsed { width: 0; }
+  .panel-header { height: 28px; padding: 0 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-subtle); flex-shrink: 0; }
+  .panel-label { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; color: var(--text-muted); text-transform: uppercase; }
+  .panel-search { height: 26px; margin: 5px 8px; padding: 0 8px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 3px; color: var(--text-primary); font-family: var(--font-mono); font-size: 11px; outline: none; flex-shrink: 0; }
+  .panel-search::placeholder { color: var(--text-muted); }
+  .panel-list { flex: 1; overflow-y: auto; }
+  .panel-list::-webkit-scrollbar { width: 3px; }
+  .panel-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+
+  .diagram-row { height: 28px; padding: 0 10px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: background 0.1s; }
+  .diagram-row:hover { background: rgba(255,255,255,0.03); }
+  .diagram-row.active { background: rgba(245,158,11,0.06); border-left: 2px solid var(--amber); padding-left: 8px; }
+  .dname { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .diagram-row.active .dname { color: var(--text-primary); }
+  .cc-badge { font-family: var(--font-mono); font-size: 9px; color: var(--text-muted); flex-shrink: 0; }
+
+  .folder-row { height: 26px; padding: 0 10px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .folder-name { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); font-weight: 500; }
+  .folder-arrow { font-size: 9px; color: var(--text-muted); }
+  .note-row { height: 26px; padding: 0 10px 0 22px; display: flex; align-items: center; gap: 5px; cursor: pointer; transition: background 0.1s; }
+  .note-row:hover { background: rgba(255,255,255,0.03); }
+  .note-row.active { border-left: 2px solid var(--amber); padding-left: 20px; }
+  .note-icon { font-size: 10px; color: var(--text-muted); }
+  .note-name { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* CENTER */
+  .center-area { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
+  .canvas-toolbar { height: 36px; background: var(--bg-surface); border-bottom: 1px solid var(--border-subtle); display: flex; align-items: center; padding: 0 10px; gap: 6px; flex-shrink: 0; }
+  .canvas-name { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); flex: 1; }
+  .canvas-name span { color: var(--text-secondary); }
+  .toolbar-group { display: flex; gap: 2px; }
+  .tbtn { height: 26px; padding: 0 8px; border-radius: 3px; border: 1px solid var(--border-subtle); background: transparent; color: var(--text-secondary); cursor: pointer; font-family: var(--font-mono); font-size: 11px; display: flex; align-items: center; gap: 4px; transition: all 0.12s; }
+  .tbtn:hover { border-color: var(--border-default); color: var(--text-primary); }
+  .tbtn.active-tool { color: var(--amber); border-color: var(--amber-border); }
+  .tbtn.done-tool { color: var(--success); border-color: rgba(34,197,94,0.3); }
+  .tsep { width: 1px; height: 18px; background: var(--border-subtle); }
+  .canvas-area { flex: 1; min-height: 0; background: var(--bg-base); position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+  /* BOTTOM DRAWER */
+  .bottom-drawer { height: 0; flex-shrink: 0; overflow: hidden; background: var(--bg-surface); border-top: 1px solid var(--border-subtle); transition: height 0.2s ease; display: flex; flex-direction: column; }
+  .bottom-drawer.open { height: 200px; }
+  .bottom-drawer.open.tall { height: 280px; }
+
+  /* RIGHT PANEL */
+  .right-panel { width: 0; flex-shrink: 0; overflow: hidden; background: var(--bg-surface); border-left: 1px solid var(--border-subtle); transition: width 0.2s ease; display: flex; flex-direction: column; }
+  .right-panel.open { width: 380px; }
+
+  /* PANEL SHARED */
+  .rp-head { height: 40px; padding: 0 12px; flex-shrink: 0; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border-subtle); }
+  .rp-title { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-secondary); flex: 1; }
+  .rp-sub { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+  .rp-close { width: 24px; height: 24px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 13px; transition: all 0.12s; }
+  .rp-close:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+  .rp-body { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+  .rp-body::-webkit-scrollbar { width: 3px; }
+  .rp-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+  .rp-foot { padding: 8px 12px; border-top: 1px solid var(--border-subtle); flex-shrink: 0; }
+
+  /* FORM ELEMENTS */
+  .code-ta { width: 100%; min-height: 130px; padding: 8px; resize: vertical; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 3px; color: var(--code-text); font-family: var(--font-mono); font-size: 11px; line-height: 1.6; outline: none; }
+  .code-ta::placeholder { color: rgba(255,255,255,0.14); }
+  .code-ta.dim { opacity: 0.4; pointer-events: none; }
+  .txt-in { width: 100%; height: 26px; padding: 0 8px; background: var(--bg-elevated); border: 1px solid var(--border-subtle); border-radius: 3px; color: var(--text-primary); font-family: var(--font-mono); font-size: 11px; outline: none; }
+  .txt-in::placeholder { color: var(--text-muted); }
+  .txt-in.dim { opacity: 0.4; pointer-events: none; }
+  .lang-lbl { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .btn-p { width: 100%; height: 36px; border: none; border-radius: 3px; background: var(--amber); color: #000; font-family: var(--font-mono); font-size: 12px; font-weight: 600; cursor: pointer; letter-spacing: 0.04em; }
+  .btn-g { height: 26px; padding: 0 10px; border-radius: 3px; border: 1px solid var(--border-subtle); background: transparent; color: var(--text-secondary); font-family: var(--font-mono); font-size: 11px; cursor: pointer; transition: all 0.12s; }
+  .btn-g:hover { border-color: var(--border-default); color: var(--text-primary); }
+  .btn-g.fw { width: 100%; }
+  .btn-g.sm { height: 22px; padding: 0 7px; font-size: 10px; }
+  .hint { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+
+  /* RUNNING */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner { width: 14px; height: 14px; border: 2px solid rgba(245,158,11,0.2); border-top-color: var(--amber); border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .pulse-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--amber); animation: pulse 1.2s ease-in-out infinite; flex-shrink: 0; }
+  .run-row { display: flex; align-items: center; gap: 8px; }
+  .run-txt { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+  .run-time { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+  .status-line { padding: 5px 8px; background: var(--bg-elevated); border-left: 2px solid var(--amber); font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+  .iter-badge { padding: 2px 6px; border-radius: 3px; background: var(--amber-dim); border: 1px solid var(--amber-border); font-family: var(--font-mono); font-size: 10px; color: var(--amber); }
+
+  /* RESULT */
+  .result-lbl { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); }
+  .fn-list { border: 1px solid var(--border-subtle); border-radius: 3px; overflow: hidden; }
+  .fn-row { min-height: 32px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-subtle); padding: 4px 8px; position: relative; }
+  .fn-row:last-child { border-bottom: none; }
+  .fn-name { font-family: var(--font-mono); font-size: 11px; color: var(--text-primary); flex: 1; }
+  .fn-cc { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); flex-shrink: 0; }
+  .chip { padding: 1px 6px; border-radius: 2px; font-family: var(--font-mono); font-size: 10px; flex-shrink: 0; }
+  .chip.ok { color: var(--success); border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.07); }
+  .chip.err { color: var(--error); border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.07); }
+  .imp-btn { opacity: 0; transition: opacity 0.12s; flex-shrink: 0; }
+  .fn-row:hover .imp-btn { opacity: 1; }
+  .err-detail { padding: 2px 0 4px 12px; font-family: var(--font-mono); font-size: 10px; color: var(--error); line-height: 1.5; }
+  .collapse-row { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .code-preview { font-family: var(--font-mono); font-size: 10px; color: rgba(180,220,160,0.35); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .expand-lnk { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+
+  /* CODE BLOCK */
+  .code-blk { background: var(--bg-base); border: 1px solid var(--border-subtle); border-radius: 3px; overflow: hidden; position: relative; flex: 1; }
+  .code-blk-inner { max-height: 155px; overflow-y: auto; padding: 10px 12px; }
+  .code-blk-inner::-webkit-scrollbar { width: 3px; }
+  .code-blk-inner::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+  .code-blk pre { font-family: var(--font-mono); font-size: 11px; color: var(--code-text); line-height: 1.65; white-space: pre; }
+  .copy-btn { position: absolute; top: 6px; right: 6px; height: 22px; padding: 0 7px; border-radius: 2px; border: 1px solid var(--border-subtle); background: var(--bg-elevated); color: var(--text-muted); font-family: var(--font-mono); font-size: 10px; cursor: pointer; }
+  .copy-btn:hover { color: var(--text-primary); }
+
+  /* LANG SELECTOR */
+  .lang-sel { display: flex; border: 1px solid rgba(255,255,255,0.10); border-radius: 3px; overflow: hidden; }
+  .lang-opt { flex: 1; height: 28px; border: none; background: transparent; color: var(--text-muted); font-family: var(--font-mono); font-size: 11px; cursor: pointer; transition: all 0.12s; border-right: 1px solid rgba(255,255,255,0.10); }
+  .lang-opt:last-child { border-right: none; }
+  .lang-opt:hover { background: rgba(255,255,255,0.04); color: var(--text-secondary); }
+  .lang-opt.active { background: var(--amber); color: #000; font-weight: 600; }
+
+  /* ERROR CARD */
+  .err-card { padding: 8px 10px; background: var(--bg-elevated); border-left: 3px solid var(--error); display: flex; align-items: center; gap: 8px; }
+  .err-msg { font-family: var(--font-mono); font-size: 11px; color: var(--error); flex: 1; line-height: 1.4; }
+
+  /* SYNTAX CHIP */
+  .syn-chip { padding: 2px 7px; border-radius: 2px; font-family: var(--font-mono); font-size: 10px; }
+  .syn-chip.ok { color: var(--success); border: 1px solid rgba(34,197,94,0.3); background: rgba(34,197,94,0.07); }
+  .syn-chip.fail { color: var(--error); border: 1px solid rgba(239,68,68,0.3); background: rgba(239,68,68,0.07); }
+  .regen-lnk { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); cursor: pointer; }
+  .regen-lnk:hover { color: var(--text-primary); }
+
+  /* SCENES */
+  .scene { display: none; }
+  .scene.visible { display: flex; }
+
+  /* HELP */
+  .help { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(17,19,24,0.92); border: 1px solid var(--border-subtle); border-radius: 3px; padding: 5px 12px; font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); pointer-events: none; white-space: nowrap; }
+
+  /* MOCK DIAGRAM */
+  .diagram-svg { opacity: 0.6; }
+</style>
+</head>
+<body>
+
+<div class="scene-nav">
+  <span>SCENE:</span>
+  <button class="scene-btn active" onclick="go('s1')">1·Workspace</button>
+  <button class="scene-btn" onclick="go('s2')">2·Analysis idle</button>
+  <button class="scene-btn" onclick="go('s3')">3·Analysis running</button>
+  <button class="scene-btn" onclick="go('s4')">4·Analysis done</button>
+  <button class="scene-btn" onclick="go('s5')">5·Gen idle</button>
+  <button class="scene-btn" onclick="go('s6')">6·Gen running</button>
+  <button class="scene-btn" onclick="go('s7')">7·Gen done</button>
+  <button class="scene-btn" onclick="go('s8')">8·Notes panel</button>
+</div>
+
+<!-- ── SVG DIAGRAM MACRO ── -->
+<template id="diag-full">
+<svg width="200" height="360" class="diagram-svg">
+  <line x1="100" y1="0" x2="100" y2="360" stroke="rgba(255,255,255,0.04)" stroke-width="1" stroke-dasharray="3,5"/>
+  <rect x="40" y="8" width="120" height="28" rx="14" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <text x="100" y="27" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="rgba(255,255,255,0.5)">START</text>
+  <line x1="100" y1="36" x2="100" y2="66" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="20" y="66" width="160" height="28" rx="2" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <text x="100" y="84" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="rgba(255,255,255,0.5)">init_graph()</text>
+  <line x1="100" y1="94" x2="100" y2="124" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <polygon points="100,124 140,148 100,172 60,148" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <text x="100" y="151" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="rgba(255,255,255,0.5)">has_nodes?</text>
+  <line x1="60" y1="148" x2="16" y2="148" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <line x1="16" y1="148" x2="16" y2="228" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="-4" y="228" width="60" height="26" rx="2" fill="none" stroke="rgba(239,68,68,0.3)" stroke-width="1"/>
+  <text x="26" y="244" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="rgba(239,68,68,0.45)">raise Err</text>
+  <line x1="140" y1="148" x2="184" y2="148" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <line x1="184" y1="148" x2="184" y2="244" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <line x1="100" y1="172" x2="100" y2="202" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="20" y="202" width="160" height="28" rx="2" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <text x="100" y="220" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="rgba(255,255,255,0.5)">compute_path()</text>
+  <line x1="100" y1="230" x2="100" y2="254" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <line x1="16" y1="254" x2="184" y2="254" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <line x1="100" y1="254" x2="100" y2="278" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="20" y="278" width="160" height="28" rx="2" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <text x="100" y="296" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="rgba(255,255,255,0.5)">return result</text>
+  <line x1="100" y1="306" x2="100" y2="328" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+  <rect x="40" y="328" width="120" height="28" rx="14" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1"/>
+  <text x="100" y="347" text-anchor="middle" font-family="JetBrains Mono" font-size="10" fill="rgba(255,255,255,0.5)">END</text>
+</svg>
+</template>
+
+<!-- ══ SCENE 1 — Workspace idle ══ -->
+<div class="app scene visible" id="s1">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="amber-dot"></div><span class="brand-name">AI·DRAKON</span></div>
+    <div class="topbar-sep"></div>
+    <span class="breadcrumb"><span>process_data.py</span> / calculate_path</span>
+    <div class="topbar-right"><button class="icon-btn">⌕</button><button class="icon-btn">⚙</button></div>
+  </div>
+  <div class="workspace">
+    <div class="icon-rail">
+      <button class="rail-icon active" title="Diagrams">⊞</button>
+      <button class="rail-icon" title="Notes">≡</button>
+      <button class="rail-icon" title="Graph">◎</button>
+      <div class="rail-sep"></div>
+      <div class="rail-bottom"><button class="rail-icon" title="Agent">⬡</button></div>
+    </div>
+    <div class="left-panel">
+      <div class="panel-header"><span class="panel-label">Diagrams</span><button class="icon-btn" style="font-size:14px;width:18px;height:18px;">+</button></div>
+      <input class="panel-search" placeholder="filter…">
+      <div class="panel-list">
+        <div class="diagram-row active"><span class="dname">calculate_path</span><span class="cc-badge">CC:4</span></div>
+        <div class="diagram-row"><span class="dname">process_data</span><span class="cc-badge">CC:7</span></div>
+        <div class="diagram-row"><span class="dname">validate_schema</span><span class="cc-badge">CC:2</span></div>
+        <div class="diagram-row"><span class="dname">build_graph</span><span class="cc-badge">CC:14</span></div>
+        <div class="diagram-row"><span class="dname">route_request</span><span class="cc-badge">CC:9</span></div>
+      </div>
+    </div>
+    <div class="center-area">
+      <div class="canvas-toolbar">
+        <span class="canvas-name"><span>calculate_path</span> · Primitive · CC:4</span>
+        <div class="toolbar-group"><button class="tbtn">−</button><button class="tbtn">+</button><button class="tbtn">⊡</button></div>
+        <div class="tsep"></div>
+        <button class="tbtn">⊙ Аналізувати</button>
+        <button class="tbtn">‹› Генерувати</button>
+      </div>
+      <div class="canvas-area" id="cv1">
+        <div class="help">Сцена 1 — workspace idle. Лівий sidebar: список діаграм. Канвас завжди видний.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 2 — Analysis panel IDLE ══ -->
+<div class="app scene" id="s2">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="amber-dot"></div><span class="brand-name">AI·DRAKON</span></div>
+    <div class="topbar-sep"></div>
+    <span class="breadcrumb"><span>process_data.py</span> / calculate_path</span>
+    <div class="topbar-right"><button class="icon-btn">⌕</button><button class="icon-btn">⚙</button></div>
+  </div>
+  <div class="workspace">
+    <div class="icon-rail">
+      <button class="rail-icon active">⊞</button><button class="rail-icon">≡</button><button class="rail-icon">◎</button>
+      <div class="rail-sep"></div><div class="rail-bottom"><button class="rail-icon">⬡</button></div>
+    </div>
+    <div class="left-panel collapsed"></div>
+    <div class="center-area">
+      <div class="canvas-toolbar">
+        <span class="canvas-name"><span>calculate_path</span> · Primitive · CC:4</span>
+        <div class="toolbar-group"><button class="tbtn">−</button><button class="tbtn">+</button></div>
+        <div class="tsep"></div>
+        <button class="tbtn active-tool">⊙ Аналізувати</button>
+        <button class="tbtn">‹› Генерувати</button>
+      </div>
+      <div class="canvas-area" id="cv2">
+        <div class="help">Сцена 2 — Analysis panel відкрита (380px), ліва панель схлопнулась.</div>
+      </div>
+    </div>
+    <div class="right-panel open">
+      <div class="rp-head">
+        <span class="rp-title">Аналіз коду</span>
+        <span class="rp-sub">Код → IR</span>
+        <button class="rp-close">✕</button>
+      </div>
+      <div class="rp-body">
+        <textarea class="code-ta" placeholder="# Вставте Python-код для аналізу&#10;def calculate_path(graph, start, end):&#10;    if not graph.nodes:&#10;        raise ValueError('empty graph')&#10;    return dijkstra(graph, start, end)"></textarea>
+        <input class="txt-in" placeholder="module.py">
+        <span class="lang-lbl">python</span>
+        <button class="btn-p">Аналізувати</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 3 — Analysis RUNNING ══ -->
+<div class="app scene" id="s3">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="amber-dot"></div><span class="brand-name">AI·DRAKON</span></div>
+    <div class="topbar-sep"></div>
+    <span class="breadcrumb"><span>process_data.py</span> / calculate_path</span>
+    <div class="topbar-right"><button class="icon-btn">⌕</button><button class="icon-btn">⚙</button></div>
+  </div>
+  <div class="workspace">
+    <div class="icon-rail">
+      <button class="rail-icon active">⊞</button><button class="rail-icon">≡</button><button class="rail-icon">◎</button>
+      <div class="rail-sep"></div><div class="rail-bottom"><button class="rail-icon">⬡</button></div>
+    </div>
+    <div class="left-panel collapsed"></div>
+    <div class="center-area">
+      <div class="canvas-toolbar">
+        <span class="canvas-name"><span>calculate_path</span> · Primitive · CC:4</span>
+        <div class="toolbar-group"><button class="tbtn">−</button><button class="tbtn">+</button></div>
+        <div class="tsep"></div>
+        <button class="tbtn active-tool">⊙ Аналізувати</button>
+        <button class="tbtn">‹› Генерувати</button>
+      </div>
+      <div class="canvas-area" id="cv3" style="opacity:0.45">
+        <div class="help" style="opacity:1">Сцена 3 — аналіз іде, таймер відраховує.</div>
+      </div>
+    </div>
+    <div class="right-panel open">
+      <div class="rp-head">
+        <div class="pulse-dot"></div>
+        <span class="rp-title">Аналіз коду</span>
+        <button class="rp-close">✕</button>
+      </div>
+      <div class="rp-body">
+        <textarea class="code-ta dim">def calculate_path(graph, start, end):
+    if not graph.nodes:
+        raise ValueError('empty graph')
+    return dijkstra(graph, start, end)</textarea>
+        <input class="txt-in dim" value="module.py">
+        <div class="run-row">
+          <div class="spinner"></div>
+          <span class="run-txt">Аналізується…</span>
+          <span class="run-time" id="t3">12s</span>
+        </div>
+        <div class="status-line">CC: 7 · рівень: primitive</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 4 — Analysis DONE ══ -->
+<div class="app scene" id="s4">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="amber-dot"></div><span class="brand-name">AI·DRAKON</span></div>
+    <div class="topbar-sep"></div>
+    <span class="breadcrumb"><span>process_data.py</span> / calculate_path</span>
+    <div class="topbar-right"><button class="icon-btn">⌕</button><button class="icon-btn">⚙</button></div>
+  </div>
+  <div class="workspace">
+    <div class="icon-rail">
+      <button class="rail-icon active">⊞</button><button class="rail-icon">≡</button><button class="rail-icon">◎</button>
+      <div class="rail-sep"></div><div class="rail-bottom"><button class="rail-icon">⬡</button></div>
+    </div>
+    <div class="left-panel collapsed"></div>
+    <div class="center-area">
+      <div class="canvas-toolbar">
+        <span class="canvas-name"><span>calculate_path</span> · Primitive · CC:4</span>
+        <div class="toolbar-group"><button class="tbtn">−</button><button class="tbtn">+</button></div>
+        <div class="tsep"></div>
+        <button class="tbtn">⊙ Аналізувати</button>
+        <button class="tbtn">‹› Генерувати</button>
+      </div>
+      <div class="canvas-area" id="cv4">
+        <div class="help">Сцена 4 — результати. Hover на рядок функції → кнопка "Імпортувати".</div>
+      </div>
+    </div>
+    <div class="right-panel open">
+      <div class="rp-head">
+        <span class="rp-title">Аналіз коду</span>
+        <span class="rp-sub" style="color:var(--success)">✓ done · 18s</span>
+        <button class="rp-close">✕</button>
+      </div>
+      <div class="rp-body">
+        <div class="collapse-row">
+          <span class="code-preview">def calculate_path(graph, start,…</span>
+          <span class="expand-lnk">↕ розгорнути</span>
+        </div>
+        <span class="result-lbl">Результат · 3 функції</span>
+        <div class="fn-list">
+          <div class="fn-row">
+            <span class="fn-name">calculate_path</span>
+            <span class="fn-cc">CC:4</span>
+            <span class="chip ok">✓ valid</span>
+            <button class="btn-g sm imp-btn">↓ Імпортувати</button>
+          </div>
+          <div class="fn-row">
+            <span class="fn-name">validate_nodes</span>
+            <span class="fn-cc">CC:6</span>
+            <span class="chip ok">✓ valid</span>
+            <button class="btn-g sm imp-btn">↓ Імпортувати</button>
+          </div>
+          <div style="display:flex;flex-direction:column;">
+            <div class="fn-row" style="border-bottom:none;">
+              <span class="fn-name">parse_weights</span>
+              <span class="fn-cc">CC:3</span>
+              <span class="chip err">2 помилки</span>
+              <button class="btn-g sm imp-btn">↓ Імпортувати</button>
+            </div>
+            <div class="err-detail">E01: missing terminator END<br>E02: node "4" has no next ref</div>
+          </div>
+        </div>
+      </div>
+      <div class="rp-foot"><button class="btn-g fw">↺ Новий аналіз</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 5 — Generation IDLE ══ -->
+<div class="app scene" id="s5">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="amber-dot"></div><span class="brand-name">AI·DRAKON</span></div>
+    <div class="topbar-sep"></div>
+    <span class="breadcrumb"><span>calculate_path</span> · Primitive · CC:4</span>
+    <div class="topbar-right"><button class="icon-btn">⌕</button><button class="icon-btn">⚙</button></div>
+  </div>
+  <div class="workspace">
+    <div class="icon-rail">
+      <button class="rail-icon active">⊞</button><button class="rail-icon">≡</button><button class="rail-icon">◎</button>
+      <div class="rail-sep"></div><div class="rail-bottom"><button class="rail-icon">⬡</button></div>
+    </div>
+    <div class="left-panel">
+      <div class="panel-header"><span class="panel-label">Diagrams</span></div>
+      <input class="panel-search" placeholder="filter…">
+      <div class="panel-list">
+        <div class="diagram-row active"><span class="dname">calculate_path</span><span class="cc-badge">CC:4</span></div>
+        <div class="diagram-row"><span class="dname">process_data</span><span class="cc-badge">CC:7</span></div>
+        <div class="diagram-row"><span class="dname">validate_schema</span><span class="cc-badge">CC:2</span></div>
+      </div>
+    </div>
+    <div class="center-area">
+      <div class="canvas-toolbar">
+        <span class="canvas-name"><span>calculate_path</span> · Primitive · CC:4</span>
+        <div class="toolbar-group"><button class="tbtn">−</button><button class="tbtn">+</button></div>
+        <div class="tsep"></div>
+        <button class="tbtn">⊙ Аналізувати</button>
+        <button class="tbtn active-tool">‹› Генерувати</button>
+      </div>
+      <div class="canvas-area" id="cv5"></div>
+      <div class="bottom-drawer open">
+        <div class="rp-head">
+          <span class="rp-title">Генерувати код</span>
+          <span class="rp-sub" style="color:var(--amber)">Python</span>
+          <button class="rp-close" style="margin-left:auto">✕</button>
+        </div>
+        <div class="rp-body">
+          <div class="lang-sel">
+            <button class="lang-opt active">Python</button>
+            <button class="lang-opt">TypeScript</button>
+            <button class="lang-opt">JavaScript</button>
+          </div>
+          <input class="txt-in" placeholder="Опис поведінки (необов'язково)">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;">
+            <span class="hint">10–30 секунд</span>
+            <button class="btn-p" style="width:auto;padding:0 20px;height:34px;">Генерувати</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 6 — Generation RUNNING ══ -->
+<div class="app scene" id="s6">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="amber-dot"></div><span class="brand-name">AI·DRAKON</span></div>
+    <div class="topbar-sep"></div>
+    <span class="breadcrumb"><span>calculate_path</span> · Primitive · CC:4</span>
+    <div class="topbar-right"><button class="icon-btn">⌕</button><button class="icon-btn">⚙</button></div>
+  </div>
+  <div class="workspace">
+    <div class="icon-rail">
+      <button class="rail-icon active">⊞</button><button class="rail-icon">≡</button><button class="rail-icon">◎</button>
+      <div class="rail-sep"></div><div class="rail-bottom"><button class="rail-icon">⬡</button></div>
+    </div>
+    <div class="left-panel">
+      <div class="panel-header"><span class="panel-label">Diagrams</span></div>
+      <div class="panel-list">
+        <div class="diagram-row active"><span class="dname">calculate_path</span><span class="cc-badge">CC:4</span></div>
+        <div class="diagram-row"><span class="dname">process_data</span><span class="cc-badge">CC:7</span></div>
+        <div class="diagram-row"><span class="dname">validate_schema</span><span class="cc-badge">CC:2</span></div>
+      </div>
+    </div>
+    <div class="center-area">
+      <div class="canvas-toolbar">
+        <span class="canvas-name"><span>calculate_path</span> · Primitive · CC:4</span>
+        <div class="toolbar-group"><button class="tbtn">−</button><button class="tbtn">+</button></div>
+        <div class="tsep"></div>
+        <button class="tbtn">⊙ Аналізувати</button>
+        <button class="tbtn active-tool">‹› Генерувати</button>
+      </div>
+      <div class="canvas-area" id="cv6" style="opacity:0.4"></div>
+      <div class="bottom-drawer open">
+        <div class="rp-head">
+          <div class="pulse-dot"></div>
+          <span class="rp-title">Генерувати код</span>
+          <span class="rp-sub">Python</span>
+          <button class="rp-close" style="margin-left:auto">✕</button>
+        </div>
+        <div class="rp-body">
+          <div class="lang-sel" style="opacity:0.35;pointer-events:none">
+            <button class="lang-opt active">Python</button><button class="lang-opt">TypeScript</button><button class="lang-opt">JavaScript</button>
+          </div>
+          <input class="txt-in dim" value="">
+          <div class="run-row" style="margin-top:auto">
+            <div class="spinner"></div>
+            <span class="run-txt">Генерується…</span>
+            <span class="run-time" id="t6">8s</span>
+            <div class="iter-badge">ітерація 1/3</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 7 — Generation DONE ══ -->
+<div class="app scene" id="s7">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="amber-dot"></div><span class="brand-name">AI·DRAKON</span></div>
+    <div class="topbar-sep"></div>
+    <span class="breadcrumb"><span>calculate_path</span> · Python generated</span>
+    <div class="topbar-right"><button class="icon-btn">⌕</button><button class="icon-btn">⚙</button></div>
+  </div>
+  <div class="workspace">
+    <div class="icon-rail">
+      <button class="rail-icon active">⊞</button><button class="rail-icon">≡</button><button class="rail-icon">◎</button>
+      <div class="rail-sep"></div><div class="rail-bottom"><button class="rail-icon">⬡</button></div>
+    </div>
+    <div class="left-panel">
+      <div class="panel-header"><span class="panel-label">Diagrams</span></div>
+      <div class="panel-list">
+        <div class="diagram-row active"><span class="dname">calculate_path</span><span class="cc-badge">CC:4</span></div>
+        <div class="diagram-row"><span class="dname">process_data</span><span class="cc-badge">CC:7</span></div>
+        <div class="diagram-row"><span class="dname">validate_schema</span><span class="cc-badge">CC:2</span></div>
+      </div>
+    </div>
+    <div class="center-area">
+      <div class="canvas-toolbar">
+        <span class="canvas-name"><span>calculate_path</span> · Primitive · CC:4</span>
+        <div class="toolbar-group"><button class="tbtn">−</button><button class="tbtn">+</button></div>
+        <div class="tsep"></div>
+        <button class="tbtn">⊙ Аналізувати</button>
+        <button class="tbtn done-tool">‹› Генерувати ✓</button>
+      </div>
+      <div class="canvas-area" id="cv7" style="opacity:0.7"></div>
+      <div class="bottom-drawer open">
+        <div class="rp-head">
+          <span class="rp-title">Генерувати код</span>
+          <span class="rp-sub" style="color:var(--success)">✓ Python · 1 ітерація</span>
+          <button class="rp-close" style="margin-left:auto">✕</button>
+        </div>
+        <div class="rp-body" style="gap:6px">
+          <div class="code-blk">
+            <button class="copy-btn">⎘ Копіювати</button>
+            <div class="code-blk-inner">
+              <pre>def calculate_path(
+    graph: Graph,
+    start: Node,
+    end: Node
+) -> list[Node]:
+    if not graph.nodes:
+        raise ValueError('empty graph')
+    path = dijkstra(graph, start, end)
+    return path</pre>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <span class="syn-chip ok">syntax: ✓</span>
+            <div style="display:flex;gap:10px;align-items:center">
+              <button class="btn-g sm">↺ Перегенерувати</button>
+              <span class="regen-lnk">Закрити</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ SCENE 8 — Notes panel, diagram stays ══ -->
+<div class="app scene" id="s8">
+  <div class="topbar">
+    <div class="topbar-brand"><div class="amber-dot"></div><span class="brand-name">AI·DRAKON</span></div>
+    <div class="topbar-sep"></div>
+    <span class="breadcrumb"><span>architecture.md</span> / Graph module</span>
+    <div class="topbar-right"><button class="icon-btn">⌕</button><button class="icon-btn">⚙</button></div>
+  </div>
+  <div class="workspace">
+    <div class="icon-rail">
+      <button class="rail-icon">⊞</button>
+      <button class="rail-icon active">≡</button>
+      <button class="rail-icon">◎</button>
+      <div class="rail-sep"></div><div class="rail-bottom"><button class="rail-icon">⬡</button></div>
+    </div>
+    <div class="left-panel">
+      <div class="panel-header">
+        <span class="panel-label">Notes</span>
+        <span style="font-family:var(--font-mono);font-size:9px;color:var(--text-muted)">12 docs</span>
+      </div>
+      <input class="panel-search" placeholder="пошук…">
+      <div class="panel-list">
+        <div class="folder-row"><span class="folder-arrow">▼</span><span class="folder-name">src/</span></div>
+        <div class="note-row active"><span class="note-icon">─</span><span class="note-name">architecture.md</span></div>
+        <div class="note-row"><span class="note-icon">─</span><span class="note-name">graph-module.md</span></div>
+        <div class="note-row"><span class="note-icon">─</span><span class="note-name">pipeline-design.md</span></div>
+        <div class="folder-row"><span class="folder-arrow">▶</span><span class="folder-name">docs/</span></div>
+        <div class="folder-row"><span class="folder-arrow">▶</span><span class="folder-name">services/</span></div>
+      </div>
+    </div>
+    <div class="center-area">
+      <div class="canvas-toolbar">
+        <span class="canvas-name">
+          <span style="color:var(--text-muted)">calculate_path</span>
+          <span style="margin:0 6px;color:var(--text-muted)">·</span>
+          <span style="color:var(--amber);font-size:10px">● активна діаграма</span>
+        </span>
+        <div class="toolbar-group"><button class="tbtn">−</button><button class="tbtn">+</button></div>
+        <div class="tsep"></div>
+        <button class="tbtn">⊙ Аналізувати</button>
+        <button class="tbtn">‹› Генерувати</button>
+      </div>
+      <div class="canvas-area" id="cv8" style="opacity:0.35">
+        <div class="help" style="opacity:1">Сцена 8 — Notes sidebar відкритий. Діаграма залишається на канвасі. Жодного page transition.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const timers = {};
+
+function go(id) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('visible'));
+  document.querySelectorAll('.scene-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('visible');
+  event.target.classList.add('active');
+  Object.values(timers).forEach(clearInterval);
+  Object.keys(timers).forEach(k => delete timers[k]);
+  injectDiagram(id);
+  if (id === 's3') startTimer('t3', 12);
+  if (id === 's6') startTimer('t6', 8);
+}
+
+function injectDiagram(sceneId) {
+  const cvIds = { s1:'cv1', s2:'cv2', s3:'cv3', s4:'cv4', s5:'cv5', s6:'cv6', s7:'cv7', s8:'cv8' };
+  const cvId = cvIds[sceneId];
+  if (!cvId) return;
+  const el = document.getElementById(cvId);
+  if (!el) return;
+  const t = document.getElementById('diag-full');
+  const existing = el.querySelector('svg.diagram-svg');
+  if (existing) existing.remove();
+  el.insertAdjacentHTML('afterbegin', t.innerHTML);
+}
+
+function startTimer(id, start) {
+  let t = start;
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = t + 's';
+  timers[id] = setInterval(() => { t++; if (el) el.textContent = t + 's'; }, 1000);
+}
+
+// Init scene 1 diagram
+window.addEventListener('load', () => injectDiagram('s1'));
+</script>
+</body>
+</html>

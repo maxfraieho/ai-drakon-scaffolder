@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI·DRAKON - Empty Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@450&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#690005",
+                        "surface-container-highest": "#33353a",
+                        "tertiary-fixed": "#c5e7ff",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "inverse-primary": "#855300",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-primary-fixed": "#2a1700",
+                        "surface-container": "#1e2025",
+                        "on-background": "#e2e2e9",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "secondary": "#adc6ff",
+                        "on-secondary-container": "#e6ecff",
+                        "tertiary": "#8fd5ff",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "on-primary-container": "#613b00",
+                        "tertiary-container": "#1abdff",
+                        "surface-tint": "#ffb95f",
+                        "outline-variant": "#534434",
+                        "on-tertiary": "#00344a",
+                        "inverse-surface": "#e2e2e9",
+                        "surface-container-lowest": "#0c0e13",
+                        "primary-fixed": "#ffddb8",
+                        "secondary-fixed": "#d8e2ff",
+                        "primary-container": "#f59e0b",
+                        "surface-container-low": "#1a1b21",
+                        "error": "#ffb4ab",
+                        "on-surface-variant": "#d8c3ad",
+                        "surface": "#111318",
+                        "on-primary-fixed-variant": "#653e00",
+                        "on-tertiary-container": "#004966",
+                        "on-secondary": "#002e6a",
+                        "surface-variant": "#33353a",
+                        "outline": "#a08e7a",
+                        "surface-container-high": "#282a2f",
+                        "error-container": "#93000a",
+                        "inverse-on-surface": "#2e3036",
+                        "surface-bright": "#37393f",
+                        "on-primary": "#472a00",
+                        "primary-fixed-dim": "#ffb95f",
+                        "primary": "#ffc174",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-dim": "#111318",
+                        "background": "#111318",
+                        "secondary-container": "#0566d9",
+                        "on-surface": "#e2e2e9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "md": "12px",
+                        "lg": "16px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xl": "24px",
+                        "panel-padding": "12px",
+                        "gutter": "1px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "code-sm": ["JetBrains Mono"],
+                        "body-md": ["IBM Plex Sans"],
+                        "code-md": ["JetBrains Mono"],
+                        "label-caps": ["IBM Plex Sans"],
+                        "body-sm": ["IBM Plex Sans"],
+                        "headline-sm": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "code-sm": ["11px", { "lineHeight": "16px", "fontWeight": "450" }],
+                        "body-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "code-md": ["12px", { "lineHeight": "20px", "fontWeight": "450" }],
+                        "label-caps": ["10px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-background'); }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden text-on-background font-body-md bg-background">
+<!-- TopNavBar -->
+<header class="bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant flex justify-between items-center w-full px-md h-[32px] fixed top-0 left-0 z-50">
+<div class="flex items-center gap-md">
+<span class="font-code-md text-headline-sm font-bold text-primary-container dark:text-primary-container tracking-tight">AI·DRAKON</span>
+<nav class="hidden md:flex items-center gap-md ml-lg">
+<a class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-container-high transition-colors px-sm py-[2px] rounded cursor-pointer active:scale-95" href="#">Project</a>
+<a class="text-primary font-bold font-body-sm text-body-sm hover:bg-surface-container-high transition-colors px-sm py-[2px] rounded cursor-pointer active:scale-95" href="#">Workspaces</a>
+<a class="text-on-surface-variant font-body-sm text-body-sm hover:bg-surface-container-high transition-colors px-sm py-[2px] rounded cursor-pointer active:scale-95" href="#">Library</a>
+</nav>
+</div>
+<div class="flex items-center gap-sm">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[16px]">search</span>
+<input class="bg-surface-container text-on-surface-variant font-body-sm text-body-sm border border-outline-variant rounded pl-xl pr-sm py-[2px] h-[24px] w-[200px] focus:outline-none focus:border-primary transition-colors" placeholder="Search..." type="text"/>
+</div>
+<button class="text-on-surface-variant hover:bg-surface-container-high transition-colors p-[2px] rounded cursor-pointer active:scale-95 flex items-center justify-center h-[24px] w-[24px]">
+<span class="material-symbols-outlined text-[16px]" data-icon="search">search</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-high transition-colors p-[2px] rounded cursor-pointer active:scale-95 flex items-center justify-center h-[24px] w-[24px]">
+<span class="material-symbols-outlined text-[16px]" data-icon="settings">settings</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container-high transition-colors p-[2px] rounded cursor-pointer active:scale-95 flex items-center justify-center h-[24px] w-[24px]">
+<span class="material-symbols-outlined text-[16px]" data-icon="dark_mode">dark_mode</span>
+</button>
+<div class="h-[24px] w-[24px] rounded-full bg-surface-variant overflow-hidden ml-sm border border-outline-variant">
+<img alt="User profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDC-vlP98v_wj6eZNGzE6reczpQtrpB3Jff7wh75rJTYRnlC4AC1_c9EO5ljWJYpY2uySsMYd8wH_ADKlI6oGMSqi4eSgXsWiO6LoVtIiujHSwRp7Q9TjJ5Q0dfvSWlkJLgh07RounerjphE7USqHJJ4PEMESqGU113gx8XVdL3QEDD3YbFdEPAc_4N9RYh-uhAr2Xw85qQf520xwgJ1ybgCmEnZBIjfsk4obL8I-hDoju5bQ0bwA1TmHywfls1xkIg6u86KEs_P34"/>
+</div>
+</div>
+</header>
+<div class="flex flex-1 pt-[32px] h-full overflow-hidden relative">
+<!-- SideNavBar -->
+<nav class="bg-surface-container dark:bg-surface-container border-r border-outline-variant dark:border-outline-variant fixed left-0 top-[32px] h-[calc(100vh-32px)] flex flex-col justify-between items-center py-sm w-[40px] z-40">
+<div class="flex flex-col items-center gap-sm w-full">
+<div class="w-full flex justify-center mb-md group relative">
+<button class="text-primary bg-surface-container-highest border-l-2 border-primary transition-all duration-150 p-sm w-full flex justify-center hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[20px]" data-icon="schema">schema</span>
+</button>
+</div>
+<div class="w-full flex justify-center mb-md group relative">
+<button class="text-on-surface-variant border-l-2 border-transparent transition-all duration-150 p-sm w-full flex justify-center hover:text-primary hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[20px]" data-icon="description">description</span>
+</button>
+</div>
+<div class="w-full flex justify-center mb-md group relative">
+<button class="text-on-surface-variant border-l-2 border-transparent transition-all duration-150 p-sm w-full flex justify-center hover:text-primary hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[20px]" data-icon="hub">hub</span>
+</button>
+</div>
+<div class="w-full flex justify-center mb-md group relative">
+<button class="text-on-surface-variant border-l-2 border-transparent transition-all duration-150 p-sm w-full flex justify-center hover:text-primary hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[20px]" data-icon="code">code</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col items-center gap-sm w-full">
+<div class="w-full flex justify-center mb-xs group relative">
+<button class="text-on-surface-variant border-l-2 border-transparent transition-all duration-150 p-sm w-full flex justify-center hover:text-primary hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[20px]" data-icon="smart_toy">smart_toy</span>
+</button>
+</div>
+<div class="w-full flex justify-center mb-xs group relative">
+<button class="text-on-surface-variant border-l-2 border-transparent transition-all duration-150 p-sm w-full flex justify-center hover:text-primary hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</nav>
+<!-- NavigationDrawer (Collapsed/Hidden for E1 State, but structural element remains) -->
+<aside class="hidden md:flex flex-col bg-surface-container-low dark:bg-surface-container-low border-r border-outline-variant dark:border-outline-variant fixed left-[40px] top-[32px] h-[calc(100vh-32px)] w-[220px] pt-md z-30 transition-transform -translate-x-full lg:translate-x-0">
+<div class="px-md pb-sm mb-sm border-b border-outline-variant/30 flex justify-between items-center">
+<span class="font-label-caps text-label-caps text-on-surface-variant">EXPLORER</span>
+<button class="text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">keyboard_double_arrow_left</span>
+</button>
+</div>
+<div class="flex flex-col gap-[2px] px-sm">
+<button class="bg-surface-container-highest text-primary font-bold hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-100 flex items-center gap-sm px-sm py-[4px] rounded text-left w-full">
+<span class="material-symbols-outlined text-[16px]" data-icon="folder_open">folder_open</span>
+<span class="font-body-sm text-body-sm">Diagrams List</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-100 flex items-center gap-sm px-sm py-[4px] rounded text-left w-full">
+<span class="material-symbols-outlined text-[16px]" data-icon="account_tree">account_tree</span>
+<span class="font-body-sm text-body-sm">Notes File Tree</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-100 flex items-center gap-sm px-sm py-[4px] rounded text-left w-full">
+<span class="material-symbols-outlined text-[16px]" data-icon="bubble_chart">bubble_chart</span>
+<span class="font-body-sm text-body-sm">Knowledge Graph</span>
+</button>
+</div>
+</aside>
+<!-- Central Canvas -->
+<main class="flex-1 flex flex-col h-full bg-background relative ml-[40px] lg:ml-[260px] transition-all duration-300">
+<!-- Canvas Toolbar -->
+<div class="h-[32px] bg-surface flex items-center justify-between px-md border-b border-outline-variant/50 w-full flex-shrink-0 z-20">
+<div class="flex items-center gap-sm">
+<span class="font-code-sm text-code-sm text-on-surface-variant opacity-70">workspace /</span>
+<span class="font-code-sm text-code-sm text-on-surface">—</span>
+</div>
+<div class="flex items-center gap-sm opacity-40">
+<button class="p-[2px] hover:bg-surface-container-high rounded" disabled="">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+</button>
+<span class="font-code-sm text-code-sm w-[40px] text-center">100%</span>
+<button class="p-[2px] hover:bg-surface-container-high rounded" disabled="">
+<span class="material-symbols-outlined text-[16px]">add</span>
+</button>
+<div class="w-[1px] h-[16px] bg-outline-variant mx-xs"></div>
+<button class="p-[2px] hover:bg-surface-container-high rounded" disabled="">
+<span class="material-symbols-outlined text-[16px]">fit_screen</span>
+</button>
+</div>
+</div>
+<!-- Empty State Area -->
+<div class="flex-1 flex flex-col items-center justify-center p-xl relative overflow-hidden">
+<!-- Abstract Diagram Hint (Background) -->
+<div class="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+<svg fill="none" height="400" viewbox="0 0 400 400" width="400" xmlns="http://www.w3.org/2000/svg">
+<rect height="40" rx="4" stroke="currentColor" stroke-width="1" width="100" x="150" y="50"></rect>
+<path d="M200 90 L200 130" stroke="currentColor" stroke-width="1"></path>
+<rect height="40" rx="4" stroke="currentColor" stroke-width="1" width="200" x="100" y="130"></rect>
+<path d="M200 170 L200 210" stroke="currentColor" stroke-width="1"></path>
+<path d="M200 210 L100 210 L100 250" stroke="currentColor" stroke-width="1"></path>
+<path d="M200 210 L300 210 L300 250" stroke="currentColor" stroke-width="1"></path>
+<rect height="60" rx="4" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1" width="100" x="50" y="250"></rect>
+<rect height="60" rx="4" stroke="currentColor" stroke-dasharray="4 4" stroke-width="1" width="100" x="250" y="250"></rect>
+</svg>
+</div>
+<!-- Empty State Content -->
+<div class="relative z-10 flex flex-col items-center max-w-[400px] text-center">
+<div class="w-[48px] h-[48px] rounded flex items-center justify-center bg-surface-container border border-outline-variant mb-lg shadow-sm">
+<span class="material-symbols-outlined text-[24px] text-on-surface-variant">schema</span>
+</div>
+<h2 class="font-headline-sm text-headline-sm text-on-surface mb-sm">Виберіть діаграму</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-xl">
+                        Робоча область порожня. Створіть нову діаграму або імпортуйте існуючий код для аналізу.
+                    </p>
+<div class="flex flex-col sm:flex-row gap-md w-full sm:w-auto">
+<button class="bg-primary text-[#000] font-body-sm text-body-sm font-semibold py-sm px-lg rounded flex items-center justify-center gap-sm hover:bg-primary-fixed transition-colors active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                            Створити нову
+                        </button>
+<button class="bg-transparent text-secondary font-body-sm text-body-sm py-sm px-lg rounded border border-outline-variant hover:bg-surface-container transition-colors flex items-center justify-center gap-sm active:scale-95">
+<span class="material-symbols-outlined text-[18px]">data_object</span>
+                            Аналізувати код
+                        </button>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

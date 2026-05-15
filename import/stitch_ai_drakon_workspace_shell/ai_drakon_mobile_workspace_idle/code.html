@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uk"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI·DRAKON Mobile Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#37393f",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "outline-variant": "#534434",
+                        "surface-container-highest": "#33353a",
+                        "error": "#ffb4ab",
+                        "primary-container": "#f59e0b",
+                        "secondary": "#adc6ff",
+                        "on-surface": "#e2e2e9",
+                        "surface": "#111318",
+                        "on-tertiary": "#00344a",
+                        "on-secondary-fixed": "#001a42",
+                        "on-error": "#690005",
+                        "surface-variant": "#33353a",
+                        "surface-container-low": "#1a1b21",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-primary-container": "#613b00",
+                        "secondary-container": "#0566d9",
+                        "outline": "#a08e7a",
+                        "on-tertiary-container": "#004966",
+                        "inverse-primary": "#855300",
+                        "on-primary": "#472a00",
+                        "on-surface-variant": "#d8c3ad",
+                        "surface-container-high": "#282a2f",
+                        "on-background": "#e2e2e9",
+                        "inverse-on-surface": "#2e3036",
+                        "surface-container-lowest": "#0c0e13",
+                        "on-primary-fixed-variant": "#653e00",
+                        "on-secondary-container": "#e6ecff",
+                        "surface-container": "#1e2025",
+                        "inverse-surface": "#e2e2e9",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "on-primary-fixed": "#2a1700",
+                        "background": "#111318",
+                        "tertiary": "#8fd5ff",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-secondary": "#002e6a",
+                        "tertiary-container": "#1abdff",
+                        "tertiary-fixed": "#c5e7ff",
+                        "surface-tint": "#ffb95f",
+                        "on-secondary-fixed-variant": "#004395",
+                        "primary-fixed-dim": "#ffb95f",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "primary": "#ffc174",
+                        "primary-fixed": "#ffddb8",
+                        "surface-dim": "#111318",
+                        "on-error-container": "#ffdad6"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "xs": "4px",
+                        "unit": "4px",
+                        "md": "12px",
+                        "xl": "24px",
+                        "sm": "8px",
+                        "panel-padding": "12px",
+                        "lg": "16px",
+                        "gutter": "1px"
+                    },
+                    "fontFamily": {
+                        "code-md": ["JetBrains Mono"],
+                        "body-sm": ["IBM Plex Sans"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-sm": ["IBM Plex Sans"],
+                        "label-caps": ["IBM Plex Sans"],
+                        "body-md": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "code-md": ["12px", { "lineHeight": "20px", "fontWeight": "450" }],
+                        "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "code-sm": ["11px", { "lineHeight": "16px", "fontWeight": "450" }],
+                        "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-caps": ["10px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0a0b0e; color: #e2e2e9; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .bg-level-1 { background-color: #111318; border: 1px solid rgba(255, 255, 255, 0.06); }
+        .bg-level-2 { background-color: #191c23; border: 1px solid rgba(255, 255, 255, 0.10); }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="h-screen w-full flex flex-col font-body-sm overflow-hidden text-on-surface">
+<!-- TopNavBar -->
+<nav class="bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant flex justify-between items-center w-full px-md h-[32px] shrink-0 z-50">
+<div class="flex items-center gap-sm">
+<button class="text-on-surface-variant hover:bg-surface-container-high transition-colors p-xs rounded cursor-pointer active:scale-95">
+<span class="material-symbols-outlined text-[18px]">menu</span>
+</button>
+<div class="flex items-center gap-xs font-code-md text-headline-sm font-bold text-primary-container dark:text-primary-container">
+<div class="w-2 h-2 rounded-full bg-primary-container"></div>
+                AI·DRAKON
+            </div>
+<span class="text-on-surface-variant px-sm font-code-sm">/</span>
+<span class="text-on-surface font-code-sm">process_data.py</span>
+</div>
+<div class="flex items-center gap-xs">
+<button class="text-on-surface-variant hover:bg-surface-container-high transition-colors p-xs rounded cursor-pointer active:scale-95">
+<span class="material-symbols-outlined text-[18px]">account_circle</span>
+</button>
+</div>
+</nav>
+<!-- Main Workspace Area -->
+<main class="flex-1 relative w-full flex flex-col bg-[#0a0b0e] overflow-hidden">
+<!-- Canvas Header / Sub-nav -->
+<div class="bg-level-1 h-10 flex items-center justify-between px-md shrink-0">
+<div class="flex items-center gap-md">
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-on-surface transition-colors font-label-caps">
+<span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                    BACK
+                </button>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-on-surface transition-colors font-label-caps">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+                    NEW
+                </button>
+</div>
+<div>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">check_circle</span>
+</div>
+</div>
+<!-- Drawing Canvas -->
+<div class="flex-1 relative w-full overflow-auto p-lg">
+<!-- Diagram Nodes (Static Representation) -->
+<div class="absolute top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-8">
+<!-- Node 1 -->
+<div class="bg-level-2 px-md py-sm rounded-full min-w-[120px] text-center border-t-2 border-t-primary-container">
+<span class="font-code-sm text-on-surface">Start Process</span>
+</div>
+<!-- Edge -->
+<div class="w-px h-8 bg-outline-variant"></div>
+<!-- Node 2 -->
+<div class="bg-level-2 px-xl py-md rounded w-[240px] text-center">
+<span class="font-code-sm text-on-surface">Fetch Data</span>
+</div>
+<!-- Edge -->
+<div class="w-px h-8 bg-outline-variant"></div>
+<!-- Node 3 -->
+<div class="bg-level-2 px-md py-sm rounded-full min-w-[120px] text-center border-b-2 border-b-primary-container">
+<span class="font-code-sm text-on-surface">End Process</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile Toolbar (Bottom Fixed) -->
+<div class="bg-level-1 border-t border-outline-variant h-[48px] w-full shrink-0 flex items-center justify-between px-md gap-sm overflow-x-auto no-scrollbar">
+<button class="flex items-center justify-center gap-xs bg-primary-container text-[#000] px-sm py-xs rounded hover:opacity-90 transition-opacity font-label-caps whitespace-nowrap min-w-fit">
+<span class="material-symbols-outlined text-[16px] text-[#000]">save</span>
+            Save
+        </button>
+<div class="w-px h-4 bg-outline-variant shrink-0"></div>
+<button class="text-on-surface-variant hover:text-on-surface p-xs shrink-0">
+<span class="material-symbols-outlined text-[18px]">undo</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface p-xs shrink-0">
+<span class="material-symbols-outlined text-[18px]">redo</span>
+</button>
+<div class="w-px h-4 bg-outline-variant shrink-0"></div>
+<button class="text-on-surface-variant hover:text-on-surface p-xs shrink-0">
+<span class="material-symbols-outlined text-[18px]">home</span>
+</button>
+<div class="flex items-center bg-level-2 rounded shrink-0">
+<button class="text-primary-container p-xs px-sm border-r border-outline-variant">
+<span class="material-symbols-outlined text-[18px]">ads_click</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface p-xs px-sm">
+<span class="material-symbols-outlined text-[18px]">pan_tool</span>
+</button>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-xs shrink-0 ml-auto">
+<span class="material-symbols-outlined text-[18px]">more_horiz</span>
+</button>
+</div>
+</body></html>

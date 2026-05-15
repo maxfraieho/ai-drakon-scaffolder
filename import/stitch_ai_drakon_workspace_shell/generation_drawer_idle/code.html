@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON - Code Generation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#00344a",
+                        "surface-container": "#1f1f23",
+                        "on-primary-fixed-variant": "#653e00",
+                        "secondary-fixed-dim": "#c3c6d0",
+                        "error": "#ffb4ab",
+                        "surface-container-highest": "#343538",
+                        "background": "#121316",
+                        "surface-container-high": "#292a2d",
+                        "surface-bright": "#38393c",
+                        "on-secondary-container": "#b2b5be",
+                        "surface-dim": "#121316",
+                        "on-secondary-fixed-variant": "#43474f",
+                        "primary-container": "#f59e0b",
+                        "tertiary-fixed": "#c5e7ff",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "tertiary-container": "#1abdff",
+                        "tertiary": "#8fd5ff",
+                        "secondary": "#c3c6d0",
+                        "on-background": "#e3e2e6",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "outline": "#a08e7a",
+                        "on-surface-variant": "#d8c3ad",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed": "#181c23",
+                        "surface-variant": "#343538",
+                        "on-primary": "#472a00",
+                        "inverse-primary": "#855300",
+                        "on-primary-fixed": "#2a1700",
+                        "secondary-fixed": "#dfe2ec",
+                        "inverse-surface": "#e3e2e6",
+                        "on-secondary": "#2d3138",
+                        "inverse-on-surface": "#303034",
+                        "primary-fixed": "#ffddb8",
+                        "on-tertiary-fixed": "#001e2d",
+                        "primary-fixed-dim": "#ffb95f",
+                        "on-surface": "#e3e2e6",
+                        "primary": "#ffc174",
+                        "secondary-container": "#43474f",
+                        "on-primary-container": "#613b00",
+                        "on-tertiary-container": "#004966",
+                        "outline-variant": "#534434",
+                        "surface-container-lowest": "#0d0e11",
+                        "on-error": "#690005",
+                        "surface": "#121316",
+                        "on-error-container": "#ffdad6",
+                        "surface-tint": "#ffb95f",
+                        "surface-container-low": "#1b1b1f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "toolbar-height": "40px",
+                        "container-margin": "16px",
+                        "unit": "4px",
+                        "sidebar-width": "260px",
+                        "panel-gap": "1px"
+                    },
+                    "fontFamily": {
+                        "label-caps": [
+                            "IBM Plex Sans"
+                        ],
+                        "code-sm": [
+                            "JetBrains Mono"
+                        ],
+                        "body-md": [
+                            "IBM Plex Sans"
+                        ],
+                        "body-sm": [
+                            "IBM Plex Sans"
+                        ],
+                        "code-md": [
+                            "JetBrains Mono"
+                        ],
+                        "headline-sm": [
+                            "IBM Plex Sans"
+                        ]
+                    },
+                    "fontSize": {
+                        "label-caps": [
+                            "10px",
+                            {
+                                "lineHeight": "12px",
+                                "letterSpacing": "0.08em",
+                                "fontWeight": "700"
+                            }
+                        ],
+                        "code-sm": [
+                            "11px",
+                            {
+                                "lineHeight": "16px",
+                                "fontWeight": "400"
+                            }
+                        ],
+                        "body-md": [
+                            "13px",
+                            {
+                                "lineHeight": "18px",
+                                "fontWeight": "400"
+                            }
+                        ],
+                        "body-sm": [
+                            "12px",
+                            {
+                                "lineHeight": "16px",
+                                "fontWeight": "400"
+                            }
+                        ],
+                        "code-md": [
+                            "12px",
+                            {
+                                "lineHeight": "18px",
+                                "fontWeight": "400"
+                            }
+                        ],
+                        "headline-sm": [
+                            "16px",
+                            {
+                                "lineHeight": "24px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                            }
+                        ]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar for IDE feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0b0e; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f1f23; 
+            border: 1px solid #0a0b0e;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #343538; 
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex flex-col font-body-md">
+<!-- TopNavBar -->
+<header class="bg-surface-container dark:bg-surface-container-high h-toolbar-height border-b border-outline-variant flex justify-between items-center px-container-margin w-full shrink-0">
+<div class="font-code-md text-code-md font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined" data-icon="polymer" style="font-variation-settings: 'FILL' 1;">polymer</span>
+            AI-DRAKON
+        </div>
+<nav class="flex gap-6 h-full items-center">
+<a class="font-code-md text-code-md uppercase text-primary border-b-2 border-primary h-full flex items-center pt-unit cursor-pointer active:opacity-80" href="#">Diagrams</a>
+<a class="font-code-md text-code-md uppercase text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors h-full flex items-center pt-unit px-2 cursor-pointer active:opacity-80" href="#">Git</a>
+<a class="font-code-md text-code-md uppercase text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors h-full flex items-center pt-unit px-2 cursor-pointer active:opacity-80" href="#">Sync</a>
+<a class="font-code-md text-code-md uppercase text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors h-full flex items-center pt-unit px-2 cursor-pointer active:opacity-80" href="#">Docs</a>
+<a class="font-code-md text-code-md uppercase text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors h-full flex items-center pt-unit px-2 cursor-pointer active:opacity-80" href="#">Settings</a>
+</nav>
+<div class="flex items-center gap-2 text-on-surface-variant">
+<div class="relative flex items-center bg-[#0a0b0e] border border-outline-variant rounded focus-within:border-primary-container px-2 h-7 w-48 mr-4">
+<span class="material-symbols-outlined text-[14px] mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none text-code-sm font-code-sm text-on-surface focus:ring-0 w-full p-0 placeholder-white/30 h-full" placeholder="Search..." type="text"/>
+</div>
+<button class="hover:text-primary hover:bg-surface-container-highest p-1 rounded transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-[18px]" data-icon="smart_toy">smart_toy</span>
+</button>
+<button class="hover:text-primary hover:bg-surface-container-highest p-1 rounded transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-[18px]" data-icon="light_mode">light_mode</span>
+</button>
+<button class="hover:text-primary hover:bg-surface-container-highest p-1 rounded transition-colors cursor-pointer active:opacity-80">
+<span class="material-symbols-outlined text-[18px]" data-icon="logout">logout</span>
+</button>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- Main Sidebar (Icon Nav) -->
+<aside class="bg-surface-container-low dark:bg-surface-container-low w-[40px] border-r border-outline-variant flex flex-col items-center py-unit gap-2 shrink-0 h-full">
+<button class="bg-surface-container-highest text-primary border-l-2 border-primary w-full flex justify-center py-2 transition-all duration-150" title="Diagrams">
+<span class="material-symbols-outlined text-[20px]" data-icon="account_tree">account_tree</span>
+</button>
+<button class="text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface w-full flex justify-center py-2 transition-all duration-150 border-l-2 border-transparent" title="Notes">
+<span class="material-symbols-outlined text-[20px]" data-icon="description">description</span>
+</button>
+<button class="text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface w-full flex justify-center py-2 transition-all duration-150 border-l-2 border-transparent" title="Graph">
+<span class="material-symbols-outlined text-[20px]" data-icon="hub">hub</span>
+</button>
+<button class="text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface w-full flex justify-center py-2 transition-all duration-150 border-l-2 border-transparent" title="GitHub">
+<span class="material-symbols-outlined text-[20px]" data-icon="terminal">terminal</span>
+</button>
+<button class="text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface w-full flex justify-center py-2 transition-all duration-150 border-l-2 border-transparent" title="Agent">
+<span class="material-symbols-outlined text-[20px]" data-icon="memory">memory</span>
+</button>
+<div class="mt-auto flex flex-col w-full gap-2 mb-2">
+<button class="text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface w-full flex justify-center py-2 transition-all duration-150 border-l-2 border-transparent" title="Settings">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+</button>
+</div>
+</aside>
+<!-- Secondary Sidebar (File Tree) -->
+<aside class="bg-surface-container-lowest dark:bg-surface-container-lowest w-[220px] border-r border-outline-variant flex flex-col overflow-hidden shrink-0 h-full">
+<div class="h-8 bg-[#111318] border-b border-outline-variant flex items-center px-3 justify-between shrink-0">
+<div class="flex items-center gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant">FILES</span>
+</div>
+<span class="font-code-sm text-code-sm text-on-surface-variant">main</span>
+</div>
+<div class="flex flex-col py-2 overflow-y-auto">
+<button class="bg-secondary-container text-on-secondary-container flex items-center px-3 py-1 gap-2 transition-colors border-l-2 border-primary-container h-[28px]">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="folder" style="font-variation-settings: 'FILL' 1;">folder</span>
+<span class="font-code-sm text-code-sm truncate">src</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container flex items-center px-3 py-1 gap-2 transition-colors border-l-2 border-transparent pl-7 h-[28px]">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+<span class="font-code-sm text-code-sm truncate">main.py</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container flex items-center px-3 py-1 gap-2 transition-colors border-l-2 border-transparent pl-7 h-[28px]">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+<span class="font-code-sm text-code-sm truncate">utils.py</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container flex items-center px-3 py-1 gap-2 transition-colors border-l-2 border-transparent pl-7 h-[28px]">
+<span class="material-symbols-outlined text-[16px]" data-icon="description">description</span>
+<span class="font-code-sm text-code-sm truncate">drakon_parser.py</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container flex items-center px-3 py-1 gap-2 transition-colors border-l-2 border-transparent mt-1 h-[28px]">
+<span class="material-symbols-outlined text-[16px]" data-icon="folder">folder</span>
+<span class="font-code-sm text-code-sm truncate">tests</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container flex items-center px-3 py-1 gap-2 transition-colors border-l-2 border-transparent mt-1 h-[28px]">
+<span class="material-symbols-outlined text-[16px]" data-icon="folder">folder</span>
+<span class="font-code-sm text-code-sm truncate">docs</span>
+</button>
+</div>
+<div class="mt-auto border-t border-outline-variant flex items-center justify-around h-8 bg-[#111318] shrink-0">
+<button class="text-on-surface-variant hover:text-primary p-1 rounded transition-colors" title="Search">
+<span class="material-symbols-outlined text-[16px]" data-icon="search">search</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary p-1 rounded transition-colors" title="History">
+<span class="material-symbols-outlined text-[16px]" data-icon="history">history</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 bg-[#0a0b0e] relative h-full">
+<!-- Canvas Tools (TopAppBar for Canvas) -->
+<div class="bg-surface-container-high border-b border-outline-variant full-width h-8 mb-1 flex items-center gap-unit px-2 shrink-0">
+<span class="font-label-caps text-label-caps text-on-surface-variant mr-4 hidden md:block">Canvas Tools</span>
+<div class="flex gap-2 mr-auto">
+<button class="text-on-surface-variant hover:bg-surface-container-highest font-label-caps text-label-caps px-2 py-1 rounded scale-95 active:scale-90 transition-all">Analyze</button>
+<!-- Active State for Generate Code -->
+<button class="text-primary font-bold border border-primary-container bg-[#191c23] hover:bg-surface-container-highest font-label-caps text-label-caps px-2 py-1 rounded scale-95 active:scale-90 transition-all">Генерувати код</button>
+</div>
+<div class="flex items-center gap-1 border-r border-outline-variant pr-2 mr-2">
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-1 rounded scale-95 active:scale-90 transition-all" title="Undo">
+<span class="material-symbols-outlined text-[16px]" data-icon="undo">undo</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-1 rounded scale-95 active:scale-90 transition-all" title="Redo">
+<span class="material-symbols-outlined text-[16px]" data-icon="redo">redo</span>
+</button>
+</div>
+<div class="flex items-center gap-1">
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-1 rounded scale-95 active:scale-90 transition-all" title="Home">
+<span class="material-symbols-outlined text-[16px]" data-icon="home">home</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-1 rounded scale-95 active:scale-90 transition-all" title="Zoom In">
+<span class="material-symbols-outlined text-[16px]" data-icon="zoom_in">zoom_in</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-1 rounded scale-95 active:scale-90 transition-all" title="Zoom Out">
+<span class="material-symbols-outlined text-[16px]" data-icon="zoom_out">zoom_out</span>
+</button>
+<div class="w-px h-4 bg-outline-variant mx-1"></div>
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-1 rounded scale-95 active:scale-90 transition-all" title="Copy">
+<span class="material-symbols-outlined text-[16px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary hover:bg-surface-container-highest p-1 rounded scale-95 active:scale-90 transition-all" title="Cut">
+<span class="material-symbols-outlined text-[16px]" data-icon="content_cut">content_cut</span>
+</button>
+<button class="text-on-surface-variant hover:text-error hover:bg-surface-container-highest p-1 rounded scale-95 active:scale-90 transition-all" title="Delete">
+<span class="material-symbols-outlined text-[16px]" data-icon="delete">delete</span>
+</button>
+</div>
+<button class="bg-primary-container text-[#0a0b0e] hover:bg-primary-fixed-dim font-label-caps text-label-caps px-3 py-1 rounded scale-95 active:scale-90 transition-all ml-4">Save</button>
+</div>
+<!-- Canvas Viewport (Reduced height to fit drawer) -->
+<div class="flex-1 overflow-auto relative p-8">
+<!-- Grid background simulation -->
+<div class="absolute inset-0 pointer-events-none" style="background-image: radial-gradient(#1f1f23 1px, transparent 1px); background-size: 20px 20px; opacity: 0.5;"></div>
+<!-- Mock DRAKON Canvas Elements -->
+<div class="relative z-10 max-w-3xl mx-auto flex flex-col items-center gap-6 mt-10">
+<div class="w-48 bg-[#111318] border-2 border-primary-container rounded-sm py-3 px-4 text-center shadow-[0_0_15px_rgba(245,158,11,0.1)]">
+<span class="font-headline-sm text-headline-sm text-primary">Process Input</span>
+</div>
+<div class="h-8 w-px bg-on-surface-variant"></div>
+<div class="w-56 bg-[#111318] border border-outline-variant rounded-sm py-3 px-4 text-center hover:border-primary transition-colors cursor-pointer">
+<span class="font-body-md text-body-md text-on-surface">Validate Data Schema</span>
+</div>
+<div class="h-8 w-px bg-on-surface-variant"></div>
+<div class="flex gap-12">
+<div class="flex flex-col items-center">
+<div class="w-40 bg-[#111318] border border-outline-variant rounded-sm py-3 px-4 text-center hover:border-primary transition-colors cursor-pointer transform -skew-x-12">
+<span class="font-body-md text-body-md text-on-surface block transform skew-x-12">If Valid</span>
+</div>
+<div class="h-8 w-px bg-on-surface-variant"></div>
+<div class="w-48 bg-[#111318] border border-outline-variant rounded-sm py-3 px-4 text-center hover:border-primary transition-colors cursor-pointer">
+<span class="font-body-md text-body-md text-on-surface">Transform Payload</span>
+</div>
+</div>
+<div class="flex flex-col items-center">
+<div class="w-40 bg-[#111318] border border-outline-variant rounded-sm py-3 px-4 text-center hover:border-primary transition-colors cursor-pointer transform -skew-x-12">
+<span class="font-body-md text-body-md text-on-surface block transform skew-x-12">If Invalid</span>
+</div>
+<div class="h-8 w-px bg-on-surface-variant"></div>
+<div class="w-48 bg-[#111318] border border-error rounded-sm py-3 px-4 text-center hover:bg-error-container transition-colors cursor-pointer">
+<span class="font-body-md text-body-md text-error">Throw Exception</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Code Generation Bottom Drawer -->
+<div class="h-[200px] w-full bg-[#111318] border-t border-primary-container/30 flex flex-col shrink-0 shadow-[0_-4px_20px_rgba(0,0,0,0.5)] z-20">
+<!-- Drawer Header -->
+<div class="h-8 bg-[#191c23] border-b border-outline-variant flex items-center px-4 justify-between shrink-0">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="terminal">terminal</span>
+<h3 class="font-label-caps text-label-caps text-primary tracking-widest">ГЕНЕРУВАТИ КОД</h3>
+</div>
+<div class="flex items-center gap-4">
+<!-- Language Selector -->
+<div class="flex bg-[#0a0b0e] border border-outline-variant rounded overflow-hidden">
+<button class="px-3 py-1 font-code-sm text-code-sm bg-surface-container-highest text-primary border-b-2 border-primary">Python</button>
+<button class="px-3 py-1 font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-container border-b-2 border-transparent transition-colors">JS/TS</button>
+<button class="px-3 py-1 font-code-sm text-code-sm text-on-surface-variant hover:bg-surface-container border-b-2 border-transparent transition-colors">Go</button>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 rounded transition-colors">
+<span class="material-symbols-outlined text-[18px]" data-icon="close">close</span>
+</button>
+</div>
+</div>
+<!-- Drawer Content -->
+<div class="flex-1 p-4 flex gap-4 bg-[#0a0b0e] overflow-hidden">
+<!-- Left: Input Area -->
+<div class="flex-1 flex flex-col gap-2">
+<label class="font-code-sm text-code-sm text-on-surface-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px]" data-icon="edit_note">edit_note</span>
+                            Description / Prompt
+                        </label>
+<textarea class="flex-1 bg-[#111318] border border-outline-variant rounded p-3 font-code-md text-code-md text-on-surface focus:border-primary-container focus:ring-0 resize-none placeholder-white/20" placeholder="Describe specific implementation details, naming conventions, or required libraries..."></textarea>
+</div>
+<!-- Right: Actions & Options -->
+<div class="w-64 flex flex-col gap-3 bg-[#111318] border border-outline-variant rounded p-3">
+<div class="flex flex-col gap-2">
+<span class="font-label-caps text-label-caps text-on-surface-variant border-b border-outline-variant pb-1">OPTIONS</span>
+<label class="flex items-center gap-2 cursor-pointer mt-1">
+<input checked="" class="form-checkbox bg-[#0a0b0e] border-outline-variant text-primary focus:ring-primary focus:ring-offset-[#111318] rounded-[2px] h-3 w-3" type="checkbox"/>
+<span class="font-code-sm text-code-sm text-on-surface">Include Docstrings</span>
+</label>
+<label class="flex items-center gap-2 cursor-pointer">
+<input checked="" class="form-checkbox bg-[#0a0b0e] border-outline-variant text-primary focus:ring-primary focus:ring-offset-[#111318] rounded-[2px] h-3 w-3" type="checkbox"/>
+<span class="font-code-sm text-code-sm text-on-surface">Add Type Hints</span>
+</label>
+</div>
+<div class="mt-auto pt-2 border-t border-outline-variant flex justify-end">
+<button class="w-full bg-primary-container text-[#0a0b0e] hover:bg-primary-fixed-dim font-label-caps text-label-caps px-4 py-2 rounded transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]" data-icon="magic_button">magic_button</span>
+                                GENERATE
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

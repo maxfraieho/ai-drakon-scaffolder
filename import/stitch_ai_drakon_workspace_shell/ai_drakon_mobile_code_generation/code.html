@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uk"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON - Генератор коду</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@450&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-bright": "#37393f",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "outline-variant": "#534434",
+                        "surface-container-highest": "#33353a",
+                        "error": "#ffb4ab",
+                        "primary-container": "#f59e0b",
+                        "secondary": "#adc6ff",
+                        "on-surface": "#e2e2e9",
+                        "surface": "#111318",
+                        "on-tertiary": "#00344a",
+                        "on-secondary-fixed": "#001a42",
+                        "on-error": "#690005",
+                        "surface-variant": "#33353a",
+                        "surface-container-low": "#1a1b21",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-primary-container": "#613b00",
+                        "secondary-container": "#0566d9",
+                        "outline": "#a08e7a",
+                        "on-tertiary-container": "#004966",
+                        "inverse-primary": "#855300",
+                        "on-primary": "#472a00",
+                        "on-surface-variant": "#d8c3ad",
+                        "surface-container-high": "#282a2f",
+                        "on-background": "#e2e2e9",
+                        "inverse-on-surface": "#2e3036",
+                        "surface-container-lowest": "#0c0e13",
+                        "on-primary-fixed-variant": "#653e00",
+                        "on-secondary-container": "#e6ecff",
+                        "surface-container": "#1e2025",
+                        "inverse-surface": "#e2e2e9",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "on-primary-fixed": "#2a1700",
+                        "background": "#111318",
+                        "tertiary": "#8fd5ff",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-secondary": "#002e6a",
+                        "tertiary-container": "#1abdff",
+                        "tertiary-fixed": "#c5e7ff",
+                        "surface-tint": "#ffb95f",
+                        "on-secondary-fixed-variant": "#004395",
+                        "primary-fixed-dim": "#ffb95f",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "primary": "#ffc174",
+                        "primary-fixed": "#ffddb8",
+                        "surface-dim": "#111318",
+                        "on-error-container": "#ffdad6"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "xs": "4px",
+                        "unit": "4px",
+                        "md": "12px",
+                        "xl": "24px",
+                        "sm": "8px",
+                        "panel-padding": "12px",
+                        "lg": "16px",
+                        "gutter": "1px"
+                    },
+                    fontFamily: {
+                        "code-md": ["JetBrains Mono"],
+                        "body-sm": ["IBM Plex Sans"],
+                        "code-sm": ["JetBrains Mono"],
+                        "headline-sm": ["IBM Plex Sans"],
+                        "label-caps": ["IBM Plex Sans"],
+                        "body-md": ["IBM Plex Sans"]
+                    },
+                    fontSize: {
+                        "code-md": ["12px", { "lineHeight": "20px", "fontWeight": "450" }],
+                        "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "code-sm": ["11px", { "lineHeight": "16px", "fontWeight": "450" }],
+                        "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "label-caps": ["10px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #000; /* Simulated backdrop for the bottom sheet */ }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-body-md text-on-surface antialiased h-screen w-screen flex flex-col justify-end overflow-hidden relative">
+<!-- Modal Backdrop Overlay (Simulated) -->
+<div class="absolute inset-0 bg-black/60 z-0"></div>
+<!-- Bottom Sheet -->
+<div class="relative z-10 w-full h-[663px] bg-surface-container rounded-t-xl border-t border-outline-variant/30 flex flex-col shadow-2xl">
+<!-- Drag Handle -->
+<div class="w-full h-[16px] flex justify-center items-center py-xs cursor-pointer">
+<div class="w-[32px] h-[4px] bg-outline-variant rounded-full"></div>
+</div>
+<!-- Header -->
+<div class="flex justify-between items-center px-lg pb-md border-b border-outline-variant/30">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary-container" style="font-variation-settings: 'FILL' 1;">terminal</span>
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-on-surface">ГЕНЕРУВАТИ КОД</span>
+<span class="font-code-sm text-code-sm text-primary-container">Python</span>
+</div>
+</div>
+<button class="p-xs text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high rounded transition-colors">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Body -->
+<div class="flex-1 overflow-y-auto p-lg flex flex-col gap-lg">
+<!-- Language Selector -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-caps text-label-caps text-on-surface-variant">МОВА</label>
+<div class="flex p-xs bg-surface-container-lowest rounded border border-outline-variant/30 w-full">
+<button class="flex-1 py-sm font-code-sm text-code-sm text-surface-container bg-primary-container rounded shadow-sm text-center">Python</button>
+<button class="flex-1 py-sm font-code-sm text-code-sm text-on-surface-variant hover:text-on-surface transition-colors text-center">TS</button>
+<button class="flex-1 py-sm font-code-sm text-code-sm text-on-surface-variant hover:text-on-surface transition-colors text-center">JS</button>
+</div>
+</div>
+<!-- Description Input -->
+<div class="flex flex-col gap-xs flex-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant">ОПИС ПОВЕДІНКИ</label>
+<textarea class="w-full flex-1 bg-[#191c23] border border-white/10 rounded p-sm font-code-md text-code-md text-on-surface focus:outline-none focus:border-primary-container focus:ring-0 resize-none transition-colors placeholder-on-surface-variant/50" placeholder="Опишіть логіку функції або компонента..."></textarea>
+</div>
+<!-- Advanced Settings Toggle (Optional styling example) -->
+<div class="flex items-center justify-between py-sm border-t border-outline-variant/10">
+<span class="font-body-sm text-body-sm text-on-surface-variant">Додаткові налаштування</span>
+<span class="material-symbols-outlined text-on-surface-variant text-[18px]">expand_more</span>
+</div>
+</div>
+<!-- Footer -->
+<div class="p-lg border-t border-outline-variant/30 flex items-center justify-between bg-surface-container-low rounded-b-none">
+<div class="flex items-center gap-xs text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span class="font-body-sm text-body-sm">10–30 секунд</span>
+</div>
+<button class="flex items-center gap-xs bg-primary-container text-black px-lg py-sm rounded font-body-md text-body-md font-semibold hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                Генерувати
+            </button>
+</div>
+</div>
+</body></html>

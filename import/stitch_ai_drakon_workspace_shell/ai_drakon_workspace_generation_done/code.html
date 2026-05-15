@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uk"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI·DRAKON - Code Generation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;450&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-error": "#690005",
+                        "surface-container-highest": "#33353a",
+                        "tertiary-fixed": "#c5e7ff",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "inverse-primary": "#855300",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-secondary-fixed-variant": "#004395",
+                        "on-primary-fixed": "#2a1700",
+                        "surface-container": "#1e2025",
+                        "on-background": "#e2e2e9",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "secondary": "#adc6ff",
+                        "on-secondary-container": "#e6ecff",
+                        "tertiary": "#8fd5ff",
+                        "on-error-container": "#ffdad6",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "on-primary-container": "#613b00",
+                        "tertiary-container": "#1abdff",
+                        "surface-tint": "#ffb95f",
+                        "outline-variant": "#534434",
+                        "on-tertiary": "#00344a",
+                        "inverse-surface": "#e2e2e9",
+                        "surface-container-lowest": "#0c0e13",
+                        "primary-fixed": "#ffddb8",
+                        "secondary-fixed": "#d8e2ff",
+                        "primary-container": "#f59e0b",
+                        "surface-container-low": "#1a1b21",
+                        "error": "#ffb4ab",
+                        "on-surface-variant": "#d8c3ad",
+                        "surface": "#111318",
+                        "on-primary-fixed-variant": "#653e00",
+                        "on-tertiary-container": "#004966",
+                        "on-secondary": "#002e6a",
+                        "surface-variant": "#33353a",
+                        "outline": "#a08e7a",
+                        "surface-container-high": "#282a2f",
+                        "error-container": "#93000a",
+                        "inverse-on-surface": "#2e3036",
+                        "surface-bright": "#37393f",
+                        "on-primary": "#472a00",
+                        "primary-fixed-dim": "#ffb95f",
+                        "primary": "#ffc174",
+                        "on-secondary-fixed": "#001a42",
+                        "surface-dim": "#111318",
+                        "background": "#111318",
+                        "secondary-container": "#0566d9",
+                        "on-surface": "#e2e2e9"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "md": "12px",
+                        "lg": "16px",
+                        "sm": "8px",
+                        "unit": "4px",
+                        "xl": "24px",
+                        "panel-padding": "12px",
+                        "gutter": "1px",
+                        "xs": "4px"
+                    },
+                    "fontFamily": {
+                        "code-sm": ["JetBrains Mono"],
+                        "body-md": ["IBM Plex Sans"],
+                        "code-md": ["JetBrains Mono"],
+                        "label-caps": ["IBM Plex Sans"],
+                        "body-sm": ["IBM Plex Sans"],
+                        "headline-sm": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "code-sm": ["11px", { "lineHeight": "16px", "fontWeight": "450" }],
+                        "body-md": ["13px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "code-md": ["12px", { "lineHeight": "20px", "fontWeight": "450" }],
+                        "label-caps": ["10px", { "lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                        "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex flex-col font-body-md">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full px-md h-[32px] bg-surface dark:bg-surface border-b border-outline-variant dark:border-outline-variant docked full-width top-0 z-50">
+<div class="flex items-center gap-lg">
+<span class="font-code-md text-headline-sm font-bold text-primary-container dark:text-primary-container">AI·DRAKON</span>
+<nav class="flex gap-md">
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 px-sm py-xs rounded font-label-caps text-label-caps" href="#">Project</a>
+<a class="text-primary font-bold hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 px-sm py-xs rounded font-label-caps text-label-caps" href="#">Workspaces</a>
+<a class="text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 px-sm py-xs rounded font-label-caps text-label-caps" href="#">Library</a>
+</nav>
+</div>
+<div class="flex items-center gap-sm">
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded"><span class="material-symbols-outlined text-[16px]">search</span></button>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded"><span class="material-symbols-outlined text-[16px]">settings</span></button>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-high transition-colors cursor-pointer active:scale-95 rounded"><span class="material-symbols-outlined text-[16px]">dark_mode</span></button>
+<img alt="User profile" class="w-6 h-6 rounded-full ml-sm" data-alt="A small circular avatar placeholder image showing a generic user profile picture, in a modern, technical, low-distraction UI context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDnvTSvAXdUg6Ru0l3AtxnIFKKZv1QnQKkgCpb8eNULLuFNSpigTDP8D9CG8AnvCQ5G5Fn9yDXwiSUO4bs9Bswy8rIOxUUj-a3zjxNumpfuYGoI-MWA9YZHBE9bwrNjRiPhxySgFlP8WMzN_ZnEcQelGEvAR415kp0_JEiFPlN02AJK6Y3VR_CiV48xbZHIu5pfTvAQr3ppCVVY8IhgwhT87VnEvBJLe6OXY3YqQJ3e6Hz6z8Gs_2isa77KSvE7n_KewHYkB3Er5dE"/>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden pt-[32px]">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-[32px] h-[calc(100vh-32px)] flex flex-col justify-between items-center py-sm w-[40px] bg-surface-container dark:bg-surface-container border-r border-outline-variant dark:border-outline-variant z-40">
+<div class="flex flex-col gap-sm w-full">
+<button class="w-full py-sm flex justify-center text-primary bg-surface-container-highest border-l-2 border-primary transition-all duration-150" title="Diagrams">
+<span class="material-symbols-outlined text-[20px]">schema</span>
+</button>
+<button class="w-full py-sm flex justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-150" title="Notes">
+<span class="material-symbols-outlined text-[20px]">description</span>
+</button>
+<button class="w-full py-sm flex justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-150" title="Graph">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+</button>
+<button class="w-full py-sm flex justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-150" title="GitHub">
+<span class="material-symbols-outlined text-[20px]">code</span>
+</button>
+</div>
+<div class="flex flex-col gap-sm w-full">
+<button class="w-full py-sm flex justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-150" title="Agent">
+<span class="material-symbols-outlined text-[20px]">smart_toy</span>
+</button>
+<button class="w-full py-sm flex justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-high transition-all duration-150" title="Settings">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+</button>
+</div>
+</nav>
+<!-- NavigationDrawer -->
+<aside class="fixed left-[40px] top-[32px] h-[calc(100vh-32px)] flex flex-col pt-md w-[220px] bg-surface-container-low dark:bg-surface-container-low border-r border-outline-variant dark:border-outline-variant z-30">
+<div class="px-md pb-md border-b border-outline-variant mb-sm">
+<h2 class="font-label-caps text-label-caps text-on-surface-variant tracking-widest">EXPLORER</h2>
+</div>
+<ul class="flex flex-col">
+<li>
+<a class="flex items-center gap-sm px-md py-sm bg-surface-container-highest text-primary font-bold hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-100" href="#">
+<span class="material-symbols-outlined text-[16px]">folder_open</span>
+<span class="font-body-sm text-body-sm">Diagrams List</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-100" href="#">
+<span class="material-symbols-outlined text-[16px]">account_tree</span>
+<span class="font-body-sm text-body-sm">Notes File Tree</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-sm px-md py-sm text-on-surface-variant hover:bg-surface-variant dark:hover:bg-surface-variant transition-colors duration-100" href="#">
+<span class="material-symbols-outlined text-[16px]">bubble_chart</span>
+<span class="font-body-sm text-body-sm">Knowledge Graph</span>
+</a>
+</li>
+</ul>
+</aside>
+<!-- Main Workspace -->
+<main class="ml-[260px] flex-1 flex flex-col h-full bg-surface-container-lowest relative z-10">
+<!-- Canvas Toolbar -->
+<div class="h-[40px] bg-surface border-b border-outline-variant flex items-center justify-between px-md shrink-0">
+<div class="flex gap-sm">
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined text-[18px]">undo</span></button>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined text-[18px]">redo</span></button>
+<div class="w-gutter h-4 bg-outline-variant mx-xs"></div>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined text-[18px]">zoom_in</span></button>
+<button class="p-xs text-on-surface-variant hover:bg-surface-container-high rounded transition-colors"><span class="material-symbols-outlined text-[18px]">zoom_out</span></button>
+</div>
+<div class="flex gap-sm">
+<button class="px-sm py-xs bg-surface-container-high border border-primary text-primary rounded flex items-center gap-xs font-body-sm text-body-sm hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-[16px]">code</span>
+                        Генерувати код
+                    </button>
+<button class="px-sm py-xs border border-outline-variant text-on-surface-variant rounded flex items-center gap-xs font-body-sm text-body-sm hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">play_arrow</span>
+                        Run
+                    </button>
+</div>
+</div>
+<!-- Diagram Canvas Area -->
+<div class="flex-1 overflow-auto p-xl relative bg-surface-lowest">
+<!-- Abstract Diagram Representation -->
+<div class="w-full h-full border border-dashed border-outline-variant/30 flex items-center justify-center rounded">
+<div class="flex flex-col items-center gap-xl opacity-50">
+<div class="w-[120px] h-[40px] bg-surface border border-outline rounded flex items-center justify-center font-code-sm text-code-sm text-on-surface">Start</div>
+<div class="w-[2px] h-[40px] bg-outline"></div>
+<div class="w-[160px] h-[60px] bg-surface border border-outline rounded flex items-center justify-center font-code-sm text-code-sm text-on-surface">Process Data</div>
+<div class="w-[2px] h-[40px] bg-outline"></div>
+<div class="w-[120px] h-[40px] bg-surface border border-outline rounded flex items-center justify-center font-code-sm text-code-sm text-on-surface">End</div>
+</div>
+</div>
+</div>
+<!-- Bottom Code Drawer -->
+<div class="h-[200px] bg-surface-container border-t border-outline-variant shrink-0 flex flex-col z-20">
+<div class="flex justify-between items-center px-md h-[32px] border-b border-outline-variant bg-surface">
+<span class="font-label-caps text-label-caps tracking-widest text-on-surface">ГЕНЕРУВАТИ КОД</span>
+<button class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-[16px]">close</span></button>
+</div>
+<div class="flex-1 p-md flex flex-col gap-sm overflow-hidden bg-background">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-sm">
+<span class="font-code-sm text-code-sm text-on-surface-variant">Frame 2.3 (Done)</span>
+<div class="px-xs py-[2px] bg-tertiary-container/10 border border-tertiary/30 rounded flex items-center gap-xs">
+<span class="font-code-sm text-code-sm text-tertiary">syntax: ✓</span>
+</div>
+</div>
+<button class="flex items-center gap-xs text-on-surface-variant hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[14px]">refresh</span>
+<span class="font-body-sm text-body-sm">Перегенерувати</span>
+</button>
+</div>
+<div class="flex-1 bg-surface-lowest border border-outline-variant/50 rounded p-sm overflow-auto font-code-sm text-code-sm text-primary/80 leading-relaxed">
+<pre><code>def process_data(input_data):
+    """
+    Auto-generated from Frame 2.3
+    """
+    if not input_data:
+        return None
+        
+    results = []
+    for item in input_data:
+        processed = item.strip().lower()
+        if processed:
+            results.append(processed)
+            
+    return results</code></pre>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

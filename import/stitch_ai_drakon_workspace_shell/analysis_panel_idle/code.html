@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON - Code Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary": "#00344a",
+                        "surface-container": "#1f1f23",
+                        "on-primary-fixed-variant": "#653e00",
+                        "secondary-fixed-dim": "#c3c6d0",
+                        "error": "#ffb4ab",
+                        "surface-container-highest": "#343538",
+                        "background": "#121316",
+                        "surface-container-high": "#292a2d",
+                        "surface-bright": "#38393c",
+                        "on-secondary-container": "#b2b5be",
+                        "surface-dim": "#121316",
+                        "on-secondary-fixed-variant": "#43474f",
+                        "primary-container": "#f59e0b",
+                        "tertiary-fixed": "#c5e7ff",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "tertiary-container": "#1abdff",
+                        "tertiary": "#8fd5ff",
+                        "secondary": "#c3c6d0",
+                        "on-background": "#e3e2e6",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "outline": "#a08e7a",
+                        "on-surface-variant": "#d8c3ad",
+                        "error-container": "#93000a",
+                        "on-secondary-fixed": "#181c23",
+                        "surface-variant": "#343538",
+                        "on-primary": "#472a00",
+                        "inverse-primary": "#855300",
+                        "on-primary-fixed": "#2a1700",
+                        "secondary-fixed": "#dfe2ec",
+                        "inverse-surface": "#e3e2e6",
+                        "on-secondary": "#2d3138",
+                        "inverse-on-surface": "#303034",
+                        "primary-fixed": "#ffddb8",
+                        "on-tertiary-fixed": "#001e2d",
+                        "primary-fixed-dim": "#ffb95f",
+                        "on-surface": "#e3e2e6",
+                        "primary": "#ffc174",
+                        "secondary-container": "#43474f",
+                        "on-primary-container": "#613b00",
+                        "on-tertiary-container": "#004966",
+                        "outline-variant": "#534434",
+                        "surface-container-lowest": "#0d0e11",
+                        "on-error": "#690005",
+                        "surface": "#121316",
+                        "on-error-container": "#ffdad6",
+                        "surface-tint": "#ffb95f",
+                        "surface-container-low": "#1b1b1f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "toolbar-height": "40px",
+                        "container-margin": "16px",
+                        "unit": "4px",
+                        "sidebar-width": "260px",
+                        "panel-gap": "1px"
+                    },
+                    "fontFamily": {
+                        "label-caps": ["IBM Plex Sans"],
+                        "code-sm": ["JetBrains Mono"],
+                        "body-md": ["IBM Plex Sans"],
+                        "body-sm": ["IBM Plex Sans"],
+                        "code-md": ["JetBrains Mono"],
+                        "headline-sm": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "label-caps": ["10px", { "lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700" }],
+                        "code-sm": ["11px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "body-md": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "code-md": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "headline-sm": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Base IDE layout styling */
+        body { margin: 0; overflow: hidden; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .material-symbols-outlined.fill { font-variation-settings: 'FILL' 1; }
+        
+        /* Custom scrollbar for IDE feel */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #343538; border-radius: 4px; border: 2px solid #121316; }
+        ::-webkit-scrollbar-thumb:hover { background: #534434; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body-md h-screen w-screen flex flex-col antialiased">
+<!-- TopNavBar -->
+<nav class="bg-surface-container dark:bg-surface-container-high docked full-width top h-toolbar-height border-b border-outline-variant flat no shadows flex justify-between items-center px-container-margin w-full shrink-0">
+<div class="flex items-center gap-4">
+<div class="font-code-md text-code-md font-bold text-primary flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[18px]">account_tree</span>
+                AI-DRAKON
+            </div>
+<div class="flex gap-1 ml-6 h-full items-center">
+<a class="px-3 h-full flex items-center font-code-md text-code-md uppercase text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors cursor-pointer active:opacity-80" href="#">Diagrams</a>
+<a class="px-3 h-full flex items-center font-code-md text-code-md uppercase text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors cursor-pointer active:opacity-80" href="#">Git</a>
+<a class="px-3 h-full flex items-center font-code-md text-code-md uppercase text-primary border-b border-primary hover:text-primary hover:bg-surface-container-highest transition-colors cursor-pointer active:opacity-80" href="#">Sync</a>
+<a class="px-3 h-full flex items-center font-code-md text-code-md uppercase text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors cursor-pointer active:opacity-80" href="#">Docs</a>
+<a class="px-3 h-full flex items-center font-code-md text-code-md uppercase text-on-surface-variant hover:text-primary hover:bg-surface-container-highest transition-colors cursor-pointer active:opacity-80" href="#">Settings</a>
+</div>
+</div>
+<div class="flex items-center gap-1">
+<div class="flex items-center bg-[#0a0b0e] border border-outline-variant rounded px-2 py-1 focus-within:border-primary focus-within:border-primary h-7 w-48 mr-4">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant mr-2">search</span>
+<input class="bg-transparent border-none outline-none text-on-surface font-code-sm text-code-sm w-full placeholder:text-on-surface-variant/30" placeholder="Search..." type="text"/>
+</div>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded cursor-pointer transition-colors active:opacity-80">
+<span class="material-symbols-outlined text-[18px]" data-icon="smart_toy">smart_toy</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded cursor-pointer transition-colors active:opacity-80">
+<span class="material-symbols-outlined text-[18px]" data-icon="light_mode">light_mode</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center text-on-surface-variant hover:text-primary hover:bg-surface-container-highest rounded cursor-pointer transition-colors active:opacity-80">
+<span class="material-symbols-outlined text-[18px]" data-icon="logout">logout</span>
+</button>
+</div>
+</nav>
+<!-- Main Workspace Layout -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Primary Left SideNavBar (Collapsed) -->
+<nav class="bg-surface-container-low dark:bg-surface-container-low docked left h-full w-[40px] border-r border-outline-variant flat no shadows flex flex-col items-center py-unit gap-2 shrink-0 z-10">
+<!-- Icons Only -->
+<a class="w-8 h-8 flex items-center justify-center rounded text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150" href="#" title="Diagrams">
+<span class="material-symbols-outlined text-[20px]" data-icon="account_tree">account_tree</span>
+</a>
+<a class="w-8 h-8 flex items-center justify-center rounded text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150" href="#" title="Notes">
+<span class="material-symbols-outlined text-[20px]" data-icon="description">description</span>
+</a>
+<a class="w-8 h-8 flex items-center justify-center rounded bg-surface-container-highest text-primary border-l-2 border-primary transition-all duration-150" href="#" title="Graph">
+<span class="material-symbols-outlined text-[20px]" data-icon="hub">hub</span>
+</a>
+<a class="w-8 h-8 flex items-center justify-center rounded text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150" href="#" title="GitHub">
+<span class="material-symbols-outlined text-[20px]" data-icon="terminal">terminal</span>
+</a>
+<a class="w-8 h-8 flex items-center justify-center rounded text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150" href="#" title="Agent">
+<span class="material-symbols-outlined text-[20px]" data-icon="memory">memory</span>
+</a>
+<div class="flex-1"></div>
+<a class="w-8 h-8 flex items-center justify-center rounded text-on-secondary-container hover:bg-surface-container-high hover:text-on-surface transition-all duration-150 mb-2" href="#" title="Settings">
+<span class="material-symbols-outlined text-[20px]" data-icon="settings">settings</span>
+</a>
+</nav>
+<!-- Secondary SideNavBar (Collapsed to 0px per requirement) -->
+<!-- Omitted from DOM structure for collapsed state or rendered as 0px width -->
+<!-- Central Canvas Area -->
+<main class="flex-1 flex flex-col relative bg-[#0a0b0e] overflow-hidden min-w-0">
+<!-- Canvas Tools Nav -->
+<nav class="bg-surface-container-high full-width h-8 mb-1 border-b border-outline-variant flat no shadows flex items-center gap-unit px-2 shrink-0 z-10">
+<div class="flex items-center gap-1">
+<button class="px-3 h-6 rounded flex items-center font-label-caps text-label-caps text-on-surface-variant hover:bg-surface-container-highest scale-95 active:scale-90 transition-all">Analyze</button>
+<button class="px-3 h-6 rounded flex items-center font-label-caps text-label-caps text-primary font-bold bg-surface-container-highest scale-95 active:scale-90 transition-all">Аналізувати код</button>
+<button class="px-3 h-6 rounded flex items-center font-label-caps text-label-caps text-on-surface-variant hover:bg-surface-container-highest scale-95 active:scale-90 transition-all">Generate</button>
+</div>
+<div class="flex-1"></div>
+<div class="flex items-center gap-1 border-r border-outline-variant pr-2 mr-1">
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest rounded transition-colors" title="undo">
+<span class="material-symbols-outlined text-[16px]" data-icon="undo">undo</span>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest rounded transition-colors" title="redo">
+<span class="material-symbols-outlined text-[16px]" data-icon="redo">redo</span>
+</button>
+</div>
+<div class="flex items-center gap-1 border-r border-outline-variant pr-2 mr-1">
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest rounded transition-colors" title="home">
+<span class="material-symbols-outlined text-[16px]" data-icon="home">home</span>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest rounded transition-colors" title="zoom_in">
+<span class="material-symbols-outlined text-[16px]" data-icon="zoom_in">zoom_in</span>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest rounded transition-colors" title="zoom_out">
+<span class="material-symbols-outlined text-[16px]" data-icon="zoom_out">zoom_out</span>
+</button>
+</div>
+<div class="flex items-center gap-1 mr-2">
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest rounded transition-colors" title="content_copy">
+<span class="material-symbols-outlined text-[16px]" data-icon="content_copy">content_copy</span>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest rounded transition-colors" title="content_cut">
+<span class="material-symbols-outlined text-[16px]" data-icon="content_cut">content_cut</span>
+</button>
+<button class="w-6 h-6 flex items-center justify-center text-on-surface-variant hover:bg-surface-container-highest rounded transition-colors" title="delete">
+<span class="material-symbols-outlined text-[16px]" data-icon="delete">delete</span>
+</button>
+</div>
+<button class="h-6 px-3 bg-primary-container text-[#0a0b0e] font-label-caps text-label-caps rounded flex items-center justify-center hover:opacity-90 transition-opacity">
+                    Save
+                </button>
+</nav>
+<!-- Canvas Content (Graph rendering area placeholder) -->
+<div class="flex-1 w-full h-full relative overflow-auto p-8">
+<!-- Example Node -->
+<div class="absolute top-20 left-20 w-48 bg-[#111318] border border-outline-variant rounded p-3 flex flex-col gap-2">
+<div class="font-code-sm text-code-sm text-primary border-b border-outline-variant pb-1 mb-1">core_module.py</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">def analyze_data(input):</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant pl-4">return process(input)</div>
+</div>
+<!-- Example Node -->
+<div class="absolute top-40 left-80 w-56 bg-[#111318] border border-primary/50 rounded p-3 flex flex-col gap-2 ring-1 ring-primary/30">
+<div class="font-code-sm text-code-sm text-primary border-b border-outline-variant pb-1 mb-1 flex justify-between items-center">
+<span>utils.py</span>
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant">def process(data):</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant pl-4"># processing logic</div>
+<div class="font-code-sm text-code-sm text-on-surface-variant pl-4">return data.mapped()</div>
+</div>
+<!-- Grid Background pattern -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none opacity-20" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<pattern height="40" id="grid" patternunits="userSpaceOnUse" width="40">
+<path d="M 40 0 L 0 0 0 40" fill="none" stroke="#a08e7a" stroke-opacity="0.5" stroke-width="0.5"></path>
+</pattern>
+</defs>
+<rect fill="url(#grid)" height="100%" width="100%"></rect>
+</svg>
+</div>
+</main>
+<!-- Right Panel: Code Analysis -->
+<aside class="w-[380px] bg-[#111318] border-l border-outline-variant flex flex-col shrink-0 h-full z-20">
+<!-- Panel Header -->
+<div class="h-8 bg-[#191c23] border-b border-outline-variant flex items-center justify-between px-3 shrink-0">
+<span class="font-label-caps text-label-caps text-primary tracking-wider uppercase">АНАЛІЗ КОДУ</span>
+<button class="text-on-surface-variant hover:text-on-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<!-- Panel Body -->
+<div class="flex-1 flex flex-col p-4 gap-4 overflow-y-auto">
+<div class="flex flex-col gap-2 h-full">
+<label class="font-code-sm text-code-sm text-on-surface-variant">Snippet for Analysis:</label>
+<div class="relative flex-1 min-h-[300px] border border-outline-variant rounded bg-[#0a0b0e] focus-within:border-primary focus-within:ring-1 focus-within:ring-primary overflow-hidden">
+<!-- Line Numbers Column -->
+<div class="absolute left-0 top-0 bottom-0 w-8 bg-[#111318] border-r border-outline-variant flex flex-col items-end py-2 pr-2 font-code-sm text-code-sm text-on-surface-variant/50 select-none z-10">
+<span>1</span>
+<span>2</span>
+<span>3</span>
+<span>4</span>
+<span>5</span>
+<span>6</span>
+<span>7</span>
+<span>8</span>
+<span>9</span>
+</div>
+<!-- Textarea -->
+<textarea class="w-full h-full bg-transparent border-none outline-none font-code-sm text-code-sm text-on-surface p-2 pl-10 resize-none font-mono focus:ring-0" spellcheck="false">def calculate_complexity(graph_data):
+    """
+    Evaluates the cyclomatic complexity of 
+    the currently rendered flow diagram.
+    """
+    nodes = graph_data.get('nodes', [])
+    edges = graph_data.get('edges', [])
+    
+    # E - N + 2P
+    complexity = len(edges) - len(nodes) + 2
+    
+    return {
+        'score': complexity,
+        'status': 'high' if complexity &gt; 10 else 'optimal'
+    }</textarea>
+</div>
+</div>
+<!-- Action Area -->
+<div class="flex flex-col gap-3 mt-2 shrink-0">
+<div class="flex gap-2">
+<span class="bg-[#1e2229] px-2 py-1 rounded font-code-sm text-code-sm text-on-surface flex items-center gap-1 border border-outline-variant/30">
+<span class="w-2 h-2 rounded-full bg-primary-container"></span>
+                            Python 3.10
+                        </span>
+<span class="bg-[#1e2229] px-2 py-1 rounded font-code-sm text-code-sm text-on-surface flex items-center gap-1 border border-outline-variant/30">
+                            Focus: Security
+                        </span>
+</div>
+<button class="w-full h-8 bg-primary-container text-[#0a0b0e] rounded flex items-center justify-center font-label-caps text-label-caps tracking-wide hover:opacity-90 transition-opacity active:scale-[0.98]">
+                        АНАЛІЗУВАТИ
+                    </button>
+</div>
+</div>
+</aside>
+</div>
+</body></html>

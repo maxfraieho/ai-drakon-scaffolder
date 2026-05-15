@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uk"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON - Аналіз Коду</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;450;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-bright": "#37393f",
+                        "error-container": "#93000a",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "outline-variant": "#534434",
+                        "surface-container-highest": "#33353a",
+                        "error": "#ffb4ab",
+                        "primary-container": "#f59e0b",
+                        "secondary": "#adc6ff",
+                        "on-surface": "#e2e2e9",
+                        "surface": "#111318",
+                        "on-tertiary": "#00344a",
+                        "on-secondary-fixed": "#001a42",
+                        "on-error": "#690005",
+                        "surface-variant": "#33353a",
+                        "surface-container-low": "#1a1b21",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-primary-container": "#613b00",
+                        "secondary-container": "#0566d9",
+                        "outline": "#a08e7a",
+                        "on-tertiary-container": "#004966",
+                        "inverse-primary": "#855300",
+                        "on-primary": "#472a00",
+                        "on-surface-variant": "#d8c3ad",
+                        "surface-container-high": "#282a2f",
+                        "on-background": "#e2e2e9",
+                        "inverse-on-surface": "#2e3036",
+                        "surface-container-lowest": "#0c0e13",
+                        "on-primary-fixed-variant": "#653e00",
+                        "on-secondary-container": "#e6ecff",
+                        "surface-container": "#1e2025",
+                        "inverse-surface": "#e2e2e9",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "on-primary-fixed": "#2a1700",
+                        "background": "#111318",
+                        "tertiary": "#8fd5ff",
+                        "secondary-fixed": "#d8e2ff",
+                        "on-secondary": "#002e6a",
+                        "tertiary-container": "#1abdff",
+                        "tertiary-fixed": "#c5e7ff",
+                        "surface-tint": "#ffb95f",
+                        "on-secondary-fixed-variant": "#004395",
+                        "primary-fixed-dim": "#ffb95f",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "primary": "#ffc174",
+                        "primary-fixed": "#ffddb8",
+                        "surface-dim": "#111318",
+                        "on-error-container": "#ffdad6"
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    spacing: {
+                        "xs": "4px",
+                        "unit": "4px",
+                        "md": "12px",
+                        "xl": "24px",
+                        "sm": "8px",
+                        "panel-padding": "12px",
+                        "lg": "16px",
+                        "gutter": "1px"
+                    },
+                    fontFamily: {
+                        "code-md": ["JetBrains Mono", "monospace"],
+                        "body-sm": ["IBM Plex Sans", "sans-serif"],
+                        "code-sm": ["JetBrains Mono", "monospace"],
+                        "headline-sm": ["IBM Plex Sans", "sans-serif"],
+                        "label-caps": ["IBM Plex Sans", "sans-serif"],
+                        "body-md": ["IBM Plex Sans", "sans-serif"]
+                    },
+                    fontSize: {
+                        "code-md": ["12px", { lineHeight: "20px", fontWeight: "450" }],
+                        "body-sm": ["12px", { lineHeight: "18px", fontWeight: "400" }],
+                        "code-sm": ["11px", { lineHeight: "16px", fontWeight: "450" }],
+                        "headline-sm": ["16px", { lineHeight: "24px", letterSpacing: "-0.01em", fontWeight: "600" }],
+                        "label-caps": ["10px", { lineHeight: "12px", letterSpacing: "0.05em", fontWeight: "700" }],
+                        "body-md": ["13px", { lineHeight: "20px", fontWeight: "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background h-screen w-screen overflow-hidden flex flex-col font-body-sm relative">
+<!-- Backdrop overlay -->
+<div class="absolute inset-0 bg-black/60 z-40 backdrop-blur-sm"></div>
+<!-- Modal Sheet -->
+<div class="absolute inset-x-0 bottom-0 top-12 bg-surface z-50 flex flex-col rounded-t-xl border-t border-outline-variant/30 shadow-2xl">
+<!-- Header -->
+<div class="h-12 border-b border-outline-variant/30 flex items-center justify-between px-md shrink-0 bg-surface">
+<div class="flex items-center gap-sm">
+<span class="font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase">АНАЛІЗ КОДУ</span>
+<span class="text-outline-variant">/</span>
+<span class="font-body-sm text-body-sm text-on-surface">Код → IR</span>
+</div>
+<button class="w-8 h-8 flex items-center justify-center rounded hover:bg-surface-container-high transition-colors text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<!-- Body -->
+<div class="flex-1 overflow-y-auto p-panel-padding flex flex-col gap-md">
+<!-- File Path Input -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-widest">Шлях до файлу (опціонально)</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-sm text-on-surface-variant text-[16px]">folder</span>
+<input class="w-full bg-[#191c23] border border-white/10 rounded h-8 pl-8 pr-sm font-code-sm text-code-sm text-on-surface focus:outline-none focus:border-primary-container placeholder:text-on-surface-variant/50 transition-colors" placeholder="src/main.py" type="text"/>
+</div>
+</div>
+<!-- Code Editor Area -->
+<div class="flex-1 flex flex-col min-h-[300px] border border-white/10 rounded overflow-hidden relative group">
+<!-- Editor Header -->
+<div class="h-8 bg-surface-container-high border-b border-white/10 flex items-center px-sm justify-between">
+<div class="flex items-center gap-xs">
+<span class="material-symbols-outlined text-[14px] text-primary">code</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">Вхідний Код</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="font-code-sm text-code-sm text-primary-container bg-primary-container/10 px-2 py-0.5 rounded border border-primary-container/20">python</span>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</div>
+<!-- Textarea -->
+<textarea class="flex-1 bg-[#0a0b0e] w-full p-sm font-code-sm text-code-sm text-on-surface resize-none focus:outline-none focus:ring-1 focus:ring-primary-container/50 border-none placeholder:text-on-surface-variant/30 leading-relaxed" placeholder="Вставте або напишіть код сюди...
+
+def hello_world():
+    print('Ready to analyze')"></textarea>
+</div>
+</div>
+<!-- Footer / Action Area -->
+<div class="p-panel-padding border-t border-outline-variant/30 bg-surface shrink-0">
+<button class="w-full h-10 bg-primary-container hover:bg-primary text-black font-body-sm text-body-sm font-semibold rounded flex items-center justify-center gap-sm transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">analytics</span>
+                Аналізувати
+            </button>
+</div>
+</div>
+</body></html>
