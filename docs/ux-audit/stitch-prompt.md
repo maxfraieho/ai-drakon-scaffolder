@@ -1,106 +1,86 @@
-# Google Stitch Prompt — AI-DRAKON Pipeline UI
-
-## Context for Stitch
-
-Design two panels for an expert-facing DRAKON diagramming tool called AI-DRAKON.
-The product uses a "Precision Dark" design system: near-black backgrounds (#0a0b0e base, #111318 surface), amber accent (#f59e0b), white text at varying opacity, JetBrains Mono for all code and labels.
-
-The audience is software engineers and technical architects. Density is preferred over spaciousness. No decorative elements. No onboarding copy. Every element must have a function.
+Design two non-modal panels for AI-DRAKON — a DRAKON visual programming IDE used by software architects. Dense, utilitarian, zero decoration. Expert users only.
 
 ---
 
-## Panel 1: Code Analysis Panel ("Аналіз коду")
-
-This panel appears in the right side of the DRAKON diagrams page when the user triggers code analysis. It is a slide-in drawer or collapsible right column (min-width 380px, max-width 480px), not a modal.
-
-**States to design:**
-
-### State A: Input (idle)
-- Header: "Аналіз коду" (monospaced, small caps or uppercase tracking)
-- Subtext: "Код → DRAKON IR" (muted, 11px)
-- Textarea: "Вставте Python-код для аналізу" — monospaced font, dark background, 12px, min 8 lines
-- Two fields below textarea: file path input (optional, placeholder "module.py"), language selector (currently only "python", shown as static label, not dropdown — forward-compatible)
-- Primary CTA: "Аналізувати" button — amber, full-width or right-aligned, clear
-- No other elements in idle state
-
-### State B: Running
-- Same layout but textarea + inputs are dimmed/disabled
-- Button replaced with: spinner + "Аналізується… Xs" counter (same pattern as existing docs generator)
-- A narrow progress area below the button: shows CC score and tree_level as they resolve ("CC: 7, рівень: primitive")
-
-### State C: Done — result
-- Result section below the input (the input collapses to show just 2 lines + an expand toggle)
-- Result card: shows list of analyzed functions (name + CC score + "valid" / "N помилок")
-- Each function row has a "↓ Імпортувати діаграму" action button (small, ghost)
-- Errors (if any) shown inline in red under the affected function
-- "Новий аналіз" button resets to State A
-
-### State D: Error
-- Input area stays visible
-- Error message below button: red border card, message text, "Повторити" button
+DESIGN SYSTEM (strict — do not deviate):
+Background base: #0a0b0e
+Background surface: #111318
+Background elevated (inputs): #191c23
+Border subtle: rgba(255,255,255,0.08)
+Border default: rgba(255,255,255,0.12)
+Text primary: rgba(255,255,255,0.92)
+Text secondary: rgba(255,255,255,0.55)
+Text muted: rgba(255,255,255,0.28)
+Accent (amber): #f59e0b — ONLY for primary CTAs and active state
+Error: #ef4444
+Success: #22c55e
+Code text: rgba(180,220,160,0.90)
+Font UI: IBM Plex Sans, 12–13px
+Font code/labels: JetBrains Mono, 11–12px
+Border radius: 4px on buttons/inputs, 0px on panel containers
+No gradients. No shadows. No glow. No illustrations.
 
 ---
 
-## Panel 2: Code Generation Panel ("Генерувати код")
+PANEL 1: Code Analysis — "Аналіз коду"
+Position: right-side column, width 380px, full viewport height
+Appears when user clicks "Аналізувати код" in toolbar
 
-This panel appears inside the diagram editor when a DRAKON diagram is open. It appears as a bottom drawer or bottom panel (height 280px, collapsible), not a full-screen overlay.
+Frame 1.1 — IDLE
+- Header bar (height 40px): monospaced label "АНАЛІЗ КОДУ" uppercase left, small "Код → IR" muted right, ✕ ghost button far right
+- Divider (1px, border subtle)
+- Code textarea: bg #191c23, border rgba(255,255,255,0.08), monospace 11px, min 8 lines, placeholder "# Вставте Python-код"
+- Below textarea: file path input (small, 1 line, placeholder "module.py"), language label "python" (static, muted, uppercase)
+- CTA: "Аналізувати" full-width button, bg #f59e0b, text black, height 36px, JetBrains Mono
 
-**States to design:**
+Frame 1.2 — RUNNING
+- Same layout, textarea + inputs opacity 0.4, non-interactive
+- Button replaced with: spinner (amber, 16px) + "Аналізується… 12s" monospaced muted
+- Below: slim status line (1 row, bg #191c23, border-left 2px amber): "CC: 7 · рівень: primitive" — appears after 2s
 
-### State A: Config (idle)
-- Header: "Генерувати код" (monospaced label)
-- Row: language selector — three buttons: "Python" / "TypeScript" / "JavaScript" — segmented control style, amber highlight on active
-- Optional: description textarea (1 line, placeholder "Опис поведінки (необов'язково)")
-- CTA: "Генерувати" button — amber, right-aligned
-- Small note: "Генерація займе 10–30 секунд" in muted text (11px)
+Frame 1.3 — DONE
+- Input section collapses to 2 visible lines of code + "↕ розгорнути" text link
+- Result section below:
+  - Section label: "РЕЗУЛЬТАТ" uppercase monospaced muted 10px
+  - List of function rows. Each row (height 32px, border-bottom subtle):
+    · Left: function name in JetBrains Mono 12px
+    · Middle: "CC: 4" muted small
+    · Right: status chip — "✓ valid" in #22c55e or "2 помилки" in #ef4444
+    · Far right: "↓ Імпортувати" ghost button (appears on hover only)
+  - If errors: below affected row, indented red text 11px monospaced
+- Footer: "Новий аналіз" ghost button full-width, border-top subtle
 
-### State B: Running
-- Header stays, inputs dimmed
-- Spinner + elapsed counter in button area
-- Optional: "Ітерація 1/3" badge (shows Ralph Loop progress)
-
-### State C: Done — result
-- Code block: monospaced, syntax-highlighted (dark bg, lighter text), scrollable, max-height 180px
-- Top-right of code block: "Копіювати" button (small, icon + text)
-- Below code: "syntax: ✓" or "syntax: N помилок" status badge
-- "Перегенерувати" button (ghost, smaller) and "Закрити" (text link)
-
----
-
-## Layout Constraints
-
-- Both panels must work at 1280px+ viewport without covering the main diagram canvas
-- Panel 1 (right column): diagram canvas shrinks to accommodate (flexbox split)
-- Panel 2 (bottom drawer): diagram canvas height reduces, canvas stays visible
-- Mobile: both panels become full-screen bottom sheets (height 85dvh), diagram hidden behind
-- No modals. No blocking overlays. Non-destructive panels that can be dismissed without losing work.
+Frame 1.4 — ERROR
+- Textarea stays visible
+- Error card below button: border-left 3px #ef4444, bg #191c23, message text red 12px, "Повторити" ghost button right
 
 ---
 
-## Visual Language (must match existing system)
+PANEL 2: Code Generation — "Генерувати код"
+Position: bottom drawer, full width of diagram editor, height 280px
+Appears when user clicks "Генерувати код" in toolbar
 
-- Background: #111318 (bg-surface) for panel, #191c23 (bg-elevated) for input areas
-- Borders: rgba(255,255,255,0.10) for panel edges, rgba(255,255,255,0.06) for inner dividers
-- Text primary: rgba(255,255,255,0.92)
-- Text muted: rgba(255,255,255,0.30)
-- Accent: #f59e0b — used ONLY for primary CTAs and active states
-- Error: #ef4444
-- Success: #22c55e
-- Code areas: bg #0a0b0e, text rgba(255,255,255,0.80), font JetBrains Mono 12px
-- Radius: 4px (sm), 8px (md)
-- No gradients. No glow effects on panels (glow is reserved for the amber dot in header brand only).
-- No decorative dividers, no section headers with heavy weight — use spacing and subtle borders instead.
+Frame 2.1 — IDLE
+- Header row (height 40px): label "ГЕНЕРУВАТИ КОД" monospaced uppercase left, ✕ ghost button right
+- Language selector row: 3 segments ["Python" | "TypeScript" | "JavaScript"] — inline buttons, active = bg #f59e0b text black, inactive = ghost with muted text, height 28px, border 1px rgba(255,255,255,0.10)
+- Description input: 1 row, bg #191c23, placeholder "Опис поведінки (необов'язково)"
+- Bottom row: muted hint "10–30 секунд" left, "Генерувати" amber button right (height 34px, JetBrains Mono)
+
+Frame 2.2 — RUNNING
+- Inputs dimmed opacity 0.4
+- Button area: spinner + "Генерується… 8s" text + amber chip "ітерація 1/3" (badge, bg rgba(245,158,11,0.12), border amber 1px, text amber, 10px monospaced)
+
+Frame 2.3 — DONE
+- Code block fills most of panel height: bg #0a0b0e, border 1px rgba(255,255,255,0.08), border-radius 4px, overflow-y scroll, max-height 180px
+- Code text: JetBrains Mono 11px, color rgba(180,220,160,0.90)
+- Top-right of code block: "⎘ Копіювати" ghost button (11px monospaced, stays visible)
+- Below code: left = syntax chip ("syntax: ✓" green or "syntax: 2 помилок" red), right = "Перегенерувати" ghost small + "Закрити" text link
 
 ---
 
-## What Stitch must NOT produce
-
-- Modals
-- Centered dialogs
-- Tooltip-heavy interfaces
-- Accordion-heavy interfaces
-- Wizard/stepper patterns
-- Empty state illustrations
-- Marketing-style hero text
-- Color blocks as decoration
-- Rounded corners > 8px on panel containers
+CONSTRAINTS:
+- No modals. No popovers. No tooltips on main actions.
+- No empty-state illustrations.
+- No rounded corners > 4px on panels themselves.
+- Both panels must coexist with a diagram canvas without covering it.
+- Mobile: panels become full-height bottom sheets (85dvh). Out of scope for this design.
