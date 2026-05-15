@@ -72,3 +72,13 @@ def test_validate_ir_node_passes_for_valid():
     irs = PythonAnalyzer().analyze(SIMPLE_CODE, "test.py")
     result = validate_ir_node(_blank_state(source_code=SIMPLE_CODE, drakon_ir=irs))
     assert result["validation_errors"] == []
+
+
+
+def test_analysis_graph_primitive_end_to_end():
+    from pipeline.graphs import analysis_graph
+    initial = _blank_state(source_code=SIMPLE_CODE, file_path="test.py")
+    final = analysis_graph.invoke(initial)
+    assert final["tree_level"] == "primitive"
+    assert len(final["drakon_ir"]) > 0
+    assert final["validation_errors"] == []
