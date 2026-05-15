@@ -26,7 +26,7 @@ function DocsRoute() {
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
   const [log, setLog] = useState<string[]>([]);
   const [instructions, setInstructions] = useState("");
-  const [docsTab, setDocsTab] = useState<"generator" | "notes" | "files" | "graph">("generator");
+  const [docsTab, setDocsTab] = useState<"generator" | "notes" | "graph">("generator");
   const [focusedSlug, setFocusedSlug] = useState<string | null>(null);
 
   const handleGraphNodeClick = (slug: string) => {
