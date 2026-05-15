@@ -676,6 +676,35 @@ export function DiagramsPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setPipelineAnalysisOpen((v) => !v)}
+                aria-pressed={pipelineAnalysisOpen}
+                className={cn(
+                  "hidden h-8 items-center gap-1.5 rounded-[var(--radius-sm)] border px-2 text-[11px] font-mono uppercase tracking-wider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex",
+                  pipelineAnalysisOpen
+                    ? "border-[var(--accent-amber)] text-[var(--accent-amber)]"
+                    : "border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <ScanSearch className="h-3.5 w-3.5" aria-hidden="true" />
+                Аналіз
+              </button>
+              <button
+                type="button"
+                onClick={() => setPipelineGenerationOpen((v) => !v)}
+                aria-pressed={pipelineGenerationOpen}
+                disabled={!selectedDiagramForGen && filteredDiagrams.length === 0}
+                className={cn(
+                  "hidden h-8 items-center gap-1.5 rounded-[var(--radius-sm)] border px-2 text-[11px] font-mono uppercase tracking-wider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex disabled:opacity-50 disabled:cursor-not-allowed",
+                  pipelineGenerationOpen
+                    ? "border-[var(--accent-amber)] text-[var(--accent-amber)]"
+                    : "border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Генерація
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate({ to: "/github" })}
                 aria-label="Open GitHub files"
                 className="hidden h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex"
