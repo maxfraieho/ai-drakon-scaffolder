@@ -1,0 +1,78 @@
+const workerUrl = () =>
+  (typeof window !== "undefined" && (window as unknown as { __ENV_WORKER_URL__?: string }).__ENV_WORKER_URL__) ||
+  import.meta.env.VITE_WORKER_URL ||
+  "https://drakon-mcp-worker.maxfraieho.workers.dev";
+
+function authHeaders(): Record<string, string> {
+  const jwt = typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+  return {
+    "Content-Type": "application/json",
+    ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
+  };
+}
+
+export interface PipelineJob {
+  job_id: string;
+}
+
+export interface AnalyzedFunction {
+  name: string;
+  params: string;
+  items: Record<string, unknown>;
+  error?: string;
+  cyclomatic_complexity?: number;
+  validation_errors?: string[];
+}
+
+export interface AnalyzeResult {
+  drakon_ir: AnalyzedFunction[];
+  tree_level: string;
+  cyclomatic_complexity: number;
+  validation_errors: string[];
+}
+
+export interface GenerateResult {
+  code: string;
+  language: string;
+  syntax_errors: string[];
+  iterations: number;
+}
+
+export interface JobStatus<T = unknown> {
+  job_id: string;
+  status: "pending" | "running" | "done" | "error";
+  result: T;
+  error: string;
+}
+
+export async function startAnalysis(source_code: string, file_path = "module.py"): Promise<PipelineJob> {
+  const res = await fetch(`${workerUrl()}/v1/pipeline/analyze`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ source_code, file_path }),
+  });
+  if (!res.ok) throw new Error(`analyze HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function startGeneration(
+  drakon_ir: object,
+  language: string,
+  description = "",
+): Promise<PipelineJob> {
+  const res = await fetch(`${workerUrl()}/v1/pipeline/generate`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ drakon_ir, description, language }),
+  });
+  if (!res.ok) throw new Error(`generate HTTP ${res.status}`);
+  return res.json();
+}
+
+export async function pollJob<T = unknown>(job_id: string): Promise<JobStatus<T>> {
+  const res = await fetch(`${workerUrl()}/v1/pipeline/status/${job_id}`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error(`status HTTP ${res.status}`);
+  return res.json();
+}

@@ -3,6 +3,7 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import {
   Bot,
+  Code2,
   Download,
   FilePenLine,
   FolderPlus,
@@ -13,9 +14,12 @@ import {
   PanelLeftOpen,
   Pencil,
   Plus,
+  ScanSearch,
   Search,
   Trash2,
 } from "lucide-react";
+import { CodeAnalysisPanel } from "@/components/pipeline/CodeAnalysisPanel";
+import { CodeGenerationPanel } from "@/components/pipeline/CodeGenerationPanel";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -155,6 +159,10 @@ export function DiagramsPage() {
     excludeGlobs: ["node_modules/**", "dist/**"],
   });
   const autoAnalyzeHandledRef = useRef(false);
+
+  const [pipelineAnalysisOpen, setPipelineAnalysisOpen] = useState(false);
+  const [pipelineGenerationOpen, setPipelineGenerationOpen] = useState(false);
+  const [selectedDiagramForGen, setSelectedDiagramForGen] = useState<Diagram | null>(null);
 
   const selectedFolder =
     folders.find((folder) => folder.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
@@ -668,6 +676,35 @@ export function DiagramsPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setPipelineAnalysisOpen((v) => !v)}
+                aria-pressed={pipelineAnalysisOpen}
+                className={cn(
+                  "hidden h-8 items-center gap-1.5 rounded-[var(--radius-sm)] border px-2 text-[11px] font-mono uppercase tracking-wider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex",
+                  pipelineAnalysisOpen
+                    ? "border-[var(--accent-amber)] text-[var(--accent-amber)]"
+                    : "border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <ScanSearch className="h-3.5 w-3.5" aria-hidden="true" />
+                Аналіз
+              </button>
+              <button
+                type="button"
+                onClick={() => setPipelineGenerationOpen((v) => !v)}
+                aria-pressed={pipelineGenerationOpen}
+                disabled={!selectedDiagramForGen && filteredDiagrams.length === 0}
+                className={cn(
+                  "hidden h-8 items-center gap-1.5 rounded-[var(--radius-sm)] border px-2 text-[11px] font-mono uppercase tracking-wider focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex disabled:opacity-50 disabled:cursor-not-allowed",
+                  pipelineGenerationOpen
+                    ? "border-[var(--accent-amber)] text-[var(--accent-amber)]"
+                    : "border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]",
+                )}
+              >
+                <Code2 className="h-3.5 w-3.5" aria-hidden="true" />
+                Генерація
+              </button>
+              <button
+                type="button"
                 onClick={() => navigate({ to: "/github" })}
                 aria-label="Open GitHub files"
                 className="hidden h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] border border-[var(--border-default)] text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex"
@@ -994,7 +1031,40 @@ export function DiagramsPage() {
             </section>
           </div>
 
+          <CodeGenerationPanel
+            open={pipelineGenerationOpen}
+            onClose={() => setPipelineGenerationOpen(false)}
+            diagramIr={
+              (selectedDiagramForGen ?? filteredDiagrams[0])?.diagram.items
+                ? { items: (selectedDiagramForGen ?? filteredDiagrams[0])!.diagram.items }
+                : null
+            }
+          />
         </main>
+
+        <CodeAnalysisPanel
+          open={pipelineAnalysisOpen}
+          onClose={() => setPipelineAnalysisOpen(false)}
+          onImportIr={(ir) => {
+            const id = crypto.randomUUID();
+            const now = new Date().toISOString();
+            const stored: Diagram = {
+              id,
+              folderId: selectedFolder.slug,
+              name: ir.name || "imported",
+              createdAt: now,
+              updatedAt: now,
+              diagram: {
+                name: ir.name || "imported",
+                items: ir.items ?? {},
+              },
+            };
+            upsertDiagramInStorage(stored);
+            setDiagrams((prev) => [stored, ...prev]);
+            setSelectedDiagramForGen(stored);
+            toast.success(`IR імпортовано: ${ir.name}`);
+          }}
+        />
 
         <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
           <DialogContent>
