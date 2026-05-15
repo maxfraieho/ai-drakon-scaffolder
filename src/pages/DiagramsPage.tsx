@@ -212,7 +212,7 @@ export function DiagramsPage() {
             {selectedDiagram ? (
               <DrakonViewer
                 key={selectedDiagram.id}
-                diagram={selectedDiagram.diagram}
+                diagram={selectedDiagram.diagram as unknown as import("@/types/drakonwidget").DrakonDiagram}
                 diagramId={selectedDiagram.id}
                 height={9999}
                 className="h-full"
