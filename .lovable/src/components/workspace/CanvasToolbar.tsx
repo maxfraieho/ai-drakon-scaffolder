@@ -32,8 +32,13 @@ export function CanvasToolbar({
     <div className="flex h-9 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2.5">
       {/* Left: diagram identity */}
       <div className="flex min-w-0 items-center gap-2">
-        <span className="font-mono text-[11px] font-semibold text-[var(--accent-amber)] truncate">
-          {diagramName || "(не вибрано)"}
+        <span
+          className={cn(
+            "font-mono text-[11px] font-semibold truncate",
+            diagramName ? "text-[var(--accent-amber)]" : "text-[var(--text-muted)] italic",
+          )}
+        >
+          {diagramName || "схему не вибрано"}
         </span>
         {level && (
           <>
