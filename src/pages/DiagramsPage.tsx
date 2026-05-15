@@ -160,6 +160,10 @@ export function DiagramsPage() {
   });
   const autoAnalyzeHandledRef = useRef(false);
 
+  const [pipelineAnalysisOpen, setPipelineAnalysisOpen] = useState(false);
+  const [pipelineGenerationOpen, setPipelineGenerationOpen] = useState(false);
+  const [selectedDiagramForGen, setSelectedDiagramForGen] = useState<Diagram | null>(null);
+
   const selectedFolder =
     folders.find((folder) => folder.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
 
