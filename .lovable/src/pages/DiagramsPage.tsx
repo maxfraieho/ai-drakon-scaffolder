@@ -278,7 +278,7 @@ export function DiagramsPage() {
             updatedAt: now,
             diagram: {
               name: ir.name || "imported",
-              items: (ir.items ?? {}) as Record<string, DrakonItem>,
+              items: (ir.items ?? {}) as unknown as Record<string, DrakonItem>,
             },
           };
           upsertDiagramInStorage(stored);

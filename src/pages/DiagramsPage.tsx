@@ -31,7 +31,7 @@ import {
   type Folder,
 } from "@/lib/folder-storage";
 import type { Diagram } from "@/types/drakon";
-import type { DrakonItem } from "@/types/drakonwidget";
+import type { DrakonItem } from "@/types/drakon";
 
 export function DiagramsPage() {
   const navigate = useNavigate();
