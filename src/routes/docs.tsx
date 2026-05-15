@@ -262,9 +262,6 @@ function DocsRoute() {
             <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
           </TabsContent>
 
-          <TabsContent value="files">
-            <DocsFilesTab onNoteOpen={(slug) => { setFocusedSlug(slug); setDocsTab("notes"); }} />
-          </TabsContent>
 
           <TabsContent value="graph">
             <NotesGraphTab onNodeClick={handleGraphNodeClick} />
