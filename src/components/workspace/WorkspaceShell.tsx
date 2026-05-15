@@ -201,9 +201,9 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
         <div className="ml-auto flex items-center gap-0.5">
           <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
-            <SheetTrigger asChild>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
+            <Tooltip delayDuration={300}>
+              <TooltipTrigger asChild>
+                <SheetTrigger asChild>
                   <button
                     type="button"
                     aria-label="AI-агенти"
@@ -211,12 +211,12 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                   >
                     <Bot className="h-4 w-4" />
                   </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="font-mono text-[11px]">
-                  AI-агенти
-                </TooltipContent>
-              </Tooltip>
-            </SheetTrigger>
+                </SheetTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="font-mono text-[11px]">
+                AI-агенти
+              </TooltipContent>
+            </Tooltip>
             <SheetContent
               side="right"
               className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)]"
