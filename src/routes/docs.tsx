@@ -147,10 +147,6 @@ function DocsRoute() {
               <BookOpen className="mr-1.5 h-3.5 w-3.5" />
               Документи
             </TabsTrigger>
-            <TabsTrigger value="files">
-              <FolderTree className="mr-1.5 h-3.5 w-3.5" />
-              Файли
-            </TabsTrigger>
             <TabsTrigger value="graph">
               <Network className="mr-1.5 h-3.5 w-3.5" />
               Граф
