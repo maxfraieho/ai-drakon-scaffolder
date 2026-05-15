@@ -1,52 +1,99 @@
-## Scope
+# План: Workspace Shell за дизайном Stitch
 
-Three connected features tied together by a new MCP client helper that talks to `VITE_WORKER_URL/mcp` (JSON-RPC over `tools/call`).
+## Мета
+Привести застосунок до структури з `import/stitch_ai_drakon_workspace_shell/pipeline_ui_prototype.html` (workspace_idle + analysis_panel + generation_drawer), реалізуючи концепцію canvas-first IDE з `/docs/concept`.
 
-## Files to add
+## Нова структура вікна (замість поточної DiagramsPage з картками)
 
-- `src/lib/mcp/client.ts` — typed wrapper around `POST /mcp` for `tools/call` (handles `Authorization: Bearer <jwt>`, optional `X-Github-Token`, JSON-RPC envelope, error unwrapping).
-- `src/lib/mcp/projects.ts` — helpers: `listProjects()` (calls `drakon.listdiagrams` with empty folderSlug, extracts unique first path segments), `saveDiagramToMinio()`, `saveDiagramToGit()`, `sanitizeDiagramId()`.
-- `src/components/drakon/ProjectFolderSection.tsx` — reusable form section with the 5 fields described in Feature 1, plus eye-toggle password input. Persists to `localStorage`/`sessionStorage` keys `drakon_last_folder`, `drakon_last_repo`, `drakon_last_branch`, `drakon_gh_write_token`.
+```
+┌─────────────────────────────────────────────────────────────┐
+│ TopBar 32px: ● AI-DRAKON │ breadcrumb        agent/theme/⎋ │
+├──┬───────────┬───────────────────────────────────────┬──────┤
+│  │ DIAGRAMS  │ canvas-toolbar: name·CC·[⊙Аналіз][‹›Ген]│ R   │
+│  │ [search]  │                                         │ I   │
+│40│ ▾ folder  │                                         │ G   │
+│px│  diagram  │           DRAKON CANVAS                 │ H   │
+│  │  ●diagram │                                         │ T   │
+│IC│  diagram  │                                         │ 380 │
+│ON│           │                                         │ px  │
+│  │           │                                         │     │
+│RA│           ├───────────────────────────────────────┬─┤slide│
+│IL│           │ BOTTOM DRAWER (Generation, 200/280px) │ │-in  │
+└──┴───────────┴───────────────────────────────────────┴──────┘
+```
 
-## Files to edit
+## Етапи
 
-- `src/components/drakon/DrakonEditor.tsx`
-  - Mount `<ProjectFolderSection>` above the bottom icon toolbar.
-  - Replace `handleSave` with logic that:
-    1. always calls `saveDiagramToMinio(folderSlug, diagramId, diagram)`
-    2. if "Save to git" checked + token present, also calls `saveDiagramToGit(...)`
-    3. shows two `toast.success` / `toast.error` results (one per target).
+### 1. WorkspaceShell — нова коренева оболонка (`src/components/workspace/`)
+- `WorkspaceShell.tsx` — TopBar 32px + IconRail 40px + LeftPanel 220px (collapsible) + центр + BottomDrawer + RightPanel
+- `IconRail.tsx` — 5 секцій: Diagrams/Notes/Graph/GitHub/Agent + Settings знизу
+- `LeftPanel.tsx` — заголовок + пошук + список діаграм/папок
+- `CanvasToolbar.tsx` — плаваючий toolbar з ⊙Аналіз / ‹›Генерація / zoom
+- `BottomDrawer.tsx` + `RightSlideIn.tsx` — обгортки для existing pipeline panels
 
-- `src/pages/DiagramsPage.tsx`
-  - Add a "Project" dropdown above the diagram grid populated from `listProjects()` with an "All projects" option.
-  - When a project (other than "All") is selected, override `folderDiagrams` to filter by that folderSlug.
-  - Each card subtitle gets `{folderSlug} / {diagramId}` (small mono text).
+### 2. AppHeader → новий TopBar
+Зменшення висоти 48→32px, mono-шрифт, breadcrumb, видалення поточних tab-кнопок навігації (нав переходить у IconRail).
 
-- `src/routes/sync.tsx` (closest thing to "GitHub Analysis page" — the place where analysis results are rendered)
-  - Below the diff results add a "Bind analysis to project folder" card containing:
-    - editable "MinIO folder" pre-filled with `{owner}--{repo}` derived from `localStorage.github.lastRepo`
-    - same `<ProjectFolderSection>` (compact mode)
-    - "Save all to MinIO + git" button that iterates `diff.missingInDiagram` (the analyzer-suggested diagrams) and for each calls `saveDiagramToMinio` (+ `saveDiagramToGit` if token).
-    - Thin 4px progress bar `Saving N/M diagrams…`
-    - Completion toast + "Open in Editor" ghost button → `/diagrams?folder=...`.
+### 3. DiagramsPage переписати під canvas-first
+- Замість grid карток — одразу canvas з лівим списком
+- Click на діаграму у списку → відкриває її в canvas
+- Старий card-grid view доступний через окремий tab "Explorer" в LeftPanel
+- CodeAnalysisPanel прив'язується як RightSlideIn
+- CodeGenerationPanel — як BottomDrawer
 
-- Mirror every change under `.lovable/src/...`.
+### 4. Об'єднати маршрути під WorkspaceShell
+- `/diagrams` → workspace з активним Diagrams в IconRail
+- `/docs` → workspace з активним Notes
+- `/github` → workspace з активним GitHub
+- `/sync` → workspace з активним Graph (або окрема)
+- `/settings` → workspace з Settings
 
-## Technical notes
+Кожен маршрут показує контент у LeftPanel + центрі без зміни базової оболонки.
 
-- MCP envelope:
-  ```ts
-  POST {workerUrl}/mcp
-  { "jsonrpc":"2.0", "id":1, "method":"tools/call",
-    "params":{ "name":"drakon.savediagram", "arguments": {...} } }
-  ```
-  Response unwrap: `result.content[0].text` or `result.structuredContent` depending on tool; helper handles both.
-- `sanitizeDiagramId(s) = s.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9_\-]/g,'').slice(0,80)`.
-- Token never logged, never stored in `localStorage` — only `sessionStorage`.
-- All new UI uses existing dark tokens (`bg-[var(--bg-elevated)]`, `border-[var(--border-subtle)]`, etc.). No new colors.
-- Additive: existing `api.saveDiagram` flow stays as fallback path; new save path is preferred when ProjectFolderSection has a folder set.
+### 5. Тонкі візуальні правки за Stitch
+- IBM Plex Sans для UI (додати в `__root.tsx`)
+- font-size 11-13px (density)
+- amber accent (`#f59e0b`) на active states
+- 40/220/380/200 px фіксовані розміри панелей
+- збереження стану collapsed/open у localStorage
 
-## Out of scope
+### 6. Mirror у `.lovable/src/`
+Після кожної зміни — копія в `.lovable/src/`.
 
-- Modifying `drakon-mcp-worker` (assumed to already expose `drakon.savediagram` / `drakon.savetogit` / `drakon.listdiagrams`).
-- The "GitHub Analysis page" mentioned in Feature 2 doesn't exist as a standalone page; integrating into `/sync` (which renders analysis-derived suggestions) is the closest fit. If you want a brand-new `/analysis` page instead, say so before I start.
+## Технічні деталі
+
+**Залишається без змін:**
+- `DrakonCanvas`, `DrakonEditor` (рендеринг)
+- `pipeline-api.ts`, `CodeAnalysisPanel`, `CodeGenerationPanel` (тільки переносимо в нові обгортки)
+- Storage: `diagram-storage`, `folder-storage`
+- Routing: TanStack file-based
+
+**Видаляється/архівується:**
+- Card-grid view DiagramsPage (винесемо в Explorer tab)
+- Mobile sheet drawer для папок (замінюється IconRail collapse)
+
+**Файли, які створю:**
+- `src/components/workspace/WorkspaceShell.tsx`
+- `src/components/workspace/IconRail.tsx`
+- `src/components/workspace/TopBar.tsx`
+- `src/components/workspace/LeftPanel.tsx`
+- `src/components/workspace/CanvasToolbar.tsx`
+- `src/components/workspace/BottomDrawer.tsx`
+- `src/components/workspace/RightSlideIn.tsx`
+
+**Файли, які перепишу:**
+- `src/routes/__root.tsx` (видалю AppHeader, поставлю WorkspaceShell)
+- `src/pages/DiagramsPage.tsx` (canvas-first)
+- `src/components/app/AppHeader.tsx` → видалити або переробити в TopBar
+
+## Поза скоупом
+- Логіка пайплайнів (працює як є)
+- Drakon рендеринг (не чіпаємо)
+- Auth, API
+- Mobile responsive (Stitch має окремі мобільні екрани — зроблю базову адаптацію через collapse, повне мобільне UI окремим завданням)
+
+## Питання до тебе перед стартом
+Підтверди або скоригуй:
+1. **Навігація**: переносимо Diagrams/Git/Sync/Docs/Settings у вертикальний IconRail замість горизонтального TopBar — ОК?
+2. **DiagramsPage**: робимо canvas-first (відразу canvas + список зліва), а старий вигляд карток виносимо у вкладку "Explorer" — ОК?
+3. **Mobile**: достатньо базового адаптива (рейл і панелі стають collapse/sheet), чи потрібно одразу окремий mobile-shell з референсу?

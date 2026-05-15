@@ -12,7 +12,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { readSettings } from "@/lib/settings-storage";
-import { AppHeader } from "@/components/app/AppHeader";
+import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -113,7 +113,7 @@ function RootShell({ children }: { children: React.ReactNode }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
         />
       </head>
       <body>
@@ -144,12 +144,15 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider delayDuration={200}>
-        <div className="flex min-h-screen flex-col bg-[var(--bg-base)]">
-          {!hideChrome && <AppHeader />}
-          <div className="flex-1">
+        {hideChrome ? (
+          <div className="min-h-screen bg-[var(--bg-base)]">
             <Outlet />
           </div>
-        </div>
+        ) : (
+          <WorkspaceShell>
+            <Outlet />
+          </WorkspaceShell>
+        )}
         <Toaster position="top-center" richColors closeButton />
       </TooltipProvider>
     </QueryClientProvider>
