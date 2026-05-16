@@ -2,7 +2,6 @@
 // Talks to {workerUrl}/mcp using `tools/call`. Auth: Bearer JWT.
 // Optional X-Github-Token header for tools that write to git.
 
-import { readSettings } from "@/lib/settings-storage";
 import { getAccessToken } from "@/lib/auth";
 import { resolveWorkerUrl } from "@/lib/worker-url";
 
