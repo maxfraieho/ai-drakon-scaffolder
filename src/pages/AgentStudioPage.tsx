@@ -53,6 +53,13 @@ export default function AgentStudioPage() {
       {/* Top Navigation Bar */}
       <header className="flex h-8 shrink-0 items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-3">
         <div className="flex h-full items-center gap-6">
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="flex items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] md:hidden"
+            aria-label="Toggle sidebar"
+          >
+            <span className="material-symbols-outlined text-[20px]">menu</span>
+          </button>
           <span className="font-headline-sm text-[var(--color-on-surface)]">
             ⚙ АГЕНТНА ЛОГІКА
           </span>
