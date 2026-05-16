@@ -39,6 +39,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
+import { CommandPalette } from "@/components/workspace/CommandPalette";
 import { cn } from "@/lib/utils";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
@@ -97,10 +98,22 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [cmdOpen, setCmdOpen] = useState(false);
 
   useEffect(() => {
     const t = readSettings().app.theme;
     setTheme(t === "light" ? "light" : "dark");
+  }, []);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((v) => !v);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
   }, []);
 
   const toggleTheme = () => {
@@ -229,6 +242,15 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           ) : null}
         </div>
 
+        <button
+          type="button"
+          onClick={() => setCmdOpen(true)}
+          className="hidden md:inline-flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors ml-2"
+          aria-label="Відкрити command palette"
+        >
+          <span>⌘K</span>
+        </button>
+
         <div className="ml-auto flex items-center gap-0.5">
           <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
             <Tooltip delayDuration={300}>
@@ -338,6 +360,13 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
         </main>
       </div>
 
+      <CommandPalette
+        open={cmdOpen}
+        onOpenChange={setCmdOpen}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onLogout={logout}
+      />
     </div>
   );
 }
