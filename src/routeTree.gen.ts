@@ -13,11 +13,13 @@ import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GithubRouteImport } from './routes/github'
+import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
+import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as IndexIndexRouteImport } from './routes/index.index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
 import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
+import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
 
 const SyncRoute = SyncRouteImport.update({
   id: '/sync',
@@ -39,19 +41,24 @@ const GithubRoute = GithubRouteImport.update({
   path: '/github',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DiagramsRoute = DiagramsRouteImport.update({
   id: '/diagrams',
   path: '/diagrams',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexIndexRoute = IndexIndexRouteImport.update({
-  id: '/index/',
-  path: '/index/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EditorIdRoute = EditorIdRouteImport.update({
@@ -64,87 +71,106 @@ const DiagramEditorRoute = DiagramEditorRouteImport.update({
   path: '/diagram/editor',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
+  id: '/pipeline/$pipelineId/edit',
+  path: '/pipeline/$pipelineId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
+  '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
-  '/index/': typeof IndexIndexRoute
+  '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
+  '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
-  '/index': typeof IndexIndexRoute
+  '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
+  '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
-  '/index/': typeof IndexIndexRoute
+  '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agents'
     | '/diagrams'
+    | '/docs'
     | '/github'
     | '/login'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
-    | '/index/'
+    | '/pipeline/$pipelineId/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agents'
     | '/diagrams'
+    | '/docs'
     | '/github'
     | '/login'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
-    | '/index'
+    | '/pipeline/$pipelineId/edit'
   id:
     | '__root__'
     | '/'
+    | '/agents'
     | '/diagrams'
+    | '/docs'
     | '/github'
     | '/login'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
-    | '/index/'
+    | '/pipeline/$pipelineId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgentsRoute: typeof AgentsRoute
   DiagramsRoute: typeof DiagramsRoute
+  DocsRoute: typeof DocsRoute
   GithubRoute: typeof GithubRoute
   LoginRoute: typeof LoginRoute
   SettingsRoute: typeof SettingsRoute
   SyncRoute: typeof SyncRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
-  IndexIndexRoute: typeof IndexIndexRoute
+  PipelinePipelineIdEditRoute: typeof PipelinePipelineIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -177,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GithubRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/diagrams': {
       id: '/diagrams'
       path: '/diagrams'
@@ -184,18 +217,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiagramsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/index/': {
-      id: '/index/'
-      path: '/index'
-      fullPath: '/index/'
-      preLoaderRoute: typeof IndexIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/editor/$id': {
@@ -212,20 +245,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiagramEditorRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pipeline/$pipelineId/edit': {
+      id: '/pipeline/$pipelineId/edit'
+      path: '/pipeline/$pipelineId/edit'
+      fullPath: '/pipeline/$pipelineId/edit'
+      preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgentsRoute: AgentsRoute,
   DiagramsRoute: DiagramsRoute,
+  DocsRoute: DocsRoute,
   GithubRoute: GithubRoute,
   LoginRoute: LoginRoute,
   SettingsRoute: SettingsRoute,
   SyncRoute: SyncRoute,
   DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,
-  IndexIndexRoute: IndexIndexRoute,
+  PipelinePipelineIdEditRoute: PipelinePipelineIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
