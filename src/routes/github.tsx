@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { readFoldersFromStorage } from "@/lib/folder-storage";
+import { hasClientJwt } from "@/lib/route-auth";
 import { readSettings } from "@/lib/settings-storage";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { DrakonDiagram } from "@/types/drakon";
@@ -466,7 +467,7 @@ function GitHubRoute() {
     </div>
   );
 
-  if (typeof window !== "undefined" && !localStorage.getItem("jwt")) {
+  if (!hasClientJwt()) {
     return <Navigate to="/login" replace />;
   }
 
