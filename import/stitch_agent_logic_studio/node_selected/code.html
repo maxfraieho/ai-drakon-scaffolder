@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uk"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DRAKON - Node Selected</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#4f319c",
+                        "secondary": "#cebdff",
+                        "surface-container-low": "#1a1b21",
+                        "on-surface": "#e2e2e9",
+                        "on-secondary-fixed": "#21005e",
+                        "on-primary-fixed-variant": "#653e00",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#33353a",
+                        "on-tertiary-fixed": "#002109",
+                        "surface-container-high": "#282a2f",
+                        "surface-container": "#1e2025",
+                        "outline": "#a08e7a",
+                        "tertiary-container": "#2bca62",
+                        "on-primary-fixed": "#2a1700",
+                        "background": "#111318",
+                        "surface-tint": "#ffb95f",
+                        "on-surface-variant": "#d8c3ad",
+                        "primary-fixed-dim": "#ffb95f",
+                        "secondary-fixed": "#e8ddff",
+                        "surface-dim": "#111318",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "surface-bright": "#37393f",
+                        "on-primary-container": "#613b00",
+                        "primary-fixed": "#ffddb8",
+                        "on-primary": "#472a00",
+                        "secondary-container": "#4f319c",
+                        "inverse-on-surface": "#2e3036",
+                        "on-secondary-container": "#bea8ff",
+                        "primary-container": "#f59e0b",
+                        "surface-variant": "#33353a",
+                        "on-tertiary": "#003915",
+                        "on-tertiary-container": "#004f20",
+                        "surface-container-lowest": "#0c0e13",
+                        "inverse-surface": "#e2e2e9",
+                        "tertiary": "#51e77b",
+                        "on-secondary": "#381385",
+                        "on-error": "#690005",
+                        "primary": "#ffc174",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "outline-variant": "#534434",
+                        "surface": "#111318",
+                        "on-background": "#e2e2e9",
+                        "inverse-primary": "#855300",
+                        "on-error-container": "#ffdad6",
+                        "error": "#ffb4ab",
+                        "secondary-fixed-dim": "#cebdff",
+                        "tertiary-fixed": "#6bff8f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "element-gap": "8px",
+                        "gutter": "1px",
+                        "container-margin": "0px",
+                        "unit": "4px",
+                        "panel-padding": "12px"
+                    },
+                    "fontFamily": {
+                        "mono-code": ["JetBrains Mono"],
+                        "ui-md": ["IBM Plex Sans"],
+                        "ui-sm": ["IBM Plex Sans"],
+                        "mono-label": ["JetBrains Mono"],
+                        "headline-sm": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "mono-code": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "ui-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+                        "ui-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "mono-label": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "400" }],
+                        "headline-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { font-family: 'IBM Plex Sans', sans-serif; background-color: #0a0b0e; color: #e2e2e9; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .fill-icon { font-variation-settings: 'FILL' 1; }
+    </style>
+</head>
+<body class="h-screen w-screen overflow-hidden flex flex-col bg-background">
+<!-- TopNavBar -->
+<header class="flex justify-between items-center w-full h-8 px-panel-padding bg-surface text-primary font-headline-sm text-headline-sm border-b border-outline-variant shrink-0">
+<div class="flex items-center gap-element-gap">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">⚙ АГЕНТНА ЛОГІКА</span>
+</div>
+<nav class="flex h-full">
+<a class="h-full px-4 flex items-center text-on-surface-variant hover:text-primary transition-colors font-ui-sm text-ui-sm" href="#">Architect</a>
+<a class="h-full px-4 flex items-center text-primary border-b-2 border-primary pb-1 font-ui-sm text-ui-sm opacity-80" href="#">DRAKON</a>
+<a class="h-full px-4 flex items-center text-on-surface-variant hover:text-primary transition-colors font-ui-sm text-ui-sm" href="#">Docs</a>
+</nav>
+<div class="flex items-center">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-ui-md font-ui-md" data-icon="sensors">sensors</span></button>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="flex flex-col h-screen border-r border-outline-variant bg-surface text-primary w-[200px] shrink-0">
+<div class="p-panel-padding border-b border-outline-variant flex flex-col gap-1">
+<span class="font-headline-sm text-headline-sm text-primary">WORKSPACE</span>
+<span class="font-mono-label text-mono-label text-on-surface-variant">Active Session</span>
+</div>
+<nav class="flex-1 flex flex-col py-unit">
+<a class="flex items-center gap-element-gap px-panel-padding py-2 text-on-surface-variant hover:bg-surface-container-low font-mono-label text-mono-label" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md" data-icon="account_tree">account_tree</span>
+                    АГЕНТИ
+                </a>
+<a class="flex items-center gap-element-gap px-panel-padding py-2 bg-surface-container-high text-primary border-l-2 border-primary font-mono-label text-mono-label scale-95" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md" data-icon="account_tree">account_tree</span>
+                    ВУЗЛИ
+                </a>
+<a class="flex items-center gap-element-gap px-panel-padding py-2 text-on-surface-variant hover:bg-surface-container-low font-mono-label text-mono-label" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md" data-icon="database">database</span>
+                    БАЗА ЗНАНЬ
+                </a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col bg-[#0a0b0e] overflow-hidden relative">
+<!-- Explorer / Nodes List (Left Panel of Main Area) -->
+<div class="absolute left-0 top-0 bottom-0 w-64 bg-surface border-r border-outline-variant flex flex-col z-10">
+<div class="h-8 border-b border-outline-variant flex items-center px-panel-padding">
+<span class="font-mono-label text-mono-label text-on-surface">ВУЗЛИ З ПРОМПТАМИ</span>
+</div>
+<div class="flex-1 overflow-y-auto p-unit flex flex-col gap-unit">
+<button class="h-6 flex items-center px-2 hover:bg-surface-container-high transition-colors text-left group">
+<span class="material-symbols-outlined font-ui-md text-ui-md text-on-surface-variant mr-2 group-hover:text-primary" data-icon="data_object">data_object</span>
+<span class="font-mono-label text-mono-label text-on-surface-variant">init_state</span>
+</button>
+<!-- Selected Node -->
+<button class="h-6 flex items-center px-2 bg-primary-fixed-dim/15 border border-primary text-left">
+<span class="material-symbols-outlined font-ui-md text-ui-md text-primary mr-2" data-icon="bolt">bolt</span>
+<span class="font-mono-label text-mono-label text-primary">ir_gen</span>
+</button>
+<button class="h-6 flex items-center px-2 hover:bg-surface-container-high transition-colors text-left group">
+<span class="material-symbols-outlined font-ui-md text-ui-md text-on-surface-variant mr-2 group-hover:text-primary" data-icon="rule">rule</span>
+<span class="font-mono-label text-mono-label text-on-surface-variant">validate_syntax</span>
+</button>
+<button class="h-6 flex items-center px-2 hover:bg-surface-container-high transition-colors text-left group">
+<span class="material-symbols-outlined font-ui-md text-ui-md text-[#a78bfa] mr-2" data-icon="call_split">call_split</span>
+<span class="font-mono-label text-mono-label text-on-surface-variant">is_valid?</span>
+</button>
+</div>
+</div>
+<!-- Logic Canvas (Center) -->
+<div class="flex-1 ml-64 mr-80 relative overflow-hidden bg-background">
+<!-- Toolbar -->
+<div class="absolute top-panel-padding right-panel-padding bg-surface border border-outline-variant rounded flex items-center p-1 gap-1 z-20">
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant"><span class="material-symbols-outlined text-ui-md" data-icon="zoom_in">zoom_in</span></button>
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant"><span class="material-symbols-outlined text-ui-md" data-icon="zoom_out">zoom_out</span></button>
+<button class="p-1 hover:bg-surface-container-high rounded text-on-surface-variant"><span class="material-symbols-outlined text-ui-md" data-icon="fit_screen">fit_screen</span></button>
+</div>
+<!-- Mock Canvas Graph -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<div class="relative w-full max-w-lg h-96">
+<!-- Node: init_state -->
+<div class="absolute top-0 left-1/2 -translate-x-1/2 bg-surface-container-high border border-outline-variant px-4 py-2 rounded pointer-events-auto">
+<span class="font-mono-code text-mono-code text-on-surface">init_state</span>
+</div>
+<!-- Edge -->
+<div class="absolute top-8 left-1/2 w-px h-12 bg-on-surface-variant/30"></div>
+<div class="absolute top-18 left-1/2 -translate-x-1/2 w-2 h-2 border-r border-b border-on-surface-variant/30 rotate-45"></div>
+<!-- Node: ir_gen (Selected) -->
+<div class="absolute top-20 left-1/2 -translate-x-1/2 bg-surface-container-high border border-primary px-4 py-2 rounded pointer-events-auto shadow-[0_0_0_1px_rgba(245,158,11,0.5)]">
+<span class="font-mono-code text-mono-code text-primary">ir_gen</span>
+</div>
+<!-- Edge -->
+<div class="absolute top-28 left-1/2 w-px h-12 bg-on-surface-variant/30"></div>
+<div class="absolute top-38 left-1/2 -translate-x-1/2 w-2 h-2 border-r border-b border-on-surface-variant/30 rotate-45"></div>
+<!-- Node: is_valid -->
+<div class="absolute top-40 left-1/2 -translate-x-1/2 bg-surface-container-high border border-[#a78bfa] px-6 py-4 transform rotate-45 pointer-events-auto">
+<span class="font-mono-code text-mono-code text-[#a78bfa] -rotate-45 block transform">is_valid?</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Panel (Inspector - Slide in Open) -->
+<div class="absolute right-0 top-0 bottom-0 w-80 bg-surface border-l border-outline-variant flex flex-col z-20 shadow-[-4px_0_12px_rgba(0,0,0,0.5)]">
+<!-- Header -->
+<div class="h-12 border-b border-outline-variant flex items-center justify-between px-panel-padding bg-surface-container-low shrink-0">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-headline-sm text-headline-sm text-on-surface">ir_gen</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="bg-primary/10 text-primary font-mono-label text-mono-label px-2 py-0.5 rounded border border-primary/20 uppercase">action</span>
+<button class="text-on-surface-variant hover:text-on-surface"><span class="material-symbols-outlined text-ui-md" data-icon="close">close</span></button>
+</div>
+</div>
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-panel-padding flex flex-col gap-6">
+<!-- Prompt Section -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<label class="font-ui-sm text-ui-sm text-on-surface-variant uppercase tracking-wider">СИСТЕМНИЙ ПРОМПТ</label>
+<span class="font-mono-label text-mono-label text-on-surface-variant/50">1.2k chars</span>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 font-mono-code text-mono-code text-primary h-64 overflow-y-auto">
+<pre class="whitespace-pre-wrap">You are an expert system architect translating YAML specifications into Intermediate Representation (DRAKON IR).
+
+# Context
+Analyze the provided user intent and map it to logical nodes.
+
+# Rules
+1. Maintain strict adherence to the schema.
+2. Output valid JSON.
+3. Handle missing variables gracefully.
+
+YAML → DRAKON IR description...
+...
+...
+...
+</pre>
+</div>
+</div>
+<!-- Config Section (Mock) -->
+<div class="flex flex-col gap-2">
+<label class="font-ui-sm text-ui-sm text-on-surface-variant uppercase tracking-wider">MODEL CONFIG</label>
+<div class="grid grid-cols-2 gap-2">
+<div class="flex flex-col gap-1">
+<span class="font-mono-label text-mono-label text-on-surface-variant">Temperature</span>
+<input class="bg-surface-container-lowest border border-outline-variant text-on-surface font-mono-code text-mono-code px-2 py-1 rounded w-full focus:border-primary focus:ring-0" type="text" value="0.2"/>
+</div>
+<div class="flex flex-col gap-1">
+<span class="font-mono-label text-mono-label text-on-surface-variant">Max Tokens</span>
+<input class="bg-surface-container-lowest border border-outline-variant text-on-surface font-mono-code text-mono-code px-2 py-1 rounded w-full focus:border-primary focus:ring-0" type="text" value="4096"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer / Actions -->
+<div class="p-panel-padding border-t border-outline-variant bg-surface-container-low shrink-0 flex justify-end gap-2">
+<button class="px-4 py-1.5 border border-outline-variant text-on-surface font-ui-sm text-ui-sm rounded hover:bg-surface-container-highest transition-colors">СКАСУВАТИ</button>
+<button class="px-4 py-1.5 bg-primary text-on-primary font-ui-sm text-ui-sm font-medium rounded hover:brightness-110 transition-all">ЗБЕРЕГТИ ПРОМПТ</button>
+</div>
+</div>
+</main>
+</div>
+</body></html>

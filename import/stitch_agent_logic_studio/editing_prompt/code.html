@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>State 3: Editing Prompt</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#4f319c",
+                        "secondary": "#cebdff",
+                        "surface-container-low": "#1a1b21",
+                        "on-surface": "#e2e2e9",
+                        "on-secondary-fixed": "#21005e",
+                        "on-primary-fixed-variant": "#653e00",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#33353a",
+                        "on-tertiary-fixed": "#002109",
+                        "surface-container-high": "#282a2f",
+                        "surface-container": "#1e2025",
+                        "outline": "#a08e7a",
+                        "tertiary-container": "#2bca62",
+                        "on-primary-fixed": "#2a1700",
+                        "background": "#111318",
+                        "surface-tint": "#ffb95f",
+                        "on-surface-variant": "#d8c3ad",
+                        "primary-fixed-dim": "#ffb95f",
+                        "secondary-fixed": "#e8ddff",
+                        "surface-dim": "#111318",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "surface-bright": "#37393f",
+                        "on-primary-container": "#613b00",
+                        "primary-fixed": "#ffddb8",
+                        "on-primary": "#472a00",
+                        "secondary-container": "#4f319c",
+                        "inverse-on-surface": "#2e3036",
+                        "on-secondary-container": "#bea8ff",
+                        "primary-container": "#f59e0b",
+                        "surface-variant": "#33353a",
+                        "on-tertiary": "#003915",
+                        "on-tertiary-container": "#004f20",
+                        "surface-container-lowest": "#0c0e13",
+                        "inverse-surface": "#e2e2e9",
+                        "tertiary": "#51e77b",
+                        "on-secondary": "#381385",
+                        "on-error": "#690005",
+                        "primary": "#ffc174",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "outline-variant": "#534434",
+                        "surface": "#111318",
+                        "on-background": "#e2e2e9",
+                        "inverse-primary": "#855300",
+                        "on-error-container": "#ffdad6",
+                        "error": "#ffb4ab",
+                        "secondary-fixed-dim": "#cebdff",
+                        "tertiary-fixed": "#6bff8f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "element-gap": "8px",
+                        "gutter": "1px",
+                        "container-margin": "0px",
+                        "unit": "4px",
+                        "panel-padding": "12px"
+                    },
+                    "fontFamily": {
+                        "mono-code": ["JetBrains Mono", "monospace"],
+                        "ui-md": ["IBM Plex Sans", "sans-serif"],
+                        "ui-sm": ["IBM Plex Sans", "sans-serif"],
+                        "mono-label": ["JetBrains Mono", "monospace"],
+                        "headline-sm": ["IBM Plex Sans", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "mono-code": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "ui-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+                        "ui-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "mono-label": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "400" }],
+                        "headline-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface h-screen w-full overflow-hidden flex font-ui-sm text-ui-sm selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar Component -->
+<nav class="flex flex-col h-screen border-r border-outline-variant bg-surface docked left-0 h-full w-[200px] flex-shrink-0 z-20">
+<div class="h-16 flex flex-col justify-center px-panel-padding border-b border-outline-variant">
+<div class="flex items-center gap-element-gap">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">psychology</span>
+<div>
+<h1 class="font-headline-sm text-headline-sm text-primary">WORKSPACE</h1>
+<p class="font-mono-label text-mono-label text-on-surface-variant uppercase">Active Session</p>
+</div>
+</div>
+</div>
+<div class="flex-1 flex flex-col pt-unit">
+<!-- Inactive Tab 1 -->
+<a class="flex items-center gap-element-gap px-panel-padding py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md">account_tree</span>
+<span class="font-mono-label text-mono-label">АГЕНТИ</span>
+</a>
+<!-- Active Tab 2 -->
+<a class="flex items-center gap-element-gap px-panel-padding py-2 bg-surface-container-high text-primary border-l-2 border-primary scale-95 origin-left transition-transform" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md">account_tree</span>
+<span class="font-mono-label text-mono-label">ВУЗЛИ</span>
+</a>
+<!-- Inactive Tab 3 -->
+<a class="flex items-center gap-element-gap px-panel-padding py-2 text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md">database</span>
+<span class="font-mono-label text-mono-label">БАЗА ЗНАНЬ</span>
+</a>
+</div>
+<div class="p-panel-padding border-t border-outline-variant flex items-center gap-element-gap">
+<div class="w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center overflow-hidden border border-outline-variant">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">person</span>
+</div>
+<span class="font-mono-label text-mono-label text-on-surface-variant truncate">Agent Avatar</span>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col min-w-0 h-full">
+<!-- TopNavBar Component -->
+<header class="flex justify-between items-center w-full h-8 px-panel-padding bg-surface border-b border-outline-variant docked full-width top-0 z-10 flex-shrink-0">
+<div class="flex items-center gap-panel-padding h-full">
+<div class="font-headline-sm text-headline-sm font-bold text-on-surface mr-4">
+                    ⚙ АГЕНТНА ЛОГІКА
+                </div>
+<nav class="flex items-end gap-4 h-full">
+<!-- Active Link -->
+<a class="font-ui-sm text-ui-sm text-primary border-b-2 border-primary pb-1 opacity-80 h-full flex items-end" href="#">
+                        Architect
+                    </a>
+<!-- Inactive Link -->
+<a class="font-ui-sm text-ui-sm text-on-surface-variant hover:text-primary transition-colors pb-1 h-full flex items-end" href="#">
+                        DRAKON
+                    </a>
+<!-- Inactive Link -->
+<a class="font-ui-sm text-ui-sm text-on-surface-variant hover:text-primary transition-colors pb-1 h-full flex items-end" href="#">
+                        Docs
+                    </a>
+</nav>
+</div>
+<div class="flex items-center h-full text-on-surface-variant">
+<button class="hover:text-primary transition-colors flex items-center">
+<span class="material-symbols-outlined font-ui-md text-ui-md">sensors</span>
+</button>
+</div>
+</header>
+<!-- Canvas and Right Panel Container -->
+<div class="flex-1 flex min-h-0 bg-background relative">
+<!-- Logic Canvas (Middle) -->
+<div class="flex-1 relative overflow-hidden flex items-center justify-center pattern-dots bg-background">
+<!-- Decorative grid background -->
+<div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 24px 24px;"></div>
+<!-- Node: Start -->
+<div class="absolute top-[20%] left-[20%] bg-surface-container-highest border border-outline-variant p-panel-padding min-w-[120px] rounded flex flex-col items-center">
+<span class="font-mono-label text-mono-label text-on-surface-variant mb-unit uppercase tracking-widest">Trigger</span>
+<span class="font-ui-md text-ui-md text-on-surface">document_upload</span>
+<!-- Port -->
+<div class="absolute -bottom-2 w-3 h-3 bg-surface border border-outline-variant rounded-full"></div>
+</div>
+<!-- Edge connecting Start to IR Gen -->
+<svg class="absolute top-0 left-0 w-full h-full pointer-events-none" style="z-index: 0;">
+<path d="M 320 280 C 320 380, 480 380, 480 480" fill="none" stroke="#534434" stroke-width="1.5"></path>
+</svg>
+<!-- Active Node: IR Gen -->
+<div class="absolute top-[45%] left-[40%] bg-[#191c23] border border-primary p-panel-padding min-w-[160px] rounded shadow-[0_0_0_1px_rgba(245,158,11,0.2)] flex flex-col z-10">
+<div class="flex items-center gap-unit mb-2 border-b border-outline-variant pb-unit">
+<span class="material-symbols-outlined text-[14px] text-primary">memory</span>
+<span class="font-ui-md text-ui-md text-primary font-bold">ir_gen</span>
+</div>
+<div class="font-mono-code text-mono-code text-on-surface-variant line-clamp-2 opacity-70">
+                        You are an expert IR...
+                    </div>
+<!-- Ports -->
+<div class="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-surface border border-primary rounded-full"></div>
+<div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-surface border border-outline-variant rounded-full"></div>
+</div>
+</div>
+<!-- Right Panel: Inspector (State 3: Editing Prompt) -->
+<aside class="w-[360px] flex-shrink-0 bg-surface border-l border-outline-variant flex flex-col z-20 shadow-[-4px_0_12px_rgba(0,0,0,0.5)]">
+<!-- Inspector Header -->
+<div class="h-8 border-b border-outline-variant flex items-center justify-between px-panel-padding bg-surface-container-lowest">
+<div class="flex items-center gap-element-gap">
+<span class="material-symbols-outlined text-[14px] text-primary">tune</span>
+<span class="font-headline-sm text-headline-sm font-semibold uppercase tracking-wider">Inspector</span>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-[16px]">close</span>
+</button>
+</div>
+<div class="px-panel-padding py-2 border-b border-outline-variant flex items-center gap-2">
+<span class="px-2 py-0.5 bg-primary/15 text-primary border border-primary/30 rounded-sm font-mono-label text-mono-label">NODE</span>
+<span class="font-mono-code text-mono-code text-on-surface">ir_gen</span>
+</div>
+<!-- Inspector Content -->
+<div class="flex-1 flex flex-col overflow-hidden p-panel-padding gap-4">
+<!-- Basic Config -->
+<div class="flex flex-col gap-unit">
+<label class="font-mono-label text-mono-label text-on-surface-variant uppercase">Model Selection</label>
+<select class="w-full bg-surface-container-high border border-outline-variant text-on-surface font-ui-sm text-ui-sm p-1.5 focus:border-primary focus:outline-none focus:ring-0">
+<option>gpt-4-turbo-preview</option>
+<option>claude-3-opus</option>
+<option>mixtral-8x7b</option>
+</select>
+</div>
+<!-- Prompt Editor (ACTIVE STATE) -->
+<div class="flex-1 flex flex-col gap-unit">
+<div class="flex justify-between items-center">
+<label class="font-mono-label text-mono-label text-primary uppercase flex items-center gap-1">
+<span class="material-symbols-outlined text-[12px]">edit_note</span>
+                                System Prompt
+                            </label>
+<span class="font-mono-label text-mono-label text-on-surface-variant">Editing...</span>
+</div>
+<!-- Focused Textarea Wrapper -->
+<div class="flex-1 relative border-2 border-primary bg-surface-container-lowest flex flex-col group">
+<!-- Line numbers simulation -->
+<div class="absolute left-0 top-0 bottom-0 w-8 bg-surface-container-high border-r border-outline-variant/50 flex flex-col items-end py-2 pr-1 font-mono-code text-mono-code text-on-surface-variant/50 select-none z-10">
+<span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span>
+</div>
+<!-- The actual textarea mimicking the active editing state -->
+<!-- Using standard textarea but styling text to be primary/amber. Added fake cursor using standard text selection simulation or just text content -->
+<textarea autofocus="" class="flex-1 w-full bg-transparent border-none focus:ring-0 focus:outline-none p-2 pl-10 font-mono-code text-mono-code text-primary resize-none" spellcheck="false">You are an expert IR analyst. Review the provided text and extract entities matching the schema.
+Schema:
+- Name
+- Organization
+- Role|
+
+Ensure strictly valid JSON output.</textarea>
+<!-- Terminal-like footer for editor -->
+<div class="h-6 bg-surface-container-highest border-t border-primary flex items-center px-2 justify-between">
+<span class="font-mono-label text-mono-label text-primary/70">Line 5, Col 6</span>
+<span class="font-mono-label text-mono-label text-primary/70">UTF-8</span>
+</div>
+</div>
+</div>
+<!-- Variables Readonly -->
+<div class="flex flex-col gap-unit">
+<label class="font-mono-label text-mono-label text-on-surface-variant uppercase">Input Variables</label>
+<div class="bg-surface-container border border-outline-variant p-2 font-mono-code text-mono-code text-on-surface-variant flex flex-wrap gap-2">
+<span class="px-1 bg-surface-container-highest border border-outline-variant rounded-sm text-secondary">{input_text}</span>
+<span class="px-1 bg-surface-container-highest border border-outline-variant rounded-sm text-secondary">{schema_def}</span>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="p-panel-padding border-t border-outline-variant bg-surface-container-low flex justify-end gap-2">
+<button class="px-3 py-1.5 border border-outline-variant text-on-surface font-ui-sm text-ui-sm hover:bg-surface-container-highest transition-colors rounded-sm">
+                        Revert
+                    </button>
+<!-- Active Save Button -->
+<button class="px-4 py-1.5 bg-primary-container text-on-primary-container font-ui-md text-ui-md font-semibold hover:brightness-110 transition-all rounded-sm flex items-center gap-1 shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+<span class="material-symbols-outlined text-[16px]">save</span>
+                        Save Prompt
+                    </button>
+</div>
+</aside>
+</div>
+</main>
+<style>
+        /* Fake cursor blink animation since we placed a '|' character in textarea, 
+           we can't easily animate just that character inside native textarea without JS.
+           We'll rely on the visual indicator of the amber text and border to signify active state,
+           and standard browser cursor if user interacts. 
+           The prompt specifically requested "Cursor is visible within the amber mono text."
+           Placing a pipe character '|' at the end of the text line simulates it statically. */
+           
+        /* Custom scrollbar for editor */
+        textarea::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track {
+            background: #1e2025;
+        }
+        textarea::-webkit-scrollbar-thumb {
+            background: #534434;
+            border-radius: 4px;
+        }
+    </style>
+</body></html>

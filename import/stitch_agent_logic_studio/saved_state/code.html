@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Agent Logic Workspace - State 4</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#4f319c",
+                        "secondary": "#cebdff",
+                        "surface-container-low": "#1a1b21",
+                        "on-surface": "#e2e2e9",
+                        "on-secondary-fixed": "#21005e",
+                        "on-primary-fixed-variant": "#653e00",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#33353a",
+                        "on-tertiary-fixed": "#002109",
+                        "surface-container-high": "#282a2f",
+                        "surface-container": "#1e2025",
+                        "outline": "#a08e7a",
+                        "tertiary-container": "#2bca62",
+                        "on-primary-fixed": "#2a1700",
+                        "background": "#111318",
+                        "surface-tint": "#ffb95f",
+                        "on-surface-variant": "#d8c3ad",
+                        "primary-fixed-dim": "#ffb95f",
+                        "secondary-fixed": "#e8ddff",
+                        "surface-dim": "#111318",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "surface-bright": "#37393f",
+                        "on-primary-container": "#613b00",
+                        "primary-fixed": "#ffddb8",
+                        "on-primary": "#472a00",
+                        "secondary-container": "#4f319c",
+                        "inverse-on-surface": "#2e3036",
+                        "on-secondary-container": "#bea8ff",
+                        "primary-container": "#f59e0b",
+                        "surface-variant": "#33353a",
+                        "on-tertiary": "#003915",
+                        "on-tertiary-container": "#004f20",
+                        "surface-container-lowest": "#0c0e13",
+                        "inverse-surface": "#e2e2e9",
+                        "tertiary": "#51e77b",
+                        "on-secondary": "#381385",
+                        "on-error": "#690005",
+                        "primary": "#ffc174",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "outline-variant": "#534434",
+                        "surface": "#111318",
+                        "on-background": "#e2e2e9",
+                        "inverse-primary": "#855300",
+                        "on-error-container": "#ffdad6",
+                        "error": "#ffb4ab",
+                        "secondary-fixed-dim": "#cebdff",
+                        "tertiary-fixed": "#6bff8f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "element-gap": "8px",
+                        "gutter": "1px",
+                        "container-margin": "0px",
+                        "unit": "4px",
+                        "panel-padding": "12px"
+                    },
+                    "fontFamily": {
+                        "mono-code": ["JetBrains Mono"],
+                        "ui-md": ["IBM Plex Sans"],
+                        "ui-sm": ["IBM Plex Sans"],
+                        "mono-label": ["JetBrains Mono"],
+                        "headline-sm": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "mono-code": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "ui-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+                        "ui-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "mono-label": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "400" }],
+                        "headline-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for IDE feel */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: theme('colors.background');
+        }
+        ::-webkit-scrollbar-thumb {
+            background: theme('colors.surface-container-highest');
+            border-radius: theme('borderRadius.DEFAULT');
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: theme('colors.outline-variant');
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen w-screen overflow-hidden flex flex-col font-ui-sm text-ui-sm">
+<!-- TopNavBar Shared Component -->
+<nav class="bg-surface text-primary flex justify-between items-center w-full h-8 px-panel-padding border-b border-outline-variant shrink-0 z-50">
+<div class="font-headline-sm text-headline-sm font-bold text-on-surface flex items-center">
+            ⚙ АГЕНТНА ЛОГІКА
+        </div>
+<div class="hidden md:flex space-x-element-gap items-center h-full">
+<button class="text-primary border-b-2 border-primary pb-1 h-full flex items-center cursor-pointer font-ui-sm text-ui-sm mt-[2px] opacity-80">
+                Architect
+            </button>
+<button class="text-on-surface-variant hover:text-primary transition-colors h-full flex items-center cursor-pointer font-ui-sm text-ui-sm mt-[2px]">
+                DRAKON
+            </button>
+<button class="text-on-surface-variant hover:text-primary transition-colors h-full flex items-center cursor-pointer font-ui-sm text-ui-sm mt-[2px]">
+                Docs
+            </button>
+</div>
+<div class="flex items-center text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-[18px]">sensors</span>
+</div>
+</nav>
+<!-- Main Workspace Layout -->
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar Shared Component -->
+<aside class="hidden md:flex flex-col h-full w-[200px] border-r border-outline-variant bg-surface shrink-0 z-40">
+<div class="p-panel-padding border-b border-outline-variant">
+<div class="font-headline-sm text-headline-sm text-primary mb-1">WORKSPACE</div>
+<div class="font-mono-label text-mono-label text-on-surface-variant">Active Session</div>
+</div>
+<div class="flex flex-col py-unit">
+<div class="bg-surface-container-high text-primary border-l-2 border-primary px-panel-padding py-2 flex items-center gap-element-gap cursor-pointer scale-95 transition-transform origin-left">
+<span class="material-symbols-outlined font-ui-md text-ui-md">account_tree</span>
+<span class="font-mono-label text-mono-label">АГЕНТИ</span>
+</div>
+<div class="text-on-surface-variant px-panel-padding py-2 flex items-center gap-element-gap cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined font-ui-md text-ui-md">account_tree</span>
+<span class="font-mono-label text-mono-label">ВУЗЛИ</span>
+</div>
+<div class="text-on-surface-variant px-panel-padding py-2 flex items-center gap-element-gap cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined font-ui-md text-ui-md">database</span>
+<span class="font-mono-label text-mono-label">БАЗА ЗНАНЬ</span>
+</div>
+</div>
+</aside>
+<!-- Logic Canvas -->
+<main class="flex-1 bg-surface-dim relative overflow-hidden flex flex-col z-0">
+<!-- Terminal/Grid Background Pattern -->
+<div class="absolute inset-0 z-0 pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, theme('colors.outline-variant') 1px, transparent 0); background-size: 24px 24px; opacity: 0.3;"></div>
+<!-- Canvas Toolbar -->
+<div class="absolute top-0 right-0 p-panel-padding z-20 flex gap-2">
+<button class="bg-surface border border-outline-variant text-on-surface-variant p-1 rounded hover:text-primary transition-colors" title="Zoom In">
+<span class="material-symbols-outlined text-[16px]">zoom_in</span>
+</button>
+<button class="bg-surface border border-outline-variant text-on-surface-variant p-1 rounded hover:text-primary transition-colors" title="Zoom Out">
+<span class="material-symbols-outlined text-[16px]">zoom_out</span>
+</button>
+<button class="bg-surface border border-outline-variant text-on-surface-variant p-1 rounded hover:text-primary transition-colors" title="Fit to Screen">
+<span class="material-symbols-outlined text-[16px]">fit_screen</span>
+</button>
+</div>
+<!-- Nodes Container -->
+<div class="relative z-10 flex-1 flex items-center justify-center">
+<div class="flex flex-col items-center">
+<!-- Inactive Node -->
+<div class="bg-surface-container-highest border border-outline-variant p-panel-padding rounded min-w-[200px] flex flex-col gap-1 cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="flex justify-between items-center">
+<span class="font-mono-label text-mono-label text-on-surface-variant">NODE_01</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">data_object</span>
+</div>
+<div class="font-ui-sm text-ui-sm text-on-surface font-bold">Data Ingestion Router</div>
+</div>
+<!-- Edge -->
+<div class="h-12 w-px bg-outline-variant relative">
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 border-r border-b border-outline-variant rotate-45"></div>
+</div>
+<!-- Active Node -->
+<div class="bg-surface-container-highest border border-primary-container p-panel-padding rounded min-w-[200px] flex flex-col gap-1 cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-mono-label text-mono-label text-primary-container">NODE_02</span>
+<span class="material-symbols-outlined text-[14px] text-primary-container">psychology</span>
+</div>
+<div class="font-ui-sm text-ui-sm text-on-surface font-bold">Semantic Parser</div>
+<div class="mt-2 flex gap-2">
+<span class="bg-tertiary/15 text-tertiary font-mono-code text-mono-code px-1 py-0.5 rounded border border-tertiary/30">Active</span>
+<span class="bg-primary-container/15 text-primary-container font-mono-code text-mono-code px-1 py-0.5 rounded border border-primary-container/30">LLM Processing</span>
+</div>
+</div>
+<!-- Edge (Dashed for active flow) -->
+<div class="h-12 w-px border-l border-dashed border-primary-container relative">
+<div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 border-r border-b border-primary-container rotate-45"></div>
+</div>
+<!-- Inactive Output Node -->
+<div class="bg-surface-container-highest border border-outline-variant p-panel-padding rounded min-w-[200px] flex flex-col gap-1 cursor-pointer hover:bg-surface-container-high transition-colors opacity-70">
+<div class="flex justify-between items-center">
+<span class="font-mono-label text-mono-label text-on-surface-variant">NODE_03</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant">output</span>
+</div>
+<div class="font-ui-sm text-ui-sm text-on-surface font-bold">Knowledge Base Sink</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Right Panel: Inspector & Settings (State 4) -->
+<aside class="w-[320px] bg-surface border-l border-outline-variant flex flex-col shrink-0 z-30">
+<!-- Panel Header -->
+<div class="h-8 border-b border-outline-variant flex items-center px-panel-padding bg-surface-container-low shrink-0">
+<span class="material-symbols-outlined text-[16px] mr-2 text-on-surface-variant">tune</span>
+<span class="font-mono-label text-mono-label text-on-surface">INSPECTOR</span>
+</div>
+<!-- Panel Content -->
+<div class="p-panel-padding flex-1 overflow-y-auto flex flex-col gap-4">
+<!-- Identification Section -->
+<div class="flex flex-col gap-3">
+<div class="flex flex-col gap-1">
+<label class="font-mono-label text-mono-label text-on-surface-variant uppercase">Node ID</label>
+<input class="bg-background border border-outline-variant text-on-surface-variant font-mono-code text-mono-code p-1.5 rounded focus:outline-none" readonly="" type="text" value="NODE_02"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-mono-label text-mono-label text-on-surface-variant uppercase">Display Name</label>
+<input class="bg-surface-container border border-outline-variant text-on-surface font-ui-sm text-ui-sm p-1.5 rounded focus:border-primary focus:outline-none transition-colors" type="text" value="Semantic Parser"/>
+</div>
+</div>
+<div class="h-px bg-outline-variant w-full my-1"></div>
+<!-- Technical Configuration Section -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<label class="font-mono-label text-mono-label text-on-surface-variant uppercase">Logic Module</label>
+<span class="bg-secondary/15 text-secondary font-mono-code text-[10px] px-1 rounded border border-secondary/30">v1.2.0</span>
+</div>
+<select class="bg-surface-container border border-outline-variant text-on-surface font-ui-sm text-ui-sm p-1.5 rounded focus:border-primary focus:outline-none appearance-none">
+<option value="llm_parser">LLM Semantic Extraction</option>
+<option value="regex">RegEx Matcher</option>
+<option value="json">JSON Flattener</option>
+</select>
+<div class="flex flex-col gap-1 mt-2">
+<label class="font-mono-label text-mono-label text-on-surface-variant uppercase">Execution Payload (JSON)</label>
+<div class="relative">
+<textarea class="w-full bg-background border border-outline-variant text-primary-fixed-dim font-mono-code text-mono-code p-2 rounded focus:border-primary focus:outline-none resize-none leading-relaxed" rows="6" spellcheck="false">{
+  "model_target": "gpt-4-turbo",
+  "temperature": 0.15,
+  "max_tokens": 1024,
+  "system_prompt": "ref:sys_parse_01",
+  "strict_schema": true
+}</textarea>
+<button class="absolute top-2 right-2 text-on-surface-variant hover:text-on-surface bg-surface-container rounded p-0.5">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Contextual Footer / Save State -->
+<div class="mt-auto pt-4 flex flex-col gap-2">
+<!-- Flashed Button Effect via brightness -->
+<button class="bg-primary-container text-on-primary-container font-ui-sm text-ui-sm font-semibold py-2 px-4 rounded w-full flex items-center justify-center gap-2 border border-transparent hover:brightness-110 transition-all brightness-110">
+<span class="material-symbols-outlined text-[16px]">save</span>
+                        Save Configuration
+                    </button>
+<!-- Success Message (State 4 Core Requirement) -->
+<div class="flex items-center justify-center gap-1.5 text-tertiary bg-tertiary/10 py-1.5 rounded border border-tertiary/20">
+<span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-mono-label text-mono-label">Збережено 2 хв тому</span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+</body></html>

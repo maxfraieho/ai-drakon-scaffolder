@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uk"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>⚙ АГЕНТНА ЛОГІКА - KB Drawer Open</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-secondary-fixed-variant": "#4f319c",
+                        "secondary": "#cebdff",
+                        "surface-container-low": "#1a1b21",
+                        "on-surface": "#e2e2e9",
+                        "on-secondary-fixed": "#21005e",
+                        "on-primary-fixed-variant": "#653e00",
+                        "error-container": "#93000a",
+                        "surface-container-highest": "#33353a",
+                        "on-tertiary-fixed": "#002109",
+                        "surface-container-high": "#282a2f",
+                        "surface-container": "#1e2025",
+                        "outline": "#a08e7a",
+                        "tertiary-container": "#2bca62",
+                        "on-primary-fixed": "#2a1700",
+                        "background": "#111318",
+                        "surface-tint": "#ffb95f",
+                        "on-surface-variant": "#d8c3ad",
+                        "primary-fixed-dim": "#ffb95f",
+                        "secondary-fixed": "#e8ddff",
+                        "surface-dim": "#111318",
+                        "on-tertiary-fixed-variant": "#005321",
+                        "surface-bright": "#37393f",
+                        "on-primary-container": "#613b00",
+                        "primary-fixed": "#ffddb8",
+                        "on-primary": "#472a00",
+                        "secondary-container": "#4f319c",
+                        "inverse-on-surface": "#2e3036",
+                        "on-secondary-container": "#bea8ff",
+                        "primary-container": "#f59e0b",
+                        "surface-variant": "#33353a",
+                        "on-tertiary": "#003915",
+                        "on-tertiary-container": "#004f20",
+                        "surface-container-lowest": "#0c0e13",
+                        "inverse-surface": "#e2e2e9",
+                        "tertiary": "#51e77b",
+                        "on-secondary": "#381385",
+                        "on-error": "#690005",
+                        "primary": "#ffc174",
+                        "tertiary-fixed-dim": "#4ae176",
+                        "outline-variant": "#534434",
+                        "surface": "#111318",
+                        "on-background": "#e2e2e9",
+                        "inverse-primary": "#855300",
+                        "on-error-container": "#ffdad6",
+                        "error": "#ffb4ab",
+                        "secondary-fixed-dim": "#cebdff",
+                        "tertiary-fixed": "#6bff8f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "element-gap": "8px",
+                        "gutter": "1px",
+                        "container-margin": "0px",
+                        "unit": "4px",
+                        "panel-padding": "12px"
+                    },
+                    "fontFamily": {
+                        "mono-code": ["JetBrains Mono"],
+                        "ui-md": ["IBM Plex Sans"],
+                        "ui-sm": ["IBM Plex Sans"],
+                        "mono-label": ["JetBrains Mono"],
+                        "headline-sm": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "mono-code": ["12px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "ui-md": ["13px", { "lineHeight": "18px", "fontWeight": "500" }],
+                        "ui-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "mono-label": ["11px", { "lineHeight": "14px", "letterSpacing": "0.02em", "fontWeight": "400" }],
+                        "headline-sm": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body { background-color: #0a0b0e; color: #e2e2e9; margin: 0; overflow: hidden; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .filled-icon { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+</head>
+<body class="flex flex-col h-screen font-ui-md bg-[#0a0b0e]">
+<!-- TopNavBar -->
+<header class="bg-surface docked full-width top-0 border-b border-outline-variant flat no shadows flex justify-between items-center w-full h-8 px-panel-padding shrink-0">
+<div class="flex items-center gap-element-gap">
+<span class="font-headline-sm text-headline-sm font-bold text-on-surface">⚙ АГЕНТНА ЛОГІКА</span>
+</div>
+<nav class="flex items-center gap-4">
+<a class="font-ui-sm text-ui-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Architect</a>
+<a class="font-ui-sm text-ui-sm text-primary border-b-2 border-primary pb-1 opacity-80" href="#">DRAKON</a>
+<a class="font-ui-sm text-ui-sm text-on-surface-variant hover:text-primary transition-colors" href="#">Docs</a>
+</nav>
+<div class="flex items-center">
+<span class="material-symbols-outlined font-ui-md text-ui-md text-on-surface hover:text-primary transition-colors cursor-pointer" data-icon="sensors">sensors</span>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-surface docked left-0 h-full w-[200px] border-r border-outline-variant flat no shadows flex flex-col shrink-0">
+<div class="p-panel-padding border-b border-outline-variant mb-unit">
+<div class="flex items-center gap-element-gap">
+<div class="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center overflow-hidden border border-outline-variant">
+<span class="material-symbols-outlined text-on-surface text-[16px]" data-icon="robot_2">robot_2</span>
+</div>
+<div>
+<div class="font-headline-sm text-headline-sm text-primary">WORKSPACE</div>
+<div class="font-mono-label text-mono-label text-on-surface-variant">Active Session</div>
+</div>
+</div>
+</div>
+<nav class="flex flex-col gap-gutter px-unit">
+<a class="flex items-center gap-element-gap p-unit text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md" data-icon="account_tree">account_tree</span>
+<span class="font-mono-label text-mono-label">АГЕНТИ</span>
+</a>
+<a class="flex items-center gap-element-gap p-unit text-on-surface-variant hover:bg-surface-container-low transition-colors" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md" data-icon="account_tree">account_tree</span>
+<span class="font-mono-label text-mono-label">ВУЗЛИ</span>
+</a>
+<a class="flex items-center gap-element-gap p-unit bg-surface-container-high text-primary border-l-2 border-primary scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined font-ui-md text-ui-md" data-icon="database">database</span>
+<span class="font-mono-label text-mono-label">БАЗА ЗНАНЬ</span>
+</a>
+</nav>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col bg-[#0a0b0e] relative min-w-0">
+<!-- Canvas Area (Compressed) -->
+<div class="flex-1 flex overflow-hidden relative">
+<!-- Left: Logic Graph (Simplified for Drawer State) -->
+<div class="flex-1 bg-surface border-r border-outline-variant p-panel-padding overflow-auto relative mr-[1px]">
+<div class="absolute top-panel-padding left-panel-padding flex gap-unit z-10">
+<div class="bg-surface-container px-2 py-1 border border-outline-variant font-mono-label text-mono-label text-on-surface">FLOW: Analysis</div>
+</div>
+<!-- Simplified Graph Visualization -->
+<div class="w-full h-full flex items-center justify-center pt-8">
+<div class="flex flex-col items-center gap-8">
+<div class="bg-[#191c23] border border-outline-variant px-4 py-2 font-mono-label text-mono-label text-on-surface w-32 text-center rounded-DEFAULT">START</div>
+<div class="h-8 w-px bg-on-surface-variant relative">
+<div class="absolute bottom-[-4px] left-[-3px] w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-on-surface-variant"></div>
+</div>
+<div class="bg-[#191c23] border border-[#a78bfa] px-4 py-2 font-mono-label text-mono-label text-secondary w-40 text-center rounded-DEFAULT">Parse Input</div>
+<div class="h-8 w-px bg-on-surface-variant relative">
+<div class="absolute bottom-[-4px] left-[-3px] w-0 h-0 border-l-[4px] border-r-[4px] border-t-[6px] border-l-transparent border-r-transparent border-t-on-surface-variant"></div>
+</div>
+<div class="bg-[#191c23] border border-primary-container px-4 py-2 font-mono-label text-mono-label text-primary-container w-40 text-center rounded-DEFAULT border-dashed">Extract Entities</div>
+</div>
+</div>
+<div class="absolute bottom-panel-padding right-panel-padding flex gap-unit">
+<button class="bg-surface-container border border-outline-variant p-1 hover:bg-surface-container-high text-on-surface"><span class="material-symbols-outlined text-[16px]" data-icon="zoom_in">zoom_in</span></button>
+<button class="bg-surface-container border border-outline-variant p-1 hover:bg-surface-container-high text-on-surface"><span class="material-symbols-outlined text-[16px]" data-icon="zoom_out">zoom_out</span></button>
+<button class="bg-surface-container border border-outline-variant p-1 hover:bg-surface-container-high text-on-surface"><span class="material-symbols-outlined text-[16px]" data-icon="fit_screen">fit_screen</span></button>
+</div>
+</div>
+<!-- Right: Node Properties (Compressed) -->
+<div class="w-[300px] bg-surface flex flex-col shrink-0">
+<div class="h-8 border-b border-outline-variant flex items-center px-panel-padding bg-surface-container-lowest shrink-0">
+<span class="font-headline-sm text-headline-sm text-on-surface">INSPECTOR</span>
+</div>
+<div class="flex-1 overflow-auto p-panel-padding flex flex-col gap-element-gap">
+<div class="border border-outline-variant bg-surface-container-lowest p-2">
+<div class="font-mono-label text-mono-label text-on-surface-variant mb-1">Node ID</div>
+<div class="font-mono-code text-mono-code text-on-surface">node_extract_01</div>
+</div>
+<div class="border border-outline-variant bg-surface-container-lowest p-2">
+<div class="font-mono-label text-mono-label text-on-surface-variant mb-1">Type</div>
+<div class="font-mono-code text-mono-code text-secondary">LLM Task</div>
+</div>
+<div class="border border-outline-variant bg-surface-container-lowest p-2">
+<div class="font-mono-label text-mono-label text-on-surface-variant mb-1">Prompt Template</div>
+<div class="font-mono-code text-mono-code text-on-surface text-opacity-70 h-20 overflow-hidden relative">
+                                Extract all monetary values and dates from the following text...
+                                <div class="absolute bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-surface-container-lowest to-transparent"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- KB Drawer (OPEN) -->
+<div class="flex flex-col border-t border-outline-variant bg-surface mt-[1px] shrink-0 transition-all duration-300" style="height: 200px;">
+<!-- Trigger Bar -->
+<div class="h-6 bg-surface-container-lowest border-b border-outline-variant flex items-center px-unit cursor-pointer hover:bg-surface-container-low select-none">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant mr-1" data-icon="expand_more">expand_more</span>
+<span class="font-mono-label text-mono-label text-primary">БАЗА ЗНАНЬ | 02-ir-fmt</span>
+<div class="ml-auto flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant hover:text-on-surface" data-icon="open_in_new">open_in_new</span>
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant hover:text-on-surface" data-icon="close">close</span>
+</div>
+</div>
+<!-- Drawer Content -->
+<div class="flex flex-1 overflow-hidden">
+<!-- Left: File List -->
+<div class="w-[200px] border-r border-outline-variant bg-surface-container-lowest overflow-auto p-unit flex flex-col gap-unit shrink-0">
+<div class="flex items-center gap-1 p-1 text-on-surface-variant hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-[14px]" data-icon="description">description</span>
+<span class="font-mono-label text-mono-label truncate">00-rules.md</span>
+</div>
+<div class="flex items-center gap-1 p-1 text-on-surface-variant hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-[14px]" data-icon="description">description</span>
+<span class="font-mono-label text-mono-label truncate">01-nodes.md</span>
+</div>
+<div class="flex items-center gap-1 p-1 bg-surface-container-high text-primary border-l-2 border-primary cursor-pointer">
+<span class="material-symbols-outlined text-[14px]" data-icon="description">description</span>
+<span class="font-mono-label text-mono-label truncate">02-ir-fmt.md</span>
+</div>
+<div class="flex items-center gap-1 p-1 text-on-surface-variant hover:bg-surface-container-low cursor-pointer">
+<span class="material-symbols-outlined text-[14px]" data-icon="description">description</span>
+<span class="font-mono-label text-mono-label truncate">03-validation.md</span>
+</div>
+</div>
+<!-- Right: Markdown Content -->
+<div class="flex-1 bg-surface overflow-auto p-panel-padding">
+<div class="font-mono-code text-mono-code text-on-surface-variant whitespace-pre-wrap max-w-3xl"># 02. Intermediate Representation Format (IR-FMT)
+
+## Structure
+The IR must adhere strictly to the following JSON schema to ensure compatibility between extraction and processing nodes.</div></div></div></div></main></div></body></html>
