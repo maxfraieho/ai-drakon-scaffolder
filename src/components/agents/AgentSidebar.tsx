@@ -27,6 +27,8 @@ export function AgentSidebar({
   onSelectPipeline,
   onSelectNode,
   onSelectKbFile,
+  open,
+  onClose,
 }: Props) {
   const agentKbFiles = useMemo(
     () => kbFiles.filter((f) => f.agentId === selectedPipeline.agentId),
