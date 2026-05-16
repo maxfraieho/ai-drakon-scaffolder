@@ -343,8 +343,7 @@ export function CodeGenerationPanel({
 
           {/* Right history */}
           <div
-            className="w-[320px] flex flex-col"
-            style={{ background: "var(--color-surface-container, #201f1f)" }}
+            className="w-[320px] flex flex-col bg-muted/40"
           >
             <div
               className="h-8 flex items-center px-4 border-b font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--color-on-surface-variant)]"
