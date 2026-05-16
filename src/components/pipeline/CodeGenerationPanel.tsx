@@ -55,6 +55,8 @@ export function CodeGenerationPanel({
   const [errorMsg, setErrorMsg] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [history, setHistory] = useState<GenerationHistoryItem[]>([]);
+  const [kbSaving, setKbSaving] = useState(false);
+  const [kbSaved, setKbSaved] = useState(false);
   const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
