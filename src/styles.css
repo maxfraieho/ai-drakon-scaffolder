@@ -58,6 +58,37 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
 
+  /* ── Stitch / Drakon Logic System tokens ── */
+  --color-surface: #111318;
+  --color-surface-container-lowest: #0c0e13;
+  --color-surface-container-low: #1a1b21;
+  --color-surface-container: #1e2025;
+  --color-surface-container-high: #282a2f;
+  --color-surface-container-highest: #33353a;
+  --color-on-surface: #e2e2e9;
+  --color-on-surface-variant: #d8c3ad;
+  --color-primary-container: #f59e0b;
+  --color-on-primary-container: #613b00;
+  --color-outline: #a08e7a;
+  --color-outline-variant: #534434;
+  --color-tertiary: #51e77b;
+  --color-secondary-container: #4f319c;
+  --color-on-secondary-container: #bea8ff;
+
+  --text-ui-sm: 12px;
+  --text-ui-md: 13px;
+  --text-headline-sm: 14px;
+  --text-mono-label: 11px;
+  --text-mono-code: 12px;
+
+  --font-ui:
+    "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    Roboto, sans-serif;
+
+  --spacing-panel-padding: 12px;
+  --spacing-element-gap: 8px;
+  --spacing-unit: 8px;
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
