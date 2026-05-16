@@ -1997,6 +1997,28 @@ async function handlePipelineStream(jobId, env, ctx) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // ── Pipeline proxy (architect-agent LangGraph endpoints) ─────────────────────
+async function handleKb(kbPath, request, env) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const targetUrl = architectUrl + '/kb/' + kbPath;
+  const url = new URL(request.url);
+  const fullTarget = targetUrl + url.search;
+
+  const init = {
+    method: request.method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (request.method !== 'GET' && request.method !== 'DELETE') {
+    init.body = await request.text();
+  }
+
+  const resp = await fetch(fullTarget, init);
+  const data = await resp.json().catch(() => ({}));
+  return new Response(JSON.stringify(data), {
+    status: resp.status,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+  });
+}
+
 async function handlePipeline(pipelinePath, request, env, ctx) {
   const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   const targetUrl = architectUrl + '/pipeline/' + pipelinePath;
@@ -2164,6 +2186,22 @@ async function handleNotesDelete(request, env) {
       }
       // ─────────────────────────────────────────────────────────────────────
 
+
+      // ─── KB proxy ─────────────────────────────────────────────────────────
+      if (method === 'POST' && path === '/v1/kb/contribute') {
+        return await handleKb('contribute', request, env);
+      }
+      if (method === 'GET' && path === '/v1/kb/list') {
+        return await handleKb('list', request, env);
+      }
+      const kbGetMatch = path.match(/^\/v1\/kb\/get\/([^\/]+)$/);
+      if (method === 'GET' && kbGetMatch) {
+        return await handleKb('get/' + decodeURIComponent(kbGetMatch[1]), request, env);
+      }
+      const kbDeleteMatch = path.match(/^\/v1\/kb\/delete\/([^\/]+)$/);
+      if (method === 'DELETE' && kbDeleteMatch) {
+        return await handleKb('delete/' + decodeURIComponent(kbDeleteMatch[1]), request, env);
+      }
       // ─── Agent proxy ──────────────────────────────────────────────────
       const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);
       if (method === 'POST' && agentChatMatch) {

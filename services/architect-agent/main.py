@@ -35,7 +35,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="architect-agent", version="0.1.0", lifespan=lifespan)
 app.include_router(files_router)
 from pipeline_route import router as pipeline_router
+from kb_route import router as kb_router
 app.include_router(pipeline_router)
+app.include_router(kb_router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
