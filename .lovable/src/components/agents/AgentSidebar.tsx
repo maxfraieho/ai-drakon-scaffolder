@@ -15,6 +15,8 @@ interface Props {
   onSelectPipeline: (p: AgentPipeline) => void;
   onSelectNode: (n: AgentNode) => void;
   onSelectKbFile: (f: KbFile) => void;
+  open?: boolean;
+  onClose?: () => void;
 }
 
 export function AgentSidebar({
@@ -25,6 +27,8 @@ export function AgentSidebar({
   onSelectPipeline,
   onSelectNode,
   onSelectKbFile,
+  open,
+  onClose,
 }: Props) {
   const agentKbFiles = useMemo(
     () => kbFiles.filter((f) => f.agentId === selectedPipeline.agentId),
@@ -36,7 +40,14 @@ export function AgentSidebar({
   );
 
   return (
-    <nav className="flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
+    <nav
+      className={cn(
+        "flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--color-outline-variant)] bg-[var(--color-surface)] transition-transform duration-200",
+        "md:relative md:translate-x-0",
+        "absolute inset-y-0 left-0 z-40",
+        open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+      )}
+    >
       <div className="flex flex-col gap-1 border-b border-[var(--color-outline-variant)] p-3">
         <span className="font-headline-sm text-[var(--color-primary-container)]">WORKSPACE</span>
         <span className="font-mono-label text-[var(--color-on-surface-variant)]">
@@ -52,7 +63,10 @@ export function AgentSidebar({
           {agentPipelines.map((p) => (
             <button
               key={p.id}
-              onClick={() => onSelectPipeline(p)}
+              onClick={() => {
+                onSelectPipeline(p);
+                onClose?.();
+              }}
               className={cn(
                 "flex w-full items-center gap-2 border-l-2 px-3 py-1.5 text-left transition-colors",
                 selectedPipeline.id === p.id
@@ -75,7 +89,10 @@ export function AgentSidebar({
             return (
               <button
                 key={n.id}
-                onClick={() => onSelectNode(n)}
+                onClick={() => {
+                  onSelectNode(n);
+                  onClose?.();
+                }}
                 className={cn(
                   "flex w-full items-center gap-2 border-l-2 px-3 py-1.5 text-left transition-colors",
                   active
