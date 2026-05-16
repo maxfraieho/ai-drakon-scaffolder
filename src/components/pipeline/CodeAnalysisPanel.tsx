@@ -89,7 +89,7 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
     if (!result || kbSaving || kbSaved) return;
     setKbSaving(true);
     try {
-      const token = localStorage.getItem("auth_token") ?? "";
+      const token = localStorage.getItem("jwt") ?? "";
       await kbContribute(
         {
           code: source,

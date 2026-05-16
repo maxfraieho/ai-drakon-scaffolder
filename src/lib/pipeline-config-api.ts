@@ -1,5 +1,5 @@
-export type NodeType = action | decision | terminator | loop_start | loop_end;
-export type AgentId  = architect | drakon | docs;
+export type NodeType = "action" | "decision" | "terminator" | "loop_start" | "loop_end";
+export type AgentId  = "architect" | "drakon" | "docs";
 
 export interface NodeConfig {
   id:               string;
@@ -15,7 +15,7 @@ export interface EdgeConfig {
   from_node: string;
   to_node:   string;
   label?:    string;
-  condition?: yes | no;
+  condition?: "yes" | "no";
 }
 
 export interface PipelineConfig {
