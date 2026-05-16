@@ -1,20 +1,7 @@
 import type { IrDiagram } from "./ir-types";
 import { getAccessToken } from "@/lib/auth";
 
-function resolveApiBase() {
-  const envBase = import.meta.env.VITE_WORKER_URL;
-  if (envBase && envBase.trim().length > 0) {
-    return envBase;
-  }
-
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-
-  return "";
-}
-
-const BASE = resolveApiBase();
+const BASE = import.meta.env.VITE_WORKER_URL;
 
 export type ValidationIssue = {
   code: string;

@@ -2,19 +2,8 @@
 // Talks to {workerUrl}/mcp using `tools/call`. Auth: Bearer JWT.
 // Optional X-Github-Token header for tools that write to git.
 
-import { readSettings } from "@/lib/settings-storage";
 import { getAccessToken } from "@/lib/auth";
-
-function resolveWorkerUrl(): string {
-  if (typeof window !== "undefined") {
-    const override = readSettings().app.workerUrl.trim();
-    if (override) return override;
-  }
-  return (
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_WORKER_URL) ||
-    "https://drakon-mcp-worker.maxfraieho.workers.dev"
-  );
-}
+import { resolveWorkerUrl } from "@/lib/worker-url";
 
 export interface McpCallOptions {
   githubToken?: string;

@@ -18,7 +18,6 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as IndexIndexRouteImport } from './routes/index.index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
 import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
 
@@ -67,11 +66,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexIndexRoute = IndexIndexRouteImport.update({
-  id: '/index/',
-  path: '/index/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const EditorIdRoute = EditorIdRouteImport.update({
   id: '/editor/$id',
   path: '/editor/$id',
@@ -95,7 +89,6 @@ export interface FileRoutesByFullPath {
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
-  '/index/': typeof IndexIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -109,7 +102,6 @@ export interface FileRoutesByTo {
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
-  '/index': typeof IndexIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -124,7 +116,6 @@ export interface FileRoutesById {
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
-  '/index/': typeof IndexIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -140,7 +131,6 @@ export interface FileRouteTypes {
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
-    | '/index/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -154,7 +144,6 @@ export interface FileRouteTypes {
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
-    | '/index'
   id:
     | '__root__'
     | '/'
@@ -168,7 +157,6 @@ export interface FileRouteTypes {
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
-    | '/index/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -183,7 +171,6 @@ export interface RootRouteChildren {
   SyncRoute: typeof SyncRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
-  IndexIndexRoute: typeof IndexIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -251,13 +238,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/index/': {
-      id: '/index/'
-      path: '/index'
-      fullPath: '/index/'
-      preLoaderRoute: typeof IndexIndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/editor/$id': {
       id: '/editor/$id'
       path: '/editor/$id'
@@ -287,7 +267,6 @@ const rootRouteChildren: RootRouteChildren = {
   SyncRoute: SyncRoute,
   DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,
-  IndexIndexRoute: IndexIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

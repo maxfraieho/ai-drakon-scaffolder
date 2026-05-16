@@ -13,6 +13,7 @@ import { NotesTab } from "@/components/docs/NotesTab";
 import { NotesGraphTab } from "@/components/docs/NotesGraphTab";
 import { useDaviaSettings } from "@/hooks/useDaviaSettings";
 import { docsApi, type DocsAnalysisItem } from "@/lib/docs-api";
+import { hasClientJwt } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/docs")({
   component: DocsRoute,
@@ -38,7 +39,7 @@ function DocsRoute() {
   const startedAtRef = useRef<number | null>(null);
   const logRef = useRef<HTMLDivElement | null>(null);
 
-  if (typeof window !== "undefined" && !localStorage.getItem("jwt")) {
+  if (!hasClientJwt()) {
     return <Navigate to="/login" replace />;
   }
 

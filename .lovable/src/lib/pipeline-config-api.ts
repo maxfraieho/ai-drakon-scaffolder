@@ -1,3 +1,6 @@
+import { getAccessToken } from "@/lib/auth";
+import { resolveWorkerUrl } from "@/lib/worker-url";
+
 export type NodeType = "action" | "decision" | "terminator" | "loop_start" | "loop_end";
 export type AgentId  = "architect" | "drakon" | "docs";
 
@@ -35,11 +38,10 @@ export interface ValidationResult {
 }
 
 const worker = () =>
-  import.meta.env.VITE_WORKER_URL ??
-  "https://drakon-mcp-worker.maxfraieho.workers.dev";
+  resolveWorkerUrl();
 
 function authHeaders(): HeadersInit {
-  const jwt = localStorage.getItem("jwt") ?? "";
+  const jwt = getAccessToken() ?? "";
   return {
     "Content-Type": "application/json",
     ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),

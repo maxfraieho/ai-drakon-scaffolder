@@ -1,9 +1,16 @@
-import { Navigate, createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
-  return <Navigate to="/diagrams" replace />;
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate({ to: "/diagrams", replace: true });
+  }, [navigate]);
+
+  return null;
 }

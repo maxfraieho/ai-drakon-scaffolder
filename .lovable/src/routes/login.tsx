@@ -1,6 +1,6 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 
+import { hasClientJwt } from "@/lib/route-auth";
 import { LoginPage } from "@/pages/LoginPage";
 
 export const Route = createFileRoute("/login")({
@@ -8,17 +8,7 @@ export const Route = createFileRoute("/login")({
 });
 
 function LoginRoute() {
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) {
-    return null;
-  }
-
-  if (localStorage.getItem("jwt")) {
+  if (hasClientJwt()) {
     return <Navigate to="/diagrams" replace />;
   }
 
