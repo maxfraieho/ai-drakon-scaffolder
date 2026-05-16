@@ -28,6 +28,7 @@ export default function AgentStudioPage() {
   const [selectedNode, setSelectedNode] = useState<AgentNode | null>(null);
   const [selectedKbFile, setSelectedKbFile] = useState<KbFile | null>(null);
   const [kbOpen, setKbOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const llmNodes = selectedPipeline.nodes.filter((n) => n.hasPrompt);
   const agentKbFiles = KB_FILES.filter((f) => f.agentId === selectedPipeline.agentId);
