@@ -1,0 +1,4 @@
+name = "drakon-mcp-worker"
+main = "worker-mcp-drakon.js"
+compatibility_date = "2024-01-01"
+account_id = "c354ea45a11a1e1c14f1f41fe780cb34"

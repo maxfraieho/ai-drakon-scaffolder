@@ -1824,6 +1824,17 @@ export default {
       }
       // ──────────────────────────────────────────────────────────────────────
 
+      // ─── Pipeline SSE (auth via ?token= query param — EventSource не підтримує headers) ─
+      const pipelineStreamMatch = path.match(/^\/v1\/pipeline\/stream\/([^\/]+)$/);
+      if (method === 'GET' && pipelineStreamMatch) {
+        const streamJobId = decodeURIComponent(pipelineStreamMatch[1]);
+        const qToken = new URL(request.url).searchParams.get('token') || '';
+        const streamPayload = await verifyJWT(qToken, env.JWT_SECRET).catch(() => null);
+        if (!streamPayload) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+        return await handlePipelineStream(streamJobId, env, ctx);
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       const ownerPayload = await verifyOwnerAuth(request, env);
       if (!ownerPayload) {
         return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
@@ -1915,6 +1926,76 @@ export default {
 
 
 
+// ── Pipeline SSE stream (architect-agent polling → browser EventSource) ──────
+async function handlePipelineStream(jobId, env, ctx) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+
+  ctx.waitUntil((async () => {
+    try {
+      await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'pending', job_id: jobId })}
+
+`));
+      const deadline = Date.now() + 85_000;
+      while (Date.now() < deadline) {
+        let resp;
+        try {
+          resp = await fetch(`${architectUrl}/pipeline/status/${jobId}`, {
+            signal: AbortSignal.timeout(8_000),
+          });
+        } catch (fetchErr) {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: String(fetchErr.message) })}
+
+`));
+          break;
+        }
+        if (resp.status === 404) {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: 'Сервіс перезапустився. Спробуйте ще раз.' })}
+
+`));
+          break;
+        }
+        if (!resp.ok) {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: `Agent HTTP ${resp.status}` })}
+
+`));
+          break;
+        }
+        let data;
+        try { data = await resp.json(); } catch {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: 'Bad JSON from agent' })}
+
+`));
+          break;
+        }
+        await writer.write(encoder.encode(`data: ${JSON.stringify(data)}
+
+`));
+        if (data.status === 'done' || data.status === 'error') break;
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    } catch (e) {
+      try { await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: String(e.message) })}
+
+`)); } catch { /* closed */ }
+    } finally {
+      try { await writer.close(); } catch { /* ignore */ }
+    }
+  })());
+
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
 // ── Pipeline proxy (architect-agent LangGraph endpoints) ─────────────────────
 async function handlePipeline(pipelinePath, request, env, ctx) {
   const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
