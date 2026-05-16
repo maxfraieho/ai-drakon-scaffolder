@@ -1,7 +1,7 @@
 import type { Diagram } from "@/types/drakon";
 import type { AnalysisJob, CodebaseAnalysisRequest } from "@/types/analysis";
 import { getAccessToken } from "@/lib/auth";
-import { getGithubConfig, readSettings } from "@/lib/settings-storage";
+import { getGithubConfig } from "@/lib/settings-storage";
 import { resolveWorkerUrl } from "@/lib/worker-url";
 
 function resolveApiBase() {
