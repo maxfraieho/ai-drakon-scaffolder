@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uk"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON | ГЕНЕРАЦІЯ КОДУ</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "bg-elevated": "#191c23",
+            "background": "#121316",
+            "primary": "#ffc174",
+            "on-background": "#e3e2e6",
+            "on-surface": "#e3e2e6",
+            "bg-surface": "#111318",
+            "bg-base": "#0a0b0e",
+            "text-muted": "rgba(255,255,255,0.28)",
+            "text-primary": "rgba(255,255,255,0.92)",
+            "text-secondary": "rgba(255,255,255,0.55)",
+            "border-default": "rgba(255,255,255,0.10)",
+            "border-subtle": "rgba(255,255,255,0.06)",
+            "primary-container": "#f59e0b",
+            "success": "#22c55e",
+            "error": "#ef4444",
+            "surface-container": "#1f1f23",
+            "surface-container-high": "#292a2d",
+          },
+          "borderRadius": {
+            "DEFAULT": "0rem",
+          },
+          "spacing": {
+            "margin": "16px",
+            "input-height": "28px",
+            "panel-padding": "12px",
+            "unit": "4px",
+            "gutter": "8px"
+          },
+          "fontFamily": {
+            "body-sm": ["IBM Plex Sans"],
+            "mono-sm": ["JetBrains Mono"],
+            "label-caps": ["JetBrains Mono"],
+            "headline-sm": ["IBM Plex Sans"],
+            "mono-md": ["JetBrains Mono"],
+          },
+          "fontSize": {
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+            "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+            "headline-sm": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+            "mono-md": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 18px;
+    }
+    body {
+      background-color: #121316;
+      color: rgba(255,255,255,0.92);
+      overflow: hidden;
+    }
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+  </style>
+</head>
+<body class="font-body-sm text-body-sm flex h-screen w-full">
+<!-- SideNavBar (As defined in JSON) -->
+<aside class="fixed left-0 top-0 h-full flex flex-col z-40 bg-bg-surface border-r border-border-default w-[64px] md:w-[240px]">
+<div class="p-4 flex items-center gap-3 border-b border-border-default h-[48px]">
+<span class="material-symbols-outlined text-primary">account_tree</span>
+<span class="hidden md:block font-mono-md text-mono-md font-bold text-on-surface">DRAKON-OS</span>
+</div>
+<nav class="flex-1 py-2">
+<div class="px-2 mb-4 hidden md:block">
+<p class="font-mono-sm text-mono-sm text-text-muted px-2">Technical Console</p>
+</div>
+<div class="flex flex-col gap-1">
+<a class="flex items-center gap-3 px-4 py-2 text-text-secondary hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">folder</span>
+<span class="hidden md:block font-mono-sm text-mono-sm">Files</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-secondary hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="hidden md:block font-mono-sm text-mono-sm">Explorer</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-text-secondary hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="hidden md:block font-mono-sm text-mono-sm">History</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 bg-bg-elevated text-primary border-l-2 border-primary" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="hidden md:block font-mono-sm text-mono-sm">Settings</span>
+</a>
+</div>
+</nav>
+<div class="border-t border-border-default p-2">
+<a class="flex items-center gap-3 px-4 py-2 text-text-secondary hover:bg-surface-container transition-colors" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+<span class="hidden md:block font-mono-sm text-mono-sm">Docs</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 ml-[64px] md:ml-[240px] mr-[480px] flex flex-col relative bg-background">
+<!-- TopNavBar (As defined in JSON) -->
+<header class="flex justify-between items-center h-[48px] px-margin w-full bg-bg-base border-b border-border-default">
+<div class="flex items-center gap-6">
+<span class="font-mono-md text-mono-md font-bold tracking-tighter text-on-surface">AI-DRAKON</span>
+<div class="flex gap-4">
+<a class="text-primary font-bold border-b-2 border-primary pb-1 font-body-sm text-body-sm" href="#">Diagrams</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-text-secondary hover:text-primary transition-colors cursor-pointer">account_tree</span>
+<span class="material-symbols-outlined text-text-secondary hover:text-primary transition-colors cursor-pointer">settings</span>
+<span class="material-symbols-outlined text-text-secondary hover:text-primary transition-colors cursor-pointer">logout</span>
+</div>
+</header>
+<!-- Canvas Content -->
+<div class="flex-1 flex flex-col items-center justify-center p-12 opacity-30">
+<span class="material-symbols-outlined text-8xl mb-4" style="font-variation-settings: 'wght' 100;">schema</span>
+<p class="font-label-caps text-label-caps text-text-muted uppercase mb-8">ВИБЕРІТЬ СХЕМУ ЗІ СПИСКУ ЗЛІВА</p>
+<div class="flex gap-4">
+<button class="bg-primary text-black h-[28px] px-4 font-body-sm text-body-sm font-bold flex items-center gap-2">
+<span class="material-symbols-outlined" style="font-size:16px;">add</span> НОВА СХЕМА
+        </button>
+<button class="bg-bg-elevated border border-border-default text-primary h-[28px] px-4 font-body-sm text-body-sm hover:border-primary transition-colors">
+          ІМПОРТ JSON
+        </button>
+</div>
+</div>
+</main>
+<!-- NavigationDrawer: ГЕНЕРАЦІЯ КОДУ (The focus of the task) -->
+<aside class="fixed right-0 top-0 h-full w-[480px] flex flex-col z-50 bg-bg-elevated border-l border-border-default">
+<!-- Drawer Header -->
+<div class="p-panel-padding flex justify-between items-start border-b border-border-default bg-surface-container">
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">ГЕНЕРАЦІЯ КОДУ</h2>
+<p class="font-mono-sm text-mono-sm text-text-muted mt-1 uppercase">Pipeline B · DRAKON IR → Code</p>
+</div>
+<button class="p-1 hover:bg-surface-container-high transition-all">
+<span class="material-symbols-outlined text-text-muted">close</span>
+</button>
+</div>
+<!-- Drawer Navigation (Tabs) -->
+<div class="flex border-b border-border-default">
+<button class="flex-1 py-3 text-primary border-b border-primary font-bold font-label-caps text-label-caps uppercase">INPUT</button>
+<button class="flex-1 py-3 text-text-secondary hover:bg-surface-container-high font-label-caps text-label-caps uppercase">PREVIEW</button>
+<button class="flex-1 py-3 text-text-secondary hover:bg-surface-container-high font-label-caps text-label-caps uppercase">LOGS</button>
+</div>
+<!-- Drawer Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-margin flex flex-col gap-margin">
+<!-- Input Section -->
+<section class="flex flex-col gap-gutter">
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">ЦІЛЬОВА МОВА</label>
+<div class="relative">
+<select class="w-full h-[28px] bg-bg-base border border-border-default text-primary px-2 font-mono-sm text-mono-sm focus:border-primary appearance-none outline-none">
+<option>Python</option>
+<option>TypeScript</option>
+<option>C++</option>
+<option>Rust</option>
+</select>
+<span class="material-symbols-outlined absolute right-2 top-1 text-text-muted pointer-events-none" style="font-size:16px;">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">ОПИС ЗАДАЧІ (НЕОБОВ'ЯЗКОВО)</label>
+<textarea class="w-full bg-bg-base border border-border-default text-on-surface p-2 font-mono-sm text-mono-sm focus:border-primary outline-none min-h-[80px] resize-none" placeholder="Describe what the code should do..."></textarea>
+</div>
+<button class="w-full bg-primary text-black h-[32px] font-bold text-body-sm flex items-center justify-center gap-2 hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined" style="font-size:18px;">terminal</span>
+          ЗГЕНЕРУВАТИ КОД
+        </button>
+</section>
+<!-- Divider -->
+<div class="h-px bg-border-subtle"></div>
+<!-- Result Section -->
+<section class="flex flex-col gap-gutter">
+<div class="flex justify-between items-center bg-success/10 border border-success/20 px-3 py-2">
+<div class="flex items-center gap-2 text-success">
+<span class="material-symbols-outlined" style="font-size:18px;">check_circle</span>
+<span class="font-bold font-mono-sm text-mono-sm uppercase">✓ КОД ЗГЕНЕРОВАНО</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-text-muted">1m 43s</span>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-end">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">Python</label>
+<span class="font-mono-sm text-mono-sm text-primary-container">module_v2.py</span>
+</div>
+<!-- Code Block -->
+<div class="bg-bg-base border border-border-default p-4 font-mono-sm text-mono-sm overflow-hidden relative">
+<pre class="text-on-surface whitespace-pre"><code><span class="text-primary">def</span> <span class="text-tertiary">process_order</span>(order_id: <span class="text-tertiary">int</span>):
+    <span class="text-text-muted"># Initializing pipeline IR sequence</span>
+    pipeline = AI_Drakon.load_model(<span class="text-primary">"v2"</span>)
+    
+    <span class="text-primary">try</span>:
+        result = pipeline.execute(order_id)
+        <span class="text-primary">return</span> {
+            <span class="text-primary">"status"</span>: <span class="text-success">"SUCCESS"</span>,
+            <span class="text-primary">"data"</span>: result
+        }
+    <span class="text-primary">except</span> <span class="text-tertiary">Exception</span> <span class="text-primary">as</span> e:
+        <span class="text-error">logger.error</span>(f<span class="text-primary">"Fail: {e}"</span>)
+        <span class="text-primary">raise</span></code></pre>
+<div class="absolute top-2 right-2 flex gap-1">
+<span class="material-symbols-outlined text-text-muted hover:text-on-surface cursor-pointer p-1" style="font-size:14px;">content_copy</span>
+</div>
+</div>
+</div>
+<!-- Action Row -->
+<div class="flex gap-2 mt-2">
+<button class="flex-1 bg-bg-elevated border border-border-default text-on-surface h-[28px] font-mono-sm text-mono-sm flex items-center justify-center gap-2 hover:bg-surface-container transition-colors">
+<span class="material-symbols-outlined" style="font-size:14px;">content_copy</span>
+            Копіювати код
+          </button>
+<button class="flex-[1.5] bg-primary text-black h-[28px] font-bold font-mono-sm text-mono-sm flex items-center justify-center gap-2 hover:brightness-110 transition-all">
+            Відкрити в Monaco →
+          </button>
+</div>
+</section>
+<!-- Advanced Stats -->
+<div class="mt-auto pt-margin grid grid-cols-2 gap-4">
+<div class="border border-border-subtle p-3 bg-surface-container-low">
+<span class="block font-label-caps text-label-caps text-text-muted uppercase mb-1">Tokens Used</span>
+<span class="font-mono-md text-mono-md text-on-surface">1,204</span>
+</div>
+<div class="border border-border-subtle p-3 bg-surface-container-low">
+<span class="block font-label-caps text-label-caps text-text-muted uppercase mb-1">Model</span>
+<span class="font-mono-md text-mono-md text-on-surface">GPT-4-Turbo</span>
+</div>
+</div>
+</div>
+<!-- Sticky Footer CTA -->
+<div class="p-margin border-t border-border-default bg-bg-base">
+<button class="w-full h-10 border border-primary text-primary font-bold uppercase tracking-widest font-label-caps text-label-caps hover:bg-primary hover:text-black transition-all">
+        EXECUTE PIPELINE
+      </button>
+</div>
+</aside>
+<!-- Status Bar -->
+<footer class="fixed bottom-0 left-0 right-[480px] h-6 bg-bg-base border-t border-border-default flex items-center px-4 justify-between z-30">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1">
+<span class="w-2 h-2 rounded-full bg-success"></span>
+<span class="font-mono-sm text-mono-sm text-text-muted">Connected: Central-01</span>
+</div>
+<span class="font-mono-sm text-mono-sm text-text-muted">UTF-8</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-mono-sm text-mono-sm text-text-muted">Ln 1, Col 1</span>
+<span class="font-mono-sm text-mono-sm text-primary">DRK-V1.4.0</span>
+</div>
+</footer>
+</body></html>

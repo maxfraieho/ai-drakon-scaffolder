@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON - Code Analysis</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "bg-elevated": "#191c23",
+            "tertiary-fixed-dim": "#7fd0ff",
+            "on-tertiary-fixed": "#001e2d",
+            "background": "#121316",
+            "on-error": "#690005",
+            "on-surface-variant": "#d8c3ad",
+            "primary-fixed": "#ffddb8",
+            "success": "#22c55e",
+            "border-subtle": "rgba(255,255,255,0.06)",
+            "tertiary-container": "#1abdff",
+            "on-error-container": "#ffdad6",
+            "primary": "#ffc174",
+            "on-background": "#e3e2e6",
+            "inverse-on-surface": "#303034",
+            "secondary-container": "#44474f",
+            "on-surface": "#e3e2e6",
+            "on-tertiary": "#00344a",
+            "surface": "#121316",
+            "on-tertiary-fixed-variant": "#004c6a",
+            "surface-dim": "#121316",
+            "on-secondary": "#2d3038",
+            "bg-surface": "#111318",
+            "on-primary-container": "#613b00",
+            "primary-fixed-dim": "#ffb95f",
+            "surface-container-highest": "#343538",
+            "surface-bright": "#38393c",
+            "on-secondary-container": "#b3b5be",
+            "on-primary-fixed-variant": "#653e00",
+            "on-primary-fixed": "#2a1700",
+            "surface-container-lowest": "#0d0e11",
+            "bg-base": "#0a0b0e",
+            "text-muted": "rgba(255,255,255,0.28)",
+            "secondary": "#c4c6d0",
+            "tertiary": "#8fd5ff",
+            "inverse-surface": "#e3e2e6",
+            "on-secondary-fixed": "#191c23",
+            "secondary-fixed-dim": "#c4c6d0",
+            "error": "#ef4444",
+            "tertiary-fixed": "#c5e7ff",
+            "surface-tint": "#ffb95f",
+            "text-primary": "rgba(255,255,255,0.92)",
+            "surface-container-low": "#1b1b1f",
+            "secondary-fixed": "#e0e2ec",
+            "accent-amber-dim": "rgba(245,158,11,0.15)",
+            "error-container": "#93000a",
+            "primary-container": "#f59e0b",
+            "surface-container-high": "#292a2d",
+            "text-secondary": "rgba(255,255,255,0.55)",
+            "border-default": "rgba(255,255,255,0.10)",
+            "outline-variant": "#534434",
+            "outline": "#a08e7a",
+            "on-tertiary-container": "#004966",
+            "surface-container": "#1f1f23",
+            "inverse-primary": "#855300",
+            "surface-variant": "#343538",
+            "on-primary": "#472a00",
+            "on-secondary-fixed-variant": "#44474f"
+          },
+          "borderRadius": {
+            "DEFAULT": "0px",
+            "lg": "0px",
+            "xl": "0px",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "16px",
+            "input-height": "28px",
+            "panel-padding": "12px",
+            "unit": "4px",
+            "gutter": "8px"
+          },
+          "fontFamily": {
+            "body-sm": ["IBM Plex Sans"],
+            "mono-sm": ["JetBrains Mono"],
+            "label-caps": ["JetBrains Mono"],
+            "headline-sm": ["IBM Plex Sans"],
+            "mono-md": ["JetBrains Mono"],
+            "body-md": ["IBM Plex Sans"]
+          },
+          "fontSize": {
+            "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+            "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+            "headline-sm": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+            "mono-md": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+            "body-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      font-size: 18px;
+    }
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+  </style>
+</head>
+<body class="bg-background text-on-background selection:bg-primary selection:text-on-primary-container font-body-sm text-body-sm overflow-hidden h-screen flex flex-col">
+<header class="bg-bg-base text-primary font-body-sm text-body-sm border-b border-border-default flex justify-between items-center h-[48px] px-margin w-full shrink-0 z-50">
+<div class="flex items-center gap-gutter">
+<span class="material-symbols-outlined">terminal</span>
+<span class="font-mono-md text-mono-md font-bold tracking-tighter text-on-surface">AI-DRAKON</span>
+<span class="mx-unit text-text-muted">|</span>
+<span class="text-primary font-bold border-b-2 border-primary pb-1">Diagrams</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 px-3 py-1 bg-surface-container border border-border-default">
+<span class="material-symbols-outlined text-[14px]">search</span>
+<span class="text-text-secondary text-body-sm">Аналіз</span>
+</div>
+<div class="flex items-center gap-2 px-3 py-1 bg-bg-elevated border border-primary text-primary">
+<span class="material-symbols-outlined text-[14px]">code</span>
+<span class="font-bold text-body-sm">Генерація</span>
+</div>
+<div class="flex items-center gap-gutter ml-4">
+<span class="material-symbols-outlined text-text-secondary cursor-pointer hover:text-primary transition-colors">account_tree</span>
+<span class="material-symbols-outlined text-text-secondary cursor-pointer hover:text-primary transition-colors">settings</span>
+<span class="material-symbols-outlined text-text-secondary cursor-pointer hover:text-primary transition-colors">logout</span>
+</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden relative">
+<nav class="fixed left-0 top-0 h-full flex flex-col z-40 bg-bg-surface border-r border-border-default w-[64px] md:w-[240px] pt-[48px]">
+<div class="p-panel-padding flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">DIAGRAMS</span>
+<span class="material-symbols-outlined text-text-muted cursor-pointer hover:text-primary">add</span>
+</div>
+<div class="flex border-b border-border-default px-2">
+<button class="flex-1 py-2 font-mono-sm text-mono-sm bg-elevated text-primary border-l-2 border-primary">FILES</button>
+<button class="flex-1 py-2 font-mono-sm text-mono-sm text-text-secondary hover:bg-surface-container">EXPLORER</button>
+<button class="flex-1 py-2 font-mono-sm text-mono-sm text-text-secondary hover:bg-surface-container">HISTORY</button>
+</div>
+<div class="p-2 space-y-1">
+<div class="px-2 py-1.5 flex items-center gap-2 text-text-secondary hover:bg-bg-elevated transition-colors cursor-pointer group">
+<span class="material-symbols-outlined text-[16px] group-hover:text-primary">expand_more</span>
+<span class="material-symbols-outlined text-[16px] group-hover:text-primary">folder</span>
+<span class="font-mono-sm text-mono-sm">Загальні</span>
+<span class="ml-auto text-[9px] text-text-muted">0</span>
+</div>
+<div class="pl-8 py-1 text-text-muted italic font-mono-sm text-mono-sm">порожньо</div>
+</div>
+<div class="mt-auto border-t border-border-default p-2">
+<button class="w-full flex items-center justify-center gap-2 py-1.5 border border-dashed border-border-default text-text-muted hover:border-primary hover:text-primary transition-all font-mono-sm text-mono-sm uppercase">
+<span class="material-symbols-outlined text-[14px]">add</span>
+          ПАПКА
+        </button>
+</div>
+</nav>
+<main class="flex-1 ml-[64px] md:ml-[240px] mr-0 bg-background flex flex-col items-center justify-center relative">
+<div class="text-center opacity-40 select-none">
+<span class="material-symbols-outlined text-[64px] mb-4" data-weight="fill">schema</span>
+<p class="font-label-caps text-label-caps tracking-[0.2em] uppercase">ВИБЕРІТЬ СХЕМУ ЗІ СПИСКУ ЗЛІВА</p>
+<div class="flex gap-gutter mt-8 justify-center">
+<button class="bg-primary text-on-primary font-bold px-4 py-2 flex items-center gap-2 text-body-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            НОВА СХЕМА
+          </button>
+<button class="bg-bg-elevated border border-border-default text-text-secondary px-4 py-2 text-body-sm hover:text-primary transition-colors">
+            ІМПОРТ JSON
+          </button>
+</div>
+</div>
+</main>
+<aside class="fixed right-0 top-[48px] h-[calc(100%-48px)] flex flex-col z-50 w-[480px] bg-bg-elevated border-l border-border-default">
+<div class="p-4 flex justify-between items-center bg-surface-container border-b border-border-default">
+<div class="flex flex-col">
+<span class="font-label-caps text-label-caps text-primary uppercase">CODE_ANALYSIS_ENGINE</span>
+<h2 class="font-headline-sm text-headline-sm font-bold text-on-surface">АНАЛІЗ КОДУ</h2>
+</div>
+<button class="p-1 hover:bg-surface-container-high text-text-secondary">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-panel-padding space-y-6">
+<div class="flex items-center justify-between p-3 border border-success/30 bg-success/5">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center text-success">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div>
+<p class="text-success font-bold font-body-sm">✓ АНАЛІЗ ЗАВЕРШЕНО</p>
+<p class="text-text-muted text-mono-sm">Module structure extracted successfully</p>
+</div>
+</div>
+<div class="flex items-center gap-1.5 text-text-secondary font-mono-sm px-2 py-1 bg-background/50 border border-border-default">
+<span class="material-symbols-outlined text-[14px]">timer</span>
+            2m 14s
+          </div>
+</div>
+<section class="space-y-gutter">
+<div class="flex items-center justify-between">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">DRAKON IR OUTPUT</span>
+<span class="text-mono-sm text-text-muted">SCHEMA_VERSION: 1.0.4</span>
+</div>
+<div class="relative group">
+<div class="w-full h-[400px] bg-bg-base border border-border-default p-4 font-mono-sm text-mono-sm overflow-auto text-on-surface/80 leading-relaxed">
+<pre class="whitespace-pre-wrap">{
+  "nodes": [
+    {
+      "id": "root",
+      "type": "header",
+      "label": "hello()",
+      "position": { "x": 0, "y": 0 }
+    },
+    {
+      "id": "action_1",
+      "type": "action",
+      "label": "print('hello')",
+      "position": { "x": 0, "y": 80 }
+    },
+    {
+      "id": "end",
+      "type": "footer",
+      "label": "END",
+      "position": { "x": 0, "y": 160 }
+    }
+  ],
+  "edges": [
+    { "source": "root", "target": "action_1" },
+    { "source": "action_1", "target": "end" }
+  ],
+  "metadata": {
+    "source_file": "module.py",
+    "parser": "PY_DRK_TRANSPILLER_V2",
+    "timestamp": "2023-11-24T14:22:01Z"
+  }
+}</pre>
+</div>
+<div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="bg-surface-container-high/80 border border-border-default p-1 text-text-secondary hover:text-primary">
+<span class="material-symbols-outlined text-[16px]">content_copy</span>
+</button>
+<button class="bg-surface-container-high/80 border border-border-default p-1 text-text-secondary hover:text-primary">
+<span class="material-symbols-outlined text-[16px]">fullscreen</span>
+</button>
+</div>
+</div>
+</section>
+<section class="space-y-3">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">MODULE ANALYTICS</span>
+<div class="grid grid-cols-3 gap-2">
+<div class="bg-surface-container p-2 border border-border-default">
+<div class="text-text-muted font-label-caps mb-1">NODES</div>
+<div class="font-mono-md text-mono-md text-primary">3</div>
+</div>
+<div class="bg-surface-container p-2 border border-border-default">
+<div class="text-text-muted font-label-caps mb-1">EDGES</div>
+<div class="font-mono-md text-mono-md text-primary">2</div>
+</div>
+<div class="bg-surface-container p-2 border border-border-default">
+<div class="text-text-muted font-label-caps mb-1">COMPLEXITY</div>
+<div class="font-mono-md text-mono-md text-primary">O(1)</div>
+</div>
+</div>
+</section>
+</div>
+<div class="p-4 border-t border-border-default bg-surface-container flex gap-gutter">
+<button class="flex-1 h-[32px] bg-bg-elevated border border-border-default text-primary font-bold text-body-sm flex items-center justify-center gap-2 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+          Копіювати IR
+        </button>
+<button class="flex-1 h-[32px] bg-primary text-on-primary font-bold text-body-sm flex items-center justify-center gap-2 hover:brightness-110 transition-all">
+          Відкрити в редакторі
+          <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+</button>
+</div>
+</aside>
+</div>
+<footer class="h-[24px] bg-bg-base border-t border-border-default px-margin flex items-center justify-between shrink-0">
+<div class="flex items-center gap-4 h-full">
+<div class="flex items-center gap-1.5 text-success">
+<span class="w-2 h-2 rounded-full bg-success"></span>
+<span class="font-mono-sm text-mono-sm uppercase">ENGINE_READY</span>
+</div>
+<span class="text-text-muted font-mono-sm text-mono-sm">LN 1, COL 1</span>
+</div>
+<div class="flex items-center gap-4 h-full">
+<span class="text-text-muted font-mono-sm text-mono-sm uppercase">UTF-8</span>
+<span class="text-text-muted font-mono-sm text-mono-sm uppercase">PYTHON 3.10</span>
+<span class="material-symbols-outlined text-text-muted text-[14px]">notifications</span>
+</div>
+</footer>
+</body></html>

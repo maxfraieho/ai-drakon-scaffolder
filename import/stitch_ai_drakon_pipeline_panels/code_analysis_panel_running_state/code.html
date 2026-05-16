@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="uk"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON | АНАЛІЗ КОДУ</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "bg-elevated": "#191c23",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "on-tertiary-fixed": "#001e2d",
+                        "background": "#121316",
+                        "on-error": "#690005",
+                        "on-surface-variant": "#d8c3ad",
+                        "primary-fixed": "#ffddb8",
+                        "success": "#22c55e",
+                        "border-subtle": "rgba(255,255,255,0.06)",
+                        "tertiary-container": "#1abdff",
+                        "on-error-container": "#ffdad6",
+                        "primary": "#ffc174",
+                        "on-background": "#e3e2e6",
+                        "inverse-on-surface": "#303034",
+                        "secondary-container": "#44474f",
+                        "on-surface": "#e3e2e6",
+                        "on-tertiary": "#00344a",
+                        "surface": "#121316",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "surface-dim": "#121316",
+                        "on-secondary": "#2d3038",
+                        "bg-surface": "#111318",
+                        "on-primary-container": "#613b00",
+                        "primary-fixed-dim": "#ffb95f",
+                        "surface-container-highest": "#343538",
+                        "surface-bright": "#38393c",
+                        "on-secondary-container": "#b3b5be",
+                        "on-primary-fixed-variant": "#653e00",
+                        "on-primary-fixed": "#2a1700",
+                        "surface-container-lowest": "#0d0e11",
+                        "bg-base": "#0a0b0e",
+                        "text-muted": "rgba(255,255,255,0.28)",
+                        "secondary": "#c4c6d0",
+                        "tertiary": "#8fd5ff",
+                        "inverse-surface": "#e3e2e6",
+                        "on-secondary-fixed": "#191c23",
+                        "secondary-fixed-dim": "#c4c6d0",
+                        "error": "#ef4444",
+                        "tertiary-fixed": "#c5e7ff",
+                        "surface-tint": "#ffb95f",
+                        "text-primary": "rgba(255,255,255,0.92)",
+                        "surface-container-low": "#1b1b1f",
+                        "secondary-fixed": "#e0e2ec",
+                        "accent-amber-dim": "rgba(245,158,11,0.15)",
+                        "error-container": "#93000a",
+                        "primary-container": "#f59e0b",
+                        "surface-container-high": "#292a2d",
+                        "text-secondary": "rgba(255,255,255,0.55)",
+                        "border-default": "rgba(255,255,255,0.10)",
+                        "outline-variant": "#534434",
+                        "outline": "#a08e7a",
+                        "on-tertiary-container": "#004966",
+                        "surface-container": "#1f1f23",
+                        "inverse-primary": "#855300",
+                        "surface-variant": "#343538",
+                        "on-primary": "#472a00",
+                        "on-secondary-fixed-variant": "#44474f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0px",
+                        "lg": "0px",
+                        "xl": "0px",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin": "16px",
+                        "input-height": "28px",
+                        "panel-padding": "12px",
+                        "unit": "4px",
+                        "gutter": "8px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["IBM Plex Sans"],
+                        "mono-sm": ["JetBrains Mono"],
+                        "label-caps": ["JetBrains Mono"],
+                        "headline-sm": ["IBM Plex Sans"],
+                        "mono-md": ["JetBrains Mono"],
+                        "body-md": ["IBM Plex Sans"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "mono-sm": ["11px", {"lineHeight": "14px", "fontWeight": "400"}],
+                        "label-caps": ["10px", {"lineHeight": "12px", "letterSpacing": "0.08em", "fontWeight": "700"}],
+                        "headline-sm": ["16px", {"lineHeight": "24px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+                        "mono-md": ["12px", {"lineHeight": "16px", "fontWeight": "400"}],
+                        "body-md": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            font-size: 18px;
+        }
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-sm overflow-hidden select-none">
+<!-- TopNavBar -->
+<header class="bg-bg-base dark:bg-bg-base border-b border-border-default flex justify-between items-center h-[48px] px-margin w-full fixed top-0 z-50">
+<div class="flex items-center gap-gutter">
+<span class="material-symbols-outlined text-primary">terminal</span>
+<span class="font-mono-md text-mono-md font-bold tracking-tighter text-on-surface">AI-DRAKON</span>
+<div class="h-4 w-[1px] bg-border-default mx-2"></div>
+<span class="text-primary font-bold border-b-2 border-primary pb-1 font-body-sm text-body-sm">Diagrams</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex gap-2 p-1 bg-bg-elevated border border-border-default">
+<button class="bg-primary text-on-primary-container px-3 h-[24px] font-body-sm flex items-center gap-1 border border-primary">
+<span class="material-symbols-outlined !text-[14px]">search</span>
+                    Аналіз
+                </button>
+<button class="text-text-secondary px-3 h-[24px] font-body-sm flex items-center gap-1 hover:text-primary transition-colors">
+<span class="material-symbols-outlined !text-[14px]">code</span>
+                    Генерація
+                </button>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-text-secondary cursor-pointer hover:text-primary">account_tree</span>
+<span class="material-symbols-outlined text-text-secondary cursor-pointer hover:text-primary">settings</span>
+<span class="material-symbols-outlined text-text-secondary cursor-pointer hover:text-primary">logout</span>
+</div>
+</div>
+</header>
+<div class="flex h-screen pt-[48px]">
+<!-- SideNavBar (Left Icons) -->
+<nav class="bg-bg-surface border-r border-border-default w-[64px] flex flex-col items-center py-4 gap-6 fixed left-0 h-full z-40">
+<div class="bg-elevated text-primary border-l-2 border-primary p-2 w-full flex justify-center">
+<span class="material-symbols-outlined">folder</span>
+</div>
+<div class="text-text-secondary hover:bg-surface-container p-2 w-full flex justify-center transition-colors cursor-pointer">
+<span class="material-symbols-outlined">search</span>
+</div>
+<div class="text-text-secondary hover:bg-surface-container p-2 w-full flex justify-center transition-colors cursor-pointer">
+<span class="material-symbols-outlined">history</span>
+</div>
+<div class="text-text-secondary hover:bg-surface-container p-2 w-full flex justify-center transition-colors cursor-pointer mt-auto mb-12">
+<span class="material-symbols-outlined">settings</span>
+</div>
+</nav>
+<!-- Diagrams Explorer (Left Panel) -->
+<main class="ml-[64px] flex-1 bg-background flex flex-col">
+<div class="flex h-full">
+<!-- File Tree -->
+<div class="w-[240px] border-r border-border-default bg-bg-surface flex flex-col">
+<div class="p-3 border-b border-border-default flex justify-between items-center bg-bg-elevated">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">DIAGRAMS</span>
+<span class="material-symbols-outlined text-text-secondary cursor-pointer hover:text-primary">add</span>
+</div>
+<div class="flex border-b border-border-default text-[11px] font-mono-sm">
+<div class="flex-1 text-center py-2 bg-elevated text-primary border-b border-primary uppercase">Files</div>
+<div class="flex-1 text-center py-2 text-text-secondary hover:bg-surface-container-high transition-all cursor-pointer uppercase">Explorer</div>
+<div class="flex-1 text-center py-2 text-text-secondary hover:bg-surface-container-high transition-all cursor-pointer uppercase">History</div>
+</div>
+<div class="p-2">
+<div class="flex items-center gap-2 px-2 py-1 bg-bg-base border border-border-default mb-4">
+<span class="material-symbols-outlined !text-[14px] text-text-muted">search</span>
+<input class="bg-transparent border-none p-0 text-[11px] w-full focus:ring-0 text-on-surface" placeholder="Пошук..." type="text"/>
+</div>
+<div class="space-y-1">
+<div class="flex items-center gap-1 text-on-surface hover:bg-bg-elevated p-1 cursor-pointer">
+<span class="material-symbols-outlined !text-[16px]">keyboard_arrow_down</span>
+<span class="material-symbols-outlined !text-[16px]">folder_open</span>
+<span class="text-[12px]">Загальні</span>
+<span class="ml-auto text-text-muted text-[10px]">8</span>
+</div>
+<div class="pl-8 text-text-muted text-[11px] italic py-1">порожньо</div>
+</div>
+</div>
+<div class="mt-auto p-3 border-t border-border-default">
+<button class="w-full border border-dashed border-border-default py-1 text-text-muted text-[11px] flex items-center justify-center gap-1 hover:border-primary hover:text-primary transition-colors uppercase">
+<span class="material-symbols-outlined !text-[14px]">add</span>
+                            ПАПКА
+                        </button>
+</div>
+</div>
+<!-- Canvas Area -->
+<div class="flex-1 relative flex items-center justify-center bg-bg-base p-12">
+<div class="absolute top-4 left-4 flex items-center gap-2 text-text-secondary font-mono-sm">
+<span class="italic">схему не вибрано</span>
+</div>
+<div class="text-center">
+<div class="mb-6 flex justify-center">
+<span class="material-symbols-outlined !text-[48px] text-text-muted" style="font-variation-settings: 'wght' 200;">account_tree</span>
+</div>
+<div class="font-label-caps text-label-caps text-text-muted mb-8 tracking-[0.2em]">ВИБЕРІТЬ СХЕМУ ЗІ СПИСКУ ЗЛІВА</div>
+<div class="flex gap-4 justify-center">
+<button class="bg-primary text-on-primary-container px-6 py-2 font-mono-sm font-bold border border-primary flex items-center gap-2 hover:bg-primary-container transition-all">
+<span class="material-symbols-outlined !text-[16px]">add</span>
+                                + НОВА СХЕМА
+                            </button>
+<button class="bg-bg-elevated text-primary px-6 py-2 font-mono-sm border border-border-default hover:bg-surface-container transition-all">
+                                ІМПОРТ JSON
+                            </button>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- NavigationDrawer (Right Panel: АНАЛІЗ КОДУ) -->
+<aside class="fixed right-0 top-0 h-full w-[480px] bg-bg-elevated border-l border-border-default z-50 flex flex-col p-0 shadow-2xl">
+<!-- Panel Header -->
+<div class="p-panel-padding flex justify-between items-center border-b border-border-default">
+<div class="flex flex-col">
+<h2 class="font-label-caps text-[11px] text-text-muted uppercase tracking-[0.08em]">АНАЛІЗ КОДУ</h2>
+<span class="font-body-sm text-[12px] text-text-secondary">Pipeline A · Code → DRAKON IR</span>
+</div>
+<button class="material-symbols-outlined text-text-secondary hover:text-error transition-colors">close</button>
+</div>
+<!-- Panel Content -->
+<div class="flex-1 p-panel-padding flex flex-col gap-margin overflow-y-auto">
+<!-- Input Section -->
+<div class="flex flex-col gap-gutter">
+<label class="font-label-caps text-label-caps text-text-muted uppercase">КОД ДЛЯ АНАЛІЗУ</label>
+<div class="relative border border-border-default bg-bg-base p-panel-padding group focus-within:border-primary transition-colors">
+<textarea class="w-full h-[240px] bg-transparent border-none p-0 text-on-surface font-mono-sm text-[11px] focus:ring-0 resize-none" spellcheck="false">def calculate_flow(matrix, threshold=0.85):
+    """
+    Main algorithm for DRAKON graph transformation
+    """
+    result = []
+    for node in matrix:
+        if node.weight &gt; threshold:
+            # Check edge cases
+            if node.is_leaf():
+                result.append(node.id)
+            else:
+                flow = node.process_children()
+                result.extend(flow)
+    return sorted(list(set(result)))
+
+# Pipeline entry point
+if __name__ == "__main__":
+    data = load_system_matrix()
+    output = calculate_flow(data)
+    print(f"Analysis complete: {len(output)} nodes found")</textarea>
+<div class="absolute top-2 right-2 flex gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined !text-[14px] cursor-pointer hover:text-primary">content_copy</span>
+<span class="material-symbols-outlined !text-[14px] cursor-pointer hover:text-primary">fullscreen</span>
+</div>
+</div>
+</div>
+<!-- Primary Action -->
+<button class="w-full bg-primary text-on-primary h-[40px] flex items-center justify-center gap-2 font-mono-sm text-[12px] font-bold uppercase hover:bg-primary-container transition-all">
+<span class="material-symbols-outlined">play_arrow</span>
+                    ЗАПУСТИТИ АНАЛІЗ
+                </button>
+<!-- Running State -->
+<div class="bg-surface-container border border-border-default p-panel-padding flex flex-col gap-3">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+</span>
+<span class="font-mono-sm text-[11px] text-primary uppercase font-bold tracking-wider">ВИКОНУЄТЬСЯ</span>
+</div>
+<span class="font-mono-sm text-[11px] text-text-muted">TIMER: 12s</span>
+</div>
+<!-- Progress Bar -->
+<div class="w-full bg-bg-base h-[2px] overflow-hidden">
+<div class="bg-primary h-full w-2/3 shadow-[0_0_8px_rgba(255,193,116,0.5)]"></div>
+</div>
+<div class="flex items-start gap-2">
+<span class="material-symbols-outlined !text-[14px] text-text-secondary mt-0.5">info</span>
+<p class="font-body-sm text-[11px] text-text-secondary italic">
+                            Pipeline A запущено. Очікуємо результат обробки синтаксичного дерева...
+                        </p>
+</div>
+</div>
+<!-- Data Preview -->
+<div class="mt-4">
+<label class="font-label-caps text-label-caps text-text-muted uppercase mb-2 block">CONTEXT_MAP_META</label>
+<div class="grid grid-cols-2 gap-2">
+<div class="bg-bg-base border border-border-default p-2">
+<div class="text-[10px] text-text-muted uppercase">Nodes</div>
+<div class="text-[13px] font-mono-md text-on-surface">1,402</div>
+</div>
+<div class="bg-bg-base border border-border-default p-2">
+<div class="text-[10px] text-text-muted uppercase">Edges</div>
+<div class="text-[13px] font-mono-md text-on-surface">3,891</div>
+</div>
+<div class="bg-bg-base border border-border-default p-2">
+<div class="text-[10px] text-text-muted uppercase">Complexity</div>
+<div class="text-[13px] font-mono-md text-on-surface">O(n log n)</div>
+</div>
+<div class="bg-bg-base border border-border-default p-2">
+<div class="text-[10px] text-text-muted uppercase">Confidence</div>
+<div class="text-[13px] font-mono-md text-primary">98.4%</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Action -->
+<div class="p-panel-padding bg-bg-base border-t border-border-default">
+<button class="w-full h-[32px] border border-border-default text-text-secondary font-mono-sm text-[11px] hover:bg-bg-elevated transition-colors uppercase">
+                    ПЕРЕГЛЯНУТИ ЛОГИ (STDOUT)
+                </button>
+</div>
+</aside>
+</div>
+<!-- Background Decoration (Subtle Noise/Texture if needed) -->
+<div class="fixed inset-0 pointer-events-none opacity-[0.03] contrast-150 grayscale" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDPNV53H15jkmxlyUhrcweUp_-AVnjA0t-Vg7F226QFLT8XL3QqXC6VXTTLEoCdUEbdkaP0WEpAspt4Dv7fb4cS-sFHgbhFuqdJnA0tzyf3HZUy1edibYkBP7e40ZUH1mM2RaB0SxFli9TzeG9RDDhSvlotCxE7EfTsDlXQtay5_xOnaHlaUTeY8P_nIay3h8Gg5aG-twJSLUmcO7PxCcVdL9jtNstsMjNkiuEZluBQeAfzi6R75c0pnDFFxZlFPwk3wBYKu2_WgcL1');"></div>
+</body></html>
