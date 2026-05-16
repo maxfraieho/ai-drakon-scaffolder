@@ -148,6 +148,7 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   const [pendingFolder, setPendingFolder] = useState<string | null>(null);
   // Mobile document list panel
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarSearch, setSidebarSearch] = useState("");
 
   const tree = useMemo(() => mergeLocalFolders(rawTree, localFolders), [rawTree, localFolders]);
 
@@ -317,6 +318,14 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
             </Button>
           </div>
         </div>
+        <div className="border-b border-border px-2 py-1">
+          <input
+            value={sidebarSearch}
+            onChange={(e) => setSidebarSearch(e.target.value)}
+            placeholder="Пошук документів..."
+            className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
+          />
+        </div>
         <ScrollArea className="flex-1">
           {loading ? (
             <div className="flex items-center justify-center p-4">
@@ -328,7 +337,13 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
             </div>
           ) : (
             <div className="space-y-0 p-1">
-              {tree.map((node, i) => (
+              {(sidebarSearch.trim()
+                ? flattenTree(tree).filter((n) =>
+                    n.slug?.toLowerCase().includes(sidebarSearch.toLowerCase()) ||
+                    n.title?.toLowerCase().includes(sidebarSearch.toLowerCase()),
+                  )
+                : tree
+              ).map((node, i) => (
                 <SidebarTreeNode
                   key={node.slug ?? node.path ?? i}
                   node={node}
