@@ -52,31 +52,16 @@ export function CodeGenerationPanel({ open, onClose, diagramIr }: CodeGeneration
 
   useEffect(() => {
     if (status !== "running" || !jobId) return;
-    let cancelled = false;
-    const tick = async () => {
-      try {
-        const data = await pollJob<GenerateResult>(jobId);
-        if (cancelled) return;
-        if (data.status === "done") {
-          setResult(data.result);
-          setStatus("done");
-          toast.success("Код згенеровано");
-        } else if (data.status === "error") {
-          setErrorMsg(data.error || "Невідома помилка");
-          setStatus("error");
-        }
-      } catch (e) {
-        if (cancelled) return;
-        setErrorMsg(e instanceof Error ? e.message : "Помилка статусу");
+    return streamJob<GenerateResult>(jobId, (data) => {
+      if (data.status === "done") {
+        setResult(data.result);
+        setStatus("done");
+        toast.success("Код згенеровано");
+      } else if (data.status === "error") {
+        setErrorMsg(data.error || "Невідома помилка");
         setStatus("error");
       }
-    };
-    const id = setInterval(tick, 3000);
-    void tick();
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
+    });
   }, [status, jobId]);
 
   const runGenerate = async () => {
