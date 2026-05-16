@@ -102,109 +102,174 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
       </header>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-3">
-        {status === "idle" || status === "running" ? (
-          <>
-            <div className="space-y-1.5">
-              <label className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                Шлях файлу
-              </label>
-              <Input
-                value={filePath}
-                onChange={(e) => setFilePath(e.target.value)}
-                placeholder="module.py"
-                disabled={status === "running"}
-                className="font-mono text-xs"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <label className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                Python код
-              </label>
-              <Textarea
-                value={source}
-                onChange={(e) => setSource(e.target.value)}
-                placeholder="def hello():&#10;    print('hello')"
-                rows={12}
-                disabled={status === "running"}
-                className="font-mono text-xs resize-y"
-              />
-            </div>
-            <Button
-              type="button"
-              onClick={runAnalysis}
-              disabled={status === "running"}
-              className="w-full bg-[var(--accent-amber)] text-black hover:bg-[var(--accent-amber)]/90"
-            >
-              {status === "running" ? (
-                <>
-                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                  Аналіз… {elapsed}s
-                </>
-              ) : (
-                <>Аналізувати</>
-              )}
-            </Button>
-          </>
-        ) : null}
+        <div className="space-y-1.5">
+          <label className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+            Шлях файлу
+          </label>
+          <Input
+            value={filePath}
+            onChange={(e) => setFilePath(e.target.value)}
+            placeholder="module.py"
+            disabled={status === "running"}
+            className="font-mono text-xs"
+          />
+        </div>
+        <div className="space-y-1.5">
+          <label className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+            Python код
+          </label>
+          <Textarea
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            placeholder="def hello():&#10;    print('hello')"
+            rows={12}
+            disabled={status === "running"}
+            className="font-mono text-xs resize-y"
+          />
+        </div>
+        <Button
+          type="button"
+          onClick={runAnalysis}
+          disabled={status === "running"}
+          className="w-full bg-[var(--accent-amber)] text-black hover:bg-[var(--accent-amber)]/90"
+        >
+          {status === "running" ? (
+            <>
+              <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+              Аналіз… {elapsed}s
+            </>
+          ) : (
+            <>Аналізувати</>
+          )}
+        </Button>
 
-        {status === "done" && result ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                Результат · {result.tree_level} · CC {result.cyclomatic_complexity}
-              </span>
-              <Button variant="ghost" size="sm" onClick={reset} className="h-6 text-xs">
-                Новий аналіз
-              </Button>
+        {status === "running" && (
+          <div className="border border-[var(--border-default)] bg-[var(--surface-container)] p-3 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-amber)] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-amber)]" />
+                </span>
+                <span className="font-mono text-[11px] text-[var(--accent-amber)] uppercase font-bold tracking-wider">
+                  ВИКОНУЄТЬСЯ
+                </span>
+              </div>
+              <span className="font-mono text-[11px] text-[var(--text-muted)]">{elapsed}s</span>
             </div>
-            <ul className="space-y-1.5">
+            <div className="w-full bg-[var(--bg-base)] h-[2px] overflow-hidden">
+              <div
+                className="bg-[var(--accent-amber)] h-full transition-all"
+                style={{ width: `${Math.min(90, elapsed * 5)}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-[var(--text-secondary)] italic">
+              Pipeline A запущено. Очікуємо результат обробки синтаксичного дерева...
+            </p>
+          </div>
+        )}
+
+        {status === "done" && result && (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between px-3 py-2 border border-emerald-500/30 bg-emerald-500/5">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <span className="text-[16px]">✓</span>
+                <span className="font-mono text-[11px] font-bold uppercase">
+                  АНАЛІЗ ЗАВЕРШЕНО
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[11px] text-[var(--text-muted)]">{elapsed}s</span>
+                <button
+                  type="button"
+                  onClick={reset}
+                  className="font-mono text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] uppercase"
+                >
+                  Новий аналіз
+                </button>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <div className="flex justify-between items-center">
+                <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
+                  DRAKON IR OUTPUT
+                </span>
+                <span className="font-mono text-[10px] text-[var(--text-muted)]">
+                  CC: {result.cyclomatic_complexity}
+                </span>
+              </div>
+              <div className="relative group">
+                <pre className="w-full h-[320px] bg-[var(--bg-base)] border border-[var(--border-default)] p-3 font-mono text-[11px] overflow-auto text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
+                  {JSON.stringify(result.drakon_ir, null, 2)}
+                </pre>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await navigator.clipboard.writeText(JSON.stringify(result.drakon_ir, null, 2));
+                      toast.success("Скопійовано");
+                    }}
+                    className="bg-[var(--surface-container)]/80 border border-[var(--border-default)] p-1 text-[var(--text-secondary)] hover:text-[var(--accent-amber)]"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-[var(--bg-base)] border border-[var(--border-default)] p-2">
+                <div className="font-mono text-[10px] text-[var(--text-muted)] uppercase">Functions</div>
+                <div className="font-mono text-[13px] text-[var(--text-primary)]">
+                  {result.drakon_ir.length}
+                </div>
+              </div>
+              <div className="bg-[var(--bg-base)] border border-[var(--border-default)] p-2">
+                <div className="font-mono text-[10px] text-[var(--text-muted)] uppercase">CC</div>
+                <div className="font-mono text-[13px] text-[var(--text-primary)]">
+                  {result.cyclomatic_complexity}
+                </div>
+              </div>
+              <div className="bg-[var(--bg-base)] border border-[var(--border-default)] p-2">
+                <div className="font-mono text-[10px] text-[var(--text-muted)] uppercase">Level</div>
+                <div className="font-mono text-[13px] text-[var(--text-primary)]">
+                  {result.tree_level}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1">
               {result.drakon_ir.map((fn, i) => {
                 const valid = !fn.error && (!fn.validation_errors || fn.validation_errors.length === 0);
-                return (
-                  <li
+                return valid ? (
+                  <button
                     key={`${fn.name}-${i}`}
-                    className="flex items-center justify-between gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-1.5"
+                    type="button"
+                    onClick={() => onImportIr(fn)}
+                    className="w-full flex items-center justify-between px-2 py-1.5 border border-[var(--border-default)] bg-[var(--bg-base)] hover:border-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/5 transition-all font-mono text-xs text-[var(--text-primary)]"
                   >
-                    <div className="min-w-0 flex-1">
-                      <div className="font-mono text-xs text-[var(--text-primary)] truncate">
-                        {fn.name}
-                        {typeof fn.cyclomatic_complexity === "number" ? (
-                          <span className="ml-2 text-[var(--text-muted)]">CC: {fn.cyclomatic_complexity}</span>
-                        ) : null}
-                        {valid ? (
-                          <span className="ml-2 text-emerald-500">✓</span>
-                        ) : (
-                          <span className="ml-2 text-red-400">
-                            — {fn.error || `${fn.validation_errors?.length ?? 0} помилок`}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {valid ? (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onImportIr(fn)}
-                        className="h-6 px-2 text-[11px] font-mono"
-                      >
-                        ↓ Імпортувати
-                      </Button>
-                    ) : null}
-                  </li>
-                );
+                    <span>{fn.name}</span>
+                    <span className="text-[var(--text-muted)]">↓ Імпортувати</span>
+                  </button>
+                ) : null;
               })}
-            </ul>
+            </div>
           </div>
-        ) : null}
+        )}
 
-        {status === "error" ? (
-          <div className="space-y-2 rounded-[var(--radius-sm)] border border-red-500/30 bg-red-500/5 p-3">
-            <p className="font-mono text-xs text-red-400">{errorMsg || "Помилка"}</p>
-            <Button variant="outline" size="sm" onClick={reset}>
+        {status === "error" && (
+          <div className="border border-red-500/30 bg-red-500/5 p-3 flex flex-col gap-2">
+            <p className="font-mono text-[11px] text-red-400">{errorMsg || "Помилка"}</p>
+            <button
+              type="button"
+              onClick={reset}
+              className="w-full border border-[var(--border-default)] py-1 font-mono text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)] transition-colors"
+            >
               Повторити
-            </Button>
+            </button>
           </div>
-        ) : null}
+        )}
       </div>
     </aside>
   );
