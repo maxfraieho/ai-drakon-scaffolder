@@ -65,6 +65,8 @@ import {
   writeFoldersToStorage,
   type Folder,
 } from "@/lib/folder-storage";
+import { CodeAnalysisPanel } from "@/components/pipeline/CodeAnalysisPanel";
+import type { AnalyzedFunction } from "@/lib/pipeline-api";
 import type { CodebaseAnalysisRequest } from "@/types/analysis";
 import type { Diagram } from "@/types/drakon";
 import { listProjects } from "@/lib/mcp/projects";
@@ -144,6 +146,7 @@ export function DiagramsPage() {
   const [diagramForGithubSave, setDiagramForGithubSave] = useState<Diagram | null>(null);
   const [isCommittingToGithub, setIsCommittingToGithub] = useState(false);
   const [isAnalyzeOpen, setIsAnalyzeOpen] = useState(false);
+  const [isAnalysisPanelOpen, setIsAnalysisPanelOpen] = useState(false);
   const [analyzeDraft, setAnalyzeDraft] = useState<CodebaseAnalysisRequest>({
     projectName: "",
     sourceType: "text-paste",
@@ -272,7 +275,31 @@ export function DiagramsPage() {
     });
   };
 
-  const openNewDiagram = () => {
+  const handleImportIr = (fn: AnalyzedFunction) => {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const stored: Diagram = {
+      id,
+      folderId: selectedFolder.slug,
+      name: fn.name,
+      createdAt: now,
+      updatedAt: now,
+      diagram: {
+        name: fn.name,
+        items: fn.items as never,
+      },
+    };
+    upsertDiagramInStorage(stored);
+    setDiagrams((prev) => [stored, ...prev]);
+    setIsAnalysisPanelOpen(false);
+    toast.success(`Діаграму "${fn.name}" імпортовано`);
+    navigate({
+      to: "/diagram/editor",
+      search: { diagramId: stored.id, folderId: selectedFolder.slug },
+    });
+  };
+
+    const openNewDiagram = () => {
     navigate({
       to: "/diagram/editor",
       search: {
@@ -676,6 +703,15 @@ export function DiagramsPage() {
               </button>
               <button
                 type="button"
+                onClick={() => setIsAnalysisPanelOpen((v) => !v)}
+                aria-label="Відкрити панель аналізу"
+                title="Аналіз коду (Pipeline A)"
+                className="hidden rounded-[var(--radius-sm)] border border-[var(--border-default)] bg-transparent px-3 py-1.5 text-[11px] font-mono uppercase tracking-wider text-[var(--text-secondary)] hover:border-[var(--border-strong)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50 md:inline-flex"
+              >
+                Аналіз
+              </button>
+              <button
+                type="button"
                 onClick={openNewDiagram}
                 aria-label="Create new diagram"
                 className="inline-flex items-center gap-1.5 rounded-[var(--radius-sm)] bg-[var(--accent-amber)] px-3 py-1.5 text-[11px] font-mono font-medium uppercase tracking-wider text-black active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60"
@@ -995,6 +1031,12 @@ export function DiagramsPage() {
           </div>
 
         </main>
+
+        <CodeAnalysisPanel
+          open={isAnalysisPanelOpen}
+          onClose={() => setIsAnalysisPanelOpen(false)}
+          onImportIr={handleImportIr}
+        />
 
         <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
           <DialogContent>
