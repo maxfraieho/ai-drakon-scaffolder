@@ -12,7 +12,7 @@ import {
   Moon,
   Sun,
   Terminal,
-  Workflow,
+  Cpu,
 } from "lucide-react";
 
 import {
