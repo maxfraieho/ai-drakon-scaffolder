@@ -94,7 +94,7 @@ export default function PipelineEditorPage() {
       <div className="min-h-0 flex-1">
         <DrakonEditor
           diagram={pipelineToIR(config)}
-          diagramId={}
+          diagramId={`pipeline-${config.id}`}
           isNew={false}
           onSaveOverride={handleSaveOverride}
           className="h-full"
