@@ -11,12 +11,9 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as PipelineEditorRouteImport } from './routes/pipeline-editor'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GithubRouteImport } from './routes/github'
-import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
-import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IndexIndexRouteImport } from './routes/index.index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
@@ -32,11 +29,6 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PipelineEditorRoute = PipelineEditorRouteImport.update({
-  id: '/pipeline-editor',
-  path: '/pipeline-editor',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -47,19 +39,9 @@ const GithubRoute = GithubRouteImport.update({
   path: '/github',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DocsRoute = DocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DiagramsRoute = DiagramsRouteImport.update({
   id: '/diagrams',
   path: '/diagrams',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AgentsRoute = AgentsRouteImport.update({
-  id: '/agents',
-  path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -85,12 +67,9 @@ const DiagramEditorRoute = DiagramEditorRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
-  '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
-  '/pipeline-editor': typeof PipelineEditorRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
@@ -99,12 +78,9 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
-  '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
-  '/pipeline-editor': typeof PipelineEditorRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
@@ -114,12 +90,9 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
-  '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
-  '/pipeline-editor': typeof PipelineEditorRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
@@ -130,12 +103,9 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/agents'
     | '/diagrams'
-    | '/docs'
     | '/github'
     | '/login'
-    | '/pipeline-editor'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
@@ -144,12 +114,9 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/agents'
     | '/diagrams'
-    | '/docs'
     | '/github'
     | '/login'
-    | '/pipeline-editor'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
@@ -158,12 +125,9 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
-    | '/agents'
     | '/diagrams'
-    | '/docs'
     | '/github'
     | '/login'
-    | '/pipeline-editor'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
@@ -173,12 +137,9 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AgentsRoute: typeof AgentsRoute
   DiagramsRoute: typeof DiagramsRoute
-  DocsRoute: typeof DocsRoute
   GithubRoute: typeof GithubRoute
   LoginRoute: typeof LoginRoute
-  PipelineEditorRoute: typeof PipelineEditorRoute
   SettingsRoute: typeof SettingsRoute
   SyncRoute: typeof SyncRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
@@ -202,13 +163,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pipeline-editor': {
-      id: '/pipeline-editor'
-      path: '/pipeline-editor'
-      fullPath: '/pipeline-editor'
-      preLoaderRoute: typeof PipelineEditorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -223,25 +177,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GithubRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/docs': {
-      id: '/docs'
-      path: '/docs'
-      fullPath: '/docs'
-      preLoaderRoute: typeof DocsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/diagrams': {
       id: '/diagrams'
       path: '/diagrams'
       fullPath: '/diagrams'
       preLoaderRoute: typeof DiagramsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/agents': {
-      id: '/agents'
-      path: '/agents'
-      fullPath: '/agents'
-      preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -277,12 +217,9 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AgentsRoute: AgentsRoute,
   DiagramsRoute: DiagramsRoute,
-  DocsRoute: DocsRoute,
   GithubRoute: GithubRoute,
   LoginRoute: LoginRoute,
-  PipelineEditorRoute: PipelineEditorRoute,
   SettingsRoute: SettingsRoute,
   SyncRoute: SyncRoute,
   DiagramEditorRoute: DiagramEditorRoute,
@@ -292,13 +229,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

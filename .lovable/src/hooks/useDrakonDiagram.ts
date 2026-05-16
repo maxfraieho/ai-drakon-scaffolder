@@ -4,12 +4,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 import { api } from "@/lib/api";
-import {
-  readDiagramsFromStorage,
-  removeDiagramFromStorage,
-  upsertDiagramInStorage,
-} from "@/lib/diagram-storage";
+import { readDiagramsFromStorage, removeDiagramFromStorage, upsertDiagramInStorage } from "@/lib/diagram-storage";
 import { useDiagramStore } from "@/store/useDiagramStore";
+import { withDiagramMetadataDefaults } from "@/types/diagram-metadata";
 import type { Diagram } from "@/types/drakon";
 
 type SaveInput = {
@@ -24,8 +21,7 @@ const getDiagramStorageKey = (diagramId: string) => `diagram_${diagramId}`;
 function normalizeDiagram(folderSlug: string | undefined, data: SaveInput): Diagram {
   const now = new Date().toISOString();
   const raw = (data.diagram ?? {}) as Record<string, unknown>;
-  const nested = ((raw.diagram as Record<string, unknown> | undefined) ??
-    raw) as unknown as Diagram["diagram"];
+  const nested = ((raw.diagram as Record<string, unknown> | undefined) ?? raw) as unknown as Diagram["diagram"];
   const name = data.name ?? (raw.name as string) ?? "Untitled";
 
   return {
@@ -38,6 +34,7 @@ function normalizeDiagram(folderSlug: string | undefined, data: SaveInput): Diag
       ...nested,
       name,
       items: nested?.items ?? {},
+      metadata: withDiagramMetadataDefaults(nested?.metadata),
     },
   };
 }
@@ -109,9 +106,7 @@ export function useSaveDrakonDiagram(folderSlug?: string) {
       return { success: true, diagram: savedDiagram };
     },
     onSuccess: (result, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: ["drakon-diagram", folderSlug, variables.diagramId],
-      });
+      queryClient.invalidateQueries({ queryKey: ["drakon-diagram", folderSlug, variables.diagramId] });
       useDiagramStore.getState().setDiagram(result.diagram);
       toast.success("Схему збережено");
     },
