@@ -63,7 +63,10 @@ export function AgentSidebar({
           {agentPipelines.map((p) => (
             <button
               key={p.id}
-              onClick={() => onSelectPipeline(p)}
+              onClick={() => {
+                onSelectPipeline(p);
+                onClose?.();
+              }}
               className={cn(
                 "flex w-full items-center gap-2 border-l-2 px-3 py-1.5 text-left transition-colors",
                 selectedPipeline.id === p.id
