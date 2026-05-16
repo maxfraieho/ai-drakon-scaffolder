@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  pollJob,
+  streamJob,
   startGeneration,
   type GenerateResult,
 } from "@/lib/pipeline-api";
