@@ -1,4 +1,4 @@
-const WORKER_URL = import.meta.env.VITE_WORKER_URL ?? "";
+import { resolveWorkerUrl } from "@/lib/worker-url";
 
 export interface KbContributePayload {
   code: string;
@@ -12,7 +12,7 @@ export async function kbContribute(
   payload: KbContributePayload,
   token: string
 ): Promise<{ id: string; timestamp: number }> {
-  const res = await fetch(`${WORKER_URL}/v1/kb/contribute`, {
+  const res = await fetch(`${resolveWorkerUrl()}/v1/kb/contribute`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
