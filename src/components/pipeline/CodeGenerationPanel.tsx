@@ -12,6 +12,7 @@ import {
   saveGenerationHistory,
   type GenerationHistoryItem,
 } from "@/lib/pipeline-history";
+import { kbContribute } from "@/lib/kb-api";
 
 interface CodeGenerationPanelProps {
   open: boolean;
