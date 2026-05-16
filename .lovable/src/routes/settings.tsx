@@ -62,6 +62,11 @@ function statusBadge(status: ConnectionStatus) {
 function SettingsRoute() {
   const navigate = useNavigate();
   const [settings, setSettings] = useState<AppSettings>(() => readSettings());
+  const [agentBaseUrl, setAgentBaseUrl] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("drakon_agent_base_url") ?? "http://192.168.3.184"
+      : "http://192.168.3.184",
+  );
   const [showGithubToken, setShowGithubToken] = useState(false);
   const [showN8nToken, setShowN8nToken] = useState(false);
   const [isCheckingGithub, setIsCheckingGithub] = useState(false);
@@ -113,6 +118,7 @@ function SettingsRoute() {
   const saveSettings = () => {
     try {
       writeSettings(settings);
+      localStorage.setItem("drakon_agent_base_url", agentBaseUrl.trim() || "http://192.168.3.184");
       toast.success("Налаштування збережено", {
         description: "Конфігурацію оновлено локально.",
       });
@@ -758,6 +764,19 @@ function SettingsRoute() {
                   }
                   placeholder="https://your-worker.example.workers.dev"
                 />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="app-agent-base-url">Agent Server URL</Label>
+                <Input
+                  id="app-agent-base-url"
+                  value={agentBaseUrl}
+                  onChange={(event) => setAgentBaseUrl(event.target.value)}
+                  placeholder="http://192.168.3.184"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Base URL for AI agents (drakon:8765, architect:8766, docs:8767)
+                </p>
               </div>
 
               <div className="grid gap-2">

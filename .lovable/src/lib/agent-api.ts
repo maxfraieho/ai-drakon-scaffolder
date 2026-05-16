@@ -16,7 +16,22 @@ function getWorkerUrl(): string {
   return readSettings().app.workerUrl.replace(/\/+$/, "");
 }
 
+const AGENT_PORTS: Record<AgentId, number> = {
+  drakon: 8765,
+  architect: 8766,
+  docs: 8767,
+};
+
+function readAgentBaseUrl(): string {
+  if (typeof window === "undefined") return "http://192.168.3.184";
+  return localStorage.getItem("drakon_agent_base_url")?.trim() || "http://192.168.3.184";
+}
+
 function getAgentUrlFor(agentId: AgentId): string {
+  const fromBase = readAgentBaseUrl().replace(/\/+$/, "");
+  if (fromBase) {
+    return `${fromBase}:${AGENT_PORTS[agentId]}`;
+  }
   const a = readSettings().agents;
   return agentId === "drakon" ? a.drakonUrl : agentId === "architect" ? a.architectUrl : a.docsUrl;
 }
