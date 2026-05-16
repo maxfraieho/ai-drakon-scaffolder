@@ -1,25 +1,34 @@
-# SESSION STATE — 2026-05-16 (день, сесія 4)
+# SESSION STATE — 2026-05-17 (сесія 4)
 
 ## Машини
 | Машина | Роль | Доступ |
 |--------|------|--------|
-| 192.168.3.161 (OrangePi PC2) | Claude Code — ця сесія | pass `805335io` (без крапки!) |
+| 192.168.3.161 (OrangePi PC2) | Claude Code — ця сесія | pass `805235io.` (з крапкою!) |
 | 192.168.3.184 (Alpine Linux) | Dev server, репо, PinchTab, агенти | `sshpass -p '805235io.' ssh vokov@192.168.3.184` |
 
 ## Репозиторії (на 192.168.3.184)
-| Репо | GitHub | Шлях |
-|------|--------|------|
-| ai-drakon-setup | maxfraieho/ai-drakon-setup | `~/workspace/ai-drakon-setup/` |
-| drakon-flow-designer | maxfraieho/drakon-flow-designer | (новий Lovable repo, remote: drakon-flow-designer) |
+| Репо | GitHub | Remote name | Призначення |
+|------|--------|-------------|-------------|
+| ai-drakon-setup | maxfraieho/ai-drakon-setup | origin | CF Pages source (будує сайт) |
+| drakon-flow-designer | maxfraieho/drakon-flow-designer | drakon-flow-designer | Новий Lovable repo |
 
-**КРИТИЧНО:** Після будь-яких змін пушити в ОБИДВА remote (`origin` + `drakon-flow-designer`).
-**Mirror:** drakon-flow-designer → ai-drakon-setup via GitHub Action (MIRROR_TOKEN ✅)
+**КРИТИЧНО:** Після будь-яких змін пушити в ОБИДВА remote:
+```
+git push origin main
+git push drakon-flow-designer main
+```
+Mirror: drakon-flow-designer → ai-drakon-setup via GitHub Action (MIRROR_TOKEN ✅)
+
+**Старі remotes (більше не використовувати):**
+- `drakon-flow` → maxfraieho/drakon-flow.git (obsolete)
+- `drakon-flow-new` → maxfraieho/drakon-flow-90aa2999.git (obsolete)
 
 ## Live URLs
-- UI: https://ai-drakon-setup.pages.dev/  (login: `owner` / `805235io`)
+- UI: https://ai-drakon-setup.pages.dev/ (login: `owner` / `805235io`)
 - Worker: https://drakon-mcp-worker.maxfraieho.workers.dev
 - Architect tunnel: https://architect-agent.exodus.pp.ua
 - Drakon tunnel: https://drakon-agent.exodus.pp.ua
+- Docs tunnel: https://docs-agent.exodus.pp.ua
 
 ## Стан Спринтів
 
@@ -29,42 +38,43 @@
 | Sprint 1 | SSE Streaming | ✅ верифіковано |
 | Sprint 2 | Monaco Editor + localStorage History | ✅ верифіковано Q |
 | Sprint 3 | KB Integration (SQLite + RAG) | ✅ верифіковано bundle |
-| **Sprint 4** | JS/TS підтримка в drakon-agent | 🔵 ПЛАН — виконати ПІСЛЯ Sprint 5 |
-| **Sprint 5** | Agent Pipeline Management System | ✅ ВИКОНАНО (сесія 3) |
+| **Sprint 4** | JS/TS підтримка в drakon-agent | 🔵 НАСТУПНИЙ |
+| **Sprint 5** | Agent Pipeline Management System | ✅ ВИКОНАНО + BUG FIXES |
 
-## Sprint 5 — Pipeline Management ✅ COMPLETE
+## Sprint 5 — Pipeline Management ✅ COMPLETE (з виправленнями)
 
-**Commit range:** `a535101`..`5bad869` (6 commits, pushed → origin + drakon-flow-new)
+**Commit range:** `a535101`..`73f3b7f`
 
-### Що зроблено (Tasks 1–7)
+### Баги знайдені та виправлені (code review сесія 4)
 
-| Task | Опис | Commit | Стан |
-|------|------|--------|------|
-| 1 | `services/shared/drakon_shared/` Python package + pip install -e | a535101 | ✅ |
-| 2 | 4x Pipeline JSON configs (architect-a/b, drakon-analyze, docs-chat) | a535101 | ✅ |
-| 3 | Mount `pipeline_config_router` на architect-agent `/v1/agents/pipeline` | a7a0c29 | ✅ |
-| 4 | Cloudflare Worker proxy `/v1/agents/pipeline*` | 6ad495b | ✅ deployed |
-| 5 | `src/lib/pipeline-config-api.ts` (fetchPipeline, savePipeline, validate) | e49d422 | ✅ |
-| 6 | `src/lib/pipeline-to-drakon.ts` (BFS irToPipeline, widget types, branch/0) | bc32081 | ✅ |
-| 7 | `DrakonEditor.onSaveOverride` + `PipelineEditorPage` + TanStack route | 5bad869 | ✅ |
+| Commit | Файл | Проблема | Фікс |
+|--------|------|----------|------|
+| `359aca2` | `PipelineEditorPage.tsx:97` | `diagramId={}` — template literal обрізано | `diagramId={\`pipeline-\${config.id}\`}` |
+| `359aca2` | `pipeline-to-drakon.ts:15` | `nodeToItem.set(node.id, )` — 2-й аргумент відсутній | `nodeToItem.set(node.id, \`\${prefix}\${counter++}\`)` |
+| `73f3b7f` | `CodeGenerationPanel.tsx:152` | `auth_token` → `jwt` | localStorage key consistency |
+| `73f3b7f` | `CodeAnalysisPanel.tsx:92` | `auth_token` → `jwt` | те саме |
+| `73f3b7f` | `pipeline-config-api.ts:1-2,18` | bare identifiers замість string literals | `"action" \| "decision" \| ...` |
+| `73f3b7f` | `.github/workflows/mirror-to-ai-drakon.yml` | self-referential loop видалено | GH Actions failures усунуті |
 
-### Виправлення відносно плану (застосовано під час виконання)
-- `PipelineConfig` з `pipeline-config-api.ts` (nodes+edges), не steps
-- `irToPipeline` — BFS обхід графа, не тільки `item.one`
-- `PipelineEditorPage` — `Route.useParams()` з TanStack Router, `fetchPipeline()` з api
-- b0: `type: "branch"`, `branchId: 0` (число), `import from "@/types/drakonwidget"`
+**CF Pages:** `359aca2` → deploy success ✅, `73f3b7f` → build активний (2026-05-17)
 
 ### Smoke tests (верифіковано)
-- `✓ drakon_shared OK` — Python import
-- `✓ architect-a: 6 nodes, 9 edges` + 3 others — список пайплайнів
-- `GET http://localhost:8766/v1/agents/pipeline` → 4 configs JSON
-- `GET https://drakon-mcp-worker.maxfraieho.workers.dev/v1/agents/pipeline` → 401 (auth OK)
-- `tsc --noEmit --skipLibCheck` → exit 0
+- CF Pages build: ✅ success (`29ad0acb`)
+- Pipeline endpoints: `GET /v1/agents/pipeline` → 4 configs JSON ✅
+- Worker auth: `GET https://drakon-mcp-worker.../v1/agents/pipeline` → 401 ✅
 
-### Що ще потрібно (Lovable side)
-- Промт 40 (`lovable-prompts/40-pipeline-editor.md`) ще НЕ застосований у Lovable chat
-- Потрібно вставити в Lovable → CF Pages deploy → PinchTab verify
-- Промт 40 додає: Edit кнопки в AgentSidebar, hideChrome для /agents/pipeline/
+## Lovable Migration ✅ (сесія 4)
+
+- Новий Lovable repo: `git@github.com:maxfraieho/drakon-flow-designer.git`
+- Remote додано: `git remote add drakon-flow-designer https://github.com/maxfraieho/drakon-flow-designer.git`
+- MIRROR_TOKEN встановлено: `gh secret set MIRROR_TOKEN --repo maxfraieho/drakon-flow-designer`
+- Mirror Action: `drakon-flow-designer` → `ai-drakon-setup` (GitHub Actions) ✅
+- Force push: обидва repo на `73f3b7f` ✅
+
+### Підключення нового Lovable
+1. Lovable → новий проект → Connect GitHub → `maxfraieho/drakon-flow-designer`
+2. Перший промт: `docs/templates/lovable-migration/lovable-prompts/00-handoff.md`
+3. Другий промт: `lovable-prompts/40-pipeline-editor.md`
 
 ## Sprint 4 — JS/TS Support (НАСТУПНИЙ)
 
@@ -113,19 +123,26 @@
 - `drakonwidget.js` — НІКОЛИ
 - IR без X/Y координат
 - `params` — завжди STRING
-- `src/` синхронізується з `.lovable/src/`
+- `src/` синхронізується з `.lovable/src/` при кожній зміні
 - `git add .` ЗАБОРОНЕНО
-- Push → ОБИДВА remote (origin + drakon-flow-new)
+- Push → ОБИДВА remote (origin + drakon-flow-designer)
 - `DrakonDiagram` з `@/types/drakonwidget` (не `@/types/drakon`)
 - b0: type="branch", branchId=0 (число, не рядок)
+- Template literals в JSX/TS треба перевіряти після SSH-запису (backticks обрізаються!)
 
-## Git log (2026-05-16 ніч)
+## Git log (2026-05-17 ніч)
 ```
+73f3b7f  fix(review): auth token key, TS union types, stale mirror workflow
+359aca2  fix: template literals stripped in Sprint5 files — diagramId + nodeToItem
+092276e  chore: migrate Lovable to drakon-flow-designer repo + cleanup screenshots
 5bad869  feat(sprint5): DrakonEditor onSaveOverride + PipelineEditorPage + TanStack route
 bc32081  feat(sprint5): PipelineConfig <-> DrakonDiagram converters (BFS, widget types, branch/0)
 e49d422  feat(sprint5): TypeScript pipeline config API client
 6ad495b  feat(sprint5): worker proxy for /v1/agents/pipeline
 a7a0c29  feat(sprint5): mount pipeline_config_router on architect-agent
 a535101  feat(sprint5): drakon_shared package + pipeline JSON configs for all 4 pipelines
-d184ed3  docs(sprint5): implementation plan + lovable prompt 40
 ```
+
+## Важливий урок (template literals via SSH)
+При записі файлів через SSH з Python/shell — template literals з backticks (`` ` ``) можуть обрізатись.
+**Рішення:** писати Python fix-скрипти локально → `scp` на сервер → `python3 /tmp/fix.py`
