@@ -195,7 +195,7 @@ export function CodeGenerationPanel({
   return (
     <section
       className={cn(
-        "antialiased flex shrink-0 flex-col border-t bg-[var(--color-surface)] z-20 transition-[height] duration-200 ease-in-out shadow-[0_-4px_24px_rgba(0,0,0,0.5)]",
+        "antialiased flex shrink-0 flex-col border-t bg-background z-20 transition-[height] duration-200 ease-in-out shadow-[0_-4px_24px_rgba(0,0,0,0.5)]",
         panelHeight,
       )}
       style={{ borderColor: "var(--color-outline-variant, #534434)" }}
