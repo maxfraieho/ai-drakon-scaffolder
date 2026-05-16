@@ -31,6 +31,7 @@ import {
   saveDiagramToGit,
   saveDiagramToMinio,
 } from "@/lib/mcp/projects";
+import { hasClientJwt } from "@/lib/route-auth";
 import type { AnalysisJob } from "@/types/analysis";
 
 export const Route = createFileRoute("/sync")({
@@ -38,8 +39,8 @@ export const Route = createFileRoute("/sync")({
 });
 
 function SyncRoute() {
-  if (typeof window !== "undefined" && !localStorage.getItem("jwt")) {
-    return null;
+  if (!hasClientJwt()) {
+    return <Navigate to="/login" replace />;
   }
   return <SyncPage />;
 }
