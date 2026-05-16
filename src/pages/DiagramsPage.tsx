@@ -194,8 +194,20 @@ export function DiagramsPage() {
           cyclomaticComplexity={itemCount > 0 ? itemCount : undefined}
           analysisActive={analysisOpen}
           generationActive={generationOpen}
-          onToggleAnalysis={() => setAnalysisOpen((v) => !v)}
-          onToggleGeneration={() => setGenerationOpen((v) => !v)}
+          onToggleAnalysis={() =>
+            setAnalysisOpen((v) => {
+              const next = !v;
+              if (next) setGenerationOpen(false);
+              return next;
+            })
+          }
+          onToggleGeneration={() =>
+            setGenerationOpen((v) => {
+              const next = !v;
+              if (next) setAnalysisOpen(false);
+              return next;
+            })
+          }
           onEdit={selectedDiagram ? () => openInEditor(selectedDiagram) : undefined}
         />
 
