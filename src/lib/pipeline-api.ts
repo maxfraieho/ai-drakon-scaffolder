@@ -1,10 +1,11 @@
+import { getAccessToken } from "@/lib/auth";
+import { resolveWorkerUrl } from "@/lib/worker-url";
+
 const workerUrl = () =>
-  (typeof window !== "undefined" && (window as unknown as { __ENV_WORKER_URL__?: string }).__ENV_WORKER_URL__) ||
-  import.meta.env.VITE_WORKER_URL ||
-  "https://drakon-mcp-worker.maxfraieho.workers.dev";
+  resolveWorkerUrl();
 
 function authHeaders(): Record<string, string> {
-  const jwt = typeof window !== "undefined" ? localStorage.getItem("jwt") : null;
+  const jwt = getAccessToken();
   return {
     "Content-Type": "application/json",
     ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
@@ -88,8 +89,7 @@ export function streamJob<T = unknown>(
   job_id: string,
   onEvent: (data: JobStatus<T>) => void,
 ): () => void {
-  const jwt =
-    typeof window !== "undefined" ? (localStorage.getItem("jwt") ?? "") : "";
+  const jwt = getAccessToken() ?? "";
   const url = `${workerUrl()}/v1/pipeline/stream/${encodeURIComponent(job_id)}?token=${encodeURIComponent(jwt)}`;
   const es = new EventSource(url);
 

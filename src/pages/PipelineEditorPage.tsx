@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 import type { DrakonDiagram } from "@/types/drakonwidget";
@@ -9,10 +9,9 @@ import {
   type PipelineConfig,
 } from "@/lib/pipeline-config-api";
 import { pipelineToIR, irToPipeline } from "@/lib/pipeline-to-drakon";
-import { Route } from "@/routes/pipeline-editor";
-
 export default function PipelineEditorPage() {
-  const { pipelineId } = Route.useParams();
+  const location = useLocation();
+  const pipelineId = new URLSearchParams(location.search).get("pipelineId") ?? "architect-a";
   const [config, setConfig] = useState<PipelineConfig | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -44,7 +43,7 @@ export default function PipelineEditorPage() {
       const res = await validatePipeline(pipelineId);
       setErrors(res.errors);
       if (res.valid) toast.success("Топологія валідна ✓");
-      else toast.error();
+      else toast.error("Топологія невалідна");
     } catch (e) {
       toast.error("Помилка валідації");
     }
