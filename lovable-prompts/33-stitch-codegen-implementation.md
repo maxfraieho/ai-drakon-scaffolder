@@ -1,77 +1,42 @@
-# Lovable Prompt 33 — Stitch Design Implementation: CodeGenerationPanel
+# Prompt 33 — Переробити CodeGenerationPanel за Stitch-дизайном
 
-> **ВАЖЛИВО:** Після всіх змін скопіюй `src/` до `.lovable/src/` (вони мають бути синхронізовані).
-
----
-
-## Задача
-
-Повністю переробити `CodeGenerationPanel.tsx` за дизайн-системою Stitch (Modern Technical Minimalism):
-- JetBrains Mono для всього тексту
-- Obsidian dark palette
-- Amber (#ffc174) тільки для actionable елементів
-- Мінімальні border radius (2–3px)
-- History panel у idle-стані (праворуч)
-- Monaco Editor замість `<pre>` у done-стані
-- localStorage history (5 останніх генерацій)
+## Мета
+Повністю переробити `src/components/pipeline/CodeGenerationPanel.tsx` — idle-стан та done-стан — за Stitch-дизайном "Modern Technical Minimalism".
 
 ---
 
-## 1. CSS-змінні — додати/оновити в globals.css або index.css
+## Референс (читати перед усім іншим)
 
-```css
-:root, .dark {
-  /* Obsidian palette */
-  --drakon-bg:           #131313;
-  --drakon-surface:      #131313;
-  --drakon-surface-low:  #1c1b1b;
-  --drakon-surface-mid:  #201f1f;
-  --drakon-surface-high: #2a2a2a;
-  --drakon-surface-top:  #353534;
-  --drakon-surface-base: #0e0e0e;
+**Done state:** `import/stitch_ai_drakon_codegen_ui_refinement/variant_a_monaco_done_state/code.html`
+— секція `<!-- Bottom Panel: Code Generation (Done State) -->` і далі.
 
-  /* Text */
-  --drakon-on-surface:     #e5e2e1;
-  --drakon-on-muted:       #d8c3ad;
+**Idle state:** `import/stitch_ai_drakon_codegen_ui_refinement/variant_b_idle_history_state/code.html`
+— секція `<!-- Bottom Code Generation Panel -->` і далі.
 
-  /* Borders */
-  --drakon-border:         #534434;
-  --drakon-border-subtle:  #a08e7a;
+**Дизайн-система:** `import/stitch_ai_drakon_codegen_ui_refinement/ai_drakon_ide/DESIGN.md`
 
-  /* Primary — amber ONLY for actions */
-  --drakon-primary:        #ffc174;
-  --drakon-primary-dim:    #ffb95f;
-  --drakon-primary-bg:     #f59e0b;
-  --drakon-on-primary:     #2a1700;
-
-  /* Accent — blue for code keywords */
-  --drakon-accent:         #8fd5ff;
-
-  /* Status */
-  --drakon-success:        #4ade80;
-  --drakon-error:          #ffb4ab;
-
-  /* Font */
-  --drakon-font: 'JetBrains Mono', monospace;
-}
-```
-
-Додати в `<head>` (index.html або головний layout, якщо ще немає):
-```html
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-```
+> **Правило токенів:** Використовувати тільки Tailwind-токени з DESIGN.md. Hex-значення не хардкодити — тільки через CSS-змінні або токени з конфігурації.
 
 ---
 
-## 2. Встановити залежність
+## Стани та референси
 
-```bash
-npm install @monaco-editor/react
-```
+| Стан | HTML-файл | Секція в HTML | Що взяти |
+|------|-----------|---------------|----------|
+| **Idle** (немає результату) | `variant_b.../code.html` | `<!-- Bottom Code Generation Panel -->` | Двоколонковий layout: форма (flex-1) + history (w-[320px]) |
+| **Done** (є результат) | `variant_a.../code.html` | `<!-- Bottom Panel: Code Generation (Done State) -->` | Status bar + Monaco editor area |
+| **Loading** | Немає референсу | — | Адаптуй від idle: кнопка `disabled` + `opacity-50`, додай spinner у label |
+
+> Hover/анімації — в HTML статично, додати вручну:
+> - Hover на history item: `bg-surface-container-high border border-outline-variant`, перехід `transition-colors duration-150`
+> - Кнопки: `active:scale-[0.96] transition-transform duration-75`
+> - Панель відкривається: `transition-[height] duration-200 ease-in-out` між `h-64` (idle) та `h-[480px]` (done)
 
 ---
 
-## 3. localStorage history — новий файл `src/lib/pipeline-history.ts`
+## Нові файли
+
+### `src/lib/pipeline-history.ts` (новий)
 
 ```typescript
 export interface GenerationHistoryItem {
@@ -90,291 +55,97 @@ const MAX = 20;
 
 export function saveGenerationHistory(item: Omit<GenerationHistoryItem, 'id' | 'timestamp'>): void {
   const history = loadGenerationHistory();
-  const entry: GenerationHistoryItem = {
-    ...item,
-    id: crypto.randomUUID(),
-    timestamp: Date.now(),
-  };
-  const updated = [entry, ...history].slice(0, MAX);
-  try {
-    localStorage.setItem(KEY, JSON.stringify(updated));
-  } catch {}
+  const updated = [{ ...item, id: crypto.randomUUID(), timestamp: Date.now() }, ...history].slice(0, MAX);
+  try { localStorage.setItem(KEY, JSON.stringify(updated)); } catch {}
 }
 
 export function loadGenerationHistory(): GenerationHistoryItem[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    return raw ? (JSON.parse(raw) as GenerationHistoryItem[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-export function clearGenerationHistory(): void {
-  localStorage.removeItem(KEY);
+  try { return JSON.parse(localStorage.getItem(KEY) ?? '[]'); } catch { return []; }
 }
 ```
 
 ---
 
-## 4. CodeGenerationPanel.tsx — повна переробка
+## Зміни в CodeGenerationPanel.tsx
 
-### 4.1 Імпорти
-
-```tsx
-import Editor from '@monaco-editor/react';
-import { saveGenerationHistory, loadGenerationHistory, GenerationHistoryItem } from '@/lib/pipeline-history';
-```
-
-### 4.2 Структура панелі (обидва стани)
-
-Панель займає нижню частину екрану. Висота:
-- Idle: `h-64`
-- Done/generating: `h-[480px]`
-
-Перехід між висотами: `transition-[height] duration-200 ease-in-out`.
-
-**PANEL HEADER** (спільний):
-```tsx
-<div className="h-10 flex items-center justify-between px-4 border-b shrink-0"
-     style={{ background: 'var(--drakon-surface-low)', borderColor: 'var(--drakon-border)' }}>
-  {/* Left: icon + title */}
-  <div className="flex items-center gap-2">
-    <span className="text-[18px]" style={{ color: 'var(--drakon-primary)' }}>⚡</span>
-    <span className="text-[11px] font-semibold uppercase tracking-[0.05em]"
-          style={{ color: 'var(--drakon-primary)', fontFamily: 'var(--drakon-font)' }}>
-      ГЕНЕРУВАТИ КОД
-    </span>
-  </div>
-  {/* Right: language tabs + close */}
-  <div className="flex items-center gap-3">
-    {/* Language toggle */}
-    <div className="flex p-[1px] border rounded-[3px]"
-         style={{ background: 'var(--drakon-surface-top)', borderColor: 'var(--drakon-border)' }}>
-      {(['python', 'typescript', 'javascript'] as const).map((lang) => (
-        <button
-          key={lang}
-          onClick={() => setSelectedLanguage(lang)}
-          className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider rounded-[2px] transition-colors active:scale-[0.96]"
-          style={{
-            fontFamily: 'var(--drakon-font)',
-            background: selectedLanguage === lang ? 'var(--drakon-primary)' : 'transparent',
-            color: selectedLanguage === lang ? 'var(--drakon-on-primary)' : 'var(--drakon-on-muted)',
-          }}>
-          {lang === 'python' ? 'PY' : lang === 'typescript' ? 'TS' : 'JS'}
-        </button>
-      ))}
-    </div>
-    {/* Close */}
-    <button onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-[3px] transition-colors active:scale-[0.96]"
-            style={{ color: 'var(--drakon-on-muted)' }}>
-      ✕
-    </button>
-  </div>
-</div>
-```
-
-### 4.3 IDLE STATE — двоколонковий layout
-
-```
-┌─────────────────────────────────┬─────────────────────┐
-│  ФОРМА (flex-1)                 │  ОСТАННІ ГЕНЕРАЦІЇ  │
-│  ┌─────────────┐ ┌───────────┐  │  ─────────────────  │
-│  │ СХЕМА:  [▼] │ │ МОВА: PY  │  │  py · sum.py  12:34 │
-│  └─────────────┘ └───────────┘  │  ts · parse.ts 12:28│
-│  ┌─────────────────────────┐    │  py · greet.py 11:55│
-│  │ Опис... (textarea)      │    │                     │
-│  └─────────────────────────┘    │                     │
-│  [підказка]         [⚡ ГЕНЕРУВАТИ] │               │
-└─────────────────────────────────┴─────────────────────┘
-```
-
-ФОРМА (ліва частина, `flex-1 p-3 border-r flex flex-col gap-2`):
+### Залежності
 
 ```tsx
-{/* Controls row */}
-<div className="flex items-center gap-4">
-  {/* Scheme */}
-  <div className="flex items-center gap-2 flex-1">
-    <span className="text-[10px] font-semibold uppercase tracking-wider shrink-0"
-          style={{ color: 'var(--drakon-on-muted)', fontFamily: 'var(--drakon-font)' }}>
-      СХЕМА:
-    </span>
-    <select
-      value={selectedScheme}
-      onChange={e => setSelectedScheme(e.target.value)}
-      disabled={schemes.length === 0}
-      className="flex-1 h-8 px-2 text-[13px] border rounded-[3px] outline-none appearance-none cursor-pointer"
-      style={{
-        fontFamily: 'var(--drakon-font)',
-        background: 'var(--drakon-surface-mid)',
-        borderColor: 'var(--drakon-border)',
-        color: 'var(--drakon-on-surface)',
-      }}>
-      <option value="">Виберіть схему...</option>
-      {schemes.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-    </select>
-  </div>
-</div>
-
-{/* Description textarea */}
-<textarea
-  value={description}
-  onChange={e => setDescription(e.target.value)}
-  placeholder="Опис поведінки (необов'язково)..."
-  className="flex-1 w-full p-2 text-[12px] border rounded-[3px] resize-none outline-none focus:border-[var(--drakon-primary)]"
-  style={{
-    fontFamily: 'var(--drakon-font)',
-    background: 'var(--drakon-surface-mid)',
-    borderColor: 'var(--drakon-border)',
-    color: 'var(--drakon-on-surface)',
-  }}
-/>
-
-{/* Generate row */}
-<div className="flex items-center justify-between">
-  <span className="text-[10px] italic" style={{ color: 'var(--drakon-on-muted)', fontFamily: 'var(--drakon-font)' }}>
-    {!selectedScheme ? 'Виберіть схему для початку генерації' : 'Готово до генерації'}
-  </span>
-  <button
-    onClick={handleGenerate}
-    disabled={!selectedScheme || status === 'loading'}
-    className="h-10 px-6 text-[11px] font-semibold uppercase tracking-wider rounded-[3px] transition-all active:scale-[0.96]"
-    style={{
-      fontFamily: 'var(--drakon-font)',
-      background: selectedScheme ? 'var(--drakon-primary)' : 'color-mix(in srgb, var(--drakon-primary) 40%, transparent)',
-      color: selectedScheme ? 'var(--drakon-on-primary)' : 'color-mix(in srgb, var(--drakon-on-primary) 40%, transparent)',
-      cursor: selectedScheme ? 'pointer' : 'not-allowed',
-    }}>
-    ⚡ ГЕНЕРУВАТИ
-  </button>
-</div>
+import Editor from '@monaco-editor/react';  // npm install @monaco-editor/react
+import { saveGenerationHistory, loadGenerationHistory, type GenerationHistoryItem } from '@/lib/pipeline-history';
 ```
 
-HISTORY PANEL (права частина, `w-[300px] flex flex-col shrink-0`):
+### Panel header (спільний для всіх станів)
 
+Взяти з `variant_a.../code.html`, `<div class="flex items-center justify-between px-margin-md h-10 ...">`:
+- Ліворуч: amber-іконка `code` + `text-primary uppercase tracking-widest` заголовок "ГЕНЕРУВАТИ КОД"
+- Праворуч: сегментований перемикач мов (PY/TS/JS) у стилі `bg-surface-container-highest border border-outline-variant p-gutter rounded-sm` + кнопка закриття
+
+> Перемикач мов — в header, НЕ у тілі форми.
+
+### Idle state layout
+
+Взяти з `variant_b.../code.html`, `<div class="flex-1 flex overflow-hidden">`:
+
+```
+┌──────────────────────────────────┬──────────────────────┐
+│ Ліва форма (flex-1)              │ History (w-[320px])  │
+│  СХЕМА: [select▼]  МОВА: [PY]   │ ОСТАННІ ГЕНЕРАЦІЇ    │
+│  ┌──────────────────────────┐   │ py · Main Logic 12:34│
+│  │ textarea опис...         │   │ ts · Auth Flow  12:28│
+│  └──────────────────────────┘   │ py · Data Proc  11:55│
+│  [підказка]      [⚡ ГЕНЕРУВАТИ] │                      │
+└──────────────────────────────────┴──────────────────────┘
+```
+
+- Кнопка ГЕНЕРУВАТИ: `disabled` (cursor-not-allowed + opacity-50) якщо scheme не вибрана
+- У рядку з кнопкою ліворуч — текст-підказка: "Виберіть схему для початку" або пусто
+
+**History item** (з `variant_b`):
+- Language badge: `bg-primary-container text-on-primary-container text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-[2px]`
+- Filename + "time · N iter" (tabular-nums для числа iter та часу)
+- Refresh-іконка: `opacity-0 group-hover:opacity-100` — з'являється при hover на item
+- Мінімальна зона кліку history item: 40px висота (`min-h-[40px]`)
+
+### Done state layout
+
+Взяти з `variant_a.../code.html`, повний `<div class="flex-1 flex flex-col border ...">`:
+
+**Status bar** (над кодом):
 ```tsx
-<div className="w-[300px] flex flex-col shrink-0 border-l"
-     style={{ background: 'var(--drakon-surface-mid)', borderColor: 'var(--drakon-border)' }}>
-  {/* Header */}
-  <div className="h-8 flex items-center px-3 border-b text-[10px] font-semibold uppercase tracking-wider"
-       style={{ borderColor: 'var(--drakon-border)', color: 'var(--drakon-on-muted)', fontFamily: 'var(--drakon-font)' }}>
-    ОСТАННІ ГЕНЕРАЦІЇ
-  </div>
-  {/* List */}
-  <div className="flex-1 overflow-y-auto p-1 flex flex-col gap-[1px]">
-    {history.slice(0, 5).map(item => (
-      <div
-        key={item.id}
-        onClick={() => loadHistoryItem(item)}
-        className="group flex items-center justify-between p-2 rounded-[3px] border border-transparent cursor-pointer transition-all"
-        style={{ background: 'transparent' }}
-        onMouseEnter={e => {
-          (e.currentTarget as HTMLElement).style.background = 'var(--drakon-surface-high)';
-          (e.currentTarget as HTMLElement).style.borderColor = 'var(--drakon-border)';
-        }}
-        onMouseLeave={e => {
-          (e.currentTarget as HTMLElement).style.background = 'transparent';
-          (e.currentTarget as HTMLElement).style.borderColor = 'transparent';
-        }}>
-        <div className="flex items-center gap-2 overflow-hidden">
-          {/* Language badge */}
-          <span className="px-1.5 py-0.5 rounded-[2px] text-[10px] font-bold uppercase shrink-0"
-                style={{
-                  fontFamily: 'var(--drakon-font)',
-                  background: 'var(--drakon-primary-bg)',
-                  color: 'var(--drakon-on-primary)',
-                }}>
-            {item.language === 'python' ? 'PY' : item.language === 'typescript' ? 'TS' : 'JS'}
-          </span>
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-[12px] truncate" style={{ fontFamily: 'var(--drakon-font)', color: 'var(--drakon-on-surface)' }}>
-              {item.scheme}
-            </span>
-            <span className="text-[10px] font-variant-numeric tabular-nums"
-                  style={{ fontFamily: 'var(--drakon-font)', color: 'var(--drakon-on-muted)' }}>
-              {new Date(item.timestamp).toLocaleTimeString('uk', { hour: '2-digit', minute: '2-digit' })} · {item.iterations} iter
-            </span>
-          </div>
-        </div>
-        <button
-          onClick={e => { e.stopPropagation(); loadHistoryItem(item); }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-[2px]"
-          style={{ color: 'var(--drakon-on-muted)' }}
-          title="Відновити">
-          ↺
-        </button>
-      </div>
-    ))}
-    {history.length === 0 && (
-      <div className="flex-1 flex items-center justify-center text-[11px] opacity-40"
-           style={{ fontFamily: 'var(--drakon-font)', color: 'var(--drakon-on-muted)' }}>
-        Ще немає генерацій
-      </div>
-    )}
-  </div>
-</div>
-```
-
-### 4.4 DONE STATE — Monaco + status bar
-
-```
-┌──────────────────────────────────────────────────────────┐
-│ ✓ КОД ЗГЕНЕРОВАНО · syntax: OK     3s | 2 iter  [COPY] [↺] │
-├──────────────────────────────────────────────────────────┤
-│                                                          │
-│   Monaco Editor (flex-1, theme vs-dark, readOnly)        │
-│   height: 100% (fills remaining panel space)             │
-│                                                          │
-└──────────────────────────────────────────────────────────┘
-```
-
-STATUS BAR:
-```tsx
-<div className="flex items-center justify-between px-3 py-1.5 border-b shrink-0"
-     style={{ background: 'var(--drakon-surface-low)', borderColor: 'var(--drakon-border)' }}>
-  {/* Left: status */}
-  <div className="flex items-center gap-2">
-    <span style={{ color: 'var(--drakon-success)' }}>✓</span>
-    <span className="text-[11px] font-semibold uppercase tracking-wider"
-          style={{ fontFamily: 'var(--drakon-font)', color: 'var(--drakon-success)' }}>
-      КОД ЗГЕНЕРОВАНО
-    </span>
-    <span style={{ color: 'var(--drakon-border-subtle)' }}>·</span>
-    <span className="text-[11px]" style={{ fontFamily: 'var(--drakon-font)', color: 'var(--drakon-on-muted)' }}>
-      syntax: <span style={{ color: result.syntax_errors.length === 0 ? 'var(--drakon-success)' : 'var(--drakon-error)' }}>
+<div className="flex items-center justify-between px-4 py-1.5 border-b shrink-0"
+     style={{ background: 'var(--surface-container-low, #1c1b1b)', borderColor: 'var(--outline-variant, #534434)' }}>
+  {/* Ліворуч */}
+  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wider">
+    <span className="text-[#4ade80]">✓</span>
+    <span className="text-[#4ade80]">КОД ЗГЕНЕРОВАНО</span>
+    <span className="opacity-40 mx-1">·</span>
+    <span className="text-on-surface-variant">
+      syntax: <span className={result.syntax_errors.length === 0 ? 'text-[#4ade80]' : 'text-error'}>
         {result.syntax_errors.length === 0 ? 'OK' : `${result.syntax_errors.length} err`}
       </span>
     </span>
   </div>
-  {/* Right: timing + actions */}
-  <div className="flex items-center gap-3">
-    <span className="text-[11px] font-variant-numeric tabular-nums"
-          style={{ fontFamily: 'var(--drakon-font)', color: 'var(--drakon-on-muted)' }}>
-      {elapsed}s <span style={{ opacity: 0.5 }}>|</span> {result.iterations} iter
+  {/* Праворуч */}
+  <div className="flex items-center gap-3 text-[11px]">
+    {/* tabular-nums — щоб числа не стрибали */}
+    <span className="tabular-nums text-on-surface-variant font-mono">
+      {elapsed}s <span className="opacity-40 mx-1">|</span> {result.iterations} iter
     </span>
+    {/* COPY — opacity-60 за замовчуванням (НЕ opacity-0!) */}
     <button onClick={copyCode}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[10px] font-semibold uppercase transition-all active:scale-[0.96]"
-            style={{
-              fontFamily: 'var(--drakon-font)',
-              color: 'var(--drakon-on-muted)',
-              opacity: 0.8,
-            }}
-            onMouseEnter={e => (e.currentTarget as HTMLElement).style.opacity = '1'}
-            onMouseLeave={e => (e.currentTarget as HTMLElement).style.opacity = '0.8'}>
+            className="flex items-center gap-1 px-2 py-1 rounded-[2px] opacity-60 hover:opacity-100 transition-opacity active:scale-[0.96] transition-transform duration-75 min-h-[32px]">
       ⎘ COPY
     </button>
     <button onClick={handleRegenerate}
-            className="flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-[10px] font-semibold uppercase transition-all active:scale-[0.96]"
-            style={{ fontFamily: 'var(--drakon-font)', color: 'var(--drakon-primary)' }}>
+            className="flex items-center gap-1 px-2 py-1 rounded-[2px] text-primary hover:text-primary-fixed-dim transition-colors active:scale-[0.96] transition-transform duration-75 min-h-[32px]">
       ↺ ПЕРЕГЕНЕРУВАТИ
     </button>
   </div>
 </div>
 ```
 
-MONACO EDITOR (замість `<pre>`):
+**Monaco Editor** (замість `<pre>`):
 ```tsx
 <div className="flex-1 min-h-0">
   <Editor
@@ -393,85 +164,54 @@ MONACO EDITOR (замість `<pre>`):
       padding: { top: 12, bottom: 12 },
       renderLineHighlight: 'none',
       overviewRulerLanes: 0,
-      hideCursorInOverviewRuler: true,
-      scrollbar: {
-        vertical: 'visible',
-        horizontal: 'visible',
-        verticalScrollbarSize: 6,
-        horizontalScrollbarSize: 6,
-      },
+      scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
     }}
   />
 </div>
 ```
 
-### 4.5 Логіка history
+### Взаємодія панелей
 
-```tsx
-const [history, setHistory] = useState<GenerationHistoryItem[]>([]);
+Коли відкривається CodeGenerationPanel (кнопка "Генерація" у toolbar):
+- Якщо відкрита права панель "АНАЛІЗ КОДУ" — закрити її
+- Тільки одна панель може бути відкрита одночасно
 
-// Завантажити при mount
-useEffect(() => {
-  setHistory(loadGenerationHistory());
-}, []);
+### make-interfaces checklist (перевір перед фінішем)
 
-// Зберегти після успішної генерації (в onSuccess або після setResult):
-if (result) {
-  saveGenerationHistory({
-    scheme: selectedScheme,
-    language: selectedLanguage,
-    description,
-    code: result.code,
-    iterations: result.iterations,
-    elapsed,
-  });
-  setHistory(loadGenerationHistory());
-}
-
-// Відновити з history:
-const loadHistoryItem = (item: GenerationHistoryItem) => {
-  setSelectedScheme(item.scheme);
-  setSelectedLanguage(item.language as Language);
-  setDescription(item.description);
-  // якщо хочеш одразу показати код:
-  // setResult({ code: item.code, syntax_errors: [], iterations: item.iterations });
-  // setElapsed(item.elapsed);
-  // setStatus('done');
-};
-```
-
-### 4.6 Взаємодія панелей
-
-Коли відкривається CodeGenerationPanel (клік на кнопку "Генерація"):
-- Якщо відкрита права панель "АНАЛІЗ КОДУ" — закрити її (`setCodeAnalysisPanelOpen(false)` або аналог)
-- Вони не повинні бути відкриті одночасно
+- [ ] `antialiased` на кореневому елементі панелі
+- [ ] `tabular-nums` на elapsed та iterations
+- [ ] `active:scale-[0.96] transition-transform duration-75` на всіх кнопках
+- [ ] Copy: `opacity-60` (не `opacity-0`)
+- [ ] History item hover: `transition-colors duration-150` (не `transition-all`)
+- [ ] Усі інтерактивні елементи ≥ 40px висота
+- [ ] Concentric border radius: panel (`rounded-sm`) → button всередині (`rounded-[2px]`)
+- [ ] `will-change` — тільки якщо є перший кадр гальма (не за замовчуванням)
 
 ---
 
-## 5. Елементи що НЕ змінювати
+## Порядок змін схема → мова
 
-- `drakonwidget.js` — НЕ чіпати
-- Логіку SSE streaming у Worker
-- Маршрутизацію та auth
-- Інші компоненти (крім CodeGenerationPanel і нового pipeline-history.ts)
+У `variant_a` і `variant_b` **схема йде перед мовою**:
+1. Scheme select
+2. Description input/textarea
+3. Generate button
 
----
-
-## 6. Фінальна перевірка
-
-1. Idle state: форма + history panel поряд, generate disabled без схеми
-2. Done state: Monaco замість `<pre>`, статус-бар з tabular-nums, copy opacity 0.8
-3. History зберігається між сесіями (localStorage)
-4. JetBrains Mono скрізь у панелі
-5. Amber (#ffc174) тільки на: активна мова-таб, кнопка Generate (enabled), кнопка ПЕРЕГЕНЕРУВАТИ, language badge в history
+Мовний перемикач — у **header панелі**, не в тілі форми.
 
 ---
 
-## ВАЖЛИВО: Sync
+## Що НЕ чіпати
 
-**Після змін обов'язково скопіюй:**
+- `drakonwidget.js`
+- SSE streaming logic у Worker
+- Auth, routing
+- Будь-які компоненти окрім `CodeGenerationPanel.tsx` і нового `pipeline-history.ts`
+
+---
+
+## ВАЖЛИВО: Sync після змін
+
 ```
 src/ → .lovable/src/
 ```
 Обидві директорії мають бути ідентичні. CF Pages будує з `.lovable/src/`.
-
