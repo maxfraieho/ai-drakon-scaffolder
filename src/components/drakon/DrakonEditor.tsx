@@ -70,6 +70,7 @@ interface DrakonEditorProps {
   height?: number;
   isNew?: boolean;
   onSaved?: (diagramId: string) => void;
+  onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>;
   className?: string;
 }
 
@@ -99,6 +100,7 @@ export function DrakonEditor({
   height = 500,
   isNew = false,
   onSaved,
+  onSaveOverride,
   className,
 }: DrakonEditorProps) {
   const { theme } = useTheme();
@@ -409,6 +411,14 @@ export function DrakonEditor({
   const handleSave = useCallback(async () => {
     if (!widgetRef.current) return;
 
+    if (onSaveOverride) {
+      const raw = JSON.parse(widgetRef.current.exportJson()) as DrakonDiagram;
+      raw.name = diagramName;
+      const ok = await onSaveOverride(raw);
+      if (ok) setHasChanges(false);
+      return;
+    }
+
     const effectiveId = diagramId || (isNew ? slugify(diagramName) : '') || crypto.randomUUID();
     const jsonString = widgetRef.current.exportJson();
     const diagramData = JSON.parse(jsonString);
@@ -464,7 +474,7 @@ export function DrakonEditor({
     } finally {
       setIsSaving(false);
     }
-  }, [diagramId, diagramName, folderSlug, isNew, onSaved, projectFolder]);
+  }, [diagramId, diagramName, folderSlug, isNew, onSaved, onSaveOverride, projectFolder]);
 
   const handleUndo = useCallback(() => {
     widgetRef.current?.undo();
