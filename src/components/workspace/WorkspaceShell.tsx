@@ -39,6 +39,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
+import { CommandPalette } from "@/components/workspace/CommandPalette";
 import { cn } from "@/lib/utils";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
