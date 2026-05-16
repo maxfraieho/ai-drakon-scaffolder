@@ -12,6 +12,7 @@ import {
   saveGenerationHistory,
   type GenerationHistoryItem,
 } from "@/lib/pipeline-history";
+import { kbContribute } from "@/lib/kb-api";
 
 interface CodeGenerationPanelProps {
   open: boolean;
@@ -54,6 +55,8 @@ export function CodeGenerationPanel({
   const [errorMsg, setErrorMsg] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [history, setHistory] = useState<GenerationHistoryItem[]>([]);
+  const [kbSaving, setKbSaving] = useState(false);
+  const [kbSaved, setKbSaved] = useState(false);
   const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -88,6 +91,7 @@ export function CodeGenerationPanel({
           : 0;
         setResult(data.result);
         setStatus("done");
+        setKbSaved(false);
         toast.success("Код згенеровано");
         saveGenerationHistory({
           scheme: diagramName || "diagram",
@@ -128,6 +132,7 @@ export function CodeGenerationPanel({
     setErrorMsg("");
     setElapsed(0);
     setJobId(null);
+    setKbSaved(false);
   };
 
   const copyCode = async () => {
@@ -137,6 +142,32 @@ export function CodeGenerationPanel({
       toast.success("Скопійовано");
     } catch {
       toast.error("Не вдалося скопіювати");
+    }
+  };
+
+  const handleSaveToKb = async () => {
+    if (!result?.code || kbSaving || kbSaved) return;
+    setKbSaving(true);
+    try {
+      const token = localStorage.getItem("auth_token") ?? "";
+      await kbContribute(
+        {
+          code: result.code,
+          ir_yaml: description ?? "",
+          language: lang,
+          description: description ?? "",
+          job_id: jobId ?? undefined,
+        },
+        token
+      );
+      setKbSaved(true);
+      toast.success("Збережено до KB", {
+        description: `${lang} · ${result.code.split("\n").length} рядків`,
+      });
+    } catch {
+      toast.error("Помилка збереження");
+    } finally {
+      setKbSaving(false);
     }
   };
 
@@ -151,6 +182,7 @@ export function CodeGenerationPanel({
     } as GenerateResult);
     setElapsed(item.elapsed);
     setStatus("done");
+    setKbSaved(false);
   };
 
   if (!open) return null;
@@ -432,6 +464,13 @@ export function CodeGenerationPanel({
                 </span>
                 COPY
               </button>
+              <button
+                type="button"
+                onClick={handleSaveToKb}
+                disabled={kbSaving || kbSaved || !result?.code}
+                className="flex items-center gap-1 rounded border border-[var(--color-primary-container)]/40 px-2 py-1 min-h-[32px] font-mono text-[11px] uppercase text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-container)]/10 disabled:opacity-50"
+              >
+                {kbSaved ? "✓ Збережено" : kbSaving ? "..." : "Save to KB"}
               <button
                 type="button"
                 onClick={handleRegenerate}
