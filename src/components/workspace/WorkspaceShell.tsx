@@ -39,7 +39,7 @@ type RailItem = {
 
 const RAIL_TOP: RailItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
-  { to: "/agents", label: "Агенти", icon: Workflow },
+  { to: "/agents", label: "Агенти", icon: Cpu },
   { to: "/docs", label: "Нотатки", icon: FileText },
   { to: "/sync", label: "Граф", icon: GitMerge },
   { to: "/github", label: "GitHub", icon: GitBranch },
