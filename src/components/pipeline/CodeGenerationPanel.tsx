@@ -202,9 +202,8 @@ export function CodeGenerationPanel({
     >
       {/* Header */}
       <header
-        className="flex h-10 shrink-0 items-center justify-between px-4 border-b"
+        className="flex h-10 shrink-0 items-center justify-between px-4 border-b bg-muted"
         style={{
-          background: "var(--color-surface-container-low, #1c1b1b)",
           borderColor: "var(--color-outline-variant, #534434)",
         }}
       >
