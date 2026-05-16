@@ -242,6 +242,15 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           ) : null}
         </div>
 
+        <button
+          type="button"
+          onClick={() => setCmdOpen(true)}
+          className="hidden md:inline-flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors ml-2"
+          aria-label="Відкрити command palette"
+        >
+          <span>⌘K</span>
+        </button>
+
         <div className="ml-auto flex items-center gap-0.5">
           <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
             <Tooltip delayDuration={300}>
