@@ -37,9 +37,8 @@ export function NodeInspector({ node, pipelineId, onClose }: Props) {
 
   return (
     <aside className="flex h-full w-[320px] shrink-0 flex-col border-l border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
-      {/* Header */}
       <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface-container-high)] px-3">
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex min-w-0 items-center gap-2">
           <span
             className={cn(
               "material-symbols-outlined text-[18px]",
@@ -50,7 +49,7 @@ export function NodeInspector({ node, pipelineId, onClose }: Props) {
           >
             {node.icon}
           </span>
-          <span className="font-headline-sm text-[var(--color-on-surface)] truncate">
+          <span className="font-headline-sm truncate text-[var(--color-on-surface)]">
             {node.label}
           </span>
         </div>
@@ -63,13 +62,12 @@ export function NodeInspector({ node, pipelineId, onClose }: Props) {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-4">
-        {/* Meta */}
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-3">
         <section className="flex flex-col gap-2">
           <span className="font-mono-label uppercase text-[var(--color-on-surface-variant)]">
             Тип вузла
           </span>
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex flex-wrap items-center gap-2">
             <span
               className={cn(
                 "rounded px-2 py-0.5 font-mono-label uppercase",
@@ -90,14 +88,13 @@ export function NodeInspector({ node, pipelineId, onClose }: Props) {
           <span className="font-mono-label uppercase text-[var(--color-on-surface-variant)]">
             Опис
           </span>
-          <p className="font-ui-sm text-[var(--color-on-surface)] leading-relaxed">
+          <p className="font-ui-sm leading-relaxed text-[var(--color-on-surface)]">
             {node.description}
           </p>
         </section>
 
-        {/* Prompt */}
         {node.hasPrompt && (
-          <section className="flex flex-1 flex-col gap-2 min-h-0">
+          <section className="flex min-h-0 flex-1 flex-col gap-2">
             <div className="flex items-center justify-between">
               <span className="font-mono-label uppercase text-[var(--color-on-surface-variant)]">
                 Системний промпт
@@ -141,10 +138,10 @@ export function NodeInspector({ node, pipelineId, onClose }: Props) {
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
               className={cn(
-                "flex-1 min-h-[280px] resize-none rounded border bg-[var(--color-surface-container-lowest)] p-2.5 font-mono-code text-[var(--color-on-surface)] outline-none transition-colors",
+                "font-mono-code min-h-[280px] flex-1 resize-none rounded border bg-[var(--color-surface-container-lowest)] p-2.5 text-[var(--color-on-surface)] outline-none transition-colors",
                 editing
                   ? "border-[var(--color-primary-container)]"
-                  : "border-[var(--color-outline-variant)] cursor-default"
+                  : "cursor-default border-[var(--color-outline-variant)]"
               )}
             />
             {saved && (

@@ -58,7 +58,7 @@
   --color-text-secondary: var(--text-secondary);
   --color-text-muted: var(--text-muted);
 
-  /* ── Stitch / Drakon Logic System ── */
+  /* ── Stitch / Drakon Logic System tokens ── */
   --color-surface: #111318;
   --color-surface-container-lowest: #0c0e13;
   --color-surface-container-low: #1a1b21;

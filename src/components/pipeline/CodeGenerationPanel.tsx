@@ -14,6 +14,7 @@ interface CodeGenerationPanelProps {
   open: boolean;
   onClose: () => void;
   diagramIr: object | null;
+  diagramName?: string;
 }
 
 type Status = "idle" | "running" | "done" | "error";

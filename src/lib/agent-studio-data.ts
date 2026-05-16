@@ -37,38 +37,11 @@ export const PIPELINES: AgentPipeline[] = [
     shortName: "Pipeline A",
     description: "LangGraph StateGraph · 7 вузлів · Ralph Loop (max 3 iter)",
     nodes: [
+      { id: "measure_cc", label: "measure_cc", type: "action", icon: "data_object", description: "Вимірює цикломатичну складність через radon.complexity.cc_visit(). Повертає максимальний CC по всіх функціях.", hasPrompt: false, isDeterministic: true },
+      { id: "classify", label: "classify_complexity", type: "decision", icon: "call_split", description: "Визначає tree_level: primitive (CC≤10) | silhouette (11-20) | branch (21-50) | deep (>50). Обирає шлях: AST або LLM.", hasPrompt: false, isDeterministic: true },
+      { id: "ast_translate", label: "ast_translate", type: "action", icon: "data_object", description: "Швидкий детерміністичний шлях. PythonAnalyzer: Python AST → DRAKON IR без LLM. Тільки для CC ≤ 10.", hasPrompt: false, isDeterministic: true },
       {
-        id: "measure_cc",
-        label: "measure_cc",
-        type: "action",
-        icon: "data_object",
-        description: "Вимірює цикломатичну складність через radon.complexity.cc_visit(). Повертає максимальний CC по всіх функціях.",
-        hasPrompt: false,
-        isDeterministic: true,
-      },
-      {
-        id: "classify",
-        label: "classify_complexity",
-        type: "decision",
-        icon: "call_split",
-        description: "Визначає tree_level: primitive (CC≤10) | silhouette (11-20) | branch (21-50) | deep (>50). Обирає шлях: AST або LLM.",
-        hasPrompt: false,
-        isDeterministic: true,
-      },
-      {
-        id: "ast_translate",
-        label: "ast_translate",
-        type: "action",
-        icon: "data_object",
-        description: "Швидкий детерміністичний шлях. PythonAnalyzer: Python AST → DRAKON IR без LLM. Тільки для CC ≤ 10.",
-        hasPrompt: false,
-        isDeterministic: true,
-      },
-      {
-        id: "yaml_gen",
-        label: "yaml_gen",
-        type: "action",
-        icon: "generating_tokens",
+        id: "yaml_gen", label: "yaml_gen", type: "action", icon: "generating_tokens",
         description: "LLM: перетворює Python код у спрощений C4-B YAML опис поведінки. Знижує ризик галюцинацій на першому кроці.",
         hasPrompt: true,
         prompt: `Перетвори Python код у YAML опис алгоритмічної поведінки.
@@ -95,10 +68,7 @@ steps:
 Поверни тільки YAML.`,
       },
       {
-        id: "ir_gen",
-        label: "ir_gen",
-        type: "action",
-        icon: "generating_tokens",
+        id: "ir_gen", label: "ir_gen", type: "action", icon: "generating_tokens",
         description: "LLM: конвертує YAML + оригінальний код → DRAKON IR JSON. Якщо є validation_errors — передаються як контекст. Ralph Loop (max 3 iter).",
         hasPrompt: true,
         prompt: `Конвертуй YAML опис у DRAKON IR JSON.
@@ -128,15 +98,7 @@ IR-формат вузла:
 
 Поверни тільки JSON.`,
       },
-      {
-        id: "validate",
-        label: "validate",
-        type: "action",
-        icon: "task_alt",
-        description: "ir_validator.py: перевіряє топологічні правила DRAKON. Якщо invalid і iter < 3 → повертається до ir_gen (Ralph Loop).",
-        hasPrompt: false,
-        isDeterministic: true,
-      },
+      { id: "validate", label: "validate", type: "action", icon: "task_alt", description: "ir_validator.py: перевіряє топологічні правила DRAKON. Якщо invalid і iter < 3 → повертається до ir_gen (Ralph Loop).", hasPrompt: false, isDeterministic: true },
     ],
   },
   {
@@ -147,10 +109,7 @@ IR-формат вузла:
     description: "LangGraph StateGraph · 3 вузли · Syntax Loop (max 3 iter)",
     nodes: [
       {
-        id: "code_gen",
-        label: "code_gen",
-        type: "action",
-        icon: "generating_tokens",
+        id: "code_gen", label: "code_gen", type: "action", icon: "generating_tokens",
         description: "LLM: отримує DRAKON IR + цільову мову. Якщо є syntax_errors — передаються як контекст. Syntax Loop (max 3).",
         hasPrompt: true,
         prompt: `Згенеруй код мовою {language} з DRAKON IR.
@@ -169,15 +128,7 @@ DRAKON IR:
 
 Поверни тільки код.`,
       },
-      {
-        id: "check_syntax",
-        label: "check_syntax",
-        type: "action",
-        icon: "task_alt",
-        description: "Перевіряє синтаксис. Python: ast.parse(). Якщо помилки → повертає до code_gen.",
-        hasPrompt: false,
-        isDeterministic: true,
-      },
+      { id: "check_syntax", label: "check_syntax", type: "action", icon: "task_alt", description: "Перевіряє синтаксис. Python: ast.parse(). Якщо помилки → повертає до code_gen.", hasPrompt: false, isDeterministic: true },
     ],
   },
   {
@@ -187,24 +138,8 @@ DRAKON IR:
     shortName: "AST Analyzer",
     description: "Детерміністичний транслятор · Python AST → DRAKON IR · без LLM",
     nodes: [
-      {
-        id: "ast_visitor",
-        label: "PythonAnalyzer",
-        type: "action",
-        icon: "data_object",
-        description: "ast.NodeVisitor: обходить Python AST, маппить конструкції на DRAKON вузли. Детерміністично.",
-        hasPrompt: false,
-        isDeterministic: true,
-      },
-      {
-        id: "ir_validator_drakon",
-        label: "validate_ir",
-        type: "action",
-        icon: "task_alt",
-        description: "ir_validator.py: топологічні перевірки DRAKON. Повертає validation_errors[].",
-        hasPrompt: false,
-        isDeterministic: true,
-      },
+      { id: "ast_visitor", label: "PythonAnalyzer", type: "action", icon: "data_object", description: "ast.NodeVisitor: обходить Python AST, маппить конструкції на DRAKON вузли. Детерміністично.", hasPrompt: false, isDeterministic: true },
+      { id: "ir_validator_drakon", label: "validate_ir", type: "action", icon: "task_alt", description: "ir_validator.py: топологічні перевірки DRAKON. Повертає validation_errors[].", hasPrompt: false, isDeterministic: true },
     ],
   },
   {
@@ -214,20 +149,9 @@ DRAKON IR:
     shortName: "Docs Chat",
     description: "RAG over knowledge base · 2 вузли",
     nodes: [
+      { id: "retrieve", label: "retrieve_context", type: "action", icon: "database", description: "BM25 + векторний пошук по KB. Повертає top-k релевантних чанків.", hasPrompt: false, isDeterministic: true },
       {
-        id: "retrieve",
-        label: "retrieve_context",
-        type: "action",
-        icon: "database",
-        description: "BM25 + векторний пошук по KB. Повертає top-k релевантних чанків.",
-        hasPrompt: false,
-        isDeterministic: true,
-      },
-      {
-        id: "answer",
-        label: "answer",
-        type: "action",
-        icon: "generating_tokens",
+        id: "answer", label: "answer", type: "action", icon: "generating_tokens",
         description: "LLM: формує відповідь на основі retrieved context.",
         hasPrompt: true,
         prompt: `Дай відповідь на питання користувача на основі наданого контексту.

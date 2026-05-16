@@ -30,7 +30,6 @@ export function AgentSidebar({
     () => kbFiles.filter((f) => f.agentId === selectedPipeline.agentId),
     [kbFiles, selectedPipeline.agentId]
   );
-
   const agentPipelines = useMemo(
     () => pipelines.filter((p) => p.agentId === selectedPipeline.agentId),
     [pipelines, selectedPipeline.agentId]
@@ -38,7 +37,6 @@ export function AgentSidebar({
 
   return (
     <nav className="flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
-      {/* Header */}
       <div className="flex flex-col gap-1 border-b border-[var(--color-outline-variant)] p-3">
         <span className="font-headline-sm text-[var(--color-primary-container)]">WORKSPACE</span>
         <span className="font-mono-label text-[var(--color-on-surface-variant)]">
@@ -47,7 +45,6 @@ export function AgentSidebar({
       </div>
 
       <div className="flex flex-1 flex-col overflow-y-auto">
-        {/* Pipelines */}
         <section className="border-b border-[var(--color-outline-variant)] py-1">
           <div className="px-3 py-1.5 font-mono-label uppercase text-[var(--color-on-surface-variant)]">
             Пайплайни
@@ -69,7 +66,6 @@ export function AgentSidebar({
           ))}
         </section>
 
-        {/* Nodes */}
         <section className="border-b border-[var(--color-outline-variant)] py-1">
           <div className="px-3 py-1.5 font-mono-label uppercase text-[var(--color-on-surface-variant)]">
             Вузли
@@ -99,7 +95,7 @@ export function AgentSidebar({
                 </span>
                 <span
                   className={cn(
-                    "font-mono-code truncate flex-1",
+                    "font-mono-code flex-1 truncate",
                     active
                       ? "text-[var(--color-on-surface)]"
                       : "text-[var(--color-on-surface-variant)]"
@@ -117,7 +113,6 @@ export function AgentSidebar({
           })}
         </section>
 
-        {/* KB */}
         <section className="py-1">
           <div className="px-3 py-1.5 font-mono-label uppercase text-[var(--color-on-surface-variant)]">
             База знань

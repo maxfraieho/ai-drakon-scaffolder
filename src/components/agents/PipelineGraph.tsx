@@ -5,15 +5,10 @@ interface Props {
   pipeline: AgentPipeline;
 }
 
-/**
- * Lightweight visual pipeline graph. Renders nodes left-to-right with
- * connectors. Detеrministic (det) vs LLM nodes are color-coded per
- * Stitch design system.
- */
 export function PipelineGraph({ pipeline }: Props) {
   return (
     <div className="rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface)] p-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="mb-3 flex items-center justify-between">
         <span className="font-mono-label uppercase text-[var(--color-on-surface-variant)]">
           LangGraph StateGraph
         </span>
@@ -30,8 +25,8 @@ export function PipelineGraph({ pipeline }: Props) {
                 className={cn(
                   "flex items-center gap-2 rounded border px-2.5 py-1.5",
                   isLlm
-                    ? "border-[var(--color-secondary-container)] bg-[var(--color-secondary-container)]/20"
-                    : "border-[var(--color-tertiary)]/40 bg-[var(--color-surface-container-low)]"
+                    ? "border-[var(--color-secondary-container)] bg-[color-mix(in_oklab,var(--color-secondary-container)_20%,transparent)]"
+                    : "border-[color-mix(in_oklab,var(--color-tertiary)_40%,transparent)] bg-[var(--color-surface-container-low)]"
                 )}
               >
                 <span

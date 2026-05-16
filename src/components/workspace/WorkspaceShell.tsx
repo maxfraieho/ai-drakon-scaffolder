@@ -12,6 +12,7 @@ import {
   Moon,
   Sun,
   Terminal,
+  Workflow,
 } from "lucide-react";
 
 import {
@@ -31,13 +32,14 @@ import { cn } from "@/lib/utils";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
 type RailItem = {
-  to: "/diagrams" | "/docs" | "/sync" | "/github" | "/settings";
+  to: "/diagrams" | "/docs" | "/sync" | "/github" | "/settings" | "/agents";
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 };
 
 const RAIL_TOP: RailItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
+  { to: "/agents", label: "Агенти", icon: Workflow },
   { to: "/docs", label: "Нотатки", icon: FileText },
   { to: "/sync", label: "Граф", icon: GitMerge },
   { to: "/github", label: "GitHub", icon: GitBranch },

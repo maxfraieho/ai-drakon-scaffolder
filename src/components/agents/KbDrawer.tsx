@@ -20,17 +20,16 @@ const SAMPLE_CONTENT: Record<string, string> = {
 `,
   "01-node-patterns.md": `# Python → DRAKON Node Mapping
 
-| Python | DRAKON |
-|--------|--------|
-| assignment | action |
-| if / elif | decision |
-| for / while | loop_start + loop_end |
-| return | terminator |
-| try / except | decision + action |
+| Python    | DRAKON                  |
+|-----------|-------------------------|
+| assignment| action                  |
+| if / elif | decision                |
+| for/while | loop_start + loop_end   |
+| return    | terminator              |
+| try/except| decision + action       |
 `,
   "02-ir-format.md": `# DRAKON IR JSON schema
 
-\`\`\`json
 {
   "node_id": {
     "type": "action | decision | terminator | loop_start | loop_end",
@@ -40,7 +39,6 @@ const SAMPLE_CONTENT: Record<string, string> = {
     "no":  "id"
   }
 }
-\`\`\`
 `,
 };
 
@@ -81,7 +79,6 @@ export function KbDrawer({ open, kbFiles, selectedFile, onToggle, onSelectFile }
 
       {open && (
         <div className="flex h-[calc(100%-2.5rem)]">
-          {/* File list */}
           <div className="w-[220px] shrink-0 overflow-y-auto border-r border-[var(--color-outline-variant)]">
             {kbFiles.map((f) => (
               <button
@@ -95,7 +92,7 @@ export function KbDrawer({ open, kbFiles, selectedFile, onToggle, onSelectFile }
                 )}
               >
                 <span className="font-mono-code text-[var(--color-on-surface)]">{f.filename}</span>
-                <span className="font-ui-sm text-[var(--color-on-surface-variant)] line-clamp-1">
+                <span className="font-ui-sm line-clamp-1 text-[var(--color-on-surface-variant)]">
                   {f.description}
                 </span>
               </button>
@@ -106,8 +103,7 @@ export function KbDrawer({ open, kbFiles, selectedFile, onToggle, onSelectFile }
               </div>
             )}
           </div>
-          {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4 bg-[var(--color-surface-container-lowest)]">
+          <div className="flex-1 overflow-y-auto bg-[var(--color-surface-container-lowest)] p-4">
             {selectedFile ? (
               <pre className="font-mono-code whitespace-pre-wrap text-[var(--color-on-surface)]">
                 {content}
