@@ -195,16 +195,15 @@ export function CodeGenerationPanel({
   return (
     <section
       className={cn(
-        "antialiased flex shrink-0 flex-col border-t bg-[var(--color-surface)] z-20 transition-[height] duration-200 ease-in-out shadow-[0_-4px_24px_rgba(0,0,0,0.5)]",
+        "antialiased flex shrink-0 flex-col border-t bg-background z-20 transition-[height] duration-200 ease-in-out shadow-[0_-4px_24px_rgba(0,0,0,0.5)]",
         panelHeight,
       )}
       style={{ borderColor: "var(--color-outline-variant, #534434)" }}
     >
       {/* Header */}
       <header
-        className="flex h-10 shrink-0 items-center justify-between px-4 border-b"
+        className="flex h-10 shrink-0 items-center justify-between px-4 border-b bg-muted"
         style={{
-          background: "var(--color-surface-container-low, #1c1b1b)",
           borderColor: "var(--color-outline-variant, #534434)",
         }}
       >
@@ -277,13 +276,12 @@ export function CodeGenerationPanel({
               </span>
               <div
                 className={cn(
-                  "flex flex-1 items-center justify-between rounded-sm border px-2 h-[32px] font-mono text-[12px]",
+                  "flex flex-1 items-center justify-between rounded-sm border px-2 h-[32px] font-mono text-[12px] bg-background",
                   diagramIr
                     ? "text-[var(--color-on-surface)]"
                     : "text-[var(--color-on-surface-variant)] opacity-60",
                 )}
                 style={{
-                  background: "var(--color-surface-container, #201f1f)",
                   borderColor: "var(--color-outline-variant, #534434)",
                 }}
               >
@@ -300,9 +298,8 @@ export function CodeGenerationPanel({
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={running}
                 placeholder="Опис поведінки (необов'язково)…"
-                className="flex-1 w-full resize-none rounded-sm border p-2 font-mono text-[12px] text-[var(--color-on-surface)] outline-none placeholder:text-[var(--color-on-surface-variant)]/50 focus:border-[var(--color-primary-container)] focus:ring-1 focus:ring-[var(--color-primary-container)]"
+                className="flex-1 w-full resize-none rounded-sm border p-2 font-mono text-[12px] text-[var(--color-on-surface)] bg-background outline-none placeholder:text-[var(--color-on-surface-variant)]/50 focus:border-[var(--color-primary-container)] focus:ring-1 focus:ring-[var(--color-primary-container)]"
                 style={{
-                  background: "var(--color-surface-container, #201f1f)",
                   borderColor: "var(--color-outline-variant, #534434)",
                 }}
               />
@@ -346,8 +343,7 @@ export function CodeGenerationPanel({
 
           {/* Right history */}
           <div
-            className="w-[320px] flex flex-col"
-            style={{ background: "var(--color-surface-container, #201f1f)" }}
+            className="w-[320px] flex flex-col bg-muted/40"
           >
             <div
               className="h-8 flex items-center px-4 border-b font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--color-on-surface-variant)]"
@@ -409,9 +405,8 @@ export function CodeGenerationPanel({
         <div className="flex flex-1 flex-col min-h-0">
           {/* Status bar */}
           <div
-            className="flex items-center justify-between px-4 py-1.5 border-b shrink-0"
+            className="flex items-center justify-between px-4 py-1.5 border-b shrink-0 bg-muted"
             style={{
-              background: "var(--color-surface-container-low, #1c1b1b)",
               borderColor: "var(--color-outline-variant, #534434)",
             }}
           >
@@ -492,7 +487,7 @@ export function CodeGenerationPanel({
                 height="100%"
                 language={MONACO_LANG[lang]}
                 value={result.code}
-                theme="vs-dark"
+                theme={typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "vs-dark" : "vs-light"}
                 options={{
                   readOnly: true,
                   minimap: { enabled: false },
