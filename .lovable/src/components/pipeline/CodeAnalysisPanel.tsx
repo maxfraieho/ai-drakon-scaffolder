@@ -10,6 +10,7 @@ import {
   type AnalyzeResult,
   type AnalyzedFunction,
 } from "@/lib/pipeline-api";
+import { kbContribute } from "@/lib/kb-api";
 
 interface CodeAnalysisPanelProps {
   open: boolean;
@@ -27,6 +28,8 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [elapsed, setElapsed] = useState(0);
+  const [kbSaving, setKbSaving] = useState(false);
+  const [kbSaved, setKbSaved] = useState(false);
   const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -63,6 +66,7 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
     setStatus("running");
     setResult(null);
     setErrorMsg("");
+    setKbSaved(false);
     try {
       const resp = await startAnalysis(source, filePath || "module.py");
       setJobId(resp.job_id);
@@ -78,6 +82,31 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
     setResult(null);
     setErrorMsg("");
     setElapsed(0);
+    setKbSaved(false);
+  };
+
+  const handleSaveToKb = async () => {
+    if (!result || kbSaving || kbSaved) return;
+    setKbSaving(true);
+    try {
+      const token = localStorage.getItem("auth_token") ?? "";
+      await kbContribute(
+        {
+          code: source,
+          ir_yaml: JSON.stringify(result.drakon_ir, null, 2),
+          language: "python",
+          description: filePath,
+          job_id: jobId ?? undefined,
+        },
+        token
+      );
+      setKbSaved(true);
+      toast.success("Збережено до KB", { description: filePath });
+    } catch {
+      toast.error("Помилка збереження");
+    } finally {
+      setKbSaving(false);
+    }
   };
 
   if (!open) return null;
@@ -178,8 +207,16 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
                   АНАЛІЗ ЗАВЕРШЕНО
                 </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className="font-mono text-[11px] text-[var(--text-muted)]">{elapsed}s</span>
+                <button
+                  type="button"
+                  onClick={handleSaveToKb}
+                  disabled={kbSaving || kbSaved}
+                  className="flex items-center gap-1.5 rounded border border-[var(--accent-amber)]/40 px-2 py-1 font-mono text-[10px] uppercase text-[var(--accent-amber)] transition-colors hover:bg-[var(--accent-amber)]/10 disabled:opacity-50"
+                >
+                  {kbSaved ? "✓ Збережено" : kbSaving ? "..." : "Save to KB"}
+                </button>
                 <button
                   type="button"
                   onClick={reset}
