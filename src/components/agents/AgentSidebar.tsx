@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import {
   AGENT_LABELS,
@@ -61,22 +62,31 @@ export function AgentSidebar({
             Пайплайни
           </div>
           {agentPipelines.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => {
-                onSelectPipeline(p);
-                onClose?.();
-              }}
-              className={cn(
-                "flex w-full items-center gap-2 border-l-2 px-3 py-1.5 text-left transition-colors",
-                selectedPipeline.id === p.id
-                  ? "border-[var(--color-primary-container)] bg-[var(--color-surface-container-high)] text-[var(--color-primary-container)]"
-                  : "border-transparent text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
-              )}
-            >
-              <span className="material-symbols-outlined text-[16px]">linear_scale</span>
-              <span className="font-ui-md truncate">{p.shortName}</span>
-            </button>
+            <div key={p.id} className="flex items-center">
+              <button
+                onClick={() => {
+                  onSelectPipeline(p);
+                  onClose?.();
+                }}
+                className={cn(
+                  "flex min-w-0 flex-1 items-center gap-2 border-l-2 px-3 py-1.5 text-left transition-colors",
+                  selectedPipeline.id === p.id
+                    ? "border-[var(--color-primary-container)] bg-[var(--color-surface-container-high)] text-[var(--color-primary-container)]"
+                    : "border-transparent text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
+                )}
+              >
+                <span className="material-symbols-outlined text-[16px]">linear_scale</span>
+                <span className="font-ui-md truncate">{p.shortName}</span>
+              </button>
+              <Link
+                to="/agents/pipeline/$pipelineId/edit"
+                params={{ pipelineId: p.id }}
+                onClick={() => onClose?.()}
+                className="mr-2 inline-flex h-8 items-center gap-1 rounded px-2 font-mono text-[10px] uppercase tracking-wider text-[var(--accent-amber)] opacity-60 transition-colors hover:opacity-100 active:scale-[0.96] active:transition-transform active:duration-75"
+              >
+                Edit
+              </Link>
+            </div>
           ))}
         </section>
 

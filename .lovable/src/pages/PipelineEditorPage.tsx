@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
-import { Link, useLocation } from "@tanstack/react-router";
+import { Link, useParams } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 import type { DrakonDiagram } from "@/types/drakonwidget";
@@ -9,9 +9,9 @@ import {
   type PipelineConfig,
 } from "@/lib/pipeline-config-api";
 import { pipelineToIR, irToPipeline } from "@/lib/pipeline-to-drakon";
+
 export default function PipelineEditorPage() {
-  const location = useLocation();
-  const pipelineId = new URLSearchParams(location.search).get("pipelineId") ?? "architect-a";
+  const { pipelineId } = useParams({ from: "/agents/pipeline/$pipelineId/edit" });
   const [config, setConfig] = useState<PipelineConfig | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
 
