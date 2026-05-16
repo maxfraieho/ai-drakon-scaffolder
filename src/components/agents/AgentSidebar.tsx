@@ -89,7 +89,10 @@ export function AgentSidebar({
             return (
               <button
                 key={n.id}
-                onClick={() => onSelectNode(n)}
+                onClick={() => {
+                  onSelectNode(n);
+                  onClose?.();
+                }}
                 className={cn(
                   "flex w-full items-center gap-2 border-l-2 px-3 py-1.5 text-left transition-colors",
                   active
