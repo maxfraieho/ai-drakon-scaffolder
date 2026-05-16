@@ -2173,6 +2173,18 @@ async function handleNotesDelete(request, env) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+      // ─── Pipeline config registry (/v1/agents/pipeline* → architect-agent) ───
+      if (path.startsWith('/v1/agents/pipeline')) {
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+        const targetUrl = architectUrl + path + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        return fetch(proxied);
+      }
+
       // ─── Pipeline proxy (/v1/pipeline/* → architect-agent) ─────────────
       if (method === 'POST' && path === '/v1/pipeline/analyze') {
         return await handlePipeline('analyze', request, env, ctx);
