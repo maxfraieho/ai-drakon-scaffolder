@@ -143,7 +143,7 @@ function RootComponent() {
   }, []);
 
   const location = useLocation();
-  const hideChrome = location.pathname === "/login" || location.pathname.startsWith("/agents");
+  const hideChrome = location.pathname === "/login";
 
   return (
     <QueryClientProvider client={queryClient}>
