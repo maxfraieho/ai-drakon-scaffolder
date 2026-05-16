@@ -20,6 +20,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
+import { hasClientJwt } from "@/lib/route-auth";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 import type { AppSettings } from "@/types/settings";
 
@@ -235,7 +236,7 @@ function SettingsRoute() {
     toast.success("Локальний кеш діаграм очищено");
   };
 
-  if (typeof window !== "undefined" && !localStorage.getItem("jwt")) {
+  if (!hasClientJwt()) {
     return <Navigate to="/login" replace />;
   }
 
