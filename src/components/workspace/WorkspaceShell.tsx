@@ -61,6 +61,7 @@ function getBreadcrumb(pathname: string): { section: string; sub?: string } {
   if (pathname.startsWith("/sync")) return { section: "Sync" };
   if (pathname.startsWith("/github")) return { section: "GitHub" };
   if (pathname.startsWith("/settings")) return { section: "Settings" };
+  if (pathname.startsWith("/agents")) return { section: "Agent Logic Studio" };
   return { section: "Workspace" };
 }
 
