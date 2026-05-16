@@ -28,6 +28,8 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [elapsed, setElapsed] = useState(0);
+  const [kbSaving, setKbSaving] = useState(false);
+  const [kbSaved, setKbSaved] = useState(false);
   const startedAtRef = useRef<number | null>(null);
 
   useEffect(() => {
