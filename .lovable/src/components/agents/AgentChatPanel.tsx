@@ -14,16 +14,17 @@ import {
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { sendFeedback, getAgentLabel } from "@/lib/agent-api";
-import { upsertDiagramInStorage } from "@/lib/diagram-storage";
 import { DEFAULT_FOLDER } from "@/lib/folder-storage";
+import { api } from "@/lib/api";
 import { useAgentChatStore } from "@/store/useAgentChatStore";
 import { useAgentHealth } from "@/hooks/useAgentHealth";
 import type { AgentId, AgentMessage } from "@/types/agent-chat";
-import type { Diagram, DrakonDiagram } from "@/types/drakon";
+import type { DrakonDiagram } from "@/types/drakon";
 
 const AGENTS: AgentId[] = ["drakon", "architect", "docs"];
 
@@ -145,23 +146,16 @@ export function AgentChatPanel({ className }: Props) {
     void sendMessage(activeAgent, lastUser.content);
   };
 
-  const handleOpenDiagram = (
+  const handleOpenDiagram = async (
     diag: { name: string; items: Record<string, unknown> },
-  ) => {
+  ): Promise<void> => {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const drakonDiagram = {
+    const drakonDiagram: DrakonDiagram = {
       name: diag.name,
       items: diag.items as DrakonDiagram["items"],
-    } as DrakonDiagram;
-    const diagram: Diagram = {
-      id,
-      name: diag.name,
-      folderId: DEFAULT_FOLDER.id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      diagram: drakonDiagram,
     };
-    upsertDiagramInStorage(diagram);
+
+    await api.saveDiagram(DEFAULT_FOLDER.slug, id, drakonDiagram);
     navigate({ to: "/diagrams" });
   };
 
@@ -191,7 +185,7 @@ export function AgentChatPanel({ className }: Props) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <ScrollArea ref={scrollRef} className="flex-1">
         <div className="flex flex-col gap-3 p-3">
           {messages.length === 0 && (
             <AssistantBubble text={WELCOME[activeAgent]} />
@@ -217,7 +211,7 @@ export function AgentChatPanel({ className }: Props) {
             </div>
           )}
         </div>
-      </div>
+      </ScrollArea>
 
       {/* LLM status bar — завжди показується */}
       <div className="border-t px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 flex-wrap">
@@ -376,7 +370,7 @@ function MessageItem({
               <Button
                 size="sm"
                 variant="secondary"
-                onClick={() => onOpenDiagram(firstDiagram)}
+                onClick={() => void onOpenDiagram(firstDiagram)}
               >
                 <ExternalLink className="mr-1 h-3.5 w-3.5" />
                 Відкрити в редакторі
