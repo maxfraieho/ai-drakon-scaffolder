@@ -51,38 +51,36 @@ export default function AgentStudioPage() {
   return (
     <div className="font-ui-sm flex h-screen w-full flex-col overflow-hidden bg-[var(--color-surface-container-lowest)] text-[var(--color-on-surface)] antialiased">
       {/* Top Navigation Bar */}
-      <header className="flex h-8 shrink-0 items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-3">
-        <div className="flex h-full items-center gap-6">
-          <button
-            onClick={() => setSidebarOpen((v) => !v)}
-            className="flex items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] md:hidden"
-            aria-label="Toggle sidebar"
-          >
-            <span className="material-symbols-outlined text-[20px]">menu</span>
-          </button>
-          <span className="font-headline-sm text-[var(--color-on-surface)]">
-            ⚙ АГЕНТНА ЛОГІКА
-          </span>
-          <nav className="flex h-full items-center gap-4">
-            {TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleSelectTab(tab.id)}
-                className={cn(
-                  "font-ui-sm flex h-full items-center pt-0.5 transition-colors",
-                  activeTab === tab.id
-                    ? "border-b-2 border-[var(--color-primary-container)] text-[var(--color-primary-container)]"
-                    : "text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)]"
-                )}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-        <div className="flex items-center gap-3">
+      <header className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-2 md:px-3">
+        <button
+          onClick={() => setSidebarOpen((v) => !v)}
+          className="flex h-6 w-6 shrink-0 items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] md:hidden"
+          aria-label="Toggle sidebar"
+        >
+          <span className="material-symbols-outlined text-[18px]">menu</span>
+        </button>
+        <span className="hidden md:inline font-headline-sm text-[var(--color-on-surface)] shrink-0 mr-4">
+          ⚙ АГЕНТНА ЛОГІКА
+        </span>
+        <nav className="flex h-full min-w-0 flex-1 items-center gap-3 md:gap-4 overflow-x-auto no-scrollbar">
+          {TABS.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleSelectTab(tab.id)}
+              className={cn(
+                "font-ui-sm flex h-full shrink-0 items-center pt-0.5 transition-colors",
+                activeTab === tab.id
+                  ? "border-b-2 border-[var(--color-primary-container)] text-[var(--color-primary-container)]"
+                  : "text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)]"
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+        <div className="flex shrink-0 items-center gap-2 md:gap-3">
           <span className="font-mono-label text-[var(--color-tertiary)]">● LIVE</span>
-          <button className="flex items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)]">
+          <button className="hidden md:flex items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)]">
             <span className="material-symbols-outlined text-[18px]">sensors</span>
           </button>
         </div>
