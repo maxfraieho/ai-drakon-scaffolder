@@ -12,7 +12,7 @@ import {
   Moon,
   Sun,
   Terminal,
-  Workflow,
+  Cpu,
 } from "lucide-react";
 
 import {
@@ -39,7 +39,7 @@ type RailItem = {
 
 const RAIL_TOP: RailItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
-  { to: "/agents", label: "Агенти", icon: Workflow },
+  { to: "/agents", label: "Агенти", icon: Cpu },
   { to: "/docs", label: "Нотатки", icon: FileText },
   { to: "/sync", label: "Граф", icon: GitMerge },
   { to: "/github", label: "GitHub", icon: GitBranch },
@@ -61,6 +61,7 @@ function getBreadcrumb(pathname: string): { section: string; sub?: string } {
   if (pathname.startsWith("/sync")) return { section: "Sync" };
   if (pathname.startsWith("/github")) return { section: "GitHub" };
   if (pathname.startsWith("/settings")) return { section: "Settings" };
+  if (pathname.startsWith("/agents")) return { section: "Agent Logic Studio" };
   return { section: "Workspace" };
 }
 
