@@ -471,6 +471,7 @@ export function CodeGenerationPanel({
                 className="flex items-center gap-1 rounded border border-[var(--color-primary-container)]/40 px-2 py-1 min-h-[32px] font-mono text-[11px] uppercase text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-container)]/10 disabled:opacity-50"
               >
                 {kbSaved ? "✓ Збережено" : kbSaving ? "..." : "Save to KB"}
+              </button>
               <button
                 type="button"
                 onClick={handleRegenerate}
