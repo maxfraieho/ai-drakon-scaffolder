@@ -83,3 +83,37 @@ export async function pollJob<T = unknown>(job_id: string): Promise<JobStatus<T>
   if (!res.ok) throw new Error(`status HTTP ${res.status}`);
   return res.json();
 }
+
+export function streamJob<T = unknown>(
+  job_id: string,
+  onEvent: (data: JobStatus<T>) => void,
+): () => void {
+  const jwt =
+    typeof window !== "undefined" ? (localStorage.getItem("jwt") ?? "") : "";
+  const url = `${workerUrl()}/v1/pipeline/stream/${encodeURIComponent(job_id)}?token=${encodeURIComponent(jwt)}`;
+  const es = new EventSource(url);
+
+  es.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data) as JobStatus<T>;
+      onEvent(data);
+      if (data.status === "done" || data.status === "error") {
+        es.close();
+      }
+    } catch {
+      es.close();
+    }
+  };
+
+  es.onerror = () => {
+    onEvent({
+      job_id,
+      status: "error",
+      result: null as unknown as T,
+      error: "SSE connection error",
+    });
+    es.close();
+  };
+
+  return () => es.close();
+}

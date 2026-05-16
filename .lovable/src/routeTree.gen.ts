@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
+import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IndexIndexRouteImport } from './routes/index.index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
@@ -50,6 +51,11 @@ const DiagramsRoute = DiagramsRouteImport.update({
   path: '/diagrams',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -73,6 +79,7 @@ const DiagramEditorRoute = DiagramEditorRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
@@ -98,6 +106,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/agents': typeof AgentsRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
@@ -112,6 +121,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/agents'
     | '/diagrams'
     | '/docs'
     | '/github'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/agents'
     | '/diagrams'
     | '/docs'
     | '/github'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/agents'
     | '/diagrams'
     | '/docs'
     | '/github'
@@ -149,6 +161,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AgentsRoute: typeof AgentsRoute
   DiagramsRoute: typeof DiagramsRoute
   DocsRoute: typeof DocsRoute
   GithubRoute: typeof GithubRoute
@@ -204,6 +217,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DiagramsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -237,6 +257,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AgentsRoute: AgentsRoute,
   DiagramsRoute: DiagramsRoute,
   DocsRoute: DocsRoute,
   GithubRoute: GithubRoute,

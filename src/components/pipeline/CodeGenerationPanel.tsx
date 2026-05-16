@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  pollJob,
+  streamJob,
   startGeneration,
   type GenerateResult,
 } from "@/lib/pipeline-api";
@@ -52,31 +52,16 @@ export function CodeGenerationPanel({ open, onClose, diagramIr }: CodeGeneration
 
   useEffect(() => {
     if (status !== "running" || !jobId) return;
-    let cancelled = false;
-    const tick = async () => {
-      try {
-        const data = await pollJob<GenerateResult>(jobId);
-        if (cancelled) return;
-        if (data.status === "done") {
-          setResult(data.result);
-          setStatus("done");
-          toast.success("Код згенеровано");
-        } else if (data.status === "error") {
-          setErrorMsg(data.error || "Невідома помилка");
-          setStatus("error");
-        }
-      } catch (e) {
-        if (cancelled) return;
-        setErrorMsg(e instanceof Error ? e.message : "Помилка статусу");
+    return streamJob<GenerateResult>(jobId, (data) => {
+      if (data.status === "done") {
+        setResult(data.result);
+        setStatus("done");
+        toast.success("Код згенеровано");
+      } else if (data.status === "error") {
+        setErrorMsg(data.error || "Невідома помилка");
         setStatus("error");
       }
-    };
-    const id = setInterval(tick, 3000);
-    void tick();
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
+    });
   }, [status, jobId]);
 
   const runGenerate = async () => {
@@ -154,88 +139,121 @@ export function CodeGenerationPanel({ open, onClose, diagramIr }: CodeGeneration
         </button>
       </header>
 
-      <div className="flex-1 overflow-auto p-3">
-        {status === "idle" || status === "running" ? (
-          <div className="flex flex-col gap-2">
-            <Textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Опис поведінки (необов'язково)"
-              rows={1}
-              disabled={status === "running"}
-              className="text-xs resize-none"
-            />
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                onClick={runGenerate}
-                disabled={status === "running" || !diagramIr}
-                className="bg-[var(--accent-amber)] text-black hover:bg-[var(--accent-amber)]/90"
-              >
-                {status === "running" ? (
-                  <>
-                    <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                    Генерація… {elapsed}s
-                  </>
-                ) : (
-                  <>Генерувати</>
-                )}
-              </Button>
-              {!diagramIr ? (
-                <span className="font-mono text-[10px] text-[var(--text-muted)]">
-                  Виберіть схему
-                </span>
-              ) : null}
-            </div>
+      <div className="flex-1 overflow-auto p-3 space-y-2">
+        <div className="flex flex-col gap-2">
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Опис поведінки (необов'язково)"
+            rows={1}
+            disabled={status === "running"}
+            className="text-xs resize-none"
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              onClick={runGenerate}
+              disabled={status === "running" || !diagramIr}
+              className="bg-[var(--accent-amber)] text-black hover:bg-[var(--accent-amber)]/90"
+            >
+              {status === "running" ? (
+                <>
+                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                  Генерація… {elapsed}s
+                </>
+              ) : (
+                <>Генерувати</>
+              )}
+            </Button>
+            {!diagramIr ? (
+              <span className="font-mono text-[10px] text-[var(--text-muted)]">
+                Виберіть схему
+              </span>
+            ) : null}
           </div>
-        ) : null}
+        </div>
 
-        {status === "done" && result ? (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
+        {status === "running" && (
+          <div className="border border-[var(--border-default)] bg-[var(--surface-container)] p-3 flex flex-col gap-2">
+            <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <span className="font-mono text-[10px] uppercase tracking-wider text-[var(--text-muted)]">
-                  {result.language} · ітерацій: {result.iterations}
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-amber)] opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-amber)]" />
                 </span>
+                <span className="font-mono text-[11px] text-[var(--accent-amber)] uppercase font-bold tracking-wider">
+                  ВИКОНУЄТЬСЯ
+                </span>
+              </div>
+              <span className="font-mono text-[11px] text-[var(--text-muted)]">{elapsed}s</span>
+            </div>
+            <div className="w-full bg-[var(--bg-base)] h-[2px] overflow-hidden">
+              <div
+                className="bg-[var(--accent-amber)] h-full transition-all"
+                style={{ width: `${Math.min(90, elapsed * 5)}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-[var(--text-secondary)] italic">
+              Pipeline B запущено. Генерація коду з DRAKON IR...
+            </p>
+          </div>
+        )}
+
+        {status === "done" && result && (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between px-3 py-2 border border-emerald-500/30 bg-emerald-500/5">
+              <div className="flex items-center gap-2 text-emerald-400">
+                <span className="text-[16px]">✓</span>
+                <span className="font-mono text-[11px] font-bold uppercase">КОД ЗГЕНЕРОВАНО</span>
                 {result.syntax_errors.length === 0 ? (
-                  <span className="font-mono text-[10px] text-emerald-500">syntax: ✓</span>
+                  <span className="font-mono text-[10px] text-emerald-400">syntax: OK</span>
                 ) : (
                   <span className="font-mono text-[10px] text-red-400">
-                    syntax: {result.syntax_errors.length} помилок
+                    {result.syntax_errors.length} syntax помилок
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" onClick={copyCode} className="h-6 text-[11px]">
-                  <Copy className="mr-1 h-3 w-3" />
-                  Копіювати
-                </Button>
-                <Button variant="ghost" size="sm" onClick={reset} className="h-6 text-[11px]">
-                  Перегенерувати
-                </Button>
+              <div className="flex items-center gap-3">
+                <span className="font-mono text-[11px] text-[var(--text-muted)]">{elapsed}s · {result.iterations} ітерацій</span>
                 <button
                   type="button"
-                  onClick={onClose}
-                  className="text-[11px] text-[var(--text-muted)] hover:text-[var(--text-primary)] underline-offset-2 hover:underline"
+                  onClick={reset}
+                  className="font-mono text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] uppercase"
                 >
-                  Закрити
+                  Перегенерувати
                 </button>
               </div>
             </div>
-            <pre className="font-mono text-xs bg-[var(--bg-base)] p-3 rounded-[var(--radius-sm)] overflow-auto max-h-[180px] w-full border border-[var(--border-subtle)]">
-              <code>{result.code}</code>
-            </pre>
-          </div>
-        ) : null}
 
-        {status === "error" ? (
-          <div className="space-y-2 rounded-[var(--radius-sm)] border border-red-500/30 bg-red-500/5 p-3">
-            <p className="font-mono text-xs text-red-400">{errorMsg || "Помилка"}</p>
-            <Button variant="outline" size="sm" onClick={reset}>
-              Повторити
-            </Button>
+            <div className="relative group">
+              <pre className="w-full bg-[var(--bg-base)] border border-[var(--border-default)] p-3 font-mono text-[11px] overflow-auto max-h-[160px] text-[var(--text-primary)] leading-relaxed whitespace-pre">
+                <code>{result.code}</code>
+              </pre>
+              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  onClick={copyCode}
+                  className="bg-[var(--surface-container)]/80 border border-[var(--border-default)] p-1 text-[var(--text-secondary)] hover:text-[var(--accent-amber)]"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
           </div>
-        ) : null}
+        )}
+
+        {status === "error" && (
+          <div className="border border-red-500/30 bg-red-500/5 p-3 flex flex-col gap-2">
+            <p className="font-mono text-[11px] text-red-400">{errorMsg || "Помилка"}</p>
+            <button
+              type="button"
+              onClick={reset}
+              className="w-full border border-[var(--border-default)] py-1 font-mono text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)] transition-colors"
+            >
+              Повторити
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
