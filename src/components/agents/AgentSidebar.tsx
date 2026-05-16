@@ -15,6 +15,8 @@ interface Props {
   onSelectPipeline: (p: AgentPipeline) => void;
   onSelectNode: (n: AgentNode) => void;
   onSelectKbFile: (f: KbFile) => void;
+  open?: boolean;
+  onClose?: () => void;
 }
 
 export function AgentSidebar({
