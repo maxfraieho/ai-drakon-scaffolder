@@ -1,0 +1,27 @@
+{
+  "id": "architect-a",
+  "agent_id": "architect",
+  "name": "Pipeline A: Код → DRAKON IR",
+  "description": "LangGraph StateGraph · Ralph Loop max 3 iter",
+  "max_iterations": 3,
+  "version": 1,
+  "nodes": [
+    {"id": "measure_cc",    "label": "measure_cc",         "type": "action",   "is_llm": false, "is_deterministic": true,  "description": "radon.complexity.cc_visit() — max CC"},
+    {"id": "classify",      "label": "classify_complexity", "type": "decision", "is_llm": false, "is_deterministic": true,  "description": "CC≤10 → AST path, CC>10 → LLM path"},
+    {"id": "ast_translate", "label": "ast_translate",       "type": "action",   "is_llm": false, "is_deterministic": true,  "description": "Python AST → DRAKON IR без LLM"},
+    {"id": "yaml_gen",      "label": "yaml_gen",            "type": "action",   "is_llm": true,  "is_deterministic": false, "prompt_key": "yaml_gen", "description": "LLM: Python → C4-B YAML"},
+    {"id": "ir_gen",        "label": "ir_gen",              "type": "action",   "is_llm": true,  "is_deterministic": false, "prompt_key": "ir_gen",   "description": "LLM: YAML → DRAKON IR JSON (Ralph Loop)"},
+    {"id": "validate",      "label": "validate",            "type": "action",   "is_llm": false, "is_deterministic": true,  "description": "ir_validator.py — топологічні правила"}
+  ],
+  "edges": [
+    {"from_node": "__start__",     "to_node": "measure_cc"},
+    {"from_node": "measure_cc",    "to_node": "classify"},
+    {"from_node": "classify",      "to_node": "ast_translate", "condition": "yes", "label": "CC≤10"},
+    {"from_node": "classify",      "to_node": "yaml_gen",      "condition": "no",  "label": "CC>10"},
+    {"from_node": "ast_translate", "to_node": "validate"},
+    {"from_node": "yaml_gen",      "to_node": "ir_gen"},
+    {"from_node": "ir_gen",        "to_node": "validate"},
+    {"from_node": "validate",      "to_node": "__end__",  "condition": "yes", "label": "valid"},
+    {"from_node": "validate",      "to_node": "ir_gen",   "condition": "no",  "label": "invalid·iter<3"}
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "id": "architect-b",
+  "agent_id": "architect",
+  "name": "Pipeline B: DRAKON IR → Код",
+  "description": "LangGraph StateGraph · Syntax Loop max 3 iter",
+  "max_iterations": 3,
+  "version": 1,
+  "nodes": [
+    {"id": "code_gen",     "label": "code_gen",     "type": "action", "is_llm": true,  "is_deterministic": false, "prompt_key": "code_gen",  "description": "LLM: DRAKON IR → код цільовою мовою"},
+    {"id": "check_syntax", "label": "check_syntax", "type": "action", "is_llm": false, "is_deterministic": true,  "description": "ast.parse() — перевірка синтаксису"}
+  ],
+  "edges": [
+    {"from_node": "__start__",    "to_node": "code_gen"},
+    {"from_node": "code_gen",     "to_node": "check_syntax"},
+    {"from_node": "check_syntax", "to_node": "__end__",  "condition": "yes", "label": "valid"},
+    {"from_node": "check_syntax", "to_node": "code_gen", "condition": "no",  "label": "err·iter<3"}
+  ]
+}

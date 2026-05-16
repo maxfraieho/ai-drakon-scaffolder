@@ -1,0 +1,17 @@
+{
+  "id": "docs-chat",
+  "agent_id": "docs",
+  "name": "Docs Q&A Pipeline",
+  "description": "BM25 KB retrieval + LLM answer · 2 вузли",
+  "max_iterations": 1,
+  "version": 1,
+  "nodes": [
+    {"id": "retrieve_context", "label": "retrieve_context", "type": "action", "is_llm": false, "is_deterministic": true, "description": "BM25 пошук релевантних фрагментів з KB"},
+    {"id": "answer",           "label": "answer",           "type": "action", "is_llm": true,  "is_deterministic": false, "prompt_key": "answer", "description": "LLM формує відповідь"}
+  ],
+  "edges": [
+    {"from_node": "__start__",        "to_node": "retrieve_context"},
+    {"from_node": "retrieve_context", "to_node": "answer"},
+    {"from_node": "answer",           "to_node": "__end__"}
+  ]
+}

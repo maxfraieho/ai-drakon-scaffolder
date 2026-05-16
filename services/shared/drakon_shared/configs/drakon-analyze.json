@@ -1,0 +1,17 @@
+{
+  "id": "drakon-analyze",
+  "agent_id": "drakon",
+  "name": "Аналіз Python AST",
+  "description": "Детерміністичний транслятор · Python AST → DRAKON IR · без LLM",
+  "max_iterations": 1,
+  "version": 1,
+  "nodes": [
+    {"id": "ast_visitor", "label": "PythonAnalyzer", "type": "action", "is_llm": false, "is_deterministic": true, "description": "ast.NodeVisitor → DRAKON IR вузли та зв'язки"},
+    {"id": "validate_ir", "label": "validate_ir",    "type": "action", "is_llm": false, "is_deterministic": true, "description": "ir_validator.py — топологічні перевірки"}
+  ],
+  "edges": [
+    {"from_node": "__start__",   "to_node": "ast_visitor"},
+    {"from_node": "ast_visitor", "to_node": "validate_ir"},
+    {"from_node": "validate_ir", "to_node": "__end__"}
+  ]
+}
