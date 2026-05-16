@@ -207,7 +207,7 @@ function DocsRoute() {
 
                 <div
                   ref={logRef}
-                  className="log-area h-72 overflow-y-auto rounded-md border border-border bg-black p-3 font-mono text-xs text-green-300"
+                  className="log-area h-72 overflow-y-auto rounded-md border border-border bg-muted dark:bg-black p-3 font-mono text-xs text-emerald-700 dark:text-green-300"
                 >
                   {log.length === 0 ? (
                     <div className="text-muted-foreground">Лог порожній…</div>
