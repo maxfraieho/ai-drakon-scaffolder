@@ -360,6 +360,13 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
         </main>
       </div>
 
+      <CommandPalette
+        open={cmdOpen}
+        onOpenChange={setCmdOpen}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onLogout={logout}
+      />
     </div>
   );
 }
