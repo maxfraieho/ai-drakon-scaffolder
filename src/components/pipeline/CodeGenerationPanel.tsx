@@ -91,6 +91,7 @@ export function CodeGenerationPanel({
           : 0;
         setResult(data.result);
         setStatus("done");
+        setKbSaved(false);
         toast.success("Код згенеровано");
         saveGenerationHistory({
           scheme: diagramName || "diagram",
