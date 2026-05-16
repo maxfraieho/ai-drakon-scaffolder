@@ -28,6 +28,7 @@ export default function AgentStudioPage() {
   const [selectedNode, setSelectedNode] = useState<AgentNode | null>(null);
   const [selectedKbFile, setSelectedKbFile] = useState<KbFile | null>(null);
   const [kbOpen, setKbOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const llmNodes = selectedPipeline.nodes.filter((n) => n.hasPrompt);
   const agentKbFiles = KB_FILES.filter((f) => f.agentId === selectedPipeline.agentId);
@@ -52,6 +53,13 @@ export default function AgentStudioPage() {
       {/* Top Navigation Bar */}
       <header className="flex h-8 shrink-0 items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-3">
         <div className="flex h-full items-center gap-6">
+          <button
+            onClick={() => setSidebarOpen((v) => !v)}
+            className="flex items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] md:hidden"
+            aria-label="Toggle sidebar"
+          >
+            <span className="material-symbols-outlined text-[20px]">menu</span>
+          </button>
           <span className="font-headline-sm text-[var(--color-on-surface)]">
             ⚙ АГЕНТНА ЛОГІКА
           </span>
@@ -81,7 +89,13 @@ export default function AgentStudioPage() {
       </header>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
+        {sidebarOpen && (
+          <div
+            className="absolute inset-0 z-30 bg-black/40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         <AgentSidebar
           pipelines={PIPELINES}
           kbFiles={KB_FILES}
@@ -93,6 +107,8 @@ export default function AgentStudioPage() {
             setSelectedKbFile(f);
             setKbOpen(true);
           }}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
 
         <main className="relative flex flex-1 flex-col overflow-hidden">
