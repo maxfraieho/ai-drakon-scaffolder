@@ -466,6 +466,13 @@ export function CodeGenerationPanel({
               </button>
               <button
                 type="button"
+                onClick={handleSaveToKb}
+                disabled={kbSaving || kbSaved || !result?.code}
+                className="flex items-center gap-1 rounded border border-[var(--color-primary-container)]/40 px-2 py-1 min-h-[32px] font-mono text-[11px] uppercase text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-container)]/10 disabled:opacity-50"
+              >
+                {kbSaved ? "✓ Збережено" : kbSaving ? "..." : "Save to KB"}
+              <button
+                type="button"
                 onClick={handleRegenerate}
                 className="flex items-center gap-1 px-2 py-1 rounded-[2px] transition-colors active:scale-[0.96] duration-75 min-h-[32px] text-[var(--color-primary-container)] hover:text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-highest)]"
               >
