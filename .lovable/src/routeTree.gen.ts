@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as PipelineEditorRouteImport } from './routes/pipeline-editor'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
@@ -29,6 +30,11 @@ const SyncRoute = SyncRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineEditorRoute = PipelineEditorRouteImport.update({
+  id: '/pipeline-editor',
+  path: '/pipeline-editor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipeline-editor': typeof PipelineEditorRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipeline-editor': typeof PipelineEditorRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipeline-editor': typeof PipelineEditorRoute
   '/settings': typeof SettingsRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
@@ -126,6 +135,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipeline-editor'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipeline-editor'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipeline-editor'
     | '/settings'
     | '/sync'
     | '/diagram/editor'
@@ -166,6 +178,7 @@ export interface RootRouteChildren {
   DocsRoute: typeof DocsRoute
   GithubRoute: typeof GithubRoute
   LoginRoute: typeof LoginRoute
+  PipelineEditorRoute: typeof PipelineEditorRoute
   SettingsRoute: typeof SettingsRoute
   SyncRoute: typeof SyncRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline-editor': {
+      id: '/pipeline-editor'
+      path: '/pipeline-editor'
+      fullPath: '/pipeline-editor'
+      preLoaderRoute: typeof PipelineEditorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -262,6 +282,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsRoute: DocsRoute,
   GithubRoute: GithubRoute,
   LoginRoute: LoginRoute,
+  PipelineEditorRoute: PipelineEditorRoute,
   SettingsRoute: SettingsRoute,
   SyncRoute: SyncRoute,
   DiagramEditorRoute: DiagramEditorRoute,
