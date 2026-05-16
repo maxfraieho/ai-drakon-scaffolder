@@ -1,6 +1,6 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { BookOpen, FileText, FolderTree, Loader2, Network, Play } from "lucide-react";
+import { BookOpen, FileText, Loader2, Network, Play } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -261,6 +261,7 @@ function DocsRoute() {
           <TabsContent value="notes">
             <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
           </TabsContent>
+
 
           <TabsContent value="graph">
             <NotesGraphTab onNodeClick={handleGraphNodeClick} />

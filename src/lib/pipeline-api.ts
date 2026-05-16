@@ -1,5 +1,5 @@
 const workerUrl = () =>
-  (typeof window !== "undefined" && (window as any).__ENV_WORKER_URL__) ||
+  (typeof window !== "undefined" && (window as unknown as { __ENV_WORKER_URL__?: string }).__ENV_WORKER_URL__) ||
   import.meta.env.VITE_WORKER_URL ||
   "https://drakon-mcp-worker.maxfraieho.workers.dev";
 
@@ -20,6 +20,8 @@ export interface AnalyzedFunction {
   params: string;
   items: Record<string, unknown>;
   error?: string;
+  cyclomatic_complexity?: number;
+  validation_errors?: string[];
 }
 
 export interface AnalyzeResult {
@@ -43,10 +45,7 @@ export interface JobStatus<T = unknown> {
   error: string;
 }
 
-export async function startAnalysis(
-  source_code: string,
-  file_path = "module.py",
-): Promise<PipelineJob> {
+export async function startAnalysis(source_code: string, file_path = "module.py"): Promise<PipelineJob> {
   const res = await fetch(`${workerUrl()}/v1/pipeline/analyze`, {
     method: "POST",
     headers: authHeaders(),
