@@ -145,6 +145,7 @@ export function CodeGenerationPanel({
     setDescription(item.description);
     setResult({
       code: item.code,
+      language: item.language,
       syntax_errors: [],
       iterations: item.iterations,
     } as GenerateResult);
