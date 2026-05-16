@@ -405,9 +405,8 @@ export function CodeGenerationPanel({
         <div className="flex flex-1 flex-col min-h-0">
           {/* Status bar */}
           <div
-            className="flex items-center justify-between px-4 py-1.5 border-b shrink-0"
+            className="flex items-center justify-between px-4 py-1.5 border-b shrink-0 bg-muted"
             style={{
-              background: "var(--color-surface-container-low, #1c1b1b)",
               borderColor: "var(--color-outline-variant, #534434)",
             }}
           >
