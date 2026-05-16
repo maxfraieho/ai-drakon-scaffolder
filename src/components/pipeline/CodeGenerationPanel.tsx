@@ -132,6 +132,7 @@ export function CodeGenerationPanel({
     setErrorMsg("");
     setElapsed(0);
     setJobId(null);
+    setKbSaved(false);
   };
 
   const copyCode = async () => {
@@ -141,6 +142,32 @@ export function CodeGenerationPanel({
       toast.success("Скопійовано");
     } catch {
       toast.error("Не вдалося скопіювати");
+    }
+  };
+
+  const handleSaveToKb = async () => {
+    if (!result?.code || kbSaving || kbSaved) return;
+    setKbSaving(true);
+    try {
+      const token = localStorage.getItem("auth_token") ?? "";
+      await kbContribute(
+        {
+          code: result.code,
+          ir_yaml: description ?? "",
+          language: lang,
+          description: description ?? "",
+          job_id: jobId ?? undefined,
+        },
+        token
+      );
+      setKbSaved(true);
+      toast.success("Збережено до KB", {
+        description: `${lang} · ${result.code.split("\n").length} рядків`,
+      });
+    } catch {
+      toast.error("Помилка збереження");
+    } finally {
+      setKbSaving(false);
     }
   };
 
@@ -155,6 +182,7 @@ export function CodeGenerationPanel({
     } as GenerateResult);
     setElapsed(item.elapsed);
     setStatus("done");
+    setKbSaved(false);
   };
 
   if (!open) return null;
