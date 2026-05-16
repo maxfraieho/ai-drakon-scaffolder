@@ -298,9 +298,8 @@ export function CodeGenerationPanel({
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={running}
                 placeholder="Опис поведінки (необов'язково)…"
-                className="flex-1 w-full resize-none rounded-sm border p-2 font-mono text-[12px] text-[var(--color-on-surface)] outline-none placeholder:text-[var(--color-on-surface-variant)]/50 focus:border-[var(--color-primary-container)] focus:ring-1 focus:ring-[var(--color-primary-container)]"
+                className="flex-1 w-full resize-none rounded-sm border p-2 font-mono text-[12px] text-[var(--color-on-surface)] bg-background outline-none placeholder:text-[var(--color-on-surface-variant)]/50 focus:border-[var(--color-primary-container)] focus:ring-1 focus:ring-[var(--color-primary-container)]"
                 style={{
-                  background: "var(--color-surface-container, #201f1f)",
                   borderColor: "var(--color-outline-variant, #534434)",
                 }}
               />
