@@ -98,10 +98,22 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [cmdOpen, setCmdOpen] = useState(false);
 
   useEffect(() => {
     const t = readSettings().app.theme;
     setTheme(t === "light" ? "light" : "dark");
+  }, []);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((v) => !v);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
   }, []);
 
   const toggleTheme = () => {
