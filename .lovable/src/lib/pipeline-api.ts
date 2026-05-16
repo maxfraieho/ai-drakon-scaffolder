@@ -10,6 +10,12 @@ function authHeaders(): Record<string, string> {
     ...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
   };
 }
+export class ServiceRestartError extends Error {
+  constructor() {
+    super("Сервіс перезапустився. Спробуйте ще раз.");
+    this.name = "ServiceRestartError";
+  }
+}
 
 export interface PipelineJob {
   job_id: string;
@@ -73,6 +79,7 @@ export async function pollJob<T = unknown>(job_id: string): Promise<JobStatus<T>
   const res = await fetch(`${workerUrl()}/v1/pipeline/status/${job_id}`, {
     headers: authHeaders(),
   });
+  if (res.status === 404) throw new ServiceRestartError();
   if (!res.ok) throw new Error(`status HTTP ${res.status}`);
   return res.json();
 }

@@ -36,6 +36,8 @@ export function CodeGenerationPanel({ open, onClose, diagramIr }: CodeGeneration
   const [elapsed, setElapsed] = useState(0);
   const startedAtRef = useRef<number | null>(null);
 
+  useEffect(() => { setDescription(""); }, [diagramIr]);
+
   useEffect(() => {
     if (status !== "running") return;
     startedAtRef.current = Date.now();
