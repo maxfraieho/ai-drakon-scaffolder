@@ -89,7 +89,13 @@ export default function AgentStudioPage() {
       </header>
 
       {/* Body */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="relative flex flex-1 overflow-hidden">
+        {sidebarOpen && (
+          <div
+            className="absolute inset-0 z-30 bg-black/40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
         <AgentSidebar
           pipelines={PIPELINES}
           kbFiles={KB_FILES}
@@ -101,6 +107,8 @@ export default function AgentStudioPage() {
             setSelectedKbFile(f);
             setKbOpen(true);
           }}
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
         />
 
         <main className="relative flex flex-1 flex-col overflow-hidden">
