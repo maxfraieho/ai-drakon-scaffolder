@@ -210,6 +210,18 @@
   --shadow-elevated: 0 0 0 1px rgba(0, 0, 0, 0.10), 0 4px 16px rgba(0, 0, 0, 0.12);
 
   --primary-foreground: #ffffff;
+
+  /* Stitch / Drakon Logic System — light overrides */
+  --color-surface: #ffffff;
+  --color-surface-container-lowest: #f7f8fa;
+  --color-surface-container-low: #f0f1f4;
+  --color-surface-container: #e8eaed;
+  --color-surface-container-high: #dfe1e5;
+  --color-surface-container-highest: #d4d7dc;
+  --color-on-surface: rgba(0, 0, 0, 0.88);
+  --color-on-surface-variant: rgba(0, 0, 0, 0.60);
+  --color-outline: rgba(0, 0, 0, 0.30);
+  --color-outline-variant: rgba(0, 0, 0, 0.14);
 }
 
 @layer base {
