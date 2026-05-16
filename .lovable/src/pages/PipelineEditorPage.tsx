@@ -11,7 +11,7 @@ import {
 import { pipelineToIR, irToPipeline } from "@/lib/pipeline-to-drakon";
 
 export default function PipelineEditorPage() {
-  const { pipelineId } = useParams({ from: "/agents/pipeline/$pipelineId/edit" });
+  const { pipelineId } = useParams({ from: "/pipeline/$pipelineId/edit" });
   const [config, setConfig] = useState<PipelineConfig | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
 

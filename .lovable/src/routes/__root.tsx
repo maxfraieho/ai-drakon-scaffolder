@@ -144,7 +144,7 @@ function RootComponent() {
 
   const location = useLocation();
   const hideChrome =
-    location.pathname === "/login" || location.pathname.startsWith("/agents/pipeline/");
+    location.pathname === "/login" || location.pathname.startsWith("/pipeline/");
 
   return (
     <QueryClientProvider client={queryClient}>

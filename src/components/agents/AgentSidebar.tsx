@@ -79,7 +79,7 @@ export function AgentSidebar({
                 <span className="font-ui-md truncate">{p.shortName}</span>
               </button>
               <Link
-                to="/agents/pipeline/$pipelineId/edit"
+                to="/pipeline/$pipelineId/edit"
                 params={{ pipelineId: p.id }}
                 onClick={() => onClose?.()}
                 className="mr-2 inline-flex h-8 items-center gap-1 rounded px-2 font-mono text-[10px] uppercase tracking-wider text-[var(--accent-amber)] opacity-60 transition-colors hover:opacity-100 active:scale-[0.96] active:transition-transform active:duration-75"
