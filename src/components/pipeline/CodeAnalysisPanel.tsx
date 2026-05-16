@@ -207,8 +207,16 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
                   АНАЛІЗ ЗАВЕРШЕНО
                 </span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <span className="font-mono text-[11px] text-[var(--text-muted)]">{elapsed}s</span>
+                <button
+                  type="button"
+                  onClick={handleSaveToKb}
+                  disabled={kbSaving || kbSaved}
+                  className="flex items-center gap-1.5 rounded border border-[var(--accent-amber)]/40 px-2 py-1 font-mono text-[10px] uppercase text-[var(--accent-amber)] transition-colors hover:bg-[var(--accent-amber)]/10 disabled:opacity-50"
+                >
+                  {kbSaved ? "✓ Збережено" : kbSaving ? "..." : "Save to KB"}
+                </button>
                 <button
                   type="button"
                   onClick={reset}
