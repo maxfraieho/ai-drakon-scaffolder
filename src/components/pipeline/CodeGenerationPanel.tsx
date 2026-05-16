@@ -487,7 +487,7 @@ export function CodeGenerationPanel({
                 height="100%"
                 language={MONACO_LANG[lang]}
                 value={result.code}
-                theme="vs-dark"
+                theme={typeof document !== "undefined" && document.documentElement.classList.contains("dark") ? "vs-dark" : "vs-light"}
                 options={{
                   readOnly: true,
                   minimap: { enabled: false },
