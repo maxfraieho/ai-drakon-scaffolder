@@ -10,6 +10,7 @@ import {
   type AnalyzeResult,
   type AnalyzedFunction,
 } from "@/lib/pipeline-api";
+import { kbContribute } from "@/lib/kb-api";
 
 interface CodeAnalysisPanelProps {
   open: boolean;
