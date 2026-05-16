@@ -72,3 +72,41 @@ def test_for_loop_creates_question():
     items = results[0]["items"]
     question_nodes = [v for v in items.values() if v.get("type") == "question"]
     assert len(question_nodes) >= 1
+
+
+# --- routing tests ---
+from fastapi.testclient import TestClient
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from main import app
+
+client = TestClient(app)
+
+def test_route_js_by_filename():
+    resp = client.post("/analyze", json={
+        "code": "function hello(x) { return x; }",
+        "filename": "module.js",
+        "refine": False
+    })
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["count"] == 1
+    assert data["diagrams"][0]["name"] == "hello"
+
+def test_route_ts_by_filename():
+    resp = client.post("/analyze", json={
+        "code": "function greet(name: string): string { return name; }",
+        "filename": "module.ts",
+        "refine": False
+    })
+    assert resp.status_code == 200
+    assert resp.json()["count"] == 1
+
+def test_route_python_still_works():
+    resp = client.post("/analyze", json={
+        "code": "def hello(x):\n    return x + 1",
+        "filename": "module.py",
+        "refine": False
+    })
+    assert resp.status_code == 200
+    assert resp.json()["count"] == 1

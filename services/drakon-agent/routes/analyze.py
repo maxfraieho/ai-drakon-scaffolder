@@ -5,6 +5,10 @@ from pydantic import BaseModel
 from typing import Optional
 
 from analyzer.ast_analyzer import PythonAnalyzer
+from analyzer.js_analyzer import JSAnalyzer
+from pathlib import Path
+
+_JS_EXTENSIONS = {'.js', '.mjs', '.cjs', '.ts', '.mts', '.tsx', '.jsx'}
 from knowledge_base.retrieval import init as kb_init, retrieve_text
 from ai_refiner.refiner import refine_ir_safe
 from validator.ir_validator import validate_ir
@@ -41,7 +45,11 @@ def analyze(req: AnalyzeRequest):
     _ensure_kb()
 
     try:
-        raw_diagrams = PythonAnalyzer().analyze(req.code, req.filename or "module.py")
+        ext = Path(req.filename or 'module.py').suffix.lower()
+        if ext in _JS_EXTENSIONS:
+            raw_diagrams = JSAnalyzer().analyze(req.code, req.filename or 'module.js')
+        else:
+            raw_diagrams = PythonAnalyzer().analyze(req.code, req.filename or 'module.py')
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
