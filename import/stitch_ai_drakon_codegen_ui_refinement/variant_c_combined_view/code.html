@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI-DRAKON - Code Generation</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-fixed": "#2a1700",
+                        "primary-fixed-dim": "#ffb95f",
+                        "surface-tint": "#ffb95f",
+                        "background": "#131313",
+                        "on-surface-variant": "#d8c3ad",
+                        "surface-dim": "#131313",
+                        "secondary-fixed": "#e5e2e1",
+                        "surface-container-low": "#1c1b1b",
+                        "on-surface": "#e5e2e1",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "secondary": "#c8c6c5",
+                        "on-secondary-fixed-variant": "#474746",
+                        "surface-container-highest": "#353534",
+                        "on-tertiary-fixed": "#001e2d",
+                        "on-primary-fixed-variant": "#653e00",
+                        "error-container": "#93000a",
+                        "surface-container": "#201f1f",
+                        "surface-container-high": "#2a2a2a",
+                        "outline": "#a08e7a",
+                        "tertiary-container": "#1abdff",
+                        "on-error": "#690005",
+                        "tertiary": "#8fd5ff",
+                        "inverse-surface": "#e5e2e1",
+                        "on-secondary": "#313030",
+                        "outline-variant": "#534434",
+                        "surface": "#131313",
+                        "primary": "#ffc174",
+                        "tertiary-fixed-dim": "#7fd0ff",
+                        "inverse-primary": "#855300",
+                        "on-background": "#e5e2e1",
+                        "error": "#ffb4ab",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "tertiary-fixed": "#c5e7ff",
+                        "on-error-container": "#ffdad6",
+                        "on-primary-container": "#613b00",
+                        "surface-bright": "#3a3939",
+                        "on-tertiary-fixed-variant": "#004c6a",
+                        "primary-fixed": "#ffddb8",
+                        "on-primary": "#472a00",
+                        "secondary-container": "#474746",
+                        "inverse-on-surface": "#313030",
+                        "surface-container-lowest": "#0e0e0e",
+                        "on-secondary-container": "#b7b4b4",
+                        "primary-container": "#f59e0b",
+                        "surface-variant": "#353534",
+                        "on-tertiary": "#00344a",
+                        "on-tertiary-container": "#004966",
+                        "accent-amber": "#f59e0b",
+                        "bg-base": "#131313",
+                        "bg-elevated": "#1c1b1b",
+                        "bg-overlay": "rgba(255,255,255,0.05)",
+                        "border-default": "#353534",
+                        "border-subtle": "#2a2a2a",
+                        "text-primary": "#e5e2e1",
+                        "text-muted": "#d8c3ad"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "margin-sm": "8px",
+                        "unit": "4px",
+                        "gutter": "1px",
+                        "panel-padding": "12px",
+                        "margin-md": "16px"
+                    },
+                    "fontFamily": {
+                        "headline-md": ["JetBrains Mono"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-md": ["JetBrains Mono"],
+                        "label-md": ["JetBrains Mono"],
+                        "headline-lg": ["JetBrains Mono"],
+                        "body-lg": ["JetBrains Mono"],
+                        "code-sm": ["JetBrains Mono"]
+                    },
+                    "fontSize": {
+                        "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}],
+                        "label-sm": ["10px", {"lineHeight": "14px", "fontWeight": "500"}],
+                        "body-md": ["13px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-md": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600"}],
+                        "body-lg": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                        "code-sm": ["12px", {"lineHeight": "18px", "fontWeight": "400"}]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        body {
+            background-color: #131313;
+            color: #e5e2e1;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        /* Custom scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #131313;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #353534;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #474746;
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col overflow-hidden bg-background text-on-surface">
+<!-- TopAppBar -->
+<header class="bg-surface dark:bg-surface flex justify-between items-center h-12 px-margin-md w-full z-50 border-b border-outline-variant dark:border-outline-variant flat no shadows">
+<div class="flex items-center gap-4">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-primary">AI-DRAKON</span>
+<span class="text-on-surface-variant dark:text-on-surface-variant px-2 py-1 bg-surface-container-low rounded">Diagrams</span>
+</div>
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="play_arrow">play_arrow</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="save">save</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="cloud_done">cloud_done</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest border border-outline-variant flex items-center justify-center overflow-hidden ml-2 cursor-pointer">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="person">person</span>
+</div>
+</div>
+</header>
+<!-- Main Workspace -->
+<div class="flex flex-1 overflow-hidden h-[calc(100vh-3rem)]">
+<!-- SideNavBar -->
+<nav class="bg-surface-container-low dark:bg-surface-container-low docked h-full left-0 w-16 md:w-64 border-r border-outline-variant dark:border-outline-variant flat no shadows flex flex-col h-full py-panel-padding z-40 transition-all duration-150 ease-in-out shrink-0">
+<!-- Header (Desktop only) -->
+<div class="hidden md:flex flex-col px-4 pb-4 mb-4 border-b border-outline-variant">
+<span class="text-label-md font-label-md uppercase tracking-widest text-on-surface-variant">Project Workspace</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant opacity-70 mt-1">v1.0.4-beta</span>
+<button class="mt-4 bg-primary text-on-primary-fixed font-label-md text-label-md py-2 px-4 rounded hover:bg-primary-fixed-dim transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[16px]">add</span>
+                    New Diagram
+                </button>
+</div>
+<!-- Tabs -->
+<div class="flex-1 flex flex-col gap-1 px-2">
+<!-- Inactive Tab -->
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="folder_open">folder_open</span>
+<span class="text-label-md font-label-md hidden md:block">Explorer</span>
+</a>
+<!-- Active Tab -->
+<a class="flex items-center gap-3 px-3 py-2 rounded bg-surface-container-highest dark:bg-surface-container-highest text-primary dark:text-primary border-l-2 border-primary transition-colors group" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="text-label-md font-label-md hidden md:block">Diagrams</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="history">history</span>
+<span class="text-label-md font-label-md hidden md:block">History</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="terminal">terminal</span>
+<span class="text-label-md font-label-md hidden md:block">Terminal</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant dark:text-on-surface-variant hover:bg-surface-container-high dark:hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="settings">settings</span>
+<span class="text-label-md font-label-md hidden md:block">Settings</span>
+</a>
+</div>
+<!-- Footer -->
+<div class="mt-auto px-2 pt-4 border-t border-outline-variant">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-surface-variant hover:bg-surface-container-high transition-colors group" href="#">
+<span class="material-symbols-outlined group-hover:text-primary transition-colors" data-icon="help">help</span>
+<span class="text-label-md font-label-md hidden md:block">Help</span>
+</a>
+</div>
+</nav>
+<!-- Sub-Explorer Pane (Diagrams) -->
+<div class="w-64 bg-surface-container-lowest border-r border-outline-variant flex flex-col hidden md:flex shrink-0">
+<div class="h-10 border-b border-outline-variant flex items-center px-3 justify-between bg-surface-container-low">
+<span class="text-label-md font-label-md uppercase text-on-surface-variant tracking-widest">Diagrams</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant hover:text-primary cursor-pointer">add</span>
+</div>
+<!-- Tabs inside explorer -->
+<div class="flex border-b border-outline-variant bg-surface-container-low">
+<div class="flex-1 py-1.5 text-center text-label-sm font-label-sm border-b-2 border-primary text-primary cursor-pointer">FILES</div>
+<div class="flex-1 py-1.5 text-center text-label-sm font-label-sm text-on-surface-variant hover:bg-surface-container-high cursor-pointer">EXPLORER</div>
+<div class="flex-1 py-1.5 text-center text-label-sm font-label-sm text-on-surface-variant hover:bg-surface-container-high cursor-pointer">HISTORY</div>
+</div>
+<!-- Search -->
+<div class="p-2 border-b border-outline-variant">
+<div class="bg-surface-container-high rounded flex items-center px-2 py-1 border border-outline-variant focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant mr-2">search</span>
+<input class="bg-transparent border-none text-body-md text-on-surface focus:ring-0 p-0 w-full placeholder:text-on-surface-variant" placeholder="Пошук..." type="text"/>
+</div>
+</div>
+<!-- File Tree -->
+<div class="flex-1 overflow-y-auto p-2">
+<div class="flex items-center gap-2 py-1 px-2 hover:bg-surface-container-high rounded cursor-pointer group text-on-surface-variant hover:text-on-surface">
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+<span class="material-symbols-outlined text-[16px]">folder</span>
+<span class="text-body-md font-body-md flex-1">Загальні</span>
+<span class="text-label-sm font-label-sm bg-surface-container-highest px-1.5 rounded opacity-0 group-hover:opacity-100">8</span>
+</div>
+<div class="pl-8 py-1 text-body-md font-body-md text-on-surface-variant italic opacity-60">
+                    порожньо
+                </div>
+</div>
+<div class="p-2 border-t border-outline-variant mt-auto">
+<button class="w-full py-1.5 flex items-center justify-center gap-2 text-label-md font-label-md text-on-surface-variant border border-outline-variant rounded hover:bg-surface-container-high hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-[16px]">create_new_folder</span>
+                    + ПАПКА
+                </button>
+</div>
+</div>
+<!-- Main Editor / Generation Canvas -->
+<div class="flex-1 flex flex-col bg-background relative overflow-hidden">
+<!-- Context Bar -->
+<div class="h-10 border-b border-outline-variant flex items-center px-4 justify-between bg-surface-container-lowest shrink-0">
+<div class="text-body-md font-body-md text-on-surface-variant opacity-60">
+                    схему не вибрано
+                </div>
+<div class="flex gap-2">
+<button class="flex items-center gap-2 px-3 py-1 text-label-md font-label-md border border-outline-variant rounded text-on-surface-variant hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-[16px]">analytics</span>
+                        Аналіз
+                    </button>
+<button class="flex items-center gap-2 px-3 py-1 text-label-md font-label-md border border-primary bg-primary-container/10 text-primary rounded transition-colors">
+<span class="material-symbols-outlined text-[16px]">code</span>
+                        Генерація
+                    </button>
+</div>
+</div>
+<!-- Empty State / Canvas Area -->
+<div class="flex-1 flex flex-col items-center justify-center p-8 relative">
+<!-- Background grid pattern -->
+<div class="absolute inset-0 opacity-[0.03] pointer-events-none" style="background-image: radial-gradient(circle at 1px 1px, #e5e2e1 1px, transparent 0); background-size: 24px 24px;"></div>
+<div class="z-10 flex flex-col items-center text-center max-w-md">
+<div class="w-16 h-16 mb-6 text-outline-variant opacity-50 relative">
+<span class="material-symbols-outlined text-6xl">account_tree</span>
+<span class="material-symbols-outlined text-2xl absolute -bottom-2 -right-2 bg-background">code</span>
+</div>
+<h2 class="text-label-md font-label-md uppercase tracking-[0.1em] text-on-surface-variant mb-8">
+                        ВИБЕРІТЬ СХЕМУ ЗІ СПИСКУ ЗЛІВА
+                    </h2>
+<div class="flex gap-4">
+<button class="bg-primary hover:bg-primary-fixed-dim text-on-primary-fixed font-label-md text-label-md py-2 px-6 rounded transition-colors flex items-center gap-2 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                            + НОВА СХЕМА
+                        </button>
+<button class="border border-outline-variant text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface font-label-md text-label-md py-2 px-6 rounded transition-colors">
+                            ІМПОРТ JSON
+                        </button>
+</div>
+</div>
+</div>
+<!-- Bottom Code Generation Panel (Expanded State) -->
+<div class="border-t border-outline-variant bg-surface-container-lowest flex flex-col shrink-0" style="height: 380px;">
+<!-- Panel Header -->
+<div class="h-10 flex items-center px-4 justify-between bg-surface-container-low border-b border-outline-variant">
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-[16px]">code</span>
+<span class="text-label-md font-label-md uppercase tracking-widest">ГЕНЕРУВАТИ КОД</span>
+</div>
+<!-- Language Chips -->
+<div class="flex gap-1 ml-4">
+<div class="bg-primary text-on-primary-fixed text-label-sm font-label-sm px-2 py-0.5 rounded-sm cursor-pointer">PYTHON</div>
+<div class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high text-label-sm font-label-sm px-2 py-0.5 rounded-sm cursor-pointer transition-colors">TYPESCRIPT</div>
+<div class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high text-label-sm font-label-sm px-2 py-0.5 rounded-sm cursor-pointer transition-colors">JAVASCRIPT</div>
+</div>
+</div>
+<button class="text-on-surface-variant hover:text-error transition-colors">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
+<div class="flex flex-1 overflow-hidden">
+<!-- Left Form Area -->
+<div class="w-1/3 min-w-[300px] border-r border-outline-variant p-4 flex flex-col gap-4 bg-surface flex-shrink-0 overflow-y-auto">
+<div class="flex flex-col gap-2">
+<label class="text-label-sm font-label-sm text-on-surface-variant uppercase">Prompt</label>
+<textarea class="w-full bg-surface-container-low border border-outline-variant rounded p-3 text-body-md font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-none placeholder:text-on-surface-variant/50" placeholder="Опис поведінки (необов'язково)..." rows="3"></textarea>
+</div>
+<div class="flex items-center gap-3">
+<button class="bg-surface-container-high border border-outline-variant text-on-surface-variant font-label-md text-label-md py-2 px-6 rounded opacity-50 cursor-not-allowed flex items-center justify-center">
+                                Генерувати
+                            </button>
+<span class="text-body-md font-body-md text-on-surface-variant italic text-sm">
+                                Виберіть схему
+                            </span>
+</div>
+<!-- Success Status Indicator (From Variant A) -->
+<div class="mt-4 border border-outline-variant bg-[#001e2d]/20 rounded p-3 flex flex-col gap-2 border-l-2 border-l-tertiary">
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2 text-tertiary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+<span class="text-label-md font-label-md uppercase">КОД ЗГЕНЕРОВАНО</span>
+<span class="text-label-sm font-label-sm opacity-70 bg-tertiary/10 px-1 rounded">syntax: OK</span>
+</div>
+<div class="text-label-sm font-label-sm text-on-surface-variant flex items-center gap-3 tabular-nums">
+<span>3s</span>
+<span>•</span>
+<span>2 ітерацій</span>
+<button class="text-primary hover:text-primary-fixed-dim uppercase hover:underline">Перегенерувати</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Monaco Editor Area -->
+<div class="flex-1 flex flex-col bg-[#1e1e1e] relative">
+<!-- Editor Header/Toolbar -->
+<div class="h-8 bg-[#252526] flex justify-between items-center px-4 border-b border-[#333]">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[14px] text-[#858585]">description</span>
+<span class="text-[#cccccc] text-code-sm font-code-sm">generated_module.py</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="text-[#858585] hover:text-[#cccccc] transition-colors flex items-center gap-1 opacity-60 hover:opacity-100" title="Copy Code">
+<span class="material-symbols-outlined text-[14px]">content_copy</span>
+<span class="text-label-sm font-label-sm">Copy</span>
+</button>
+</div>
+</div>
+<!-- Editor Content Area (Simulated Monaco) -->
+<div class="flex-1 overflow-y-auto p-4 font-code-sm text-code-sm text-[#d4d4d4] leading-relaxed relative group">
+<!-- Line Numbers -->
+<div class="absolute left-0 top-0 bottom-0 w-12 bg-[#1e1e1e] border-r border-[#333] flex flex-col text-right pr-2 pt-4 text-[#858585] select-none">
+<div>1</div>
+<div>2</div>
+<div>3</div>
+<div>4</div>
+<div>5</div>
+<div>6</div>
+</div>
+<!-- Code Content -->
+<div class="pl-10">
+<pre><span class="text-[#569cd6]">def</span> <span class="text-[#dcdcaa]">process_request</span>(req):
+    <span class="text-[#ce9178]">"""Обробляє запит по DRAKON-схемі."""</span>
+    <span class="text-[#c586c0]">if</span> <span class="text-[#4fc1ff]">not</span> req:
+        <span class="text-[#c586c0]">return</span> <span class="text-[#569cd6]">None</span>
+        
+    <span class="text-[#6a9955]"># Generated logic injected here</span>
+    <span class="text-[#c586c0]">return</span> req.status_code</pre>
+</div>
+</div>
+</div>
+</div>
+<!-- Collapsible Recent History Section (Overlay/Bottom bar) -->
+<div class="border-t border-outline-variant bg-surface-container-low h-8 flex items-center justify-between px-4">
+<button class="flex items-center gap-2 text-on-surface-variant hover:text-primary transition-colors text-label-sm font-label-sm">
+<span class="material-symbols-outlined text-[14px]">history</span>
+                        Recent Runs (3)
+                        <span class="material-symbols-outlined text-[14px]">expand_less</span>
+</button>
+<div class="flex items-center gap-4 text-label-sm font-label-sm text-on-surface-variant tabular-nums">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span> Ready</span>
+<span>Ln 6, Col 26</span>
+<span>UTF-8</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body></html>
