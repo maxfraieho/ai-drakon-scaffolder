@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, ScanSearch, X } from "lucide-react";
+import { Copy, Loader2, ScanSearch, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  pollJob,
+  streamJob,
   startAnalysis,
   type AnalyzeResult,
   type AnalyzedFunction,
