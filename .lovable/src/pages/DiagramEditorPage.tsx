@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { ArrowLeft, FolderTree, PanelLeftClose, PanelLeftOpen, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Code2, FolderTree, PanelLeftClose, PanelLeftOpen, ShieldCheck } from "lucide-react";
+import { CodeGenerationPanel } from "@/components/pipeline/CodeGenerationPanel";
 import { toast } from "sonner";
 
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
@@ -32,6 +33,7 @@ export default function DiagramEditorPage() {
 
 
   const [validationOpen, setValidationOpen] = useState(false);
+  const [codeGenOpen, setCodeGenOpen] = useState(false);
   const [filesOpen, setFilesOpen] = useState(false); // desktop left rail
   const [filesSheetOpen, setFilesSheetOpen] = useState(false); // mobile sheet
 
@@ -152,6 +154,22 @@ export default function DiagramEditorPage() {
         >
           <ShieldCheck className="h-4 w-4" aria-hidden="true" />
         </button>
+        <button
+          type="button"
+          onClick={() => setCodeGenOpen((v) => !v)}
+          aria-label={codeGenOpen ? "Закрити генерацію коду" : "Відкрити генерацію коду (Pipeline B)"}
+          aria-pressed={codeGenOpen}
+          title="Генерація коду (Pipeline B)"
+          className={cn(
+            "inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50",
+            codeGenOpen
+              ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
+              : "text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]",
+          )}
+          style={{ transition: "transform 100ms, background-color 150ms, color 150ms" }}
+        >
+          <Code2 className="h-4 w-4" aria-hidden="true" />
+        </button>
       </div>
 
       {/* Main + sidebars */}
@@ -183,14 +201,22 @@ export default function DiagramEditorPage() {
           )}
         </aside>
 
-        <div className="min-w-0 flex-1 overflow-hidden p-3 md:p-4">
-          <DrakonEditor
-            diagramId={diagramId}
-            folderSlug={folderId}
-            isNew={isNew}
-            diagram={diagramData as never}
-            height={600}
-            onSaved={() => {}}
+        <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <div className="flex-1 overflow-hidden p-3 md:p-4">
+            <DrakonEditor
+              diagramId={diagramId}
+              folderSlug={folderId}
+              isNew={isNew}
+              diagram={diagramData as never}
+              height={600}
+              onSaved={() => {}}
+            />
+          </div>
+          <CodeGenerationPanel
+            open={codeGenOpen}
+            onClose={() => setCodeGenOpen(false)}
+            diagramIr={diagramData?.items ?? null}
+            diagramName={diagramData?.name || diagramId || "diagram"}
           />
         </div>
 
