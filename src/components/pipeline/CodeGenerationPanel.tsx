@@ -276,13 +276,12 @@ export function CodeGenerationPanel({
               </span>
               <div
                 className={cn(
-                  "flex flex-1 items-center justify-between rounded-sm border px-2 h-[32px] font-mono text-[12px]",
+                  "flex flex-1 items-center justify-between rounded-sm border px-2 h-[32px] font-mono text-[12px] bg-background",
                   diagramIr
                     ? "text-[var(--color-on-surface)]"
                     : "text-[var(--color-on-surface-variant)] opacity-60",
                 )}
                 style={{
-                  background: "var(--color-surface-container, #201f1f)",
                   borderColor: "var(--color-outline-variant, #534434)",
                 }}
               >
