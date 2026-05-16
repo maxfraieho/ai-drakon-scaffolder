@@ -66,6 +66,7 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
     setStatus("running");
     setResult(null);
     setErrorMsg("");
+    setKbSaved(false);
     try {
       const resp = await startAnalysis(source, filePath || "module.py");
       setJobId(resp.job_id);
@@ -81,6 +82,31 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
     setResult(null);
     setErrorMsg("");
     setElapsed(0);
+    setKbSaved(false);
+  };
+
+  const handleSaveToKb = async () => {
+    if (!result || kbSaving || kbSaved) return;
+    setKbSaving(true);
+    try {
+      const token = localStorage.getItem("auth_token") ?? "";
+      await kbContribute(
+        {
+          code: source,
+          ir_yaml: JSON.stringify(result.drakon_ir, null, 2),
+          language: "python",
+          description: filePath,
+          job_id: jobId ?? undefined,
+        },
+        token
+      );
+      setKbSaved(true);
+      toast.success("Збережено до KB", { description: filePath });
+    } catch {
+      toast.error("Помилка збереження");
+    } finally {
+      setKbSaving(false);
+    }
   };
 
   if (!open) return null;
