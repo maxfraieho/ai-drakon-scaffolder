@@ -97,7 +97,7 @@ Mirror: drakon-flow-designer → ai-drakon-setup via GitHub Action (MIRROR_TOKEN
 |-------|------|------|
 | 34-38 | Nav, palette, sidebar, Save to KB | ✅ виконані |
 | **39** | JS/TS lang selector | ⏳ чекає Sprint 4 backend |
-| **40** | Pipeline Editor (DRAKON widget) | ⏳ вставити в Lovable chat → verify |
+| **40** | Pipeline Editor (DRAKON widget) | ✅ виконано + верифіковано |
 
 ## Агенти (на 192.168.3.184)
 
