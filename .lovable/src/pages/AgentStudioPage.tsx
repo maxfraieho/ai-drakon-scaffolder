@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AgentSidebar } from "@/components/agents/AgentSidebar";
-import { PipelineGraph } from "@/components/agents/PipelineGraph";
+import { PipelineFlowGraph } from "@/components/agents/PipelineFlowGraph";
 import { NodeInspector } from "@/components/agents/NodeInspector";
 import { NodeCard } from "@/components/agents/NodeCard";
 import { KbDrawer } from "@/components/agents/KbDrawer";
@@ -125,7 +125,14 @@ export default function AgentStudioPage() {
               </span>
             </div>
 
-            <PipelineGraph pipeline={selectedPipeline} />
+            <PipelineFlowGraph
+              pipelineId={selectedPipeline.id}
+              selectedNodeId={selectedNode?.id ?? null}
+              onNodeClick={(nodeId) => {
+                const node = selectedPipeline.nodes.find((n) => n.id === nodeId);
+                if (node) setSelectedNode(selectedNode?.id === nodeId ? null : node);
+              }}
+            />
 
             {llmNodes.length > 0 ? (
               <div className="flex flex-col gap-2">

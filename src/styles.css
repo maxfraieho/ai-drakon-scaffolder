@@ -372,3 +372,18 @@
 .font-headline-sm { font-family: var(--font-ui); font-size: 14px; font-weight: 600; line-height: 1.3; letter-spacing: 0.02em; }
 .font-mono-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.02em; line-height: 1.4; }
 .font-mono-code { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
+
+/* ReactFlow dark-mode override */
+.react-flow__controls-button {
+  background: var(--color-surface) !important;
+  border-color: var(--color-outline-variant) !important;
+  color: var(--color-on-surface-variant) !important;
+}
+
+.react-flow__controls-button:hover {
+  background: var(--color-surface-container-high) !important;
+}
+
+.react-flow__background {
+  background-color: var(--color-surface-container-low) !important;
+}
