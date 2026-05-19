@@ -31,6 +31,7 @@ import {
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { cn } from "@/lib/utils";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
+import { clearAccessToken } from "@/lib/auth";
 
 type NavItem = {
   to: "/diagrams" | "/github" | "/sync" | "/docs" | "/settings";
@@ -73,11 +74,7 @@ export function AppHeader() {
   };
 
   const logout = () => {
-    try {
-      localStorage.removeItem("jwt");
-    } catch {
-      // ignore
-    }
+    clearAccessToken();
     navigate({ to: "/login", replace: true });
   };
 
