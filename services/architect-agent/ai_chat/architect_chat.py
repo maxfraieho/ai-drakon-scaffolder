@@ -8,7 +8,7 @@ import httpx
 
 PROXY_URL = os.getenv("PROXY_URL", "http://localhost:18880/v1")
 PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc")
-PROXY_MODEL = os.getenv("PROXY_MODEL", "coding-proxy")
+PROXY_MODEL = os.getenv("PROXY_MODEL", "fast-proxy")
 
 _DRAKON_AGENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "drakon-agent"))
 if _DRAKON_AGENT not in sys.path:
