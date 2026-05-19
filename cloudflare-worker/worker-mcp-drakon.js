@@ -908,7 +908,7 @@ async function handleAuthLogin(request, env) {
     return errorResponse('Invalid credentials', 401, undefined, 'INVALID_CREDENTIALS');
   }
 
-  const token = await generateJWT({ role: 'owner', sub: ownerUsername }, env.JWT_SECRET, 24 * 60 * 60 * 1000);
+  const token = await generateJWT({ role: 'owner', sub: ownerUsername }, env.JWT_SECRET, 7 * 24 * 60 * 60 * 1000);
   return jsonResponse({ success: true, token, jwt: token, expiresInMs: 7 * 24 * 60 * 60 * 1000 });
 }
 
