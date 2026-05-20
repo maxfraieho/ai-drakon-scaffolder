@@ -15,19 +15,6 @@ type LoginResponse = {
   jwt?: string;
   error?: string;
   message?: string;
-
-  listProjects: (): Promise<{ success: boolean; projects: unknown[] }> =>
-    fetch(resolveApiBase() + '/v1/projects/list').then((r) => r.json()),
-
-  listDrakonIr: (project?: string): Promise<{ success: boolean; diagrams: string[]; count: number }> => {
-    const qs = project ? '?project=' + encodeURIComponent(project) : '';
-    return fetch(resolveApiBase() + '/v1/drakon-ir/list' + qs).then((r) => r.json());
-  },
-
-  getDrakonIr: (name: string, project?: string): Promise<{ success: boolean; name: string; diagram: object }> => {
-    const proj = project ? '&project=' + encodeURIComponent(project) : '';
-    return fetch(resolveApiBase() + '/v1/drakon-ir/' + encodeURIComponent(name) + '?_=1' + proj).then((r) => r.json());
-  },
 };
 
 type GenerateResponse = {
@@ -97,6 +84,12 @@ type GithubCommitResponse = {
 type GithubBranchesResponse = {
   success: boolean;
   branches: string[];
+};
+
+type ProjectActionResponse = {
+  success?: boolean;
+  error?: string;
+  message?: string;
 };
 
 const headers = (): HeadersInit => ({
@@ -216,6 +209,48 @@ export const api = {
     });
 
     return parseResponse<AnalysisJob[]>(response);
+  },
+
+  listProjects: (): Promise<{ success: boolean; projects: unknown[] }> =>
+    fetch(`${resolveApiBase()}/v1/projects/list`, { headers: headers() }).then((r) => r.json()),
+
+  listDrakonIr: (project?: string): Promise<{ success: boolean; diagrams: string[]; count: number }> => {
+    const qs = project ? `?project=${encodeURIComponent(project)}` : "";
+    return fetch(`${resolveApiBase()}/v1/drakon-ir/list${qs}`, { headers: headers() }).then((r) => r.json());
+  },
+
+  getDrakonIr: (name: string, project?: string): Promise<{ success: boolean; name: string; diagram: object }> => {
+    const proj = project ? `&project=${encodeURIComponent(project)}` : "";
+    return fetch(`${resolveApiBase()}/v1/drakon-ir/${encodeURIComponent(name)}?_=1${proj}`, {
+      headers: headers(),
+    }).then((r) => r.json());
+  },
+
+  runArchitectAnalyze: async (project: string): Promise<ProjectActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/architect/analyze`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ project }),
+    });
+    return parseResponse<ProjectActionResponse>(response);
+  },
+
+  runDrakonGenerate: async (project: string): Promise<ProjectActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/generate`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ project }),
+    });
+    return parseResponse<ProjectActionResponse>(response);
+  },
+
+  runDocsDocument: async (project: string, instructions = ""): Promise<ProjectActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/docs/document`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ project, instructions }),
+    });
+    return parseResponse<ProjectActionResponse>(response);
   },
 
   githubListTree: (
