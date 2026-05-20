@@ -9,18 +9,51 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as DevcycleRouteImport } from './routes/devcycle'
+import { Route as SyncRouteImport } from './routes/sync'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as GithubRouteImport } from './routes/github'
+import { Route as DocsRouteImport } from './routes/docs'
+import { Route as DiagramsRouteImport } from './routes/diagrams'
+import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as EditorIdRouteImport } from './routes/editor.$id'
+import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
+import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
 
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
+const SyncRoute = SyncRouteImport.update({
+  id: '/sync',
+  path: '/sync',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DevcycleRoute = DevcycleRouteImport.update({
-  id: '/devcycle',
-  path: '/devcycle',
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GithubRoute = GithubRouteImport.update({
+  id: '/github',
+  path: '/github',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagramsRoute = DiagramsRouteImport.update({
+  id: '/diagrams',
+  path: '/diagrams',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -28,51 +61,167 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EditorIdRoute = EditorIdRouteImport.update({
+  id: '/editor/$id',
+  path: '/editor/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiagramEditorRoute = DiagramEditorRouteImport.update({
+  id: '/diagram/editor',
+  path: '/diagram/editor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
+  id: '/pipeline/$pipelineId/edit',
+  path: '/pipeline/$pipelineId/edit',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/devcycle': typeof DevcycleRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/agents': typeof AgentsRoute
+  '/diagrams': typeof DiagramsRoute
+  '/docs': typeof DocsRoute
+  '/github': typeof GithubRoute
+  '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
+  '/sync': typeof SyncRoute
+  '/diagram/editor': typeof DiagramEditorRoute
+  '/editor/$id': typeof EditorIdRoute
+  '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/devcycle': typeof DevcycleRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/agents': typeof AgentsRoute
+  '/diagrams': typeof DiagramsRoute
+  '/docs': typeof DocsRoute
+  '/github': typeof GithubRoute
+  '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
+  '/sync': typeof SyncRoute
+  '/diagram/editor': typeof DiagramEditorRoute
+  '/editor/$id': typeof EditorIdRoute
+  '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/devcycle': typeof DevcycleRoute
-  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/agents': typeof AgentsRoute
+  '/diagrams': typeof DiagramsRoute
+  '/docs': typeof DocsRoute
+  '/github': typeof GithubRoute
+  '/login': typeof LoginRoute
+  '/settings': typeof SettingsRoute
+  '/sync': typeof SyncRoute
+  '/diagram/editor': typeof DiagramEditorRoute
+  '/editor/$id': typeof EditorIdRoute
+  '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/devcycle' | '/sitemap.xml'
+  fullPaths:
+    | '/'
+    | '/agents'
+    | '/diagrams'
+    | '/docs'
+    | '/github'
+    | '/login'
+    | '/settings'
+    | '/sync'
+    | '/diagram/editor'
+    | '/editor/$id'
+    | '/pipeline/$pipelineId/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/devcycle' | '/sitemap.xml'
-  id: '__root__' | '/' | '/devcycle' | '/sitemap.xml'
+  to:
+    | '/'
+    | '/agents'
+    | '/diagrams'
+    | '/docs'
+    | '/github'
+    | '/login'
+    | '/settings'
+    | '/sync'
+    | '/diagram/editor'
+    | '/editor/$id'
+    | '/pipeline/$pipelineId/edit'
+  id:
+    | '__root__'
+    | '/'
+    | '/agents'
+    | '/diagrams'
+    | '/docs'
+    | '/github'
+    | '/login'
+    | '/settings'
+    | '/sync'
+    | '/diagram/editor'
+    | '/editor/$id'
+    | '/pipeline/$pipelineId/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  DevcycleRoute: typeof DevcycleRoute
-  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  AgentsRoute: typeof AgentsRoute
+  DiagramsRoute: typeof DiagramsRoute
+  DocsRoute: typeof DocsRoute
+  GithubRoute: typeof GithubRoute
+  LoginRoute: typeof LoginRoute
+  SettingsRoute: typeof SettingsRoute
+  SyncRoute: typeof SyncRoute
+  DiagramEditorRoute: typeof DiagramEditorRoute
+  EditorIdRoute: typeof EditorIdRoute
+  PipelinePipelineIdEditRoute: typeof PipelinePipelineIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
+    '/sync': {
+      id: '/sync'
+      path: '/sync'
+      fullPath: '/sync'
+      preLoaderRoute: typeof SyncRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/devcycle': {
-      id: '/devcycle'
-      path: '/devcycle'
-      fullPath: '/devcycle'
-      preLoaderRoute: typeof DevcycleRouteImport
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/github': {
+      id: '/github'
+      path: '/github'
+      fullPath: '/github'
+      preLoaderRoute: typeof GithubRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagrams': {
+      id: '/diagrams'
+      path: '/diagrams'
+      fullPath: '/diagrams'
+      preLoaderRoute: typeof DiagramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agents': {
+      id: '/agents'
+      path: '/agents'
+      fullPath: '/agents'
+      preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -82,14 +231,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/editor/$id': {
+      id: '/editor/$id'
+      path: '/editor/$id'
+      fullPath: '/editor/$id'
+      preLoaderRoute: typeof EditorIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/diagram/editor': {
+      id: '/diagram/editor'
+      path: '/diagram/editor'
+      fullPath: '/diagram/editor'
+      preLoaderRoute: typeof DiagramEditorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline/$pipelineId/edit': {
+      id: '/pipeline/$pipelineId/edit'
+      path: '/pipeline/$pipelineId/edit'
+      fullPath: '/pipeline/$pipelineId/edit'
+      preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  DevcycleRoute: DevcycleRoute,
-  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  AgentsRoute: AgentsRoute,
+  DiagramsRoute: DiagramsRoute,
+  DocsRoute: DocsRoute,
+  GithubRoute: GithubRoute,
+  LoginRoute: LoginRoute,
+  SettingsRoute: SettingsRoute,
+  SyncRoute: SyncRoute,
+  DiagramEditorRoute: DiagramEditorRoute,
+  EditorIdRoute: EditorIdRoute,
+  PipelinePipelineIdEditRoute: PipelinePipelineIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
