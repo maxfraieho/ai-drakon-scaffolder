@@ -57,7 +57,8 @@ export function DevCyclePanel() {
 
   const openReview = () => {
     setStatuses((prev) => ({ ...prev, review: "done" }));
-    void navigate({ to: "/docs" });
+    const target = activeProject?.hasDocs ? "/docs" : "/diagrams";
+    void navigate({ to: target });
   };
 
   return (
