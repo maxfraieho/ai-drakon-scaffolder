@@ -137,37 +137,6 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
   const crumb = getBreadcrumb(location.pathname);
 
-  const renderRailButton = (item: RailItem, active: boolean) => {
-    const Icon = item.icon;
-    return (
-      <Tooltip key={item.to} delayDuration={300}>
-        <TooltipTrigger asChild>
-          <Link
-            to={item.to}
-            aria-label={item.label}
-            className={cn(
-              "relative flex h-8 w-8 items-center justify-center rounded-[var(--radius-sm)] transition-colors",
-              active
-                ? "text-[var(--accent-amber)] bg-[var(--accent-dim)]"
-                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-white/5",
-            )}
-          >
-            {active && (
-              <span
-                aria-hidden="true"
-                className="absolute left-0 top-1/2 h-5 w-[2px] -translate-y-1/2 rounded-r bg-[var(--accent-amber)]"
-              />
-            )}
-            <Icon className="h-[18px] w-[18px]" />
-          </Link>
-        </TooltipTrigger>
-        <TooltipContent side="right" className="font-mono text-[11px]">
-          {item.label}
-        </TooltipContent>
-      </Tooltip>
-    );
-  };
-
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
       {/* TOP BAR — 32px */}
