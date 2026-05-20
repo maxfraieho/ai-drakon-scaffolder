@@ -61,5 +61,5 @@
 ## Deploy
 
 CF Pages будує з repo `maxfraieho/ai-drakon-setup` (repo A).
-Lovable пише в `maxfraieho/drakon-flow-designer` (repo B).
+Lovable пише в `maxfraieho/drakon-diagram-flow` (repo B).
 GitHub Action автоматично дзеркалює B → A.
