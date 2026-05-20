@@ -247,7 +247,7 @@ function SettingsRoute() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background">
+    <div className="h-full overflow-y-auto bg-background">
       <div className="mx-auto w-full max-w-4xl px-3 pb-28 pt-4 md:px-6 md:pb-6">
         <header className="mb-4">
           <h1 className="text-lg font-semibold md:text-2xl">Налаштування</h1>

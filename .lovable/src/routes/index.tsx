@@ -1,16 +1,14 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+
+import { hasClientJwt } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/")({
   component: Index,
 });
 
 function Index() {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    navigate({ to: "/diagrams", replace: true });
-  }, [navigate]);
-
-  return null;
+  if (!hasClientJwt()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <Navigate to="/diagrams" replace />;
 }

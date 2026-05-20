@@ -41,6 +41,7 @@ import {
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { CommandPalette } from "@/components/workspace/CommandPalette";
 import { cn } from "@/lib/utils";
+import { clearAccessToken } from "@/lib/auth";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
 type RailItem = {
@@ -125,11 +126,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   };
 
   const logout = () => {
-    try {
-      localStorage.removeItem("jwt");
-    } catch {
-      /* ignore */
-    }
+    clearAccessToken();
     navigate({ to: "/login", replace: true });
   };
 
