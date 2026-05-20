@@ -51,7 +51,7 @@ export function DrakonIrPanel({ onSelectDiagram, selectedName }: DrakonIrPanelPr
 
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)]">
-      <div className="flex h-7 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-2.5">
+      <div className="flex shrink-0 items-start justify-between border-b border-[var(--border-subtle)] px-2.5 py-1">
         <div className="flex flex-col gap-0.5">
           <div className="flex items-center gap-1.5">
             <GitBranch className="h-3 w-3 text-[var(--accent-amber)]" />
