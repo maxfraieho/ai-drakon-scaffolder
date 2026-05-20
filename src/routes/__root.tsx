@@ -1,21 +1,15 @@
-import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
   Link,
   createRootRouteWithContext,
   useRouter,
-  useLocation,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { readSettings } from "@/lib/settings-storage";
-import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
-import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { ProjectProvider } from "@/context/ProjectContext";
+import { DevCycleProvider } from "@/context/DevCycleContext";
 
 function NotFoundComponent() {
   return (
@@ -80,17 +74,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "Lovable App" },
-      { name: "description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
+      { name: "description", content: "Lovable Generated Project" },
       { name: "author", content: "Lovable" },
       { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
+      { property: "og:description", content: "Lovable Generated Project" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "Lovable App" },
-      { name: "twitter:description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0mMTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0mMTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
     ],
     links: [
       {
@@ -107,19 +97,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
         <HeadContent />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..700,0..1,-50..200"
-        />
       </head>
       <body>
         {children}
@@ -132,37 +112,11 @@ function RootShell({ children }: { children: React.ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-  useEffect(() => {
-    try {
-      const theme = readSettings().app.theme ?? "dark";
-      const resolved = theme === "light" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", resolved);
-      document.documentElement.classList.toggle("dark", resolved === "dark");
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  const location = useLocation();
-  const hideChrome =
-    location.pathname === "/login" || location.pathname.startsWith("/pipeline/");
-
   return (
     <QueryClientProvider client={queryClient}>
-      <ProjectProvider>
-        <TooltipProvider delayDuration={200}>
-          {hideChrome ? (
-            <div className="min-h-screen bg-[var(--bg-base)]">
-              <Outlet />
-            </div>
-          ) : (
-            <WorkspaceShell>
-              <Outlet />
-            </WorkspaceShell>
-          )}
-          <Toaster position="top-center" richColors closeButton />
-        </TooltipProvider>
-      </ProjectProvider>
+      <DevCycleProvider>
+        <Outlet />
+      </DevCycleProvider>
     </QueryClientProvider>
   );
 }
