@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { CommandPalette } from "@/components/workspace/CommandPalette";
+import { DevCyclePanel } from "@/components/workspace/DevCyclePanel";
+import { ProjectSelector } from "@/components/workspace/ProjectSelector";
 import { cn } from "@/lib/utils";
 import { clearAccessToken } from "@/lib/auth";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
@@ -341,15 +343,37 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
       {/* WORKSPACE BODY */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        {/* ICON RAIL — 40px, hidden on mobile */}
-        <nav
-          aria-label="Основна навігація"
-          className="hidden md:flex h-full w-10 shrink-0 flex-col items-center gap-1 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] py-2"
-        >
-          {RAIL_TOP.map((item) => renderRailButton(item, isRailActive(item.to)))}
-          <div className="flex-1" />
-          {RAIL_BOTTOM.map((item) => renderRailButton(item, isRailActive(item.to)))}
-        </nav>
+        <aside className="hidden md:flex h-full w-60 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+          <div className="border-b border-[var(--border-subtle)]">
+            <ProjectSelector />
+          </div>
+
+          <nav aria-label="Основна навігація" className="flex-1 overflow-y-auto p-2">
+            <div className="flex flex-col gap-0.5">
+              {[...RAIL_TOP, ...RAIL_BOTTOM].map((item) => {
+                const Icon = item.icon;
+                const active = isRailActive(item.to);
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={cn(
+                      "flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 font-mono text-[11px] transition-colors",
+                      active
+                        ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
+                        : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </nav>
+
+          <DevCyclePanel />
+        </aside>
 
         {/* CONTENT SLOT */}
         <main className="flex-1 min-w-0 overflow-hidden">
