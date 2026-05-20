@@ -39,6 +39,7 @@ import { api } from "@/lib/api";
 import { readFoldersFromStorage } from "@/lib/folder-storage";
 import { hasClientJwt } from "@/lib/route-auth";
 import { readSettings } from "@/lib/settings-storage";
+import { useProject } from "@/context/ProjectContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import type { DrakonDiagram } from "@/types/drakon";
 
@@ -110,9 +111,11 @@ function GitHubRoute() {
   const holdTimerRef = useRef<number | null>(null);
 
   const githubDefaults = readSettings().github;
-  const owner = githubDefaults.owner;
-  const repo = githubDefaults.repo;
-  const [branch, setBranch] = useState(githubDefaults.branch || "main");
+  const { activeProject } = useProject();
+  const ghSource = activeProject?.github ?? null;
+  const owner = ghSource?.owner ?? githubDefaults.owner;
+  const repo = ghSource?.repo ?? githubDefaults.repo;
+  const [branch, setBranch] = useState(ghSource?.branch ?? githubDefaults.branch ?? "main");
   const token = githubDefaults.token || "";
 
   const [branches, setBranches] = useState<string[]>([githubDefaults.branch || "main"]);
@@ -202,7 +205,7 @@ function GitHubRoute() {
     if (canLoad) {
       void loadPath("");
     }
-  }, [owner, repo, branch, token]);
+  }, [owner, repo, branch, token, activeProject?.slug]);
 
   const openFile = async (entry: GithubTreeEntry) => {
     setLoadingPreview(true);
@@ -477,6 +480,11 @@ function GitHubRoute() {
         <div className="flex min-w-0 items-center gap-2">
           <Github className="h-4 w-4 text-muted-foreground" />
           <p className="truncate text-sm font-medium md:text-base">{owner}/{repo}</p>
+          {activeProject?.github && (
+            <span className="rounded px-1.5 py-0.5 bg-amber-400/10 border border-amber-400/30 font-mono text-[10px] text-amber-400 whitespace-nowrap">
+              {activeProject.name}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

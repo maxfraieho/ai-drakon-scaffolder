@@ -1824,6 +1824,72 @@ export default {
       }
       // ──────────────────────────────────────────────────────────────────────
 
+      // ─── Projects registry (no auth needed for list) ─────────────────────
+      if (method === 'GET' && path === '/v1/projects/list') {
+        const res = await fetch(`${DOCS_AGENT_URL}/projects/list`, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) return errorResponse(`docs-agent /projects/list ${res.status}`, 502);
+        const data = await res.json();
+        return new Response(JSON.stringify(data), {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+      if (method === 'POST' && path === '/v1/projects/add') {
+        if (!authed) return unauthorized();
+        const body = await request.text();
+        const res = await fetch(`${DOCS_AGENT_URL}/projects/add`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+        });
+        if (!res.ok) return errorResponse(`docs-agent /projects/add ${res.status}`, res.status);
+        return new Response(await res.text(), {
+          status: res.status,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+      const projectDeleteMatch = path.match(/^\/v1\/projects\/([^\/]+)$/);
+      if (method === 'DELETE' && projectDeleteMatch) {
+        if (!authed) return unauthorized();
+        const projectSlug = decodeURIComponent(projectDeleteMatch[1]);
+        const res = await fetch(`${DOCS_AGENT_URL}/projects/${encodeURIComponent(projectSlug)}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) return errorResponse(`docs-agent /projects/${projectSlug} ${res.status}`, res.status);
+        return new Response(await res.text(), {
+          status: res.status,
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+      // ─── DRAKON IR routes ───────────────────────────────────────────────
+      if (method === 'GET' && path === '/v1/drakon-ir/list') {
+        const project = new URL(request.url).searchParams.get('project') || '';
+        const qs = project ? `?project=${encodeURIComponent(project)}` : '';
+        const res = await fetch(`${DOCS_AGENT_URL}/drakon-ir/list${qs}`, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) return errorResponse(`docs-agent /drakon-ir/list ${res.status}`, 502);
+        const data = await res.json();
+        return new Response(JSON.stringify(data), {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+      const drakonIrMatch = path.match(/^\/v1\/drakon-ir\/([^\/]+)$/);
+      if (method === 'GET' && drakonIrMatch) {
+        const irName = decodeURIComponent(drakonIrMatch[1]);
+        const project = new URL(request.url).searchParams.get('project') || '';
+        const proj = project ? `&project=${encodeURIComponent(project)}` : '';
+        const res = await fetch(`${DOCS_AGENT_URL}/drakon-ir/get?name=${encodeURIComponent(irName)}${proj}`, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) return errorResponse(`docs-agent /drakon-ir/get ${res.status}`, 502);
+        const data = await res.json();
+        return new Response(JSON.stringify(data), {
+          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+        });
+      }
+
       // ─── Pipeline SSE (auth via ?token= query param — EventSource не підтримує headers) ─
       const pipelineStreamMatch = path.match(/^\/v1\/pipeline\/stream\/([^\/]+)$/);
       if (method === 'GET' && pipelineStreamMatch) {
