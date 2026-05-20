@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { GitBranch, RefreshCw, Loader2, FileCode2, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import { useProject } from "@/context/ProjectContext";
 
 interface DrakonIrPanelProps {
   onSelectDiagram: (name: string, diagram: object) => void;
@@ -9,6 +10,7 @@ interface DrakonIrPanelProps {
 }
 
 export function DrakonIrPanel({ onSelectDiagram, selectedName }: DrakonIrPanelProps) {
+  const { activeProject } = useProject();
   const [diagrams, setDiagrams] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingItem, setLoadingItem] = useState<string | null>(null);
@@ -19,7 +21,7 @@ export function DrakonIrPanel({ onSelectDiagram, selectedName }: DrakonIrPanelPr
     setLoading(true);
     setError(null);
     try {
-      const data = await api.listDrakonIr();
+      const data = await api.listDrakonIr(activeProject?.slug);
       setDiagrams(data.diagrams ?? []);
     } catch {
       setError("Не вдалося завантажити список");
@@ -28,13 +30,13 @@ export function DrakonIrPanel({ onSelectDiagram, selectedName }: DrakonIrPanelPr
     }
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [activeProject?.slug]);
 
   const handleSelect = async (name: string) => {
     if (loadingItem) return;
     setLoadingItem(name);
     try {
-      const data = await api.getDrakonIr(name);
+      const data = await api.getDrakonIr(name, activeProject?.slug);
       if (data.success && data.diagram) {
         onSelectDiagram(name, data.diagram);
       }
@@ -50,9 +52,12 @@ export function DrakonIrPanel({ onSelectDiagram, selectedName }: DrakonIrPanelPr
   return (
     <aside className="flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)]">
       <div className="flex h-7 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-2.5">
-        <div className="flex items-center gap-1.5">
-          <GitBranch className="h-3 w-3 text-[var(--accent-amber)]" />
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">DRAKON IR</span>
+        <div className="flex flex-col gap-0.5">
+          <div className="flex items-center gap-1.5">
+            <GitBranch className="h-3 w-3 text-[var(--accent-amber)]" />
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">DRAKON IR</span>
+          </div>
+          <span className="font-mono text-[9px] text-[var(--text-muted)]">[ {activeProject?.slug ?? "all-projects"} ]</span>
         </div>
         <div className="flex items-center gap-1">
           <span className="flex h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)] opacity-80 animate-pulse" />
