@@ -19,7 +19,7 @@ export interface Project {
 
 interface ProjectContextValue {
   activeProject: Project | null;
-  setActiveProject: (p: Project) => void;
+  setActiveProject: (p: Project | null) => void;
   projects: Project[];
   loadProjects: () => Promise<void>;
   loading: boolean;
@@ -57,9 +57,13 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [activeProject, setActiveProjectState] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const setActiveProject = useCallback((p: Project) => {
+  const setActiveProject = useCallback((p: Project | null) => {
     setActiveProjectState(p);
-    localStorage.setItem(STORAGE_KEY, p.slug);
+    if (p) {
+      localStorage.setItem(STORAGE_KEY, p.slug);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
   }, []);
 
   const loadProjects = useCallback(async () => {
