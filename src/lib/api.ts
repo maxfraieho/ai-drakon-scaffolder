@@ -15,6 +15,19 @@ type LoginResponse = {
   jwt?: string;
   error?: string;
   message?: string;
+
+  listProjects: (): Promise<{ success: boolean; projects: unknown[] }> =>
+    fetch(resolveApiBase() + '/v1/projects/list').then((r) => r.json()),
+
+  listDrakonIr: (project?: string): Promise<{ success: boolean; diagrams: string[]; count: number }> => {
+    const qs = project ? '?project=' + encodeURIComponent(project) : '';
+    return fetch(resolveApiBase() + '/v1/drakon-ir/list' + qs).then((r) => r.json());
+  },
+
+  getDrakonIr: (name: string, project?: string): Promise<{ success: boolean; name: string; diagram: object }> => {
+    const proj = project ? '&project=' + encodeURIComponent(project) : '';
+    return fetch(resolveApiBase() + '/v1/drakon-ir/' + encodeURIComponent(name) + '?_=1' + proj).then((r) => r.json());
+  },
 };
 
 type GenerateResponse = {

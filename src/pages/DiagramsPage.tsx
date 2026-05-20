@@ -6,6 +6,8 @@ import { FileCode2 } from "lucide-react";
 import { CodeAnalysisPanel } from "@/components/pipeline/CodeAnalysisPanel";
 import { CodeGenerationPanel } from "@/components/pipeline/CodeGenerationPanel";
 import { DiagramsLeftPanel } from "@/components/workspace/DiagramsLeftPanel";
+import { DrakonIrPanel } from "@/components/workspace/DrakonIrPanel";
+import { cn } from "@/lib/utils";
 import { CanvasToolbar } from "@/components/workspace/CanvasToolbar";
 import { DrakonViewer } from "@/components/drakon/DrakonViewer";
 import {
@@ -36,6 +38,10 @@ import type { DrakonItem } from "@/types/drakon";
 export function DiagramsPage() {
   const navigate = useNavigate();
   const importInputRef = useRef<HTMLInputElement | null>(null);
+
+  type ViewMode = "local" | "ir";
+  const [viewMode, setViewMode] = useState<ViewMode>("local");
+  const [selectedIrName, setSelectedIrName] = useState<string | null>(null);
 
   const [folders, setFolders] = useState<Folder[]>(() => readFoldersFromStorage());
   const [selectedFolderSlug, setSelectedFolderSlug] = useState<string>(
@@ -88,10 +94,11 @@ export function DiagramsPage() {
 
   // Auto-select first diagram in folder when changing folder
   useEffect(() => {
+    if (viewMode === "ir") return;
     const inFolder = diagrams.filter((d) => d.folderId === selectedFolder.slug);
     if (selectedDiagram && inFolder.some((d) => d.id === selectedDiagram.id)) return;
     setSelectedDiagram(inFolder[0] ?? null);
-  }, [selectedFolder.slug, diagrams, selectedDiagram]);
+  }, [selectedFolder.slug, diagrams, selectedDiagram, viewMode]);
 
   const allDiagrams = useMemo(() => diagrams, [diagrams]);
 
@@ -133,7 +140,48 @@ export function DiagramsPage() {
     });
   };
 
-  const handleImportJson = async (event: ChangeEvent<HTMLInputElement>) => {
+  const normalizeIrDiagram = (name: string, diagram: object): Diagram["diagram"] => {
+    const raw = diagram as Record<string, unknown>;
+    const rawItems = (raw.items ?? {}) as Record<string, Record<string, unknown>>;
+    const items: Record<string, DrakonItem> = {};
+    for (const [id, node] of Object.entries(rawItems)) {
+      items[id] = {
+        type: (node.type as DrakonItem["type"]) ?? "action",
+        content: typeof node.content === "string" ? node.content : "",
+        ...(node.one != null ? { one: node.one as string } : {}),
+        ...(node.two != null ? { two: node.two as string } : {}),
+      };
+    }
+    return { name, items };
+  };
+
+  const handleIrSelect = (name: string, diagram: object) => {
+    setSelectedIrName(name);
+    setSelectedDiagram({
+      id: "ir__" + name,
+      folderId: "__ir__",
+      name,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      diagram: normalizeIrDiagram(name, diagram),
+    });
+  };
+
+  const handleSwitchMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    if (mode === "local") {
+      setSelectedIrName(null);
+      const inFolder = diagrams.filter((d) => d.folderId === selectedFolder.slug);
+      setSelectedDiagram(inFolder[0] ?? null);
+    } else {
+      setSelectedDiagram(null);
+      setSelectedIrName(null);
+    }
+  };
+
+  const currentDiagramIsIr = selectedDiagram?.folderId === "__ir__";
+
+    const handleImportJson = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
     try {
@@ -172,19 +220,52 @@ export function DiagramsPage() {
 
   return (
     <div className="flex h-full w-full overflow-hidden">
-      <DiagramsLeftPanel
-        folders={folders}
-        diagrams={allDiagrams}
-        selectedFolderSlug={selectedFolderSlug}
-        selectedDiagramId={selectedDiagram?.id ?? null}
-        onSelectFolder={setSelectedFolderSlug}
-        onSelectDiagram={(d) => {
-          setSelectedFolderSlug(d.folderId);
-          setSelectedDiagram(d);
-        }}
-        onNewDiagram={openNewDiagram}
-        onNewFolder={() => setIsCreateFolderOpen(true)}
-      />
+      <div className="flex h-full flex-col overflow-hidden border-r border-[var(--border-subtle)]" style={{width: 220}}>
+        <div className="flex h-7 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+          <button
+            onClick={() => handleSwitchMode("local")}
+            className={cn(
+              "flex-1 font-mono text-[9px] uppercase tracking-[0.15em] transition-colors",
+              viewMode === "local"
+                ? "bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-[inset_0_-1px_0_rgba(245,158,11,0.5)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            )}
+          >
+            Схеми
+          </button>
+          <button
+            onClick={() => handleSwitchMode("ir")}
+            className={cn(
+              "flex-1 font-mono text-[9px] uppercase tracking-[0.15em] transition-colors",
+              viewMode === "ir"
+                ? "text-[var(--accent-amber)] shadow-[inset_0_-1px_0_rgba(245,158,11,0.5)]"
+                : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+            )}
+          >
+            DRAKON IR
+          </button>
+        </div>
+        {viewMode === "local" ? (
+          <DiagramsLeftPanel
+            folders={folders}
+            diagrams={allDiagrams}
+            selectedFolderSlug={selectedFolderSlug}
+            selectedDiagramId={selectedDiagram?.id ?? null}
+            onSelectFolder={setSelectedFolderSlug}
+            onSelectDiagram={(d) => {
+              setSelectedFolderSlug(d.folderId);
+              setSelectedDiagram(d);
+            }}
+            onNewDiagram={openNewDiagram}
+            onNewFolder={() => setIsCreateFolderOpen(true)}
+          />
+        ) : (
+          <DrakonIrPanel
+            onSelectDiagram={handleIrSelect}
+            selectedName={selectedIrName}
+          />
+        )}
+      </div>
 
       {/* CENTER */}
       <section className="flex flex-1 min-w-0 flex-col overflow-hidden">
@@ -208,7 +289,7 @@ export function DiagramsPage() {
               return next;
             })
           }
-          onEdit={selectedDiagram ? () => openInEditor(selectedDiagram) : undefined}
+          onEdit={selectedDiagram && !currentDiagramIsIr ? () => openInEditor(selectedDiagram) : undefined}
         />
 
         <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
