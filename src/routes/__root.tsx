@@ -15,6 +15,7 @@ import { readSettings } from "@/lib/settings-storage";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { ProjectProvider } from "@/context/ProjectContext";
 
 function NotFoundComponent() {
   return (
@@ -148,18 +149,20 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider delayDuration={200}>
-        {hideChrome ? (
-          <div className="min-h-screen bg-[var(--bg-base)]">
-            <Outlet />
-          </div>
-        ) : (
-          <WorkspaceShell>
-            <Outlet />
-          </WorkspaceShell>
-        )}
-        <Toaster position="top-center" richColors closeButton />
-      </TooltipProvider>
+      <ProjectProvider>
+        <TooltipProvider delayDuration={200}>
+          {hideChrome ? (
+            <div className="min-h-screen bg-[var(--bg-base)]">
+              <Outlet />
+            </div>
+          ) : (
+            <WorkspaceShell>
+              <Outlet />
+            </WorkspaceShell>
+          )}
+          <Toaster position="top-center" richColors closeButton />
+        </TooltipProvider>
+      </ProjectProvider>
     </QueryClientProvider>
   );
 }
