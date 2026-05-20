@@ -33,7 +33,7 @@ export function ProjectSelector() {
         if (!mounted) return;
         const parsed = (result.projects ?? []).map(toProject).filter(Boolean) as Project[];
         setProjects(parsed);
-        if (!activeProject && parsed.length > 0) {
+        if (parsed.length > 0) {
           setActiveProject(parsed[0]);
         }
       } catch {
@@ -45,7 +45,7 @@ export function ProjectSelector() {
     return () => {
       mounted = false;
     };
-  }, [activeProject, setActiveProject, setProjects]);
+  }, [setActiveProject, setProjects]);
 
   const activeDescription = useMemo(
     () => activeProject?.description?.trim() || "project selected",
