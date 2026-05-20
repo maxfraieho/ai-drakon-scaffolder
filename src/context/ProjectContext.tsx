@@ -10,6 +10,7 @@ export interface ProjectGithub {
 export interface Project {
   slug: string;
   name: string;
+  path?: string;
   description: string;
   hasDrakonIr: boolean;
   hasDocs: boolean;
@@ -44,6 +45,7 @@ function toProject(input: unknown): Project | null {
   return {
     slug,
     name: typeof d.name === "string" ? d.name : slug,
+    path: typeof d.path === "string" ? d.path : undefined,
     description: typeof d.description === "string" ? d.description : "",
     hasDrakonIr: Boolean(d.hasDrakonIr),
     hasDocs: Boolean(d.hasDocs),
