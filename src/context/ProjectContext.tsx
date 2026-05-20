@@ -10,6 +10,7 @@ export interface ProjectGithub {
 export interface Project {
   slug: string;
   name: string;
+  path?: string;
   description: string;
   hasDrakonIr: boolean;
   hasDocs: boolean;
@@ -19,7 +20,7 @@ export interface Project {
 
 interface ProjectContextValue {
   activeProject: Project | null;
-  setActiveProject: (p: Project) => void;
+  setActiveProject: (p: Project | null) => void;
   projects: Project[];
   loadProjects: () => Promise<void>;
   loading: boolean;
@@ -44,6 +45,7 @@ function toProject(input: unknown): Project | null {
   return {
     slug,
     name: typeof d.name === "string" ? d.name : slug,
+    path: typeof d.path === "string" ? d.path : undefined,
     description: typeof d.description === "string" ? d.description : "",
     hasDrakonIr: Boolean(d.hasDrakonIr),
     hasDocs: Boolean(d.hasDocs),
@@ -57,9 +59,13 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [activeProject, setActiveProjectState] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const setActiveProject = useCallback((p: Project) => {
+  const setActiveProject = useCallback((p: Project | null) => {
     setActiveProjectState(p);
-    localStorage.setItem(STORAGE_KEY, p.slug);
+    if (p) {
+      localStorage.setItem(STORAGE_KEY, p.slug);
+    } else {
+      localStorage.removeItem(STORAGE_KEY);
+    }
   }, []);
 
   const loadProjects = useCallback(async () => {

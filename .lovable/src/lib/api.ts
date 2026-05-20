@@ -226,6 +226,24 @@ export const api = {
     }).then((r) => r.json());
   },
 
+
+  addProject: (data: {
+    slug: string; name: string; path: string; description?: string;
+    hasDrakonIr?: boolean; hasDocs?: boolean;
+    github?: { owner: string; repo: string; branch: string };
+  }): Promise<{ success: boolean; project: unknown }> =>
+    fetch(`${resolveApiBase()}/v1/projects/add`, {
+      method: "POST",
+      headers: { ...headers(), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((r) => r.json()),
+
+  deleteProject: (slug: string): Promise<{ success: boolean; deleted: string }> =>
+    fetch(`${resolveApiBase()}/v1/projects/${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+      headers: headers(),
+    }).then((r) => r.json()),
+
   runArchitectAnalyze: async (project: string): Promise<ProjectActionResponse> => {
     const response = await fetch(`${resolveApiBase()}/v1/architect/analyze`, {
       method: "POST",
