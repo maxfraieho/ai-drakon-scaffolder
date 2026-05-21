@@ -15,7 +15,7 @@
 **КРИТИЧНО:** Після будь-яких змін пушити в ОБИДВА remote:
 ```
 git push origin main
-git push drakon-flow-designer main
+git push drakon-diagram-flow main
 ```
 Mirror: drakon-flow-designer → ai-drakon-setup via GitHub Action (MIRROR_TOKEN ✅)
 
@@ -63,7 +63,7 @@ Mirror: drakon-flow-designer → ai-drakon-setup via GitHub Action (MIRROR_TOKEN
 ## Lovable Migration ✅ (сесія 4)
 
 - Новий Lovable repo: `git@github.com:maxfraieho/drakon-flow-designer.git`
-- Remote: `git remote add drakon-flow-designer https://github.com/maxfraieho/drakon-flow-designer.git`
+- Remote: `git remote add drakon-diagram-flow https://github.com/maxfraieho/drakon-diagram-flow.git
 - MIRROR_TOKEN встановлено ✅
 - Mirror Action: `drakon-flow-designer` → `ai-drakon-setup` ✅
 
