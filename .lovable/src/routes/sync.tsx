@@ -68,7 +68,7 @@ const diagrams = readDiagramsFromStorage();
 const result = compareAnalysisToDiagram(completed.summary, diagrams);
 setDiff(result);
 } catch (e) {
-toast.error(Sync failed: ${e instanceof Error ? e.message : String(e)});
+toast.error(`Sync failed: ${e instanceof Error ? e.message : String(e)}`);
 } finally {
 setIsLoading(false);
 }
@@ -109,7 +109,7 @@ DRAKON-діаграмами у сховищі.
 {/ Stats row /}
 {diff && (
 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-<StatCard label="Coverage" value={${diff.stats.coveragePercent}%}
+<StatCard label="Coverage" value={`${diff.stats.coveragePercent}%`}
 accent={diff.stats.coveragePercent > 50 ? "green" : "amber"} />
 <StatCard label="Matched" value={String(diff.stats.matchedCount)} />
 <StatCard label="Missing diagrams" value={String(diff.missingInDiagram.length)}
@@ -198,7 +198,7 @@ dark:text-green-400">
 <CardContent className="pt-0">
 <div className="space-y-1">
 {diff.matched.map((item) => (
-<MatchedRow key={${item.symbolName}-${item.diagramId}} item={item} />
+<MatchedRow key={`${item.symbolName}-${item.diagramId}`} item={item} />
 ))}
 </div>
 </CardContent>
@@ -223,7 +223,7 @@ try {
 const raw = localStorage.getItem("github.lastRepo");
 if (raw) {
 const parsed = JSON.parse(raw) as { owner?: string; repo?: string };
-if (parsed.owner && parsed.repo) return ${parsed.owner}--${parsed.repo};
+if (parsed.owner && parsed.repo) return `${parsed.owner}--${parsed.repo}`;
 }
 } catch { / ignore / }
 return "";
@@ -294,13 +294,13 @@ okGit++;
 } catch (err) {
 console.warn("git save failed", id, err);
 failed++;
-fails.push({ id, error: git: ${err instanceof Error ? err.message : String(err)} });
+fails.push({ id, error: `git: ${err instanceof Error ? err.message : String(err)}` });
 }
 }
 } catch (err) {
 console.warn("minio save failed", id, err);
 failed++;
-fails.push({ id, error: minio: ${err instanceof Error ? err.message : String(err)} });
+fails.push({ id, error: `minio: ${err instanceof Error ? err.message : String(err)}` });
 }
 setProgress({ done: i + 1, total: items.length });
 }
@@ -309,10 +309,10 @@ setSummary({ minio: okMinio, git: okGit, failed });
 setFailures(fails);
 setIsSaving(false);
 if (failed === 0) {
-toast.success(✓ ${okMinio} diagrams → MinIO \${targetFolder}\``);
+toast.success(`✓ ${okMinio} diagrams → MinIO ${targetFolder}`);
 if (ownerRepo) toast.success("✓ git drn/ updated");
 } else {
-toast.error(Completed with ${failed} failure(s));
+toast.error(`Completed with ${failed} failure(s)`);
 }
 };
 
@@ -350,7 +350,7 @@ text-muted-foreground">
 <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
 <div
 className="h-full bg-primary transition-[width] duration-150"
-style={{ width: ${(progress.done / progress.total) * 100}% }}
+style={{ width: `${(progress.done / progress.total) * 100}%` }}
 />
 </div>
 </div>
@@ -419,7 +419,7 @@ accent === "green" ? "text-green-600 dark:text-green-400"
 return (
 <Card>
 <CardContent className="pt-4 pb-3 text-center">
-<div className={text-2xl font-bold ${colors}}>{value}</div>
+<div className={`text-2xl font-bold ${colors}`}>{value}</div>
 <div className="text-xs text-muted-foreground">{label}</div>
 </CardContent>
 </Card>
@@ -600,7 +600,7 @@ maxTokens: davia.maxTokens,
 outputVersion: davia.outputVersion.trim(),
 });
 setJobId(resp.job_id);
-toast.message("Генерацію запущено", { description: Job: ${resp.job_id} });
+toast.message("Генерацію запущено", { description: `Job: ${resp.job_id}` });
 } catch (e) {
 setJobStatus("error");
 toast.error(e instanceof Error ? e.message : "Не вдалося запустити");

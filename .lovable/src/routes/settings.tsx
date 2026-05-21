@@ -75,12 +75,9 @@ const [isCheckingGithub, setIsCheckingGithub] = useState(false);
 const [isCheckingN8n, setIsCheckingN8n] = useState(false);
 const [isLoadingMinio, setIsLoadingMinio] = useState(false);
 const [repoOpen, setRepoOpen] = useState(false);
-const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не
-перевірено" });
-const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не
-перевірено" });
-const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не
-перевірено" });
+const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 
 const [docsRepoPath, setDocsRepoPath] = useState(() =>
 typeof window !== "undefined" ? localStorage.getItem("docs_repo_path") || "" : "",
@@ -151,10 +148,10 @@ throw new Error("GitHub повернув помилку");
 
 setGithubStatus({
 type: "success",
-text: Знайдено гілок: ${response.branches.length},
+text: `Знайдено гілок: ${response.branches.length}`,
 });
 toast.success("GitHub підключено", {
-description: Знайдено гілок: ${response.branches.length},
+description: `Знайдено гілок: ${response.branches.length}`,
 });
 } catch (error) {
 const message = error instanceof Error ? error.message : "Помилка підключення";
@@ -178,16 +175,16 @@ if (!settings.n8n.apiKey.trim()) {
 throw new Error("Вкажіть n8n API Key");
 }
 
-const response = await fetch(${normalizedN8nUrl}/api/v1/workflows, {
+const response = await fetch(`${normalizedN8nUrl}/api/v1/workflows`, {
 method: "GET",
 headers: {
-Authorization: Bearer ${settings.n8n.apiKey.trim()},
+Authorization: `Bearer ${settings.n8n.apiKey.trim()}`,
 },
 });
 
 const data = (await response.json()) as { data?: unknown[]; error?: string; message?: string };
 if (!response.ok) {
-throw new Error(data.message || data.error || HTTP ${response.status});
+throw new Error(data.message || data.error || `HTTP ${response.status}`);
 }
 
 const workflows = Array.isArray(data.data)
@@ -195,8 +192,8 @@ const workflows = Array.isArray(data.data)
 : Array.isArray(data)
 ? data
 : [];
-setN8nStatus({ type: "success", text: Workflows: ${workflows.length} });
-toast.success("n8n підключено", { description: Workflows: ${workflows.length} });
+setN8nStatus({ type: "success", text: `Workflows: ${workflows.length}` });
+toast.success("n8n підключено", { description: `Workflows: ${workflows.length}` });
 } catch (error) {
 const message = error instanceof Error ? error.message : "Помилка підключення";
 setN8nStatus({ type: "error", text: message });
@@ -212,7 +209,7 @@ setMinioStatus({ type: "idle", text: "Завантажую..." });
 try {
 const workerUrl = (settings.app.workerUrl ||
 "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
-const resp = await fetch(${workerUrl}/health);
+const resp = await fetch(`${workerUrl}/health`);
 const data = (await resp.json()) as { storage?: { endpoint?: string; bucket?: string } };
 if (data.storage?.endpoint && data.storage.endpoint !== "not configured") {
 updateSettings((prev) => ({
