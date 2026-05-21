@@ -69,7 +69,6 @@ interface DrakonEditorProps {
 diagram?: DrakonDiagram;
 diagramId: string;
 folderSlug?: string;
-height?: number;
 isNew?: boolean;
 onSaved?: (diagramId: string) => void;
 onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>;
@@ -100,7 +99,6 @@ export function DrakonEditor({
 diagram,
 diagramId,
 folderSlug,
-height = 500,
 isNew = false,
 onSaved,
 onSaveOverride,
@@ -293,7 +291,7 @@ container.innerHTML = '';
 
 const config = buildConfig();
 const renderW = Math.max(rect.width, 400);
-const renderH = Math.max(rect.height, height);
+const renderH = Math.max(rect.height, 300);
 const element = widget.render(renderW, renderH, config);
 console.log('[DRK-INIT] widget.render OK, element:', (element as HTMLElement)?.tagName);
 container.appendChild(element);
