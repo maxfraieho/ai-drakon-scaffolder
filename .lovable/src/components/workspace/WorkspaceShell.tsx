@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Bot,
+  ChevronLeft,
+  ChevronRight,
   Cog,
   Cpu,
   FileText,
@@ -102,6 +104,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   useEffect(() => {
     const t = readSettings().app.theme;
@@ -312,7 +315,26 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
       {/* WORKSPACE BODY */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
-        <aside className="hidden md:flex h-full w-60 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+        <button
+          type="button"
+          onClick={() => setSidebarOpen((v) => !v)}
+          className="fixed left-0 top-1/2 z-50 hidden h-8 w-5 -translate-y-1/2 items-center justify-center rounded-r-sm border border-l-0 border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-muted)] transition-colors hover:text-[var(--accent-amber)] md:flex"
+          title={sidebarOpen ? "Згорнути панель" : "Розгорнути панель"}
+          aria-label={sidebarOpen ? "Згорнути панель" : "Розгорнути панель"}
+        >
+          {sidebarOpen ? (
+            <ChevronLeft className="h-3 w-3" />
+          ) : (
+            <ChevronRight className="h-3 w-3" />
+          )}
+        </button>
+
+        <aside
+          className={cn(
+            "hidden h-full shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-all duration-200 md:flex",
+            sidebarOpen ? "w-60" : "w-0 border-0",
+          )}
+        >
           <div className="border-b border-[var(--border-subtle)]">
             <ProjectSelector />
           </div>

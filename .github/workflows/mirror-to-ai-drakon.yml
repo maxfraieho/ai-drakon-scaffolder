@@ -1,4 +1,4 @@
-name: Mirror frontend to ai-drakon-setup
+name: Mirror to ai-drakon-setup
 
 on:
   push:
@@ -9,37 +9,14 @@ jobs:
     if: github.repository != 'maxfraieho/ai-drakon-setup'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Lovable repo (source)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
           persist-credentials: false
 
-      - name: Checkout ai-drakon-setup (target)
-        uses: actions/checkout@v4
-        with:
-          repository: maxfraieho/ai-drakon-setup
-          token: ${{ secrets.MIRROR_TOKEN }}
-          path: ai-drakon-setup
-          fetch-depth: 1
-
-      - name: Sync frontend files only
+      - name: Push mirror to ai-drakon-setup
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
-          rsync -av --delete src/ ai-drakon-setup/src/
-          rsync -av --delete public/ ai-drakon-setup/public/ 2>/dev/null || true
-          cp -f package.json ai-drakon-setup/package.json
-          cp -f tsconfig.json ai-drakon-setup/tsconfig.json
-          cp -f vite.config.ts ai-drakon-setup/vite.config.ts
-          cp -f components.json ai-drakon-setup/components.json 2>/dev/null || true
-          cp -f bun.lock ai-drakon-setup/bun.lock 2>/dev/null || true
-          cp -f package-lock.json ai-drakon-setup/package-lock.json 2>/dev/null || true
-
-      - name: Commit and push to ai-drakon-setup
-        run: |
-          cd ai-drakon-setup
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git add src/ public/ package.json tsconfig.json vite.config.ts components.json bun.lock 2>/dev/null || true
-          git diff --cached --quiet && echo "No frontend changes" && exit 0
-          git commit -m "chore(mirror): sync frontend from drakon-diagram-flow @ ${{ github.sha }}"
-          git push origin main
+          git remote add mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/maxfraieho/ai-drakon-setup.git"
+          git push mirror main --force

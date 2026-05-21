@@ -19,6 +19,7 @@ interface CodeGenerationPanelProps {
   onClose: () => void;
   diagramIr: object | null;
   diagramName?: string;
+  onStatusChange?: (status: Status) => void;
 }
 
 type Status = "idle" | "running" | "done" | "error";
@@ -46,6 +47,7 @@ export function CodeGenerationPanel({
   onClose,
   diagramIr,
   diagramName,
+  onStatusChange,
 }: CodeGenerationPanelProps) {
   const [lang, setLang] = useState<Lang>("python");
   const [description, setDescription] = useState("");
@@ -81,6 +83,10 @@ export function CodeGenerationPanel({
     }, 1000);
     return () => clearInterval(id);
   }, [status]);
+
+  useEffect(() => {
+    onStatusChange?.(status);
+  }, [status, onStatusChange]);
 
   useEffect(() => {
     if (status !== "running" || !jobId) return;
@@ -314,6 +320,11 @@ export function CodeGenerationPanel({
                     ? `Pipeline B виконується… ${elapsed}s`
                     : ""}
               </span>
+              {running && (
+                <span className="font-mono text-[10px] text-[var(--accent-amber)]">
+                  крок: {elapsed < 3 ? "IR → AST" : elapsed < 6 ? "LLM generation" : "syntax validate"}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={runGenerate}

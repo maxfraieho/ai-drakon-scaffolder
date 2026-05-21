@@ -7,6 +7,8 @@ interface CanvasToolbarProps {
   cyclomaticComplexity?: number;
   analysisActive: boolean;
   generationActive: boolean;
+  analysisSuggested?: boolean;
+  generationSuggested?: boolean;
   onToggleAnalysis: () => void;
   onToggleGeneration: () => void;
   onEdit?: () => void;
@@ -21,6 +23,8 @@ export function CanvasToolbar({
   cyclomaticComplexity,
   analysisActive,
   generationActive,
+  analysisSuggested = false,
+  generationSuggested = false,
   onToggleAnalysis,
   onToggleGeneration,
   onEdit,
@@ -66,11 +70,13 @@ export function CanvasToolbar({
             "inline-flex h-6 items-center gap-1 rounded-sm border px-2 font-mono text-[11px] transition-colors",
             analysisActive
               ? "border-[rgba(245,158,11,0.4)] bg-[var(--accent-dim)] text-[var(--accent-amber)]"
-              : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:text-[var(--text-primary)]",
+              : analysisSuggested
+                ? "border-[rgba(245,158,11,0.35)] text-[var(--accent-amber)]"
+                : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:text-[var(--text-primary)]",
           )}
         >
           <ScanSearch className="h-3.5 w-3.5" />
-          Аналіз
+          Аналізувати код
         </button>
         <button
           type="button"
@@ -80,11 +86,14 @@ export function CanvasToolbar({
             "inline-flex h-6 items-center gap-1 rounded-sm border px-2 font-mono text-[11px] transition-colors",
             generationActive
               ? "border-[rgba(245,158,11,0.4)] bg-[var(--accent-dim)] text-[var(--accent-amber)]"
-              : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:text-[var(--text-primary)]",
+              : generationSuggested
+                ? "border-[rgba(245,158,11,0.35)] text-[var(--accent-amber)]"
+                : "border-[var(--border-subtle)] text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:text-[var(--text-primary)]",
           )}
+          disabled={!diagramName}
         >
           <Code2 className="h-3.5 w-3.5" />
-          Генерація
+          Генерувати код
         </button>
 
         <span aria-hidden="true" className="mx-1 h-4 w-px bg-[var(--border-subtle)]" />

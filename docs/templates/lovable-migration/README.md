@@ -2,72 +2,47 @@
 
 Шаблон для переходу проекту на новий акаунт Lovable зі збереженням існуючого Cloudflare Pages.
 
-## Архітектура
+## Ситуація
+
+- Є Lovable-проект підключений до GitHub repo **A** (`maxfraieho/ai-drakon-setup`)
+- CF Pages будує з repo **A** → домен `ai-drakon-setup.pages.dev`
+- Потрібно перейти на новий акаунт Lovable, який підключається до нового repo **B** (`maxfraieho/drakon-flow`)
+- CF Pages **не можна перемкнути на новий repo через API** (обмеження Cloudflare)
+- Мета: CF Pages продовжує будувати як раніше, Lovable пише в новий repo
+
+## Рішення: GitHub Actions Mirror
+
+Repo **B** (Lovable) → on push → GitHub Action → force push → Repo **A** (CF Pages source)
 
 ```
-[Lovable UI] → writes → [drakon-diagram-flow] (repo B — frontend only)
-                              ↓ GitHub Action (rsync src/ only)
-                         [ai-drakon-setup] (repo A — full monorepo)
-                              ↓ CF Pages build
-                         [ai-drakon-setup.pages.dev]
+[Lovable] → push → [drakon-flow] → GitHub Action → [ai-drakon-setup] → CF Pages build
 ```
-
-**КРИТИЧНО:**
-- Repo B (Lovable) містить **тільки фронтенд**. Lovable видалить все інше.
-- Mirror: копіює тільки `src/`, `public/`, config — **не force push всього репо**.
-- Весь бекенд (`services/`, `cloudflare-worker/`, `docs/`) живе тільки в repo A.
 
 ---
 
-## Крок 1 — Підготувати Lovable repo (тільки фронтенд)
-
-**НЕ робити `git push --force` всього монорепо в Lovable repo.**
-Lovable видалить все що не є фронтендом і зламає структуру.
+## Крок 1 — Push поточного коду в новий repo
 
 ```bash
-# Клонуємо Lovable repo окремо
-git clone git@github.com:<owner>/<lovable-repo>.git /tmp/lovable-migration
-cd /tmp/lovable-migration
+# На сервері з існуючим repo (або локально)
+cd ~/workspace/<project>/
 
-# Копіюємо тільки фронтенд файли з основного репо
-MAIN=/path/to/ai-drakon-setup
+# Додати новий remote
+git remote add new-lovable git@github.com:<owner>/<new-repo>.git
 
-rsync -av --delete $MAIN/src/ ./src/
-rsync -av $MAIN/public/ ./public/
-cp $MAIN/package.json .
-cp $MAIN/package-lock.json . 2>/dev/null || true
-cp $MAIN/bun.lock . 2>/dev/null || true
-cp $MAIN/tsconfig.json .
-cp $MAIN/vite.config.ts .
-cp $MAIN/components.json . 2>/dev/null || true
-cp $MAIN/eslint.config.js . 2>/dev/null || true
-cp $MAIN/.prettierrc . 2>/dev/null || true
-cp $MAIN/.gitignore .
-
-# ОБОВ'ЯЗКОВО: скопіювати src/ в .lovable/src/ — Lovable читає код звідти
-mkdir -p .lovable/src
-rsync -av --delete $MAIN/.lovable/src/ ./.lovable/src/
-# Або якщо .lovable/src не існує:
-rsync -av --delete $MAIN/src/ ./.lovable/src/
-
-# Скопіювати workflow для mirror
-mkdir -p .github/workflows
-cp $MAIN/.github/workflows/mirror-to-ai-drakon.yml .github/workflows/
-
-# Commit і push
-git add .
-git commit -m "feat: migrate frontend from ai-drakon-setup"
-git push origin main --force
+# Force push (замінює вміст нового repo повністю)
+git push new-lovable main --force
 ```
+
+> **Увага:** `--force` потрібен, якщо Lovable вже зробив початковий коміт у новий repo.
 
 ---
 
-## Крок 2 — Mirror workflow (selective copy, не force push)
+## Крок 2 — Створити GitHub Actions workflow у новому repo
 
-Файл `.github/workflows/mirror-to-ai-drakon.yml` в Lovable repo:
+Файл `.github/workflows/mirror-to-cf-source.yml`:
 
 ```yaml
-name: Mirror frontend to ai-drakon-setup
+name: Mirror to CF Pages source repo
 
 on:
   push:
@@ -75,104 +50,119 @@ on:
 
 jobs:
   mirror:
-    if: github.repository != 'maxfraieho/ai-drakon-setup'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Lovable repo (source)
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
-          persist-credentials: false
+          fetch-depth: 0
+          persist-credentials: false   # КРИТИЧНО: вимикає GITHUB_TOKEN як credential
 
-      - name: Checkout ai-drakon-setup (target)
-        uses: actions/checkout@v4
-        with:
-          repository: maxfraieho/ai-drakon-setup
-          token: ${{ secrets.MIRROR_TOKEN }}
-          path: ai-drakon-setup
-          fetch-depth: 1
-
-      - name: Sync frontend files only (never touch backend)
+      - name: Push mirror to CF Pages source
+        env:
+          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
         run: |
-          rsync -av --delete src/ ai-drakon-setup/src/
-          rsync -av --delete public/ ai-drakon-setup/public/ 2>/dev/null || true
-          cp -f package.json ai-drakon-setup/package.json
-          cp -f tsconfig.json ai-drakon-setup/tsconfig.json
-          cp -f vite.config.ts ai-drakon-setup/vite.config.ts
-          cp -f components.json ai-drakon-setup/components.json 2>/dev/null || true
-          cp -f bun.lock ai-drakon-setup/bun.lock 2>/dev/null || true
-          cp -f package-lock.json ai-drakon-setup/package-lock.json 2>/dev/null || true
-
-      - name: Commit and push to ai-drakon-setup
-        run: |
-          cd ai-drakon-setup
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git config user.name "github-actions[bot]"
-          git add src/ public/ package.json tsconfig.json vite.config.ts components.json bun.lock 2>/dev/null || true
-          git diff --cached --quiet && echo "No frontend changes" && exit 0
-          git commit -m "chore(mirror): sync frontend from drakon-diagram-flow @ ${{ github.sha }}"
-          git push origin main
+          git remote add mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/<owner>/<cf-source-repo>.git"
+          git push mirror main --force
 ```
 
-**Чому НЕ `git push --force`:**
-- Force push замінює весь repo A — знищує `services/`, `cloudflare-worker/`, `docs/`
-- `rsync` + selective copy оновлює тільки frontend файли, бекенд залишається незайманим
+### Чому `persist-credentials: false`?
+
+`actions/checkout@v4` автоматично встановлює `http.extraheader` з вбудованим `GITHUB_TOKEN`.  
+Цей токен має доступ **тільки до поточного repo** і перекриває будь-які інші credentials для `github.com`.  
+`persist-credentials: false` — прибирає цей override, дозволяючи використати `MIRROR_TOKEN`.
 
 ---
 
 ## Крок 3 — Встановити MIRROR_TOKEN secret
 
+`MIRROR_TOKEN` — класичний GitHub PAT з `repo` scope, який має push-доступ до **обох** repo.
+
 ```bash
-# Використати поточний gh токен
-MIRROR_TOKEN=$(gh auth token)
-gh secret set MIRROR_TOKEN --body "$MIRROR_TOKEN" --repo <owner>/<lovable-repo>
+# На машині з gh CLI авторизованим під потрібним акаунтом
+gh secret set MIRROR_TOKEN \
+  --repo <owner>/<new-repo> \
+  --body '<ghp_TOKEN>'
 
 # Перевірити
-gh secret list --repo <owner>/<lovable-repo>
+gh secret list --repo <owner>/<new-repo>
 ```
 
+### Як отримати токен
+
+1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Generate new token → `repo` scope (повний доступ до приватних repo)
+3. Зберегти як `MIRROR_TOKEN` secret у новому repo
+
+> **Альтернатива:** якщо gh CLI вже авторизований:
+> ```bash
+> gh auth token  # скопіювати ghp_ токен
+> ```
+> Переконайтесь, що токен має `repo` scope: `curl -sI -H "Authorization: token <TOKEN>" https://api.github.com/user | grep x-oauth-scopes`
+
 ---
 
-## Крок 4 — Надати Lovable контекст (handoff)
-
-Після push — в Lovable UI:
-1. Підключити `<lovable-repo>` як GitHub repo
-2. Вставити вміст `lovable-prompts/00-handoff.md` як перше повідомлення
-
-**Важливо про промти:** Lovable не може читати файли з repo напряму через UI.
-Треба вставляти вміст промту як текст. Посилання на файл (`lovable-prompts/45-...md`) 
-спрацьовує тільки якщо Lovable конкретно підтримує file references в поточній версії.
-
----
-
-## Крок 5 — Перевірити mirror
+## Крок 4 — Commit та push workflow файлу
 
 ```bash
-# Після першого Lovable commit перевірити GitHub Actions
-gh run list --repo <owner>/<lovable-repo> --limit 3
+cd ~/workspace/<project>/
+git add .github/workflows/mirror-to-cf-source.yml
+git commit -m "ci: mirror <new-repo> → <cf-source-repo> on push to main"
 
-# SHA в обох repo мають відрізнятись (різні commits) але src/ збігатись
-gh api repos/<owner>/ai-drakon-setup/commits/main --jq '.commit.message'
-gh api repos/<owner>/<lovable-repo>/commits/main --jq '.commit.message'
+# Push до обох repo
+git push origin main          # CF Pages source (repo A)
+git push new-lovable main --force   # Новий Lovable repo (repo B)
 ```
 
 ---
 
-## Що НЕ треба робити (помилки)
+## Крок 5 — Перевірити що mirror працює
 
-| Дія | Чому небезпечно |
-|-----|----------------|
-| `git push --force` весь монорепо в Lovable repo | Lovable видалить бекенд при наступному commit |
-| Mirror через `git push --force` repo A | Знищує весь бекенд в ai-drakon-setup |
-| Зберігати config.json в git | Містить API ключі і токени |
-| Force push main в ai-drakon-setup без backup | Незворотня втрата даних |
-| Мержити Lovable commits напряму в main | Lovable може мати тільки фронтенд файли |
+```bash
+# Переглянути GitHub Actions runs
+gh run list --repo <owner>/<new-repo> --limit 3
+
+# Якщо failed — подивитись логи
+gh run view <run-id> --log-failed --repo <owner>/<new-repo>
+```
+
+Очікуваний результат:
+```
+completed   success   Mirror to CF Pages source repo   main   push   ...
+```
+
+Перевірити що останній коміт у repo A збігається з repo B:
+```bash
+gh api repos/<owner>/<cf-source-repo>/commits/main --jq '.sha,.commit.message'
+gh api repos/<owner>/<new-repo>/commits/main --jq '.sha,.commit.message'
+# SHA мають збігатися
+```
 
 ---
 
-## Файли у цьому шаблоні
+## Крок 6 — Налаштувати новий Lovable проект
+
+1. Lovable → новий проект → Connect GitHub → обрати **<new-repo>**
+2. Дати Lovable handoff контекст (файл `lovable-prompts/00-handoff.md`)
+3. Lovable тепер пише в `<new-repo>` → Action автоматично дзеркалює в `<cf-source-repo>`
+4. CF Pages будує як раніше — домен і env vars без змін
+
+---
+
+## Відомі обмеження
+
+| Обмеження | Причина |
+|-----------|---------|
+| CF Pages API не підтримує зміну repo | PATCH `source.repo_name` ігнорується Cloudflare |
+| Обидва repo мають бути доступні MIRROR_TOKEN | Fine-grained PAT не підходить якщо обидва repo різних акаунтів |
+| Force push кожен раз | Lovable може додавати коміти між нашими — force завжди актуалізує |
+| Workflow файл у новому repo | Після першого push Lovable не чіпатиме workflow файли |
+
+---
+
+## Файли у цьому проекті
 
 | Файл | Призначення |
 |------|-------------|
-| `lovable-prompts/00-handoff.md` | Контекст архітектури для Lovable (вставляти як текст) |
-| `lovable-prompts/00-project-init.md` | Промт ініціалізації нового Lovable проекту |
+| `.github/workflows/mirror-to-ai-drakon.yml` | Actual workflow для drakon-flow → ai-drakon-setup |
+| `lovable-prompts/00-project-init.md` | Промт для ініціалізації нового Lovable проекту |
+| `lovable-prompts/00-handoff.md` | Handoff контекст для Lovable після push коду |

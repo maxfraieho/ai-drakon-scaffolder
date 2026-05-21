@@ -16,11 +16,12 @@ interface CodeAnalysisPanelProps {
   open: boolean;
   onClose: () => void;
   onImportIr: (ir: AnalyzedFunction) => void;
+  onStatusChange?: (status: Status) => void;
 }
 
 type Status = "idle" | "running" | "done" | "error";
 
-export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPanelProps) {
+export function CodeAnalysisPanel({ open, onClose, onImportIr, onStatusChange }: CodeAnalysisPanelProps) {
   const [source, setSource] = useState("");
   const [filePath, setFilePath] = useState("module.py");
   const [status, setStatus] = useState<Status>("idle");
@@ -43,6 +44,10 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
     }, 1000);
     return () => clearInterval(id);
   }, [status]);
+
+  useEffect(() => {
+    onStatusChange?.(status);
+  }, [status, onStatusChange]);
 
   useEffect(() => {
     if (status !== "running" || !jobId) return;
@@ -195,6 +200,11 @@ export function CodeAnalysisPanel({ open, onClose, onImportIr }: CodeAnalysisPan
             <p className="text-[11px] text-[var(--text-secondary)] italic">
               Pipeline A запущено. Очікуємо результат обробки синтаксичного дерева...
             </p>
+            <div className="space-y-1 border-l border-[rgba(245,158,11,0.35)] pl-2 font-mono text-[10px] text-[var(--text-muted)]">
+              <div className={elapsed >= 1 ? "text-[var(--accent-amber)]" : undefined}>1) Парсинг source file</div>
+              <div className={elapsed >= 3 ? "text-[var(--accent-amber)]" : undefined}>2) Побудова DRAKON IR</div>
+              <div className={elapsed >= 6 ? "text-[var(--accent-amber)]" : undefined}>3) Валідація та метрики</div>
+            </div>
           </div>
         )}
 
