@@ -293,7 +293,7 @@ slug: n.slug!,
 }));
 
 return (
-<div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] flex-col overflow-hidden rounded-lg border border-border md:flex-row">
+<div className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border md:flex-row">
 {/* Sidebar — mobile stacked panel, desktop side panel */}
 <aside
 className={cn(
