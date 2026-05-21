@@ -295,8 +295,7 @@ isCustom={!(key in KNOWN_FIELDS)}
 {/ Advanced: JSON toggle /}
 <Collapsible open={showJson} onOpenChange={setShowJson}>
 <CollapsibleTrigger asChild>
-<Button variant="ghost" size="sm" className="w-full justify-between text-xs
-text-muted-foreground">
+<Button variant="ghost" size="sm" className="w-full justify-between text-xs text-muted-foreground">
 <span className="flex items-center gap-1.5">
 <Code className="h-3.5 w-3.5" />
 JSON
@@ -307,8 +306,7 @@ JSON
 </CollapsibleTrigger>
 <CollapsibleContent>
 <div className="relative">
-<pre className="text-[11px] font-mono bg-muted rounded-md p-3 max-h-40 overflow-auto
-whitespace-pre-wrap">
+<pre className="text-[11px] font-mono bg-muted rounded-md p-3 max-h-40 overflow-auto whitespace-pre-wrap">
 {jsonOutput}
 </pre>
 <Button

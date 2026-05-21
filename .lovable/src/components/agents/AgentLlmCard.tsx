@@ -163,8 +163,7 @@ if (merged.length > 0 && !model) setModel(merged[0]);
 setConnected(true);
 toast.success(✓ ${agentLabel}: підключено, ${fetched.length} моделей);
 } catch (e) {
-toast.error(✗ ${agentLabel}: ${e instanceof Error ? e.message : "помилка
-з'єднання"});
+toast.error(✗ ${agentLabel}: ${e instanceof Error ? e.message : "помилка з'єднання"});
 } finally {
 setConnecting(false);
 }
@@ -322,8 +321,7 @@ disabled={connecting}
 <Label className="text-xs">Модель / Слот</Label>
 <button
 type="button"
-className="text-[10px] text-muted-foreground inline-flex items-center gap-1
-hover:text-foreground disabled:opacity-50"
+className="text-[10px] text-muted-foreground inline-flex items-center gap-1 hover:text-foreground disabled:opacity-50"
 onClick={handleConnect}
 disabled={connecting}
 >

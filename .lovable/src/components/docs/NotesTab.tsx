@@ -86,8 +86,7 @@ isActive && "font-medium",
 </button>
 <button
 onClick={(e) => { e.stopPropagation(); onDeleteNote(node.slug!); }}
-className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground transition-opacity
-hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
+className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground transition-opacity hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
 title="Видалити"
 >
 <Trash2 className="h-3 w-3" />
@@ -105,27 +104,23 @@ style={{ paddingLeft: ${4 + level * 14}px }}
 >
 <button
 onClick={() => setOpen((o) => !o)}
-className="flex flex-1 items-center gap-1.5 py-1 text-left text-xs font-medium
-text-muted-foreground min-w-0"
+className="flex flex-1 items-center gap-1.5 py-1 text-left text-xs font-medium text-muted-foreground min-w-0"
 >
-{open ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3
-shrink-0" />}
+{open ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
 {open ? <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/60" /> : <Folder
 className="h-3.5 w-3.5 shrink-0 text-primary/60" />}
 <span className="truncate">{node.name}</span>
 </button>
 <button
 onClick={(e) => { e.stopPropagation(); onAddInFolder(node.path); }}
-className="h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-primary/10
-hover:text-primary md:opacity-0 md:group-hover:opacity-100"
+className="h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary md:opacity-0 md:group-hover:opacity-100"
 title="Новий документ у цій папці"
 >
 <FilePlus className="h-3 w-3" />
 </button>
 <button
 onClick={(e) => { e.stopPropagation(); onDeleteFolder(node.path, childCount > 0); }}
-className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground
-hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
+className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
 title="Видалити папку"
 >
 <Trash2 className="h-3 w-3" />
@@ -301,8 +296,7 @@ slug: n.slug!,
 }));
 
 return (
-<div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] flex-col overflow-hidden
-rounded-lg border border-border md:flex-row">
+<div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] flex-col overflow-hidden rounded-lg border border-border md:flex-row">
 {/ Sidebar — mobile stacked panel, desktop side panel /}
 <aside
 className={cn(
@@ -339,8 +333,7 @@ setSidebarOpen(false)} title="Сховати">
 value={sidebarSearch}
 onChange={(e) => setSidebarSearch(e.target.value)}
 placeholder="Пошук документів..."
-className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs
-text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
+className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
 />
 </div>
 <ScrollArea className="flex-1">
@@ -380,15 +373,13 @@ onDeleteFolder={handleDeleteFolder}
 {/ Editor area /}
 <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
 {/ Mobile bar with sidebar toggle /}
-<div className="flex items-center gap-2 border-b border-border bg-muted/10 px-2 py-1
-md:hidden">
+<div className="flex items-center gap-2 border-b border-border bg-muted/10 px-2 py-1 md:hidden">
 <Button
 size="icon" variant="ghost" className="h-8 w-8"
 onClick={() => setSidebarOpen((o) => !o)}
 title="Список документів"
 >
-{sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4
-w-4" />}
+{sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
 </Button>
 <span className="truncate text-xs text-muted-foreground">
 {activeSlug === NEW_SLUG
@@ -398,8 +389,7 @@ w-4" />}
 </div>
 
 {activeSlug === null ? (
-<div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center
-text-muted-foreground">
+<div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground">
 <FileText className="h-10 w-10 opacity-20" />
 <p className="text-sm">
 Оберіть документ або{" "}

@@ -18,13 +18,10 @@ type="button"
 onClick={() => setExpanded((v) => !v)}
 aria-expanded={expanded}
 aria-label="Toggle mutation log"
-className="flex items-center justify-between px-3 py-2 transition-colors duration-150
-hover:bg-[var(--bg-elevated)] focus-visible:outline-none focus-visible:ring-2
-focus-visible:ring-amber-400/50"
+className="flex items-center justify-between px-3 py-2 transition-colors duration-150 hover:bg-[var(--bg-elevated)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
 >
 <div className="flex items-center gap-2">
-<span className="font-mono text-[10px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 Mutation Log
 </span>
 
@@ -71,8 +68,7 @@ No mutations yet
 {mutationLog.slice(0, 10).map((entry, i) => (
 <div
 key={${entry.timestamp}-${i}}
-className="flex items-start gap-2 border-b border-[var(--border-subtle)] py-1.5 font-mono
-text-[11px] last:border-0"
+className="flex items-start gap-2 border-b border-[var(--border-subtle)] py-1.5 font-mono text-[11px] last:border-0"
 >
 <span
 className={cn(
@@ -273,8 +269,7 @@ return (
 
 return (
 <div className="space-y-3">
-{error ? <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3
-text-sm text-destructive">{error}</div> : null}
+{error ? <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">{error}</div> : null}
 <div className="space-y-1">{renderEntries("", 0)}</div>
 </div>
 );

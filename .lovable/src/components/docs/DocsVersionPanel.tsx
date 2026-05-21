@@ -50,10 +50,8 @@ setLoading(false);
 };
 
 return (
-<Collapsible open={open} onOpenChange={setOpen} className="rounded-md border
-border-border">
-<CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 text-sm
-font-medium hover:bg-muted/40">
+<Collapsible open={open} onOpenChange={setOpen} className="rounded-md border border-border">
+<CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted/40">
 <span>Версія документації</span>
 <ChevronDown className={h-4 w-4 transition-transform ${open ? "rotate-180" :
 ""}} />

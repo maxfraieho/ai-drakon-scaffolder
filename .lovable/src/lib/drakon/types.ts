@@ -27,12 +27,7 @@ zoom?: number;
 */
 export function parseDrakonDirective(text: string): DrakonBlockParams | null {
 const match = text.match(
-/^:::drakon\s+((?:\w+="[^"]"\s)+):::$/
-);
-if (!match) return null;
-
-const params: Record<string, string> = {};
-const attrRegex = /(\w+)="([^"]*)"/g;
+/^:::drakon\s+((?:\w+="[^"]"\s)+):::$/ ); if (!match) return null;  const params: Record<string, string> = {}; const attrRegex = /(\w+)="([^"]*)"/g;
 let attrMatch: RegExpExecArray | null;
 while ((attrMatch = attrRegex.exec(match[1])) !== null) {
 params[attrMatch[1]] = attrMatch[2];

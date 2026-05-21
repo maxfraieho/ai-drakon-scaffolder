@@ -47,8 +47,7 @@ placeholder="Перейти до… або пошук дій"
 className="font-mono text-[12px]"
 />
 <CommandList>
-<CommandEmpty className="font-mono text-[11px] text-[var(--text-muted)] py-6
-text-center">
+<CommandEmpty className="font-mono text-[11px] text-[var(--text-muted)] py-6 text-center">
 Нічого не знайдено
 </CommandEmpty>
 

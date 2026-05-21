@@ -23,8 +23,7 @@ return (
 </div>
 </header>
 
-<div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-4 py-4
-md:grid-cols-[220px_1fr]">
+<div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-4 py-4 md:grid-cols-[220px_1fr]">
 <aside className="rounded-md border border-border bg-card p-2">
 <nav className="flex flex-col gap-1">
 {navItems.map((item) => (

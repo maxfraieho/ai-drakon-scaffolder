@@ -63,15 +63,11 @@ analyzePath: path || "src",
 return (
 <div className="flex min-h-screen flex-col bg-[var(--bg-base)] text-[var(--text-primary)]">
 {/ Editor toolbar /}
-<div className="flex h-12 items-center gap-2 border-b border-[var(--border-subtle)]
-bg-[var(--bg-elevated)] px-3 md:px-4">
+<div className="flex h-12 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 md:px-4">
 <Link
 to="/diagrams"
 aria-label="Back to diagrams"
-className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 font-mono
-text-[11px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors duration-150
-hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)] focus-visible:outline-none
-focus-visible:ring-2 focus-visible:ring-amber-400/50"
+className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors duration-150 hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50"
 >
 <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
 Back
@@ -103,20 +99,17 @@ filesOpen
 type="button"
 aria-label="Відкрити файловий менеджер"
 title="Файли"
-className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)]
-text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]"
+className="md:hidden inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]"
 >
 <FolderTree className="h-4 w-4" />
 </button>
 </SheetTrigger>
 <SheetContent
 side="left"
-className="w-[88vw] max-w-sm border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]
-p-0"
+className="w-[88vw] max-w-sm border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0"
 >
 <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
-<SheetTitle className="font-mono text-[11px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<SheetTitle className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 Файловий менеджер
 </SheetTitle>
 </SheetHeader>
@@ -133,8 +126,7 @@ handleAnalyzeFolder(p);
 </Sheet>
 
 <div className="flex min-w-0 items-center gap-2">
-<span className="font-mono text-[10px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 {isNew ? "New" : "Edit"}
 </span>
 {!isNew && diagramId && (
@@ -155,9 +147,7 @@ aria-label={validationOpen ? "Close validation panel" : "Open validation panel"}
 aria-pressed={validationOpen}
 title="Валідація"
 className={cn(
-"ml-auto inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)]
-active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2
-focus-visible:ring-amber-400/50",
+"ml-auto inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50",
 validationOpen
 ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
 : "text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]",
@@ -169,13 +159,11 @@ style={{ transition: "transform 100ms, background-color 150ms, color 150ms" }}
 <button
 type="button"
 onClick={() => setCodeGenOpen((v) => !v)}
-aria-label={codeGenOpen ? "Закрити генерацію коду" : "Відкрити генерацію коду (Pipeline
-B)"}
+aria-label={codeGenOpen ? "Закрити генерацію коду" : "Відкрити генерацію коду (Pipeline B)"}
 aria-pressed={codeGenOpen}
 title="Генерація коду (Pipeline B)"
 className={cn(
-"inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] active:scale-[0.96]
-focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50",
+"inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] active:scale-[0.96] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/50",
 codeGenOpen
 ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
 : "text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]",
@@ -191,8 +179,7 @@ style={{ transition: "transform 100ms, background-color 150ms, color 150ms" }}
 {/ Desktop left files rail /}
 <aside
 className={cn(
-"hidden md:flex flex-shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)]
-bg-[var(--bg-surface)]",
+"hidden md:flex flex-shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]",
 filesOpen ? "w-72 lg:w-80" : "w-0",
 )}
 style={{ transitionProperty: "width", transitionDuration: "200ms" }}
@@ -201,10 +188,8 @@ aria-label="Файловий менеджер"
 >
 {filesOpen && (
 <div className="flex h-full flex-col">
-<div className="flex h-10 items-center border-b border-[var(--border-subtle)]
-bg-[var(--bg-elevated)] px-3">
-<span className="font-mono text-[10px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<div className="flex h-10 items-center border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
+<span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 Files
 </span>
 </div>
@@ -239,8 +224,7 @@ diagramName={diagramData?.name || diagramId || "diagram"}
 
 <aside
 className={cn(
-"flex flex-shrink-0 flex-col overflow-hidden border-l border-[var(--border-subtle)]
-bg-[var(--bg-surface)]",
+"flex flex-shrink-0 flex-col overflow-hidden border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]",
 validationOpen ? "w-80" : "w-0",
 )}
 style={{ transitionProperty: "width", transitionDuration: "200ms" }}

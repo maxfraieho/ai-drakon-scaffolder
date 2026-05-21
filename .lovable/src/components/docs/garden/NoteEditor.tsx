@@ -166,19 +166,15 @@ ta.setSelectionRange(s, s + sel.length);
 return (
 <div className="flex h-full flex-col">
 {/ Header /}
-<div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/10 px-3
-py-2">
+<div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/10 px-3 py-2">
 <Input
 value={title}
 onChange={(e) => onTitleChange(e.target.value)}
 placeholder="Заголовок нотатки"
-className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-base font-medium
-shadow-none focus-visible:ring-0"
+className="h-8 min-w-0 flex-1 border-0 bg-transparent px-0 text-base font-medium shadow-none focus-visible:ring-0"
 />
 {props.currentSlug && props.currentSlug.includes("/") && (
-<div className="flex max-w-full shrink-0 items-center gap-1 overflow-hidden rounded-md
-border border-border/50 bg-muted/30 px-2 py-1 text-xs text-muted-foreground" title="Папка
-документа">
+<div className="flex max-w-full shrink-0 items-center gap-1 overflow-hidden rounded-md border border-border/50 bg-muted/30 px-2 py-1 text-xs text-muted-foreground" title="Папка документа">
 <Folder className="h-3 w-3 shrink-0" />
 <span className="truncate">{props.currentSlug.split("/").slice(0, -1).join("/")}</span>
 </div>
@@ -217,8 +213,7 @@ className="h-3.5 w-3.5 md:mr-1" />}
 <div className="flex flex-col gap-1.5 border-b border-border px-3 py-2">
 <TagEditor tags={tags} onChange={onTagsChange} />
 {hasDraft && (
-<div className="flex items-center justify-between rounded-md border border-amber-500/30
-bg-amber-500/5 px-2 py-1 text-xs">
+<div className="flex items-center justify-between rounded-md border border-amber-500/30 bg-amber-500/5 px-2 py-1 text-xs">
 <span className="text-amber-600 dark:text-amber-400">Знайдено незбережену
 чернетку</span>
 <div className="flex gap-1">
@@ -237,8 +232,7 @@ bg-amber-500/5 px-2 py-1 text-xs">
 {mode === "edit" ? (
 <div className="relative flex flex-1 flex-col overflow-hidden">
 <EditorToolbar onWrap={wrap} onInsert={insertAtCursor} />
-<div className="hidden md:flex flex-wrap gap-x-3 border-b border-border/50 bg-muted/5 px-3
-py-1 text-[10px] text-muted-foreground">
+<div className="hidden md:flex flex-wrap gap-x-3 border-b border-border/50 bg-muted/5 px-3 py-1 text-[10px] text-muted-foreground">
 <span><kbd className="font-mono">Ctrl+S</kbd> зберегти</span>
 <span><kbd className="font-mono">Ctrl+B</kbd> жирний</span>
 <span><kbd className="font-mono">Ctrl+I</kbd> курсив</span>
@@ -258,15 +252,12 @@ const ta = taRef.current;
 if (ta) setAutocomplete(detectWikilinkTrigger(content, ta.selectionStart));
 }}
 placeholder="Пишіть Markdown… Використайте [[wiki-link]] для зв'язків між нотатками."
-className="absolute inset-0 h-full w-full resize-none bg-background p-3 font-mono text-sm
-leading-relaxed outline-none"
+className="absolute inset-0 h-full w-full resize-none bg-background p-3 font-mono text-sm leading-relaxed outline-none"
 spellCheck={false}
 />
 {autocomplete && filteredSuggestions.length > 0 && (
-<div className="absolute left-3 top-3 z-10 w-64 rounded-md border border-border bg-popover
-shadow-lg">
-<div className="border-b border-border px-2 py-1 text-[10px] uppercase tracking-wide
-text-muted-foreground">
+<div className="absolute left-3 top-3 z-10 w-64 rounded-md border border-border bg-popover shadow-lg">
+<div className="border-b border-border px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
 Вставити wiki-посилання
 </div>
 <ul>
@@ -295,8 +286,7 @@ i === highlight && "bg-muted",
 </div>
 ):(
 <div className="min-w-0 flex-1 overflow-y-auto overflow-x-hidden">
-<div className="w-full min-w-0 max-w-full overflow-x-hidden p-4 text-[15px] leading-relaxed
-md:text-sm">
+<div className="w-full min-w-0 max-w-full overflow-x-hidden p-4 text-[15px] leading-relaxed md:text-sm">
 {content.trim() ? (
 <NoteRenderer content={content} />
 ):(

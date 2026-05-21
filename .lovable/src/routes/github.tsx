@@ -339,8 +339,7 @@ holdTimerRef.current = null;
 const listView = (
 <div className="space-y-3">
 <div className="relative">
-<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2
-text-muted-foreground" />
+<Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
 <Input
 value={query}
 onChange={(event) => setQuery(event.target.value)}
@@ -366,8 +365,7 @@ const isDir = entry.type === "dir";
 
 return (
 <li key={entry.path}>
-<div className="flex w-full items-stretch gap-1 rounded-md border border-border
-hover:bg-accent/40">
+<div className="flex w-full items-stretch gap-1 rounded-md border border-border hover:bg-accent/40">
 <button
 type="button"
 className="flex min-w-0 flex-1 items-center gap-3 rounded-l-md px-3 py-2 text-left"
@@ -403,8 +401,7 @@ onTouchCancel={cancelHold}
 type="button"
 title="Аналізувати структуру папки"
 aria-label="Аналізувати структуру папки"
-className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground
-transition-colors hover:bg-primary/15 hover:text-primary"
+className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
 onClick={(e) => {
 e.stopPropagation();
 analyzePath(entry.path);
@@ -416,8 +413,7 @@ analyzePath(entry.path);
 type="button"
 title="Експортувати папку в набір DRAKON схем"
 aria-label="Експорт у набір DRAKON"
-className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground
-transition-colors hover:bg-primary/15 hover:text-primary"
+className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/15 hover:text-primary"
 onClick={(e) => {
 e.stopPropagation();
 exportFolderAsDrakonSet(entry.path);
@@ -435,8 +431,7 @@ exportFolderAsDrakonSet(entry.path);
 })}
 
 {filteredEntries.length === 0 ? (
-<li className="rounded-md border border-dashed border-border p-4 text-center text-sm
-text-muted-foreground">
+<li className="rounded-md border border-dashed border-border p-4 text-center text-sm text-muted-foreground">
 Нічого не знайдено
 </li>
 ) : null}
@@ -469,14 +464,12 @@ const previewView = preview ? (
 ) : null}
 </div>
 
-<pre className="max-h-[60vh] overflow-auto rounded-md border border-border bg-muted/40
-p-3 text-xs leading-5">
+<pre className="max-h-[60vh] overflow-auto rounded-md border border-border bg-muted/40 p-3 text-xs leading-5">
 {preview.content || "(Порожній файл)"}
 </pre>
 </div>
 ):(
-<div className="flex h-full min-h-[320px] items-center justify-center rounded-md border
-border-dashed border-border text-sm text-muted-foreground">
+<div className="flex h-full min-h-[320px] items-center justify-center rounded-md border border-dashed border-border text-sm text-muted-foreground">
 {loadingPreview ? "Завантаження preview..." : "Оберіть файл для preview"}
 </div>
 );
@@ -492,8 +485,7 @@ return (
 <Github className="h-4 w-4 text-muted-foreground" />
 <p className="truncate text-sm font-medium md:text-base">{owner}/{repo}</p>
 {activeProject?.github && (
-<span className="rounded px-1.5 py-0.5 bg-amber-400/10 border border-amber-400/30
-font-mono text-[10px] text-amber-400 whitespace-nowrap">
+<span className="rounded px-1.5 py-0.5 bg-amber-400/10 border border-amber-400/30 font-mono text-[10px] text-amber-400 whitespace-nowrap">
 {activeProject.name}
 </span>
 )}
@@ -516,8 +508,7 @@ font-mono text-[10px] text-amber-400 whitespace-nowrap">
 </header>
 
 {isMobile ? (
-<div className="mb-3 flex items-center justify-between gap-2 rounded-md border
-border-border px-3 py-2">
+<div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
 <Button
 variant="ghost"
 size="sm"
@@ -541,8 +532,7 @@ navigate({ to: "/diagrams" });
 <button
 key={`${crumb.path}-${index}`}
 type="button"
-className="rounded px-2 py-1 text-muted-foreground hover:bg-accent
-hover:text-accent-foreground"
+className="rounded px-2 py-1 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
 onClick={() => void loadPath(crumb.path)}
 >
 {crumb.name}
@@ -554,8 +544,7 @@ onClick={() => void loadPath(crumb.path)}
 <div className="space-y-3">{listView}</div>
 ):(
 <div className="flex h-[calc(100vh-190px)] min-h-[520px] gap-3">
-<div className="h-full w-[280px] min-w-[240px] max-w-[420px] shrink-0 overflow-auto
-rounded-md border border-border p-3">
+<div className="h-full w-[280px] min-w-[240px] max-w-[420px] shrink-0 overflow-auto rounded-md border border-border p-3">
 {listView}
 </div>
 <div className="h-full min-w-0 flex-1 overflow-auto rounded-md border border-border p-3">

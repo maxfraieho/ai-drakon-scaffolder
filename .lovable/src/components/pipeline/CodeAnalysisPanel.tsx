@@ -112,14 +112,11 @@ setKbSaving(false);
 if (!open) return null;
 
 return (
-<aside className="flex h-full w-full shrink-0 flex-col border-l border-[var(--border-subtle)]
-bg-[var(--bg-surface)] xl:w-[380px]">
-<header className="flex h-12 items-center justify-between border-b
-border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
+<aside className="flex h-full w-full shrink-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)] xl:w-[380px]">
+<header className="flex h-12 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
 <div className="flex items-center gap-2">
 <ScanSearch className="h-3.5 w-3.5 text-[var(--accent-amber)]" aria-hidden="true" />
-<span className="font-mono text-[10px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<span className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 Аналіз коду
 </span>
 </div>
@@ -127,8 +124,7 @@ text-[var(--text-muted)]">
 type="button"
 onClick={onClose}
 aria-label="Закрити панель"
-className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)]
-text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]"
+className="inline-flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-secondary)] hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)]"
 >
 <X className="h-3.5 w-3.5" aria-hidden="true" />
 </button>
@@ -177,17 +173,14 @@ className="w-full bg-[var(--accent-amber)] text-black hover:bg-[var(--accent-amb
 </Button>
 
 {status === "running" && (
-<div className="border border-[var(--border-default)] bg-[var(--surface-container)] p-3 flex
-flex-col gap-2">
+<div className="border border-[var(--border-default)] bg-[var(--surface-container)] p-3 flex flex-col gap-2">
 <div className="flex justify-between items-center">
 <div className="flex items-center gap-2">
 <span className="relative flex h-2 w-2">
-<span className="animate-ping absolute inline-flex h-full w-full rounded-full
-bg-[var(--accent-amber)] opacity-75" />
+<span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent-amber)] opacity-75" />
 <span className="relative inline-flex rounded-full h-2 w-2 bg-[var(--accent-amber)]" />
 </span>
-<span className="font-mono text-[11px] text-[var(--accent-amber)] uppercase font-bold
-tracking-wider">
+<span className="font-mono text-[11px] text-[var(--accent-amber)] uppercase font-bold tracking-wider">
 ВИКОНУЄТЬСЯ
 </span>
 </div>
@@ -207,8 +200,7 @@ Pipeline A запущено. Очікуємо результат обробки 
 
 {status === "done" && result && (
 <div className="flex flex-col gap-3">
-<div className="flex items-center justify-between px-3 py-2 border border-emerald-500/30
-bg-emerald-500/5">
+<div className="flex items-center justify-between px-3 py-2 border border-emerald-500/30 bg-emerald-500/5">
 <div className="flex items-center gap-2 text-emerald-400">
 <span className="text-[16px]">✓</span>
 <span className="font-mono text-[11px] font-bold uppercase">
@@ -221,17 +213,14 @@ bg-emerald-500/5">
 type="button"
 onClick={handleSaveToKb}
 disabled={kbSaving || kbSaved}
-className="flex items-center gap-1.5 rounded border border-[var(--accent-amber)]/40 px-2
-py-1 font-mono text-[10px] uppercase text-[var(--accent-amber)] transition-colors
-hover:bg-[var(--accent-amber)]/10 disabled:opacity-50"
+className="flex items-center gap-1.5 rounded border border-[var(--accent-amber)]/40 px-2 py-1 font-mono text-[10px] uppercase text-[var(--accent-amber)] transition-colors hover:bg-[var(--accent-amber)]/10 disabled:opacity-50"
 >
 {kbSaved ? "✓ Збережено" : kbSaving ? "..." : "Save to KB"}
 </button>
 <button
 type="button"
 onClick={reset}
-className="font-mono text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-uppercase"
+className="font-mono text-[10px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] uppercase"
 >
 Новий аналіз
 </button>
@@ -248,21 +237,17 @@ CC: {result.cyclomatic_complexity}
 </span>
 </div>
 <div className="relative group">
-<pre className="w-full h-[320px] bg-[var(--bg-base)] border border-[var(--border-default)] p-3
-font-mono text-[11px] overflow-auto text-[var(--text-primary)] leading-relaxed
-whitespace-pre-wrap">
+<pre className="w-full h-[320px] bg-[var(--bg-base)] border border-[var(--border-default)] p-3 font-mono text-[11px] overflow-auto text-[var(--text-primary)] leading-relaxed whitespace-pre-wrap">
 {JSON.stringify(result.drakon_ir, null, 2)}
 </pre>
-<div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100
-transition-opacity">
+<div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
 <button
 type="button"
 onClick={async () => {
 await navigator.clipboard.writeText(JSON.stringify(result.drakon_ir, null, 2));
 toast.success("Скопійовано");
 }}
-className="bg-[var(--surface-container)]/80 border border-[var(--border-default)] p-1
-text-[var(--text-secondary)] hover:text-[var(--accent-amber)]"
+className="bg-[var(--surface-container)]/80 border border-[var(--border-default)] p-1 text-[var(--text-secondary)] hover:text-[var(--accent-amber)]"
 >
 <Copy className="h-3.5 w-3.5" />
 </button>
@@ -299,9 +284,7 @@ return valid ? (
 key={${fn.name}-${i}}
 type="button"
 onClick={() => onImportIr(fn)}
-className="w-full flex items-center justify-between px-2 py-1.5 border
-border-[var(--border-default)] bg-[var(--bg-base)] hover:border-[var(--accent-amber)]
-hover:bg-[var(--accent-amber)]/5 transition-all font-mono text-xs text-[var(--text-primary)]"
+className="w-full flex items-center justify-between px-2 py-1.5 border border-[var(--border-default)] bg-[var(--bg-base)] hover:border-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/5 transition-all font-mono text-xs text-[var(--text-primary)]"
 >
 <span>{fn.name}</span>
 <span className="text-[var(--text-muted)]">↓ Імпортувати</span>
@@ -318,9 +301,7 @@ hover:bg-[var(--accent-amber)]/5 transition-all font-mono text-xs text-[var(--te
 <button
 type="button"
 onClick={reset}
-className="w-full border border-[var(--border-default)] py-1 font-mono text-[11px]
-text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)]
-transition-colors"
+className="w-full border border-[var(--border-default)] py-1 font-mono text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)] transition-colors"
 >
 Повторити
 </button>

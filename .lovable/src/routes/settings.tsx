@@ -257,15 +257,11 @@ return (
 </header>
 
 <Tabs defaultValue="github" className="space-y-4">
-<div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none]
-[&::-webkit-scrollbar]:hidden">
-<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:grid md:grid-cols-6 md:gap-0
-md:px-0">
+<div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:grid md:grid-cols-6 md:gap-0 md:px-0">
 <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>
-<TabsTrigger value="agents" className="shrink-0
-whitespace-nowrap">Агенти</TabsTrigger>
-<TabsTrigger value="docs" className="shrink-0
-whitespace-nowrap">Документація</TabsTrigger>
+<TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>
+<TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>
 <TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>
 <TabsTrigger value="minio" className="shrink-0 whitespace-nowrap">MinIO</TabsTrigger>
 <TabsTrigger value="app" className="shrink-0 whitespace-nowrap">Додаток</TabsTrigger>
@@ -309,8 +305,7 @@ onFocus={() => setRepoOpen(true)}
 onBlur={() => setTimeout(() => setRepoOpen(false), 150)}
 />
 {repoOpen && (
-<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border
-border-border rounded-md shadow-md">
+<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border border-border rounded-md shadow-md">
 {reposLoading && (
 <div className="px-3 py-2 text-sm text-muted-foreground flex items-center">
 <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
@@ -730,8 +725,7 @@ minio: { ...prev.minio, accessKey: e.target.value },
 placeholder="minioadmin"
 />
 </div>
-<div className="rounded-md border border-border bg-muted/40 p-3 text-xs
-text-muted-foreground">
+<div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
 Secret Key та повна конфігурація зберігаються у{" "}
 <a
 href="https://dash.cloudflare.com"
@@ -833,9 +827,7 @@ app: { ...prev.app, theme: value },
 <button
 type="button"
 onClick={clearDiagramCache}
-className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500
-transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:ring-2
-focus-visible:ring-red-400/50 active:scale-[0.96]"
+className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500 transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:ring-2 focus-visible:ring-red-400/50 active:scale-[0.96]"
 style={{ touchAction: "manipulation" }}
 >
 <Trash2 className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
@@ -846,8 +838,7 @@ style={{ touchAction: "manipulation" }}
 </TabsContent>
 </Tabs>
 
-<div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-3
-backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
+<div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
 <div className="mx-auto flex w-full max-w-4xl justify-end gap-2">
 <Button variant="outline" onClick={() => navigate({ to: "/diagrams" })}>
 Скасувати

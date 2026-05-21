@@ -24,10 +24,8 @@ function StepStateMark({ status }: { status: StepStatus }) {
 if (status === "running") {
 return <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--accent-amber)]" />;
 }
-if (status === "done") return <span className="font-mono text-[11px]
-text-[var(--text-primary)]">✓</span>;
-if (status === "error") return <span className="font-mono text-[11px]
-text-red-400">✗</span>;
+if (status === "done") return <span className="font-mono text-[11px] text-[var(--text-primary)]">✓</span>;
+if (status === "error") return <span className="font-mono text-[11px] text-red-400">✗</span>;
 return <span className="font-mono text-[11px] text-[var(--text-muted)]">○</span>;
 }
 
@@ -70,17 +68,14 @@ return (
 <CollapsibleTrigger asChild>
 <button
 type="button"
-className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-1 py-1
-font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--text-muted)]
-hover:bg-[var(--bg-base)]"
+className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-1 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--text-muted)] hover:bg-[var(--bg-base)]"
 >
 DEV CYCLE
 <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", open && "rotate-180")} />
 </button>
 </CollapsibleTrigger>
 
-<CollapsibleContent className="data-[state=open]:animate-accordion-down
-data-[state=closed]:animate-accordion-up overflow-hidden">
+<CollapsibleContent className="data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up overflow-hidden">
 <ul className="mt-1 space-y-1">
 {STEP_META.map((step, idx) => {
 const status = statuses[step.key];
@@ -90,22 +85,19 @@ const isRunning = status === "running";
 return (
 <li
 key={step.key}
-className="animate-in fade-in-0 slide-in-from-bottom-1 rounded-[var(--radius-sm)] border
-border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-1"
+className="animate-in fade-in-0 slide-in-from-bottom-1 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-1"
 style={{ animationDelay: ${idx * 55}ms }}
 >
 <div className="flex items-center gap-2">
 <span className="font-mono text-[10px] text-[var(--accent-amber)]">{idx + 1}</span>
-<span className="font-mono text-[10px] uppercase
-text-[var(--text-secondary)]">{step.label}</span>
+<span className="font-mono text-[10px] uppercase text-[var(--text-secondary)]">{step.label}</span>
 <Button
 type="button"
 size="sm"
 variant="outline"
 disabled={!isReview && disabled}
 onClick={() => (isReview ? openReview() : runStep(step.key))}
-className="ml-auto h-5 px-1.5 font-mono text-[9px] uppercase border-[var(--border-subtle)]
-bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"
+className="ml-auto h-5 px-1.5 font-mono text-[9px] uppercase border-[var(--border-subtle)] bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"
 >
 {isRunning ? (
 <Loader2 className="h-3 w-3 animate-spin" />
@@ -117,8 +109,7 @@ bg-transparent text-[var(--text-secondary)] hover:bg-[var(--bg-surface)]"
 </Button>
 <StepStateMark status={status} />
 </div>
-<p className="mt-0.5 truncate font-mono text-[9px]
-text-[var(--text-muted)]">{step.hint}</p>
+<p className="mt-0.5 truncate font-mono text-[9px] text-[var(--text-muted)]">{step.hint}</p>
 </li>
 );
 })}

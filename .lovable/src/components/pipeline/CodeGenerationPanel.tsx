@@ -195,8 +195,7 @@ const disabled = !diagramIr || running;
 return (
 <section
 className={cn(
-"antialiased flex shrink-0 flex-col border-t bg-background z-20 transition-[height] duration-200
-ease-in-out shadow-[0_-4px_24px_rgba(0,0,0,0.5)]",
+"antialiased flex shrink-0 flex-col border-t bg-background z-20 transition-[height] duration-200 ease-in-out shadow-[0_-4px_24px_rgba(0,0,0,0.5)]",
 panelHeight,
 )}
 style={{ borderColor: "var(--color-outline-variant, #534434)" }}
@@ -236,8 +235,7 @@ key={l.id}
 type="button"
 onClick={() => setLang(l.id)}
 className={cn(
-"px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider rounded-[2px]
-transition-colors active:scale-[0.96] transition-transform duration-75 min-h-[28px]",
+"px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider rounded-[2px] transition-colors active:scale-[0.96] transition-transform duration-75 min-h-[28px]",
 lang === l.id
 ? "text-black"
 : "text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]",
@@ -256,8 +254,7 @@ lang === l.id
 type="button"
 onClick={onClose}
 aria-label="Закрити панель"
-className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]
-transition-colors active:scale-[0.96] duration-75"
+className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors active:scale-[0.96] duration-75"
 >
 <span className="material-symbols-outlined text-[20px]">close</span>
 </button>
@@ -274,14 +271,12 @@ style={{ borderColor: "var(--color-outline-variant, #534434)" }}
 >
 {/ Scheme row /}
 <div className="flex items-center gap-2">
-<span className="font-mono text-[11px] font-semibold uppercase tracking-wider
-text-[var(--color-on-surface-variant)]">
+<span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--color-on-surface-variant)]">
 СХЕМА:
 </span>
 <div
 className={cn(
-"flex flex-1 items-center justify-between rounded-sm border px-2 h-[32px] font-mono text-[12px]
-bg-background",
+"flex flex-1 items-center justify-between rounded-sm border px-2 h-[32px] font-mono text-[12px] bg-background",
 diagramIr
 ? "text-[var(--color-on-surface)]"
 : "text-[var(--color-on-surface-variant)] opacity-60",
@@ -303,11 +298,7 @@ value={description}
 onChange={(e) => setDescription(e.target.value)}
 disabled={running}
 placeholder="Опис поведінки (необов'язково)…"
-className="flex-1 w-full resize-none rounded-sm border p-2 font-mono text-[12px]
-text-[var(--color-on-surface)] bg-background outline-none
-placeholder:text-[var(--color-on-surface-variant)]/50
-focus:border-[var(--color-primary-container)] focus:ring-1
-focus:ring-[var(--color-primary-container)]"
+className="flex-1 w-full resize-none rounded-sm border p-2 font-mono text-[12px] text-[var(--color-on-surface)] bg-background outline-none placeholder:text-[var(--color-on-surface-variant)]/50 focus:border-[var(--color-primary-container)] focus:ring-1 focus:ring-[var(--color-primary-container)]"
 style={{
 borderColor: "var(--color-outline-variant, #534434)",
 }}
@@ -328,8 +319,7 @@ type="button"
 onClick={runGenerate}
 disabled={disabled}
 className={cn(
-"flex items-center gap-1 rounded-sm px-6 h-[40px] font-mono text-[11px] font-semibold
-uppercase tracking-wider transition-all active:scale-[0.96] duration-75 min-h-[40px]",
+"flex items-center gap-1 rounded-sm px-6 h-[40px] font-mono text-[11px] font-semibold uppercase tracking-wider transition-all active:scale-[0.96] duration-75 min-h-[40px]",
 disabled
 ? "cursor-not-allowed opacity-50"
 : "hover:brightness-110",
@@ -355,8 +345,7 @@ progress_activity
 className="w-[320px] flex flex-col bg-muted/40"
 >
 <div
-className="h-8 flex items-center px-4 border-b font-mono text-[10px] font-semibold uppercase
-tracking-widest text-[var(--color-on-surface-variant)]"
+className="h-8 flex items-center px-4 border-b font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--color-on-surface-variant)]"
 style={{ borderColor: "var(--color-outline-variant, #534434)" }}
 >
 Останні генерації
@@ -372,10 +361,7 @@ history.map((item) => (
 key={item.id}
 type="button"
 onClick={() => replayHistory(item)}
-className="group flex items-center justify-between gap-2 p-2 rounded-sm border
-border-transparent cursor-pointer text-left min-h-[40px]
-hover:bg-[var(--color-surface-container-high)] hover:border-[var(--color-outline-variant)]
-transition-colors duration-150"
+className="group flex items-center justify-between gap-2 p-2 rounded-sm border border-transparent cursor-pointer text-left min-h-[40px] hover:bg-[var(--color-surface-container-high)] hover:border-[var(--color-outline-variant)] transition-colors duration-150"
 >
 <div className="flex items-center gap-2 overflow-hidden">
 <span
@@ -402,8 +388,7 @@ item.language === "python"
 </span>
 </div>
 </div>
-<span className="opacity-0 group-hover:opacity-100 text-[var(--color-on-surface-variant)]
-hover:text-[var(--color-primary-container)] transition-opacity p-1">
+<span className="opacity-0 group-hover:opacity-100 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)] transition-opacity p-1">
 <span className="material-symbols-outlined text-[16px]">
 refresh
 </span>
@@ -424,8 +409,7 @@ style={{
 borderColor: "var(--color-outline-variant, #534434)",
 }}
 >
-<div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase
-tracking-wider">
+<div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-wider">
 {status === "done" ? (
 <>
 <span className="text-[#4ade80]">✓</span>
@@ -467,10 +451,7 @@ result && result.syntax_errors.length === 0
 type="button"
 onClick={copyCode}
 disabled={!result?.code}
-className="flex items-center gap-1 px-2 py-1 rounded-[2px] opacity-60 hover:opacity-100
-transition-opacity active:scale-[0.96] duration-75 min-h-[32px]
-text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]
-hover:bg-[var(--color-surface-container-highest)]"
+className="flex items-center gap-1 px-2 py-1 rounded-[2px] opacity-60 hover:opacity-100 transition-opacity active:scale-[0.96] duration-75 min-h-[32px] text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-highest)]"
 >
 <span className="material-symbols-outlined text-[14px]">
 content_copy
@@ -481,18 +462,14 @@ COPY
 type="button"
 onClick={handleSaveToKb}
 disabled={kbSaving || kbSaved || !result?.code}
-className="flex items-center gap-1 rounded border border-[var(--color-primary-container)]/40
-px-2 py-1 min-h-[32px] font-mono text-[11px] uppercase text-[var(--color-primary-container)]
-transition-colors hover:bg-[var(--color-primary-container)]/10 disabled:opacity-50"
+className="flex items-center gap-1 rounded border border-[var(--color-primary-container)]/40 px-2 py-1 min-h-[32px] font-mono text-[11px] uppercase text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-container)]/10 disabled:opacity-50"
 >
 {kbSaved ? "✓ Збережено" : kbSaving ? "..." : "Save to KB"}
 </button>
 <button
 type="button"
 onClick={handleRegenerate}
-className="flex items-center gap-1 px-2 py-1 rounded-[2px] transition-colors
-active:scale-[0.96] duration-75 min-h-[32px] text-[var(--color-primary-container)]
-hover:text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-highest)]"
+className="flex items-center gap-1 px-2 py-1 rounded-[2px] transition-colors active:scale-[0.96] duration-75 min-h-[32px] text-[var(--color-primary-container)] hover:text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-highest)]"
 >
 <span className="material-symbols-outlined text-[14px]">
 refresh
@@ -529,8 +506,7 @@ horizontalScrollbarSize: 6,
 }}
 />
 ):(
-<div className="flex h-full items-center justify-center p-6 font-mono text-[12px]
-text-[var(--color-on-surface-variant)]">
+<div className="flex h-full items-center justify-center p-6 font-mono text-[12px] text-[var(--color-on-surface-variant)]">
 {errorMsg || "Немає коду"}
 </div>
 )}

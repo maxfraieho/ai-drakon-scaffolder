@@ -98,8 +98,7 @@ Run Sync Check
 </Button>
 </div>
 
-<div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800
-dark:bg-blue-950/30 p-4 text-sm text-blue-800 dark:text-blue-300">
+<div className="rounded-md border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-4 text-sm text-blue-800 dark:text-blue-300">
 <strong>Code ⇄ Diagram Sync</strong> порівнює результати аналізу коду з
 DRAKON-діаграмами у сховищі.
 Спочатку запусти аналіз коду у вкладці <strong>Аналіз</strong>, потім натисни кнопку
@@ -184,8 +183,7 @@ Potentially Orphaned Diagrams
 <button className="flex w-full items-center justify-between text-left">
 <CardTitle className="flex items-center gap-2 text-base">
 Matched Symbols
-<Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30
-dark:text-green-400">
+<Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
 {diff.matched.length}
 </Badge>
 </CardTitle>
@@ -342,8 +340,7 @@ compact
 
 {progress && (
 <div className="space-y-1">
-<div className="flex items-center justify-between font-mono text-[11px]
-text-muted-foreground">
+<div className="flex items-center justify-between font-mono text-[11px] text-muted-foreground">
 <span>Saving {progress.done}/{progress.total} diagrams…</span>
 <span>{Math.round((progress.done / progress.total) * 100)}%</span>
 </div>
@@ -373,8 +370,7 @@ className="text-xs text-red-500 hover:underline"
 {showFailures ? "Hide" : "Show"} failures ({failures.length})
 </button>
 {showFailures && (
-<div className="max-h-[200px] overflow-y-auto rounded-md border border-red-500/40
-bg-black/40 p-2 font-mono text-[11px] text-red-300 space-y-1">
+<div className="max-h-[200px] overflow-y-auto rounded-md border border-red-500/40 bg-black/40 p-2 font-mono text-[11px] text-red-300 space-y-1">
 {failures.map((f, i) => (
 <div key={i} className="break-all">
 <span className="text-red-200">{f.id}</span>: {f.error.slice(0, 100)}
@@ -432,8 +428,7 @@ return (
 <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
 <div className="min-w-0">
 <span className="font-medium">{item.symbolName}</span>
-<span className="ml-2 font-mono text-xs
-text-muted-foreground">{item.symbolType}</span>
+<span className="ml-2 font-mono text-xs text-muted-foreground">{item.symbolType}</span>
 <div className="truncate text-xs text-muted-foreground">{item.filePath}</div>
 <div className="text-xs text-blue-500">→ {item.suggestedDiagramName}</div>
 </div>
@@ -461,8 +456,7 @@ return (
 function MatchedRow({ item }: { item: MatchedItem }) {
 return (
 <div className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-muted/40">
-<Badge variant={item.matchType === "exact" ? "secondary" : "outline"} className="px-1
-text-[10px]">
+<Badge variant={item.matchType === "exact" ? "secondary" : "outline"} className="px-1 text-[10px]">
 {item.matchType}
 </Badge>
 <span className="font-medium">{item.symbolName}</span>

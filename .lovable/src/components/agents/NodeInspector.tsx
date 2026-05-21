@@ -35,10 +35,8 @@ setSaved(new Date().toLocaleTimeString());
 };
 
 return (
-<aside className="flex h-full w-[320px] shrink-0 flex-col border-l
-border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
-<header className="flex h-12 shrink-0 items-center justify-between border-b
-border-[var(--color-outline-variant)] bg-[var(--color-surface-container-high)] px-3">
+<aside className="flex h-full w-[320px] shrink-0 flex-col border-l border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
+<header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-outline-variant)] bg-[var(--color-surface-container-high)] px-3">
 <div className="flex min-w-0 items-center gap-2">
 <span
 className={cn(
@@ -56,9 +54,7 @@ node.hasPrompt
 </div>
 <button
 onClick={onClose}
-className="flex h-7 w-7 items-center justify-center rounded
-text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)]
-hover:text-[var(--color-on-surface)]"
+className="flex h-7 w-7 items-center justify-center rounded text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-highest)] hover:text-[var(--color-on-surface)]"
 aria-label="Закрити інспектор"
 >
 <span className="material-symbols-outlined text-[18px]">close</span>
@@ -81,8 +77,7 @@ node.hasPrompt
 >
 {node.hasPrompt ? "LLM" : "DETERMINISTIC"}
 </span>
-<span className="rounded border border-[var(--color-outline-variant)] px-2 py-0.5
-font-mono-label uppercase text-[var(--color-on-surface-variant)]">
+<span className="rounded border border-[var(--color-outline-variant)] px-2 py-0.5 font-mono-label uppercase text-[var(--color-on-surface-variant)]">
 {node.type}
 </span>
 </div>
@@ -106,9 +101,7 @@ font-mono-label uppercase text-[var(--color-on-surface-variant)]">
 {!editing ? (
 <button
 onClick={() => setEditing(true)}
-className="flex items-center gap-1 rounded border border-[var(--color-outline-variant)] px-2
-py-0.5 font-mono-label text-[var(--color-on-surface-variant)]
-hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
+className="flex items-center gap-1 rounded border border-[var(--color-outline-variant)] px-2 py-0.5 font-mono-label text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
 >
 <span className="material-symbols-outlined text-[14px]">edit</span>
 EDIT
@@ -125,16 +118,13 @@ setDraft(stored ?? node.prompt ?? "");
 setDraft(node.prompt ?? "");
 }
 }}
-className="flex items-center gap-1 rounded border border-[var(--color-outline-variant)] px-2
-py-0.5 font-mono-label text-[var(--color-on-surface-variant)]
-hover:bg-[var(--color-surface-container-low)]"
+className="flex items-center gap-1 rounded border border-[var(--color-outline-variant)] px-2 py-0.5 font-mono-label text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)]"
 >
 CANCEL
 </button>
 <button
 onClick={handleSave}
-className="flex items-center gap-1 rounded bg-[var(--color-primary-container)] px-2 py-0.5
-font-mono-label uppercase text-[var(--color-on-primary-container)] hover:opacity-90"
+className="flex items-center gap-1 rounded bg-[var(--color-primary-container)] px-2 py-0.5 font-mono-label uppercase text-[var(--color-on-primary-container)] hover:opacity-90"
 >
 <span className="material-symbols-outlined text-[14px]">save</span>
 SAVE
@@ -147,9 +137,7 @@ readOnly={!editing}
 value={draft}
 onChange={(e) => setDraft(e.target.value)}
 className={cn(
-"font-mono-code min-h-[280px] flex-1 resize-none rounded border
-bg-[var(--color-surface-container-lowest)] p-2.5 text-[var(--color-on-surface)] outline-none
-transition-colors",
+"font-mono-code min-h-[280px] flex-1 resize-none rounded border bg-[var(--color-surface-container-lowest)] p-2.5 text-[var(--color-on-surface)] outline-none transition-colors",
 editing
 ? "border-[var(--color-primary-container)]"
 : "cursor-default border-[var(--color-outline-variant)]"
@@ -164,8 +152,7 @@ editing
 )}
 
 {!node.hasPrompt && (
-<section className="rounded border border-[var(--color-outline-variant)]
-bg-[var(--color-surface-container-lowest)] p-3">
+<section className="rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] p-3">
 <p className="font-ui-sm text-[var(--color-on-surface-variant)]">
 Детерміністичний вузол — без LLM-промпту. Логіка реалізована в коді.
 </p>
@@ -189,8 +176,7 @@ pipeline: AgentPipeline;
 
 export function PipelineGraph({ pipeline }: Props) {
 return (
-<div className="rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface)]
-p-4">
+<div className="rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface)] p-4">
 <div className="mb-3 flex items-center justify-between">
 <span className="font-mono-label uppercase text-[var(--color-on-surface-variant)]">
 LangGraph StateGraph
@@ -208,10 +194,8 @@ return (
 className={cn(
 "flex items-center gap-2 rounded border px-2.5 py-1.5",
 isLlm
-? "border-[var(--color-secondary-container)]
-bg-[color-mix(in_oklab,var(--color-secondary-container)_20%,transparent)]"
-: "border-[color-mix(in_oklab,var(--color-tertiary)_40%,transparent)]
-bg-[var(--color-surface-container-low)]"
+? "border-[var(--color-secondary-container)] bg-[color-mix(in_oklab,var(--color-secondary-container)_20%,transparent)]"
+: "border-[color-mix(in_oklab,var(--color-tertiary)_40%,transparent)] bg-[var(--color-surface-container-low)]"
 )}
 >
 <span

@@ -51,22 +51,17 @@ toast.error("Помилка валідації");
 
 if (!config) {
 return (
-<div className="flex h-screen items-center justify-center bg-[var(--bg-base)] font-mono
-text-sm text-[var(--text-secondary)]">
+<div className="flex h-screen items-center justify-center bg-[var(--bg-base)] font-mono text-sm text-[var(--text-secondary)]">
 Завантаження пайплайну…
 </div>
 );
 }
 return (
 <div className="flex h-screen flex-col bg-[var(--bg-base)] antialiased">
-<div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)]
-bg-[var(--bg-elevated)] px-3">
+<div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
 <Link
 to="/agents"
-className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 font-mono
-text-[11px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors duration-150
-hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)] active:scale-[0.96]
-active:transition-transform active:duration-75"
+className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors duration-150 hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)] active:scale-[0.96] active:transition-transform active:duration-75"
 >
 <ArrowLeft className="h-3.5 w-3.5" />
 Агенти
@@ -79,10 +74,7 @@ v{config.version}
 <button
 type="button"
 onClick={handleValidate}
-className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-3 font-mono
-text-[11px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors duration-150
-hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)] active:scale-[0.96]
-active:transition-transform active:duration-75"
+className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-3 font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] transition-colors duration-150 hover:bg-[var(--bg-overlay)] hover:text-[var(--text-primary)] active:scale-[0.96] active:transition-transform active:duration-75"
 >
 <ShieldCheck className="h-3.5 w-3.5" />
 Validate
@@ -90,8 +82,7 @@ Validate
 </div>
 
 {errors.length > 0 && (
-<div className="flex shrink-0 flex-wrap gap-1 border-b border-[var(--border-subtle)]
-bg-red-950/30 px-3 py-1.5">
+<div className="flex shrink-0 flex-wrap gap-1 border-b border-[var(--border-subtle)] bg-red-950/30 px-3 py-1.5">
 {errors.map((e, i) => (
 <span key={i} className="font-mono text-[11px] text-red-400">{e}</span>
 ))}

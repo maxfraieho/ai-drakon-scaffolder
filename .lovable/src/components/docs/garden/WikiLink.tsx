@@ -13,8 +13,7 @@ onClick={(e) => {
 e.preventDefault();
 onNavigate?.(slug);
 }}
-className="text-[var(--accent-amber)] underline decoration-dotted underline-offset-2
-hover:text-[var(--accent-amber)]/80"
+className="text-[var(--accent-amber)] underline decoration-dotted underline-offset-2 hover:text-[var(--accent-amber)]/80"
 >
 {label}
 </button>
@@ -75,13 +74,7 @@ return <>{out}</>;
 };
 
 return (
-<div className="prose prose-sm prose-invert min-w-0 max-w-full overflow-x-hidden
-break-words [overflow-wrap:anywhere] [&_]:min-w-0 [&_]:max-w-full [&_a]:break-words
-[&_code]:whitespace-pre-wrap [&_code]:break-words [&_code]:[overflow-wrap:anywhere]
-[&_code]:[word-break:break-word] [&_pre]:overflow-x-hidden [&_pre]:whitespace-pre-wrap
-[&_pre_code]:whitespace-pre-wrap [&_pre_code]:break-words
-[&_pre_code]:[overflow-wrap:anywhere] [&_table]:block [&_table]:w-full
-[&_table]:overflow-x-auto">
+<div className="prose prose-sm prose-invert min-w-0 max-w-full overflow-x-hidden break-words [overflow-wrap:anywhere] [&_]:min-w-0 [&_]:max-w-full [&_a]:break-words [&_code]:whitespace-pre-wrap [&_code]:break-words [&_code]:[overflow-wrap:anywhere] [&_code]:[word-break:break-word] [&_pre]:overflow-x-hidden [&_pre]:whitespace-pre-wrap [&_pre_code]:whitespace-pre-wrap [&_pre_code]:break-words [&_pre_code]:[overflow-wrap:anywhere] [&_table]:block [&_table]:w-full [&_table]:overflow-x-auto">
 <ReactMarkdown
 remarkPlugins={[remarkGfm]}
 components={{
@@ -97,8 +90,7 @@ className="text-[var(--accent-amber)]">
 </a>
 ),
 pre: ({ children }) => (
-<pre className="max-w-full overflow-x-hidden whitespace-pre-wrap break-words rounded-md
-bg-muted/40 p-3 text-xs [overflow-wrap:anywhere] [word-break:break-word]">
+<pre className="max-w-full overflow-x-hidden whitespace-pre-wrap break-words rounded-md bg-muted/40 p-3 text-xs [overflow-wrap:anywhere] [word-break:break-word]">
 {children}
 </pre>
 ),
@@ -107,10 +99,8 @@ table: ({ children }) => (
 <table className="w-full table-auto border-collapse text-sm">{children}</table>
 </div>
 ),
-th: ({ children }) => <th className="break-words border border-border px-2 py-1 text-left
-align-top">{children}</th>,
-td: ({ children }) => <td className="break-words border border-border px-2 py-1
-align-top">{children}</td>,
+th: ({ children }) => <th className="break-words border border-border px-2 py-1 text-left align-top">{children}</th>,
+td: ({ children }) => <td className="break-words border border-border px-2 py-1 align-top">{children}</td>,
 code: ({ children, className }) => (
 <code className={${className ?? ""} max-w-full whitespace-pre-wrap break-words
 [overflow-wrap:anywhere] [word-break:break-word]}>

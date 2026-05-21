@@ -277,8 +277,7 @@ style={{ height }}
 
 {/ Controls overlay /}
 {!isLoading && (
-<div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover:opacity-100
-transition-opacity">
+<div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
 <Button
 variant="secondary"
 size="icon"
@@ -289,8 +288,7 @@ title="Зменшити"
 >
 <ZoomOut className="h-4 w-4" />
 </Button>
-<div className="flex items-center px-2 bg-background/80 backdrop-blur-sm rounded-md
-text-xs font-medium min-w-[50px] justify-center shadow-sm">
+<div className="flex items-center px-2 bg-background/80 backdrop-blur-sm rounded-md text-xs font-medium min-w-[50px] justify-center shadow-sm">
 {zoomPercentage}%
 </div>
 <Button

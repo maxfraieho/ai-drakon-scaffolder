@@ -8,8 +8,7 @@ return (
 <label className="flex items-center gap-2 text-sm text-muted-foreground">
 <span>Language</span>
 <select
-className="h-8 rounded-md border border-input bg-background px-2 text-foreground
-focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+className="h-8 rounded-md border border-input bg-background px-2 text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
 value={value}
 onChange={(event) => onChange?.(event.target.value as "uk" | "en" | "fr")}
 >

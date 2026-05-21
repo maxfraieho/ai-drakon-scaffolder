@@ -220,8 +220,7 @@ Warnings ({warnings.length})
 {/ Autofix preview /}
 {showAutofixes && (result?.autofixes?.length ?? 0) > 0 && (
 <div className="mt-2 border-t pt-2">
-<p className="mb-1 text-[10px] font-semibold uppercase tracking-wide
-text-muted-foreground">
+<p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
 Autofixes
 </p>
 <div className="space-y-1">
@@ -271,8 +270,7 @@ issue.severity === "error" ? "text-destructive" : "text-amber-500",
 <span>{issue.message}</span>
 {issue.nodeId && (
 <button
-className="ml-1 inline-flex items-center gap-0.5 font-mono text-[10px] text-blue-500
-hover:underline"
+className="ml-1 inline-flex items-center gap-0.5 font-mono text-[10px] text-blue-500 hover:underline"
 onClick={() => onCopyNodeId(issue.nodeId!)}
 >
 {issue.nodeId}
@@ -296,8 +294,7 @@ selected: boolean;
 onToggle: (i: number) => void;
 }) {
 return (
-<label className="flex cursor-pointer items-start gap-1.5 rounded px-1 py-0.5 text-xs
-hover:bg-muted/40">
+<label className="flex cursor-pointer items-start gap-1.5 rounded px-1 py-0.5 text-xs hover:bg-muted/40">
 <input
 type="checkbox"
 checked={selected}

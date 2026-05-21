@@ -109,14 +109,12 @@ const repoEmpty = !value.repo.trim();
 return (
 <div
 className={cn(
-"rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3
-space-y-2.5",
+"rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-elevated)] p-3 space-y-2.5",
 compact && "p-2.5 space-y-2",
 className,
 )}
 >
-<div className="font-mono text-[10px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<div className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 Project folder
 </div>
 
@@ -153,8 +151,7 @@ placeholder="owner/repo"
 className="h-8 text-sm"
 />
 {repoOpen && (
-<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border
-border-border rounded-md shadow-md">
+<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border border-border rounded-md shadow-md">
 {reposLoading && (
 <div className="px-3 py-2 text-xs text-muted-foreground flex items-center">
 <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
@@ -233,8 +230,7 @@ placeholder="ghp_…"
 className="h-8 text-sm pr-16 font-mono"
 autoComplete="off"
 />
-<div className="absolute inset-y-0 right-8 flex items-center justify-center w-5
-text-[var(--text-muted)]">
+<div className="absolute inset-y-0 right-8 flex items-center justify-center w-5 text-[var(--text-muted)]">
 {tokenStatus === "checking" && (
 <Loader2 className="h-3.5 w-3.5 animate-spin" aria-label="Validating token" />
 )}
@@ -252,8 +248,7 @@ text-[var(--text-muted)]">
 type="button"
 onClick={() => setShowToken((v) => !v)}
 aria-label={showToken ? "Hide token" : "Show token"}
-className="absolute inset-y-0 right-0 flex w-8 items-center justify-center
-text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+className="absolute inset-y-0 right-0 flex w-8 items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-primary)]"
 >
 {showToken ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
 </button>
