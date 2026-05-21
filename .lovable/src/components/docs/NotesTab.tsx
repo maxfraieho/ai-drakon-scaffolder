@@ -72,7 +72,7 @@ className={cn(
 "group flex w-full items-center rounded transition-colors hover:bg-muted",
 isActive && "bg-muted",
 )}
-style={{` paddingLeft:` ${8 + level * 14``}px }}
+style={{` paddingLeft:` ${8 + level * 14}`px }}
 >
 <button
 onClick={() => onNoteClick(node.slug!)}
@@ -100,7 +100,7 @@ return (
 <div>
 <div
 className="group flex items-center rounded hover:bg-muted/60"
-style={{` paddingLeft:` ${4 + level * 14``}px }}
+style={{` paddingLeft:` ${4 + level * 14}`px }}
 >
 <button
 onClick={() => setOpen((o) => !o)}
@@ -409,7 +409,7 @@ tags={editor.tags}
 isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)}
 isSaving={editor.isSaving}
 hasDraft={editor.hasDraft}
-currentSlug={`activeSlug === NEW_SLUG ? (pendingFolder ? ${pendingFolder`}/… : undefined)
+currentSlug={`activeSlug === NEW_SLUG ? (pendingFolder ? ${pendingFolder}`/… : undefined)
 : activeSlug}
 onTitleChange={editor.setTitle}
 onContentChange={editor.setContent}

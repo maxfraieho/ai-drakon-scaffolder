@@ -162,7 +162,7 @@ token
 );
 setKbSaved(true);
 toast.success("Збережено до KB", {
-description:`${lang`} · ${result.code.split("\n").length} рядків,
+description:`${lang}` · ${result.code.split("\n").length} рядків,
 });
 } catch {
 toast.error("Помилка збереження");

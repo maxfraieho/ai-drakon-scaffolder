@@ -137,7 +137,7 @@ if (target && !itemIdSet.has(target)) {
 issues.push({
 code: "DANGLING_POINTER",
 severity: "error",
-message: `Node ${pointerName`} points to missing node id:`${target`},
+message: `Node ${pointerName}` points to missing node id:`${target}`,
 nodeId,
 });
 }

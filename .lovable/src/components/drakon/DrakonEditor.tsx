@@ -445,7 +445,7 @@ await api.saveDiagram(targetFolder, effectiveId, diagramData);
 toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
 } catch {
 toast.error(
-MinIO save failed:`${err instanceof Error ? err.message : String(err)`},
+MinIO save failed:`${err instanceof Error ? err.message : String(err)}`,
 );
 }
 }
@@ -468,7 +468,7 @@ token: projectFolder.githubToken,
 toast.success(`✓ Saved to git: drn/${effectiveId}.json`);
 } catch (err) {
 toast.error(
-Git save failed:`${err instanceof Error ? err.message : String(err)`},
+Git save failed:`${err instanceof Error ? err.message : String(err)}`,
 );
 }
 }
@@ -1010,7 +1010,7 @@ return (
 <DialogContent className={step === 'edit' ? 'max-w-4xl h-[80vh]' : ''}>
 <DialogHeader>
 <DialogTitle>
-{`step === 'name' ? t.drakonEditor.createNewDiagram : Edit: ${diagramId`}}
+{`step === 'name' ? t.drakonEditor.createNewDiagram : Edit: ${diagramId}`}
 </DialogTitle>
 </DialogHeader>
 

@@ -86,7 +86,7 @@ return (
 <li
 key={step.key}
 className="animate-in fade-in-0 slide-in-from-bottom-1 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-1"
-style={{` animationDelay:` ${idx * 55``}ms }}
+style={{` animationDelay:` ${idx * 55}`ms }}
 >
 <div className="flex items-center gap-2">
 <span className="font-mono text-[10px] text-[var(--accent-amber)]">{idx + 1}</span>

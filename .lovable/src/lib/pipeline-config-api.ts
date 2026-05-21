@@ -44,7 +44,7 @@ function authHeaders(): HeadersInit {
 const jwt = getAccessToken() ?? "";
 return {
 "Content-Type": "application/json",
-...(jwt ? {` Authorization: Bearer ${jwt`} } : {}),
+...(jwt ? {` Authorization: Bearer ${jwt}` } : {}),
 };
 }
 
@@ -72,7 +72,7 @@ body: JSON.stringify(config),
 });
 if (!r.ok) {
 const err = await r.json().catch(() => ({})) as { topology_errors?: string[] };
-throw new Error(err.topology_errors?.join("; ") ?? Save failed:`${r.status`});
+throw new Error(err.topology_errors?.join("; ") ?? Save failed:`${r.status}`);
 }
 return r.json() as Promise<{ ok: boolean; version: number }>;
 }

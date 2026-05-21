@@ -15,7 +15,7 @@ return localStorage.getItem("jwt");
 
 function authHeaders(): Record<string, string> {
 const token = jwt();
-return token ? {` Authorization: Bearer ${token`} } : {};
+return token ? {` Authorization: Bearer ${token}` } : {};
 }
 
 export async function fetchNotesList(): Promise<NoteListItem[]> {
@@ -37,7 +37,7 @@ const raw = data.content ?? data.raw ?? "";
 const parsed = parseFrontmatter(raw);
 return {
 slug,
-path: `data.path ?? docs/${slug`}.md,
+path: `data.path ?? docs/${slug}`.md,
 title: data.title ?? parsed.title ?? slug,
 content: parsed.body,
 tags: data.tags ?? parsed.tags,
@@ -65,16 +65,16 @@ const token = jwt();
 if (!token) throw new Error("Не авторизовано (JWT відсутній)");
 const body = {
 slug: payload.slug,
-path: `docs/${payload.slug`}.md,
+path: `docs/${payload.slug}`.md,
 content: buildMarkdown(payload),
 sha: payload.sha,
-message: `notes: update ${payload.slug`},
+message: `notes: update ${payload.slug}`,
 };
 const res = await fetch( `${workerUrl()}/v1/notes/commit`, {
 method: "POST",
 headers: {
 "Content-Type": "application/json",
-Authorization: `Bearer ${token`},
+Authorization: `Bearer ${token}`,
 },
 body: JSON.stringify(body),
 });
@@ -86,7 +86,7 @@ return res.json();
 }
 
 function buildMarkdown(p: CommitNotePayload): string {
-const fm = ["---", title:`${JSON.stringify(p.title)`}, tags: [${p.tags.map((t) =>
+const fm = ["---", title:`${JSON.stringify(p.title)}`, tags: [${p.tags.map((t) =>
 JSON.stringify(t)).join(", ")}], "---", ""].join("\n");
 return fm + "\n" + p.content.trimStart();
 }
@@ -143,7 +143,7 @@ const res = await fetch( `${workerUrl()}/v1/notes/delete`, {
 method: "DELETE",
 headers: {
 "Content-Type": "application/json",
-Authorization: `Bearer ${token`},
+Authorization: `Bearer ${token}`,
 },
 body: JSON.stringify({ slug }),
 });

@@ -79,13 +79,13 @@ const update = (patch: Partial<DaviaSettings>) => setDraft((p) => ({ ...p, ...pa
 
 const buildModelsUrl = () => {
 const base = draft.baseUrl.replace(/\/+$/, "");
-return draft.protocol === "anthropic" ? ${base}/v1/models :`${base`}/models;
+return draft.protocol === "anthropic" ? ${base}/v1/models :`${base}`/models;
 };
 
 const buildHeaders = (): Record<string, string> =>
 draft.protocol === "anthropic"
 ? { "x-api-key": draft.apiKey, "anthropic-version": "2023-06-01" }
-: {` Authorization: Bearer ${draft.apiKey`} };
+: {` Authorization: Bearer ${draft.apiKey}` };
 
 const handleTest = async () => {
 setTesting(true);
@@ -237,7 +237,7 @@ aria-label="Toggle key"
 </Select>
 <Button type="button" variant="outline" size="sm" onClick={handleLoadModels}
 disabled={loadingModels}>
-<RefreshCw className={`mr-1 h-3 w-3 ${loadingModels ? "animate-spin" : ""`}} />
+<RefreshCw className={`mr-1 h-3 w-3 ${loadingModels ? "animate-spin" : ""}`} />
 Завантажити
 </Button>
 </div>

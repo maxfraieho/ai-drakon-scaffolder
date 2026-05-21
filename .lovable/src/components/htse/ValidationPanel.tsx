@@ -84,7 +84,7 @@ if (ops.length > 0 && onApplySafe) {
 onApplySafe(ops);
 toast.success(`Enqueued ${ops.length} fix${ops.length > 1 ? "es" : ""}`);
 } else {
-toast.info(Applied:`${selectedFixes.size`} fix${selectedFixes.size > 1 ? "es" : ""}
+toast.info(Applied:`${selectedFixes.size}` fix${selectedFixes.size > 1 ? "es" : ""}
 (queued));
 }
 setSelectedFixes(new Set());

@@ -30,7 +30,7 @@ apiKey: "freecc",
 hint: "OpenAI-сумісний (Bearer токен)",
 modelsPath: "/models",
 authHeader: (key: string): Record<string, string> => ({
-Authorization: `Bearer ${key`},
+Authorization: `Bearer ${key}`,
 }),
 },
 anthropic: {
@@ -181,7 +181,7 @@ toast.success(`${agentLabel}: налаштування збережено`);
 
 return (
 <div
-className={`rounded-lg border border-border border-l-4 ${styles.border`} bg-card
+className={`rounded-lg border border-border border-l-4 ${styles.border}` bg-card
 p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm}
 >
 {/ Header /}
@@ -308,7 +308,7 @@ className="h-8 px-3 gap-1.5 text-xs shrink-0"
 onClick={handleConnect}
 disabled={connecting}
 >
-<Plug className={`h-3 w-3 ${connecting ? "animate-pulse" : ""`}} />
+<Plug className={`h-3 w-3 ${connecting ? "animate-pulse" : ""}`} />
 {connecting ? "Підключаю..." : "Підключити"}
 </Button>
 </div>
@@ -324,7 +324,7 @@ className="text-[10px] text-muted-foreground inline-flex items-center gap-1 hove
 onClick={handleConnect}
 disabled={connecting}
 >
-<RefreshCw className={`h-3 w-3 ${connecting ? "animate-spin" : ""`}} />
+<RefreshCw className={`h-3 w-3 ${connecting ? "animate-spin" : ""}`} />
 Оновити
 </button>
 </div>

@@ -44,7 +44,7 @@ return (
 <button
 onClick={() => onNoteClick(node.slug!)}
 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-left transition-colors hover:bg-muted"
-style={{` paddingLeft:` ${12 + level * 18``}px }}
+style={{` paddingLeft:` ${12 + level * 18}`px }}
 >
 <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
 <span className="truncate flex-1">{node.title ?? node.slug}</span>
@@ -63,7 +63,7 @@ return (
 <button
 onClick={() => setOpen((o) => !o)}
 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium transition-colors hover:bg-muted/60"
-style={{` paddingLeft:` ${12 + level * 18``}px }}
+style={{` paddingLeft:` ${12 + level * 18}`px }}
 >
 {open ? <ChevronDown className="h-3.5 w-3.5 shrink-0" /> : <ChevronRight
 className="h-3.5 w-3.5 shrink-0" />}
@@ -131,7 +131,7 @@ title="Оновити"
 </div>
 
 <div className="border-b border-border px-3 py-1.5 text-xs text-muted-foreground">
-{`loading ? "Завантаження…" : ${countNotes(tree)`} документів}
+{`loading ? "Завантаження…" : ${countNotes(tree)}` документів}
 </div>
 
 <ScrollArea className="flex-1">
