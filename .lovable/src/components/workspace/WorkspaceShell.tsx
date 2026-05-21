@@ -13,6 +13,7 @@ Menu,
 Moon,
 Sun,
 Terminal,
+Workflow,
 } from "lucide-react";
 
 import {
@@ -47,7 +48,7 @@ import { clearAccessToken } from "@/lib/auth";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
 type RailItem = {
-to: "/diagrams" | "/docs" | "/sync" | "/github" | "/settings" | "/agents";
+to: "/diagrams" | "/docs" | "/sync" | "/github" | "/settings" | "/agents" | "/pipelines";
 label: string;
 icon: React.ComponentType<{ className?: string }>;
 };
@@ -58,6 +59,7 @@ const RAIL_TOP: RailItem[] = [
 { to: "/sync", label: "Sync", icon: GitCompare },
 { to: "/github", label: "GitHub", icon: GitBranch },
 { to: "/agents", label: "Агенти", icon: Cpu },
+  { to: "/pipelines", label: "Пайплайни", icon: Workflow },
 ];
 
 const RAIL_BOTTOM: RailItem[] = [
@@ -87,6 +89,8 @@ if (pathname.startsWith("/settings"))
 return { section: "Settings", sectionPath: "/settings" };
 if (pathname.startsWith("/agents"))
 return { section: "Агенти", sectionPath: "/agents" };
+if (pathname.startsWith("/pipelines"))
+return { section: "Пайплайни", sectionPath: "/pipelines" };
 return { section: "Workspace", sectionPath: "/" };
 }
 
