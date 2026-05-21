@@ -480,7 +480,6 @@ IR — {selectedDiagram?.name}
 <PipelineDrakonView
 ir={irSheetIr}
 pipelineName={selectedDiagram?.name ?? ""}
-onIrChange={(updated) => setIrSheetIr(updated)}
 />
 )}
 </div>
