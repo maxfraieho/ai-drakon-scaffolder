@@ -103,7 +103,7 @@ export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
         folderId: "general",
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        diagram: drakonDiagram,
+        diagram: drakonDiagram as unknown as Diagram["diagram"],
       };
       upsertDiagramInStorage(stored);
       localStorage.setItem("_pending_open_diagram_id", diagramId);

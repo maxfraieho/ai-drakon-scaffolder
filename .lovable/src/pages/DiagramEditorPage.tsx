@@ -210,7 +210,6 @@ diagramId={diagramId}
 folderSlug={folderId}
 isNew={isNew}
 diagram={diagramData as never}
-height={600}
 onSaved={() => {}}
 />
 </div>
