@@ -324,15 +324,4 @@ router: Awaited<ReturnType<typeof getRouter>>
 config: Awaited<ReturnType<typeof startInstance.getOptions>>
 }
 }
----
-### vite-env.d.ts
-**Розмір:** 109 байт
-
-
-/// <reference types="vite/client" />
-
-declare module "*?url" {
-const src: string;
-export default src;
-}
 

@@ -19,14 +19,4 @@ onChange={(event) => onChange?.(event.target.value as "uk" | "en" | "fr")}
 </label>
 );
 }
----
-### i18n/locales/fr.json
-**Розмір:** 106 байт
-
-
-{
-"app.title": "AegisRoute Operator UI",
-"common.loading": "Chargement",
-"common.error": "Erreur"
-}
 
