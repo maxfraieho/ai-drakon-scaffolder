@@ -28,7 +28,7 @@ _FALLBACK_PROJECTS = [
         "name": "UAV Watcher",
         "path": "/home/vokov/projects/uav-watcher",
         "description": "Telegram-бот моніторингу БПЛА",
-        "hasDrakonIr": False,
+        "hasDrakonIr": True,
         "hasDocs": True,
         "github": {"owner": "maxfraieho", "repo": "uav-watcher", "branch": "master"},
     },

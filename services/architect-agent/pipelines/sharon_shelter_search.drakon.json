@@ -1,0 +1,79 @@
+{
+  "name": "Sharon Shelter Search",
+  "description": "Пошук найближчих укриттів: геокодинг, фільтрація, Telegram відповідь",
+  "source": "shelter_search.py",
+  "items": {
+    "1": {
+      "type": "header",
+      "content": "Shelter Search",
+      "one": "2"
+    },
+    "2": {
+      "type": "action",
+      "content": "get lat/lon from message.location or text geocode",
+      "one": "3"
+    },
+    "3": {
+      "type": "question",
+      "content": "location found?",
+      "one": "5",
+      "two": "4"
+    },
+    "4": {
+      "type": "action",
+      "content": "reply: unable to determine location",
+      "one": "end"
+    },
+    "5": {
+      "type": "action",
+      "content": "query DB for nearest shelters (radius km)",
+      "one": "6"
+    },
+    "6": {
+      "type": "question",
+      "content": "shelters found?",
+      "one": "7",
+      "two": "9"
+    },
+    "7": {
+      "type": "action",
+      "content": "sort by distance, take top N",
+      "one": "8"
+    },
+    "8": {
+      "type": "action",
+      "content": "format shelter list with address + distance",
+      "one": "end"
+    },
+    "9": {
+      "type": "action",
+      "content": "try @UkraineShelterStfalconBot fallback",
+      "one": "10"
+    },
+    "10": {
+      "type": "question",
+      "content": "bot responded?",
+      "one": "11",
+      "two": "12"
+    },
+    "11": {
+      "type": "action",
+      "content": "forward bot response",
+      "one": "end"
+    },
+    "12": {
+      "type": "action",
+      "content": "reply: no shelters found nearby",
+      "one": "end"
+    },
+    "end": {
+      "type": "end",
+      "content": "END"
+    }
+  },
+  "schema": {
+    "state_class": "",
+    "node_module": "shelter_search",
+    "router_module": ""
+  }
+}
