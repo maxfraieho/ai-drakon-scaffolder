@@ -10,11 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SyncRouteImport } from './routes/sync'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
+import { Route as DevcycleRouteImport } from './routes/devcycle'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
@@ -24,6 +26,11 @@ import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$p
 const SyncRoute = SyncRouteImport.update({
   id: '/sync',
   path: '/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -49,6 +56,11 @@ const DocsRoute = DocsRouteImport.update({
 const DiagramsRoute = DiagramsRouteImport.update({
   id: '/diagrams',
   path: '/diagrams',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevcycleRoute = DevcycleRouteImport.update({
+  id: '/devcycle',
+  path: '/devcycle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsRoute = AgentsRouteImport.update({
@@ -80,11 +92,13 @@ const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
@@ -93,11 +107,13 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
@@ -107,11 +123,13 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
   '/settings': typeof SettingsRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
@@ -122,11 +140,13 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agents'
+    | '/devcycle'
     | '/diagrams'
     | '/docs'
     | '/github'
     | '/login'
     | '/settings'
+    | '/sitemap.xml'
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
@@ -135,11 +155,13 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agents'
+    | '/devcycle'
     | '/diagrams'
     | '/docs'
     | '/github'
     | '/login'
     | '/settings'
+    | '/sitemap.xml'
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
@@ -148,11 +170,13 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agents'
+    | '/devcycle'
     | '/diagrams'
     | '/docs'
     | '/github'
     | '/login'
     | '/settings'
+    | '/sitemap.xml'
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
@@ -162,11 +186,13 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentsRoute: typeof AgentsRoute
+  DevcycleRoute: typeof DevcycleRoute
   DiagramsRoute: typeof DiagramsRoute
   DocsRoute: typeof DocsRoute
   GithubRoute: typeof GithubRoute
   LoginRoute: typeof LoginRoute
   SettingsRoute: typeof SettingsRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SyncRoute: typeof SyncRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
@@ -180,6 +206,13 @@ declare module '@tanstack/react-router' {
       path: '/sync'
       fullPath: '/sync'
       preLoaderRoute: typeof SyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -215,6 +248,13 @@ declare module '@tanstack/react-router' {
       path: '/diagrams'
       fullPath: '/diagrams'
       preLoaderRoute: typeof DiagramsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/devcycle': {
+      id: '/devcycle'
+      path: '/devcycle'
+      fullPath: '/devcycle'
+      preLoaderRoute: typeof DevcycleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents': {
@@ -258,11 +298,13 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentsRoute: AgentsRoute,
+  DevcycleRoute: DevcycleRoute,
   DiagramsRoute: DiagramsRoute,
   DocsRoute: DocsRoute,
   GithubRoute: GithubRoute,
   LoginRoute: LoginRoute,
   SettingsRoute: SettingsRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   SyncRoute: SyncRoute,
   DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,

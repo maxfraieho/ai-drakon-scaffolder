@@ -481,7 +481,7 @@ function GitHubRoute() {
           <Github className="h-4 w-4 text-muted-foreground" />
           <p className="truncate text-sm font-medium md:text-base">{owner}/{repo}</p>
           {activeProject?.github && (
-            <span className="ml-2 rounded px-1.5 py-0.5 bg-amber-400/10 border border-amber-400/30 font-mono text-[10px] text-amber-400 whitespace-nowrap">
+            <span className="rounded px-1.5 py-0.5 bg-amber-400/10 border border-amber-400/30 font-mono text-[10px] text-amber-400 whitespace-nowrap">
               {activeProject.name}
             </span>
           )}
