@@ -56,9 +56,9 @@ const { id } = itemContext;
 return {
 id,
 name: fieldContext.name,
-formItemId:`${id}`-form-item,
-formDescriptionId:`${id}`-form-item-description,
-formMessageId:`${id}`-form-item-message,
+formItemId: `${id}-form-item`,
+formDescriptionId: `${id}-form-item-description`,
+formMessageId: `${id}-form-item-message`,
 ...fieldState,
 };
 };
@@ -110,11 +110,8 @@ return (
 <Slot
 ref={ref}
 id={formItemId}
-aria-describedby={
-          !error
-            ? formDescriptionId
-            : `${formDescriptionId} ${formMessageId}`
-        }
+aria-describedby={!error ? ${formDescriptionId} : ${formDescriptionId}
+${formMessageId}}
 aria-invalid={!!error}
 {...props}
 />
