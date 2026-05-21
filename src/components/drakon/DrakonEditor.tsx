@@ -783,7 +783,7 @@ PNG
 {/* Editor layout with toolbar at bottom */}
 <div className="flex flex-col flex-1 min-h-0 gap-2">
 {/* Widget container */}
-<div className="relative" onClick={(e) => {
+<div className="relative flex-1 min-h-0" onClick={(e) => {
 // Don't interfere when context menu is open
 if (uiStateRef.current === 'contextMenuOpen') return;
 // In paste mode, click on empty canvas exits paste mode
@@ -1031,7 +1031,6 @@ placeholder="my-flowchart"
 <DrakonEditor
 diagramId={diagramId}
 folderSlug={folderSlug}
-height={500}
 isNew
 onSaved={handleSaved}
 />
