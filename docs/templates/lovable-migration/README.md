@@ -1,168 +1,77 @@
-# Lovable Account Migration — Template
+# Lovable Account Migration
 
-Шаблон для переходу проекту на новий акаунт Lovable зі збереженням існуючого Cloudflare Pages.
+Переїзд на новий Lovable акаунт зі збереженням CF Pages + усіх налаштувань.
 
-## Ситуація
-
-- Є Lovable-проект підключений до GitHub repo **A** (`maxfraieho/ai-drakon-setup`)
-- CF Pages будує з repo **A** → домен `ai-drakon-setup.pages.dev`
-- Потрібно перейти на новий акаунт Lovable, який підключається до нового repo **B** (`maxfraieho/drakon-flow`)
-- CF Pages **не можна перемкнути на новий repo через API** (обмеження Cloudflare)
-- Мета: CF Pages продовжує будувати як раніше, Lovable пише в новий repo
-
-## Рішення: GitHub Actions Mirror
-
-Repo **B** (Lovable) → on push → GitHub Action → force push → Repo **A** (CF Pages source)
+## Архітектура
 
 ```
-[Lovable] → push → [drakon-flow] → GitHub Action → [ai-drakon-setup] → CF Pages build
+[Lovable] -> push -> [new-repo] -> GitHub Action (mirror) -> [ai-drakon-setup] -> CF Pages
 ```
+
+CF Pages завжди будує з `maxfraieho/ai-drakon-setup`.
+Lovable пише у будь-який repo — GitHub Action дзеркалює в `ai-drakon-setup`.
 
 ---
 
-## Крок 1 — Push поточного коду в новий repo
+## Швидка міграція (1 команда)
 
 ```bash
-# На сервері з існуючим repo (або локально)
-cd ~/workspace/<project>/
-
-# Додати новий remote
-git remote add new-lovable git@github.com:<owner>/<new-repo>.git
-
-# Force push (замінює вміст нового repo повністю)
-git push new-lovable main --force
+# На сервері 192.168.3.184
+lovable-migrate.sh https://github.com/maxfraieho/<new-repo>
 ```
 
-> **Увага:** `--force` потрібен, якщо Lovable вже зробив початковий коміт у новий repo.
+Скрипт автоматично:
+1. Оновлює git remote `drakon-diagram-flow` на новий URL
+2. Force push поточного коду в новий repo
+3. Встановлює `MIRROR_TOKEN` secret через `gh` CLI
+4. Виводить початковий Lovable промт для копіювання
+
+**Вимоги:** `gh` CLI авторизований (`gh auth status`), скрипт в `~/bin/lovable-migrate.sh`.
 
 ---
 
-## Крок 2 — Створити GitHub Actions workflow у новому repo
+## Потім у Lovable
 
-Файл `.github/workflows/mirror-to-cf-source.yml`:
-
-```yaml
-name: Mirror to CF Pages source repo
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  mirror:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false   # КРИТИЧНО: вимикає GITHUB_TOKEN як credential
-
-      - name: Push mirror to CF Pages source
-        env:
-          MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
-        run: |
-          git remote add mirror "https://x-access-token:${MIRROR_TOKEN}@github.com/<owner>/<cf-source-repo>.git"
-          git push mirror main --force
-```
-
-### Чому `persist-credentials: false`?
-
-`actions/checkout@v4` автоматично встановлює `http.extraheader` з вбудованим `GITHUB_TOKEN`.  
-Цей токен має доступ **тільки до поточного repo** і перекриває будь-які інші credentials для `github.com`.  
-`persist-credentials: false` — прибирає цей override, дозволяючи використати `MIRROR_TOKEN`.
+1. Create project -> Import from GitHub -> обрати **new-repo**
+2. Перший промт — скопіювати з `lovable-prompts/00-safe-migration-init.md`
+   (НЕ `00-project-init.md` — він генерує scaffold і стирає код)
+3. Lovable підтвердить що бачить репо -> далі фіча-промти
 
 ---
 
-## Крок 3 — Встановити MIRROR_TOKEN secret
-
-`MIRROR_TOKEN` — класичний GitHub PAT з `repo` scope, який має push-доступ до **обох** repo.
+## Ручні кроки (якщо скрипт недоступний)
 
 ```bash
-# На машині з gh CLI авторизованим під потрібним акаунтом
-gh secret set MIRROR_TOKEN \
-  --repo <owner>/<new-repo> \
-  --body '<ghp_TOKEN>'
+cd ~/workspace/ai-drakon-setup
 
-# Перевірити
-gh secret list --repo <owner>/<new-repo>
-```
+# 1. Оновити remote
+git remote set-url drakon-diagram-flow https://github.com/maxfraieho/<new-repo>
 
-### Як отримати токен
+# 2. Push коду
+git push drakon-diagram-flow main --force
 
-1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-2. Generate new token → `repo` scope (повний доступ до приватних repo)
-3. Зберегти як `MIRROR_TOKEN` secret у новому repo
+# 3. MIRROR_TOKEN secret
+gh secret set MIRROR_TOKEN --repo maxfraieho/<new-repo> --body "$(gh auth token)"
 
-> **Альтернатива:** якщо gh CLI вже авторизований:
-> ```bash
-> gh auth token  # скопіювати ghp_ токен
-> ```
-> Переконайтесь, що токен має `repo` scope: `curl -sI -H "Authorization: token <TOKEN>" https://api.github.com/user | grep x-oauth-scopes`
-
----
-
-## Крок 4 — Commit та push workflow файлу
-
-```bash
-cd ~/workspace/<project>/
-git add .github/workflows/mirror-to-cf-source.yml
-git commit -m "ci: mirror <new-repo> → <cf-source-repo> on push to main"
-
-# Push до обох repo
-git push origin main          # CF Pages source (repo A)
-git push new-lovable main --force   # Новий Lovable repo (repo B)
+# 4. Перевірити mirror workflow
+gh run list --repo maxfraieho/<new-repo> --limit 3
 ```
 
 ---
 
-## Крок 5 — Перевірити що mirror працює
+## Файли шаблону
 
-```bash
-# Переглянути GitHub Actions runs
-gh run list --repo <owner>/<new-repo> --limit 3
-
-# Якщо failed — подивитись логи
-gh run view <run-id> --log-failed --repo <owner>/<new-repo>
-```
-
-Очікуваний результат:
-```
-completed   success   Mirror to CF Pages source repo   main   push   ...
-```
-
-Перевірити що останній коміт у repo A збігається з repo B:
-```bash
-gh api repos/<owner>/<cf-source-repo>/commits/main --jq '.sha,.commit.message'
-gh api repos/<owner>/<new-repo>/commits/main --jq '.sha,.commit.message'
-# SHA мають збігатися
-```
-
----
-
-## Крок 6 — Налаштувати новий Lovable проект
-
-1. Lovable → новий проект → Connect GitHub → обрати **<new-repo>**
-2. Дати Lovable handoff контекст (файл `lovable-prompts/00-handoff.md`)
-3. Lovable тепер пише в `<new-repo>` → Action автоматично дзеркалює в `<cf-source-repo>`
-4. CF Pages будує як раніше — домен і env vars без змін
+| Файл | Призначення |
+|------|-------------|
+| `migrate.sh` | Скрипт автоматичної міграції |
+| `lovable-prompts/00-safe-migration-init.md` | Початковий промт (не генерує код) |
+| `lovable-prompts/00-project-init.md` | Промт для нового проекту з нуля (небезпечний для міграції) |
+| `lovable-prompts/00-handoff.md` | Контекст архітектури для Lovable |
 
 ---
 
 ## Відомі обмеження
 
-| Обмеження | Причина |
-|-----------|---------|
-| CF Pages API не підтримує зміну repo | PATCH `source.repo_name` ігнорується Cloudflare |
-| Обидва repo мають бути доступні MIRROR_TOKEN | Fine-grained PAT не підходить якщо обидва repo різних акаунтів |
-| Force push кожен раз | Lovable може додавати коміти між нашими — force завжди актуалізує |
-| Workflow файл у новому repo | Після першого push Lovable не чіпатиме workflow файли |
-
----
-
-## Файли у цьому проекті
-
-| Файл | Призначення |
-|------|-------------|
-| `.github/workflows/mirror-to-ai-drakon.yml` | Actual workflow для drakon-flow → ai-drakon-setup |
-| `lovable-prompts/00-project-init.md` | Промт для ініціалізації нового Lovable проекту |
-| `lovable-prompts/00-handoff.md` | Handoff контекст для Lovable після push коду |
+- CF Pages API не підтримує зміну repo source — тому mirror архітектура
+- MIRROR_TOKEN має мати `repo` scope для обох repos
+- `--force` при push обов'язковий — Lovable може додати початкові коміти
