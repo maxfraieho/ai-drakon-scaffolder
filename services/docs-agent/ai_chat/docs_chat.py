@@ -8,6 +8,7 @@ import httpx
 
 PROXY_URL = os.getenv("PROXY_URL", "http://localhost:18880/v1")
 PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc")
+PROXY_PROTOCOL = os.getenv("PROXY_PROTOCOL", "openai")
 PROXY_MODEL = os.getenv("PROXY_MODEL", "coding-proxy")
 
 from prompts import DOCS_SYSTEM_PROMPT
