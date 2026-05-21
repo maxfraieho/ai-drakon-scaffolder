@@ -337,8 +337,7 @@ if (next) setAnalysisOpen(false);
 return next;
 })
 }
-onEdit={selectedDiagram && !currentDiagramIsIr ? () => openInEditor(selectedDiagram) :
-undefined}
+onEditInIr={selectedDiagram && !currentDiagramIsIr ? handleEditInIr : undefined}
 onSaveAsPipeline={selectedDiagram && !currentDiagramIsIr ? () => setSavePipelineOpen(true) : undefined}
 />
 
@@ -353,13 +352,21 @@ backgroundSize: "24px 24px",
 }}
 >
 {selectedDiagram ? (
-<DrakonViewer
+<DrakonEditor
 key={selectedDiagram.id}
 diagram={selectedDiagram.diagram as unknown as
 import("@/types/drakonwidget").DrakonDiagram}
 diagramId={selectedDiagram.id}
-height={9999}
-className="h-full"
+onSaveOverride={async (diagram) => {
+const updated = {
+...selectedDiagram,
+diagram: diagram as unknown as typeof selectedDiagram.diagram,
+updatedAt: new Date().toISOString(),
+};
+upsertDiagramInStorage(updated);
+setSelectedDiagram(updated);
+return true;
+}}
 />
 ):(
 <div className="flex h-full flex-col items-center justify-center gap-3 text-center px-6">
@@ -456,6 +463,25 @@ autoFocus
 </DialogFooter>
 </DialogContent>
 </Dialog>
+
+<Sheet open={irSheetOpen} onOpenChange={setIrSheetOpen}>
+<SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col">
+<SheetHeader className="px-4 pt-4 pb-2 border-b shrink-0">
+<SheetTitle className="font-mono text-sm">
+IR — {selectedDiagram?.name}
+</SheetTitle>
+</SheetHeader>
+<div className="flex-1 min-h-0 overflow-auto">
+{irSheetIr && (
+<PipelineDrakonView
+ir={irSheetIr}
+pipelineName={selectedDiagram?.name ?? ""}
+onIrChange={(updated) => setIrSheetIr(updated)}
+/>
+)}
+</div>
+</SheetContent>
+</Sheet>
 
 {/* New folder dialog */}
 <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
