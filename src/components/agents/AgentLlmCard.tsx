@@ -170,11 +170,11 @@ setConnecting(false);
 };
 
 const handleSave = () => {
-localStorage.setItem(`${agentId}_llm_protocol, protocol`);
-localStorage.setItem(`${agentId}_llm_base_url, baseUrl`);
-localStorage.setItem(`${agentId}_llm_api_key, apiKey`);
-localStorage.setItem(`${agentId}_llm_model, model`);
-if (maxTokens) localStorage.setItem(`${agentId}_llm_max_tokens, maxTokens`);
+localStorage.setItem(`${agentId}_llm_protocol`, protocol);
+localStorage.setItem(`${agentId}_llm_base_url`, baseUrl);
+localStorage.setItem(`${agentId}_llm_api_key`, apiKey);
+localStorage.setItem(`${agentId}_llm_model`, model);
+if (maxTokens) localStorage.setItem(`${agentId}_llm_max_tokens`, maxTokens);
 else localStorage.removeItem(`${agentId}_llm_max_tokens`);
 toast.success(`${agentLabel}: налаштування збережено`);
 };
