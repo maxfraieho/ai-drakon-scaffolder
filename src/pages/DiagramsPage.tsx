@@ -196,11 +196,39 @@ const handleEditInIr = async () => {
 if (!selectedDiagram || currentDiagramIsIr) return;
 try {
 const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
-const ir = convertDiagramToIr(selectedDiagram.diagram);
+const ir = convertDiagramToIr(
+selectedDiagram.diagram as unknown as import("@/types/drakonwidget").DrakonDiagram,
+);
 setIrSheetIr(ir);
 setIrSheetOpen(true);
 } catch {
 toast.error("Помилка конвертації IR");
+}
+};
+
+const handleSaveAsPipeline = async () => {
+if (!selectedDiagram || !pipelineNameInput.trim()) return;
+setSavingPipeline(true);
+try {
+const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
+const { savePipeline } = await import("@/lib/graph-pipeline-api");
+const irDiagram = convertDiagramToIr(
+selectedDiagram.diagram as unknown as import("@/types/drakonwidget").DrakonDiagram,
+);
+const slug = pipelineNameInput
+  .trim()
+  .toLowerCase()
+  .replace(/\s+/g, "_")
+  .replace(/[^a-z0-9_]/g, "");
+await savePipeline(slug, irDiagram);
+setSavePipelineOpen(false);
+setPipelineNameInput("");
+toast.success(`Пайплайн "${slug}" збережено`);
+void navigate({ to: "/pipelines" });
+} catch (e) {
+toast.error("Помилка: " + (e instanceof Error ? e.message : "unknown"));
+} finally {
+setSavingPipeline(false);
 }
 };
 
@@ -224,30 +252,6 @@ name,
 createdAt: now,
 updatedAt: now,
 diagram: { ...parsed, name, items: parsed.items ?? {} },
-};
-
-const handleSaveAsPipeline = async () => {
-if (!selectedDiagram || !pipelineNameInput.trim()) return;
-setSavingPipeline(true);
-try {
-const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
-const { savePipeline } = await import("@/lib/graph-pipeline-api");
-const irDiagram = convertDiagramToIr(selectedDiagram.diagram);
-const slug = pipelineNameInput
-  .trim()
-  .toLowerCase()
-  .replace(/\s+/g, "_")
-  .replace(/[^a-z0-9_]/g, "");
-await savePipeline(slug, irDiagram);
-setSavePipelineOpen(false);
-setPipelineNameInput("");
-toast.success(`Пайплайн "${slug}" збережено`);
-void navigate({ to: "/pipelines" });
-} catch (e) {
-toast.error("Помилка: " + (e instanceof Error ? e.message : "unknown"));
-} finally {
-setSavingPipeline(false);
-}
 };
 upsertDiagramInStorage(stored);
 setDiagrams((prev) => [stored, ...prev]);
