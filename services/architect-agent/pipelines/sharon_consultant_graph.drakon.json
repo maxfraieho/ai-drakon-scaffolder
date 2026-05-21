@@ -1,7 +1,7 @@
 {
   "name": "Sharon LangGraph Pipeline",
-  "description": "LangGraph пайплайн Sharon: KB retrieval -> web search -> Claude generation",
-  "source": "consultant/pipeline/graph.py + nodes.py",
+  "access": "public",
+  "params": [],
   "items": {
     "1": {
       "type": "header",
@@ -86,9 +86,11 @@
       "content": "END"
     }
   },
-  "schema": {
+  "meta": {
     "state_class": "CrisisState",
     "node_module": "consultant.pipeline.nodes",
-    "router_module": "consultant.pipeline.graph"
+    "router_module": "consultant.pipeline.graph",
+    "description": "LangGraph пайплайн Sharon: KB retrieval -> web search -> Claude generation",
+    "source": "consultant/pipeline/graph.py + nodes.py"
   }
 }

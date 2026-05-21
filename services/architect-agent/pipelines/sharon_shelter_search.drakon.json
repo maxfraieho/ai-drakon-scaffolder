@@ -1,7 +1,7 @@
 {
   "name": "Sharon Shelter Search",
-  "description": "Пошук найближчих укриттів: геокодинг, фільтрація, Telegram відповідь",
-  "source": "shelter_search.py",
+  "access": "public",
+  "params": [],
   "items": {
     "1": {
       "type": "header",
@@ -71,9 +71,11 @@
       "content": "END"
     }
   },
-  "schema": {
+  "meta": {
     "state_class": "",
     "node_module": "shelter_search",
-    "router_module": ""
+    "router_module": "",
+    "description": "Пошук найближчих укриттів: геокодинг, фільтрація, Telegram відповідь",
+    "source": "shelter_search.py"
   }
 }

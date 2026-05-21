@@ -1,7 +1,7 @@
 {
   "name": "Sharon Consultant API",
-  "description": "FastAPI сервіс Sharon: lifecycle, KB init, chat pipeline, session management",
-  "source": "consultant/main.py",
+  "access": "public",
+  "params": [],
   "items": {
     "1": {
       "type": "header",
@@ -59,9 +59,11 @@
       "content": "END"
     }
   },
-  "schema": {
+  "meta": {
     "state_class": "CrisisState",
     "node_module": "consultant.pipeline.nodes",
-    "router_module": "consultant.pipeline.graph"
+    "router_module": "consultant.pipeline.graph",
+    "description": "FastAPI сервіс Sharon: lifecycle, KB init, chat pipeline, session management",
+    "source": "consultant/main.py"
   }
 }
