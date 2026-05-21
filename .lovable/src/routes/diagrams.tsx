@@ -4,12 +4,13 @@ import { DiagramsPage } from "@/pages/DiagramsPage";
 import { hasClientJwt } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/diagrams")({
-  component: DiagramsRoute,
+component: DiagramsRoute,
 });
 
 function DiagramsRoute() {
-  if (!hasClientJwt()) {
-    return <Navigate to="/login" replace />;
-  }
-  return <DiagramsPage />;
+if (!hasClientJwt()) {
+return <Navigate to="/login" replace />;
 }
+return <DiagramsPage />;
+}
+

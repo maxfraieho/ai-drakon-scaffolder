@@ -1,21 +1,33 @@
 type LanguageSwitcherProps = {
-  value?: "uk" | "en" | "fr";
-  onChange?: (language: "uk" | "en" | "fr") => void;
+value?: "uk" | "en" | "fr";
+onChange?: (language: "uk" | "en" | "fr") => void;
 };
 
 export function LanguageSwitcher({ value = "uk", onChange }: LanguageSwitcherProps) {
-  return (
-    <label className="flex items-center gap-2 text-sm text-muted-foreground">
-      <span>Language</span>
-      <select
-        className="h-8 rounded-md border border-input bg-background px-2 text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        value={value}
-        onChange={(event) => onChange?.(event.target.value as "uk" | "en" | "fr")}
-      >
-        <option value="uk">Українська</option>
-        <option value="en">English</option>
-        <option value="fr">Français</option>
-      </select>
-    </label>
-  );
+return (
+<label className="flex items-center gap-2 text-sm text-muted-foreground">
+<span>Language</span>
+<select
+className="h-8 rounded-md border border-input bg-background px-2 text-foreground
+focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+value={value}
+onChange={(event) => onChange?.(event.target.value as "uk" | "en" | "fr")}
+>
+<option value="uk">Українська</option>
+<option value="en">English</option>
+<option value="fr">Français</option>
+</select>
+</label>
+);
 }
+---
+### i18n/locales/fr.json
+**Розмір:** 106 байт
+
+
+{
+"app.title": "AegisRoute Operator UI",
+"common.loading": "Chargement",
+"common.error": "Erreur"
+}
+

@@ -3,9 +3,9 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { useTheme } from '@/components/theme-provider';
 import { slugify } from '@/lib/utils';
-import { 
-  Loader2, AlertCircle, Save, Undo, Redo, Download, Home, Plus,
-  ZoomIn, ZoomOut, Copy, Scissors, Trash2, ClipboardPaste, MousePointer, Hand, FileText
+import {
+Loader2, AlertCircle, Save, Undo, Redo, Download, Home, Plus,
+ZoomIn, ZoomOut, Copy, Scissors, Trash2, ClipboardPaste, MousePointer, Hand, FileText
 } from 'lucide-react';
 
 // Standard DRAKON icon images
@@ -38,7 +38,8 @@ import iconLink from '@/assets/drakon/link.png';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from
+'@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -50,993 +51,1001 @@ import { diagramToPseudocode, pseudocodeToMarkdown } from '@/lib/drakon/pseudoco
 import { createDrakonTranslate, getDrakonLabels } from '@/lib/drakon/i18n';
 import { FormatInspector } from '@/components/drakon/FormatInspector';
 import {
-  ProjectFolderSection,
-  readProjectFolderDefaults,
-  type ProjectFolderValue,
+ProjectFolderSection,
+readProjectFolderDefaults,
+type ProjectFolderValue,
 } from '@/components/drakon/ProjectFolderSection';
 import {
-  listProjects,
-  parseOwnerRepo,
-  saveDiagramToGit,
-  saveDiagramToMinio,
+listProjects,
+parseOwnerRepo,
+saveDiagramToGit,
+saveDiagramToMinio,
 } from '@/lib/mcp/projects';
 import { toast } from 'sonner';
-import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender, DrakonConfig } from '@/types/drakonwidget';
+import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender,
+DrakonConfig } from '@/types/drakonwidget';
 
 interface DrakonEditorProps {
-  diagram?: DrakonDiagram;
-  diagramId: string;
-  folderSlug?: string;
-  height?: number;
-  isNew?: boolean;
-  onSaved?: (diagramId: string) => void;
-  onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>;
-  className?: string;
+diagram?: DrakonDiagram;
+diagramId: string;
+folderSlug?: string;
+height?: number;
+isNew?: boolean;
+onSaved?: (diagramId: string) => void;
+onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>;
+className?: string;
 }
 
 // Empty diagram template for new diagrams
 function createEmptyDiagram(t: ReturnType<typeof useLocale>['t']): DrakonDiagram {
-  return {
-    name: t.drakonEditor.newDiagram,
-    access: 'write',
-    items: {
-      '1': { type: 'end' },
-      '2': { type: 'branch', branchId: 0, one: '3' },
-      '3': { type: 'action', content: t.drakonEditor.startHere, one: '1' },
-    },
-  };
+return {
+name: t.drakonEditor.newDiagram,
+access: 'write',
+items: {
+'1': { type: 'end' },
+'2': { type: 'branch', branchId: 0, one: '3' },
+'3': { type: 'action', content: t.drakonEditor.startHere, one: '1' },
+},
+};
 }
 
-function normWidgetDiagram<T extends { params?: unknown }>(d: T | null | undefined): T | null | undefined {
-  if (!d) return d;
-  if (Array.isArray(d.params)) return { ...d, params: (d.params as string[]).join(', ') } as T;
-  return d;
+function normWidgetDiagram<T extends { params?: unknown }>(d: T | null | undefined): T | null
+| undefined {
+if (!d) return d;
+if (Array.isArray(d.params)) return { ...d, params: (d.params as string[]).join(', ') } as T;
+return d;
 }
 
 export function DrakonEditor({
-  diagram,
-  diagramId,
-  folderSlug,
-  height = 500,
-  isNew = false,
-  onSaved,
-  onSaveOverride,
-  className,
+diagram,
+diagramId,
+folderSlug,
+height = 500,
+isNew = false,
+onSaved,
+onSaveOverride,
+className,
 }: DrakonEditorProps) {
-  const { theme } = useTheme();
-  const { t, locale } = useLocale();
-  const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const widgetRef = useRef<DrakonWidgetType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [diagramName, setDiagramName] = useState(diagram?.name || t.drakonEditor.newDiagram);
-  const [zoomLevel, setZoomLevel] = useState(5000);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: Array<{ text: string; action?: () => void; type?: string }> } | null>(null);
-  const [panMode, setPanMode] = useState(false);
-  // Track UI state to guard against unwanted selection/pasteMode resets
-  const uiStateRef = useRef<'default' | 'contextMenuOpen' | 'pasteMode'>('default');
-  // Track contextmenu target so Copy/Cut can use it as fallback when selection is lost
-  const contextTargetIdRef = useRef<string | null>(null);
-  const [editDialog, setEditDialog] = useState<{
-    open: boolean;
-    title: string;
-    value: string;
-    onConfirm: (value: string) => void;
-  }>({ open: false, title: '', value: '', onConfirm: () => {} });
-  const [formatDialog, setFormatDialog] = useState<{
-    open: boolean;
-    title: string;
-    style: Record<string, unknown>;
-    onConfirm: (style: Record<string, unknown>) => void;
-  }>({ open: false, title: '', style: {}, onConfirm: () => {} });
+const { theme } = useTheme();
+const { t, locale } = useLocale();
+const isDark = theme === 'dark' || (theme === 'system' &&
+window.matchMedia('(prefers-color-scheme: dark)').matches);
+const containerRef = useRef<HTMLDivElement>(null);
+const widgetRef = useRef<DrakonWidgetType | null>(null);
+const [isLoading, setIsLoading] = useState(true);
+const [error, setError] = useState<string | null>(null);
+const [hasChanges, setHasChanges] = useState(false);
+const [diagramName, setDiagramName] = useState(diagram?.name ||
+t.drakonEditor.newDiagram);
+const [zoomLevel, setZoomLevel] = useState(5000);
+const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: Array<{ text:
+string; action?: () => void; type?: string }> } | null>(null);
+const [panMode, setPanMode] = useState(false);
+// Track UI state to guard against unwanted selection/pasteMode resets
+const uiStateRef = useRef<'default' | 'contextMenuOpen' | 'pasteMode'>('default');
+// Track contextmenu target so Copy/Cut can use it as fallback when selection is lost
+const contextTargetIdRef = useRef<string | null>(null);
+const [editDialog, setEditDialog] = useState<{
+open: boolean;
+title: string;
+value: string;
+onConfirm: (value: string) => void;
+}>({ open: false, title: '', value: '', onConfirm: () => {} });
+const [formatDialog, setFormatDialog] = useState<{
+open: boolean;
+title: string;
+style: Record<string, unknown>;
+onConfirm: (style: Record<string, unknown>) => void;
+}>({ open: false, title: '', style: {}, onConfirm: () => {} });
 
-  const [isSaving, setIsSaving] = useState(false);
+const [isSaving, setIsSaving] = useState(false);
 
-  const [projectFolder, setProjectFolder] = useState<ProjectFolderValue>(() => {
-    const d = readProjectFolderDefaults();
-    return { ...d, folderSlug: d.folderSlug || folderSlug || '' };
-  });
-  const [knownFolders, setKnownFolders] = useState<string[]>([]);
-  useEffect(() => {
-    let alive = true;
-    listProjects().then((list) => {
-      if (alive) setKnownFolders(list);
-    });
-    return () => { alive = false; };
-  }, []);
+const [projectFolder, setProjectFolder] = useState<ProjectFolderValue>(() => {
+const d = readProjectFolderDefaults();
+return { ...d, folderSlug: d.folderSlug || folderSlug || '' };
+});
+const [knownFolders, setKnownFolders] = useState<string[]>([]);
+useEffect(() => {
+let alive = true;
+listProjects().then((list) => {
+if (alive) setKnownFolders(list);
+});
+return () => { alive = false; };
+}, []);
 
-  const editSender: DrakonEditSender = {
-    pushEdit: (edit) => {
-      setHasChanges(true);
-      console.log('[DrakonEditor] Edit:', edit);
-    },
-    stop: () => {},
-  };
+const editSender: DrakonEditSender = {
+pushEdit: (edit) => {
+setHasChanges(true);
+console.log('[DrakonEditor] Edit:', edit);
+},
+stop: () => {},
+};
 
-  // CRITICAL: memoize these so buildConfig dependencies stay stable across renders.
-  // Without this, every setState (e.g. closing context menu) triggers full widget re-init,
-  // which destroys selection, paste mode, and all widget state.
-  const drakonLabels = useMemo(() => getDrakonLabels(t.drakon), [t.drakon]);
-  const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon]);
+// CRITICAL: memoize these so buildConfig dependencies stay stable across renders.
+// Without this, every setState (e.g. closing context menu) triggers full widget re-init,
+// which destroys selection, paste mode, and all widget state.
+const drakonLabels = useMemo(() => getDrakonLabels(t.drakon), [t.drakon]);
+const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon]);
 
-  const buildConfig = useCallback((): DrakonConfig => ({
-    startEditContent: (item, isReadonly) => {
-      if (isReadonly) return;
-      setEditDialog({
-        open: true,
-        title: t.drakon.editContent,
-        value: item.content || '',
-        onConfirm: (newContent) => {
-          if (widgetRef.current) {
-            widgetRef.current.setContent(item.id, newContent);
-            setHasChanges(true);
-          }
-        },
-      });
-    },
-    showContextMenu: (left, top, items) => {
-      // Convert page coordinates to container-relative coordinates
-      const containerEl = containerRef.current;
-      uiStateRef.current = 'contextMenuOpen';
-      console.log('[DRK] showContextMenu, uiState → contextMenuOpen');
-      if (containerEl) {
-        const rect = containerEl.getBoundingClientRect();
-        setContextMenu({ x: left - rect.left, y: top - rect.top, items });
-      } else {
-        setContextMenu({ x: left, y: top, items });
-      }
-    },
-    startEditSecondary: (item, isReadonly) => {
-      if (isReadonly) return;
-      setEditDialog({
-        open: true,
-        title: t.drakon.editSecondaryText,
-        value: item.secondary || '',
-        onConfirm: (newSecondary) => {
-          if (widgetRef.current) {
-            widgetRef.current.setSecondary(item.id, newSecondary);
-            setHasChanges(true);
-          }
-        },
-      });
-    },
-    startEditLink: (item, isReadonly) => {
-      if (isReadonly) return;
-      setEditDialog({
-        open: true,
-        title: t.drakon.editLink || 'Edit Link',
-        value: item.link || '',
-        onConfirm: (newLink) => {
-          if (widgetRef.current) {
-            widgetRef.current.setLink(item.id, newLink);
-            setHasChanges(true);
-          }
-        },
-      });
-    },
-    startEditStyle: (ids, oldStyle, _x, _y, _accepted) => {
-      setFormatDialog({
-        open: true,
-        title: t.drakon.format || 'Format',
-        style: (oldStyle || {}) as Record<string, unknown>,
-        onConfirm: (newStyle) => {
-          if (widgetRef.current) {
-            widgetRef.current.setStyle(ids, newStyle);
-            setHasChanges(true);
-          }
-        },
-      });
-    },
-    startEditDiagramStyle: (oldStyle, _x, _y) => {
-      setFormatDialog({
-        open: true,
-        title: t.drakon.format || 'Format Diagram',
-        style: (oldStyle || {}) as Record<string, unknown>,
-        onConfirm: (newStyle) => {
-          if (widgetRef.current) {
-            widgetRef.current.setDiagramStyle(newStyle);
-            setHasChanges(true);
-          }
-        },
-      });
-    },
-    canSelect: !panMode,
-    canvasIcons: true,
-    textFormat: 'plain',
-    font: '14px system-ui, -apple-system, sans-serif',
-    headerFont: 'bold 16px system-ui, -apple-system, sans-serif',
-    theme: getGardenDrakonTheme(isDark),
-    translate: drakonTranslate,
-    ...drakonLabels,
-    onSelectionChanged: (items) => {
-      console.log('[DRK] onSelectionChanged, uiState:', uiStateRef.current, 'items:', items?.length);
-      // Do NOT reset pasteMode here — it kills pasteMode immediately after showPaste()
-      // pasteMode should only end via: Esc, clickEmpty, or successful socket click
-    },
-    onZoomChanged: (newZoom) => {
-      setZoomLevel(newZoom);
-    },
-  }), [isDark, panMode, drakonLabels, drakonTranslate, t.drakon]);
+const buildConfig = useCallback((): DrakonConfig => ({
+startEditContent: (item, isReadonly) => {
+if (isReadonly) return;
+setEditDialog({
+open: true,
+title: t.drakon.editContent,
+value: item.content || '',
+onConfirm: (newContent) => {
+if (widgetRef.current) {
+widgetRef.current.setContent(item.id, newContent);
+setHasChanges(true);
+}
+},
+});
+},
+showContextMenu: (left, top, items) => {
+// Convert page coordinates to container-relative coordinates
+const containerEl = containerRef.current;
+uiStateRef.current = 'contextMenuOpen';
+console.log('[DRK] showContextMenu, uiState → contextMenuOpen');
+if (containerEl) {
+const rect = containerEl.getBoundingClientRect();
+setContextMenu({ x: left - rect.left, y: top - rect.top, items });
+} else {
+setContextMenu({ x: left, y: top, items });
+}
+},
+startEditSecondary: (item, isReadonly) => {
+if (isReadonly) return;
+setEditDialog({
+open: true,
+title: t.drakon.editSecondaryText,
+value: item.secondary || '',
+onConfirm: (newSecondary) => {
+if (widgetRef.current) {
+widgetRef.current.setSecondary(item.id, newSecondary);
+setHasChanges(true);
+}
+},
+});
+},
+startEditLink: (item, isReadonly) => {
+if (isReadonly) return;
+setEditDialog({
+open: true,
+title: t.drakon.editLink || 'Edit Link',
+value: item.link || '',
+onConfirm: (newLink) => {
+if (widgetRef.current) {
+widgetRef.current.setLink(item.id, newLink);
+setHasChanges(true);
+}
+},
+});
+},
+startEditStyle: (ids, oldStyle, _x, _y, _accepted) => {
+setFormatDialog({
+open: true,
+title: t.drakon.format || 'Format',
+style: (oldStyle || {}) as Record<string, unknown>,
+onConfirm: (newStyle) => {
+if (widgetRef.current) {
+widgetRef.current.setStyle(ids, newStyle);
+setHasChanges(true);
+}
+},
+});
+},
+startEditDiagramStyle: (oldStyle, _x, _y) => {
+setFormatDialog({
+open: true,
+title: t.drakon.format || 'Format Diagram',
+style: (oldStyle || {}) as Record<string, unknown>,
+onConfirm: (newStyle) => {
+if (widgetRef.current) {
+widgetRef.current.setDiagramStyle(newStyle);
+setHasChanges(true);
+}
+},
+});
+},
+canSelect: !panMode,
+canvasIcons: true,
+textFormat: 'plain',
+font: '14px system-ui, -apple-system, sans-serif',
+headerFont: 'bold 16px system-ui, -apple-system, sans-serif',
+theme: getGardenDrakonTheme(isDark),
+translate: drakonTranslate,
+...drakonLabels,
+onSelectionChanged: (items) => {
+console.log('[DRK] onSelectionChanged, uiState:', uiStateRef.current, 'items:', items?.length);
+// Do NOT reset pasteMode here — it kills pasteMode immediately after showPaste()
+// pasteMode should only end via: Esc, clickEmpty, or successful socket click
+},
+onZoomChanged: (newZoom) => {
+setZoomLevel(newZoom);
+},
+}), [isDark, panMode, drakonLabels, drakonTranslate, t.drakon]);
 
-  // Initialize widget
-  useEffect(() => {
-    let mounted = true;
+// Initialize widget
+useEffect(() => {
+let mounted = true;
 
-    async function init() {
-      if (!containerRef.current) {
-        console.error('[DRK-INIT] containerRef is null — component not mounted?');
-        return;
-      }
-      console.log('[DRK-INIT] start, diagramId:', diagramId, 'isNew:', isNew, 'diagram prop present:', !!diagram);
-      try {
-        console.log('[DRK-INIT] loading widget script...');
-        await loadDrakonWidget();
-        console.log('[DRK-INIT] widget script loaded OK');
-        if (!mounted) return;
+async function init() {
+if (!containerRef.current) {
+console.error('[DRK-INIT] containerRef is null — component not mounted?');
+return;
+}
+console.log('[DRK-INIT] start, diagramId:', diagramId, 'isNew:', isNew, 'diagram prop present:',
+!!diagram);
+try {
+console.log('[DRK-INIT] loading widget script...');
+await loadDrakonWidget();
+console.log('[DRK-INIT] widget script loaded OK');
+if (!mounted) return;
 
-        const widget = createWidget();
-        console.log('[DRK-INIT] createWidget OK');
-        widgetRef.current = widget;
-        const container = containerRef.current;
-        const rect = container.getBoundingClientRect();
-        console.log('[DRK-INIT] container rect:', rect.width, 'x', rect.height);
-        container.innerHTML = '';
+const widget = createWidget();
+console.log('[DRK-INIT] createWidget OK');
+widgetRef.current = widget;
+const container = containerRef.current;
+const rect = container.getBoundingClientRect();
+console.log('[DRK-INIT] container rect:', rect.width, 'x', rect.height);
+container.innerHTML = '';
 
-        const config = buildConfig();
-        const renderW = Math.max(rect.width, 400);
-        const renderH = Math.max(rect.height, height);
-        const element = widget.render(renderW, renderH, config);
-        console.log('[DRK-INIT] widget.render OK, element:', (element as HTMLElement)?.tagName);
-        container.appendChild(element);
+const config = buildConfig();
+const renderW = Math.max(rect.width, 400);
+const renderH = Math.max(rect.height, height);
+const element = widget.render(renderW, renderH, config);
+console.log('[DRK-INIT] widget.render OK, element:', (element as HTMLElement)?.tagName);
+container.appendChild(element);
+// Use provided diagram or empty template for new
+const diagramToLoad = normWidgetDiagram(diagram) || createEmptyDiagram(t);
+const effectiveId = diagramId || 'new-diagram';
+console.log('[DRK-INIT] setDiagram, id:', effectiveId, 'items count:',
+Object.keys(diagramToLoad?.items || {}).length, 'name:', diagramToLoad?.name);
+await widget.setDiagram(effectiveId, diagramToLoad, editSender);
+console.log('[DRK-INIT] setDiagram OK');
+widget.setZoom(5000); // 50% zoom for editor
 
+setIsLoading(false);
+} catch (err) {
+console.error('[DRK-INIT] FAILED:', err);
+if (!mounted) return;
+setError(err instanceof Error ? err.message : 'Failed to load editor');
+setIsLoading(false);
+}
+}
 
-        // Use provided diagram or empty template for new
-        const diagramToLoad = normWidgetDiagram(diagram) || createEmptyDiagram(t);
-        const effectiveId = diagramId || 'new-diagram';
-        console.log('[DRK-INIT] setDiagram, id:', effectiveId, 'items count:',
-          Object.keys(diagramToLoad?.items || {}).length, 'name:', diagramToLoad?.name);
-        await widget.setDiagram(effectiveId, diagramToLoad, editSender);
-        console.log('[DRK-INIT] setDiagram OK');
-        widget.setZoom(5000); // 50% zoom for editor
+init();
 
-        setIsLoading(false);
-      } catch (err) {
-        console.error('[DRK-INIT] FAILED:', err);
-        if (!mounted) return;
-        setError(err instanceof Error ? err.message : 'Failed to load editor');
-        setIsLoading(false);
-      }
-    }
+return () => {
+mounted = false;
+editSender.stop();
+widgetRef.current = null;
+if (containerRef.current) containerRef.current.innerHTML = '';
+};
+}, [diagramId]);
 
-    init();
+// Native capture-phase guard: prevent canvas/widget from clearing selection
+// on right-click or while context menu / paste mode is active
+useEffect(() => {
+const el = containerRef.current;
+if (!el) return;
 
-    return () => {
-      mounted = false;
-      editSender.stop();
-      widgetRef.current = null;
-      if (containerRef.current) containerRef.current.innerHTML = '';
-    };
-  }, [diagramId]);
+const onPointerDownCapture = (e: PointerEvent) => {
+// Right-click: let it through to widget so contextmenu event fires normally.
+// Do NOT stopPropagation — widget needs this to show its context menu.
+if (e.button === 2) {
+console.log('[DRK] capture guard: right-click, passing through');
+return;
+}
 
-  // Native capture-phase guard: prevent canvas/widget from clearing selection
-  // on right-click or while context menu / paste mode is active
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
+// While context menu is open: block LEFT clicks on canvas background
+// from clearing selection. Clicks on menu items are handled by React.
+if (uiStateRef.current === 'contextMenuOpen') {
+const target = e.target as HTMLElement;
+// Allow clicks inside context menu itself
+if (target.closest('[data-drakon-context-menu]')) {
+console.log('[DRK] capture guard: click inside menu, allowing');
+return;
+}
+console.log('[DRK] capture guard: contextMenuOpen, left click on canvas, stopPropagation');
+e.stopPropagation();
+return;
+}
+// While in paste mode: let widget handle socket clicks
+if (uiStateRef.current === 'pasteMode') {
+console.log('[DRK] capture guard: pasteMode, allowing click through to widget');
+return;
+}
+};
 
-    const onPointerDownCapture = (e: PointerEvent) => {
-      // Right-click: let it through to widget so contextmenu event fires normally.
-      // Do NOT stopPropagation — widget needs this to show its context menu.
-      if (e.button === 2) {
-        console.log('[DRK] capture guard: right-click, passing through');
-        return;
-      }
+el.addEventListener('pointerdown', onPointerDownCapture, true); // capture phase
+return () => el.removeEventListener('pointerdown', onPointerDownCapture, true);
+}, []);
 
-      // While context menu is open: block LEFT clicks on canvas background
-      // from clearing selection. Clicks on menu items are handled by React.
-      if (uiStateRef.current === 'contextMenuOpen') {
-        const target = e.target as HTMLElement;
-        // Allow clicks inside context menu itself
-        if (target.closest('[data-drakon-context-menu]')) {
-          console.log('[DRK] capture guard: click inside menu, allowing');
-          return;
-        }
-        console.log('[DRK] capture guard: contextMenuOpen, left click on canvas, stopPropagation');
-        e.stopPropagation();
-        return;
-      }
+// Handle theme/panMode changes — re-render and re-set diagram to restart mouse behavior
+useEffect(() => {
+if (!widgetRef.current || !containerRef.current || isLoading) return;
 
-      // While in paste mode: let widget handle socket clicks
-      if (uiStateRef.current === 'pasteMode') {
-        console.log('[DRK] capture guard: pasteMode, allowing click through to widget');
-        return;
-      }
-    };
+const widget = widgetRef.current;
+const container = containerRef.current;
+const rect = container.getBoundingClientRect();
 
-    el.addEventListener('pointerdown', onPointerDownCapture, true); // capture phase
-    return () => el.removeEventListener('pointerdown', onPointerDownCapture, true);
-  }, []);
+// Save current diagram state before re-render
+let currentDiagramJson: string | null = null;
+try {
+currentDiagramJson = widget.exportJson();
+} catch { / ignore if no diagram loaded yet / }
 
-  // Handle theme/panMode changes — re-render and re-set diagram to restart mouse behavior
-  useEffect(() => {
-    if (!widgetRef.current || !containerRef.current || isLoading) return;
+const currentZoom = widget.getZoom();
 
-    const widget = widgetRef.current;
-    const container = containerRef.current;
-    const rect = container.getBoundingClientRect();
+container.innerHTML = '';
+const config = buildConfig();
+const element = widget.render(rect.width, rect.height, config);
+container.appendChild(element);
 
-    // Save current diagram state before re-render
-    let currentDiagramJson: string | null = null;
-    try {
-      currentDiagramJson = widget.exportJson();
-    } catch { /* ignore if no diagram loaded yet */ }
+// Re-set diagram to restart mouse behavior state machine
+if (currentDiagramJson) {
+const diagramData = normWidgetDiagram(JSON.parse(currentDiagramJson) as Record<string,
+unknown>) as unknown as DrakonDiagram;
+widget.setDiagram(diagramId, diagramData, editSender).then(() => {
+widget.setZoom(currentZoom);
+});
+} else {
+widget.redraw();
+}
+}, [isDark, buildConfig, isLoading]);
 
-    const currentZoom = widget.getZoom();
+// Escape key exits paste mode or closes context menu
+useEffect(() => {
+const handleKeyDown = (e: KeyboardEvent) => {
+if (e.key === 'Escape') {
+if (contextMenu) {
+setContextMenu(null);
+uiStateRef.current = 'default';
+} else if (uiStateRef.current === 'pasteMode') {
+uiStateRef.current = 'default';
+widgetRef.current?.redraw();
+}
+}
+};
+window.addEventListener('keydown', handleKeyDown);
+return () => window.removeEventListener('keydown', handleKeyDown);
+}, [contextMenu]);
 
-    container.innerHTML = '';
-    const config = buildConfig();
-    const element = widget.render(rect.width, rect.height, config);
-    container.appendChild(element);
+const handleSave = useCallback(async () => {
+if (!widgetRef.current) return;
 
-    // Re-set diagram to restart mouse behavior state machine
-    if (currentDiagramJson) {
-      const diagramData = normWidgetDiagram(JSON.parse(currentDiagramJson) as Record<string, unknown>) as unknown as DrakonDiagram;
-      widget.setDiagram(diagramId, diagramData, editSender).then(() => {
-        widget.setZoom(currentZoom);
-      });
-    } else {
-      widget.redraw();
-    }
-  }, [isDark, buildConfig, isLoading]);
+if (onSaveOverride) {
+const raw = JSON.parse(widgetRef.current.exportJson()) as DrakonDiagram;
+raw.name = diagramName;
+const ok = await onSaveOverride(raw);
+if (ok) setHasChanges(false);
+return;
+}
 
-  // Escape key exits paste mode or closes context menu
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (contextMenu) {
-          setContextMenu(null);
-          uiStateRef.current = 'default';
-        } else if (uiStateRef.current === 'pasteMode') {
-          uiStateRef.current = 'default';
-          widgetRef.current?.redraw();
-        }
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [contextMenu]);
+const effectiveId = diagramId || (isNew ? slugify(diagramName) : '') || crypto.randomUUID();
+const jsonString = widgetRef.current.exportJson();
+const diagramData = JSON.parse(jsonString);
+diagramData.name = diagramName;
 
-  const handleSave = useCallback(async () => {
-    if (!widgetRef.current) return;
+const targetFolder =
+(projectFolder.folderSlug || '').trim() || folderSlug || 'general';
 
-    if (onSaveOverride) {
-      const raw = JSON.parse(widgetRef.current.exportJson()) as DrakonDiagram;
-      raw.name = diagramName;
-      const ok = await onSaveOverride(raw);
-      if (ok) setHasChanges(false);
-      return;
-    }
+setIsSaving(true);
+try {
+// 1) MinIO save (always)
+try {
+await saveDiagramToMinio(targetFolder, effectiveId, diagramData);
+toast.success(✓ Saved to MinIO: ${targetFolder}/${effectiveId});
+} catch (err) {
+// legacy fallback for environments without the MCP tool
+try {
+await api.saveDiagram(targetFolder, effectiveId, diagramData);
+toast.success(✓ Saved to MinIO: ${targetFolder}/${effectiveId});
+} catch {
+toast.error(
+MinIO save failed: ${err instanceof Error ? err.message : String(err)},
+);
+}
+}
 
-    const effectiveId = diagramId || (isNew ? slugify(diagramName) : '') || crypto.randomUUID();
-    const jsonString = widgetRef.current.exportJson();
-    const diagramData = JSON.parse(jsonString);
-    diagramData.name = diagramName;
+// 2) Optional git save
+if (projectFolder.saveToGit && projectFolder.repo.trim() && projectFolder.githubToken.trim()) {
+const ownerRepo = parseOwnerRepo(projectFolder.repo);
+if (!ownerRepo) {
+toast.error('Git save: repo must be in "owner/repo" form');
+} else {
+try {
+await saveDiagramToGit({
+owner: ownerRepo.owner,
+repo: ownerRepo.repo,
+branch: projectFolder.branch.trim() || 'main',
+diagramId: effectiveId,
+diagram: diagramData,
+token: projectFolder.githubToken,
+});
+toast.success(✓ Saved to git: drn/${effectiveId}.json);
+} catch (err) {
+toast.error(
+Git save failed: ${err instanceof Error ? err.message : String(err)},
+);
+}
+}
+}
 
-    const targetFolder =
-      (projectFolder.folderSlug || '').trim() || folderSlug || 'general';
+setHasChanges(false);
+onSaved?.(effectiveId);
+} finally {
+setIsSaving(false);
+}
+}, [diagramId, diagramName, folderSlug, isNew, onSaved, onSaveOverride, projectFolder]);
 
-    setIsSaving(true);
-    try {
-      // 1) MinIO save (always)
-      try {
-        await saveDiagramToMinio(targetFolder, effectiveId, diagramData);
-        toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
-      } catch (err) {
-        // legacy fallback for environments without the MCP tool
-        try {
-          await api.saveDiagram(targetFolder, effectiveId, diagramData);
-          toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
-        } catch {
-          toast.error(
-            `MinIO save failed: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        }
-      }
+const handleUndo = useCallback(() => {
+widgetRef.current?.undo();
+}, []);
 
-      // 2) Optional git save
-      if (projectFolder.saveToGit && projectFolder.repo.trim() && projectFolder.githubToken.trim()) {
-        const ownerRepo = parseOwnerRepo(projectFolder.repo);
-        if (!ownerRepo) {
-          toast.error('Git save: repo must be in "owner/repo" form');
-        } else {
-          try {
-            await saveDiagramToGit({
-              owner: ownerRepo.owner,
-              repo: ownerRepo.repo,
-              branch: projectFolder.branch.trim() || 'main',
-              diagramId: effectiveId,
-              diagram: diagramData,
-              token: projectFolder.githubToken,
-            });
-            toast.success(`✓ Saved to git: drn/${effectiveId}.json`);
-          } catch (err) {
-            toast.error(
-              `Git save failed: ${err instanceof Error ? err.message : String(err)}`,
-            );
-          }
-        }
-      }
+const handleRedo = useCallback(() => {
+widgetRef.current?.redo();
+}, []);
 
-      setHasChanges(false);
-      onSaved?.(effectiveId);
-    } finally {
-      setIsSaving(false);
-    }
-  }, [diagramId, diagramName, folderSlug, isNew, onSaved, onSaveOverride, projectFolder]);
+const handleHome = useCallback(() => {
+widgetRef.current?.goHome();
+}, []);
 
-  const handleUndo = useCallback(() => {
-    widgetRef.current?.undo();
-  }, []);
+const handleInsertIcon = useCallback((type: string) => {
+widgetRef.current?.showInsertionSockets(type);
+}, []);
 
-  const handleRedo = useCallback(() => {
-    widgetRef.current?.redo();
-  }, []);
+const handleToggleSilhouette = useCallback(() => {
+widgetRef.current?.toggleSilhouette();
+setHasChanges(true);
+}, []);
 
-  const handleHome = useCallback(() => {
-    widgetRef.current?.goHome();
-  }, []);
+const handleZoomIn = useCallback(() => {
+if (!widgetRef.current) return;
+const current = widgetRef.current.getZoom();
+widgetRef.current.setZoom(Math.min(current + 2000, 20000));
+}, []);
 
-  const handleInsertIcon = useCallback((type: string) => {
-    widgetRef.current?.showInsertionSockets(type);
-  }, []);
+const handleZoomOut = useCallback(() => {
+if (!widgetRef.current) return;
+const current = widgetRef.current.getZoom();
+widgetRef.current.setZoom(Math.max(current - 2000, 1000));
+}, []);
 
-  const handleToggleSilhouette = useCallback(() => {
-    widgetRef.current?.toggleSilhouette();
-    setHasChanges(true);
-  }, []);
+const handleCopy = useCallback(() => {
+widgetRef.current?.copySelection();
+// Enter paste mode to show insertion sockets
+requestAnimationFrame(() => {
+widgetRef.current?.showPaste();
+uiStateRef.current = 'pasteMode';
+});
+}, []);
+const handleCut = useCallback(() => {
+widgetRef.current?.cutSelection();
+setHasChanges(true);
+// Enter paste mode to show insertion sockets
+requestAnimationFrame(() => {
+widgetRef.current?.showPaste();
+uiStateRef.current = 'pasteMode';
+});
+}, []);
 
-  const handleZoomIn = useCallback(() => {
-    if (!widgetRef.current) return;
-    const current = widgetRef.current.getZoom();
-    widgetRef.current.setZoom(Math.min(current + 2000, 20000));
-  }, []);
+const handleDelete = useCallback(() => {
+widgetRef.current?.deleteSelection();
+setHasChanges(true);
+}, []);
 
-  const handleZoomOut = useCallback(() => {
-    if (!widgetRef.current) return;
-    const current = widgetRef.current.getZoom();
-    widgetRef.current.setZoom(Math.max(current - 2000, 1000));
-  }, []);
+const handlePaste = useCallback(() => {
+widgetRef.current?.showPaste();
+setHasChanges(true);
+}, []);
 
-  const handleCopy = useCallback(() => {
-    widgetRef.current?.copySelection();
-    // Enter paste mode to show insertion sockets
-    requestAnimationFrame(() => {
-      widgetRef.current?.showPaste();
-      uiStateRef.current = 'pasteMode';
-    });
-  }, []);
+const handleExportJson = useCallback(() => {
+if (!widgetRef.current) return;
+const json = widgetRef.current.exportJson();
+const blob = new Blob([json], { type: 'application/json' });
+const link = document.createElement('a');
+link.download = ${diagramId}.drakon.json;
+link.href = URL.createObjectURL(blob);
+link.click();
+URL.revokeObjectURL(link.href);
+}, [diagramId]);
 
-  const handleCut = useCallback(() => {
-    widgetRef.current?.cutSelection();
-    setHasChanges(true);
-    // Enter paste mode to show insertion sockets
-    requestAnimationFrame(() => {
-      widgetRef.current?.showPaste();
-      uiStateRef.current = 'pasteMode';
-    });
-  }, []);
+const handleExportPng = useCallback(() => {
+if (!widgetRef.current) return;
+try {
+const canvas = widgetRef.current.exportCanvas(10000);
+const link = document.createElement('a');
+link.download = ${diagramId}.png;
+link.href = canvas.toDataURL('image/png');
+link.click();
+} catch {
+console.error('Export PNG failed - may require canvasIcons mode');
+}
+}, [diagramId]);
 
-  const handleDelete = useCallback(() => {
-    widgetRef.current?.deleteSelection();
-    setHasChanges(true);
-  }, []);
+const handleExportPseudocode = useCallback(async () => {
+if (!widgetRef.current) return;
+try {
+const jsonString = widgetRef.current.exportJson();
+const diagramData = JSON.parse(jsonString);
+const pseudocode = await diagramToPseudocode(diagramData, diagramName, locale);
+const markdown = pseudocodeToMarkdown(pseudocode, diagramName);
 
-  const handlePaste = useCallback(() => {
-    widgetRef.current?.showPaste();
-    setHasChanges(true);
-  }, []);
+const blob = new Blob([markdown], { type: 'text/markdown' });
+const link = document.createElement('a');
+link.download = ${diagramId}.md;
+link.href = URL.createObjectURL(blob);
+link.click();
+URL.revokeObjectURL(link.href);
+} catch (err) {
+console.error('Export pseudocode failed:', err);
+}
+}, [diagramId, diagramName]);
 
-  const handleExportJson = useCallback(() => {
-    if (!widgetRef.current) return;
-    const json = widgetRef.current.exportJson();
-    const blob = new Blob([json], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.download = `${diagramId}.drakon.json`;
-    link.href = URL.createObjectURL(blob);
-    link.click();
-    URL.revokeObjectURL(link.href);
-  }, [diagramId]);
+// DRAKON icon types for the toolbar — standard DRAKON notation icons
+const iconButtons = [
+{ type: 'action', img: iconAction, label: t.drakonEditor.action },
+{ type: 'question', img: iconQuestion, label: t.drakonEditor.question },
+{ type: 'select', img: iconSelect, label: t.drakonEditor.choice },
+{ type: 'case', img: iconCase, label: t.drakonEditor.caseName },
+{ type: 'foreach', img: iconForeach, label: t.drakonEditor.forLoop },
+{ type: 'branch', img: iconBranch, label: t.drakonEditor.branchName },
+{ type: 'insertion', img: iconInsertion, label: t.drakonEditor.insertion },
+{ type: 'comment', img: iconComment, label: t.drakonEditor.comment },
+{ type: 'shelf', img: iconShelf, label: t.drakonEditor.shelf },
+{ type: 'simpleinput', img: iconSinput, label: t.drakonEditor.simpleInput },
+{ type: 'simpleoutput', img: iconSoutput, label: t.drakonEditor.simpleOutput },
+{ type: 'input', img: iconInput, label: t.drakonEditor.input },
+{ type: 'output', img: iconOutput, label: t.drakonEditor.output },
+{ type: 'process', img: iconProcess, label: t.drakonEditor.process },
+{ type: 'timer', img: iconTimer, label: t.drakonEditor.timer },
+{ type: 'pause', img: iconPause, label: t.drakonEditor.pause },
+{ type: 'duration', img: iconDuration, label: t.drakonEditor.duration },
+{ type: 'group-duration', img: iconGroupDuration, label: t.drakonEditor.groupDuration },
+{ type: 'group-duration-r', img: iconGroupDurationR, label: t.drakonEditor.groupDurationRight },
+{ type: 'par', img: iconPar, label: t.drakonEditor.parallel },
+{ type: 'parblock', img: iconParblock, label: t.drakonEditor.parallelBlock },
+{ type: 'ctrl-start', img: iconCtrlStart, label: t.drakonEditor.controlStart },
+{ type: 'ctrl-end', img: iconCtrlEnd, label: t.drakonEditor.controlEnd },
+{ type: 'end', img: iconEnd, label: t.drakonEditor.endIcon },
+{ type: 'link', img: iconLink, label: t.drakonEditor.link },
+];
 
-  const handleExportPng = useCallback(() => {
-    if (!widgetRef.current) return;
-    try {
-      const canvas = widgetRef.current.exportCanvas(10000);
-      const link = document.createElement('a');
-      link.download = `${diagramId}.png`;
-      link.href = canvas.toDataURL('image/png');
-      link.click();
-    } catch {
-      console.error('Export PNG failed - may require canvasIcons mode');
-    }
-  }, [diagramId]);
+if (error) {
+return (
+<div className={cn(
+'flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4',
+className
+)} style={{ height }}>
+<AlertCircle className="h-5 w-5 text-destructive" />
+<span className="text-sm text-destructive">{error}</span>
+</div>
+);
+}
 
-  const handleExportPseudocode = useCallback(async () => {
-    if (!widgetRef.current) return;
-    try {
-      const jsonString = widgetRef.current.exportJson();
-      const diagramData = JSON.parse(jsonString);
-      const pseudocode = await diagramToPseudocode(diagramData, diagramName, locale);
-      const markdown = pseudocodeToMarkdown(pseudocode, diagramName);
-      
-      const blob = new Blob([markdown], { type: 'text/markdown' });
-      const link = document.createElement('a');
-      link.download = `${diagramId}.md`;
-      link.href = URL.createObjectURL(blob);
-      link.click();
-      URL.revokeObjectURL(link.href);
-    } catch (err) {
-      console.error('Export pseudocode failed:', err);
-    }
-  }, [diagramId, diagramName]);
+return (
+<div className={cn('space-y-3', className)}>
+{/ Toolbar /}
+<div className="flex flex-wrap items-center gap-2">
+<div className="flex items-center gap-2">
+<Label htmlFor="diagram-name"
+className="sr-only">{t.drakonEditor.diagramName}</Label>
+<Input
+id="diagram-name"
+value={diagramName}
+onChange={(e) => {
+setDiagramName(e.target.value);
+setHasChanges(true);
+}}
+className="w-48 h-8 text-sm"
+placeholder={t.drakonEditor.diagramName}
+/>
+</div>
 
-  // DRAKON icon types for the toolbar — standard DRAKON notation icons
-  const iconButtons = [
-    { type: 'action', img: iconAction, label: t.drakonEditor.action },
-    { type: 'question', img: iconQuestion, label: t.drakonEditor.question },
-    { type: 'select', img: iconSelect, label: t.drakonEditor.choice },
-    { type: 'case', img: iconCase, label: t.drakonEditor.caseName },
-    { type: 'foreach', img: iconForeach, label: t.drakonEditor.forLoop },
-    { type: 'branch', img: iconBranch, label: t.drakonEditor.branchName },
-    { type: 'insertion', img: iconInsertion, label: t.drakonEditor.insertion },
-    { type: 'comment', img: iconComment, label: t.drakonEditor.comment },
-    { type: 'shelf', img: iconShelf, label: t.drakonEditor.shelf },
-    { type: 'simpleinput', img: iconSinput, label: t.drakonEditor.simpleInput },
-    { type: 'simpleoutput', img: iconSoutput, label: t.drakonEditor.simpleOutput },
-    { type: 'input', img: iconInput, label: t.drakonEditor.input },
-    { type: 'output', img: iconOutput, label: t.drakonEditor.output },
-    { type: 'process', img: iconProcess, label: t.drakonEditor.process },
-    { type: 'timer', img: iconTimer, label: t.drakonEditor.timer },
-    { type: 'pause', img: iconPause, label: t.drakonEditor.pause },
-    { type: 'duration', img: iconDuration, label: t.drakonEditor.duration },
-    { type: 'group-duration', img: iconGroupDuration, label: t.drakonEditor.groupDuration },
-    { type: 'group-duration-r', img: iconGroupDurationR, label: t.drakonEditor.groupDurationRight },
-    { type: 'par', img: iconPar, label: t.drakonEditor.parallel },
-    { type: 'parblock', img: iconParblock, label: t.drakonEditor.parallelBlock },
-    { type: 'ctrl-start', img: iconCtrlStart, label: t.drakonEditor.controlStart },
-    { type: 'ctrl-end', img: iconCtrlEnd, label: t.drakonEditor.controlEnd },
-    { type: 'end', img: iconEnd, label: t.drakonEditor.endIcon },
-    { type: 'link', img: iconLink, label: t.drakonEditor.link },
-  ];
+<div className="flex items-center gap-1">
+<Button
+variant="default"
+size="sm"
+onClick={handleSave}
+disabled={!hasChanges || isLoading || isSaving}
+>
+{isSaving ? (
+<Loader2 className="h-4 w-4 animate-spin mr-1" />
+):(
+<Save className="h-4 w-4 mr-1" />
+)}
+{t.editor?.save || 'Save'}
+</Button>
 
-  if (error) {
-    return (
-      <div className={cn(
-        'flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4',
-        className
-      )} style={{ height }}>
-        <AlertCircle className="h-5 w-5 text-destructive" />
-        <span className="text-sm text-destructive">{error}</span>
-      </div>
-    );
-  }
+<Button variant="ghost" size="sm" onClick={handleUndo} disabled={isLoading}>
+<Undo className="h-4 w-4" />
+</Button>
+<Button variant="ghost" size="sm" onClick={handleRedo} disabled={isLoading}>
+<Redo className="h-4 w-4" />
+</Button>
+<Button variant="ghost" size="sm" onClick={handleHome} disabled={isLoading}>
+<Home className="h-4 w-4" />
+</Button>
+</div>
 
-  return (
-    <div className={cn('space-y-3', className)}>
-      {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex items-center gap-2">
-          <Label htmlFor="diagram-name" className="sr-only">{t.drakonEditor.diagramName}</Label>
-          <Input
-            id="diagram-name"
-            value={diagramName}
-            onChange={(e) => {
-              setDiagramName(e.target.value);
-              setHasChanges(true);
-            }}
-            className="w-48 h-8 text-sm"
-            placeholder={t.drakonEditor.diagramName}
-          />
-        </div>
+{/ Pan/Select mode toggle /}
+<div className="flex items-center gap-0.5 border rounded-md p-0.5">
+<Tooltip>
+<TooltipTrigger asChild>
+<Button
+variant={!panMode ? 'secondary' : 'ghost'}
+size="sm"
+onClick={() => setPanMode(false)}
+disabled={isLoading}
+>
+<MousePointer className="h-4 w-4" />
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakonEditor.select}</TooltipContent>
+</Tooltip>
+<Tooltip>
+<TooltipTrigger asChild>
+<Button
+variant={panMode ? 'secondary' : 'ghost'}
+size="sm"
+onClick={() => setPanMode(true)}
+disabled={isLoading}
+>
+<Hand className="h-4 w-4" />
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakonEditor.pan}</TooltipContent>
+</Tooltip>
+</div>
 
-        <div className="flex items-center gap-1">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={handleSave}
-            disabled={!hasChanges || isLoading || isSaving}
-          >
-            {isSaving ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-1" />
-            ) : (
-              <Save className="h-4 w-4 mr-1" />
-            )}
-            {t.editor?.save || 'Save'}
-          </Button>
-          
-          <Button variant="ghost" size="sm" onClick={handleUndo} disabled={isLoading}>
-            <Undo className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleRedo} disabled={isLoading}>
-            <Redo className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={handleHome} disabled={isLoading}>
-            <Home className="h-4 w-4" />
-          </Button>
-        </div>
+{/ Zoom & selection controls /}
+<div className="flex items-center gap-1">
+<Tooltip>
+<TooltipTrigger asChild>
+<Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={isLoading}>
+<ZoomOut className="h-4 w-4" />
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakonEditor.zoomOut}</TooltipContent>
+</Tooltip>
+<span className="text-xs text-muted-foreground w-10 text-center">{Math.round(zoomLevel /
+100)}%</span>
+<Tooltip>
+<TooltipTrigger asChild>
+<Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={isLoading}>
+<ZoomIn className="h-4 w-4" />
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakonEditor.zoomIn}</TooltipContent>
+</Tooltip>
 
-        {/* Pan/Select mode toggle */}
-        <div className="flex items-center gap-0.5 border rounded-md p-0.5">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={!panMode ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setPanMode(false)}
-                disabled={isLoading}
-              >
-                <MousePointer className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakonEditor.select}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={panMode ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => setPanMode(true)}
-                disabled={isLoading}
-              >
-                <Hand className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakonEditor.pan}</TooltipContent>
-          </Tooltip>
-        </div>
+<div className="mx-1 w-px h-5 bg-border" />
 
-        {/* Zoom & selection controls */}
-        <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleZoomOut} disabled={isLoading}>
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakonEditor.zoomOut}</TooltipContent>
-          </Tooltip>
-          <span className="text-xs text-muted-foreground w-10 text-center">{Math.round(zoomLevel / 100)}%</span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleZoomIn} disabled={isLoading}>
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakonEditor.zoomIn}</TooltipContent>
-          </Tooltip>
+<Tooltip>
+<TooltipTrigger asChild>
+<Button variant="ghost" size="sm" onClick={handleCopy} disabled={isLoading}>
+<Copy className="h-4 w-4" />
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakon.copy}</TooltipContent>
+</Tooltip>
+<Tooltip>
+<TooltipTrigger asChild>
+<Button variant="ghost" size="sm" onClick={handleCut} disabled={isLoading}>
+<Scissors className="h-4 w-4" />
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakon.cut}</TooltipContent>
+</Tooltip>
+<Tooltip>
+<TooltipTrigger asChild>
+<Button variant="ghost" size="sm" onClick={handlePaste} disabled={isLoading}>
+<ClipboardPaste className="h-4 w-4" />
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakon.paste}</TooltipContent>
+</Tooltip>
+<Tooltip>
+<TooltipTrigger asChild>
+<Button variant="ghost" size="sm" onClick={handleDelete} disabled={isLoading}>
+<Trash2 className="h-4 w-4" />
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakon.delete}</TooltipContent>
+</Tooltip>
+</div>
 
-          <div className="mx-1 w-px h-5 bg-border" />
+<div className="flex-1" />
 
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleCopy} disabled={isLoading}>
-                <Copy className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakon.copy}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleCut} disabled={isLoading}>
-                <Scissors className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakon.cut}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handlePaste} disabled={isLoading}>
-                <ClipboardPaste className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakon.paste}</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="sm" onClick={handleDelete} disabled={isLoading}>
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakon.delete}</TooltipContent>
-          </Tooltip>
-        </div>
+<div className="flex items-center gap-1">
+<Tooltip>
+<TooltipTrigger asChild>
+<Button variant="outline" size="sm" onClick={handleExportPseudocode}
+disabled={isLoading}>
+<FileText className="h-4 w-4 mr-1" />
+{t.drakonEditor.pseudocode}
+</Button>
+</TooltipTrigger>
+<TooltipContent>{t.drakonEditor.exportPseudocode}</TooltipContent>
+</Tooltip>
+<Button variant="outline" size="sm" onClick={handleExportJson} disabled={isLoading}>
+<Download className="h-4 w-4 mr-1" />
+JSON
+</Button>
+<Button variant="outline" size="sm" onClick={handleExportPng} disabled={isLoading}>
+<Download className="h-4 w-4 mr-1" />
+PNG
+</Button>
+</div>
+</div>
 
-        <div className="flex-1" />
+{/ Editor layout with toolbar at bottom /}
+<div className="flex flex-col gap-2">
+{/ Widget container /}
+<div className="relative" onClick={(e) => {
+// Don't interfere when context menu is open
+if (uiStateRef.current === 'contextMenuOpen') return;
+// In paste mode, click on empty canvas exits paste mode
+if (uiStateRef.current === 'pasteMode') {
+// Only exit if clicking on the canvas background, not on a socket
+if (!(e.target as HTMLElement).closest('[data-drakon-context-menu]')) {
+console.log('[DRK] canvas click in pasteMode → exiting pasteMode');
+uiStateRef.current = 'default';
+widgetRef.current?.redraw();
+}
+return;
+}
+if (!(e.target as HTMLElement).closest('[data-drakon-context-menu]')) {
+setContextMenu(null);
+uiStateRef.current = 'default';
+}
+}}>
+{isLoading && (
+<div
+className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg z-10"
+style={{ height }}
+>
+<Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+</div>
+)}
+<div
+ref={containerRef}
+className="drakon-container rounded-lg border overflow-hidden"
+style={{ height, minHeight: 300 }}
+/>
 
-        <div className="flex items-center gap-1">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" onClick={handleExportPseudocode} disabled={isLoading}>
-                <FileText className="h-4 w-4 mr-1" />
-                {t.drakonEditor.pseudocode}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t.drakonEditor.exportPseudocode}</TooltipContent>
-          </Tooltip>
-          <Button variant="outline" size="sm" onClick={handleExportJson} disabled={isLoading}>
-            <Download className="h-4 w-4 mr-1" />
-            JSON
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExportPng} disabled={isLoading}>
-            <Download className="h-4 w-4 mr-1" />
-            PNG
-          </Button>
-        </div>
-      </div>
+{/ Context menu /}
+{contextMenu && (
+<div
+data-drakon-context-menu
+className="absolute z-50 min-w-[140px] rounded-md border bg-popover p-1 shadow-md"
+style={{ left: contextMenu.x, top: contextMenu.y }}
+>
+{contextMenu.items.map((item, i) =>
+item.type === 'separator' ? (
+<div key={i} className="my-1 h-px bg-border" />
+):(
+<button
+key={i}
+className="w-full flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent
+hover:text-accent-foreground text-left"
+onClick={(e) => {
+e.stopPropagation();
+const action = item.action;
+const isCopyOrCut = item.text === t.drakon.copy || item.text === t.drakon.cut;
+console.log('[DRK] context menu click:', item.text, 'isCopyOrCut:', isCopyOrCut);
+setContextMenu(null);
 
-      {/* Editor layout with toolbar at bottom */}
-      <div className="flex flex-col gap-2">
-        {/* Widget container */}
-        <div className="relative" onClick={(e) => {
-          // Don't interfere when context menu is open
-          if (uiStateRef.current === 'contextMenuOpen') return;
-          // In paste mode, click on empty canvas exits paste mode
-          if (uiStateRef.current === 'pasteMode') {
-            // Only exit if clicking on the canvas background, not on a socket
-            if (!(e.target as HTMLElement).closest('[data-drakon-context-menu]')) {
-              console.log('[DRK] canvas click in pasteMode → exiting pasteMode');
-              uiStateRef.current = 'default';
-              widgetRef.current?.redraw();
-            }
-            return;
-          }
-          if (!(e.target as HTMLElement).closest('[data-drakon-context-menu]')) {
-            setContextMenu(null);
-            uiStateRef.current = 'default';
-          }
-        }}>
-          {isLoading && (
-            <div 
-              className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg z-10" 
-              style={{ height }}
-            >
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          )}
-          <div
-            ref={containerRef}
-            className="drakon-container rounded-lg border overflow-hidden"
-            style={{ height, minHeight: 300 }}
-          />
+if (action) {
+// Triple-RAF: 1) React commit 2) repaint 3) widget ready
+requestAnimationFrame(() => {
+requestAnimationFrame(() => {
+requestAnimationFrame(() => {
+console.log('[DRK] executing action:', item.text);
+action();
+if (isCopyOrCut && widgetRef.current) {
+requestAnimationFrame(() => {
+console.log('[DRK] calling showPaste after', item.text);
+widgetRef.current?.showPaste();
+uiStateRef.current = 'pasteMode';
+console.log('[DRK] uiState → pasteMode');
+});
+} else {
+uiStateRef.current = 'default';
+}
+});
+});
+});
+} else {
+uiStateRef.current = 'default';
+}
+}}
+>
+{item.text}
+</button>
+)
+)}
+</div>
+)}
+</div>
 
-          {/* Context menu */}
-          {contextMenu && (
-            <div
-              data-drakon-context-menu
-              className="absolute z-50 min-w-[140px] rounded-md border bg-popover p-1 shadow-md"
-              style={{ left: contextMenu.x, top: contextMenu.y }}
-            >
-              {contextMenu.items.map((item, i) =>
-                item.type === 'separator' ? (
-                  <div key={i} className="my-1 h-px bg-border" />
-                ) : (
-                  <button
-                    key={i}
-                    className="w-full flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-left"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const action = item.action;
-                      const isCopyOrCut = item.text === t.drakon.copy || item.text === t.drakon.cut;
-                      console.log('[DRK] context menu click:', item.text, 'isCopyOrCut:', isCopyOrCut);
-                      setContextMenu(null);
-                      
-                      if (action) {
-                        // Triple-RAF: 1) React commit 2) repaint 3) widget ready
-                        requestAnimationFrame(() => {
-                          requestAnimationFrame(() => {
-                            requestAnimationFrame(() => {
-                              console.log('[DRK] executing action:', item.text);
-                              action();
-                              
-                              if (isCopyOrCut && widgetRef.current) {
-                                requestAnimationFrame(() => {
-                                  console.log('[DRK] calling showPaste after', item.text);
-                                  widgetRef.current?.showPaste();
-                                  uiStateRef.current = 'pasteMode';
-                                  console.log('[DRK] uiState → pasteMode');
-                                });
-                              } else {
-                                uiStateRef.current = 'default';
-                              }
-                            });
-                          });
-                        });
-                      } else {
-                        uiStateRef.current = 'default';
-                      }
-                    }}
-                  >
-                    {item.text}
-                  </button>
-                )
-              )}
-            </div>
-          )}
-        </div>
+{/ Project folder + git binding /}
+<ProjectFolderSection
+value={projectFolder}
+onChange={setProjectFolder}
+knownFolders={knownFolders}
+/>
 
-        {/* Project folder + git binding */}
-        <ProjectFolderSection
-          value={projectFolder}
-          onChange={setProjectFolder}
-          knownFolders={knownFolders}
-        />
+{/ Bottom toolbar with icon buttons /}
+<div className="w-full overflow-x-auto border rounded-lg bg-background">
+<div className="flex items-center gap-1 p-1.5">
+{iconButtons.map(({ type, img, label }) => (
+<Tooltip key={type}>
+<TooltipTrigger asChild>
+<Button
+variant="ghost"
+size="icon"
+className="h-10 w-10 shrink-0"
+onClick={() => handleInsertIcon(type)}
+disabled={isLoading}
+>
+<img src={img} alt={label} className="h-7 w-7 dark:invert" />
+</Button>
+</TooltipTrigger>
+<TooltipContent side="top">{label}</TooltipContent>
+</Tooltip>
+))}
 
-        {/* Bottom toolbar with icon buttons */}
-        <div className="w-full overflow-x-auto border rounded-lg bg-background">
-          <div className="flex items-center gap-1 p-1.5">
-            {iconButtons.map(({ type, img, label }) => (
-              <Tooltip key={type}>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-10 w-10 shrink-0"
-                    onClick={() => handleInsertIcon(type)}
-                    disabled={isLoading}
-                  >
-                    <img src={img} alt={label} className="h-7 w-7 dark:invert" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="top">{label}</TooltipContent>
-              </Tooltip>
-            ))}
-            
-            {/* Separator */}
-            <div className="mx-1 w-px h-8 bg-border shrink-0" />
-            
-            {/* Toggle silhouette */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 shrink-0"
-                  onClick={handleToggleSilhouette}
-                  disabled={isLoading}
-                >
-                  <img src={iconSilhouette} alt="Silhouette" className="h-7 w-7 dark:invert" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="top">{t.drakonEditor.toggleSilhouette}</TooltipContent>
-            </Tooltip>
-      </div>
+{/ Separator /}
+<div className="mx-1 w-px h-8 bg-border shrink-0" />
 
-      {/* Edit dialog for element content */}
-      <Dialog open={editDialog.open} onOpenChange={(open) => {
-        if (!open) setEditDialog(prev => ({ ...prev, open: false }));
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>{editDialog.title}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <Input
-              autoFocus
-              value={editDialog.value}
-              onChange={(e) => setEditDialog(prev => ({ ...prev, value: e.target.value }))}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  editDialog.onConfirm(editDialog.value);
-                  setEditDialog(prev => ({ ...prev, open: false }));
-                }
-              }}
-              placeholder="..."
-            />
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setEditDialog(prev => ({ ...prev, open: false }))}>
-                {t.editor?.cancel || 'Cancel'}
-              </Button>
-              <Button size="sm" onClick={() => {
-                editDialog.onConfirm(editDialog.value);
-                setEditDialog(prev => ({ ...prev, open: false }));
-              }}>
-                OK
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+{/ Toggle silhouette /}
+<Tooltip>
+<TooltipTrigger asChild>
+<Button
+variant="ghost"
+size="icon"
+className="h-10 w-10 shrink-0"
+onClick={handleToggleSilhouette}
+disabled={isLoading}
+>
+<img src={iconSilhouette} alt="Silhouette" className="h-7 w-7 dark:invert" />
+</Button>
+</TooltipTrigger>
+<TooltipContent side="top">{t.drakonEditor.toggleSilhouette}</TooltipContent>
+</Tooltip>
+</div>
 
-      {/* Format Inspector dialog for style editing */}
-      <FormatInspector
-        open={formatDialog.open}
-        title={formatDialog.title}
-        style={formatDialog.style}
-        onConfirm={(newStyle) => {
-          formatDialog.onConfirm(newStyle);
-          setFormatDialog(prev => ({ ...prev, open: false }));
-        }}
-        onCancel={() => setFormatDialog(prev => ({ ...prev, open: false }))}
-      />
-    </div>
-      </div>
-    </div>
-  );
+{/ Edit dialog for element content /}
+<Dialog open={editDialog.open} onOpenChange={(open) => {
+if (!open) setEditDialog(prev => ({ ...prev, open: false }));
+}}>
+<DialogContent className="sm:max-w-md">
+<DialogHeader>
+<DialogTitle>{editDialog.title}</DialogTitle>
+</DialogHeader>
+<div className="space-y-4 py-2">
+<Input
+autoFocus
+value={editDialog.value}
+onChange={(e) => setEditDialog(prev => ({ ...prev, value: e.target.value }))}
+onKeyDown={(e) => {
+if (e.key === 'Enter') {
+editDialog.onConfirm(editDialog.value);
+setEditDialog(prev => ({ ...prev, open: false }));
+}
+}}
+placeholder="..."
+/>
+<div className="flex justify-end gap-2">
+<Button variant="outline" size="sm" onClick={() => setEditDialog(prev => ({ ...prev, open:
+false }))}>
+{t.editor?.cancel || 'Cancel'}
+</Button>
+<Button size="sm" onClick={() => {
+editDialog.onConfirm(editDialog.value);
+setEditDialog(prev => ({ ...prev, open: false }));
+}}>
+OK
+</Button>
+</div>
+</div>
+</DialogContent>
+</Dialog>
+
+{/ Format Inspector dialog for style editing /}
+<FormatInspector
+open={formatDialog.open}
+title={formatDialog.title}
+style={formatDialog.style}
+onConfirm={(newStyle) => {
+formatDialog.onConfirm(newStyle);
+setFormatDialog(prev => ({ ...prev, open: false }));
+}}
+onCancel={() => setFormatDialog(prev => ({ ...prev, open: false }))}
+/>
+</div>
+</div>
+</div>
+);
 }
 
 // Dialog wrapper for creating new diagrams
 interface NewDrakonDialogProps {
-  folderSlug?: string;
-  trigger?: React.ReactNode;
-  onCreated?: (diagramId: string) => void;
+folderSlug?: string;
+trigger?: React.ReactNode;
+onCreated?: (diagramId: string) => void;
 }
 
 export function NewDrakonDialog({ folderSlug, trigger, onCreated }: NewDrakonDialogProps) {
-  const [open, setOpen] = useState(false);
-  const [diagramId, setDiagramId] = useState('');
-  const [step, setStep] = useState<'name' | 'edit'>('name');
-  const { t } = useLocale();
+const [open, setOpen] = useState(false);
+const [diagramId, setDiagramId] = useState('');
+const [step, setStep] = useState<'name' | 'edit'>('name');
+const { t } = useLocale();
 
-  const handleStartEdit = () => {
-    if (!diagramId.trim()) return;
-    setStep('edit');
-  };
+const handleStartEdit = () => {
+if (!diagramId.trim()) return;
+setStep('edit');
+};
 
-  const handleSaved = (id: string) => {
-    onCreated?.(id);
-    setOpen(false);
-    setStep('name');
-    setDiagramId('');
-  };
+const handleSaved = (id: string) => {
+onCreated?.(id);
+setOpen(false);
+setStep('name');
+setDiagramId('');
+};
 
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" size="sm">
-            <Plus className="h-4 w-4 mr-1" />
-            {t.drakonEditor.newDrakon}
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className={step === 'edit' ? 'max-w-4xl h-[80vh]' : ''}>
-        <DialogHeader>
-          <DialogTitle>
-            {step === 'name' ? t.drakonEditor.createNewDiagram : `Edit: ${diagramId}`}
-          </DialogTitle>
-        </DialogHeader>
+return (
+<Dialog open={open} onOpenChange={setOpen}>
+<DialogTrigger asChild>
+{trigger || (
+<Button variant="outline" size="sm">
+<Plus className="h-4 w-4 mr-1" />
+{t.drakonEditor.newDrakon}
+</Button>
+)}
+</DialogTrigger>
+<DialogContent className={step === 'edit' ? 'max-w-4xl h-[80vh]' : ''}>
+<DialogHeader>
+<DialogTitle>
+{step === 'name' ? t.drakonEditor.createNewDiagram : Edit: ${diagramId}}
+</DialogTitle>
+</DialogHeader>
 
-        {step === 'name' ? (
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-diagram-id">{t.drakonEditor.diagramId}</Label>
-              <Input
-                id="new-diagram-id"
-                value={diagramId}
-                onChange={(e) => setDiagramId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '-'))}
-                placeholder="my-flowchart"
-              />
-              <p className="text-xs text-muted-foreground">
-                {t.drakonEditor.savedIn} {folderSlug || 'diagrams'}/diagrams/{diagramId || 'id'}.drakon.json
-              </p>
-            </div>
-            <Button onClick={handleStartEdit} disabled={!diagramId.trim()}>
-              {t.drakonEditor.createAndEdit}
-            </Button>
-          </div>
-        ) : (
-          <div className="flex-1 overflow-hidden">
-            <DrakonEditor
-              diagramId={diagramId}
-              folderSlug={folderSlug}
-              height={500}
-              isNew
-              onSaved={handleSaved}
-            />
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
+{step === 'name' ? (
+<div className="space-y-4 py-4">
+<div className="space-y-2">
+<Label htmlFor="new-diagram-id">{t.drakonEditor.diagramId}</Label>
+<Input
+id="new-diagram-id"
+value={diagramId}
+onChange={(e) => setDiagramId(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '-'))}
+placeholder="my-flowchart"
+/>
+<p className="text-xs text-muted-foreground">
+{t.drakonEditor.savedIn} {folderSlug || 'diagrams'}/diagrams/{diagramId || 'id'}.drakon.json
+</p>
+</div>
+<Button onClick={handleStartEdit} disabled={!diagramId.trim()}>
+{t.drakonEditor.createAndEdit}
+</Button>
+</div>
+):(
+<div className="flex-1 overflow-hidden">
+<DrakonEditor
+diagramId={diagramId}
+folderSlug={folderSlug}
+height={500}
+isNew
+onSaved={handleSaved}
+/>
+</div>
+)}
+</DialogContent>
+</Dialog>
+);
 }
+

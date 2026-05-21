@@ -1,23 +1,24 @@
 export interface ApiHealthResponse {
-  status: "ok" | "degraded";
-  timestamp: string;
+status: "ok" | "degraded";
+timestamp: string;
 }
 
 export interface ApiErrorResponse {
-  error: string;
-  message: string;
+error: string;
+message: string;
 }
 
 export interface EmptyApiResponse {
-  success: boolean;
+success: boolean;
 }
 
 export interface LoginRequest {
-  username: string;
-  password: string;
+username: string;
+password: string;
 }
 
 export interface LoginResponse {
-  accessToken: string;
-  expiresAt: string;
+accessToken: string;
+expiresAt: string;
 }
+
