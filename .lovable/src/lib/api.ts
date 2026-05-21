@@ -216,15 +216,13 @@ fetch( `${resolveApiBase()}/v1/projects/list`, { headers: headers() }).then((r) 
 listDrakonIr: (project?: string): Promise<{ success: boolean; diagrams: string[]; count: number
 }> => {
 const qs = project ? `?project=${encodeURIComponent(project)}` : "";
-return fetch( `${resolveApiBase()}/v1/drakon-ir/list${qs}`, { headers: headers() }).then((r)
-=> r.json());
+return fetch( `${resolveApiBase()}/v1/drakon-ir/list${qs}`, { headers: headers() }).then((r) => r.json());
 },
 
 getDrakonIr: (name: string, project?: string): Promise<{ success: boolean; name: string;
 diagram: object }> => {
 const proj = project ? `&project=${encodeURIComponent(project)}` : "";
-return
-fetch( `${resolveApiBase()}/v1/drakon-ir/${encodeURIComponent(name)}?_=1${proj}`, {
+return fetch( `${resolveApiBase()}/v1/drakon-ir/${encodeURIComponent(name)}?_=1${proj}`, {
 headers: headers(),
 }).then((r) => r.json());
 },
