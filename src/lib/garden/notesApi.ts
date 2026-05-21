@@ -25,8 +25,9 @@ const data = (await res.json()) as { notes?: NoteListItem[] };
 return data.notes ?? [];
 }
 
-export async function fetchNote(slug: string): Promise<NoteContent | null> {
-const res = await fetch( `${workerUrl()}/v1/notes/get?slug=${encodeURIComponent(slug)}`,
+export async function fetchNote(slug: string, project?: string): Promise<NoteContent | null> {
+const projectQs = project ? `&project=${encodeURIComponent(project)}` : "";
+const res = await fetch( `${workerUrl()}/v1/notes/get?slug=${encodeURIComponent(slug)}${projectQs}`,
 {
 headers: authHeaders(),
 });
@@ -46,8 +47,8 @@ sha: data.sha,
 }
 
 // Convenience: returns just the markdown body for a slug, or "" if missing
-export async function fetchNoteContent(slug: string): Promise<string> {
-const note = await fetchNote(slug);
+export async function fetchNoteContent(slug: string, project?: string): Promise<string> {
+const note = await fetchNote(slug, project);
 return note?.content ?? "";
 }
 
@@ -128,14 +129,15 @@ title?: string;
 size?: number;
 }
 
-export async function fetchNotesTree(): Promise<TreeNode[]> {
-const res = await fetch(`${workerUrl()}/v1/notes/list?flat=false`, { headers: authHeaders() });
+export async function fetchNotesTree(project?: string): Promise<TreeNode[]> {
+const projectQs = project ? `&project=${encodeURIComponent(project)}` : "";
+const res = await fetch(`${workerUrl()}/v1/notes/list?flat=false${projectQs}`, { headers: authHeaders() });
 if (!res.ok) throw new Error(`notes/tree HTTP ${res.status}`);
 const data = (await res.json()) as { tree?: TreeNode[] };
 return data.tree ?? [];
 }
 
-export async function deleteNote(slug: string): Promise<void> {
+export async function deleteNote(slug: string, project?: string): Promise<void> {
 const token = jwt();
 if (!token) throw new Error("Не авторизовано (JWT відсутній)");
 const res = await fetch( `${workerUrl()}/v1/notes/delete`, {
@@ -144,20 +146,23 @@ headers: {
 "Content-Type": "application/json",
 Authorization: `Bearer ${token}`,
 },
-body: JSON.stringify({ slug }),
+body: JSON.stringify({ slug, project }),
 });
 if (!res.ok) {
 const txt = await res.text().catch(() => "");
 throw new Error(`delete HTTP ${res.status}: ${txt}`);
 }
 }
-export async function fetchNotesGraph(): Promise<{
+export async function fetchNotesGraph(project?: string): Promise<{
 nodes: Array<{ slug: string; title: string; exists: boolean }>;
 edges: Array<{ source: string; target: string; type: string }>;
 stats: { notes: number; links: number };
 }> {
-const res = await fetch(workerUrl() + '/v1/notes/graph');
-if (!res.ok) throw new Error('notes/graph HTTP ' + res.status);
+const qs = project ? `?project=${encodeURIComponent(project)}` : "";
+const res = await fetch(`${workerUrl()}/v1/notes/graph${qs}`, {
+headers: authHeaders(),
+});
+if (!res.ok) throw new Error(`Graph: ${res.status} ${res.statusText}`);
 return res.json() as Promise<{nodes: Array<{slug: string; title: string; exists: boolean}>; edges:
 Array<{source: string; target: string; type: string}>; stats: {notes: number; links: number}}>;
 }

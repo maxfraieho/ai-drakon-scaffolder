@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Loader2, RefreshCw, Network } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExecutionGraph } from "@/components/docs/garden/ExecutionGraph";
+import { useProject } from "@/context/ProjectContext";
 import { fetchNotesGraph } from "@/lib/garden/notesApi";
 import type { GraphNode, GraphEdge } from "@/lib/garden/graphTypes";
 
@@ -10,6 +11,7 @@ onNodeClick?: (slug: string) => void;
 }
 
 export function NotesGraphTab({ onNodeClick }: NotesGraphTabProps) {
+const { activeProject } = useProject();
 const [nodes, setNodes] = useState<GraphNode[]>([]);
 const [edges, setEdges] = useState<GraphEdge[]>([]);
 const [loading, setLoading] = useState(false);
@@ -19,7 +21,7 @@ const loadGraph = async () => {
 setLoading(true);
 setError(null);
 try {
-const data = await fetchNotesGraph();
+const data = await fetchNotesGraph(activeProject?.slug);
 setNodes(data.nodes);
 setEdges(data.edges);
 } catch (e) {
@@ -31,7 +33,7 @@ setLoading(false);
 
 useEffect(() => {
 void loadGraph();
-}, []);
+}, [activeProject?.slug]);
 
 if (loading) {
 return (

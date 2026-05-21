@@ -5,6 +5,7 @@ ChevronDown, ChevronRight, FileText, Folder, FolderOpen, Loader2, RefreshCw,
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useProject } from "@/context/ProjectContext";
 import { cn } from "@/lib/utils";
 import { fetchNotesTree, type TreeNode } from "@/lib/garden/notesApi";
 function nodeMatchesSearch(node: TreeNode, q: string): boolean {
@@ -90,6 +91,7 @@ onNoteOpen: (slug: string) => void;
 }
 
 export function DocsFilesTab({ onNoteOpen }: DocsFilesTabProps) {
+const { activeProject } = useProject();
 const [tree, setTree] = useState<TreeNode[]>([]);
 const [loading, setLoading] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
@@ -97,7 +99,7 @@ const [searchQuery, setSearchQuery] = useState("");
 const load = async () => {
 setLoading(true);
 try {
-setTree(await fetchNotesTree());
+setTree(await fetchNotesTree(activeProject?.slug));
 } catch (e) {
 console.error("tree load error", e);
 } finally {
@@ -107,7 +109,7 @@ setLoading(false);
 
 useEffect(() => {
 void load();
-}, []);
+}, [activeProject?.slug]);
 
 return (
 <div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col overflow-hidden rounded-lg border border-border">
@@ -131,7 +133,7 @@ title="Оновити"
 </div>
 
 <div className="border-b border-border px-3 py-1.5 text-xs text-muted-foreground">
-{`loading ? "Завантаження…" : ${countNotes(tree)}` документів}
+{loading ? "Завантаження…" : `${countNotes(tree)} документів`}
 </div>
 
 <ScrollArea className="flex-1">
