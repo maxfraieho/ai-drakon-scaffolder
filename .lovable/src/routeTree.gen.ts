@@ -21,6 +21,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
 import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
 import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
+import { Route as DevcycleRouteImport } from './routes/devcycle'
+import { Route as SitemapXmlRouteImport } from './routes/sitemap[.]xml'
 
 const SyncRoute = SyncRouteImport.update({
 id: '/sync',
@@ -77,6 +79,16 @@ id: '/pipeline/$pipelineId/edit',
 path: '/pipeline/$pipelineId/edit',
 getParentRoute: () => rootRouteImport,
 } as any)
+const DevcycleRoute = DevcycleRouteImport.update({
+id: '/devcycle',
+path: '/devcycle',
+getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapXmlRoute = SitemapXmlRouteImport.update({
+id: '/sitemap.xml',
+path: '/sitemap.xml',
+getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
 '/': typeof IndexRoute
@@ -90,6 +102,8 @@ export interface FileRoutesByFullPath {
 '/diagram/editor': typeof DiagramEditorRoute
 '/editor/$id': typeof EditorIdRoute
 '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
+'/devcycle': typeof DevcycleRoute
+'/sitemap.xml': typeof SitemapXmlRoute
 }
 export interface FileRoutesByTo {
 '/': typeof IndexRoute
@@ -103,6 +117,8 @@ export interface FileRoutesByTo {
 '/diagram/editor': typeof DiagramEditorRoute
 '/editor/$id': typeof EditorIdRoute
 '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
+'/devcycle': typeof DevcycleRoute
+'/sitemap.xml': typeof SitemapXmlRoute
 }
 export interface FileRoutesById {
 __root__: typeof rootRouteImport
@@ -117,6 +133,8 @@ __root__: typeof rootRouteImport
 '/diagram/editor': typeof DiagramEditorRoute
 '/editor/$id': typeof EditorIdRoute
 '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
+'/devcycle': typeof DevcycleRoute
+'/sitemap.xml': typeof SitemapXmlRoute
 }
 export interface FileRouteTypes {
 fileRoutesByFullPath: FileRoutesByFullPath
@@ -132,6 +150,8 @@ fullPaths:
 | '/diagram/editor'
 | '/editor/$id'
 | '/pipeline/$pipelineId/edit'
+| '/devcycle'
+| '/sitemap.xml'
 fileRoutesByTo: FileRoutesByTo
 to:
 | '/'
@@ -145,6 +165,8 @@ to:
 | '/diagram/editor'
 | '/editor/$id'
 | '/pipeline/$pipelineId/edit'
+| '/devcycle'
+| '/sitemap.xml'
 id:
 | '__root__'
 | '/'
@@ -158,6 +180,8 @@ id:
 | '/diagram/editor'
 | '/editor/$id'
 | '/pipeline/$pipelineId/edit'
+| '/devcycle'
+| '/sitemap.xml'
 fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -172,6 +196,8 @@ SyncRoute: typeof SyncRoute
 DiagramEditorRoute: typeof DiagramEditorRoute
 EditorIdRoute: typeof EditorIdRoute
 PipelinePipelineIdEditRoute: typeof PipelinePipelineIdEditRoute
+DevcycleRoute: typeof DevcycleRoute
+SitemapXmlRoute: typeof SitemapXmlRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -253,6 +279,20 @@ fullPath: '/pipeline/$pipelineId/edit'
 preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
 parentRoute: typeof rootRouteImport
 }
+'/devcycle': {
+id: '/devcycle'
+path: '/devcycle'
+fullPath: '/devcycle'
+preLoaderRoute: typeof DevcycleRouteImport
+parentRoute: typeof rootRouteImport
+}
+'/sitemap.xml': {
+id: '/sitemap.xml'
+path: '/sitemap.xml'
+fullPath: '/sitemap.xml'
+preLoaderRoute: typeof SitemapXmlRouteImport
+parentRoute: typeof rootRouteImport
+}
 }
 }
 
@@ -268,6 +308,8 @@ SyncRoute: SyncRoute,
 DiagramEditorRoute: DiagramEditorRoute,
 EditorIdRoute: EditorIdRoute,
 PipelinePipelineIdEditRoute: PipelinePipelineIdEditRoute,
+DevcycleRoute: DevcycleRoute,
+SitemapXmlRoute: SitemapXmlRoute,
 }
 export const routeTree = rootRouteImport
 ._addFileChildren(rootRouteChildren)
