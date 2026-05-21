@@ -44,7 +44,7 @@ const links: { slug: string; alias?: string }[] = [];
 const transformed = content.replace(WIKI_RE, (_m, slug: string, alias?: string) => {
 const idx = links.length;
 links.push({ slug: slug.trim(), alias: alias?.trim() });
-return \u0000WIKI${idx}\u0000;
+return  `\u0000WIKI${idx}\u0000`;
 });
 return { transformed, links };
 }, [content]);
@@ -61,7 +61,7 @@ const link = links[Number(parts[i])];
 if (link) {
 out.push(
 <WikiLink
-key={wl-${i}}
+key={`wl-${i`}}
 slug={link.slug}
 alias={link.alias}
 onNavigate={onNavigate}
@@ -102,7 +102,7 @@ table: ({ children }) => (
 th: ({ children }) => <th className="break-words border border-border px-2 py-1 text-left align-top">{children}</th>,
 td: ({ children }) => <td className="break-words border border-border px-2 py-1 align-top">{children}</td>,
 code: ({ children, className }) => (
-<code className={${className ?? ""} max-w-full whitespace-pre-wrap break-words
+<code className= `{${className ?? ""} max-w-full whitespace-pre-wrap break-words`
 [overflow-wrap:anywhere] [word-break:break-word]}>
 {children}
 </code>

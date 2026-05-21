@@ -27,13 +27,13 @@ autofixes: ValidationAutofix[];
 
 function headers() {
 return {
-Authorization: Bearer ${getAccessToken() ?? ""},
+Authorization: `Bearer ${getAccessToken() ?? ""}`,
 "Content-Type": "application/json",
 };
 }
 
 export async function validateIrRemote(ir: IrDiagram): Promise<ValidationResult> {
-const response = await fetch(${BASE}/v1/drakon/validate-ir, {
+const response = await fetch( `${BASE}/v1/drakon/validate-ir`, {
 method: "POST",
 headers: headers(),
 body: JSON.stringify({ ir }),
@@ -42,7 +42,7 @@ body: JSON.stringify({ ir }),
 const data = (await response.json()) as ValidationResult & { error?: string; message?: string };
 
 if (!response.ok) {
-throw new Error(data.message || data.error || HTTP ${response.status});
+throw new Error(`data.message || data.error || HTTP ${response.status}`);
 }
 
 return data;

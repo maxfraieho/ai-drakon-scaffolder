@@ -379,7 +379,7 @@ items: (ir.items ?? {}) as any,
 upsertDiagramInStorage(stored);
 setDiagrams((prev) => [stored, ...prev]);
 setSelectedDiagram(stored);
-toast.success(IR імпортовано: ${ir.name});
+toast.success(`IR імпортовано: ${ir.name}`);
 }}
 />
 

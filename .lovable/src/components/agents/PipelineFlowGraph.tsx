@@ -240,7 +240,7 @@ selected: n.id === selectedNodeId,
 }));
 
 const rfEdges: Edge[] = config.edges.map((e, i) => ({
-id: e-${i},
+id: `e-${i`},
 source: e.from_node,
 target: e.to_node,
 sourceHandle: e.condition ?? undefined,
@@ -365,7 +365,7 @@ typeof window !== "undefined"
 "https://drakon-mcp-worker.maxfraieho.workers.dev"
 : "https://drakon-mcp-worker.maxfraieho.workers.dev"
 ).replace(/\/+$/, "");
-fetch(${workerUrl}/v1/proxy/slot-info?slot=${encodeURIComponent(slotName)})
+fetch( `${workerUrl}/v1/proxy/slot-info?slot=${encodeURIComponent(slotName)}`)
 .then((r) => r.json())
 .then((data) => {
 if (!cancelled) setInfo(data as SlotInfo);
@@ -418,11 +418,11 @@ docs: "claude-3-haiku-20240307",
 };
 const savedProtocol =
 typeof window !== "undefined"
-? localStorage.getItem(${_agentKey}_llm_protocol)
+? localStorage.getItem(`${_agentKey}_llm_protocol`)
 : null;
 const savedModel =
 typeof window !== "undefined"
-? localStorage.getItem(${_agentKey}_llm_model)
+? localStorage.getItem(`${_agentKey}_llm_model`)
 : null;
 const llmProtocol = (savedProtocol || "openai") as "openai" | "anthropic";
 const llmModel = savedModel || DEFAULT_MODEL[activeAgent];
@@ -456,7 +456,7 @@ void sendMessage(activeAgent, lastUser.content);
 const handleOpenDiagram = async (
 diag: { name: string; items: Record<string, unknown> },
 ): Promise<void> => {
-const id = ${Date.now()}-${Math.random().toString(36).slice(2, 8)};
+const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const drakonDiagram: DrakonDiagram = {
 name: diag.name,
 items: diag.items as DrakonDiagram["items"],
@@ -529,7 +529,7 @@ onOpenDiagram={handleOpenDiagram}
 {llmProtocol === "anthropic" ? "Anthropic" : "OpenAI"}
 </span>
 <span className="opacity-40">·</span>
-<span className="font-mono" title={slot/model: ${llmModel}}>
+<span className="font-mono" title={`slot/model: ${llmModel`}}>
 {llmModel}
 </span>
 <span className="opacity-40">→</span>
@@ -540,8 +540,8 @@ onOpenDiagram={handleOpenDiagram}
 className="font-mono text-emerald-600 dark:text-emerald-400"
 title={
 slotInfo.active_model
-? Active: ${slotInfo.active_model}
-: Top candidate: ${slotInfo.top_candidate}
+? Active:`${slotInfo.active_model`}
+: Top candidate:`${slotInfo.top_candidate`}
 }
 >
 {(slotInfo.active_model || slotInfo.top_candidate || "")
@@ -551,7 +551,7 @@ slotInfo.active_model
 ) : llmProtocol === "anthropic" ? (
 <span
 className="font-mono text-emerald-600 dark:text-emerald-400"
-title={Direct Anthropic model: ${llmModel}}
+title={`Direct Anthropic model: ${llmModel`}}
 >
 {llmModel}
 </span>

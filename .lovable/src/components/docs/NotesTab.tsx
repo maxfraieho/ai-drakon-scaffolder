@@ -72,7 +72,7 @@ className={cn(
 "group flex w-full items-center rounded transition-colors hover:bg-muted",
 isActive && "bg-muted",
 )}
-style={{ paddingLeft: ${8 + level * 14}px }}
+style={{` paddingLeft:` ${8 + level * 14``}px }}
 >
 <button
 onClick={() => onNoteClick(node.slug!)}
@@ -100,7 +100,7 @@ return (
 <div>
 <div
 className="group flex items-center rounded hover:bg-muted/60"
-style={{ paddingLeft: ${4 + level * 14}px }}
+style={{` paddingLeft:` ${4 + level * 14``}px }}
 >
 <button
 onClick={() => setOpen((o) => !o)}
@@ -216,8 +216,8 @@ return;
 }
 if (pendingFolder) {
 // Use commitNote directly to control slug
-const slugBase = slugifySegment(editor.title) || note-${Date.now()};
-const finalSlug = ${pendingFolder}/${slugBase};
+const slugBase = slugifySegment( `editor.title) || note-${Date.now()}`;
+const finalSlug = `${pendingFolder}/${slugBase}`;
 try {
 await commitNote({
 slug: finalSlug,
@@ -239,7 +239,7 @@ await handleSave();
 
 const handleDeleteNote = async (slug: string) => {
 const title = flattenTree(tree).find((n) => n.slug === slug)?.title ?? slug;
-if (!window.confirm(Видалити документ «${title}»? Це незворотня дія.)) return;
+if (!window.confirm(`Видалити документ «${title}»? Це незворотня дія.`)) return;
 try {
 await deleteNote(slug);
 if (activeSlug === slug) setActiveSlug(null);
@@ -264,12 +264,12 @@ return;
 const next = [...localFolders, slug];
 setLocalFolders(next);
 writeLocalFolders(next);
-toast.success(Папку «${slug}» створено. Додайте до неї документ, щоб зберегти.);
+toast.success(`Папку «${slug}» створено. Додайте до неї документ, щоб зберегти.`);
 };
 
 const handleDeleteFolder = async (folderPath: string, hasChildren: boolean) => {
 if (hasChildren) {
-if (!window.confirm(Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із
+if (!window.confirm( `Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із`
 усіма документами?)) return;
 const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
 try {
@@ -383,7 +383,7 @@ title="Список документів"
 </Button>
 <span className="truncate text-xs text-muted-foreground">
 {activeSlug === NEW_SLUG
-? (pendingFolder ? Новий у /${pendingFolder} : "Новий документ")
+? ( `pendingFolder ? Новий у /${pendingFolder} : "Новий документ"`)
 : activeSlug ?? "Оберіть документ"}
 </span>
 </div>
@@ -409,7 +409,7 @@ tags={editor.tags}
 isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)}
 isSaving={editor.isSaving}
 hasDraft={editor.hasDraft}
-currentSlug={activeSlug === NEW_SLUG ? (pendingFolder ? ${pendingFolder}/… : undefined)
+currentSlug={`activeSlug === NEW_SLUG ? (pendingFolder ? ${pendingFolder`}/… : undefined)
 : activeSlug}
 onTitleChange={editor.setTitle}
 onContentChange={editor.setContent}

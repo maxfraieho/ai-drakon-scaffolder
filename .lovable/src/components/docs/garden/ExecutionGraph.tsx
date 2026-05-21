@@ -601,7 +601,7 @@ title="Скинути фокус">
 {/ SVG Graph /}
 <svg
 ref={svgRef}
-viewBox={${vbX} ${vbY} ${vbW} ${vbH}}
+viewBox= `{${vbX} ${vbY} ${vbW} ${vbH}`}
 className="w-full select-none"
 style={{ height: '65vh', cursor: dragNode ? 'grabbing' : isPanning ? 'grabbing' : 'grab' }}
 onWheel={handleWheel}
@@ -624,7 +624,7 @@ const tg = slugMap.get(edge.target);
 if (!s || !tg || !isEdgeVisible(edge)) return null;
 const { strokeWidth, strokeOpacity, stroke } = getEdgeStyle(edge, edge.source, edge.target);
 return (
-<line key={e-${i}} x1={s.x} y1={s.y} x2={tg.x} y2={tg.y}
+<line key={`e-${i`}} x1={s.x} y1={s.y} x2={tg.x} y2={tg.y}
 stroke={stroke} strokeWidth={strokeWidth} strokeOpacity={strokeOpacity}
 style={{ transition: 'stroke-opacity 0.3s ease, stroke-width 0.3s ease' }}
 />
@@ -657,7 +657,7 @@ if (isFocused || isHovered) labelOpacity = 1;
 else if (hasFocus && highlighted) labelOpacity = 0.85;
 else if (hasFocus && !highlighted) labelOpacity = 0.06;
 return (
-<g key={node.slug} transform={translate(${node.x},${node.y})}
+<g key={node.slug} transform={translate(`${node.x},${node.y}`)}
 onMouseDown={e => handleNodeMouseDown(e, node.slug)}
 onMouseEnter={() => setHoveredNode(node.slug)}
 onMouseLeave={() => setHoveredNode(null)}
@@ -700,7 +700,7 @@ transition: 'opacity 0.3s ease' }}
 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Зв'язки</span>
 {Object.entries(EDGE_TYPE_CONFIG).map(([type, cfg]) => (
 <span key={type} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-<span className="w-5 rounded-full" style={{ background: cfg.color, height: ${cfg.width}px
+<span className="w-5 rounded-full" style={{` background: cfg.color, height:` ${cfg.width``}px
 }} />
 {cfg.label}
 </span>

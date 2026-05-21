@@ -15,29 +15,29 @@ return localStorage.getItem("jwt");
 
 function authHeaders(): Record<string, string> {
 const token = jwt();
-return token ? { Authorization: Bearer ${token} } : {};
+return token ? {` Authorization: Bearer ${token`} } : {};
 }
 
 export async function fetchNotesList(): Promise<NoteListItem[]> {
-const res = await fetch(${workerUrl()}/v1/notes/list, { headers: authHeaders() });
-if (!res.ok) throw new Error(notes/list HTTP ${res.status});
+const res = await fetch( `${workerUrl()}/v1/notes/list`, { headers: authHeaders() });
+if (!res.ok) throw new Error(`notes/list HTTP ${res.status}`);
 const data = (await res.json()) as { notes?: NoteListItem[] };
 return data.notes ?? [];
 }
 
 export async function fetchNote(slug: string): Promise<NoteContent | null> {
-const res = await fetch(${workerUrl()}/v1/notes/get?slug=${encodeURIComponent(slug)},
+const res = await fetch( `${workerUrl()}/v1/notes/get?slug=${encodeURIComponent(slug)}`,
 {
 headers: authHeaders(),
 });
 if (res.status === 404) return null;
-if (!res.ok) throw new Error(notes/get HTTP ${res.status});
+if (!res.ok) throw new Error(`notes/get HTTP ${res.status}`);
 const data = (await res.json()) as Partial<NoteContent> & { content?: string; raw?: string };
 const raw = data.content ?? data.raw ?? "";
 const parsed = parseFrontmatter(raw);
 return {
 slug,
-path: data.path ?? docs/${slug}.md,
+path: `data.path ?? docs/${slug`}.md,
 title: data.title ?? parsed.title ?? slug,
 content: parsed.body,
 tags: data.tags ?? parsed.tags,
@@ -65,28 +65,28 @@ const token = jwt();
 if (!token) throw new Error("Не авторизовано (JWT відсутній)");
 const body = {
 slug: payload.slug,
-path: docs/${payload.slug}.md,
+path: `docs/${payload.slug`}.md,
 content: buildMarkdown(payload),
 sha: payload.sha,
-message: notes: update ${payload.slug},
+message: `notes: update ${payload.slug`},
 };
-const res = await fetch(${workerUrl()}/v1/notes/commit, {
+const res = await fetch( `${workerUrl()}/v1/notes/commit`, {
 method: "POST",
 headers: {
 "Content-Type": "application/json",
-Authorization: Bearer ${token},
+Authorization: `Bearer ${token`},
 },
 body: JSON.stringify(body),
 });
 if (!res.ok) {
 const txt = await res.text().catch(() => "");
-throw new Error(commit HTTP ${res.status}: ${txt});
+throw new Error(`commit HTTP ${res.status}: ${txt}`);
 }
 return res.json();
 }
 
 function buildMarkdown(p: CommitNotePayload): string {
-const fm = ["---", title: ${JSON.stringify(p.title)}, tags: [${p.tags.map((t) =>
+const fm = ["---", title:`${JSON.stringify(p.title)`}, tags: [${p.tags.map((t) =>
 JSON.stringify(t)).join(", ")}], "---", ""].join("\n");
 return fm + "\n" + p.content.trimStart();
 }
@@ -129,9 +129,9 @@ size?: number;
 }
 
 export async function fetchNotesTree(): Promise<TreeNode[]> {
-const res = await fetch(${workerUrl()}/v1/notes/list?flat=false, { headers:
+const res = await fetch( `${workerUrl()}/v1/notes/list?flat=false`, { headers:
 authHeaders() });
-if (!res.ok) throw new Error(notes/tree HTTP ${res.status});
+if (!res.ok) throw new Error(`notes/tree HTTP ${res.status}`);
 const data = (await res.json()) as { tree?: TreeNode[] };
 return data.tree ?? [];
 }
@@ -139,17 +139,17 @@ return data.tree ?? [];
 export async function deleteNote(slug: string): Promise<void> {
 const token = jwt();
 if (!token) throw new Error("Не авторизовано (JWT відсутній)");
-const res = await fetch(${workerUrl()}/v1/notes/delete, {
+const res = await fetch( `${workerUrl()}/v1/notes/delete`, {
 method: "DELETE",
 headers: {
 "Content-Type": "application/json",
-Authorization: Bearer ${token},
+Authorization: `Bearer ${token`},
 },
 body: JSON.stringify({ slug }),
 });
 if (!res.ok) {
 const txt = await res.text().catch(() => "");
-throw new Error(delete HTTP ${res.status}: ${txt});
+throw new Error(`delete HTTP ${res.status}: ${txt}`);
 }
 }
 export async function fetchNotesGraph(): Promise<{

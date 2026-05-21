@@ -12,7 +12,7 @@ let counter = 0;
 // Assign stable item IDs per node
 for (const node of config.nodes) {
 const prefix = node.type === "decision" ? "q" : "n";
-nodeToItem.set(node.id, ${prefix}${counter++});
+nodeToItem.set(`node.id, ${prefix}${counter++}`);
 }
 nodeToItem.set("__end__", "end");
 
@@ -163,7 +163,7 @@ body: body ? JSON.stringify(body) : undefined,
 });
 
 if (!response.ok) {
-throw new Error(HTTP request failed: ${response.status});
+throw new Error(`HTTP request failed: ${response.status}`);
 }
 
 return (await response.json()) as TResponse;

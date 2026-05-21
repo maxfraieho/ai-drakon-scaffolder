@@ -92,7 +92,7 @@ Validate
 <div className="min-h-0 flex-1">
 <DrakonEditor
 diagram={pipelineToIR(config)}
-diagramId={pipeline-${config.id}}
+diagramId={`pipeline-${config.id`}}
 isNew={false}
 onSaveOverride={handleSaveOverride}
 className="h-full"
@@ -131,7 +131,7 @@ setErrorMsg(null);
 
 try {
 const workerUrl = readSettings().app.workerUrl.replace(/\/+$/, "");
-const resp = await fetch(${workerUrl}/auth/login, {
+const resp = await fetch( `${workerUrl}/auth/login`, {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify({ username, password }),

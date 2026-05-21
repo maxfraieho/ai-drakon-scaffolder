@@ -27,14 +27,14 @@ toolName: string,
 args: Record<string, unknown>,
 opts: McpCallOptions = {},
 ): Promise<T> {
-const url = ${resolveWorkerUrl().replace(/\/$/, "")}/mcp;
+const url =` ${resolveWorkerUrl().replace(/\/$/`, "")}/mcp;
 const jwt = getAccessToken();
 
 const headers: Record<string, string> = {
 "Content-Type": "application/json",
 Accept: "application/json, text/event-stream",
 };
-if (jwt) headers.Authorization = Bearer ${jwt};
+if (jwt) headers.Authorization = `Bearer ${jwt}`;
 if (opts.githubToken && opts.githubToken.trim()) {
 headers["X-Github-Token"] = opts.githubToken.trim();
 }
@@ -53,14 +53,14 @@ params: { name: toolName, arguments: args },
 
 if (!res.ok) {
 const text = await res.text().catch(() => "");
-throw new Error(MCP ${toolName} HTTP ${res.status}: ${text.slice(0, 200)});
+throw new Error( `MCP ${toolName} HTTP ${res.status}: ${text.slice(0, 200)}`);
 }
 
 const env = (await res.json()) as JsonRpcEnvelope<T>;
-if (env.error) throw new Error(MCP ${toolName}: ${env.error.message});
+if (env.error) throw new Error(`MCP ${toolName}: ${env.error.message}`);
 if (env.result?.isError) {
 const msg = env.result.content?.[0]?.text || "tool reported an error";
-throw new Error(MCP ${toolName}: ${msg});
+throw new Error(`MCP ${toolName}: ${msg}`);
 }
 
 if (env.result?.structuredContent !== undefined) {

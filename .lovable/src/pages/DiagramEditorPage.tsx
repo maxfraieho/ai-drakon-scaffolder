@@ -41,9 +41,9 @@ const [filesSheetOpen, setFilesSheetOpen] = useState(false); // mobile sheet
 const handleSelectPath = async (path: string, type: "file" | "dir") => {
 try {
 await navigator.clipboard.writeText(path);
-toast.success(Скопійовано шлях: ${path});
+toast.success(`Скопійовано шлях: ${path}`);
 } catch {
-toast.success(Обрано: ${path});
+toast.success(`Обрано: ${path}`);
 }
 if (type === "file") {
 setFilesSheetOpen(false);

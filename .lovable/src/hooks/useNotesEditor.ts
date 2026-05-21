@@ -29,7 +29,7 @@ const [sha, setSha] = useState<string | undefined>(undefined);
 const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 const loadedSlugRef = useRef<string | undefined>(undefined);
 
-const draftKey = slug ? ${DRAFT_PREFIX}${slug} : ${DRAFT_PREFIX}__new__;
+const draftKey = `slug ? ${DRAFT_PREFIX}${slug} : ${DRAFT_PREFIX}__new__`;
 
 // Load note on slug change
 useEffect(() => {
@@ -124,7 +124,7 @@ return null;
 }
 setIsSaving(true);
 try {
-const finalSlug = slug || slugify(title) || note-${Date.now()};
+const finalSlug = slug || slugify( `title) || note-${Date.now()}`;
 const res = await commitNote({
 slug: finalSlug,
 title: title.trim(),
@@ -137,7 +137,7 @@ setIsDirty(false);
 if (typeof window !== "undefined") {
 localStorage.removeItem(draftKey);
 if (finalSlug !== slug) {
-localStorage.removeItem(${DRAFT_PREFIX}__new__);
+localStorage.removeItem(`${DRAFT_PREFIX}__new__`);
 }
 }
 setHasDraft(false);

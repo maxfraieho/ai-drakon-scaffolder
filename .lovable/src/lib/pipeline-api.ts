@@ -8,7 +8,7 @@ function authHeaders(): Record<string, string> {
 const jwt = getAccessToken();
 return {
 "Content-Type": "application/json",
-...(jwt ? { Authorization: Bearer ${jwt} } : {}),
+...(jwt ? {` Authorization: Bearer ${jwt`} } : {}),
 };
 }
 export class ServiceRestartError extends Error {
@@ -54,12 +54,12 @@ error: string;
 
 export async function startAnalysis(source_code: string, file_path = "module.py"):
 Promise<PipelineJob> {
-const res = await fetch(${workerUrl()}/v1/pipeline/analyze, {
+const res = await fetch( `${workerUrl()}/v1/pipeline/analyze`, {
 method: "POST",
 headers: authHeaders(),
 body: JSON.stringify({ source_code, file_path }),
 });
-if (!res.ok) throw new Error(analyze HTTP ${res.status});
+if (!res.ok) throw new Error(`analyze HTTP ${res.status}`);
 return res.json();
 }
 
@@ -68,21 +68,21 @@ drakon_ir: object,
 language: string,
 description = "",
 ): Promise<PipelineJob> {
-const res = await fetch(${workerUrl()}/v1/pipeline/generate, {
+const res = await fetch( `${workerUrl()}/v1/pipeline/generate`, {
 method: "POST",
 headers: authHeaders(),
 body: JSON.stringify({ drakon_ir, description, language }),
 });
-if (!res.ok) throw new Error(generate HTTP ${res.status});
+if (!res.ok) throw new Error(`generate HTTP ${res.status}`);
 return res.json();
 }
 
 export async function pollJob<T = unknown>(job_id: string): Promise<JobStatus<T>> {
-const res = await fetch(${workerUrl()}/v1/pipeline/status/${job_id}, {
+const res = await fetch( `${workerUrl()}/v1/pipeline/status/${job_id}`, {
 headers: authHeaders(),
 });
 if (res.status === 404) throw new ServiceRestartError();
-if (!res.ok) throw new Error(status HTTP ${res.status});
+if (!res.ok) throw new Error(`status HTTP ${res.status}`);
 return res.json();
 }
 
@@ -91,7 +91,7 @@ job_id: string,
 onEvent: (data: JobStatus<T>) => void,
 ): () => void {
 const jwt = getAccessToken() ?? "";
-const url = ${workerUrl()}/v1/pipeline/stream/${encodeURIComponent(job_id)}?token=$
+const url = `${workerUrl()}/v1/pipeline/stream/${encodeURIComponent(job_id)}?token=$`
 {encodeURIComponent(jwt)};
 const es = new EventSource(url);
 

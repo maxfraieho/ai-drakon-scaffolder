@@ -46,7 +46,7 @@ setManagerOpen(false);
 setGithubOpen(false);
 setForm({ slug: "", name: "", path: "", description: "", ghOwner: "", ghRepo: "", ghBranch: "main"
 });
-toast.success(Проект "${form.name}" додано);
+toast.success(Проект `${form.name}` додано);
 } catch {
 toast.error("Помилка додавання проекту");
 } finally {

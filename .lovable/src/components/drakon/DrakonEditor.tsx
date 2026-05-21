@@ -437,15 +437,15 @@ try {
 // 1) MinIO save (always)
 try {
 await saveDiagramToMinio(targetFolder, effectiveId, diagramData);
-toast.success(✓ Saved to MinIO: ${targetFolder}/${effectiveId});
+toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
 } catch (err) {
 // legacy fallback for environments without the MCP tool
 try {
 await api.saveDiagram(targetFolder, effectiveId, diagramData);
-toast.success(✓ Saved to MinIO: ${targetFolder}/${effectiveId});
+toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
 } catch {
 toast.error(
-MinIO save failed: ${err instanceof Error ? err.message : String(err)},
+MinIO save failed:`${err instanceof Error ? err.message : String(err)`},
 );
 }
 }
@@ -465,10 +465,10 @@ diagramId: effectiveId,
 diagram: diagramData,
 token: projectFolder.githubToken,
 });
-toast.success(✓ Saved to git: drn/${effectiveId}.json);
+toast.success(`✓ Saved to git: drn/${effectiveId}.json`);
 } catch (err) {
 toast.error(
-Git save failed: ${err instanceof Error ? err.message : String(err)},
+Git save failed:`${err instanceof Error ? err.message : String(err)`},
 );
 }
 }
@@ -547,7 +547,7 @@ if (!widgetRef.current) return;
 const json = widgetRef.current.exportJson();
 const blob = new Blob([json], { type: 'application/json' });
 const link = document.createElement('a');
-link.download = ${diagramId}.drakon.json;
+link.download = `${diagramId}.drakon.json`;
 link.href = URL.createObjectURL(blob);
 link.click();
 URL.revokeObjectURL(link.href);
@@ -558,7 +558,7 @@ if (!widgetRef.current) return;
 try {
 const canvas = widgetRef.current.exportCanvas(10000);
 const link = document.createElement('a');
-link.download = ${diagramId}.png;
+link.download = `${diagramId}.png`;
 link.href = canvas.toDataURL('image/png');
 link.click();
 } catch {
@@ -576,7 +576,7 @@ const markdown = pseudocodeToMarkdown(pseudocode, diagramName);
 
 const blob = new Blob([markdown], { type: 'text/markdown' });
 const link = document.createElement('a');
-link.download = ${diagramId}.md;
+link.download = `${diagramId}.md`;
 link.href = URL.createObjectURL(blob);
 link.click();
 URL.revokeObjectURL(link.href);
@@ -1010,7 +1010,7 @@ return (
 <DialogContent className={step === 'edit' ? 'max-w-4xl h-[80vh]' : ''}>
 <DialogHeader>
 <DialogTitle>
-{step === 'name' ? t.drakonEditor.createNewDiagram : Edit: ${diagramId}}
+{`step === 'name' ? t.drakonEditor.createNewDiagram : Edit: ${diagramId`}}
 </DialogTitle>
 </DialogHeader>
 

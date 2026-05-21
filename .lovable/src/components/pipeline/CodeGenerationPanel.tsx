@@ -38,8 +38,8 @@ javascript: "javascript",
 
 function formatTime(ts: number): string {
 const d = new Date(ts);
-return ${String(d.getHours()).padStart(2,
-"0")}:${String(d.getMinutes()).padStart(2, "0")};
+return  `${String(d.getHours()).padStart(2,`
+"0`)}:${String(d.getMinutes()).padStart(2, `0")};
 }
 
 export function CodeGenerationPanel({
@@ -162,7 +162,7 @@ token
 );
 setKbSaved(true);
 toast.success("Збережено до KB", {
-description: ${lang} · ${result.code.split("\n").length} рядків,
+description:`${lang`} · ${result.code.split("\n").length} рядків,
 });
 } catch {
 toast.error("Помилка збереження");
@@ -311,7 +311,7 @@ borderColor: "var(--color-outline-variant, #534434)",
 {!diagramIr
 ? "Виберіть схему для початку генерації"
 : running
-? Pipeline B виконується… ${elapsed}s
+? `Pipeline B виконується… ${elapsed}s`
 : ""}
 </span>
 <button
@@ -426,7 +426,7 @@ result && result.syntax_errors.length === 0
 >
 {result && result.syntax_errors.length === 0
 ? "OK"
-: ${result?.syntax_errors.length ?? 0} err}
+: `${result?.syntax_errors.length ?? 0} err`}
 </span>
 </span>
 </>

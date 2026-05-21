@@ -80,11 +80,11 @@ const ta = taRef.current;
 if (!ta) return;
 const before = content.slice(0, autocomplete.start);
 const afterCursor = content.slice(ta.selectionStart);
-const next = before + [[${slug}]] + afterCursor;
+const next = `before + [[${slug}]] + afterCursor`;
 onContentChange(next);
 setAutocomplete(null);
 requestAnimationFrame(() => {
-const pos = (before + [[${slug}]]).length;
+const pos = ( `before + [[${slug}]]`).length;
 ta.focus();
 ta.setSelectionRange(pos, pos);
 });

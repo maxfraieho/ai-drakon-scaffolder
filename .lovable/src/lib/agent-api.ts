@@ -30,7 +30,7 @@ return localStorage.getItem("drakon_agent_base_url")?.trim() || "http://192.168.
 function getAgentUrlFor(agentId: AgentId): string {
 const fromBase = readAgentBaseUrl().replace(/\/+$/, "");
 if (fromBase) {
-return ${fromBase}:${AGENT_PORTS[agentId]};
+return  `${fromBase}:${AGENT_PORTS[agentId]}`;
 }
 const a = readSettings().agents;
 return agentId === "drakon" ? a.drakonUrl : agentId === "architect" ? a.architectUrl : a.docsUrl;
@@ -39,7 +39,7 @@ return agentId === "drakon" ? a.drakonUrl : agentId === "architect" ? a.architec
 export async function checkAgentHealth(agentId: AgentId): Promise<boolean> {
 // Try Worker proxy first
 try {
-const resp = await fetch(${getWorkerUrl()}/v1/agents/${agentId}/health, {
+const resp = await fetch( `${getWorkerUrl()}/v1/agents/${agentId}/health`, {
 signal: AbortSignal.timeout(4000),
 });
 if (resp.ok) return true;
@@ -49,7 +49,7 @@ if (resp.ok) return true;
 // Fallback: ping agent directly
 try {
 const direct = getAgentUrlFor(agentId).replace(/\/+$/, "");
-const resp = await fetch(${direct}/health, {
+const resp = await fetch( `${direct}/health`, {
 signal: AbortSignal.timeout(4000),
 mode: "cors",
 });
@@ -67,22 +67,22 @@ diagrams?: Array<{ name: string; items: Record<string, unknown> }>;
 function getLlmConfig(agentId: AgentId): Record<string, unknown> | null {
 if (typeof window === "undefined") return null;
 const protocol =
-localStorage.getItem(${agentId}_llm_protocol) ||
+localStorage.getItem(`${agentId}_llm_protocol`) ||
 localStorage.getItem("agent_llm_protocol") ||
 null;
 const baseUrl =
-localStorage.getItem(${agentId}_llm_base_url) ||
+localStorage.getItem(`${agentId}_llm_base_url`) ||
 localStorage.getItem("agent_llm_base_url") ||
 null;
 const apiKey =
-localStorage.getItem(${agentId}_llm_api_key) ||
+localStorage.getItem(`${agentId}_llm_api_key`) ||
 localStorage.getItem("agent_llm_api_key") ||
 null;
 const model =
-localStorage.getItem(${agentId}_llm_model) ||
+localStorage.getItem(`${agentId}_llm_model`) ||
 localStorage.getItem("agent_llm_model") ||
 null;
-const maxTokensRaw = localStorage.getItem(${agentId}_llm_max_tokens);
+const maxTokensRaw = localStorage.getItem(`${agentId}_llm_max_tokens`);
 const maxTokens = maxTokensRaw ? parseInt(maxTokensRaw, 10) : null;
 if (!protocol && !baseUrl && !apiKey && !model) return null;
 return {
@@ -103,11 +103,11 @@ const workerUrl = getWorkerUrl();
 const agentUrl = getAgentUrlFor(agentId);
 const token = getAccessToken();
 
-const resp = await fetch(${workerUrl}/v1/agents/${agentId}/chat, {
+const resp = await fetch( `${workerUrl}/v1/agents/${agentId}/chat`, {
 method: "POST",
 headers: {
 "Content-Type": "application/json",
-...(token ? { Authorization: Bearer ${token} } : {}),
+...(token ? {` Authorization: Bearer ${token`} } : {}),
 },
 body: JSON.stringify({
 message,
@@ -118,7 +118,7 @@ llmConfig: getLlmConfig(agentId),
 });
 
 if (!resp.ok) {
-throw new Error(${AGENT_LABELS[agentId]} agent error: ${resp.status});
+throw new Error(`${AGENT_LABELS[agentId]} agent error: ${resp.status}`);
 }
 const data = await resp.json();
 return {
@@ -135,11 +135,11 @@ correctedIr?: Record<string, unknown>,
 ): Promise<void> {
 const workerUrl = getWorkerUrl();
 const token = getAccessToken();
-await fetch(${workerUrl}/v1/agents/${agentId}/feedback, {
+await fetch( `${workerUrl}/v1/agents/${agentId}/feedback`, {
 method: "POST",
 headers: {
 "Content-Type": "application/json",
-...(token ? { Authorization: Bearer ${token} } : {}),
+...(token ? {` Authorization: Bearer ${token`} } : {}),
 },
 body: JSON.stringify({
 agentUrl: getAgentUrlFor(agentId),
