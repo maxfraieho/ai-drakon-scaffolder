@@ -37,9 +37,11 @@ app.include_router(files_router)
 from pipeline_route import router as pipeline_router
 from kb_route import router as kb_router
 from drakon_shared.pipeline_route import router as pipeline_config_router
+from graph_pipeline_route import router as graph_pipeline_router
 app.include_router(pipeline_router)
 app.include_router(kb_router)
 app.include_router(pipeline_config_router)
+app.include_router(graph_pipeline_router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
