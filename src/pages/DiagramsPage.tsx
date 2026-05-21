@@ -51,6 +51,9 @@ const [selectedDiagram, setSelectedDiagram] = useState<Diagram | null>(null);
 
 const [analysisOpen, setAnalysisOpen] = useState(false);
 const [generationOpen, setGenerationOpen] = useState(false);
+const [savePipelineOpen, setSavePipelineOpen] = useState(false);
+const [pipelineNameInput, setPipelineNameInput] = useState("");
+const [savingPipeline, setSavingPipeline] = useState(false);
 
 const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 const [newFolderName, setNewFolderName] = useState("");
@@ -97,6 +100,18 @@ const inFolder = diagrams.filter((d) => d.folderId === selectedFolder.slug);
 if (selectedDiagram && inFolder.some((d) => d.id === selectedDiagram.id)) return;
 setSelectedDiagram(inFolder[0] ?? null);
 }, [selectedFolder.slug, diagrams, selectedDiagram, viewMode]);
+
+useEffect(() => {
+const pendingId = localStorage.getItem("_pending_open_diagram_id");
+if (!pendingId) return;
+localStorage.removeItem("_pending_open_diagram_id");
+const all = readDiagramsFromStorage();
+const target = all.find((d) => d.id === pendingId);
+if (target) {
+setViewMode("local");
+setSelectedDiagram(target);
+}
+}, []);
 
 const allDiagrams = useMemo(() => diagrams, [diagrams]);
 
@@ -200,6 +215,30 @@ createdAt: now,
 updatedAt: now,
 diagram: { ...parsed, name, items: parsed.items ?? {} },
 };
+
+const handleSaveAsPipeline = async () => {
+if (!selectedDiagram || !pipelineNameInput.trim()) return;
+setSavingPipeline(true);
+try {
+const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
+const { savePipeline } = await import("@/lib/graph-pipeline-api");
+const irDiagram = convertDiagramToIr(selectedDiagram.diagram);
+const slug = pipelineNameInput
+  .trim()
+  .toLowerCase()
+  .replace(/\s+/g, "_")
+  .replace(/[^a-z0-9_]/g, "");
+await savePipeline(slug, irDiagram);
+setSavePipelineOpen(false);
+setPipelineNameInput("");
+toast.success(`Пайплайн "${slug}" збережено`);
+void navigate({ to: "/pipelines" });
+} catch (e) {
+toast.error("Помилка: " + (e instanceof Error ? e.message : "unknown"));
+} finally {
+setSavingPipeline(false);
+}
+};
 upsertDiagramInStorage(stored);
 setDiagrams((prev) => [stored, ...prev]);
 setSelectedDiagram(stored);
@@ -290,6 +329,7 @@ return next;
 }
 onEdit={selectedDiagram && !currentDiagramIsIr ? () => openInEditor(selectedDiagram) :
 undefined}
+onSaveAsPipeline={selectedDiagram && !currentDiagramIsIr ? () => setSavePipelineOpen(true) : undefined}
 />
 
 <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
@@ -382,6 +422,30 @@ setSelectedDiagram(stored);
 toast.success(`IR імпортовано: ${ir.name}`);
 }}
 />
+
+<Dialog open={savePipelineOpen} onOpenChange={setSavePipelineOpen}>
+<DialogContent className="sm:max-w-sm">
+<DialogHeader>
+<DialogTitle className="font-mono text-sm">Зберегти як пайплайн</DialogTitle>
+</DialogHeader>
+<div className="py-4">
+<Input
+placeholder="назва_пайплайну"
+value={pipelineNameInput}
+onChange={(e) => setPipelineNameInput(e.target.value)}
+className="font-mono text-sm"
+onKeyDown={(e) => e.key === "Enter" && void handleSaveAsPipeline()}
+autoFocus
+/>
+</div>
+<DialogFooter>
+<Button variant="outline" onClick={() => setSavePipelineOpen(false)}>Скасувати</Button>
+<Button onClick={() => void handleSaveAsPipeline()} disabled={!pipelineNameInput.trim() || savingPipeline}>
+{savingPipeline ? "Збереження…" : "Зберегти"}
+</Button>
+</DialogFooter>
+</DialogContent>
+</Dialog>
 
 {/* New folder dialog */}
 <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
