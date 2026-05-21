@@ -37,7 +37,7 @@ void loadGraph();
 
 if (loading) {
 return (
-<div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/10 text-muted-foreground">
+<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/10 text-muted-foreground">
 <Loader2 className="h-8 w-8 animate-spin" />
 <div className="text-center text-sm">Завантаження графу знань…</div>
 </div>
@@ -46,7 +46,7 @@ return (
 
 if (error) {
 return (
-<div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/10">
+<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/10">
 <p className="text-sm text-destructive">{error}</p>
 <Button variant="outline" size="sm" onClick={loadGraph}>
 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
@@ -58,7 +58,7 @@ return (
 
 if (nodes.length === 0) {
 return (
-<div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/10 text-muted-foreground">
+<div className="flex h-full min-h-0 flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/10 text-muted-foreground">
 <Network className="h-10 w-10 opacity-20" />
 <p className="text-sm">Нотаток поки немає — додайте першу у вкладці "Нотатки"</p>
 </div>
@@ -66,7 +66,7 @@ return (
 }
 
 return (
-<div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col gap-2">
+<div className="flex h-full min-h-0 flex-col gap-2">
 <div className="flex items-center justify-between px-1">
 <span className="text-xs text-muted-foreground">
 {nodes.length} нотаток · {edges.length} посилань

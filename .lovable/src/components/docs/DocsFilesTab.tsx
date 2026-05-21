@@ -112,7 +112,7 @@ void load();
 }, [activeProject?.slug]);
 
 return (
-<div className="flex h-[calc(100vh-220px)] min-h-[500px] flex-col overflow-hidden rounded-lg border border-border">
+<div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border">
 <div className="flex items-center gap-2 border-b border-border px-3 py-2">
 <Input
 value={searchQuery}
