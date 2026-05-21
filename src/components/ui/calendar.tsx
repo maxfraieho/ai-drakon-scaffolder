@@ -27,8 +27,8 @@ showOutsideDays={showOutsideDays}
 className={cn(
 "bg-background group/calendar p-3 [--cell-size:2rem]
 [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent",
-String.rawrtl:**:[.rdp-button\_next>svg]:rotate-180,
-String.rawrtl:**:[.rdp-button\_previous>svg]:rotate-180,
+"rtl:**:[.rdp-button_next>svg]:rotate-180",
+"rtl:**:[.rdp-button_previous>svg]:rotate-180",
 className,
 )}
 captionLayout={captionLayout}
