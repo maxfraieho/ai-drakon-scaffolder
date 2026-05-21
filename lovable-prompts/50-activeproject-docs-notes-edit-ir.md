@@ -48,3 +48,28 @@ Only append when `project` is truthy.
 
 ## CRITICAL: Dual-path sync rule
 Apply ALL changes to BOTH `src/` and `.lovable/src/`.
+
+---
+
+## Fix 2: fetchNotesGraph missing auth headers + error guard
+
+In `src/lib/garden/notesApi.ts` AND `.lovable/src/lib/garden/notesApi.ts`:
+
+`fetchNotesGraph` is the **only** function in this file that does NOT include `authHeaders()`. This causes a 401/redirect when the Worker requires auth — `res.json()` fails and shows a cryptic error.
+
+### Fix
+
+Change the fetch call in `fetchNotesGraph` from:
+```typescript
+const res = await fetch(workerUrl() + '/v1/notes/graph');
+```
+To:
+```typescript
+const qs = project ? `?project=${encodeURIComponent(project)}` : "";
+const res = await fetch(`${workerUrl()}/v1/notes/graph${qs}`, {
+  headers: authHeaders(),
+});
+if (!res.ok) throw new Error(`Graph: ${res.status} ${res.statusText}`);
+```
+
+Remove the duplicate `qs` construction if it already exists from Fix 1 above — just merge into one fetch call.
