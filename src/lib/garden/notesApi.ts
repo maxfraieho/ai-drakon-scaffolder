@@ -38,7 +38,7 @@ const raw = data.content ?? data.raw ?? "";
 const parsed = parseFrontmatter(raw);
 return {
 slug,
-path: `data.path ?? docs/${slug}`.md,
+path: data.path ?? `docs/${slug}.md`,
 title: data.title ?? parsed.title ?? slug,
 content: parsed.body,
 tags: data.tags ?? parsed.tags,
@@ -66,7 +66,7 @@ const token = jwt();
 if (!token) throw new Error("Не авторизовано (JWT відсутній)");
 const body = {
 slug: payload.slug,
-path: `docs/${payload.slug}`.md,
+path: `docs/${payload.slug}.md`,
 content: buildMarkdown(payload),
 sha: payload.sha,
 message: `notes: update ${payload.slug}`,

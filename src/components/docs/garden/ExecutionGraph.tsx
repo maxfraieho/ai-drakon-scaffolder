@@ -656,7 +656,7 @@ if (isFocused || isHovered) labelOpacity = 1;
 else if (hasFocus && highlighted) labelOpacity = 0.85;
 else if (hasFocus && !highlighted) labelOpacity = 0.06;
 return (
-<g key={node.slug} transform={translate(`${node.x},${node.y}`)}
+<g key={node.slug} transform={`translate(${node.x},${node.y})`}
 onMouseDown={e => handleNodeMouseDown(e, node.slug)}
 onMouseEnter={() => setHoveredNode(node.slug)}
 onMouseLeave={() => setHoveredNode(null)}

@@ -131,15 +131,16 @@ function DocsRoute() {
   const running = jobStatus === "running";
 
   return (
-    <div className="min-h-[100dvh] bg-background">
-      <div className="mx-auto w-full max-w-5xl px-3 py-4 md:px-6">
+    <div className="flex h-full flex-col overflow-hidden bg-background">
+      <div className="mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-hidden px-3 py-4 md:px-6">
         <header className="mb-4 flex items-center gap-2">
           <FileText className="h-5 w-5 text-[var(--accent-amber)]" />
           <h1 className="text-lg font-semibold md:text-2xl">Документація</h1>
         </header>
 
-        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="w-full">
-          <TabsList className="no-scrollbar mb-3 flex w-full justify-start overflow-x-auto whitespace-nowrap md:w-auto md:inline-flex">
+        <div className="flex flex-1 min-h-0 flex-col overflow-hidden px-4 pb-4">
+        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="flex flex-1 min-h-0 flex-col w-full">
+          <TabsList className="no-scrollbar mb-3 flex w-full shrink-0 justify-start overflow-x-auto whitespace-nowrap md:w-auto md:inline-flex">
             <TabsTrigger value="generator">
               <Play className="mr-1.5 h-3.5 w-3.5" />
               Генератор
@@ -154,7 +155,8 @@ function DocsRoute() {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="generator" className="space-y-4">
+          <div className="flex-1 min-h-0 overflow-y-auto mt-2">
+          <TabsContent value="generator" className="space-y-4 h-full overflow-auto">
             <Card>
               <CardHeader>
                 <CardTitle>Генератор документації</CardTitle>
@@ -259,15 +261,17 @@ function DocsRoute() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notes">
+          <TabsContent value="notes" className="h-full overflow-auto">
             <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
           </TabsContent>
 
 
-          <TabsContent value="graph">
+          <TabsContent value="graph" className="h-full overflow-auto">
             <NotesGraphTab onNodeClick={handleGraphNodeClick} />
           </TabsContent>
+          </div>
         </Tabs>
+        </div>
       </div>
     </div>
   );

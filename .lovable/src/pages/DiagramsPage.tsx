@@ -9,7 +9,8 @@ import { DiagramsLeftPanel } from "@/components/workspace/DiagramsLeftPanel";
 import { DrakonIrPanel } from "@/components/workspace/DrakonIrPanel";
 import { cn } from "@/lib/utils";
 import { CanvasToolbar } from "@/components/workspace/CanvasToolbar";
-import { DrakonViewer } from "@/components/drakon/DrakonViewer";
+import { DrakonEditor } from "@/components/drakon/DrakonEditor";
+import { PipelineDrakonView } from "@/components/pipelines/PipelineDrakonView";
 import {
 Dialog,
 DialogContent,
@@ -17,6 +18,7 @@ DialogFooter,
 DialogHeader,
 DialogTitle,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -34,6 +36,7 @@ type Folder,
 } from "@/lib/folder-storage";
 import type { Diagram } from "@/types/drakon";
 import type { DrakonItem } from "@/types/drakon";
+import type { IrDiagram } from "@/lib/graph-pipeline-api";
 export function DiagramsPage() {
 const navigate = useNavigate();
 const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -54,6 +57,8 @@ const [generationOpen, setGenerationOpen] = useState(false);
 const [savePipelineOpen, setSavePipelineOpen] = useState(false);
 const [pipelineNameInput, setPipelineNameInput] = useState("");
 const [savingPipeline, setSavingPipeline] = useState(false);
+const [irSheetOpen, setIrSheetOpen] = useState(false);
+const [irSheetIr, setIrSheetIr] = useState<IrDiagram | null>(null);
 
 const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 const [newFolderName, setNewFolderName] = useState("");
@@ -146,13 +151,6 @@ search: { folderId: selectedFolder.slug, isNew: "true" },
 });
 };
 
-const openInEditor = (d: Diagram) => {
-navigate({
-to: "/diagram/editor",
-search: { diagramId: d.id, folderId: selectedFolder.slug },
-});
-};
-
 const normalizeIrDiagram = (name: string, diagram: object): Diagram["diagram"] => {
 const raw = diagram as Record<string, unknown>;
 const rawItems = (raw.items ?? {}) as Record<string, Record<string, unknown>>;
@@ -194,6 +192,46 @@ setSelectedIrName(null);
 
 const currentDiagramIsIr = selectedDiagram?.folderId === "__ir__";
 
+const handleEditInIr = async () => {
+if (!selectedDiagram || currentDiagramIsIr) return;
+try {
+const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
+const ir = convertDiagramToIr(
+selectedDiagram.diagram as unknown as import("@/types/drakonwidget").DrakonDiagram,
+);
+setIrSheetIr(ir);
+setIrSheetOpen(true);
+} catch {
+toast.error("Помилка конвертації IR");
+}
+};
+
+const handleSaveAsPipeline = async () => {
+if (!selectedDiagram || !pipelineNameInput.trim()) return;
+setSavingPipeline(true);
+try {
+const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
+const { savePipeline } = await import("@/lib/graph-pipeline-api");
+const irDiagram = convertDiagramToIr(
+selectedDiagram.diagram as unknown as import("@/types/drakonwidget").DrakonDiagram,
+);
+const slug = pipelineNameInput
+  .trim()
+  .toLowerCase()
+  .replace(/\s+/g, "_")
+  .replace(/[^a-z0-9_]/g, "");
+await savePipeline(slug, irDiagram);
+setSavePipelineOpen(false);
+setPipelineNameInput("");
+toast.success(`Пайплайн "${slug}" збережено`);
+void navigate({ to: "/pipelines" });
+} catch (e) {
+toast.error("Помилка: " + (e instanceof Error ? e.message : "unknown"));
+} finally {
+setSavingPipeline(false);
+}
+};
+
 const handleImportJson = async (event: ChangeEvent<HTMLInputElement>) => {
 const file = event.target.files?.[0];
 if (!file) return;
@@ -214,30 +252,6 @@ name,
 createdAt: now,
 updatedAt: now,
 diagram: { ...parsed, name, items: parsed.items ?? {} },
-};
-
-const handleSaveAsPipeline = async () => {
-if (!selectedDiagram || !pipelineNameInput.trim()) return;
-setSavingPipeline(true);
-try {
-const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
-const { savePipeline } = await import("@/lib/graph-pipeline-api");
-const irDiagram = convertDiagramToIr(selectedDiagram.diagram);
-const slug = pipelineNameInput
-  .trim()
-  .toLowerCase()
-  .replace(/\s+/g, "_")
-  .replace(/[^a-z0-9_]/g, "");
-await savePipeline(slug, irDiagram);
-setSavePipelineOpen(false);
-setPipelineNameInput("");
-toast.success(`Пайплайн "${slug}" збережено`);
-void navigate({ to: "/pipelines" });
-} catch (e) {
-toast.error("Помилка: " + (e instanceof Error ? e.message : "unknown"));
-} finally {
-setSavingPipeline(false);
-}
 };
 upsertDiagramInStorage(stored);
 setDiagrams((prev) => [stored, ...prev]);
@@ -327,8 +341,7 @@ if (next) setAnalysisOpen(false);
 return next;
 })
 }
-onEdit={selectedDiagram && !currentDiagramIsIr ? () => openInEditor(selectedDiagram) :
-undefined}
+onEditInIr={selectedDiagram && !currentDiagramIsIr ? handleEditInIr : undefined}
 onSaveAsPipeline={selectedDiagram && !currentDiagramIsIr ? () => setSavePipelineOpen(true) : undefined}
 />
 
@@ -343,13 +356,21 @@ backgroundSize: "24px 24px",
 }}
 >
 {selectedDiagram ? (
-<DrakonViewer
+<DrakonEditor
 key={selectedDiagram.id}
 diagram={selectedDiagram.diagram as unknown as
 import("@/types/drakonwidget").DrakonDiagram}
 diagramId={selectedDiagram.id}
-height={9999}
-className="h-full"
+onSaveOverride={async (diagram) => {
+const updated = {
+...selectedDiagram,
+diagram: diagram as unknown as typeof selectedDiagram.diagram,
+updatedAt: new Date().toISOString(),
+};
+upsertDiagramInStorage(updated);
+setSelectedDiagram(updated);
+return true;
+}}
 />
 ):(
 <div className="flex h-full flex-col items-center justify-center gap-3 text-center px-6">
@@ -446,6 +467,27 @@ autoFocus
 </DialogFooter>
 </DialogContent>
 </Dialog>
+
+<Sheet open={irSheetOpen} onOpenChange={setIrSheetOpen}>
+<SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col">
+<SheetHeader className="px-4 pt-4 pb-2 border-b shrink-0">
+<SheetTitle className="font-mono text-sm">
+IR — {selectedDiagram?.name}
+</SheetTitle>
+</SheetHeader>
+<div className="flex-1 min-h-0 overflow-auto">
+{irSheetIr && (
+<PipelineDrakonView
+ir={irSheetIr}
+pipelineName={selectedDiagram?.name ?? ""}
+onSave={async (updatedIr) => {
+setIrSheetIr(updatedIr);
+}}
+/>
+)}
+</div>
+</SheetContent>
+</Sheet>
 
 {/* New folder dialog */}
 <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
