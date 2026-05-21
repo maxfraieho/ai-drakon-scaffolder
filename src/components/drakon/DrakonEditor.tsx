@@ -437,15 +437,15 @@ try {
 // 1) MinIO save (always)
 try {
 await saveDiagramToMinio(targetFolder, effectiveId, diagramData);
-toast.success(✓ Saved to MinIO: ${targetFolder}/${effectiveId});
+toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
 } catch (err) {
 // legacy fallback for environments without the MCP tool
 try {
 await api.saveDiagram(targetFolder, effectiveId, diagramData);
-toast.success(✓ Saved to MinIO: ${targetFolder}/${effectiveId});
+toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
 } catch {
 toast.error(
-MinIO save failed: ${err instanceof Error ? err.message : String(err)},
+`MinIO save failed: ${err instanceof Error ? err.message : String(err)}`,
 );
 }
 }
@@ -465,10 +465,10 @@ diagramId: effectiveId,
 diagram: diagramData,
 token: projectFolder.githubToken,
 });
-toast.success(✓ Saved to git: drn/${effectiveId}.json);
+toast.success(`✓ Saved to git: drn/${effectiveId}.json`);
 } catch (err) {
 toast.error(
-Git save failed: ${err instanceof Error ? err.message : String(err)},
+`Git save failed: ${err instanceof Error ? err.message : String(err)}`,
 );
 }
 }
@@ -547,7 +547,7 @@ if (!widgetRef.current) return;
 const json = widgetRef.current.exportJson();
 const blob = new Blob([json], { type: 'application/json' });
 const link = document.createElement('a');
-link.download = ${diagramId}.drakon.json;
+link.download = `${diagramId}.drakon.json`;
 link.href = URL.createObjectURL(blob);
 link.click();
 URL.revokeObjectURL(link.href);
@@ -558,7 +558,7 @@ if (!widgetRef.current) return;
 try {
 const canvas = widgetRef.current.exportCanvas(10000);
 const link = document.createElement('a');
-link.download = ${diagramId}.png;
+link.download = `${diagramId}.png`;
 link.href = canvas.toDataURL('image/png');
 link.click();
 } catch {
@@ -576,7 +576,7 @@ const markdown = pseudocodeToMarkdown(pseudocode, diagramName);
 
 const blob = new Blob([markdown], { type: 'text/markdown' });
 const link = document.createElement('a');
-link.download = ${diagramId}.md;
+link.download = `${diagramId}.md`;
 link.href = URL.createObjectURL(blob);
 link.click();
 URL.revokeObjectURL(link.href);
@@ -628,7 +628,7 @@ className
 
 return (
 <div className={cn('space-y-3', className)}>
-{/ Toolbar /}
+{/* Toolbar */}
 <div className="flex flex-wrap items-center gap-2">
 <div className="flex items-center gap-2">
 <Label htmlFor="diagram-name"
@@ -671,7 +671,7 @@ disabled={!hasChanges || isLoading || isSaving}
 </Button>
 </div>
 
-{/ Pan/Select mode toggle /}
+{/* Pan/Select mode toggle */}
 <div className="flex items-center gap-0.5 border rounded-md p-0.5">
 <Tooltip>
 <TooltipTrigger asChild>
@@ -701,7 +701,7 @@ disabled={isLoading}
 </Tooltip>
 </div>
 
-{/ Zoom & selection controls /}
+{/* Zoom & selection controls */}
 <div className="flex items-center gap-1">
 <Tooltip>
 <TooltipTrigger asChild>
@@ -782,9 +782,9 @@ PNG
 </div>
 </div>
 
-{/ Editor layout with toolbar at bottom /}
+{/* Editor layout with toolbar at bottom */}
 <div className="flex flex-col gap-2">
-{/ Widget container /}
+{/* Widget container */}
 <div className="relative" onClick={(e) => {
 // Don't interfere when context menu is open
 if (uiStateRef.current === 'contextMenuOpen') return;
@@ -817,7 +817,7 @@ className="drakon-container rounded-lg border overflow-hidden"
 style={{ height, minHeight: 300 }}
 />
 
-{/ Context menu /}
+{/* Context menu */}
 {contextMenu && (
 <div
 data-drakon-context-menu
@@ -830,8 +830,7 @@ item.type === 'separator' ? (
 ):(
 <button
 key={i}
-className="w-full flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent
-hover:text-accent-foreground text-left"
+className="w-full flex items-center gap-2 rounded-sm px-3 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground text-left"
 onClick={(e) => {
 e.stopPropagation();
 const action = item.action;
@@ -872,14 +871,14 @@ uiStateRef.current = 'default';
 )}
 </div>
 
-{/ Project folder + git binding /}
+{/* Project folder + git binding */}
 <ProjectFolderSection
 value={projectFolder}
 onChange={setProjectFolder}
 knownFolders={knownFolders}
 />
 
-{/ Bottom toolbar with icon buttons /}
+{/* Bottom toolbar with icon buttons */}
 <div className="w-full overflow-x-auto border rounded-lg bg-background">
 <div className="flex items-center gap-1 p-1.5">
 {iconButtons.map(({ type, img, label }) => (
@@ -899,10 +898,10 @@ disabled={isLoading}
 </Tooltip>
 ))}
 
-{/ Separator /}
+{/* Separator */}
 <div className="mx-1 w-px h-8 bg-border shrink-0" />
 
-{/ Toggle silhouette /}
+{/* Toggle silhouette */}
 <Tooltip>
 <TooltipTrigger asChild>
 <Button
@@ -919,7 +918,7 @@ disabled={isLoading}
 </Tooltip>
 </div>
 
-{/ Edit dialog for element content /}
+{/* Edit dialog for element content */}
 <Dialog open={editDialog.open} onOpenChange={(open) => {
 if (!open) setEditDialog(prev => ({ ...prev, open: false }));
 }}>
@@ -956,7 +955,7 @@ OK
 </DialogContent>
 </Dialog>
 
-{/ Format Inspector dialog for style editing /}
+{/* Format Inspector dialog for style editing */}
 <FormatInspector
 open={formatDialog.open}
 title={formatDialog.title}
@@ -1011,7 +1010,7 @@ return (
 <DialogContent className={step === 'edit' ? 'max-w-4xl h-[80vh]' : ''}>
 <DialogHeader>
 <DialogTitle>
-{step === 'name' ? t.drakonEditor.createNewDiagram : Edit: ${diagramId}}
+{`step === 'name' ? t.drakonEditor.createNewDiagram : Edit: ${diagramId}`}
 </DialogTitle>
 </DialogHeader>
 

@@ -78,11 +78,11 @@ const cx = CANVAS_W / 2;
 const cy = CANVAS_H / 2;
 const radius = Math.min(CANVAS_W, CANVAS_H) * 0.35;
 return nodes.map((n, i) => {
-const angle = (2 Math.PI i) / nodes.length;
+const angle = (2 * Math.PI * i) / nodes.length;
 return {
 ...n,
-x: cx + radius Math.cos(angle) + (Math.random() - 0.5) 20,
-y: cy + radius Math.sin(angle) + (Math.random() - 0.5) 20,
+x: cx + radius * Math.cos(angle) + (Math.random() - 0.5) * 20,
+y: cy + radius * Math.sin(angle) + (Math.random() - 0.5) * 20,
 vx: 0, vy: 0, fx: null, fy: null,
 connections: connCount.get(n.slug) || 0,
 folder: getRootFolder(n.slug),
@@ -107,7 +107,7 @@ for (let j = i + 1; j < n; j++) {
 const b = simNodes[j];
 let dx = a.x - b.x;
 let dy = a.y - b.y;
-let dist = Math.sqrt(dx dx + dy dy) || 1;
+let dist = Math.sqrt(dx * dx + dy * dy) || 1;
 if (dist < MIN_DIST) dist = MIN_DIST;
 const force = REPULSION / (dist * dist);
 const fx = (dx / dist) * force;
@@ -123,9 +123,9 @@ const bi = slugIdx.get(e.target);
 if (ai === undefined || bi === undefined) continue;
 const a = simNodes[ai]; const b = simNodes[bi];
 const dx = b.x - a.x; const dy = b.y - a.y;
-const dist = Math.sqrt(dx dx + dy dy) || 1;
+const dist = Math.sqrt(dx * dx + dy * dy) || 1;
 const force = dist * ATTRACTION;
-const fx = (dx / dist) force; const fy = (dy / dist) force;
+const fx = (dx / dist) * force; const fy = (dy / dist) * force;
 if (a.fx === null) { a.vx += fx; a.vy += fy; }
 if (b.fx === null) { b.vx -= fx; b.vy -= fy; }
 }
@@ -498,17 +498,15 @@ return { strokeWidth, strokeOpacity, stroke };
 
 return (
 <div className="w-full overflow-hidden rounded-lg border border-border bg-card">
-{/ Controls /}
-<div className="flex items-center justify-between px-3 py-2 border-b border-border
-bg-muted/30 flex-wrap gap-2">
+{/* Controls */}
+<div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 flex-wrap gap-2">
 <div className="flex items-center gap-1">
 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewState(p =>
 ({ ...p, zoom: Math.max(MIN_ZOOM, p.zoom - ZOOM_STEP) }))} disabled={viewState.zoom <=
 MIN_ZOOM} title="Зменшити">
 <ZoomOut className="h-4 w-4" />
 </Button>
-<span className="text-xs text-muted-foreground w-12
-text-center">{Math.round(viewState.zoom * 100)}%</span>
+<span className="text-xs text-muted-foreground w-12 text-center">{Math.round(viewState.zoom * 100)}%</span>
 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewState(p =>
 ({ ...p, zoom: Math.min(MAX_ZOOM, p.zoom + ZOOM_STEP) }))} disabled={viewState.zoom >=
 MAX_ZOOM} title="Збільшити">
@@ -520,7 +518,7 @@ zoom: 1, panX: 0, panY: 0 })} title="Скинути вигляд">
 </Button>
 </div>
 
-{/ Search /}
+{/* Search */}
 <div className="relative">
 {searchOpen ? (
 <div className="relative">
@@ -535,16 +533,13 @@ if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); }
 if (e.key === 'Enter' && searchResults.length > 0) handleSearchSelect(searchResults[0].slug);
 }}
 />
-<Button variant="ghost" size="icon" className="h-6 w-6 absolute right-1 top-1" onClick={()
-=> { setSearchOpen(false); setSearchQuery(''); }}>
+<Button variant="ghost" size="icon" className="h-6 w-6 absolute right-1 top-1" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
 <X className="h-3 w-3" />
 </Button>
 {searchQuery.trim() && (
-<div className="absolute top-full right-0 mt-1 w-64 bg-popover border border-border
-rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+<div className="absolute top-full right-0 mt-1 w-64 bg-popover border border-border rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
 {searchResults.length > 0 ? searchResults.map(n => (
-<button key={n.slug} className="w-full text-left px-3 py-2 text-xs hover:bg-accent/50
-transition-colors truncate" onClick={() => handleSearchSelect(n.slug)}>
+<button key={n.slug} className="w-full text-left px-3 py-2 text-xs hover:bg-accent/50 transition-colors truncate" onClick={() => handleSearchSelect(n.slug)}>
 {n.title}
 </button>
 )) : (
@@ -602,10 +597,10 @@ title="Скинути фокус">
 )}
 </div>
 
-{/ SVG Graph /}
+{/* SVG Graph */}
 <svg
 ref={svgRef}
-viewBox={${vbX} ${vbY} ${vbW} ${vbH}}
+viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
 className="w-full select-none"
 style={{ height: '65vh', cursor: dragNode ? 'grabbing' : isPanning ? 'grabbing' : 'grab' }}
 onWheel={handleWheel}
@@ -628,7 +623,7 @@ const tg = slugMap.get(edge.target);
 if (!s || !tg || !isEdgeVisible(edge)) return null;
 const { strokeWidth, strokeOpacity, stroke } = getEdgeStyle(edge, edge.source, edge.target);
 return (
-<line key={e-${i}} x1={s.x} y1={s.y} x2={tg.x} y2={tg.y}
+<line key={`e-${i}`} x1={s.x} y1={s.y} x2={tg.x} y2={tg.y}
 stroke={stroke} strokeWidth={strokeWidth} strokeOpacity={strokeOpacity}
 style={{ transition: 'stroke-opacity 0.3s ease, stroke-width 0.3s ease' }}
 />
@@ -661,7 +656,7 @@ if (isFocused || isHovered) labelOpacity = 1;
 else if (hasFocus && highlighted) labelOpacity = 0.85;
 else if (hasFocus && !highlighted) labelOpacity = 0.06;
 return (
-<g key={node.slug} transform={translate(${node.x},${node.y})}
+<g key={node.slug} transform={translate(`${node.x},${node.y}`)}
 onMouseDown={e => handleNodeMouseDown(e, node.slug)}
 onMouseEnter={() => setHoveredNode(node.slug)}
 onMouseLeave={() => setHoveredNode(null)}
@@ -699,15 +694,12 @@ transition: 'opacity 0.3s ease' }}
 </g>
 </svg>
 
-{/ Legend /}
-<div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 border-t border-border
-bg-muted/20">
-<span className="text-[10px] font-semibold text-muted-foreground uppercase
-tracking-wider">Зв'язки</span>
+{/* Legend */}
+<div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 border-t border-border bg-muted/20">
+<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Зв'язки</span>
 {Object.entries(EDGE_TYPE_CONFIG).map(([type, cfg]) => (
 <span key={type} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-<span className="w-5 rounded-full" style={{ background: cfg.color, height: ${cfg.width}px
-}} />
+<span className="w-5 rounded-full" style={{ background: cfg.color, height: `${cfg.width}px` }} />
 {cfg.label}
 </span>
 ))}
@@ -716,22 +708,18 @@ tracking-wider">Зв'язки</span>
 <span className="w-3 h-3 rounded-full bg-primary" />
 Розмір = зв'язки
 </span>
-<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider
-ml-3">Папки</span>
+<span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider ml-3">Папки</span>
 {[...folderColorMap.entries()].slice(0, 8).map(([folder, color]) => (
-<span key={folder} className="flex items-center gap-1.5 text-[11px]
-text-muted-foreground">
+<span key={folder} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
 <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
 {folder === '_root' ? '(корінь)' : folder}
 </span>
 ))}
-{folderColorMap.size > 8 && <span className="text-[10px]
-text-muted-foreground">+{folderColorMap.size - 8} ще</span>}
+{folderColorMap.size > 8 && <span className="text-[10px] text-muted-foreground">+{folderColorMap.size - 8} ще</span>}
 </div>
 
-{/ Stats /}
-<div className="flex justify-between items-center px-4 py-2.5 border-t border-border text-xs
-text-muted-foreground">
+{/* Stats */}
+<div className="flex justify-between items-center px-4 py-2.5 border-t border-border text-xs text-muted-foreground">
 <div className="flex gap-6">
 <span>{filteredNodes.length} документів</span>
 <span>{filteredEdges.length} посилань</span>
@@ -749,8 +737,7 @@ focusedNode}</span>
 </div>
 
 {IS_DEV && (
-<div className="px-4 py-2 border-t border-border text-[10px] font-mono
-text-muted-foreground bg-muted/20 flex flex-wrap gap-4">
+<div className="px-4 py-2 border-t border-border text-[10px] font-mono text-muted-foreground bg-muted/20 flex flex-wrap gap-4">
 <span>vis: {visibleCounts.nodes}n / {visibleCounts.edges}e</span>
 <span>types: str={edgeTypeCounts.structural} sem={edgeTypeCounts.semantic}
 nav={edgeTypeCounts.navigational}</span>

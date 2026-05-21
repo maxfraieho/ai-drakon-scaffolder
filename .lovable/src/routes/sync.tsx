@@ -77,7 +77,7 @@ setIsLoading(false);
 return (
 <div className="min-h-screen bg-background p-6">
 <div className="mx-auto max-w-4xl space-y-6">
-{/ Header /}
+{/* Header */}
 <div className="flex items-center justify-between">
 <div>
 <h1 className="flex items-center gap-2 text-2xl font-bold">
@@ -105,7 +105,7 @@ DRAKON-діаграмами у сховищі.
 нижче.
 </div>
 
-{/ Stats row /}
+{/* Stats row */}
 {diff && (
 <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
 <StatCard label="Coverage" value={`${diff.stats.coveragePercent}%`}
@@ -131,7 +131,7 @@ analysis with your diagrams.</p>
 
 {diff && (
 <div className="space-y-4">
-{/ Missing in Diagram /}
+{/* Missing in Diagram */}
 {diff.missingInDiagram.length > 0 && (
 <Card>
 <CardHeader className="pb-3">
@@ -157,7 +157,7 @@ diagramId: item.suggestedDiagramName,
 </Card>
 )}
 
-{/ Orphaned Diagrams /}
+{/* Orphaned Diagrams */}
 {diff.missingInCode.length > 0 && (
 <Card>
 <CardHeader className="pb-3">
@@ -174,7 +174,7 @@ Potentially Orphaned Diagrams
 </Card>
 )}
 
-{/ Matched — collapsible /}
+{/* Matched — collapsible */}
 {diff.matched.length > 0 && (
 <Collapsible open={matchedOpen} onOpenChange={setMatchedOpen}>
 <Card>

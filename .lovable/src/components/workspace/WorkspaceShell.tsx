@@ -138,7 +138,7 @@ const crumb = getBreadcrumb(location.pathname);
 
 return (
 <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
-{/ TOP BAR — 32px /}
+{/* TOP BAR — 32px */}
 <header className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
 <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
 <SheetTrigger asChild>
@@ -309,7 +309,7 @@ className="font-mono text-[11px] uppercase tracking-wider bg-[var(--color-primar
 </div>
 </header>
 
-{/ WORKSPACE BODY /}
+{/* WORKSPACE BODY */}
 <div className="flex flex-1 min-h-0 overflow-hidden">
 <aside className="hidden md:flex h-full w-60 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
 <div className="border-b border-[var(--border-subtle)]">
@@ -343,7 +343,7 @@ active
 <DevCyclePanel />
 </aside>
 
-{/ CONTENT SLOT /}
+{/* CONTENT SLOT */}
 <main className="flex-1 min-w-0 overflow-hidden">
 {children}
 </main>

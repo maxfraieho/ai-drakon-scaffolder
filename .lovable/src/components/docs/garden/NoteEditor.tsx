@@ -165,7 +165,7 @@ ta.setSelectionRange(s, s + sel.length);
 
 return (
 <div className="flex h-full flex-col">
-{/ Header /}
+{/* Header */}
 <div className="flex flex-wrap items-center gap-2 border-b border-border bg-muted/10 px-3 py-2">
 <Input
 value={title}
@@ -209,7 +209,7 @@ className="h-3.5 w-3.5 md:mr-1" />}
 </div>
 </div>
 
-{/ Tags + draft notice /}
+{/* Tags + draft notice */}
 <div className="flex flex-col gap-1.5 border-b border-border px-3 py-2">
 <TagEditor tags={tags} onChange={onTagsChange} />
 {hasDraft && (
@@ -228,7 +228,7 @@ className="h-3.5 w-3.5 md:mr-1" />}
 )}
 </div>
 
-{/ Body /}
+{/* Body */}
 {mode === "edit" ? (
 <div className="relative flex flex-1 flex-col overflow-hidden">
 <EditorToolbar onWrap={wrap} onInsert={insertAtCursor} />

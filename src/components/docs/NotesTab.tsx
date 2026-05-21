@@ -72,7 +72,7 @@ className={cn(
 "group flex w-full items-center rounded transition-colors hover:bg-muted",
 isActive && "bg-muted",
 )}
-style={{ paddingLeft: ${8 + level * 14}px }}
+style={{ paddingLeft: `${8 + level * 14}px` }}
 >
 <button
 onClick={() => onNoteClick(node.slug!)}
@@ -86,8 +86,7 @@ isActive && "font-medium",
 </button>
 <button
 onClick={(e) => { e.stopPropagation(); onDeleteNote(node.slug!); }}
-className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground transition-opacity
-hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
+className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground transition-opacity hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
 title="Видалити"
 >
 <Trash2 className="h-3 w-3" />
@@ -101,31 +100,27 @@ return (
 <div>
 <div
 className="group flex items-center rounded hover:bg-muted/60"
-style={{ paddingLeft: ${4 + level * 14}px }}
+style={{ paddingLeft: `${4 + level * 14}px` }}
 >
 <button
 onClick={() => setOpen((o) => !o)}
-className="flex flex-1 items-center gap-1.5 py-1 text-left text-xs font-medium
-text-muted-foreground min-w-0"
+className="flex flex-1 items-center gap-1.5 py-1 text-left text-xs font-medium text-muted-foreground min-w-0"
 >
-{open ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3
-shrink-0" />}
+{open ? <ChevronDown className="h-3 w-3 shrink-0" /> : <ChevronRight className="h-3 w-3 shrink-0" />}
 {open ? <FolderOpen className="h-3.5 w-3.5 shrink-0 text-primary/60" /> : <Folder
 className="h-3.5 w-3.5 shrink-0 text-primary/60" />}
 <span className="truncate">{node.name}</span>
 </button>
 <button
 onClick={(e) => { e.stopPropagation(); onAddInFolder(node.path); }}
-className="h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-primary/10
-hover:text-primary md:opacity-0 md:group-hover:opacity-100"
+className="h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-primary/10 hover:text-primary md:opacity-0 md:group-hover:opacity-100"
 title="Новий документ у цій папці"
 >
 <FilePlus className="h-3 w-3" />
 </button>
 <button
 onClick={(e) => { e.stopPropagation(); onDeleteFolder(node.path, childCount > 0); }}
-className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground
-hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
+className="mr-1 h-6 w-6 shrink-0 rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive md:opacity-0 md:group-hover:opacity-100"
 title="Видалити папку"
 >
 <Trash2 className="h-3 w-3" />
@@ -208,11 +203,9 @@ setSidebarOpen(false);
 };
 
 // Pre-set title with folder prefix hint via the slug system in useNotesEditor:
-// We override slug at save time by injecting folder. Simpler: set initial title to "" and on save
-prefix slug.
+// We override slug at save time by injecting folder. Simpler: set initial title to "" and on save prefix slug.
 // Implementation: when pendingFolder set, intercept editor.save by wrapping it in handleSave.
-// We do it by passing currentSlug and syncing title -> editor will slugify title; we then prepend
-folder.
+// We do it by passing currentSlug and syncing title -> editor will slugify title; we then prepend folder.
 // For this, override editor.save here using a quick monkeypatch via wrapper:
 const wrappedSave = async () => {
 if (pendingFolder && !editor.title.trim()) {
@@ -221,8 +214,8 @@ return;
 }
 if (pendingFolder) {
 // Use commitNote directly to control slug
-const slugBase = slugifySegment(editor.title) || note-${Date.now()};
-const finalSlug = ${pendingFolder}/${slugBase};
+const slugBase = slugifySegment(editor.title) || `note-${Date.now()}`;
+const finalSlug = `${pendingFolder}/${slugBase}`;
 try {
 await commitNote({
 slug: finalSlug,
@@ -244,7 +237,7 @@ await handleSave();
 
 const handleDeleteNote = async (slug: string) => {
 const title = flattenTree(tree).find((n) => n.slug === slug)?.title ?? slug;
-if (!window.confirm(Видалити документ «${title}»? Це незворотня дія.)) return;
+if (!window.confirm(`Видалити документ «${title}»? Це незворотня дія.`)) return;
 try {
 await deleteNote(slug);
 if (activeSlug === slug) setActiveSlug(null);
@@ -269,13 +262,12 @@ return;
 const next = [...localFolders, slug];
 setLocalFolders(next);
 writeLocalFolders(next);
-toast.success(Папку «${slug}» створено. Додайте до неї документ, щоб зберегти.);
+toast.success(`Папку «${slug}» створено. Додайте до неї документ, щоб зберегти.`);
 };
 
 const handleDeleteFolder = async (folderPath: string, hasChildren: boolean) => {
 if (hasChildren) {
-if (!window.confirm(Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із
-усіма документами?)) return;
+if (!window.confirm(`Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із усіма документами?`)) return;
 const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
 try {
 for (const n of notes) {
@@ -301,9 +293,8 @@ slug: n.slug!,
 }));
 
 return (
-<div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] flex-col overflow-hidden
-rounded-lg border border-border md:flex-row">
-{/ Sidebar — mobile stacked panel, desktop side panel /}
+<div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] flex-col overflow-hidden rounded-lg border border-border md:flex-row">
+{/* Sidebar — mobile stacked panel, desktop side panel */}
 <aside
 className={cn(
 "min-w-0 flex-col border-border bg-muted/20",
@@ -339,8 +330,7 @@ setSidebarOpen(false)} title="Сховати">
 value={sidebarSearch}
 onChange={(e) => setSidebarSearch(e.target.value)}
 placeholder="Пошук документів..."
-className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs
-text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
+className="w-full rounded-sm border border-input bg-background px-2 py-1 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none"
 />
 </div>
 <ScrollArea className="flex-1">
@@ -377,29 +367,26 @@ onDeleteFolder={handleDeleteFolder}
 </ScrollArea>
 </aside>
 
-{/ Editor area /}
+{/* Editor area */}
 <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-{/ Mobile bar with sidebar toggle /}
-<div className="flex items-center gap-2 border-b border-border bg-muted/10 px-2 py-1
-md:hidden">
+{/* Mobile bar with sidebar toggle */}
+<div className="flex items-center gap-2 border-b border-border bg-muted/10 px-2 py-1 md:hidden">
 <Button
 size="icon" variant="ghost" className="h-8 w-8"
 onClick={() => setSidebarOpen((o) => !o)}
 title="Список документів"
 >
-{sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4
-w-4" />}
+{sidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
 </Button>
 <span className="truncate text-xs text-muted-foreground">
 {activeSlug === NEW_SLUG
-? (pendingFolder ? Новий у /${pendingFolder} : "Новий документ")
+? ( `pendingFolder ? Новий у /${pendingFolder} : "Новий документ"`)
 : activeSlug ?? "Оберіть документ"}
 </span>
 </div>
 
 {activeSlug === null ? (
-<div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center
-text-muted-foreground">
+<div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground">
 <FileText className="h-10 w-10 opacity-20" />
 <p className="text-sm">
 Оберіть документ або{" "}
@@ -419,8 +406,7 @@ tags={editor.tags}
 isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)}
 isSaving={editor.isSaving}
 hasDraft={editor.hasDraft}
-currentSlug={activeSlug === NEW_SLUG ? (pendingFolder ? ${pendingFolder}/… : undefined)
-: activeSlug}
+currentSlug={activeSlug === NEW_SLUG ? (pendingFolder ? `${pendingFolder}/…` : undefined) : activeSlug}
 onTitleChange={editor.setTitle}
 onContentChange={editor.setContent}
 onTagsChange={editor.setTags}

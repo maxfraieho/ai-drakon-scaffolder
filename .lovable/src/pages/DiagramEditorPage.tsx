@@ -62,7 +62,7 @@ analyzePath: path || "src",
 
 return (
 <div className="flex min-h-screen flex-col bg-[var(--bg-base)] text-[var(--text-primary)]">
-{/ Editor toolbar /}
+{/* Editor toolbar */}
 <div className="flex h-12 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 md:px-4">
 <Link
 to="/diagrams"
@@ -73,7 +73,7 @@ className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 
 Back
 </Link>
 
-{/ Desktop: toggle left files rail /}
+{/* Desktop: toggle left files rail */}
 <button
 type="button"
 onClick={() => setFilesOpen((v) => !v)}
@@ -92,7 +92,7 @@ filesOpen
 <span className="hidden lg:inline">Файли</span>
 </button>
 
-{/ Mobile: open files sheet /}
+{/* Mobile: open files sheet */}
 <Sheet open={filesSheetOpen} onOpenChange={setFilesSheetOpen}>
 <SheetTrigger asChild>
 <button
@@ -174,9 +174,9 @@ style={{ transition: "transform 100ms, background-color 150ms, color 150ms" }}
 </button>
 </div>
 
-{/ Main + sidebars /}
+{/* Main + sidebars */}
 <div className="flex flex-1 overflow-hidden">
-{/ Desktop left files rail /}
+{/* Desktop left files rail */}
 <aside
 className={cn(
 "hidden md:flex flex-shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]",

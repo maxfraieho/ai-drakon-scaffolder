@@ -78,11 +78,11 @@ const cx = CANVAS_W / 2;
 const cy = CANVAS_H / 2;
 const radius = Math.min(CANVAS_W, CANVAS_H) * 0.35;
 return nodes.map((n, i) => {
-const angle = (2 Math.PI i) / nodes.length;
+const angle = (2 * Math.PI * i) / nodes.length;
 return {
 ...n,
-x: cx + radius Math.cos(angle) + (Math.random() - 0.5) 20,
-y: cy + radius Math.sin(angle) + (Math.random() - 0.5) 20,
+x: cx + radius * Math.cos(angle) + (Math.random() - 0.5) * 20,
+y: cy + radius * Math.sin(angle) + (Math.random() - 0.5) * 20,
 vx: 0, vy: 0, fx: null, fy: null,
 connections: connCount.get(n.slug) || 0,
 folder: getRootFolder(n.slug),
@@ -107,7 +107,7 @@ for (let j = i + 1; j < n; j++) {
 const b = simNodes[j];
 let dx = a.x - b.x;
 let dy = a.y - b.y;
-let dist = Math.sqrt(dx dx + dy dy) || 1;
+let dist = Math.sqrt(dx * dx + dy * dy) || 1;
 if (dist < MIN_DIST) dist = MIN_DIST;
 const force = REPULSION / (dist * dist);
 const fx = (dx / dist) * force;
@@ -123,9 +123,9 @@ const bi = slugIdx.get(e.target);
 if (ai === undefined || bi === undefined) continue;
 const a = simNodes[ai]; const b = simNodes[bi];
 const dx = b.x - a.x; const dy = b.y - a.y;
-const dist = Math.sqrt(dx dx + dy dy) || 1;
+const dist = Math.sqrt(dx * dx + dy * dy) || 1;
 const force = dist * ATTRACTION;
-const fx = (dx / dist) force; const fy = (dy / dist) force;
+const fx = (dx / dist) * force; const fy = (dy / dist) * force;
 if (a.fx === null) { a.vx += fx; a.vy += fy; }
 if (b.fx === null) { b.vx -= fx; b.vy -= fy; }
 }
@@ -498,7 +498,7 @@ return { strokeWidth, strokeOpacity, stroke };
 
 return (
 <div className="w-full overflow-hidden rounded-lg border border-border bg-card">
-{/ Controls /}
+{/* Controls */}
 <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/30 flex-wrap gap-2">
 <div className="flex items-center gap-1">
 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setViewState(p =>
@@ -518,7 +518,7 @@ zoom: 1, panX: 0, panY: 0 })} title="Скинути вигляд">
 </Button>
 </div>
 
-{/ Search /}
+{/* Search */}
 <div className="relative">
 {searchOpen ? (
 <div className="relative">
@@ -597,10 +597,10 @@ title="Скинути фокус">
 )}
 </div>
 
-{/ SVG Graph /}
+{/* SVG Graph */}
 <svg
 ref={svgRef}
-viewBox= `{${vbX} ${vbY} ${vbW} ${vbH}`}
+viewBox={`${vbX} ${vbY} ${vbW} ${vbH}`}
 className="w-full select-none"
 style={{ height: '65vh', cursor: dragNode ? 'grabbing' : isPanning ? 'grabbing' : 'grab' }}
 onWheel={handleWheel}
@@ -694,13 +694,12 @@ transition: 'opacity 0.3s ease' }}
 </g>
 </svg>
 
-{/ Legend /}
+{/* Legend */}
 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 border-t border-border bg-muted/20">
 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Зв'язки</span>
 {Object.entries(EDGE_TYPE_CONFIG).map(([type, cfg]) => (
 <span key={type} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-<span className="w-5 rounded-full" style={{` background: cfg.color, height:` ${cfg.width}`px
-}} />
+<span className="w-5 rounded-full" style={{ background: cfg.color, height: `${cfg.width}px` }} />
 {cfg.label}
 </span>
 ))}
@@ -719,7 +718,7 @@ transition: 'opacity 0.3s ease' }}
 {folderColorMap.size > 8 && <span className="text-[10px] text-muted-foreground">+{folderColorMap.size - 8} ще</span>}
 </div>
 
-{/ Stats /}
+{/* Stats */}
 <div className="flex justify-between items-center px-4 py-2.5 border-t border-border text-xs text-muted-foreground">
 <div className="flex gap-6">
 <span>{filteredNodes.length} документів</span>

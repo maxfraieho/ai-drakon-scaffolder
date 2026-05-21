@@ -36,7 +36,7 @@ role="status"
 {mutationQueue.length > 0 && (
 <span
 className="font-mono text-[11px] tabular-nums text-[var(--text-muted)]"
-aria-label= `{${mutationQueue.length} mutations queued`}
+aria-label={`${mutationQueue.length} mutations queued`}
 data-numeric="true"
 >
 +{mutationQueue.length}
@@ -67,7 +67,7 @@ No mutations yet
 
 {mutationLog.slice(0, 10).map((entry, i) => (
 <div
-key= `{${entry.timestamp}-${i}`}
+key={`${entry.timestamp}-${i}`}
 className="flex items-start gap-2 border-b border-[var(--border-subtle)] py-1.5 font-mono text-[11px] last:border-0"
 >
 <span

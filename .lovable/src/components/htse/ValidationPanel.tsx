@@ -84,8 +84,7 @@ if (ops.length > 0 && onApplySafe) {
 onApplySafe(ops);
 toast.success(`Enqueued ${ops.length} fix${ops.length > 1 ? "es" : ""}`);
 } else {
-toast.info(`Applied ${selectedFixes.size} fix${selectedFixes.size > 1 ? "es" : ""}
-(queued));
+toast.info(`Applied ${selectedFixes.size} fix${selectedFixes.size > 1 ? "es" : ""} (queued)`);
 }
 setSelectedFixes(new Set());
 setShowAutofixes(false);
@@ -134,7 +133,7 @@ className={cn("h-3 w-3 text-muted-foreground transition-transform", isOpen &&
 </CollapsibleTrigger>
 
 <CollapsibleContent className="mt-1 rounded-md border bg-background shadow-sm">
-{/ Toolbar /}
+{/* Toolbar */}
 <div className="flex flex-wrap gap-1.5 border-b p-2">
 <Button
 size="sm"
@@ -174,7 +173,7 @@ Apply selected ({selectedFixes.size})
 </div>
 
 <ScrollArea className="max-h-72 p-2">
-{/ Status message /}
+{/* Status message */}
 {!result && !isValidating && (
 <p className="py-2 text-center text-xs text-muted-foreground">
 Press Validate or wait 3s after editing
@@ -188,7 +187,7 @@ Diagram structure is valid
 </div>
 )}
 
-{/ Errors /}
+{/* Errors */}
 {errors.length > 0 && (
 <div className="mb-2">
 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-destructive">
@@ -202,7 +201,7 @@ Errors ({errors.length})
 </div>
 )}
 
-{/ Warnings /}
+{/* Warnings */}
 {warnings.length > 0 && (
 <div>
 {errors.length > 0 && <Separator className="mb-2" />}
@@ -217,7 +216,7 @@ Warnings ({warnings.length})
 </div>
 )}
 
-{/ Autofix preview /}
+{/* Autofix preview */}
 {showAutofixes && (result?.autofixes?.length ?? 0) > 0 && (
 <div className="mt-2 border-t pt-2">
 <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">

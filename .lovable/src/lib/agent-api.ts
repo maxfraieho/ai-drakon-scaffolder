@@ -107,7 +107,7 @@ const resp = await fetch( `${workerUrl}/v1/agents/${agentId}/chat`, {
 method: "POST",
 headers: {
 "Content-Type": "application/json",
-...(token ? {` Authorization: Bearer ${token}` } : {}),
+...(token ? { Authorization: `Bearer ${token}` } : {}),
 },
 body: JSON.stringify({
 message,
@@ -139,7 +139,7 @@ await fetch( `${workerUrl}/v1/agents/${agentId}/feedback`, {
 method: "POST",
 headers: {
 "Content-Type": "application/json",
-...(token ? {` Authorization: Bearer ${token}` } : {}),
+...(token ? { Authorization: `Bearer ${token}` } : {}),
 },
 body: JSON.stringify({
 agentUrl: getAgentUrlFor(agentId),

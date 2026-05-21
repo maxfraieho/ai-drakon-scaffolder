@@ -8,7 +8,7 @@ function authHeaders(): Record<string, string> {
 const jwt = getAccessToken();
 return {
 "Content-Type": "application/json",
-...(jwt ? {` Authorization: Bearer ${jwt}` } : {}),
+...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
 };
 }
 export class ServiceRestartError extends Error {

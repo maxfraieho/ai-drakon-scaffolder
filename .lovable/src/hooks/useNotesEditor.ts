@@ -124,7 +124,7 @@ return null;
 }
 setIsSaving(true);
 try {
-const finalSlug = slug || slugify( `title) || note-${Date.now()}`;
+const finalSlug = slug || slugify(title) || `note-${Date.now()}`;
 const res = await commitNote({
 slug: finalSlug,
 title: title.trim(),

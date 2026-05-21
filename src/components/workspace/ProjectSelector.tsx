@@ -46,7 +46,7 @@ setManagerOpen(false);
 setGithubOpen(false);
 setForm({ slug: "", name: "", path: "", description: "", ghOwner: "", ghRepo: "", ghBranch: "main"
 });
-toast.success(Проект "${form.name}" додано);
+toast.success(`Проект ${form.name} додано`);
 } catch {
 toast.error("Помилка додавання проекту");
 } finally {
@@ -70,13 +70,11 @@ setDeleting(null);
 return (
 <>
 <div className="h-14 px-2 py-1.5">
-<p className="font-mono text-[10px] uppercase tracking-[0.14em]
-text-[var(--text-muted)]">ACTIVE PROJECT</p>
+<p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">ACTIVE PROJECT</p>
 <div className="mt-1 flex items-center gap-1.5">
 <div className="flex-1 min-w-0">
 {loading && projects.length === 0 ? (
-<div className="flex h-8 items-center gap-2 rounded-[var(--radius-sm)] border
-border-[var(--border-subtle)] bg-[var(--bg-base)] px-2">
+<div className="flex h-8 items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2">
 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent-amber)]" />
 <span className="font-mono text-[11px] text-[var(--accent-amber)]">Select project</span>
 <Loader2 className="ml-auto h-3 w-3 animate-spin text-[var(--text-muted)]" />
@@ -89,14 +87,12 @@ const project = projects.find((item) => item.slug === slug);
 if (project) setActiveProject(project);
 }}
 >
-<SelectTrigger className="h-8 border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 font-mono
-text-[11px] text-[var(--accent-amber)]">
+<SelectTrigger className="h-8 border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 font-mono text-[11px] text-[var(--accent-amber)]">
 <SelectValue placeholder="Select project" />
 </SelectTrigger>
 <SelectContent className="border-[var(--border-subtle)] bg-[var(--bg-surface)]">
 {projects.map((project) => (
-<SelectItem key={project.slug} value={project.slug} className="font-mono text-[11px]
-text-[var(--text-primary)]">
+<SelectItem key={project.slug} value={project.slug} className="font-mono text-[11px] text-[var(--text-primary)]">
 {project.name}
 </SelectItem>
 ))}
@@ -110,8 +106,7 @@ type="button"
 size="icon"
 variant="outline"
 onClick={() => setManagerOpen(true)}
-className="h-8 w-8 border-[var(--border-subtle)] bg-[var(--bg-base)] text-[var(--text-muted)]
-hover:text-[var(--text-primary)]"
+className="h-8 w-8 border-[var(--border-subtle)] bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
 aria-label="Управління проектами"
 >
 <Settings2 className="h-3.5 w-3.5" />
@@ -120,8 +115,7 @@ aria-label="Управління проектами"
 </div>
 
 <Dialog open={managerOpen} onOpenChange={setManagerOpen}>
-<DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-lg
-font-mono">
+<DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-lg font-mono">
 <DialogHeader>
 <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
 Управління проектами
@@ -136,16 +130,14 @@ font-mono">
 <div
 key={p.slug}
 className={cn(
-"flex items-center gap-2 rounded-[var(--radius-sm)] border px-2.5 py-2 cursor-pointer
-transition-colors",
+"flex items-center gap-2 rounded-[var(--radius-sm)] border px-2.5 py-2 cursor-pointer transition-colors",
 p.slug === activeProject?.slug
 ? "border-[var(--accent-amber)]/50 bg-[var(--accent-dim)]"
 : "border-[var(--border-subtle)] bg-[var(--bg-base)] hover:bg-white/5"
 )}
 onClick={() => setActiveProject(p)}
 >
-<div className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--accent-amber)]/35
-bg-[var(--accent-dim)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--accent-amber)]">
+<div className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--accent-amber)]/35 bg-[var(--accent-dim)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--accent-amber)]">
 {p.slug}
 </div>
 <p className="flex-1 truncate text-[10px] text-[var(--text-muted)]">{p.path ?? p.description ??
@@ -154,8 +146,7 @@ bg-[var(--accent-dim)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--accent-am
 type="button"
 disabled={deleting === p.slug}
 onClick={(e) => { e.stopPropagation(); void handleDelete(p.slug); }}
-className="shrink-0 flex items-center justify-center h-6 w-6 rounded text-[var(--text-muted)]
-hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50"
+className="shrink-0 flex items-center justify-center h-6 w-6 rounded text-[var(--text-muted)] hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50"
 title="Видалити проект"
 >
 {deleting === p.slug ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2
@@ -168,9 +159,7 @@ className="h-3.5 w-3.5" />}
 <button
 type="button"
 onClick={() => { setManagerOpen(false); setAddOpen(true); }}
-className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dashed
-border-[var(--border-subtle)] px-3 py-2 text-[11px] text-[var(--text-muted)]
-hover:border-[var(--accent-amber)]/40 hover:text-[var(--text-secondary)] transition-colors w-full"
+className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-subtle)] px-3 py-2 text-[11px] text-[var(--text-muted)] hover:border-[var(--accent-amber)]/40 hover:text-[var(--text-secondary)] transition-colors w-full"
 >
 <Plus className="h-3.5 w-3.5" />
 Додати новий проект
@@ -179,8 +168,7 @@ hover:border-[var(--accent-amber)]/40 hover:text-[var(--text-secondary)] transit
 </Dialog>
 
 <Dialog open={addOpen} onOpenChange={setAddOpen}>
-<DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-md
-font-mono">
+<DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-md font-mono">
 <DialogHeader>
 <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
 Новий проект
@@ -190,8 +178,7 @@ font-mono">
 <div className="flex flex-col gap-3">
 <div className="grid grid-cols-2 gap-2">
 <div>
-<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1
-block">Slug *</Label>
+<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Slug *</Label>
 <Input
 value={form.slug}
 onChange={(e) => setForm(f => ({...f, slug: e.target.value}))}
@@ -200,8 +187,7 @@ className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-su
 />
 </div>
 <div>
-<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1
-block">Назва *</Label>
+<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Назва *</Label>
 <Input
 value={form.name}
 onChange={(e) => setForm(f => ({...f, name: e.target.value}))}
@@ -212,8 +198,7 @@ className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-su
 </div>
 
 <div>
-<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1
-block">Шлях на сервері *</Label>
+<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Шлях на сервері *</Label>
 <Input
 value={form.path}
 onChange={(e) => setForm(f => ({...f, path: e.target.value}))}
@@ -223,8 +208,7 @@ className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-su
 </div>
 
 <div>
-<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1
-block">Опис</Label>
+<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Опис</Label>
 <Input
 value={form.description}
 onChange={(e) => setForm(f => ({...f, description: e.target.value}))}
@@ -238,8 +222,7 @@ className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-su
 <CollapsibleTrigger asChild>
 <button
 type="button"
-className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-1 py-1
-text-[10px] uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-base)]"
+className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-1 py-1 text-[10px] uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-base)]"
 >
 GitHub (необов'язково)
 <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", githubOpen &&

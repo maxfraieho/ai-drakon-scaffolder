@@ -49,25 +49,20 @@ setSelectedKbFile(null);
 };
 
 return (
-<div className="font-ui-sm flex h-screen w-full flex-col overflow-hidden
-bg-[var(--color-surface-container-lowest)] text-[var(--color-on-surface)] antialiased">
-{/ Top Navigation Bar /}
-<header className="flex h-8 shrink-0 items-center gap-2 border-b
-border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-2 md:px-3">
+<div className="font-ui-sm flex h-screen w-full flex-col overflow-hidden bg-[var(--color-surface-container-lowest)] text-[var(--color-on-surface)] antialiased">
+{/* Top Navigation Bar */}
+<header className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-2 md:px-3">
 <button
 onClick={() => setSidebarOpen((v) => !v)}
-className="flex h-6 w-6 shrink-0 items-center justify-center
-text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] md:hidden"
+className="flex h-6 w-6 shrink-0 items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] md:hidden"
 aria-label="Toggle sidebar"
 >
 <span className="material-symbols-outlined text-[18px]">menu</span>
 </button>
-<span className="hidden md:inline font-headline-sm text-[var(--color-on-surface)] shrink-0
-mr-4">
+<span className="hidden md:inline font-headline-sm text-[var(--color-on-surface)] shrink-0 mr-4">
 ⚙ АГЕНТНА ЛОГІКА
 </span>
-<nav className="flex h-full min-w-0 flex-1 items-center gap-3 md:gap-4 overflow-x-auto
-no-scrollbar">
+<nav className="flex h-full min-w-0 flex-1 items-center gap-3 md:gap-4 overflow-x-auto no-scrollbar">
 {TABS.map((tab) => (
 <button
 key={tab.id}
@@ -85,14 +80,13 @@ activeTab === tab.id
 </nav>
 <div className="flex shrink-0 items-center gap-2 md:gap-3">
 <span className="font-mono-label text-[var(--color-tertiary)]">● LIVE</span>
-<button className="hidden md:flex items-center justify-center
-text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)]">
+<button className="hidden md:flex items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)]">
 <span className="material-symbols-outlined text-[18px]">sensors</span>
 </button>
 </div>
 </header>
 
-{/ Body /}
+{/* Body */}
 <div className="relative flex flex-1 overflow-hidden">
 {sidebarOpen && (
 <div
@@ -159,8 +153,7 @@ setSelectedNode(selectedNode?.id === node.id ? null : node)
 </div>
 </div>
 ):(
-<div className="rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface)]
-p-4 text-center">
+<div className="rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface)] p-4 text-center">
 <p className="font-mono-label text-[var(--color-on-surface-variant)]">
 Всі вузли детерміністичні — LLM не використовується
 </p>

@@ -50,7 +50,7 @@ search.trim() ? d.name.toLowerCase().includes(search.toLowerCase()) : true,
 
 return (
 <aside className="hidden md:flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
-{/ Header /}
+{/* Header */}
 <div className="flex h-7 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-2.5">
 <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
 Diagrams
@@ -66,7 +66,7 @@ className="inline-flex h-5 w-5 items-center justify-center rounded text-[var(--t
 </button>
 </div>
 
-{/ Tabs /}
+{/* Tabs */}
 <div className="flex shrink-0 gap-1 border-b border-[var(--border-subtle)] px-1.5 py-1">
 {([
 { id: "files", label: "Files" },
@@ -89,7 +89,7 @@ tab === t.id
 ))}
 </div>
 
-{/ Search /}
+{/* Search */}
 <div className="relative mx-2 my-1.5 shrink-0">
 <Search
 aria-hidden="true"
@@ -102,7 +102,7 @@ placeholder="Пошук…"
 className="h-6 w-full rounded-sm border border-[var(--border-subtle)] bg-[var(--bg-elevated)] pl-7 pr-2 font-mono text-[11px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none focus:border-[var(--accent-amber)]"
 />
 </div>
-{/ Tree /}
+{/* Tree */}
 <div className="flex-1 overflow-y-auto">
 {tab === "files" || tab === "explorer" ? (
 <ul className="text-sm">
@@ -191,7 +191,7 @@ History — coming soon
 )}
 </div>
 
-{/ Footer /}
+{/* Footer */}
 <div className="shrink-0 border-t border-[var(--border-subtle)] p-2">
 <button
 type="button"

@@ -266,7 +266,7 @@ selectedName={selectedIrName}
 )}
 </div>
 
-{/ CENTER /}
+{/* CENTER */}
 <section className="flex flex-1 min-w-0 flex-col overflow-hidden">
 <CanvasToolbar
 diagramName={selectedDiagram?.name}
@@ -293,7 +293,7 @@ undefined}
 />
 
 <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-{/ Canvas /}
+{/* Canvas */}
 <div
 className="flex-1 min-h-0 overflow-hidden bg-[var(--bg-base)]"
 style={{
@@ -344,7 +344,7 @@ className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-[var(--
 )}
 </div>
 
-{/ BOTTOM DRAWER — generation /}
+{/* BOTTOM DRAWER — generation */}
 <CodeGenerationPanel
 open={generationOpen}
 onClose={() => setGenerationOpen(false)}
@@ -357,7 +357,7 @@ selectedDiagram?.diagram.items
 </div>
 </section>
 
-{/ RIGHT SLIDE-IN — analysis /}
+{/* RIGHT SLIDE-IN — analysis */}
 <CodeAnalysisPanel
 open={analysisOpen}
 onClose={() => setAnalysisOpen(false)}
@@ -383,7 +383,7 @@ toast.success(`IR імпортовано: ${ir.name}`);
 }}
 />
 
-{/ New folder dialog /}
+{/* New folder dialog */}
 <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
 <DialogContent>
 <DialogHeader>

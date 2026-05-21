@@ -27,7 +27,7 @@ toolName: string,
 args: Record<string, unknown>,
 opts: McpCallOptions = {},
 ): Promise<T> {
-const url =` ${resolveWorkerUrl().replace(/\/$/`, "")}/mcp;
+const url = `${resolveWorkerUrl().replace(/\/$/, "")}/mcp`;
 const jwt = getAccessToken();
 
 const headers: Record<string, string> = {

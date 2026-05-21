@@ -72,7 +72,7 @@ className={cn(
 "group flex w-full items-center rounded transition-colors hover:bg-muted",
 isActive && "bg-muted",
 )}
-style={{` paddingLeft:` ${8 + level * 14}`px }}
+style={{ paddingLeft: `${8 + level * 14}px` }}
 >
 <button
 onClick={() => onNoteClick(node.slug!)}
@@ -100,7 +100,7 @@ return (
 <div>
 <div
 className="group flex items-center rounded hover:bg-muted/60"
-style={{` paddingLeft:` ${4 + level * 14}`px }}
+style={{ paddingLeft: `${4 + level * 14}px` }}
 >
 <button
 onClick={() => setOpen((o) => !o)}
@@ -203,11 +203,9 @@ setSidebarOpen(false);
 };
 
 // Pre-set title with folder prefix hint via the slug system in useNotesEditor:
-// We override slug at save time by injecting folder. Simpler: set initial title to "" and on save
-prefix slug.
+// We override slug at save time by injecting folder. Simpler: set initial title to "" and on save prefix slug.
 // Implementation: when pendingFolder set, intercept editor.save by wrapping it in handleSave.
-// We do it by passing currentSlug and syncing title -> editor will slugify title; we then prepend
-folder.
+// We do it by passing currentSlug and syncing title -> editor will slugify title; we then prepend folder.
 // For this, override editor.save here using a quick monkeypatch via wrapper:
 const wrappedSave = async () => {
 if (pendingFolder && !editor.title.trim()) {
@@ -216,7 +214,7 @@ return;
 }
 if (pendingFolder) {
 // Use commitNote directly to control slug
-const slugBase = slugifySegment( `editor.title) || note-${Date.now()}`;
+const slugBase = slugifySegment(editor.title) || `note-${Date.now()}`;
 const finalSlug = `${pendingFolder}/${slugBase}`;
 try {
 await commitNote({
@@ -269,8 +267,7 @@ toast.success(`Папку «${slug}» створено. Додайте до не
 
 const handleDeleteFolder = async (folderPath: string, hasChildren: boolean) => {
 if (hasChildren) {
-if (!window.confirm( `Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із`
-усіма документами?)) return;
+if (!window.confirm(`Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із усіма документами?`)) return;
 const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
 try {
 for (const n of notes) {
@@ -297,7 +294,7 @@ slug: n.slug!,
 
 return (
 <div className="relative flex h-[calc(100dvh-180px)] min-h-[480px] flex-col overflow-hidden rounded-lg border border-border md:flex-row">
-{/ Sidebar — mobile stacked panel, desktop side panel /}
+{/* Sidebar — mobile stacked panel, desktop side panel */}
 <aside
 className={cn(
 "min-w-0 flex-col border-border bg-muted/20",
@@ -370,9 +367,9 @@ onDeleteFolder={handleDeleteFolder}
 </ScrollArea>
 </aside>
 
-{/ Editor area /}
+{/* Editor area */}
 <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
-{/ Mobile bar with sidebar toggle /}
+{/* Mobile bar with sidebar toggle */}
 <div className="flex items-center gap-2 border-b border-border bg-muted/10 px-2 py-1 md:hidden">
 <Button
 size="icon" variant="ghost" className="h-8 w-8"
@@ -409,8 +406,7 @@ tags={editor.tags}
 isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)}
 isSaving={editor.isSaving}
 hasDraft={editor.hasDraft}
-currentSlug={`activeSlug === NEW_SLUG ? (pendingFolder ? ${pendingFolder}`/… : undefined)
-: activeSlug}
+currentSlug={activeSlug === NEW_SLUG ? (pendingFolder ? `${pendingFolder}/…` : undefined) : activeSlug}
 onTitleChange={editor.setTitle}
 onContentChange={editor.setContent}
 onTagsChange={editor.setTags}

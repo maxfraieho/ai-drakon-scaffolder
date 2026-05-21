@@ -50,7 +50,7 @@ setSelectedKbFile(null);
 
 return (
 <div className="font-ui-sm flex h-screen w-full flex-col overflow-hidden bg-[var(--color-surface-container-lowest)] text-[var(--color-on-surface)] antialiased">
-{/ Top Navigation Bar /}
+{/* Top Navigation Bar */}
 <header className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-2 md:px-3">
 <button
 onClick={() => setSidebarOpen((v) => !v)}
@@ -86,7 +86,7 @@ activeTab === tab.id
 </div>
 </header>
 
-{/ Body /}
+{/* Body */}
 <div className="relative flex flex-1 overflow-hidden">
 {sidebarOpen && (
 <div

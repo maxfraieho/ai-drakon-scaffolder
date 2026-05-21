@@ -44,41 +44,41 @@ function authHeaders(): HeadersInit {
 const jwt = getAccessToken() ?? "";
 return {
 "Content-Type": "application/json",
-...(jwt ? { Authorization: Bearer ${jwt} } : {}),
+...(jwt ? { Authorization: `Bearer ${jwt}` } : {}),
 };
 }
 
 export async function fetchPipelines(agentId?: AgentId): Promise<PipelineConfig[]> {
-const url = new URL(${worker()}/v1/agents/pipeline);
+const url = new URL( `${worker()}/v1/agents/pipeline`);
 if (agentId) url.searchParams.set("agent_id", agentId);
 const r = await fetch(url.toString(), { headers: authHeaders() });
-if (!r.ok) throw new Error(fetchPipelines: ${r.status});
+if (!r.ok) throw new Error(`fetchPipelines: ${r.status}`);
 return r.json() as Promise<PipelineConfig[]>;
 }
 
 export async function fetchPipeline(id: string): Promise<PipelineConfig> {
-const r = await fetch(${worker()}/v1/agents/pipeline/${id}, { headers: authHeaders() });
-if (!r.ok) throw new Error(Pipeline not found: ${id});
+const r = await fetch( `${worker()}/v1/agents/pipeline/${id}`, { headers: authHeaders() });
+if (!r.ok) throw new Error(`Pipeline not found: ${id}`);
 return r.json() as Promise<PipelineConfig>;
 }
 
 export async function savePipeline(
 config: PipelineConfig,
 ): Promise<{ ok: boolean; version: number }> {
-const r = await fetch(${worker()}/v1/agents/pipeline/${config.id}, {
+const r = await fetch( `${worker()}/v1/agents/pipeline/${config.id}`, {
 method: "PATCH",
 headers: authHeaders(),
 body: JSON.stringify(config),
 });
 if (!r.ok) {
 const err = await r.json().catch(() => ({})) as { topology_errors?: string[] };
-throw new Error(err.topology_errors?.join("; ") ?? Save failed: ${r.status});
+throw new Error(err.topology_errors?.join("; ") ?? `Save failed: ${r.status}`);
 }
 return r.json() as Promise<{ ok: boolean; version: number }>;
 }
 
 export async function validatePipeline(id: string): Promise<ValidationResult> {
-const r = await fetch(${worker()}/v1/agents/pipeline/${id}/validate, {
+const r = await fetch( `${worker()}/v1/agents/pipeline/${id}/validate`, {
 method: "POST",
 headers: authHeaders(),
 });

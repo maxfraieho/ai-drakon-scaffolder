@@ -407,7 +407,7 @@ disabled={isCheckingGithub}>
 
 <TabsContent value="agents">
 <div className="space-y-4">
-{/ Section 1: Agent URLs (compact) /}
+{/* Section 1: Agent URLs (compact) */}
 <Card>
 <CardHeader className="pb-3">
 <CardTitle className="text-base">Адреси агентів</CardTitle>
@@ -502,7 +502,7 @@ description: error instanceof Error ? error.message : "Невідома поми
 </CardContent>
 </Card>
 
-{/ Section 2: Per-agent LLM cards /}
+{/* Section 2: Per-agent LLM cards */}
 <div className="space-y-2">
 <div className="px-1">
 <h3 className="text-sm font-semibold">LLM-провайдер для кожного агента</h3>

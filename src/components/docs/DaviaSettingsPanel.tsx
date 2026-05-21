@@ -79,19 +79,19 @@ const update = (patch: Partial<DaviaSettings>) => setDraft((p) => ({ ...p, ...pa
 
 const buildModelsUrl = () => {
 const base = draft.baseUrl.replace(/\/+$/, "");
-return draft.protocol === "anthropic" ? ${base}/v1/models : ${base}/models;
+return draft.protocol === "anthropic" ? `${base}/v1/models` : `${base}/models`;
 };
 
 const buildHeaders = (): Record<string, string> =>
 draft.protocol === "anthropic"
 ? { "x-api-key": draft.apiKey, "anthropic-version": "2023-06-01" }
-: { Authorization: Bearer ${draft.apiKey} };
+: { Authorization: `Bearer ${draft.apiKey}` };
 
 const handleTest = async () => {
 setTesting(true);
 try {
 const res = await fetch(buildModelsUrl(), { headers: buildHeaders() });
-if (!res.ok) throw new Error(HTTP ${res.status});
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
 toast.success("✓ Проксі доступне");
 } catch (e) {
 toast.error("✗ Не вдалося", { description: e instanceof Error ? e.message : "" });
@@ -104,13 +104,13 @@ const handleLoadModels = async () => {
 setLoadingModels(true);
 try {
 const res = await fetch(buildModelsUrl(), { headers: buildHeaders() });
-if (!res.ok) throw new Error(HTTP ${res.status});
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
 const data = (await res.json()) as { data?: ModelInfo[] };
 const recommended = draft.protocol === "anthropic" ? RECOMMENDED_ANTHROPIC :
 RECOMMENDED_OPENAI;
 const list = Array.isArray(data.data) ? data.data : [];
 setModels([...recommended, ...list.filter((m) => !recommended.some((r) => r.id === m.id))]);
-toast.success(✓ Завантажено ${list.length} моделей);
+toast.success(`✓ Завантажено ${list.length} моделей`);
 } catch (e) {
 toast.error("✗ Не вдалося завантажити моделі", {
 description: e instanceof Error ? e.message : "",
@@ -138,13 +138,10 @@ return acc;
 }, {});
 
 return (
-<Collapsible open={open} onOpenChange={setOpen} className="rounded-md border
-border-border">
-<CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 text-sm
-font-medium hover:bg-muted/40">
+<Collapsible open={open} onOpenChange={setOpen} className="rounded-md border border-border">
+<CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 text-sm font-medium hover:bg-muted/40">
 <span>Налаштування провайдера</span>
-<ChevronDown className={h-4 w-4 transition-transform ${open ? "rotate-180" :
-""}} />
+<ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} />
 </CollapsibleTrigger>
 <CollapsibleContent className="space-y-4 border-t border-border p-3">
 <div className="grid gap-2">
@@ -170,8 +167,7 @@ setModels(v === "anthropic" ? RECOMMENDED_ANTHROPIC : RECOMMENDED_OPENAI);
 <SelectItem value="anthropic">Anthropic</SelectItem>
 </SelectContent>
 </Select>
-<p className="text-xs
-text-muted-foreground">{PROTOCOL_PRESETS[draft.protocol].hint}</p>
+<p className="text-xs text-muted-foreground">{PROTOCOL_PRESETS[draft.protocol].hint}</p>
 </div>
 
 <div className="grid gap-2">
@@ -240,7 +236,7 @@ aria-label="Toggle key"
 </Select>
 <Button type="button" variant="outline" size="sm" onClick={handleLoadModels}
 disabled={loadingModels}>
-<RefreshCw className={mr-1 h-3 w-3 ${loadingModels ? "animate-spin" : ""}} />
+<RefreshCw className={`mr-1 h-3 w-3 ${loadingModels ? "animate-spin" : ""}`} />
 Завантажити
 </Button>
 </div>

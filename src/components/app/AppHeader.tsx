@@ -82,10 +82,9 @@ const isActive = (path: string) =>
 location.pathname === path || location.pathname.startsWith(path + "/");
 
 return (
-<header className="sticky top-0 z-40 border-b border-[var(--border-subtle)]
-bg-[var(--bg-surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-surface)]/80">
+<header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-surface)]/80">
 <div className="mx-auto flex h-12 w-full max-w-[1600px] items-center gap-2 px-3 md:px-4">
-{/ Mobile menu /}
+{/* Mobile menu */}
 <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
 <SheetTrigger asChild>
 <Button
@@ -102,8 +101,7 @@ side="left"
 className="w-72 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0"
 >
 <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
-<SheetTitle className="font-mono text-[11px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<SheetTitle className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 AI-DRAKON
 </SheetTitle>
 </SheetHeader>
@@ -137,8 +135,7 @@ type="button"
 onClick={() => {
 toggleTheme();
 }}
-className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-sm
-text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
+className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--text-primary)]"
 >
 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
 {theme === "dark" ? "Світла тема" : "Темна тема"}
@@ -149,8 +146,7 @@ onClick={() => {
 setMobileOpen(false);
 logout();
 }}
-className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-sm
-text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--color-error)]"
+className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--color-error)]"
 >
 <LogOut className="h-4 w-4" />
 Вийти
@@ -159,21 +155,19 @@ text-[var(--text-secondary)] hover:bg-[var(--bg-elevated)] hover:text-[var(--col
 </SheetContent>
 </Sheet>
 
-{/ Brand /}
+{/* Brand */}
 <Link
 to="/diagrams"
-className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em]
-text-[var(--text-primary)]"
+className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-primary)]"
 >
 <span
 aria-hidden="true"
-className="inline-block h-2 w-2 rounded-full bg-[var(--accent-amber)]
-shadow-[0_0_8px_var(--accent-amber)]"
+className="inline-block h-2 w-2 rounded-full bg-[var(--accent-amber)] shadow-[0_0_8px_var(--accent-amber)]"
 />
 AI-DRAKON
 </Link>
 
-{/ Desktop nav /}
+{/* Desktop nav */}
 <nav className="ml-4 hidden md:flex items-center gap-0.5">
 {NAV.map((item) => {
 const Icon = item.icon;
@@ -215,8 +209,7 @@ side="right"
 className="w-full p-0 sm:max-w-[480px] sm:w-[480px]"
 >
 <SheetHeader className="border-b px-4 py-3">
-<SheetTitle className="font-mono text-[11px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<SheetTitle className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 AI-агенти
 </SheetTitle>
 </SheetHeader>
@@ -231,9 +224,7 @@ type="button"
 onClick={toggleTheme}
 aria-label={theme === "dark" ? "Світла тема" : "Темна тема"}
 title={theme === "dark" ? "Світла тема" : "Темна тема"}
-className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)]
-text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)]
-transition-colors"
+className="hidden md:inline-flex h-9 w-9 items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] transition-colors"
 >
 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
 </button>
@@ -243,8 +234,7 @@ transition-colors"
 <Button
 variant="ghost"
 size="icon"
-className="hidden md:inline-flex h-9 w-9 text-[var(--text-secondary)]
-hover:text-[var(--text-primary)]"
+className="hidden md:inline-flex h-9 w-9 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
 aria-label="Акаунт"
 title="Акаунт"
 >

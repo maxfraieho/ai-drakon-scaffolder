@@ -30,7 +30,7 @@ apiKey: "freecc",
 hint: "OpenAI-сумісний (Bearer токен)",
 modelsPath: "/models",
 authHeader: (key: string): Record<string, string> => ({
-Authorization: Bearer ${key},
+Authorization: `Bearer ${key}`,
 }),
 },
 anthropic: {
@@ -63,7 +63,7 @@ anthropic: [
 const COLOR_STYLES: Record<
 AgentLlmCardProps["agentColor"],
 { border: string; dot: string; chipBg: string; chipText: string }
-      ={
+> = {
 blue: {
 border: "border-l-blue-500",
 dot: "bg-blue-500",
@@ -87,13 +87,13 @@ chipText: "text-emerald-600 dark:text-emerald-400",
 function readFromStorage(agentId: string) {
 if (typeof window === "undefined") return null;
 const protocol =
-(localStorage.getItem(${agentId}_llm_protocol) as "openai" | "anthropic" | null) || "openai";
+(localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | null) || "openai";
 return {
 protocol,
-baseUrl: localStorage.getItem(${agentId}_llm_base_url) || "",
-apiKey: localStorage.getItem(${agentId}_llm_api_key) || "freecc",
-model: localStorage.getItem(${agentId}_llm_model) || "",
-maxTokens: localStorage.getItem(${agentId}_llm_max_tokens) || "",
+baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || "",
+apiKey: localStorage.getItem(`${agentId}_llm_api_key`) || "freecc",
+model: localStorage.getItem(`${agentId}_llm_model`) || "",
+maxTokens: localStorage.getItem(`${agentId}_llm_max_tokens`) || "",
 };
 }
 
@@ -148,12 +148,12 @@ const preset = PROTOCOL_PRESETS[protocol];
 let normalized = baseUrl.replace(/\/+$/, "");
 // For OpenAI-compatible proxies ensure /v1 suffix
 if (protocol === "openai" && !/\/v\d+$/.test(normalized)) {
-normalized = ${normalized}/v1;
+normalized = `${normalized}/v1`;
 setBaseUrl(normalized);
 }
-const url = ${normalized}${preset.modelsPath};
+const url = `${normalized}${preset.modelsPath}`;
 const res = await fetch(url, { headers: preset.authHeader(apiKey) });
-if (!res.ok) throw new Error(HTTP ${res.status});
+if (!res.ok) throw new Error(`HTTP ${res.status}`);
 const data = (await res.json()) as { data?: Array<{ id: string }> };
 const fetched = (data.data || []).map((m) => m.id);
 const recommended = RECOMMENDED[protocol];
@@ -161,37 +161,34 @@ const merged = [...recommended, ...fetched.filter((id) => !recommended.includes(
 setModels(merged);
 if (merged.length > 0 && !model) setModel(merged[0]);
 setConnected(true);
-toast.success(✓ ${agentLabel}: підключено, ${fetched.length} моделей);
+toast.success(`✓ ${agentLabel}: підключено, ${fetched.length} моделей`);
 } catch (e) {
-toast.error(✗ ${agentLabel}: ${e instanceof Error ? e.message : "помилка
-з'єднання"});
+toast.error(`✗ ${agentLabel}: ${e instanceof Error ? e.message : "помилка з'єднання"}`);
 } finally {
 setConnecting(false);
 }
 };
 
 const handleSave = () => {
-localStorage.setItem(${agentId}_llm_protocol, protocol);
-localStorage.setItem(${agentId}_llm_base_url, baseUrl);
-localStorage.setItem(${agentId}_llm_api_key, apiKey);
-localStorage.setItem(${agentId}_llm_model, model);
-if (maxTokens) localStorage.setItem(${agentId}_llm_max_tokens, maxTokens);
-else localStorage.removeItem(${agentId}_llm_max_tokens);
-toast.success(${agentLabel}: налаштування збережено);
+localStorage.setItem(`${agentId}_llm_protocol, protocol`);
+localStorage.setItem(`${agentId}_llm_base_url, baseUrl`);
+localStorage.setItem(`${agentId}_llm_api_key, apiKey`);
+localStorage.setItem(`${agentId}_llm_model, model`);
+if (maxTokens) localStorage.setItem(`${agentId}_llm_max_tokens, maxTokens`);
+else localStorage.removeItem(`${agentId}_llm_max_tokens`);
+toast.success(`${agentLabel}: налаштування збережено`);
 };
 
 return (
 <div
-className={rounded-lg border border-border border-l-4 ${styles.border} bg-card
-p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm}
+className={`rounded-lg border border-border border-l-4 ${styles.border} bg-card p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm`}
 >
-{/ Header /}
+{/* Header */}
 <div className="flex items-start justify-between gap-2">
 <div className="flex items-start gap-2 min-w-0">
 {agentIcon && (
 <div
-className={flex h-8 w-8 shrink-0 items-center justify-center rounded-md
-${styles.chipBg} ${styles.chipText} text-base font-semibold}
+className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${styles.chipBg} ${styles.chipText} text-base font-semibold`}
 aria-hidden
 >
 {agentIcon}
@@ -205,7 +202,7 @@ aria-hidden
 </div>
 </div>
 <div className="flex items-center gap-1.5 shrink-0">
-{/ Agent service health /}
+{/* Agent service health */}
 <span
 title={agentAlive === null ? "Перевірка..." : agentAlive ? "Агент онлайн" : "Агент офлайн"}
 className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium
@@ -228,25 +225,24 @@ agentAlive === null
 />
 {agentAlive === null ? "…" : agentAlive ? "Online" : "Offline"}
 </span>
-{/ LLM connection /}
+{/* LLM connection */}
 <span
 className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium
 ${
 connected
-? ${styles.chipBg} ${styles.chipText}
+? `${styles.chipBg} ${styles.chipText}`
 : "bg-muted text-muted-foreground"
 }`}
 >
 <span
-className={h-1.5 w-1.5 rounded-full ${connected ? styles.dot :
-"bg-muted-foreground/50"}}
+className={`h-1.5 w-1.5 rounded-full ${connected ? styles.dot : "bg-muted-foreground/50"}`}
 />
 {connected ? "LLM ок" : "LLM ?"}
 </span>
 </div>
 </div>
 
-{/ Grid: protocol + URL /}
+{/* Grid: protocol + URL */}
 <div className="grid gap-3 sm:grid-cols-2">
 <div className="grid gap-1.5">
 <Label className="text-xs">Протокол</Label>
@@ -289,7 +285,7 @@ aria-label="Toggle key"
 </div>
 </div>
 
-{/ URL + Connect button /}
+{/* URL + Connect button */}
 <div className="grid gap-1.5">
 <Label className="text-xs">URL провайдера</Label>
 <div className="flex flex-col sm:flex-row gap-2">
@@ -310,24 +306,23 @@ className="h-8 px-3 gap-1.5 text-xs shrink-0"
 onClick={handleConnect}
 disabled={connecting}
 >
-<Plug className={h-3 w-3 ${connecting ? "animate-pulse" : ""}} />
+<Plug className={`h-3 w-3 ${connecting ? "animate-pulse" : ""}`} />
 {connecting ? "Підключаю..." : "Підключити"}
 </Button>
 </div>
 </div>
 
-{/ Model dropdown + manual /}
+{/* Model dropdown + manual */}
 <div className="grid gap-1.5">
 <div className="flex items-center justify-between">
 <Label className="text-xs">Модель / Слот</Label>
 <button
 type="button"
-className="text-[10px] text-muted-foreground inline-flex items-center gap-1
-hover:text-foreground disabled:opacity-50"
+className="text-[10px] text-muted-foreground inline-flex items-center gap-1 hover:text-foreground disabled:opacity-50"
 onClick={handleConnect}
 disabled={connecting}
 >
-<RefreshCw className={h-3 w-3 ${connecting ? "animate-spin" : ""}} />
+<RefreshCw className={`h-3 w-3 ${connecting ? "animate-spin" : ""}`} />
 Оновити
 </button>
 </div>
@@ -351,7 +346,7 @@ className="h-7 text-[11px] text-muted-foreground"
 />
 </div>
 
-{/ Advanced /}
+{/* Advanced */}
 <div>
 <button
 type="button"

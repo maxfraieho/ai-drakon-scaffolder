@@ -38,8 +38,7 @@ javascript: "javascript",
 
 function formatTime(ts: number): string {
 const d = new Date(ts);
-return  `${String(d.getHours()).padStart(2,`
-"0`)}:${String(d.getMinutes()).padStart(2, `0")};
+return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
 export function CodeGenerationPanel({
@@ -200,7 +199,7 @@ panelHeight,
 )}
 style={{ borderColor: "var(--color-outline-variant, #534434)" }}
 >
-{/ Header /}
+{/* Header */}
 <header
 className="flex h-10 shrink-0 items-center justify-between px-4 border-b bg-muted"
 style={{
@@ -261,15 +260,15 @@ className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-sur
 </div>
 </header>
 
-{/ Body /}
+{/* Body */}
 {!hasResult ? (
 <div className="flex flex-1 overflow-hidden">
-{/ Left form /}
+{/* Left form */}
 <div
 className="flex flex-1 flex-col gap-2 p-3 border-r"
 style={{ borderColor: "var(--color-outline-variant, #534434)" }}
 >
-{/ Scheme row /}
+{/* Scheme row */}
 <div className="flex items-center gap-2">
 <span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--color-on-surface-variant)]">
 СХЕМА:
@@ -291,7 +290,7 @@ borderColor: "var(--color-outline-variant, #534434)",
 </div>
 </div>
 
-{/ Description /}
+{/* Description */}
 <div className="flex flex-1 flex-col min-h-0">
 <textarea
 value={description}
@@ -305,7 +304,7 @@ borderColor: "var(--color-outline-variant, #534434)",
 />
 </div>
 
-{/ Action row /}
+{/* Action row */}
 <div className="flex items-center justify-between gap-2">
 <span className="font-mono text-[10px] italic text-[var(--color-on-surface-variant)]">
 {!diagramIr
@@ -340,7 +339,7 @@ progress_activity
 </button>
 </div>
 </div>
-{/ Right history /}
+{/* Right history */}
 <div
 className="w-[320px] flex flex-col bg-muted/40"
 >
@@ -400,9 +399,8 @@ refresh
 </div>
 </div>
 ):(
-/ DONE / ERROR — Monaco view /
 <div className="flex flex-1 flex-col min-h-0">
-{/ Status bar /}
+{/* Status bar */}
 <div
 className="flex items-center justify-between px-4 py-1.5 border-b shrink-0 bg-muted"
 style={{
@@ -479,7 +477,7 @@ refresh
 </div>
 </div>
 
-{/ Monaco /}
+{/* Monaco */}
 <div className="flex-1 min-h-0">
 {result?.code ? (
 <Editor

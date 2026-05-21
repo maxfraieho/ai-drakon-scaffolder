@@ -75,12 +75,9 @@ const [isCheckingGithub, setIsCheckingGithub] = useState(false);
 const [isCheckingN8n, setIsCheckingN8n] = useState(false);
 const [isLoadingMinio, setIsLoadingMinio] = useState(false);
 const [repoOpen, setRepoOpen] = useState(false);
-const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не
-перевірено" });
-const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не
-перевірено" });
-const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не
-перевірено" });
+const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 
 const [docsRepoPath, setDocsRepoPath] = useState(() =>
 typeof window !== "undefined" ? localStorage.getItem("docs_repo_path") || "" : "",
@@ -151,10 +148,10 @@ throw new Error("GitHub повернув помилку");
 
 setGithubStatus({
 type: "success",
-text: Знайдено гілок: ${response.branches.length},
+text: `Знайдено гілок: ${response.branches.length}`,
 });
 toast.success("GitHub підключено", {
-description: Знайдено гілок: ${response.branches.length},
+description: `Знайдено гілок: ${response.branches.length}`,
 });
 } catch (error) {
 const message = error instanceof Error ? error.message : "Помилка підключення";
@@ -178,16 +175,16 @@ if (!settings.n8n.apiKey.trim()) {
 throw new Error("Вкажіть n8n API Key");
 }
 
-const response = await fetch(${normalizedN8nUrl}/api/v1/workflows, {
+const response = await fetch(`${normalizedN8nUrl}/api/v1/workflows`, {
 method: "GET",
 headers: {
-Authorization: Bearer ${settings.n8n.apiKey.trim()},
+Authorization: `Bearer ${settings.n8n.apiKey.trim()}`,
 },
 });
 
 const data = (await response.json()) as { data?: unknown[]; error?: string; message?: string };
 if (!response.ok) {
-throw new Error(data.message || data.error || HTTP ${response.status});
+throw new Error(data.message || data.error || `HTTP ${response.status}`);
 }
 
 const workflows = Array.isArray(data.data)
@@ -195,8 +192,8 @@ const workflows = Array.isArray(data.data)
 : Array.isArray(data)
 ? data
 : [];
-setN8nStatus({ type: "success", text: Workflows: ${workflows.length} });
-toast.success("n8n підключено", { description: Workflows: ${workflows.length} });
+setN8nStatus({ type: "success", text: `Workflows: ${workflows.length}` });
+toast.success("n8n підключено", { description: `Workflows: ${workflows.length}` });
 } catch (error) {
 const message = error instanceof Error ? error.message : "Помилка підключення";
 setN8nStatus({ type: "error", text: message });
@@ -212,7 +209,7 @@ setMinioStatus({ type: "idle", text: "Завантажую..." });
 try {
 const workerUrl = (settings.app.workerUrl ||
 "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
-const resp = await fetch(${workerUrl}/health);
+const resp = await fetch(`${workerUrl}/health`);
 const data = (await resp.json()) as { storage?: { endpoint?: string; bucket?: string } };
 if (data.storage?.endpoint && data.storage.endpoint !== "not configured") {
 updateSettings((prev) => ({
@@ -260,15 +257,11 @@ return (
 </header>
 
 <Tabs defaultValue="github" className="space-y-4">
-<div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none]
-[&::-webkit-scrollbar]:hidden">
-<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:grid md:grid-cols-6 md:gap-0
-md:px-0">
+<div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:grid md:grid-cols-6 md:gap-0 md:px-0">
 <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>
-<TabsTrigger value="agents" className="shrink-0
-whitespace-nowrap">Агенти</TabsTrigger>
-<TabsTrigger value="docs" className="shrink-0
-whitespace-nowrap">Документація</TabsTrigger>
+<TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>
+<TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>
 <TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>
 <TabsTrigger value="minio" className="shrink-0 whitespace-nowrap">MinIO</TabsTrigger>
 <TabsTrigger value="app" className="shrink-0 whitespace-nowrap">Додаток</TabsTrigger>
@@ -312,8 +305,7 @@ onFocus={() => setRepoOpen(true)}
 onBlur={() => setTimeout(() => setRepoOpen(false), 150)}
 />
 {repoOpen && (
-<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border
-border-border rounded-md shadow-md">
+<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border border-border rounded-md shadow-md">
 {reposLoading && (
 <div className="px-3 py-2 text-sm text-muted-foreground flex items-center">
 <Loader2 className="h-3 w-3 animate-spin inline mr-1" />
@@ -415,7 +407,7 @@ disabled={isCheckingGithub}>
 
 <TabsContent value="agents">
 <div className="space-y-4">
-{/ Section 1: Agent URLs (compact) /}
+{/* Section 1: Agent URLs (compact) */}
 <Card>
 <CardHeader className="pb-3">
 <CardTitle className="text-base">Адреси агентів</CardTitle>
@@ -510,7 +502,7 @@ description: error instanceof Error ? error.message : "Невідома поми
 </CardContent>
 </Card>
 
-{/ Section 2: Per-agent LLM cards /}
+{/* Section 2: Per-agent LLM cards */}
 <div className="space-y-2">
 <div className="px-1">
 <h3 className="text-sm font-semibold">LLM-провайдер для кожного агента</h3>
@@ -560,8 +552,7 @@ LLM-налаштування беруться з вкладки «Агенти»
 <p><span className="font-medium">Протокол:</span> {typeof window !== "undefined" ?
 localStorage.getItem("agent_llm_protocol") || "anthropic" : "anthropic"}</p>
 <p><span className="font-medium">Base URL:</span> {typeof window !== "undefined" ?
-localStorage.getItem("agent_llm_base_url") || "(з вкладки Агенти)" : "(з вкладки
-Агенти)"}</p>
+localStorage.getItem("agent_llm_base_url") || "(з вкладки Агенти)" : "(з вкладки Агенти)"}</p>
 <p><span className="font-medium">Модель:</span> {typeof window !== "undefined" ?
 localStorage.getItem("agent_llm_model") || "(з вкладки Агенти)" : "(з вкладки Агенти)"}</p>
 </div>
@@ -734,8 +725,7 @@ minio: { ...prev.minio, accessKey: e.target.value },
 placeholder="minioadmin"
 />
 </div>
-<div className="rounded-md border border-border bg-muted/40 p-3 text-xs
-text-muted-foreground">
+<div className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
 Secret Key та повна конфігурація зберігаються у{" "}
 <a
 href="https://dash.cloudflare.com"
@@ -837,9 +827,7 @@ app: { ...prev.app, theme: value },
 <button
 type="button"
 onClick={clearDiagramCache}
-className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500
-transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:ring-2
-focus-visible:ring-red-400/50 active:scale-[0.96]"
+className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm text-red-500 transition-colors duration-150 hover:bg-red-500/10 hover:text-red-400 focus-visible:ring-2 focus-visible:ring-red-400/50 active:scale-[0.96]"
 style={{ touchAction: "manipulation" }}
 >
 <Trash2 className="h-3.5 w-3.5 flex-shrink-0" aria-hidden="true" />
@@ -850,8 +838,7 @@ style={{ touchAction: "manipulation" }}
 </TabsContent>
 </Tabs>
 
-<div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-3
-backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
+<div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
 <div className="mx-auto flex w-full max-w-4xl justify-end gap-2">
 <Button variant="outline" onClick={() => navigate({ to: "/diagrams" })}>
 Скасувати

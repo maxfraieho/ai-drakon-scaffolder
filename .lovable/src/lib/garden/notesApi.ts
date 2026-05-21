@@ -15,7 +15,7 @@ return localStorage.getItem("jwt");
 
 function authHeaders(): Record<string, string> {
 const token = jwt();
-return token ? {` Authorization: Bearer ${token}` } : {};
+return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
 export async function fetchNotesList(): Promise<NoteListItem[]> {
@@ -87,7 +87,7 @@ return res.json();
 
 function buildMarkdown(p: CommitNotePayload): string {
 const fm = ["---", `title: ${JSON.stringify(p.title)}`, `tags: [${p.tags.map((t) =>
-JSON.stringify(t)).join(", ")}], "---", ""].join("\n");
+JSON.stringify(t)).join(", ")}]`, "---", ""].join("\n");
 return fm + "\n" + p.content.trimStart();
 }
 
@@ -129,8 +129,7 @@ size?: number;
 }
 
 export async function fetchNotesTree(): Promise<TreeNode[]> {
-const res = await fetch( `${workerUrl()}/v1/notes/list?flat=false`, { headers:
-authHeaders() });
+const res = await fetch(`${workerUrl()}/v1/notes/list?flat=false`, { headers: authHeaders() });
 if (!res.ok) throw new Error(`notes/tree HTTP ${res.status}`);
 const data = (await res.json()) as { tree?: TreeNode[] };
 return data.tree ?? [];

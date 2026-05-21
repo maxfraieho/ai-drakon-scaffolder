@@ -292,7 +292,7 @@ isCustom={!(key in KNOWN_FIELDS)}
 </div>
 </ScrollArea>
 
-{/ Advanced: JSON toggle /}
+{/* Advanced: JSON toggle */}
 <Collapsible open={showJson} onOpenChange={setShowJson}>
 <CollapsibleTrigger asChild>
 <Button variant="ghost" size="sm" className="w-full justify-between text-xs text-muted-foreground">
@@ -321,7 +321,7 @@ onClick={handleCopyJson}
 </CollapsibleContent>
 </Collapsible>
 
-{/ Actions /}
+{/* Actions */}
 <div className="flex justify-end gap-2 pt-2">
 <Button variant="outline" size="sm" onClick={onCancel}>
 Cancel

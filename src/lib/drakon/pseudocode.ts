@@ -47,7 +47,7 @@ await loadDrakongen();
 if (!window.drakongen) throw new Error('drakongen not available');
 
 const jsonString = JSON.stringify(diagramJson);
-const filename = ${name}.drakon;
+const filename = `${name}.drakon`;
 return window.drakongen.toPseudocode(jsonString, name, filename, language);
 }
 
@@ -63,7 +63,7 @@ await loadDrakongen();
 if (!window.drakongen) throw new Error('drakongen not available');
 
 const jsonString = JSON.stringify(diagramJson);
-const filename = ${name}.drakon;
+const filename = `${name}.drakon`;
 return window.drakongen.toTree(jsonString, name, filename, language);
 }
 
@@ -73,10 +73,10 @@ return window.drakongen.toTree(jsonString, name, filename, language);
 export function pseudocodeToMarkdown(pseudocode: string, diagramName: string): string {
 const frontmatter = [
 '---',
-title: "${diagramName}",
-type: pseudocode,
-generated: true,
-date: "${new Date().toISOString()}",
+`title: ${diagramName}`,
+'type: pseudocode',
+'generated: true',
+`date: ${new Date().toISOString()}`,
 '---',
 '',
 ].join('\n');

@@ -189,7 +189,7 @@ className="w-full bg-[var(--accent-amber)] text-black hover:bg-[var(--accent-amb
 <div className="w-full bg-[var(--bg-base)] h-[2px] overflow-hidden">
 <div
 className="bg-[var(--accent-amber)] h-full transition-all"
-style={{` width:`${Math.min(90`, elapsed * 5)`}% }}
+style={{ width: `${Math.min(90, elapsed * 5)}%` }}
 />
 </div>
 <p className="text-[11px] text-[var(--text-secondary)] italic">
@@ -281,7 +281,7 @@ className="bg-[var(--surface-container)]/80 border border-[var(--border-default)
 const valid = !fn.error && (!fn.validation_errors || fn.validation_errors.length === 0);
 return valid ? (
 <button
-key= `{${fn.name}-${i}`}
+key={`${fn.name}-${i}`}
 type="button"
 onClick={() => onImportIr(fn)}
 className="w-full flex items-center justify-between px-2 py-1.5 border border-[var(--border-default)] bg-[var(--bg-base)] hover:border-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/5 transition-all font-mono text-xs text-[var(--text-primary)]"

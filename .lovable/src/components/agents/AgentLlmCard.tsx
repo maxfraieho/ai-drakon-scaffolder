@@ -63,7 +63,7 @@ anthropic: [
 const COLOR_STYLES: Record<
 AgentLlmCardProps["agentColor"],
 { border: string; dot: string; chipBg: string; chipText: string }
-      ={
+> = {
 blue: {
 border: "border-l-blue-500",
 dot: "bg-blue-500",
@@ -181,10 +181,9 @@ toast.success(`${agentLabel}: налаштування збережено`);
 
 return (
 <div
-className={`rounded-lg border border-border border-l-4 ${styles.border}` bg-card
-p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm}
+className={`rounded-lg border border-border border-l-4 ${styles.border} bg-card p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm`}
 >
-{/ Header /}
+{/* Header */}
 <div className="flex items-start justify-between gap-2">
 <div className="flex items-start gap-2 min-w-0">
 {agentIcon && (
@@ -203,7 +202,7 @@ aria-hidden
 </div>
 </div>
 <div className="flex items-center gap-1.5 shrink-0">
-{/ Agent service health /}
+{/* Agent service health */}
 <span
 title={agentAlive === null ? "Перевірка..." : agentAlive ? "Агент онлайн" : "Агент офлайн"}
 className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium
@@ -226,25 +225,24 @@ agentAlive === null
 />
 {agentAlive === null ? "…" : agentAlive ? "Online" : "Offline"}
 </span>
-{/ LLM connection /}
+{/* LLM connection */}
 <span
 className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium
 ${
 connected
-? ${styles.chipBg} ${styles.chipText}
+? `${styles.chipBg} ${styles.chipText}`
 : "bg-muted text-muted-foreground"
 }`}
 >
 <span
-className= `{h-1.5 w-1.5 rounded-full ${connected ? styles.dot :`
-"bg-muted-foreground/50"}}
+className={`h-1.5 w-1.5 rounded-full ${connected ? styles.dot : "bg-muted-foreground/50"}`}
 />
 {connected ? "LLM ок" : "LLM ?"}
 </span>
 </div>
 </div>
 
-{/ Grid: protocol + URL /}
+{/* Grid: protocol + URL */}
 <div className="grid gap-3 sm:grid-cols-2">
 <div className="grid gap-1.5">
 <Label className="text-xs">Протокол</Label>
@@ -287,7 +285,7 @@ aria-label="Toggle key"
 </div>
 </div>
 
-{/ URL + Connect button /}
+{/* URL + Connect button */}
 <div className="grid gap-1.5">
 <Label className="text-xs">URL провайдера</Label>
 <div className="flex flex-col sm:flex-row gap-2">
@@ -314,7 +312,7 @@ disabled={connecting}
 </div>
 </div>
 
-{/ Model dropdown + manual /}
+{/* Model dropdown + manual */}
 <div className="grid gap-1.5">
 <div className="flex items-center justify-between">
 <Label className="text-xs">Модель / Слот</Label>
@@ -348,7 +346,7 @@ className="h-7 text-[11px] text-muted-foreground"
 />
 </div>
 
-{/ Advanced /}
+{/* Advanced */}
 <div>
 <button
 type="button"

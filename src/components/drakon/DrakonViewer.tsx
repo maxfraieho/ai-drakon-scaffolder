@@ -251,8 +251,7 @@ fullscreenWidgetRef.current?.goHome();
 if (error) {
 return (
 <div className={cn(
-'flex items-center justify-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10
-p-4 text-destructive',
+'flex items-center justify-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive',
 className
 )} style={{ height }}>
 <AlertCircle className="h-5 w-5" />
@@ -275,10 +274,9 @@ style={{ height }}
 </div>
 )}
 
-{/ Controls overlay /}
+{/* Controls overlay */}
 {!isLoading && (
-<div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover:opacity-100
-transition-opacity">
+<div className="absolute top-2 right-2 z-20 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
 <Button
 variant="secondary"
 size="icon"
@@ -289,8 +287,7 @@ title="Зменшити"
 >
 <ZoomOut className="h-4 w-4" />
 </Button>
-<div className="flex items-center px-2 bg-background/80 backdrop-blur-sm rounded-md
-text-xs font-medium min-w-[50px] justify-center shadow-sm">
+<div className="flex items-center px-2 bg-background/80 backdrop-blur-sm rounded-md text-xs font-medium min-w-[50px] justify-center shadow-sm">
 {zoomPercentage}%
 </div>
 <Button
@@ -331,7 +328,7 @@ style={{ height, minHeight: 200 }}
 />
 </div>
 
-{/ Fullscreen Dialog /}
+{/* Fullscreen Dialog */}
 <Dialog open={isFullscreen} onOpenChange={setIsFullscreen}>
 <DialogContent className="max-w-[95vw] w-[95vw] h-[90vh] p-0 gap-0">
 <DialogHeader className="p-4 pb-2 flex-row items-center justify-between space-y-0">

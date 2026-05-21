@@ -9,7 +9,7 @@ onClose: () => void;
 }
 
 export function NodeInspector({ node, pipelineId, onClose }: Props) {
-const storageKey = agent-prompt: `${pipelineId}:${node.id}`;
+const storageKey = `agent-prompt:${pipelineId}:${node.id}`;
 const [editing, setEditing] = useState(false);
 const [draft, setDraft] = useState(node.prompt ?? "");
 const [saved, setSaved] = useState<string | null>(null);

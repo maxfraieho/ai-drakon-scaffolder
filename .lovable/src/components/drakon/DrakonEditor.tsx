@@ -445,7 +445,7 @@ await api.saveDiagram(targetFolder, effectiveId, diagramData);
 toast.success(`✓ Saved to MinIO: ${targetFolder}/${effectiveId}`);
 } catch {
 toast.error(
-MinIO save failed:`${err instanceof Error ? err.message : String(err)}`,
+`MinIO save failed: ${err instanceof Error ? err.message : String(err)}`,
 );
 }
 }
@@ -468,7 +468,7 @@ token: projectFolder.githubToken,
 toast.success(`✓ Saved to git: drn/${effectiveId}.json`);
 } catch (err) {
 toast.error(
-Git save failed:`${err instanceof Error ? err.message : String(err)}`,
+`Git save failed: ${err instanceof Error ? err.message : String(err)}`,
 );
 }
 }
@@ -628,7 +628,7 @@ className
 
 return (
 <div className={cn('space-y-3', className)}>
-{/ Toolbar /}
+{/* Toolbar */}
 <div className="flex flex-wrap items-center gap-2">
 <div className="flex items-center gap-2">
 <Label htmlFor="diagram-name"
@@ -671,7 +671,7 @@ disabled={!hasChanges || isLoading || isSaving}
 </Button>
 </div>
 
-{/ Pan/Select mode toggle /}
+{/* Pan/Select mode toggle */}
 <div className="flex items-center gap-0.5 border rounded-md p-0.5">
 <Tooltip>
 <TooltipTrigger asChild>
@@ -701,7 +701,7 @@ disabled={isLoading}
 </Tooltip>
 </div>
 
-{/ Zoom & selection controls /}
+{/* Zoom & selection controls */}
 <div className="flex items-center gap-1">
 <Tooltip>
 <TooltipTrigger asChild>
@@ -782,9 +782,9 @@ PNG
 </div>
 </div>
 
-{/ Editor layout with toolbar at bottom /}
+{/* Editor layout with toolbar at bottom */}
 <div className="flex flex-col gap-2">
-{/ Widget container /}
+{/* Widget container */}
 <div className="relative" onClick={(e) => {
 // Don't interfere when context menu is open
 if (uiStateRef.current === 'contextMenuOpen') return;
@@ -817,7 +817,7 @@ className="drakon-container rounded-lg border overflow-hidden"
 style={{ height, minHeight: 300 }}
 />
 
-{/ Context menu /}
+{/* Context menu */}
 {contextMenu && (
 <div
 data-drakon-context-menu
@@ -871,14 +871,14 @@ uiStateRef.current = 'default';
 )}
 </div>
 
-{/ Project folder + git binding /}
+{/* Project folder + git binding */}
 <ProjectFolderSection
 value={projectFolder}
 onChange={setProjectFolder}
 knownFolders={knownFolders}
 />
 
-{/ Bottom toolbar with icon buttons /}
+{/* Bottom toolbar with icon buttons */}
 <div className="w-full overflow-x-auto border rounded-lg bg-background">
 <div className="flex items-center gap-1 p-1.5">
 {iconButtons.map(({ type, img, label }) => (
@@ -898,10 +898,10 @@ disabled={isLoading}
 </Tooltip>
 ))}
 
-{/ Separator /}
+{/* Separator */}
 <div className="mx-1 w-px h-8 bg-border shrink-0" />
 
-{/ Toggle silhouette /}
+{/* Toggle silhouette */}
 <Tooltip>
 <TooltipTrigger asChild>
 <Button
@@ -918,7 +918,7 @@ disabled={isLoading}
 </Tooltip>
 </div>
 
-{/ Edit dialog for element content /}
+{/* Edit dialog for element content */}
 <Dialog open={editDialog.open} onOpenChange={(open) => {
 if (!open) setEditDialog(prev => ({ ...prev, open: false }));
 }}>
@@ -955,7 +955,7 @@ OK
 </DialogContent>
 </Dialog>
 
-{/ Format Inspector dialog for style editing /}
+{/* Format Inspector dialog for style editing */}
 <FormatInspector
 open={formatDialog.open}
 title={formatDialog.title}

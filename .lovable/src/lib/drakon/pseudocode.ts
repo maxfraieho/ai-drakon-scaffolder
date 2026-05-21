@@ -73,10 +73,10 @@ return window.drakongen.toTree(jsonString, name, filename, language);
 export function pseudocodeToMarkdown(pseudocode: string, diagramName: string): string {
 const frontmatter = [
 '---',
-title: `${diagramName}`,
-type: pseudocode,
-generated: true,
-date: `${new Date().toISOString()}`,
+`title: ${diagramName}`,
+'type: pseudocode',
+'generated: true',
+`date: ${new Date().toISOString()}`,
 '---',
 '',
 ].join('\n');

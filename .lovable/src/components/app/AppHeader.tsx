@@ -84,7 +84,7 @@ location.pathname === path || location.pathname.startsWith(path + "/");
 return (
 <header className="sticky top-0 z-40 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]/95 backdrop-blur supports-[backdrop-filter]:bg-[var(--bg-surface)]/80">
 <div className="mx-auto flex h-12 w-full max-w-[1600px] items-center gap-2 px-3 md:px-4">
-{/ Mobile menu /}
+{/* Mobile menu */}
 <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
 <SheetTrigger asChild>
 <Button
@@ -155,7 +155,7 @@ className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] px-3 py-2.5
 </SheetContent>
 </Sheet>
 
-{/ Brand /}
+{/* Brand */}
 <Link
 to="/diagrams"
 className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-primary)]"
@@ -167,7 +167,7 @@ className="inline-block h-2 w-2 rounded-full bg-[var(--accent-amber)] shadow-[0_
 AI-DRAKON
 </Link>
 
-{/ Desktop nav /}
+{/* Desktop nav */}
 <nav className="ml-4 hidden md:flex items-center gap-0.5">
 {NAV.map((item) => {
 const Icon = item.icon;

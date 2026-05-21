@@ -137,27 +137,22 @@ location.pathname === to || location.pathname.startsWith(to + "/");
 const crumb = getBreadcrumb(location.pathname);
 
 return (
-<div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)]
-text-[var(--text-primary)]">
-{/ TOP BAR — 32px /}
-<header className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)]
-bg-[var(--bg-surface)] px-3">
+<div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
+{/* TOP BAR — 32px */}
+<header className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
 <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
 <SheetTrigger asChild>
 <button
 type="button"
-className="md:hidden inline-flex h-6 w-6 items-center justify-center rounded
-text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+className="md:hidden inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
 aria-label="Меню"
 >
 <Menu className="h-4 w-4" />
 </button>
 </SheetTrigger>
-<SheetContent side="left" className="w-64 border-r border-[var(--border-subtle)]
-bg-[var(--bg-surface)] p-0">
+<SheetContent side="left" className="w-64 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0">
 <SheetHeader className="border-b border-[var(--border-subtle)] px-3 py-2">
-<SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 Навігація
 </SheetTitle>
 </SheetHeader>
@@ -171,8 +166,7 @@ key={item.to}
 to={item.to}
 onClick={() => setMobileNavOpen(false)}
 className={cn(
-"flex items-center gap-3 rounded-[var(--radius-sm)] px-2.5 py-2 font-mono text-[12px]
-transition-colors",
+"flex items-center gap-3 rounded-[var(--radius-sm)] px-2.5 py-2 font-mono text-[12px] transition-colors",
 active
 ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
 : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
@@ -189,8 +183,7 @@ active
 
 <Link
 to="/diagrams"
-className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase
-tracking-[0.12em] text-[var(--text-primary)]"
+className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-primary)]"
 >
 <Terminal
 aria-hidden="true"
@@ -199,15 +192,12 @@ className="h-3.5 w-3.5 text-[var(--accent-amber)]"
 AI-DRAKON
 </Link>
 
-<span aria-hidden="true" className="hidden md:block h-3 w-px bg-[var(--border-subtle)]
-mx-1" />
+<span aria-hidden="true" className="hidden md:block h-3 w-px bg-[var(--border-subtle)] mx-1" />
 
-<div className="hidden md:flex items-center gap-1.5 font-mono text-[11px]
-text-[var(--text-muted)] min-w-0">
+<div className="hidden md:flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-muted)] min-w-0">
 <Link
 to={crumb.sectionPath}
-className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors
-duration-150"
+className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-150"
 >
 {crumb.section}
 </Link>
@@ -222,9 +212,7 @@ duration-150"
 <button
 type="button"
 onClick={() => setCmdOpen(true)}
-className="hidden md:inline-flex items-center gap-1.5 h-5 px-2 rounded border
-border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5
-hover:text-[var(--text-primary)] transition-colors ml-2"
+className="hidden md:inline-flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors ml-2"
 aria-label="Відкрити command palette"
 >
 <span>⌘K</span>
@@ -238,8 +226,7 @@ aria-label="Відкрити command palette"
 <button
 type="button"
 aria-label="Чат з агентом"
-className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)]
-hover:bg-white/5 hover:text-[var(--text-primary)]"
+className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
 >
 <Bot className="h-4 w-4" />
 </button>
@@ -251,12 +238,10 @@ hover:bg-white/5 hover:text-[var(--text-primary)]"
 </Tooltip>
 <SheetContent
 side="right"
-className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l
-border-[var(--border-subtle)]"
+className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)]"
 >
 <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
-<SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 AI-агенти
 </SheetTitle>
 </SheetHeader>
@@ -272,8 +257,7 @@ AI-агенти
 type="button"
 onClick={toggleTheme}
 aria-label={theme === "dark" ? "Світла тема" : "Темна тема"}
-className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)]
-hover:bg-white/5 hover:text-[var(--text-primary)]"
+className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
 >
 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
 </button>
@@ -290,9 +274,7 @@ hover:bg-white/5 hover:text-[var(--text-primary)]"
 <button
 type="button"
 aria-label="Вийти"
-className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)]
-hover:bg-white/5 hover:text-[var(--text-primary)] active:scale-[0.96] transition-transform
-duration-75"
+className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] active:scale-[0.96] transition-transform duration-75"
 >
 <LogOut className="h-4 w-4" />
 </button>
@@ -302,11 +284,9 @@ duration-75"
 Вийти
 </TooltipContent>
 </Tooltip>
-<AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)]
-font-mono">
+<AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono">
 <AlertDialogHeader>
-<AlertDialogTitle className="text-[var(--text-primary)] font-mono text-[13px] font-semibold
-uppercase tracking-wider">
+<AlertDialogTitle className="text-[var(--text-primary)] font-mono text-[13px] font-semibold uppercase tracking-wider">
 Вийти з системи?
 </AlertDialogTitle>
 <AlertDialogDescription className="text-[var(--text-muted)] text-[12px]">
@@ -314,14 +294,12 @@ JWT-токен буде видалено. Потрібно буде увійти
 </AlertDialogDescription>
 </AlertDialogHeader>
 <AlertDialogFooter>
-<AlertDialogCancel className="font-mono text-[11px] uppercase tracking-wider bg-transparent
-border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-white/5">
+<AlertDialogCancel className="font-mono text-[11px] uppercase tracking-wider bg-transparent border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-white/5">
 Скасувати
 </AlertDialogCancel>
 <AlertDialogAction
 onClick={logout}
-className="font-mono text-[11px] uppercase tracking-wider
-bg-[var(--color-primary-container,#f59e0b)] text-[#2a1700] hover:brightness-110"
+className="font-mono text-[11px] uppercase tracking-wider bg-[var(--color-primary-container,#f59e0b)] text-[#2a1700] hover:brightness-110"
 >
 Вийти
 </AlertDialogAction>
@@ -331,10 +309,9 @@ bg-[var(--color-primary-container,#f59e0b)] text-[#2a1700] hover:brightness-110"
 </div>
 </header>
 
-{/ WORKSPACE BODY /}
+{/* WORKSPACE BODY */}
 <div className="flex flex-1 min-h-0 overflow-hidden">
-<aside className="hidden md:flex h-full w-60 shrink-0 flex-col border-r
-border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+<aside className="hidden md:flex h-full w-60 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
 <div className="border-b border-[var(--border-subtle)]">
 <ProjectSelector />
 </div>
@@ -349,8 +326,7 @@ return (
 key={item.to}
 to={item.to}
 className={cn(
-"flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 font-mono text-[11px]
-transition-colors",
+"flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 font-mono text-[11px] transition-colors",
 active
 ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
 : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
@@ -367,7 +343,7 @@ active
 <DevCyclePanel />
 </aside>
 
-{/ CONTENT SLOT /}
+{/* CONTENT SLOT */}
 <main className="flex-1 min-w-0 overflow-hidden">
 {children}
 </main>

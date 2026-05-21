@@ -220,15 +220,13 @@ return (
 <div className="flex h-full w-full overflow-hidden">
 <div className="flex h-full flex-col overflow-hidden border-r border-[var(--border-subtle)]"
 style={{width: 220}}>
-<div className="flex h-7 shrink-0 border-b border-[var(--border-subtle)]
-bg-[var(--bg-surface)]">
+<div className="flex h-7 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
 <button
 onClick={() => handleSwitchMode("local")}
 className={cn(
 "flex-1 font-mono text-[9px] uppercase tracking-[0.15em] transition-colors",
 viewMode === "local"
-? "bg-[var(--bg-elevated)] text-[var(--text-primary)]
-shadow-[inset_0_-1px_0_rgba(245,158,11,0.5)]"
+? "bg-[var(--bg-elevated)] text-[var(--text-primary)] shadow-[inset_0_-1px_0_rgba(245,158,11,0.5)]"
 : "text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
 )}
 >
@@ -268,7 +266,7 @@ selectedName={selectedIrName}
 )}
 </div>
 
-{/ CENTER /}
+{/* CENTER */}
 <section className="flex flex-1 min-w-0 flex-col overflow-hidden">
 <CanvasToolbar
 diagramName={selectedDiagram?.name}
@@ -295,7 +293,7 @@ undefined}
 />
 
 <div className="flex flex-1 min-h-0 flex-col overflow-hidden">
-{/ Canvas /}
+{/* Canvas */}
 <div
 className="flex-1 min-h-0 overflow-hidden bg-[var(--bg-base)]"
 style={{
@@ -316,8 +314,7 @@ className="h-full"
 ):(
 <div className="flex h-full flex-col items-center justify-center gap-3 text-center px-6">
 <FileCode2 className="h-10 w-10 text-[var(--text-muted)]" />
-<div className="font-mono text-[11px] uppercase tracking-[0.18em]
-text-[var(--text-muted)]">
+<div className="font-mono text-[11px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
 Виберіть схему зі списку зліва
 </div>
 <input
@@ -331,17 +328,14 @@ onChange={handleImportJson}
 <button
 type="button"
 onClick={openNewDiagram}
-className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-[var(--accent-amber)] px-3
-font-mono text-[11px] uppercase tracking-wider text-black active:scale-[0.96]"
+className="inline-flex h-8 items-center gap-1.5 rounded-sm bg-[var(--accent-amber)] px-3 font-mono text-[11px] uppercase tracking-wider text-black active:scale-[0.96]"
 >
                               • Нова схема
 </button>
 <button
 type="button"
 onClick={() => importInputRef.current?.click()}
-className="inline-flex h-8 items-center gap-1.5 rounded-sm border
-border-[var(--border-default)] px-3 font-mono text-[11px] uppercase tracking-wider
-text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+className="inline-flex h-8 items-center gap-1.5 rounded-sm border border-[var(--border-default)] px-3 font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
 >
 Імпорт JSON
 </button>
@@ -350,7 +344,7 @@ text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
 )}
 </div>
 
-{/ BOTTOM DRAWER — generation /}
+{/* BOTTOM DRAWER — generation */}
 <CodeGenerationPanel
 open={generationOpen}
 onClose={() => setGenerationOpen(false)}
@@ -363,7 +357,7 @@ selectedDiagram?.diagram.items
 </div>
 </section>
 
-{/ RIGHT SLIDE-IN — analysis /}
+{/* RIGHT SLIDE-IN — analysis */}
 <CodeAnalysisPanel
 open={analysisOpen}
 onClose={() => setAnalysisOpen(false)}
@@ -385,11 +379,11 @@ items: (ir.items ?? {}) as any,
 upsertDiagramInStorage(stored);
 setDiagrams((prev) => [stored, ...prev]);
 setSelectedDiagram(stored);
-toast.success(IR імпортовано: ${ir.name});
+toast.success(`IR імпортовано: ${ir.name}`);
 }}
 />
 
-{/ New folder dialog /}
+{/* New folder dialog */}
 <Dialog open={isCreateFolderOpen} onOpenChange={setIsCreateFolderOpen}>
 <DialogContent>
 <DialogHeader>
