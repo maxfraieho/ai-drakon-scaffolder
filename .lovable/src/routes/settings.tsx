@@ -557,8 +557,7 @@ LLM-налаштування беруться з вкладки «Агенти»
 <p><span className="font-medium">Протокол:</span> {typeof window !== "undefined" ?
 localStorage.getItem("agent_llm_protocol") || "anthropic" : "anthropic"}</p>
 <p><span className="font-medium">Base URL:</span> {typeof window !== "undefined" ?
-localStorage.getItem("agent_llm_base_url") || "(з вкладки Агенти)" : "(з вкладки
-Агенти)"}</p>
+localStorage.getItem("agent_llm_base_url") || "(з вкладки Агенти)" : "(з вкладки Агенти)"}</p>
 <p><span className="font-medium">Модель:</span> {typeof window !== "undefined" ?
 localStorage.getItem("agent_llm_model") || "(з вкладки Агенти)" : "(з вкладки Агенти)"}</p>
 </div>
