@@ -138,8 +138,7 @@ function DocsRoute() {
           <h1 className="text-lg font-semibold md:text-2xl">Документація</h1>
         </header>
 
-        <div className="flex flex-1 min-h-0 flex-col overflow-hidden px-4 pb-4">
-        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="flex flex-1 min-h-0 flex-col w-full">
+        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="flex flex-1 min-h-0 flex-col w-full px-4 pb-4">
           <TabsList className="no-scrollbar mb-3 flex w-full shrink-0 justify-start overflow-x-auto whitespace-nowrap md:w-auto md:inline-flex">
             <TabsTrigger value="generator">
               <Play className="mr-1.5 h-3.5 w-3.5" />
@@ -271,7 +270,6 @@ function DocsRoute() {
           </TabsContent>
           </div>
         </Tabs>
-        </div>
       </div>
     </div>
   );

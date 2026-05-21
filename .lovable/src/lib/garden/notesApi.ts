@@ -158,8 +158,8 @@ nodes: Array<{ slug: string; title: string; exists: boolean }>;
 edges: Array<{ source: string; target: string; type: string }>;
 stats: { notes: number; links: number };
 }> {
-const qs = project ? `?project=${encodeURIComponent(project)}` : "";
-const res = await fetch(`${workerUrl()}/v1/notes/graph${qs}`, {
+const projectQs = project ? `?project=${encodeURIComponent(project)}` : "";
+const res = await fetch(`${workerUrl()}/v1/notes/graph${projectQs}`, {
 headers: authHeaders(),
 });
 if (!res.ok) throw new Error(`Graph: ${res.status} ${res.statusText}`);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, type ChangeEvent, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { FileCode2 } from "lucide-react";
@@ -11,6 +11,8 @@ import { cn } from "@/lib/utils";
 import { CanvasToolbar } from "@/components/workspace/CanvasToolbar";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 import { PipelineDrakonView } from "@/components/pipelines/PipelineDrakonView";
+import { convertDiagramToIr } from "@/lib/htse/diagram-to-ir";
+import { savePipeline } from "@/lib/graph-pipeline-api";
 import {
 Dialog,
 DialogContent,
@@ -57,7 +59,6 @@ const [generationOpen, setGenerationOpen] = useState(false);
 const [savePipelineOpen, setSavePipelineOpen] = useState(false);
 const [pipelineNameInput, setPipelineNameInput] = useState("");
 const [savingPipeline, setSavingPipeline] = useState(false);
-const [irSheetOpen, setIrSheetOpen] = useState(false);
 const [irSheetIr, setIrSheetIr] = useState<IrDiagram | null>(null);
 
 const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
@@ -190,17 +191,27 @@ setSelectedIrName(null);
 }
 };
 
+const handleDiagramSave = useCallback(async (diagram: import("@/types/drakonwidget").DrakonDiagram) => {
+if (!selectedDiagram) return false;
+const updated = {
+  ...selectedDiagram,
+  diagram: diagram as unknown as typeof selectedDiagram.diagram,
+  updatedAt: new Date().toISOString(),
+};
+upsertDiagramInStorage(updated);
+setSelectedDiagram(updated);
+return true;
+}, [selectedDiagram]);
+
 const currentDiagramIsIr = selectedDiagram?.folderId === "__ir__";
 
 const handleEditInIr = async () => {
 if (!selectedDiagram || currentDiagramIsIr) return;
 try {
-const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
 const ir = convertDiagramToIr(
 selectedDiagram.diagram as unknown as import("@/types/drakonwidget").DrakonDiagram,
 );
 setIrSheetIr(ir);
-setIrSheetOpen(true);
 } catch {
 toast.error("Помилка конвертації IR");
 }
@@ -210,8 +221,6 @@ const handleSaveAsPipeline = async () => {
 if (!selectedDiagram || !pipelineNameInput.trim()) return;
 setSavingPipeline(true);
 try {
-const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
-const { savePipeline } = await import("@/lib/graph-pipeline-api");
 const irDiagram = convertDiagramToIr(
 selectedDiagram.diagram as unknown as import("@/types/drakonwidget").DrakonDiagram,
 );
@@ -361,16 +370,7 @@ key={selectedDiagram.id}
 diagram={selectedDiagram.diagram as unknown as
 import("@/types/drakonwidget").DrakonDiagram}
 diagramId={selectedDiagram.id}
-onSaveOverride={async (diagram) => {
-const updated = {
-...selectedDiagram,
-diagram: diagram as unknown as typeof selectedDiagram.diagram,
-updatedAt: new Date().toISOString(),
-};
-upsertDiagramInStorage(updated);
-setSelectedDiagram(updated);
-return true;
-}}
+onSaveOverride={handleDiagramSave}
 />
 ):(
 <div className="flex h-full flex-col items-center justify-center gap-3 text-center px-6">
@@ -468,7 +468,7 @@ autoFocus
 </DialogContent>
 </Dialog>
 
-<Sheet open={irSheetOpen} onOpenChange={setIrSheetOpen}>
+<Sheet open={irSheetIr !== null} onOpenChange={(o) => { if (!o) setIrSheetIr(null); }}>
 <SheetContent side="right" className="w-full sm:max-w-3xl p-0 flex flex-col">
 <SheetHeader className="px-4 pt-4 pb-2 border-b shrink-0">
 <SheetTitle className="font-mono text-sm">
