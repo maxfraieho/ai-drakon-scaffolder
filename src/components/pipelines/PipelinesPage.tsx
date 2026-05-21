@@ -22,10 +22,6 @@ export function PipelinesPage() {
 
   const refreshPipelines = () => {
     setListLoading(true);
-    listPipelines()
-      .then(setPipelines)
-      .catch(() => toast.error("Не вдалось завантажити пайплайни"));
-      
     void listPipelines()
       .then(setPipelines)
       .catch(() => toast.error("Не вдалось завантажити пайплайни"))
