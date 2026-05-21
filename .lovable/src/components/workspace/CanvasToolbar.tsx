@@ -1,4 +1,4 @@
-import { Code2, Download, Edit3, Maximize2, ScanSearch, ZoomIn, ZoomOut } from "lucide-react";
+import { Code2, Download, FileCode2, Maximize2, ScanSearch, ZoomIn, ZoomOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CanvasToolbarProps {
@@ -11,7 +11,7 @@ interface CanvasToolbarProps {
   generationSuggested?: boolean;
   onToggleAnalysis: () => void;
   onToggleGeneration: () => void;
-  onEdit?: () => void;
+  onEditInIr?: () => void;
   onSaveAsPipeline?: () => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
@@ -28,7 +28,7 @@ export function CanvasToolbar({
   generationSuggested = false,
   onToggleAnalysis,
   onToggleGeneration,
-  onEdit,
+  onEditInIr,
   onSaveAsPipeline,
   onZoomIn,
   onZoomOut,
@@ -100,15 +100,15 @@ export function CanvasToolbar({
 
         <span aria-hidden="true" className="mx-1 h-4 w-px bg-[var(--border-subtle)]" />
 
-        {onEdit && (
+        {onEditInIr && (
           <button
             type="button"
-            onClick={onEdit}
-            aria-label="Редагувати схему"
-            title="Редагувати"
-            className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+            onClick={onEditInIr}
+            className="inline-flex h-6 items-center gap-1 rounded-sm border border-[var(--border-subtle)] px-2 font-mono text-[11px] text-[var(--text-secondary)] hover:border-[var(--border-default)] hover:text-[var(--text-primary)]"
+            title="DRAKON IR"
           >
-            <Edit3 className="h-3.5 w-3.5" />
+            <FileCode2 className="h-3 w-3" />
+            IR
           </button>
         )}
         {onSaveAsPipeline && (

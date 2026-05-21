@@ -69,7 +69,6 @@ interface DrakonEditorProps {
 diagram?: DrakonDiagram;
 diagramId: string;
 folderSlug?: string;
-height?: number;
 isNew?: boolean;
 onSaved?: (diagramId: string) => void;
 onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>;
@@ -100,7 +99,6 @@ export function DrakonEditor({
 diagram,
 diagramId,
 folderSlug,
-height = 500,
 isNew = false,
 onSaved,
 onSaveOverride,
@@ -293,7 +291,7 @@ container.innerHTML = '';
 
 const config = buildConfig();
 const renderW = Math.max(rect.width, 400);
-const renderH = Math.max(rect.height, height);
+const renderH = Math.max(rect.height, 300);
 const element = widget.render(renderW, renderH, config);
 console.log('[DRK-INIT] widget.render OK, element:', (element as HTMLElement)?.tagName);
 container.appendChild(element);
@@ -619,7 +617,7 @@ return (
 <div className={cn(
 'flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4',
 className
-)} style={{ height }}>
+)}>
 <AlertCircle className="h-5 w-5 text-destructive" />
 <span className="text-sm text-destructive">{error}</span>
 </div>
@@ -627,9 +625,9 @@ className
 }
 
 return (
-<div className={cn('space-y-3', className)}>
+<div className={cn('flex h-full flex-col', className)}>
 {/* Toolbar */}
-<div className="flex flex-wrap items-center gap-2">
+<div className="flex flex-wrap items-center gap-2 shrink-0 border-b pb-1">
 <div className="flex items-center gap-2">
 <Label htmlFor="diagram-name"
 className="sr-only">{t.drakonEditor.diagramName}</Label>
@@ -783,9 +781,9 @@ PNG
 </div>
 
 {/* Editor layout with toolbar at bottom */}
-<div className="flex flex-col gap-2">
+<div className="flex flex-col flex-1 min-h-0 gap-2">
 {/* Widget container */}
-<div className="relative" onClick={(e) => {
+<div className="relative flex-1 min-h-0" onClick={(e) => {
 // Don't interfere when context menu is open
 if (uiStateRef.current === 'contextMenuOpen') return;
 // In paste mode, click on empty canvas exits paste mode
@@ -804,17 +802,13 @@ uiStateRef.current = 'default';
 }
 }}>
 {isLoading && (
-<div
-className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg z-10"
-style={{ height }}
->
+<div className="absolute inset-0 flex items-center justify-center bg-muted/50 rounded-lg z-10">
 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
 </div>
 )}
 <div
 ref={containerRef}
-className="drakon-container rounded-lg border overflow-hidden"
-style={{ height, minHeight: 300 }}
+className="drakon-container rounded-lg border overflow-hidden h-full"
 />
 
 {/* Context menu */}
@@ -879,7 +873,7 @@ knownFolders={knownFolders}
 />
 
 {/* Bottom toolbar with icon buttons */}
-<div className="w-full overflow-x-auto border rounded-lg bg-background">
+<div className="w-full overflow-x-auto border rounded-lg bg-background shrink-0">
 <div className="flex items-center gap-1 p-1.5">
 {iconButtons.map(({ type, img, label }) => (
 <Tooltip key={type}>
@@ -1037,7 +1031,6 @@ placeholder="my-flowchart"
 <DrakonEditor
 diagramId={diagramId}
 folderSlug={folderSlug}
-height={500}
 isNew
 onSaved={handleSaved}
 />
