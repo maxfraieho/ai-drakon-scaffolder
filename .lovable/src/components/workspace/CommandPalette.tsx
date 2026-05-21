@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
-LayoutDashboard, FileText, GitCompare, GitBranch, Cog, Cpu, Moon, Sun, LogOut,
+LayoutDashboard, FileText, GitBranch, Cog, Cpu, Moon, Sun, LogOut,
 } from "lucide-react";
 import {
 CommandDialog,
@@ -24,7 +24,6 @@ onLogout: () => void;
 const NAV_ITEMS = [
 { label: "Схеми", to: "/diagrams", icon: LayoutDashboard, shortcut: "G D" },
 { label: "Нотатки", to: "/docs", icon: FileText, shortcut: "G N" },
-{ label: "Sync", to: "/sync", icon: GitCompare, shortcut: "G S" },
 { label: "GitHub", to: "/github", icon: GitBranch, shortcut: "G H" },
 { label: "Агенти", to: "/agents", icon: Cpu, shortcut: "G A" },
 { label: "Налаштування", to: "/settings", icon: Cog, shortcut: "G ," },
@@ -47,7 +46,8 @@ placeholder="Перейти до… або пошук дій"
 className="font-mono text-[12px]"
 />
 <CommandList>
-<CommandEmpty className="font-mono text-[11px] text-[var(--text-muted)] py-6 text-center">
+<CommandEmpty className="font-mono text-[11px] text-[var(--text-muted)] py-6
+text-center">
 Нічого не знайдено
 </CommandEmpty>
 
