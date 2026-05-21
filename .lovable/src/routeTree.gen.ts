@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as PipelinesRouteImport } from './routes/pipelines'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
@@ -36,6 +37,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelinesRoute = PipelinesRouteImport.update({
+  id: '/pipelines',
+  path: '/pipelines',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
@@ -112,6 +119,7 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
@@ -128,6 +136,7 @@ export interface FileRoutesById {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
@@ -145,6 +154,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
     | '/sync'
@@ -160,6 +170,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
     | '/sync'
@@ -175,6 +186,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
     | '/sync'
@@ -191,6 +203,7 @@ export interface RootRouteChildren {
   DocsRoute: typeof DocsRoute
   GithubRoute: typeof GithubRoute
   LoginRoute: typeof LoginRoute
+  PipelinesRoute: typeof PipelinesRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SyncRoute: typeof SyncRoute
@@ -220,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipelines': {
+      id: '/pipelines'
+      path: '/pipelines'
+      fullPath: '/pipelines'
+      preLoaderRoute: typeof PipelinesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -303,6 +323,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsRoute: DocsRoute,
   GithubRoute: GithubRoute,
   LoginRoute: LoginRoute,
+  PipelinesRoute: PipelinesRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SyncRoute: SyncRoute,
