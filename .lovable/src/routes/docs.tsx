@@ -154,8 +154,8 @@ function DocsRoute() {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 min-h-0 overflow-y-auto mt-2">
-          <TabsContent value="generator" className="space-y-4 h-full overflow-auto">
+          <div className="mt-2 flex-1 min-h-0 overflow-hidden">
+          <TabsContent value="generator" className="h-full min-h-0 space-y-4 overflow-auto">
             <Card>
               <CardHeader>
                 <CardTitle>Генератор документації</CardTitle>
@@ -260,12 +260,12 @@ function DocsRoute() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notes" className="h-full overflow-auto">
+          <TabsContent value="notes" className="h-full min-h-0 overflow-hidden">
             <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
           </TabsContent>
 
 
-          <TabsContent value="graph" className="h-full overflow-auto">
+          <TabsContent value="graph" className="h-full min-h-0 overflow-hidden">
             <NotesGraphTab onNodeClick={handleGraphNodeClick} />
           </TabsContent>
           </div>

@@ -3,7 +3,6 @@ import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
 Bot,
 FileText,
-GitCompare,
 Github,
 LayoutGrid,
 LogOut,
@@ -34,7 +33,7 @@ import { readSettings, writeSettings } from "@/lib/settings-storage";
 import { clearAccessToken } from "@/lib/auth";
 
 type NavItem = {
-to: "/diagrams" | "/github" | "/sync" | "/docs" | "/settings";
+to: "/diagrams" | "/github" | "/docs" | "/settings";
 label: string;
 icon: React.ComponentType<{ className?: string }>;
 };
@@ -42,7 +41,6 @@ icon: React.ComponentType<{ className?: string }>;
 const NAV: NavItem[] = [
 { to: "/diagrams", label: "Схеми", icon: LayoutGrid },
 { to: "/github", label: "Git", icon: Github },
-{ to: "/sync", label: "Синхронізація", icon: GitCompare },
 { to: "/docs", label: "Документація", icon: FileText },
 { to: "/settings", label: "Налаштування", icon: SettingsIcon },
 ];
