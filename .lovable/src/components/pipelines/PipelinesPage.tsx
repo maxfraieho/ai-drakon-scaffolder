@@ -4,7 +4,7 @@ import {
   getPipeline,
   savePipeline,
   type PipelineInfo,
-  type DrakonIR,
+  type IrDiagram,
 } from "@/lib/graph-pipeline-api";
 import { PipelineDrakonView } from "./PipelineDrakonView";
 import { Workflow, RefreshCw } from "lucide-react";
@@ -13,7 +13,7 @@ import { toast } from "sonner";
 export function PipelinesPage() {
   const [pipelines, setPipelines] = useState<PipelineInfo[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
-  const [ir, setIr] = useState<DrakonIR | null>(null);
+  const [ir, setIr] = useState<IrDiagram | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function PipelinesPage() {
     }
   };
 
-  const handleSave = async (updatedIr: DrakonIR) => {
+  const handleSave = async (updatedIr: IrDiagram) => {
     if (!selected) return;
     await savePipeline(selected, updatedIr);
     setIr(updatedIr);
