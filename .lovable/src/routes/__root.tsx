@@ -16,6 +16,7 @@ import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProjectProvider } from "@/context/ProjectContext";
+import { DevCycleProvider } from "@/context/DevCycleContext";
 
 function NotFoundComponent() {
   return (
@@ -150,6 +151,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ProjectProvider>
+        <DevCycleProvider>
         <TooltipProvider delayDuration={200}>
           {hideChrome ? (
             <div className="min-h-screen bg-[var(--bg-base)]">
@@ -162,6 +164,7 @@ function RootComponent() {
           )}
           <Toaster position="top-center" richColors closeButton />
         </TooltipProvider>
+        </DevCycleProvider>
       </ProjectProvider>
     </QueryClientProvider>
   );
