@@ -56,9 +56,9 @@ const { id } = itemContext;
 return {
 id,
 name: fieldContext.name,
-formItemId: ${id}-form-item,
-formDescriptionId: ${id}-form-item-description,
-formMessageId: ${id}-form-item-message,
+formItemId: `${id}-form-item`,
+formDescriptionId: `${id}-form-item-description`,
+formMessageId: `${id}-form-item-message`,
 ...fieldState,
 };
 };
