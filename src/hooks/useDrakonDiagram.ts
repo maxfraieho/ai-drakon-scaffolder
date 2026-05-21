@@ -17,7 +17,7 @@ name?: string;
 isNew?: boolean;
 };
 
-const getDiagramStorageKey = (diagramId: string) => diagram_${diagramId};
+const getDiagramStorageKey = (diagramId: string) => `diagram_${diagramId}`;
 function normalizeDiagram(folderSlug: string | undefined, data: SaveInput): Diagram {
 const now = new Date().toISOString();
 const raw = (data.diagram ?? {}) as Record<string, unknown>;
@@ -78,7 +78,7 @@ useDiagramStore.getState().setDiagram(fallback);
 return fallback;
 }
 },
-staleTime: 5 60 1000,
+staleTime: 5 * 60 * 1000,
 });
 }
 

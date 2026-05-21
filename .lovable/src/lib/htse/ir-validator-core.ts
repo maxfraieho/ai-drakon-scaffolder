@@ -102,7 +102,7 @@ if (!VALID_IR_ITEM_TYPES.has(item.type)) {
 issues.push({
 code: "INVALID_ITEM_TYPE",
 severity: "error",
-message: Node has invalid type: `${item.type || "(empty)"}`,
+message: `Node has invalid type: ${item.type || "(empty)"}`,
 nodeId,
 });
 }
@@ -115,7 +115,8 @@ terminalCandidates.push(nodeId);
 issues.push({
 code: "MULTIPLE_TERMINAL_CANDIDATE",
 severity: "warning",
-message: "Non-end node has no main vector (one) and should be merged into a single terminal end.",
+message: "Non-end node has no main vector (one) and should be merged into a single terminal
+end.",
 nodeId,
 autofix: "merge_terminals",
 });
@@ -137,7 +138,7 @@ if (target && !itemIdSet.has(target)) {
 issues.push({
 code: "DANGLING_POINTER",
 severity: "error",
-message: `Node ${pointerName}` points to missing node id:`${target}`,
+message: `Node ${pointerName} points to missing node id: ${target}`,
 nodeId,
 });
 }
