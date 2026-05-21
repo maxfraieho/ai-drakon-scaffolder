@@ -520,6 +520,9 @@ async function analyzeGithubRepo(owner, repo, branch, env) {
               }
             }
           }
+        } else {
+          const errText = await astR.text().catch(() => '');
+          summary._astError = `AST analyzer HTTP ${astR.status}: ${errText.slice(0, 150)}`;
         }
       } catch (e) {
         summary._astError = e.message;
@@ -1167,6 +1170,124 @@ async function handleGithubListBranches(args, env, requestToken = '') {
   };
 }
 
+// ─── Agent MCP helpers ────────────────────────────────────────────────────────
+async function mcpCallAgent(agentId, message, context, env, ctx) {
+  const defaultUrls = {
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+  };
+  const targetUrl = defaultUrls[agentId];
+  const usesAnalyze = agentId === 'drakon' && isPythonCode(message);
+  const endpoint = usesAnalyze ? '/analyze' : '/chat';
+  const agentBody = usesAnalyze
+    ? JSON.stringify({ code: message, refine: true })
+    : JSON.stringify({ message, context: context || null });
+  try {
+    const agentResp = await fetch(targetUrl + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: agentBody,
+      signal: AbortSignal.timeout(90_000),
+    });
+    const rawText = await agentResp.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch {
+      return { error: 'Agent non-JSON (HTTP ' + agentResp.status + '): ' + rawText.slice(0, 200) };
+    }
+    if (!agentResp.ok) {
+      return { error: data.detail || data.error || ('Agent HTTP ' + agentResp.status), ...data };
+    }
+    return data;
+  } catch (e) {
+    return { error: 'Agent unreachable: ' + e.message };
+  }
+}
+
+async function mcpCallPipeline(endpoint, body, env) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  try {
+    const resp = await fetch(architectUrl + '/pipeline/' + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(120_000),
+    });
+    const rawText = await resp.text();
+    try { return JSON.parse(rawText); } catch {
+      return { error: 'Pipeline non-JSON: ' + rawText.slice(0, 200) };
+    }
+  } catch (e) {
+    return { error: 'Pipeline unreachable: ' + e.message };
+  }
+}
+
+async function mcpGetPipelineStatus(jobId, env) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  try {
+    const resp = await fetch(architectUrl + '/pipeline/status/' + encodeURIComponent(jobId), {
+      signal: AbortSignal.timeout(15_000),
+    });
+    const rawText = await resp.text();
+    try { return JSON.parse(rawText); } catch {
+      return { error: 'Status non-JSON: ' + rawText.slice(0, 100) };
+    }
+  } catch (e) {
+    return { error: 'Pipeline unreachable: ' + e.message };
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Dataview / docs knowledge base tools
+
+const DOCS_AGENT_BASE = 'https://docs-agent.exodus.pp.ua';
+
+async function handleDocsDataviewQuery(query, env) {
+  try {
+    const resp = await fetch(`${DOCS_AGENT_BASE}/docs/dataview/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    const rawText = await resp.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch { return { error: `docs-agent parse error: ${rawText.slice(0, 200)}` }; }
+    if (!resp.ok) return { error: `docs-agent HTTP ${resp.status}`, detail: data };
+    return data;
+  } catch (e) {
+    return { error: 'docs-agent unreachable: ' + e.message };
+  }
+}
+
+async function handleDocsWikilink(link, env) {
+  try {
+    const url = `${DOCS_AGENT_BASE}/docs/wikilink?link=${encodeURIComponent(link)}`;
+    const resp = await fetch(url);
+    const rawText = await resp.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch { return { error: `docs-agent parse error: ${rawText.slice(0, 200)}` }; }
+    if (!resp.ok) return { error: `docs-agent HTTP ${resp.status}`, detail: data };
+    return data;
+  } catch (e) {
+    return { error: 'docs-agent unreachable: ' + e.message };
+  }
+}
+
+async function handleDocsBacklinks(link, env) {
+  try {
+    const url = `${DOCS_AGENT_BASE}/docs/backlinks?link=${encodeURIComponent(link)}`;
+    const resp = await fetch(url);
+    const rawText = await resp.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch { return { error: `docs-agent parse error: ${rawText.slice(0, 200)}` }; }
+    if (!resp.ok) return { error: `docs-agent HTTP ${resp.status}`, detail: data };
+    return data;
+  } catch (e) {
+    return { error: 'docs-agent unreachable: ' + e.message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function getMcpTools() {
   return [
     {
@@ -1478,6 +1599,98 @@ function getMcpTools() {
         required: ['owner', 'repo'],
       },
     },
+    {
+      name: 'docs.chat',
+      description: 'Send a message to the documentation agent (Документознавець) to get structured Markdown documentation for code modules, functions, or architecture. Responds in Ukrainian. Use before creating DRAKON diagrams to build project context.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          message: { type: 'string', description: 'Question or code to document' },
+          context: { type: 'object', description: 'Optional: { currentDoc, fileTree }' },
+        },
+        required: ['message'],
+      },
+    },
+    {
+      name: 'architect.chat',
+      description: 'Send a message to the architect agent to get structural analysis, module relationship mapping, or architecture planning. Returns analysis with file-tree context and diagram recommendations.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          message: { type: 'string' },
+          context: { type: 'object', description: 'Optional: { fileTree, currentDiagram }' },
+        },
+        required: ['message'],
+      },
+    },
+    {
+      name: 'architect.analyze',
+      description: 'Submit Python source code to the architect LangGraph pipeline for deep structural analysis. Async — returns job_id immediately. Pipeline: cyclomatic complexity → call graph → behavioral YAML → DRAKON IR. Poll with architect.jobstatus.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          source_code: { type: 'string', description: 'Python source code to analyze' },
+          file_path: { type: 'string', description: 'File path hint (e.g. "bot/handlers.py")', default: 'module.py' },
+        },
+        required: ['source_code'],
+      },
+    },
+    {
+      name: 'architect.jobstatus',
+      description: 'Poll the status of an architect.analyze job. Returns status (running|done|error) and when done: drakon_ir array ready to pass to drakon.savediagram.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          job_id: { type: 'string' },
+        },
+        required: ['job_id'],
+      },
+    },
+    {
+      name: 'drakon.agentchat',
+      description: 'Send a message or Python code to the drakon-agent. Python code is auto-detected and sent to /analyze which returns DRAKON IR diagrams. Other messages go to /chat for diagram questions and feedback.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          message: { type: 'string', description: 'Message text or Python source code' },
+          context: { type: 'object' },
+        },
+        required: ['message'],
+      },
+    },
+    {
+      name: 'docs.query',
+      description: 'Execute a DQL (Dataview Query Language) query against the project knowledge base. Supports LIST/TABLE with FROM (tag/folder/field), WHERE, SORT, LIMIT. Examples: "LIST FROM #architecture", "TABLE title, status FROM type = \\"plan\\" WHERE status = \\"active\\"", "LIST WHERE contains(tags, \\"pipeline\\") SORT file.mtime DESC LIMIT 5"',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'DQL query string' },
+        },
+        required: ['query'],
+      },
+    },
+    {
+      name: 'docs.wikilink',
+      description: 'Read the full content of a project document by wiki-link. Returns frontmatter metadata + document body. Use after docs.query to read specific documents.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          link: { type: 'string', description: 'Wiki link target, e.g. "concept/03-architecture" or "plans/2026-05-15-pipeline"' },
+        },
+        required: ['link'],
+      },
+    },
+    {
+      name: 'docs.backlinks',
+      description: 'Find all project documents that link to the specified document via [[wiki-links]]. Useful for understanding dependencies and document relationships.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          link: { type: 'string', description: 'Wiki link target to find backlinks for' },
+        },
+        required: ['link'],
+      },
+    },
   ];
 }
 
@@ -1629,6 +1842,49 @@ async function handleMcp(request, env, ctx) {
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
+    if (name === 'docs.chat') {
+      const result = await mcpCallAgent('docs', String(args.message || ''), args.context || null, env, ctx);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'architect.chat') {
+      const result = await mcpCallAgent('architect', String(args.message || ''), args.context || null, env, ctx);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'architect.analyze') {
+      const result = await mcpCallPipeline('analyze', {
+        source_code: String(args.source_code || ''),
+        file_path: String(args.file_path || 'module.py'),
+      }, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'architect.jobstatus') {
+      const result = await mcpGetPipelineStatus(String(args.job_id || ''), env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'drakon.agentchat') {
+      const result = await mcpCallAgent('drakon', String(args.message || ''), args.context || null, env, ctx);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'docs.query') {
+      const result = await handleDocsDataviewQuery(String(args.query || ''), env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'docs.wikilink') {
+      const result = await handleDocsWikilink(String(args.link || ''), env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'docs.backlinks') {
+      const result = await handleDocsBacklinks(String(args.link || ''), env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
     log('warn', 'tool.unknown', { tool: name, ms: Date.now() - t0 });
     return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown tool: ${name}` } }, 404);
 
@@ -1723,8 +1979,17 @@ async function handleAgentChat(agentId, request, env, ctx) {
 
   const ms = Date.now() - t0;
   let data;
-  try { data = await agentResp.json(); } catch {
-    return errorResponse('Agent returned non-JSON', 502, undefined, 'AGENT_BAD_RESPONSE');
+  let rawText = '';
+  try {
+    rawText = await agentResp.text();
+    data = JSON.parse(rawText);
+  } catch {
+    return errorResponse(
+      'Agent error (HTTP ' + agentResp.status + '): ' + rawText.slice(0, 200),
+      502,
+      undefined,
+      'AGENT_BAD_RESPONSE'
+    );
   }
 
   ctx.waitUntil(saveLogToMinio(env, {
@@ -1784,6 +2049,16 @@ export default {
         return await handleAuthLogin(request, env);
       }
 
+      if (method === 'GET' && path === '/mcp') {
+        // MCP Streamable HTTP: GET returns 405 to signal POST-only mode
+        return new Response(null, { status: 405, headers: {
+          'Allow': 'POST',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        } });
+      }
+
       if (method === 'POST' && path === '/mcp') {
         const owner = await verifyOwnerAuth(request, env);
         if (!owner) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
@@ -1806,6 +2081,14 @@ export default {
         return resp;
       }
 
+      // ─── DRAKON IR routes (read-only, no auth needed) ─────────────────────
+      if (method === 'GET' && path === '/v1/drakon-ir/list') {
+        return await handleDrakonIrList();
+      }
+      const drakonIrGetMatch = path.match(/^\/v1\/drakon-ir\/([^/]+)$/);
+      if (method === 'GET' && drakonIrGetMatch) {
+        return await handleDrakonIrGet(decodeURIComponent(drakonIrGetMatch[1]));
+      }
       // ─── Public Notes routes (no auth needed for reads) ─────────────────
       if (method === 'GET' && path === '/v1/notes/list') {
         return await handleNotesList(request);
@@ -1823,72 +2106,6 @@ export default {
         return await handleNotesDelete(request, env);
       }
       // ──────────────────────────────────────────────────────────────────────
-
-      // ─── Projects registry (no auth needed for list) ─────────────────────
-      if (method === 'GET' && path === '/v1/projects/list') {
-        const res = await fetch(`${DOCS_AGENT_URL}/projects/list`, {
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (!res.ok) return errorResponse(`docs-agent /projects/list ${res.status}`, 502);
-        const data = await res.json();
-        return new Response(JSON.stringify(data), {
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        });
-      }
-      if (method === 'POST' && path === '/v1/projects/add') {
-        if (!authed) return unauthorized();
-        const body = await request.text();
-        const res = await fetch(`${DOCS_AGENT_URL}/projects/add`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body,
-        });
-        if (!res.ok) return errorResponse(`docs-agent /projects/add ${res.status}`, res.status);
-        return new Response(await res.text(), {
-          status: res.status,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        });
-      }
-      const projectDeleteMatch = path.match(/^\/v1\/projects\/([^\/]+)$/);
-      if (method === 'DELETE' && projectDeleteMatch) {
-        if (!authed) return unauthorized();
-        const projectSlug = decodeURIComponent(projectDeleteMatch[1]);
-        const res = await fetch(`${DOCS_AGENT_URL}/projects/${encodeURIComponent(projectSlug)}`, {
-          method: 'DELETE',
-        });
-        if (!res.ok) return errorResponse(`docs-agent /projects/${projectSlug} ${res.status}`, res.status);
-        return new Response(await res.text(), {
-          status: res.status,
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        });
-      }
-      // ─── DRAKON IR routes ───────────────────────────────────────────────
-      if (method === 'GET' && path === '/v1/drakon-ir/list') {
-        const project = new URL(request.url).searchParams.get('project') || '';
-        const qs = project ? `?project=${encodeURIComponent(project)}` : '';
-        const res = await fetch(`${DOCS_AGENT_URL}/drakon-ir/list${qs}`, {
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (!res.ok) return errorResponse(`docs-agent /drakon-ir/list ${res.status}`, 502);
-        const data = await res.json();
-        return new Response(JSON.stringify(data), {
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        });
-      }
-      const drakonIrMatch = path.match(/^\/v1\/drakon-ir\/([^\/]+)$/);
-      if (method === 'GET' && drakonIrMatch) {
-        const irName = decodeURIComponent(drakonIrMatch[1]);
-        const project = new URL(request.url).searchParams.get('project') || '';
-        const proj = project ? `&project=${encodeURIComponent(project)}` : '';
-        const res = await fetch(`${DOCS_AGENT_URL}/drakon-ir/get?name=${encodeURIComponent(irName)}${proj}`, {
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (!res.ok) return errorResponse(`docs-agent /drakon-ir/get ${res.status}`, 502);
-        const data = await res.json();
-        return new Response(JSON.stringify(data), {
-          headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        });
-      }
 
       // ─── Pipeline SSE (auth via ?token= query param — EventSource не підтримує headers) ─
       const pipelineStreamMatch = path.match(/^\/v1\/pipeline\/stream\/([^\/]+)$/);
@@ -2129,6 +2346,18 @@ async function handlePipeline(pipelinePath, request, env, ctx) {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 // ── Notes API (docs-agent proxy) ─────────────────────────────────────────────
+
+async function handleDrakonIrList() {
+  const res = await fetch(DOCS_AGENT_URL + '/drakon-ir/list', { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) return errorResponse('docs-agent /drakon-ir/list ' + res.status, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleDrakonIrGet(name) {
+  const res = await fetch(DOCS_AGENT_URL + '/drakon-ir/get?name=' + encodeURIComponent(name), { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) return errorResponse('docs-agent /drakon-ir/get ' + res.status, 502);
+  return jsonResponse(await res.json());
+}
 
 async function handleNotesList(request) {
   const url = new URL(request.url);
