@@ -80,7 +80,7 @@ return;
 setTokenStatus("checking");
 try {
 const res = await fetch("https://api.github.com/user", {
-headers: {` Authorization: token ${token}` },
+headers: { Authorization: `token ${token}` },
 });
 if (res.status === 200) setTokenStatus("valid");
 else if (res.status === 401 || res.status === 403) setTokenStatus("invalid");

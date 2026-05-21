@@ -79,13 +79,13 @@ const update = (patch: Partial<DaviaSettings>) => setDraft((p) => ({ ...p, ...pa
 
 const buildModelsUrl = () => {
 const base = draft.baseUrl.replace(/\/+$/, "");
-return draft.protocol === "anthropic" ? ${base}/v1/models :`${base}`/models;
+return draft.protocol === "anthropic" ? `${base}/v1/models` : `${base}/models`;
 };
 
 const buildHeaders = (): Record<string, string> =>
 draft.protocol === "anthropic"
 ? { "x-api-key": draft.apiKey, "anthropic-version": "2023-06-01" }
-: {` Authorization: Bearer ${draft.apiKey}` };
+: { Authorization: `Bearer ${draft.apiKey}` };
 
 const handleTest = async () => {
 setTesting(true);

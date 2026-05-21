@@ -86,7 +86,7 @@ return res.json();
 }
 
 function buildMarkdown(p: CommitNotePayload): string {
-const fm = ["---", title:`${JSON.stringify(p.title)}`, tags: [${p.tags.map((t) =>
+const fm = ["---", `title: ${JSON.stringify(p.title)}`, `tags: [${p.tags.map((t) =>
 JSON.stringify(t)).join(", ")}], "---", ""].join("\n");
 return fm + "\n" + p.content.trimStart();
 }

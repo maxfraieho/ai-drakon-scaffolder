@@ -223,7 +223,7 @@ await api.saveDiagram(diagram.folderId, diagram.id, diagram.diagram);
 }
 
 toast.success(
-Створено ${generated.length} діаграм у папці `${selectedAnalysisFolder.name}`,
+`Створено ${generated.length} діаграм у папці ${selectedAnalysisFolder.name}`,
 );
 } catch (error) {
 toast.error(error instanceof Error ? error.message : "Не вдалося виконати аналіз");
