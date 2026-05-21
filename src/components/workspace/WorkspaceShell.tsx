@@ -6,7 +6,6 @@ Cog,
 Cpu,
 FileText,
 GitBranch,
-GitCompare,
 LayoutDashboard,
 LogOut,
 Menu,
@@ -48,7 +47,7 @@ import { clearAccessToken } from "@/lib/auth";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
 type RailItem = {
-to: "/diagrams" | "/docs" | "/sync" | "/github" | "/settings" | "/agents" | "/pipelines";
+to: "/diagrams" | "/docs" | "/github" | "/settings" | "/agents" | "/pipelines";
 label: string;
 icon: React.ComponentType<{ className?: string }>;
 };
@@ -56,7 +55,6 @@ icon: React.ComponentType<{ className?: string }>;
 const RAIL_TOP: RailItem[] = [
 { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
 { to: "/docs", label: "Нотатки", icon: FileText },
-{ to: "/sync", label: "Sync", icon: GitCompare },
 { to: "/github", label: "GitHub", icon: GitBranch },
 { to: "/agents", label: "Агенти", icon: Cpu },
   { to: "/pipelines", label: "Пайплайни", icon: Workflow },
@@ -81,8 +79,6 @@ if (pathname.startsWith("/diagrams"))
 return { section: "Diagrams", sectionPath: "/diagrams" };
 if (pathname.startsWith("/docs"))
 return { section: "Нотатки", sectionPath: "/docs" };
-if (pathname.startsWith("/sync"))
-return { section: "Sync", sectionPath: "/sync" };
 if (pathname.startsWith("/github"))
 return { section: "GitHub", sectionPath: "/github" };
 if (pathname.startsWith("/settings"))
