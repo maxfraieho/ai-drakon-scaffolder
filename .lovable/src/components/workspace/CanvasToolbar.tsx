@@ -1,4 +1,4 @@
-import { Code2, Edit3, Maximize2, ScanSearch, ZoomIn, ZoomOut } from "lucide-react";
+import { Code2, Download, Edit3, Maximize2, ScanSearch, ZoomIn, ZoomOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface CanvasToolbarProps {
@@ -12,6 +12,7 @@ interface CanvasToolbarProps {
   onToggleAnalysis: () => void;
   onToggleGeneration: () => void;
   onEdit?: () => void;
+  onSaveAsPipeline?: () => void;
   onZoomIn?: () => void;
   onZoomOut?: () => void;
   onFullscreen?: () => void;
@@ -28,6 +29,7 @@ export function CanvasToolbar({
   onToggleAnalysis,
   onToggleGeneration,
   onEdit,
+  onSaveAsPipeline,
   onZoomIn,
   onZoomOut,
   onFullscreen,
@@ -107,6 +109,17 @@ export function CanvasToolbar({
             className="inline-flex h-6 w-6 items-center justify-center rounded-sm text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
           >
             <Edit3 className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {onSaveAsPipeline && (
+          <button
+            type="button"
+            onClick={onSaveAsPipeline}
+            className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-mono uppercase tracking-wider border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--accent-amber)] hover:border-[var(--accent-amber)]/50 transition-colors"
+            title="Зберегти схему як DRAKON-пайплайн"
+          >
+            <Download className="h-2.5 w-2.5" />
+            Пайплайн
           </button>
         )}
         {onZoomOut && (
