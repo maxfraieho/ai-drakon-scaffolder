@@ -201,8 +201,7 @@ className={cn("-mx-1 my-1 h-px bg-muted", className)}
 ));
 MenubarSeparator.displayName = MenubarPrimitive.Separator.displayName;
 
-const MenubarShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>)
-=> {
+const MenubarShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
 return (
 <span
 className={cn("ml-auto text-xs tracking-widest text-muted-foreground", className)}

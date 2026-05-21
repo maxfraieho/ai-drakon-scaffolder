@@ -533,8 +533,7 @@ if (e.key === 'Escape') { setSearchOpen(false); setSearchQuery(''); }
 if (e.key === 'Enter' && searchResults.length > 0) handleSearchSelect(searchResults[0].slug);
 }}
 />
-<Button variant="ghost" size="icon" className="h-6 w-6 absolute right-1 top-1" onClick={()
-=> { setSearchOpen(false); setSearchQuery(''); }}>
+<Button variant="ghost" size="icon" className="h-6 w-6 absolute right-1 top-1" onClick={() => { setSearchOpen(false); setSearchQuery(''); }}>
 <X className="h-3 w-3" />
 </Button>
 {searchQuery.trim() && (

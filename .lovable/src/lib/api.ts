@@ -262,8 +262,7 @@ body: JSON.stringify({ project }),
 return parseResponse<ProjectActionResponse>(response);
 },
 
-runDocsDocument: async (project: string, instructions = ""): Promise<ProjectActionResponse>
-=> {
+runDocsDocument: async (project: string, instructions = ""): Promise<ProjectActionResponse> => {
 const response = await fetch( `${resolveApiBase()}/v1/docs/document`, {
 method: "POST",
 headers: headers(),

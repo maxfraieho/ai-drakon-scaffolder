@@ -422,8 +422,7 @@ return (
 );
 }
 
-function MissingRow({ item, onCreateDiagram }: { item: MissingInDiagram; onCreateDiagram: ()
-=> void }) {
+function MissingRow({ item, onCreateDiagram }: { item: MissingInDiagram; onCreateDiagram: () => void }) {
 return (
 <div className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
 <div className="min-w-0">
