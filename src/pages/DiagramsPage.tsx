@@ -9,7 +9,8 @@ import { DiagramsLeftPanel } from "@/components/workspace/DiagramsLeftPanel";
 import { DrakonIrPanel } from "@/components/workspace/DrakonIrPanel";
 import { cn } from "@/lib/utils";
 import { CanvasToolbar } from "@/components/workspace/CanvasToolbar";
-import { DrakonViewer } from "@/components/drakon/DrakonViewer";
+import { DrakonEditor } from "@/components/drakon/DrakonEditor";
+import { PipelineDrakonView } from "@/components/pipelines/PipelineDrakonView";
 import {
 Dialog,
 DialogContent,
@@ -17,6 +18,7 @@ DialogFooter,
 DialogHeader,
 DialogTitle,
 } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
@@ -34,6 +36,7 @@ type Folder,
 } from "@/lib/folder-storage";
 import type { Diagram } from "@/types/drakon";
 import type { DrakonItem } from "@/types/drakon";
+import type { IrDiagram } from "@/lib/graph-pipeline-api";
 export function DiagramsPage() {
 const navigate = useNavigate();
 const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -54,6 +57,8 @@ const [generationOpen, setGenerationOpen] = useState(false);
 const [savePipelineOpen, setSavePipelineOpen] = useState(false);
 const [pipelineNameInput, setPipelineNameInput] = useState("");
 const [savingPipeline, setSavingPipeline] = useState(false);
+const [irSheetOpen, setIrSheetOpen] = useState(false);
+const [irSheetIr, setIrSheetIr] = useState<IrDiagram | null>(null);
 
 const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 const [newFolderName, setNewFolderName] = useState("");
@@ -146,13 +151,6 @@ search: { folderId: selectedFolder.slug, isNew: "true" },
 });
 };
 
-const openInEditor = (d: Diagram) => {
-navigate({
-to: "/diagram/editor",
-search: { diagramId: d.id, folderId: selectedFolder.slug },
-});
-};
-
 const normalizeIrDiagram = (name: string, diagram: object): Diagram["diagram"] => {
 const raw = diagram as Record<string, unknown>;
 const rawItems = (raw.items ?? {}) as Record<string, Record<string, unknown>>;
@@ -193,6 +191,18 @@ setSelectedIrName(null);
 };
 
 const currentDiagramIsIr = selectedDiagram?.folderId === "__ir__";
+
+const handleEditInIr = async () => {
+if (!selectedDiagram || currentDiagramIsIr) return;
+try {
+const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
+const ir = convertDiagramToIr(selectedDiagram.diagram);
+setIrSheetIr(ir);
+setIrSheetOpen(true);
+} catch {
+toast.error("Помилка конвертації IR");
+}
+};
 
 const handleImportJson = async (event: ChangeEvent<HTMLInputElement>) => {
 const file = event.target.files?.[0];
