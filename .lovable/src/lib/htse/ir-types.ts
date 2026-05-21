@@ -35,10 +35,19 @@ branchId?: string;
 style?: Record<string, unknown>;
 }
 
+export interface IrDiagramMeta {
+state_class?: string;
+node_module?: string;
+router_module?: string;
+description?: string;
+source?: string;
+}
+
 export interface IrDiagram {
 name: string;
 access: "public" | "private";
 params: string[];
 items: Record<string, IrItem>;
+meta?: IrDiagramMeta;
 }
 
