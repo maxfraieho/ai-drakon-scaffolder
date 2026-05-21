@@ -5,23 +5,14 @@
  * falls back to http://192.168.3.184, then appends architect port 8766.
  */
 
+import type { IrDiagram } from "@/lib/htse/ir-types";
+
 export interface PipelineInfo {
   name: string;
   display_name: string;
 }
 
-export interface DrakonIRItem {
-  type: "header" | "action" | "question" | "end";
-  content: string;
-  one?: string;
-  two?: string;
-}
-
-export interface DrakonIR {
-  name: string;
-  items: Record<string, DrakonIRItem>;
-  schema?: { state_class?: string };
-}
+export type { IrDiagram };
 
 export interface ExecutionEvent {
   event: "node_done" | "breakpoint" | "done" | "error";
@@ -43,13 +34,13 @@ export async function listPipelines(): Promise<PipelineInfo[]> {
   return data.pipelines ?? [];
 }
 
-export async function getPipeline(name: string): Promise<DrakonIR> {
+export async function getPipeline(name: string): Promise<IrDiagram> {
   const r = await fetch(`${getArchitectBase()}/graph-pipelines/${name}`);
   if (!r.ok) throw new Error(`getPipeline(${name}): ${r.status}`);
   return r.json();
 }
 
-export async function savePipeline(name: string, ir: DrakonIR): Promise<void> {
+export async function savePipeline(name: string, ir: IrDiagram): Promise<void> {
   const r = await fetch(`${getArchitectBase()}/graph-pipelines/${name}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
