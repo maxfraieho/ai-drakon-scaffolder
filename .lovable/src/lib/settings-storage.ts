@@ -9,6 +9,13 @@ export const DEFAULT_SETTINGS: AppSettings = {
     branch: "main",
     token: "",
   },
+  project: {
+    name: "sharon-global",
+    githubOwner: "maxfraieho",
+    githubRepo: "sharon-global",
+    githubBranch: "main",
+    repoRoot: "/home/vokov/workspace/sharon-global",
+  },
   n8n: {
     baseUrl: "",
     apiKey: "",
@@ -29,6 +36,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
     drakonUrl: "https://drakon-agent.exodus.pp.ua",
     architectUrl: "https://architect-agent.exodus.pp.ua",
     docsUrl: "https://docs-agent.exodus.pp.ua",
+    proxyModel: "fast-proxy",
+    proxyProtocol: "openai" as const,
   },
 };
 
@@ -65,12 +74,20 @@ export function readSettings(): AppSettings {
     }
 
     const github = isObject(parsed.github) ? parsed.github : {};
+    const project = isObject(parsed.project) ? parsed.project : {};
     const n8n = isObject(parsed.n8n) ? parsed.n8n : {};
     const app = isObject(parsed.app) ? parsed.app : {};
     const minio = isObject(parsed.minio) ? parsed.minio : {};
     const agents = isObject(parsed.agents) ? parsed.agents : {};
 
     return {
+      project: {
+        name: typeof project.name === "string" ? project.name : DEFAULT_SETTINGS.project.name,
+        githubOwner: typeof project.githubOwner === "string" ? project.githubOwner : DEFAULT_SETTINGS.project.githubOwner,
+        githubRepo: typeof project.githubRepo === "string" ? project.githubRepo : DEFAULT_SETTINGS.project.githubRepo,
+        githubBranch: typeof project.githubBranch === "string" ? project.githubBranch : DEFAULT_SETTINGS.project.githubBranch,
+        repoRoot: typeof project.repoRoot === "string" ? project.repoRoot : DEFAULT_SETTINGS.project.repoRoot,
+      },
       github: {
         owner: typeof github.owner === "string" ? github.owner : typeof legacyGithub.owner === "string" ? legacyGithub.owner : DEFAULT_SETTINGS.github.owner,
         repo: typeof github.repo === "string" ? github.repo : typeof legacyGithub.repo === "string" ? legacyGithub.repo : DEFAULT_SETTINGS.github.repo,
@@ -106,6 +123,8 @@ export function readSettings(): AppSettings {
         accessKey: typeof minio.accessKey === "string" ? minio.accessKey : DEFAULT_SETTINGS.minio.accessKey,
       },
       agents: {
+        proxyModel: typeof agents.proxyModel === "string" ? agents.proxyModel : DEFAULT_SETTINGS.agents.proxyModel,
+        proxyProtocol: agents.proxyProtocol === "openai" || agents.proxyProtocol === "anthropic" ? agents.proxyProtocol : DEFAULT_SETTINGS.agents.proxyProtocol,
         drakonUrl:
           typeof agents.drakonUrl === "string" && agents.drakonUrl.startsWith("https://")
             ? agents.drakonUrl

@@ -5,6 +5,13 @@ export type AppSettings = {
     branch: string;
     token: string;
   };
+  project: {
+    name: string;
+    githubOwner: string;
+    githubRepo: string;
+    githubBranch: string;
+    repoRoot: string;
+  };
   n8n: {
     baseUrl: string;
     apiKey: string;
@@ -14,7 +21,7 @@ export type AppSettings = {
   app: {
     workerUrl: string;
     defaultFolder: string;
-    theme: "light" | "dark" | "system";
+    theme: 'light' | 'dark' | 'system';
   };
   minio: {
     endpoint: string;
@@ -25,5 +32,7 @@ export type AppSettings = {
     drakonUrl: string;
     architectUrl: string;
     docsUrl: string;
+    proxyModel: string;
+    proxyProtocol: 'openai' | 'anthropic';
   };
 };
