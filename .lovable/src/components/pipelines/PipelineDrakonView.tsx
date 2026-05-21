@@ -3,23 +3,28 @@ import {
   startExecution,
   streamExecution,
   resumeExecution,
-  type DrakonIR,
+  type IrDiagram,
   type ExecutionEvent,
 } from "@/lib/graph-pipeline-api";
 import { NodeStateInspector } from "./NodeStateInspector";
 import { Button } from "@/components/ui/button";
-import { Play, StopCircle, Zap } from "lucide-react";
+import { Play, StopCircle, Zap, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
+import { upsertDiagramInStorage } from "@/lib/diagram-storage";
+import type { Diagram } from "@/types/drakon";
 
 interface Props {
   pipelineName: string;
-  ir: DrakonIR;
-  onSave: (ir: DrakonIR) => Promise<void>;
+  ir: IrDiagram;
+  onSave: (ir: IrDiagram) => Promise<void>;
 }
 
 type ExecStatus = "idle" | "running" | "breakpoint" | "done" | "error";
 
 export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
+  const navigate = useNavigate();
   const [activeNode, setActiveNode] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<ExecStatus>("idle");
@@ -88,6 +93,26 @@ export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
     error: "border-red-500 text-red-500",
   };
 
+  const handleOpenInDiagrams = () => {
+    try {
+      const drakonDiagram = convertIrToDiagram(ir);
+      const diagramId = `pipeline-${pipelineName}`;
+      const stored: Diagram = {
+        id: diagramId,
+        name: ir.name,
+        folderId: "general",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        diagram: drakonDiagram,
+      };
+      upsertDiagramInStorage(stored);
+      localStorage.setItem("_pending_open_diagram_id", diagramId);
+      void navigate({ to: "/diagrams" });
+    } catch {
+      toast.error("Не вдалось конвертувати у схему");
+    }
+  };
+
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
@@ -114,6 +139,16 @@ export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
             <StopCircle className="h-3 w-3 mr-1" /> Зупинити
           </Button>
         )}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleOpenInDiagrams}
+          title="Відкрити у редакторі схем"
+          className="h-7 text-[11px] font-mono"
+        >
+          <ExternalLink className="h-3 w-3 mr-1" />
+          Схеми
+        </Button>
         <div className="ml-auto flex items-center gap-3">
           {activeNode && (
             <span className="font-mono text-[10px] text-[var(--text-secondary)]">
