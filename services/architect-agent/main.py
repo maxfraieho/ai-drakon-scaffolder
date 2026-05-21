@@ -54,6 +54,18 @@ class MemorySaveRequest(BaseModel):
     commit_msg: str
 
 
+
+@app.get("/settings")
+def get_settings():
+    import os
+    return {
+        "repo_root": os.getenv("REPO_ROOT", ""),
+        "proxy_url": os.getenv("PROXY_URL", "http://localhost:18880/v1"),
+        "proxy_model": os.getenv("PROXY_MODEL", "fast-proxy"),
+        "proxy_protocol": os.getenv("PROXY_PROTOCOL", "openai"),
+        "agent": "architect",
+    }
+
 @app.get("/health")
 def health():
     return {"status": "ok", "service": "architect-agent", "port": PORT}
