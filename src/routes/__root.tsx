@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 Outlet,
@@ -11,11 +10,11 @@ Scripts,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { readSettings } from "@/lib/settings-storage";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProjectProvider } from "@/context/ProjectContext";
+import { ThemeProvider } from "@/components/theme-provider";
 
 function NotFoundComponent() {
 return (
@@ -143,22 +142,13 @@ AD@20..48,300..700,0..1,-50..200"
 function RootComponent() {
 const { queryClient } = Route.useRouteContext();
 
-useEffect(() => {
-try {
-const theme = readSettings().app.theme ?? "dark";
-const resolved = theme === "light" ? "light" : "dark";
-document.documentElement.setAttribute("data-theme", resolved);
-document.documentElement.classList.toggle("dark", resolved === "dark");
-} catch {
-// ignore
-}
-}, []);
 
 const location = useLocation();
 const hideChrome =
 location.pathname === "/login" || location.pathname.startsWith("/pipeline/");
 
 return (
+<ThemeProvider>
 <QueryClientProvider client={queryClient}>
 <ProjectProvider>
 <TooltipProvider delayDuration={200}>
@@ -175,6 +165,7 @@ return (
 </TooltipProvider>
 </ProjectProvider>
 </QueryClientProvider>
+</ThemeProvider>
 );
 }
 

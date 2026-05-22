@@ -46,7 +46,7 @@ import { ProjectSelector } from "@/components/workspace/ProjectSelector";
 import { AgentStatusBar } from "@/components/workspace/AgentStatusBar";
 import { cn } from "@/lib/utils";
 import { clearAccessToken } from "@/lib/auth";
-import { readSettings, writeSettings } from "@/lib/settings-storage";
+import { useTheme } from "@/components/theme-provider";
 
 type NavItem = {
   to: string;
@@ -66,10 +66,6 @@ const NAV_SYSTEM: NavItem[] = [
   { to: "/settings", label: "Налаштування", icon: Cog },
 ];
 
-function applyTheme(theme: "light" | "dark") {
-  document.documentElement.setAttribute("data-theme", theme);
-  document.documentElement.classList.toggle("dark", theme === "dark");
-}
 
 function getBreadcrumb(pathname: string): { section: string; sectionPath: string; sub?: string } {
   if (pathname.startsWith("/diagram/editor")) return { section: "Diagrams", sectionPath: "/diagrams", sub: "Editor" };
@@ -133,16 +129,11 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const navigate = useNavigate();
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const { theme, setTheme } = useTheme();
   const [cmdOpen, setCmdOpen] = useState(false);
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("nav_collapsed") === "true"; } catch { return false; }
   });
-
-  useEffect(() => {
-    const t = readSettings().app.theme;
-    setTheme(t === "light" ? "light" : "dark");
-  }, []);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -156,11 +147,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   }, []);
 
   const toggleTheme = () => {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    const s = readSettings();
-    writeSettings({ ...s, app: { ...s.app, theme: next } });
-    applyTheme(next);
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   const logout = () => {
