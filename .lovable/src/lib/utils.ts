@@ -13,3 +13,11 @@ return value
 .replace(/(^-|-$)+/g, "");
 }
 
+export function generateId(): string {
+  try {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+      return crypto.randomUUID();
+    }
+  } catch { /* ignore */ }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}

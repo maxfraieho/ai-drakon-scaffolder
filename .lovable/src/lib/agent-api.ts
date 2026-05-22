@@ -150,14 +150,14 @@ corrected_ir: correctedIr ?? null,
 });
 }
 
-export interface CliMessage {
+interface CliApiMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
 
 export async function sendToCliAgent(
   url: string,
-  messages: CliMessage[],
+  messages: CliApiMessage[],
   apiKey?: string,
 ): Promise<string> {
   const base = url.replace(/\/+$/, "");

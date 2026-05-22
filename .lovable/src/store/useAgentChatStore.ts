@@ -2,17 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { AgentId, AgentMessage } from "@/types/agent-chat";
 import { sendToAgent } from "@/lib/agent-api";
-
-function nextId(): string {
-try {
-if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-return crypto.randomUUID();
-}
-} catch {
-// ignore
-}
-return  `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
+import { generateId } from "@/lib/utils";
 
 interface AgentChatState {
 sessions: Record<AgentId, AgentMessage[]>;
@@ -40,7 +30,7 @@ setActiveAgent: (id) => set({ activeAgent: id }),
 
 sendMessage: async (agentId, content, context) => {
 const userMsg: AgentMessage = {
-id: nextId(),
+id: generateId(),
 agentId,
 role: "user",
 content,
@@ -58,7 +48,7 @@ error: { ...s.error, [agentId]: null },
 try {
 const result = await sendToAgent(agentId, content, context);
 const assistantMsg: AgentMessage = {
-id: nextId(),
+id: generateId(),
 agentId,
 role: "assistant",
 content: result.reply,

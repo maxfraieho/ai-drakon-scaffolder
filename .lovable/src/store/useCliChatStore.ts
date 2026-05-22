@@ -2,19 +2,9 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 import { sendToCliAgent } from "@/lib/agent-api";
+import { generateId } from "@/lib/utils";
 import { getCliAgentsConfig } from "@/lib/settings-storage";
 import type { CliAgentId, CliMessage } from "@/types/agent-chat";
-
-function nextId(): string {
-  try {
-    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-      return crypto.randomUUID();
-    }
-  } catch {
-    // ignore
-  }
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
 
 interface CliChatState {
   selectedAgent: CliAgentId;
@@ -39,7 +29,7 @@ export const useCliChatStore = create<CliChatState>()(
       sendMessage: async (content, systemContext) => {
         const existingMessages = get().messages;
         const userMsg: CliMessage = {
-          id: nextId(),
+          id: generateId(),
           role: "user",
           content,
           timestamp: new Date().toISOString(),
@@ -66,7 +56,7 @@ export const useCliChatStore = create<CliChatState>()(
           const reply = await sendToCliAgent(agentCfg.url, apiMessages, agentCfg.apiKey || undefined);
 
           const assistantMsg: CliMessage = {
-            id: nextId(),
+            id: generateId(),
             role: "assistant",
             content: reply,
             timestamp: new Date().toISOString(),

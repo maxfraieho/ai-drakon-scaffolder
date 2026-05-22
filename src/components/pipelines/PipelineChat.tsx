@@ -33,7 +33,7 @@ export function PipelineChat({ pipelineName, ir, className }: PipelineChatProps)
   const clearHistory = useCliChatStore((s) => s.clearHistory);
   const setAgent = useCliChatStore((s) => s.setAgent);
 
-  const cliCfg = getCliAgentsConfig();
+  const cliCfg = useMemo(() => getCliAgentsConfig(), []);
   const agentOptions = [
     { id: "cli1" as const, label: cliCfg.cli1.label || "RPi 3B" },
     { id: "cli2" as const, label: cliCfg.cli2.label || "OrangePi" },
