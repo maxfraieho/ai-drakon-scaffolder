@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 Outlet,
@@ -11,11 +10,11 @@ Scripts,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
-import { readSettings } from "@/lib/settings-storage";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProjectProvider } from "@/context/ProjectContext";
+import { ThemeProvider } from "@/components/theme-provider";
 
 function NotFoundComponent() {
 return (
@@ -29,7 +28,8 @@ The page you're looking for doesn't exist or has been moved.
 <div className="mt-6">
 <Link
 to="/"
-className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm
+font-medium text-primary-foreground transition-colors hover:bg-primary/90"
 >
 Go home
 </Link>
@@ -58,13 +58,17 @@ onClick={() => {
 router.invalidate();
 reset();
 }}
-className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm
+font-medium text-primary-foreground transition-colors hover:bg-primary/90"
 >
 Try again
 </button>
 <a
 href="/"
-className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent" >
+className="inline-flex items-center justify-center rounded-md border border-input
+bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors
+hover:bg-accent"
+>
 Go home
 </a>
 </div>
@@ -79,17 +83,22 @@ meta: [
 { charSet: "utf-8" },
 { name: "viewport", content: "width=device-width, initial-scale=1" },
 { title: "Lovable App" },
-{ name: "description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
+{ name: "description", content: "Setup Assistant prepares a new project environment for
+AI-DRAKON Platform before code import." },
 { name: "author", content: "Lovable" },
 { property: "og:title", content: "Lovable App" },
-{ property: "og:description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
+{ property: "og:description", content: "Setup Assistant prepares a new project environment for
+AI-DRAKON Platform before code import." },
 { property: "og:type", content: "website" },
 { name: "twitter:card", content: "summary" },
 { name: "twitter:site", content: "@Lovable" },
 { name: "twitter:title", content: "Lovable App" },
-{ name: "twitter:description", content: "Setup Assistant prepares a new project environment for AI-DRAKON Platform before code import." },
-{ property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0m MTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
-{ name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0m MTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
+{ name: "twitter:description", content: "Setup Assistant prepares a new project environment for
+AI-DRAKON Platform before code import." },
+{ property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0m
+MTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
+{ name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Y0m
+MTETKm7PDCgD38d3l1I6YPNb2/social-images/social-1778404176364-12767.webp" },
 ],
 links: [
 {
@@ -113,11 +122,13 @@ return (
 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
 <link
 rel="stylesheet"
-href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&famil y=JetBrains+Mono:wght@400;500;600&display=swap"
+href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&famil
+y=JetBrains+Mono:wght@400;500;600&display=swap"
 />
 <link
 rel="stylesheet"
-href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GR AD@20..48,300..700,0..1,-50..200"
+href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GR
+AD@20..48,300..700,0..1,-50..200"
 />
 </head>
 <body>
@@ -131,22 +142,13 @@ href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wg
 function RootComponent() {
 const { queryClient } = Route.useRouteContext();
 
-useEffect(() => {
-try {
-const theme = readSettings().app.theme ?? "dark";
-const resolved = theme === "light" ? "light" : "dark";
-document.documentElement.setAttribute("data-theme", resolved);
-document.documentElement.classList.toggle("dark", resolved === "dark");
-} catch {
-// ignore
-}
-}, []);
 
 const location = useLocation();
 const hideChrome =
 location.pathname === "/login" || location.pathname.startsWith("/pipeline/");
 
 return (
+<ThemeProvider>
 <QueryClientProvider client={queryClient}>
 <ProjectProvider>
 <TooltipProvider delayDuration={200}>
@@ -163,6 +165,7 @@ return (
 </TooltipProvider>
 </ProjectProvider>
 </QueryClientProvider>
+</ThemeProvider>
 );
 }
 

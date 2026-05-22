@@ -29,7 +29,7 @@ DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { cn } from "@/lib/utils";
-import { readSettings, writeSettings } from "@/lib/settings-storage";
+import { useTheme } from "@/components/theme-provider";
 import { clearAccessToken } from "@/lib/auth";
 
 type NavItem = {
@@ -45,30 +45,16 @@ const NAV: NavItem[] = [
 { to: "/settings", label: "Налаштування", icon: SettingsIcon },
 ];
 
-function applyTheme(theme: "light" | "dark") {
-document.documentElement.setAttribute("data-theme", theme);
-document.documentElement.classList.toggle("dark", theme === "dark");
-}
 
 export function AppHeader() {
 const location = useLocation();
 const navigate = useNavigate();
 const [mobileOpen, setMobileOpen] = useState(false);
 const [agentsOpen, setAgentsOpen] = useState(false);
-const [theme, setTheme] = useState<"light" | "dark">("dark");
-
-useEffect(() => {
-const t = readSettings().app.theme;
-const resolved: "light" | "dark" = t === "light" ? "light" : "dark";
-setTheme(resolved);
-}, []);
+const { theme, setTheme } = useTheme();
 
 const toggleTheme = () => {
-const next = theme === "dark" ? "light" : "dark";
-setTheme(next);
-const s = readSettings();
-writeSettings({ ...s, app: { ...s.app, theme: next } });
-applyTheme(next);
+setTheme(theme === "dark" ? "light" : "dark");
 };
 
 const logout = () => {
