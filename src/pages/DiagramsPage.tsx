@@ -371,7 +371,10 @@ selectedName={selectedIrName}
 
 <button
 type="button"
-onClick={() => setCol2Collapsed(v => !v)}
+onClick={() => {
+setCol2Collapsed(v => !v);
+setTimeout(() => window.dispatchEvent(new Event("resize")), 50);
+}}
 title={col2Collapsed ? "Показати файли" : "Сховати файли"}
 className="hidden md:flex h-full w-2 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
 >

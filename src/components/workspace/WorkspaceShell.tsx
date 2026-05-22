@@ -357,6 +357,7 @@ onClick={() => {
 const next = !navCollapsed;
 setNavCollapsed(next);
 try { localStorage.setItem("nav_collapsed", String(next)); } catch {}
+setTimeout(() => window.dispatchEvent(new Event("resize")), 210);
 }}
 title={navCollapsed ? "Показати навігацію" : "Сховати навігацію"}
 className="hidden md:flex h-full w-2 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
