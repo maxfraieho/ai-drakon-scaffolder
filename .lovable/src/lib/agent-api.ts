@@ -159,15 +159,18 @@ export async function sendToCliAgent(
   url: string,
   messages: CliApiMessage[],
   apiKey?: string,
+  onChunk?: (chunk: string) => void,
 ): Promise<string> {
   const base = url.replace(/\/+$/, "");
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
 
+  const useStream = typeof onChunk === "function";
+
   const resp = await fetch(`${base}/v1/chat/completions`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ model: "cli-cc/claude-sonnet-4-6", messages, stream: false }),
+    body: JSON.stringify({ model: "cli-cc/claude-sonnet-4-6", messages, stream: useStream }),
     signal: AbortSignal.timeout(120_000),
   });
 
@@ -176,9 +179,45 @@ export async function sendToCliAgent(
     throw new Error(`CLI Agent ${resp.status}: ${text}`);
   }
 
-  const data = await resp.json();
-  const content = data?.choices?.[0]?.message?.content;
-  if (typeof content !== "string") throw new Error("CLI Agent: unexpected response format");
-  return content;
+  if (!useStream) {
+    const data = await resp.json();
+    const content = data?.choices?.[0]?.message?.content;
+    if (typeof content !== "string") throw new Error("CLI Agent: unexpected response format");
+    return content;
+  }
+
+  const reader = resp.body?.getReader();
+  if (!reader) throw new Error("CLI Agent: no response body");
+
+  const decoder = new TextDecoder();
+  let full = "";
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop() ?? "";
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6).trim();
+      if (data === "[DONE]") continue;
+      try {
+        const json = JSON.parse(data) as { choices?: Array<{ delta?: { content?: string } }> };
+        const chunk = json.choices?.[0]?.delta?.content;
+        if (typeof chunk === "string" && chunk) {
+          full += chunk;
+          onChunk(chunk);
+        }
+      } catch {
+        // ignore malformed SSE chunks
+      }
+    }
+  }
+
+  return full;
 }
 
