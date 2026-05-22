@@ -37,6 +37,15 @@ export const useCliChatStore = create<CliChatState>()(
 
         set({ messages: [...existingMessages, userMsg], loading: true, error: null });
 
+        const assistantId = generateId();
+        const assistantMsg: CliMessage = {
+          id: assistantId,
+          role: "assistant",
+          content: "",
+          timestamp: new Date().toISOString(),
+        };
+        set((s) => ({ messages: [...s.messages, assistantMsg] }));
+
         try {
           const cfg = getCliAgentsConfig();
           const { selectedAgent } = get();
@@ -53,17 +62,16 @@ export const useCliChatStore = create<CliChatState>()(
             }
           }
 
-          const reply = await sendToCliAgent(agentCfg.url, apiMessages, agentCfg.apiKey || undefined);
-
-          const assistantMsg: CliMessage = {
-            id: generateId(),
-            role: "assistant",
-            content: reply,
-            timestamp: new Date().toISOString(),
-          };
-
-          set((s) => ({ messages: [...s.messages, assistantMsg] }));
+          await sendToCliAgent(agentCfg.url, apiMessages, agentCfg.apiKey || undefined, (chunk) => {
+            set((s) => ({
+              messages: s.messages.map((m) =>
+                m.id === assistantId ? { ...m, content: m.content + chunk } : m,
+              ),
+            }));
+          });
         } catch (e) {
+          set((s) => ({ messages: s.messages.filter((m) => m.id !== assistantId) }));
+
           const raw = e instanceof Error ? e.message : String(e);
           let friendly = raw;
           if (raw.includes("Failed to fetch") || raw.includes("NetworkError") || raw.includes("Load failed")) {

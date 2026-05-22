@@ -63,18 +63,18 @@ export function PipelineChat({ pipelineName, ir, className }: PipelineChatProps)
 
   return (
     <div className={cn("flex h-full flex-col bg-background", className)}>
-      <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-3 py-2">
+      <div className="flex items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-3 py-2">
         <div className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
           Agent CLI
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="h-5 text-[10px]">
+        <div className="flex min-w-0 items-center gap-1.5">
+          <Badge variant="outline" className="h-5 max-w-[40vw] truncate text-[10px] md:max-w-none">
             {pipelineName}
           </Badge>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-5 gap-1 px-2 text-[10px]">
-                {selectedLabel}
+              <Button variant="ghost" size="sm" className="h-5 max-w-[42vw] gap-1 px-2 text-[10px] md:max-w-none">
+                <span className="truncate">{selectedLabel}</span>
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -122,7 +122,14 @@ export function PipelineChat({ pipelineName, ir, className }: PipelineChatProps)
           ))}
 
           {loading && (
-            <div className="text-[11px] text-muted-foreground">{selectedLabel} відповідає…</div>
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <span className="inline-flex gap-0.5">
+                <span className="animate-bounce [animation-delay:0ms]">·</span>
+                <span className="animate-bounce [animation-delay:150ms]">·</span>
+                <span className="animate-bounce [animation-delay:300ms]">·</span>
+              </span>
+              {selectedLabel} генерує…
+            </div>
           )}
 
           {error && (
