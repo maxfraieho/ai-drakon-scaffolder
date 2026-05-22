@@ -167,7 +167,7 @@ export async function sendToCliAgent(
   const resp = await fetch(`${base}/v1/chat/completions`, {
     method: "POST",
     headers,
-    body: JSON.stringify({ model: "Claude", messages, stream: false }),
+    body: JSON.stringify({ model: "cli-cc/claude-sonnet-4-6", messages, stream: false }),
     signal: AbortSignal.timeout(120_000),
   });
 
