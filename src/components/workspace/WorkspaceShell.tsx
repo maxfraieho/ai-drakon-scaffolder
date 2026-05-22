@@ -359,7 +359,7 @@ setNavCollapsed(next);
 try { localStorage.setItem("nav_collapsed", String(next)); } catch {}
 }}
 title={navCollapsed ? "Показати навігацію" : "Сховати навігацію"}
-className="hidden md:flex h-full w-4 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-white/5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+className="hidden md:flex h-full w-2 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
 >
 {navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
 </button>
