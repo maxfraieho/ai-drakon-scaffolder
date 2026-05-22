@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import Editor from "@monaco-editor/react";
+import { useTheme } from "@/components/theme-provider";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
@@ -47,6 +48,8 @@ onClose,
 diagramIr,
 diagramName,
 }: CodeGenerationPanelProps) {
+  const { theme } = useTheme();
+  const monacoTheme = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "vs-dark" : "vs-light";
 const [lang, setLang] = useState<Lang>("python");
 const [description, setDescription] = useState("");
 const [status, setStatus] = useState<Status>("idle");
@@ -484,8 +487,7 @@ refresh
 height="100%"
 language={MONACO_LANG[lang]}
 value={result.code}
-theme={typeof document !== "undefined" &&
-document.documentElement.classList.contains("dark") ? "vs-dark" : "vs-light"}
+theme={monacoTheme}
 options={{
 readOnly: true,
 minimap: { enabled: false },

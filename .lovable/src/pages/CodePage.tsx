@@ -4,13 +4,29 @@ import {
   Folder, Play, Save, Loader2, AlertCircle, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import Editor from "@monaco-editor/react";
+import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { getGithubConfig } from "@/lib/settings-storage";
 import { startAnalysis, pollJob, type AnalyzeResult } from "@/lib/pipeline-api";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+
+
+const EXT_TO_LANG: Record<string, string> = {
+  py: "python", ts: "typescript", tsx: "typescript",
+  js: "javascript", jsx: "javascript", json: "json",
+  yaml: "yaml", yml: "yaml", md: "markdown", sh: "shell",
+  html: "html", css: "css", scss: "css", sql: "sql",
+  rs: "rust", go: "go", java: "java", cpp: "cpp", c: "c",
+  toml: "ini", txt: "plaintext",
+};
+
+function detectLang(path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_TO_LANG[ext] ?? "plaintext";
+}
 
 // ── File tree ────────────────────────────────────────────────────────────────
 
@@ -168,6 +184,8 @@ export default function CodePage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [treeCollapsed, setTreeCollapsed] = useState(false);
+  const { theme } = useTheme();
+  const monacoTheme = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "vs-dark" : "vs-light";
 
   // Load file from GitHub
   const openFile = useCallback(async (path: string) => {
@@ -321,16 +339,24 @@ export default function CodePage() {
           </Button>
         </div>
 
-        <Textarea
+        <Editor
+          height="100%"
+          language={detectLang(filePath)}
           value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder={"# Виберіть файл з дерева або вставте код\n\ndef my_function(x, y):\n    if x > 0:\n        return x + y\n    return y"}
-          className={cn(
-            "flex-1 resize-none rounded-none border-0 bg-[var(--bg-base)] font-mono text-[12px] text-[var(--text-primary)] p-4",
-            "focus-visible:ring-0 focus-visible:ring-offset-0 leading-relaxed",
-            "placeholder:text-[var(--text-muted)] placeholder:opacity-40",
-          )}
-          spellCheck={false}
+          theme={monacoTheme}
+          onChange={(v) => setCode(v ?? "")}
+          options={{
+            minimap: { enabled: false },
+            scrollBeyondLastLine: false,
+            fontSize: 12,
+            lineHeight: 18,
+            fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+            fontLigatures: true,
+            padding: { top: 12, bottom: 12 },
+            wordWrap: "on",
+            scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
+            overviewRulerLanes: 0,
+          }}
         />
       </div>
 
