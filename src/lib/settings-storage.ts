@@ -30,6 +30,10 @@ drakonUrl: "https://drakon-agent.exodus.pp.ua",
 architectUrl: "https://architect-agent.exodus.pp.ua",
 docsUrl: "https://docs-agent.exodus.pp.ua",
 },
+cliAgents: {
+cli1: { url: "https://claude.exodus.pp.ua", label: "RPi 3B", apiKey: "" },
+cli2: { url: "https://claude2.exodus.pp.ua", label: "OrangePi", apiKey: "" },
+},
 };
 
 const LEGACY_GITHUB_STORAGE_KEY = "github.lastRepo";
@@ -73,6 +77,13 @@ const n8n = isObject(parsed.n8n) ? parsed.n8n : {};
 const app = isObject(parsed.app) ? parsed.app : {};
 const minio = isObject(parsed.minio) ? parsed.minio : {};
 const agents = isObject(parsed.agents) ? parsed.agents : {};
+const cliAgents = isObject(parsed.cliAgents) ? parsed.cliAgents : {};
+const cli1 = isObject((cliAgents as Record<string, unknown>).cli1)
+? (cliAgents as Record<string, Record<string, unknown>>).cli1
+: {};
+const cli2 = isObject((cliAgents as Record<string, unknown>).cli2)
+? (cliAgents as Record<string, Record<string, unknown>>).cli2
+: {};
 
 return {
 github: {
@@ -128,6 +139,18 @@ typeof agents.docsUrl === "string" && agents.docsUrl.startsWith("https://")
 ? agents.docsUrl
 : DEFAULT_SETTINGS.agents.docsUrl,
 },
+cliAgents: {
+cli1: {
+url: typeof cli1.url === "string" && cli1.url ? cli1.url : DEFAULT_SETTINGS.cliAgents.cli1.url,
+label: typeof cli1.label === "string" ? cli1.label : DEFAULT_SETTINGS.cliAgents.cli1.label,
+apiKey: typeof cli1.apiKey === "string" ? cli1.apiKey : "",
+},
+cli2: {
+url: typeof cli2.url === "string" && cli2.url ? cli2.url : DEFAULT_SETTINGS.cliAgents.cli2.url,
+label: typeof cli2.label === "string" ? cli2.label : DEFAULT_SETTINGS.cliAgents.cli2.label,
+apiKey: typeof cli2.apiKey === "string" ? cli2.apiKey : "",
+},
+},
 };
 } catch {
 return DEFAULT_SETTINGS;
@@ -163,5 +186,9 @@ return readSettings().minio;
 
 export function getAgentsConfig(): AppSettings["agents"] {
 return readSettings().agents;
+}
+
+export function getCliAgentsConfig(): AppSettings["cliAgents"] {
+return readSettings().cliAgents;
 }
 
