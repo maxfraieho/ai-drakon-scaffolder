@@ -1,23 +1,222 @@
-import { useState, useRef } from "react";
-import { FileCode, Github, Play, ArrowRight, Copy, Check } from "lucide-react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import {
+  ChevronLeft, ChevronRight, Copy, Check, FileCode, FolderOpen,
+  Folder, Play, Save, Loader2, AlertCircle, RefreshCw,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
+import { getGithubConfig } from "@/lib/settings-storage";
 import { startAnalysis, pollJob, type AnalyzeResult } from "@/lib/pipeline-api";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 
+// ── File tree ────────────────────────────────────────────────────────────────
+
+interface TreeEntry {
+  name: string;
+  path: string;
+  type: "file" | "dir";
+}
+
+function FileTree({
+  owner, repo, branch, token,
+  onFileSelect, selectedPath,
+}: {
+  owner: string; repo: string; branch: string; token: string;
+  onFileSelect: (path: string) => void;
+  selectedPath: string;
+}) {
+  const [entries, setEntries] = useState<TreeEntry[]>([]);
+  const [currentPath, setCurrentPath] = useState("");
+  const [pathStack, setPathStack] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async (path: string) => {
+    if (!owner || !repo || !token) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await api.githubListTree(owner, repo, path, branch, token);
+      if (res.success) {
+        const sorted = [...res.entries].sort((a, b) => {
+          if (a.type !== b.type) return a.type === "dir" ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        });
+        setEntries(sorted);
+      } else {
+        setError("Не вдалося завантажити");
+      }
+    } catch {
+      setError("Помилка з'єднання");
+    } finally {
+      setLoading(false);
+    }
+  }, [owner, repo, branch, token]);
+
+  useEffect(() => { load(""); }, [load]);
+
+  const enterDir = (entry: TreeEntry) => {
+    setPathStack((s) => [...s, currentPath]);
+    setCurrentPath(entry.path);
+    load(entry.path);
+  };
+
+  const goBack = () => {
+    const prev = pathStack[pathStack.length - 1] ?? "";
+    setPathStack((s) => s.slice(0, -1));
+    setCurrentPath(prev);
+    load(prev);
+  };
+
+  const refresh = () => load(currentPath);
+
+  if (!owner || !repo || !token) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-2 px-3">
+        <AlertCircle className="h-4 w-4 text-[var(--text-muted)]" />
+        <span className="font-mono text-[9px] text-[var(--text-muted)] text-center">
+          Налаштуйте GitHub у Settings
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
+        {pathStack.length > 0 && (
+          <button
+            type="button"
+            onClick={goBack}
+            className="h-5 w-5 flex items-center justify-center rounded hover:bg-white/5 text-[var(--text-muted)]"
+          >
+            <ChevronLeft className="h-3 w-3" />
+          </button>
+        )}
+        <span className="font-mono text-[9px] text-[var(--text-muted)] truncate flex-1">
+          {currentPath || repo}
+        </span>
+        <button
+          type="button"
+          onClick={refresh}
+          className="h-5 w-5 flex items-center justify-center rounded hover:bg-white/5 text-[var(--text-muted)]"
+        >
+          <RefreshCw className={cn("h-2.5 w-2.5", loading && "animate-spin")} />
+        </button>
+      </div>
+
+      {/* Entries */}
+      <div className="flex-1 overflow-y-auto py-1">
+        {error && (
+          <div className="px-3 py-2 font-mono text-[9px] text-red-400">{error}</div>
+        )}
+        {!loading && !error && entries.length === 0 && (
+          <div className="px-3 py-2 font-mono text-[9px] text-[var(--text-muted)]">
+            Порожня папка
+          </div>
+        )}
+        {entries.map((entry) => (
+          <button
+            key={entry.path}
+            type="button"
+            onClick={() => entry.type === "dir" ? enterDir(entry) : onFileSelect(entry.path)}
+            className={cn(
+              "w-full flex items-center gap-1.5 px-2 py-1 text-left transition-colors",
+              entry.type === "file" && selectedPath === entry.path
+                ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
+                : "hover:bg-white/5 text-[var(--text-secondary)]",
+            )}
+          >
+            {entry.type === "dir"
+              ? <FolderOpen className="h-3 w-3 shrink-0 text-[var(--accent-amber)]/70" />
+              : <FileCode className="h-3 w-3 shrink-0 text-[var(--text-muted)]" />
+            }
+            <span className="font-mono text-[10px] truncate">{entry.name}</span>
+            {entry.type === "dir" && (
+              <ChevronRight className="h-2.5 w-2.5 shrink-0 ml-auto text-[var(--text-muted)]" />
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Code page ─────────────────────────────────────────────────────────────────
+
 export default function CodePage() {
   const navigate = useNavigate();
+  const ghCfg = getGithubConfig();
+  const owner = ghCfg.owner || ghCfg.repo.split("/")[0] || "";
+  const repo = ghCfg.repo.includes("/") ? ghCfg.repo.split("/")[1] : ghCfg.repo;
+  const branch = ghCfg.branch || "main";
+  const token = ghCfg.token;
+
   const [code, setCode] = useState("");
   const [filePath, setFilePath] = useState("untitled.py");
+  const [fileSha, setFileSha] = useState<string | null>(null);
+  const [loadingFile, setLoadingFile] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
-  const [copied, setCopied] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const analyze = async () => {
-    if (!code.trim()) { toast.error("Вставте код для аналізу"); return; }
+  const [treeCollapsed, setTreeCollapsed] = useState(false);
+
+  // Load file from GitHub
+  const openFile = useCallback(async (path: string) => {
+    if (!owner || !repo || !token) return;
+    setLoadingFile(true);
+    try {
+      const res = await api.githubGetFile(owner, repo, path, branch, token);
+      if (res.success) {
+        setCode(res.content);
+        setFilePath(path);
+        setFileSha(res.sha);
+        setResult(null);
+      } else {
+        toast.error("Не вдалося завантажити файл");
+      }
+    } catch {
+      toast.error("Помилка завантаження файлу");
+    } finally {
+      setLoadingFile(false);
+    }
+  }, [owner, repo, branch, token]);
+
+  // Save to git
+  const saveToGit = useCallback(async () => {
+    if (!owner || !repo || !token) {
+      toast.error("Налаштуйте GitHub у Settings");
+      return;
+    }
+    if (!code.trim()) { toast.error("Файл порожній"); return; }
+    setSaving(true);
+    try {
+      const message = `edit(${filePath.split("/").pop()}): update via AI-DRAKON code editor`;
+      const res = await api.githubCommitFile(owner, repo, filePath, code, message, branch, token);
+      if (res.success) {
+        toast.success("Збережено в git");
+        if (res.commitSha) setFileSha(res.commitSha);
+      } else {
+        toast.error("Помилка збереження в git");
+      }
+    } catch {
+      toast.error("Помилка збереження");
+    } finally {
+      setSaving(false);
+    }
+  }, [owner, repo, branch, token, filePath, code]);
+
+  // Run Pipeline A
+  const analyze = useCallback(async () => {
+    if (!code.trim()) { toast.error("Код порожній"); return; }
     setAnalyzing(true);
     setResult(null);
     try {
@@ -28,7 +227,7 @@ export default function CodePage() {
         if (attempts > 60) {
           clearInterval(pollRef.current!);
           setAnalyzing(false);
-          toast.error("Timeout — агент не відповів");
+          toast.error("Timeout");
           return;
         }
         try {
@@ -48,12 +247,7 @@ export default function CodePage() {
       setAnalyzing(false);
       toast.error("Не вдалося запустити аналіз");
     }
-  };
-
-  const goToDiagram = (fn: AnalyzeResult["drakon_ir"][number]) => {
-    sessionStorage.setItem("pending_ir", JSON.stringify(fn));
-    navigate({ to: "/diagrams" });
-  };
+  }, [code, filePath]);
 
   const copyCode = () => {
     navigator.clipboard.writeText(code);
@@ -61,51 +255,87 @@ export default function CodePage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const goToDiagram = (fn: AnalyzeResult["drakon_ir"][number]) => {
+    sessionStorage.setItem("pending_ir", JSON.stringify(fn));
+    navigate({ to: "/diagrams" });
+  };
+
   return (
     <div className="flex h-full overflow-hidden bg-[var(--bg-base)]">
+      {/* File tree panel */}
+      <div className={cn(
+        "shrink-0 flex flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
+        treeCollapsed ? "w-0 border-r-0" : "w-44",
+      )}>
+        <div className="px-2 py-1.5 border-b border-[var(--border-subtle)] shrink-0">
+          <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
+            {repo || "Файли проекту"}
+          </span>
+        </div>
+        <FileTree
+          owner={owner} repo={repo} branch={branch} token={token}
+          onFileSelect={openFile}
+          selectedPath={filePath}
+        />
+      </div>
+
+      {/* Toggle tree */}
+      <button
+        type="button"
+        onClick={() => setTreeCollapsed((v) => !v)}
+        className="h-full w-2 shrink-0 flex items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-muted)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
+        title={treeCollapsed ? "Показати файли" : "Сховати файли"}
+      >
+        {treeCollapsed
+          ? <ChevronRight className="h-3 w-3" />
+          : <ChevronLeft className="h-3 w-3" />
+        }
+      </button>
+
       {/* Editor */}
       <div className="flex flex-col flex-1 min-w-0">
         <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
-          <FileCode className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
+          <FileCode className="h-3.5 w-3.5 text-[var(--accent-amber)] shrink-0" />
           <input
             value={filePath}
             onChange={(e) => setFilePath(e.target.value)}
             className="font-mono text-[11px] text-[var(--text-secondary)] bg-transparent outline-none flex-1 min-w-0"
             placeholder="path/to/file.py"
           />
+          {loadingFile && <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)] shrink-0" />}
           <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 gap-1 font-mono text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2"
+            variant="ghost" size="sm"
+            className="h-6 gap-1 font-mono text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2 shrink-0"
             onClick={copyCode}
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
           </Button>
           <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 gap-1 font-mono text-[10px] text-[var(--text-muted)] hover:text-[var(--text-primary)] px-2"
+            variant="ghost" size="sm"
+            disabled={saving || !token}
+            onClick={saveToGit}
+            className="h-6 gap-1 font-mono text-[10px] text-[var(--text-muted)] hover:text-green-400 px-2 shrink-0"
+            title={token ? "Зберегти в git" : "Потрібен GitHub токен в Settings"}
           >
-            <Github className="h-3 w-3" />
-            GitHub
+            {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
           </Button>
         </div>
 
         <Textarea
           value={code}
           onChange={(e) => setCode(e.target.value)}
-          placeholder={"# Вставте Python-код для аналізу\n\ndef my_function(x, y):\n    if x > 0:\n        return x + y\n    return y"}
+          placeholder={"# Виберіть файл з дерева або вставте код\n\ndef my_function(x, y):\n    if x > 0:\n        return x + y\n    return y"}
           className={cn(
             "flex-1 resize-none rounded-none border-0 bg-[var(--bg-base)] font-mono text-[12px] text-[var(--text-primary)] p-4",
             "focus-visible:ring-0 focus-visible:ring-offset-0 leading-relaxed",
-            "placeholder:text-[var(--text-muted)] placeholder:opacity-50",
+            "placeholder:text-[var(--text-muted)] placeholder:opacity-40",
           )}
           spellCheck={false}
         />
       </div>
 
-      {/* Right panel: Pipeline A mini */}
-      <div className="w-56 shrink-0 flex flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+      {/* Pipeline A panel */}
+      <div className="w-48 shrink-0 flex flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]">
         <div className="px-3 py-2 border-b border-[var(--border-subtle)]">
           <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
             Pipeline A
@@ -123,14 +353,9 @@ export default function CodePage() {
           </Button>
 
           {analyzing && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)] animate-pulse" />
-                <span className="font-mono text-[10px] text-[var(--text-muted)]">architect-agent</span>
-              </div>
-              <div className="font-mono text-[9px] text-[var(--text-muted)] pl-3.5">
-                Обчислення CC...
-              </div>
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)] animate-pulse" />
+              <span className="font-mono text-[10px] text-[var(--text-muted)]">architect-agent</span>
             </div>
           )}
 
@@ -150,7 +375,7 @@ export default function CodePage() {
                     <span className="font-mono text-[10px] text-[var(--text-primary)] break-all leading-tight">
                       {fn.name.split(".").pop()}
                     </span>
-                    <ArrowRight className="h-3 w-3 text-[var(--text-muted)] group-hover:text-[var(--accent-amber)] shrink-0 mt-0.5" />
+                    <ChevronRight className="h-3 w-3 text-[var(--text-muted)] group-hover:text-[var(--accent-amber)] shrink-0 mt-0.5" />
                   </div>
                   {fn.cyclomatic_complexity !== undefined && (
                     <div className="mt-1 flex items-center gap-2">
