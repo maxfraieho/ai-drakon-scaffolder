@@ -150,3 +150,35 @@ corrected_ir: correctedIr ?? null,
 });
 }
 
+export interface CliMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+export async function sendToCliAgent(
+  url: string,
+  messages: CliMessage[],
+  apiKey?: string,
+): Promise<string> {
+  const base = url.replace(/\/+$/, "");
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (apiKey) headers.Authorization = `Bearer ${apiKey}`;
+
+  const resp = await fetch(`${base}/v1/chat/completions`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ model: "claude", messages, stream: false }),
+    signal: AbortSignal.timeout(120_000),
+  });
+
+  if (!resp.ok) {
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(`CLI Agent ${resp.status}: ${text}`);
+  }
+
+  const data = await resp.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (typeof content !== "string") throw new Error("CLI Agent: unexpected response format");
+  return content;
+}
+
