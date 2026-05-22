@@ -282,8 +282,38 @@ const level = selectedDiagram?.diagram.metadata?.diagramLevel;
 
 return (
 <div className="flex h-full w-full overflow-hidden">
-<div className="flex h-full flex-col overflow-hidden border-r border-[var(--border-subtle)]"
-style={{width: 220}}>
+<div className="flex shrink-0 border-b border-[var(--border-subtle)] md:hidden">
+<button
+className={cn(
+"flex-1 py-2 text-[11px] font-mono uppercase tracking-widest transition-colors",
+!showEditor
+? "border-b-2 border-[var(--accent-amber)] text-[var(--accent-amber)]"
+: "text-[var(--text-muted)]",
+)}
+onClick={() => setShowEditor(false)}
+>
+Файли
+</button>
+<button
+className={cn(
+"flex-1 py-2 text-[11px] font-mono uppercase tracking-widest transition-colors",
+showEditor
+? "border-b-2 border-[var(--accent-amber)] text-[var(--accent-amber)]"
+: "text-[var(--text-muted)]",
+)}
+onClick={() => setShowEditor(true)}
+disabled={!selectedDiagram}
+>
+Редактор
+</button>
+</div>
+<div
+className={cn(
+"h-full flex-col overflow-hidden border-r border-[var(--border-subtle)]",
+showEditor ? "hidden md:flex" : "flex",
+)}
+style={{width: 220}}
+>
 <div className="flex h-7 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
 <button
 onClick={() => handleSwitchMode("local")}
@@ -332,7 +362,7 @@ selectedName={selectedIrName}
 </div>
 
 {/* CENTER */}
-<section className="flex flex-1 min-w-0 flex-col overflow-hidden">
+<section className={cn("flex flex-1 min-w-0 flex-col overflow-hidden", showEditor ? "flex" : "hidden md:flex")}>
 <CanvasToolbar
 diagramName={selectedDiagram?.name}
 level={level}
