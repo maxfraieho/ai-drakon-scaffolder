@@ -71,8 +71,6 @@ typeof window !== "undefined"
 );
 const [showGithubToken, setShowGithubToken] = useState(false);
 const [showN8nToken, setShowN8nToken] = useState(false);
-const [showCli1Token, setShowCli1Token] = useState(false);
-const [showCli2Token, setShowCli2Token] = useState(false);
 const [isCheckingGithub, setIsCheckingGithub] = useState(false);
 const [isCheckingN8n, setIsCheckingN8n] = useState(false);
 const [isLoadingMinio, setIsLoadingMinio] = useState(false);
@@ -95,23 +93,6 @@ localStorage.setItem("docs_repo_path", docsRepoPath);
 localStorage.setItem("docs_repo_name", docsRepoName);
 toast.success("Налаштування документації збережено");
 };
-
-  const handleSaveCliAgents = () => {
-    const urls = [settings.cliAgents.cli1.url.trim(), settings.cliAgents.cli2.url.trim()];
-    if (urls.some((url) => !url.startsWith("https://"))) {
-      toast.error("URL для CLI агентів мають починатися з https://");
-      return;
-    }
-
-    try {
-      writeSettings(settings);
-      toast.success("Налаштування CLI збережено");
-    } catch (error) {
-      toast.error("Не вдалося зберегти CLI налаштування", {
-        description: error instanceof Error ? error.message : "Невідома помилка",
-      });
-    }
-  };
 
 const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner,
 settings.github.token);
