@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, type ElementType } from "react";
 import {
   Check, ChevronRight, Copy, Loader2, Play,
   RefreshCw, RotateCcw, Lightbulb, Code2,
@@ -68,7 +68,7 @@ const STEPS_G: Step[] = [
 ];
 
 const SCENARIO_META: Record<Scenario, {
-  icon: React.ElementType; label: string; desc: string; steps: Step[]; firstStep: StepId;
+  icon: ElementType; label: string; desc: string; steps: Step[]; firstStep: StepId;
 }> = {
   A: { icon: Code2,      label: "Код → Генерація",   desc: "Аналіз → IR → Код",    steps: STEPS_A, firstStep: "code" },
   B: { icon: Lightbulb,  label: "Ідея → Генерація",  desc: "IR з опису фічі",      steps: STEPS_B, firstStep: "idea" },
