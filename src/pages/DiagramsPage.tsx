@@ -53,6 +53,7 @@ const [selectedFolderSlug, setSelectedFolderSlug] = useState<string>(
 );
 const [diagrams, setDiagrams] = useState<Diagram[]>([]);
 const [selectedDiagram, setSelectedDiagram] = useState<Diagram | null>(null);
+const [showEditor, setShowEditor] = useState(false);
 
 const [analysisOpen, setAnalysisOpen] = useState(false);
 const [generationOpen, setGenerationOpen] = useState(false);
@@ -116,6 +117,7 @@ const target = all.find((d) => d.id === pendingId);
 if (target) {
 setViewMode("local");
 setSelectedDiagram(target);
+setShowEditor(true);
 }
 }, []);
 
@@ -316,6 +318,7 @@ onSelectFolder={setSelectedFolderSlug}
 onSelectDiagram={(d) => {
 setSelectedFolderSlug(d.folderId);
 setSelectedDiagram(d);
+setShowEditor(true);
 }}
 onNewDiagram={openNewDiagram}
 onNewFolder={() => setIsCreateFolderOpen(true)}
