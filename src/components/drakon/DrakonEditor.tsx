@@ -394,6 +394,50 @@ widget.redraw();
 }
 }, [isDark, buildConfig, isLoading]);
 
+// Resize observer: re-render canvas when container changes size (panel collapse/expand)
+useEffect(() => {
+const container = containerRef.current;
+if (!container || isLoading) return;
+
+let timer: ReturnType<typeof setTimeout> | null = null;
+
+const observer = new ResizeObserver(() => {
+if (timer) clearTimeout(timer);
+timer = setTimeout(() => {
+if (!widgetRef.current || !containerRef.current) return;
+const widget = widgetRef.current;
+const cont = containerRef.current;
+const rect = cont.getBoundingClientRect();
+if (rect.width < 10 || rect.height < 10) return; // skip while animating to 0
+
+let json: string | null = null;
+try { json = widget.exportJson(); } catch { /* no diagram yet */ }
+const zoom = widget.getZoom();
+
+cont.innerHTML = '';
+const el = widget.render(rect.width, rect.height, buildConfig());
+cont.appendChild(el);
+
+if (json) {
+const data = normWidgetDiagram(
+JSON.parse(json) as Record<string, unknown>
+) as unknown as DrakonDiagram;
+void widget.setDiagram(diagramId, data, editSender).then(() => {
+widget.setZoom(zoom);
+});
+} else {
+widget.redraw();
+}
+}, 60);
+});
+
+observer.observe(container);
+return () => {
+observer.disconnect();
+if (timer) clearTimeout(timer);
+};
+}, [isLoading, buildConfig, diagramId]);
+
 // Escape key exits paste mode or closes context menu
 useEffect(() => {
 const handleKeyDown = (e: KeyboardEvent) => {
