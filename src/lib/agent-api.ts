@@ -210,7 +210,7 @@ export async function sendToCliAgent(
         const chunk = json.choices?.[0]?.delta?.content;
         if (typeof chunk === "string" && chunk) {
           full += chunk;
-          onChunk(chunk);
+          onChunk?.(chunk);
         }
       } catch {
         // ignore malformed SSE chunks
