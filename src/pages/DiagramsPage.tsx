@@ -281,7 +281,7 @@ const itemCount = selectedDiagram?.diagram.items
 const level = selectedDiagram?.diagram.metadata?.diagramLevel;
 
 return (
-<div className="flex h-full w-full overflow-hidden">
+<div className="flex h-full w-full flex-col overflow-hidden md:flex-row">
 <div className="flex shrink-0 border-b border-[var(--border-subtle)] md:hidden">
 <button
 className={cn(
