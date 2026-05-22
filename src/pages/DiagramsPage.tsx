@@ -203,6 +203,12 @@ const updated = {
 };
 upsertDiagramInStorage(updated);
 setSelectedDiagram(updated);
+// Sync to MinIO for cross-device access (skip IR diagrams)
+if (selectedDiagram.folderId !== "__ir__") {
+  void api.saveDiagram(selectedDiagram.folderId, selectedDiagram.id, diagram).catch(() => {
+    toast.error("Збережено локально. MinIO недоступний.");
+  });
+}
 return true;
 }, [selectedDiagram]);
 
