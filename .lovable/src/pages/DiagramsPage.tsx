@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { FileCode2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileCode2 } from "lucide-react";
 
 import { CodeAnalysisPanel } from "@/components/pipeline/CodeAnalysisPanel";
 import { CodeGenerationPanel } from "@/components/pipeline/CodeGenerationPanel";
@@ -54,6 +54,7 @@ const [selectedFolderSlug, setSelectedFolderSlug] = useState<string>(
 const [diagrams, setDiagrams] = useState<Diagram[]>([]);
 const [selectedDiagram, setSelectedDiagram] = useState<Diagram | null>(null);
 const [showEditor, setShowEditor] = useState(false);
+const [col2Collapsed, setCol2Collapsed] = useState(false);
 
 const [analysisOpen, setAnalysisOpen] = useState(false);
 const [generationOpen, setGenerationOpen] = useState(false);
@@ -316,8 +317,9 @@ disabled={!selectedDiagram}
 </div>
 <div
 className={cn(
-"w-full md:w-[220px] md:shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)]",
-showEditor ? "hidden md:flex" : "flex",
+"flex-col overflow-hidden border-r border-[var(--border-subtle)]",
+showEditor ? "hidden" : "flex w-full",
+col2Collapsed ? "md:hidden" : "md:flex md:w-[220px] md:shrink-0",
 )}
 >
 <div className="flex h-7 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
@@ -366,6 +368,15 @@ selectedName={selectedIrName}
 />
 )}
 </div>
+
+<button
+type="button"
+onClick={() => setCol2Collapsed(v => !v)}
+title={col2Collapsed ? "Показати файли" : "Сховати файли"}
+className="hidden md:flex h-full w-4 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-white/5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+>
+{col2Collapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+</button>
 
 {/* CENTER */}
 <section className={cn("flex flex-1 min-w-0 flex-col overflow-hidden", showEditor ? "flex" : "hidden md:flex")}>

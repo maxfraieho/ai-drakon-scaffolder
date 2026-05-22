@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
 Bot,
+ChevronLeft,
+ChevronRight,
 Cog,
 Cpu,
 FileText,
@@ -101,6 +103,9 @@ const [agentsOpen, setAgentsOpen] = useState(false);
 const [mobileNavOpen, setMobileNavOpen] = useState(false);
 const [theme, setTheme] = useState<"light" | "dark">("dark");
 const [cmdOpen, setCmdOpen] = useState(false);
+const [navCollapsed, setNavCollapsed] = useState(() => {
+try { return localStorage.getItem("nav_collapsed") === "true"; } catch { return false; }
+});
 
 useEffect(() => {
 const t = readSettings().app.theme;
@@ -311,7 +316,10 @@ className="font-mono text-[11px] uppercase tracking-wider bg-[var(--color-primar
 
 {/* WORKSPACE BODY */}
 <div className="flex flex-1 min-h-0 overflow-hidden">
-<aside className="hidden md:flex h-full w-60 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+<aside className={cn(
+"hidden md:flex h-full shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
+navCollapsed ? "w-0 border-r-0" : "w-60",
+)}>
 <div className="border-b border-[var(--border-subtle)]">
 <ProjectSelector />
 </div>
@@ -342,6 +350,19 @@ active
 
 <DevCyclePanel />
 </aside>
+
+<button
+type="button"
+onClick={() => {
+const next = !navCollapsed;
+setNavCollapsed(next);
+try { localStorage.setItem("nav_collapsed", String(next)); } catch {}
+}}
+title={navCollapsed ? "Показати навігацію" : "Сховати навігацію"}
+className="hidden md:flex h-full w-4 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] hover:bg-white/5 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+>
+{navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
+</button>
 
 {/* CONTENT SLOT */}
 <main className="flex-1 min-w-0 overflow-hidden">
