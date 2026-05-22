@@ -44,7 +44,7 @@ signal: AbortSignal.timeout(4000),
 });
 if (resp.ok) return true;
 } catch {
-/ fall through /
+// fall through
 }
 // Fallback: ping agent directly
 try {
