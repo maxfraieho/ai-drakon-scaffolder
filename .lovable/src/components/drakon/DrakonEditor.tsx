@@ -61,6 +61,7 @@ parseOwnerRepo,
 saveDiagramToGit,
 saveDiagramToMinio,
 } from '@/lib/mcp/projects';
+import { getGithubConfig } from '@/lib/settings-storage';
 import { toast } from 'sonner';
 import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender,
 DrakonConfig } from '@/types/drakonwidget';
@@ -140,7 +141,7 @@ const [isSaving, setIsSaving] = useState(false);
 
 const [projectFolder, setProjectFolder] = useState<ProjectFolderValue>(() => {
 const d = readProjectFolderDefaults();
-return { ...d, folderSlug: d.folderSlug || folderSlug || '' };
+return { folderSlug: d.folderSlug || folderSlug || '', saveToGit: d.saveToGit };
 });
 const [knownFolders, setKnownFolders] = useState<string[]>([]);
 useEffect(() => {
@@ -492,26 +493,31 @@ toast.error(
 }
 }
 
-// 2) Optional git save
-if (projectFolder.saveToGit && projectFolder.repo.trim() && projectFolder.githubToken.trim()) {
-const ownerRepo = parseOwnerRepo(projectFolder.repo);
+// 2) Optional git save — uses token/repo/branch from Settings
+if (projectFolder.saveToGit) {
+const ghCfg = getGithubConfig();
+if (!ghCfg.token.trim() || !ghCfg.repo.trim()) {
+toast.error('Git save: configure GitHub token and repo in Settings first');
+} else {
+const ownerRepo = parseOwnerRepo(`${ghCfg.owner}/${ghCfg.repo}`);
 if (!ownerRepo) {
-toast.error('Git save: repo must be in "owner/repo" form');
+toast.error('Git save: invalid repo in Settings');
 } else {
 try {
 await saveDiagramToGit({
 owner: ownerRepo.owner,
 repo: ownerRepo.repo,
-branch: projectFolder.branch.trim() || 'main',
+branch: ghCfg.branch || 'main',
 diagramId: effectiveId,
 diagram: diagramData,
-token: projectFolder.githubToken,
+token: ghCfg.token,
 });
 toast.success(`✓ Saved to git: drn/${effectiveId}.json`);
 } catch (err) {
 toast.error(
 `Git save failed: ${err instanceof Error ? err.message : String(err)}`,
 );
+}
 }
 }
 }

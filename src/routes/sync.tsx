@@ -27,6 +27,7 @@ ProjectFolderSection,
 readProjectFolderDefaults,
 type ProjectFolderValue,
 } from "@/components/drakon/ProjectFolderSection";
+import { getGithubConfig } from "@/lib/settings-storage";
 import {
 parseOwnerRepo,
 sanitizeDiagramId,
@@ -232,7 +233,7 @@ const navigate = useNavigate();
 const [folder, setFolder] = useState<string>(() => defaultMinioFolder());
 const [pf, setPf] = useState<ProjectFolderValue>(() => {
 const d = readProjectFolderDefaults();
-return { ...d, folderSlug: d.folderSlug || defaultMinioFolder() };
+return { folderSlug: d.folderSlug || defaultMinioFolder(), saveToGit: d.saveToGit };
 });
 const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 const [isSaving, setIsSaving] = useState(false);
@@ -259,8 +260,9 @@ let okGit = 0;
 let failed = 0;
 const fails: Array<{ id: string; error: string }> = [];
 
-const ownerRepo = pf.saveToGit && pf.repo.trim() && pf.githubToken.trim()
-? parseOwnerRepo(pf.repo)
+const ghCfg = getGithubConfig();
+const ownerRepo = pf.saveToGit && ghCfg.token.trim() && ghCfg.repo.trim()
+? parseOwnerRepo(`${ghCfg.owner}/${ghCfg.repo}`)
 : null;
 
 for (let i = 0; i < items.length; i++) {
@@ -283,10 +285,10 @@ try {
 await saveDiagramToGit({
 owner: ownerRepo.owner,
 repo: ownerRepo.repo,
-branch: pf.branch.trim() || "main",
+branch: ghCfg.branch || "main",
 diagramId: id,
 diagram,
-token: pf.githubToken,
+token: ghCfg.token,
 });
 okGit++;
 } catch (err) {
@@ -334,8 +336,6 @@ className="h-8 text-sm font-mono"
 <ProjectFolderSection
 value={pf}
 onChange={setPf}
-hideFolder
-compact
 />
 
 {progress && (
