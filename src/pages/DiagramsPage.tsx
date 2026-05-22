@@ -310,10 +310,9 @@ disabled={!selectedDiagram}
 </div>
 <div
 className={cn(
-"h-full flex-col overflow-hidden border-r border-[var(--border-subtle)]",
+"w-full md:w-[220px] md:shrink-0 flex-col overflow-hidden border-r border-[var(--border-subtle)]",
 showEditor ? "hidden md:flex" : "flex",
 )}
-style={{width: 220}}
 >
 <div className="flex h-7 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
 <button

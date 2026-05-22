@@ -152,7 +152,7 @@ export function PipelinesPage() {
                   }}
                 >
                   <Bot className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Agent CLI</span>
+                  <span className="sm:hidden">CLI</span><span className="hidden sm:inline">Agent CLI</span>
                   {chatOpen ? (
                     <PanelRightClose className="hidden h-3.5 w-3.5 md:inline" />
                   ) : (
