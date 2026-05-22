@@ -179,6 +179,7 @@ createdAt: new Date().toISOString(),
 updatedAt: new Date().toISOString(),
 diagram: normalizeIrDiagram(name, diagram),
 });
+setShowEditor(true);
 };
 
 const handleSwitchMode = (mode: ViewMode) => {
