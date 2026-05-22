@@ -71,6 +71,8 @@ typeof window !== "undefined"
 );
 const [showGithubToken, setShowGithubToken] = useState(false);
 const [showN8nToken, setShowN8nToken] = useState(false);
+const [showCli1Token, setShowCli1Token] = useState(false);
+const [showCli2Token, setShowCli2Token] = useState(false);
 const [isCheckingGithub, setIsCheckingGithub] = useState(false);
 const [isCheckingN8n, setIsCheckingN8n] = useState(false);
 const [isLoadingMinio, setIsLoadingMinio] = useState(false);
@@ -499,6 +501,150 @@ description: error instanceof Error ? error.message : "Невідома поми
 >
 Зберегти адреси
 </Button>
+</CardContent>
+</Card>
+
+<Card>
+<CardHeader className="pb-3">
+<CardTitle className="text-base">Agent CLI</CardTitle>
+<CardDescription className="text-xs">
+CLI-агенти для Pipeline Chat (CodeProxy OpenAI-compatible).
+</CardDescription>
+</CardHeader>
+<CardContent className="space-y-4">
+<div className="grid gap-4 md:grid-cols-2">
+<div className="space-y-3 rounded-md border border-border p-3">
+<h4 className="text-sm font-medium">cli1</h4>
+<div className="grid gap-2">
+<Label htmlFor="cli1-url">URL</Label>
+<Input
+id="cli1-url"
+value={settings.cliAgents.cli1.url}
+onChange={(event) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: {
+...prev.cliAgents,
+cli1: { ...prev.cliAgents.cli1, url: event.target.value },
+},
+}))
+}
+placeholder="https://claude.exodus.pp.ua"
+/>
+</div>
+<div className="grid gap-2">
+<Label htmlFor="cli1-label">Label</Label>
+<Input
+id="cli1-label"
+value={settings.cliAgents.cli1.label}
+onChange={(event) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: {
+...prev.cliAgents,
+cli1: { ...prev.cliAgents.cli1, label: event.target.value },
+},
+}))
+}
+placeholder="RPi 3B"
+/>
+</div>
+<div className="grid gap-2">
+<Label htmlFor="cli1-key">API Key (optional)</Label>
+<div className="relative">
+<Input
+id="cli1-key"
+type={showCli1Token ? "text" : "password"}
+value={settings.cliAgents.cli1.apiKey}
+onChange={(event) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: {
+...prev.cliAgents,
+cli1: { ...prev.cliAgents.cli1, apiKey: event.target.value },
+},
+}))
+}
+className="pr-10"
+/>
+<button
+type="button"
+className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+onClick={() => setShowCli1Token((prev) => !prev)}
+aria-label="Toggle CLI1 key visibility"
+>
+{showCli1Token ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+</button>
+</div>
+</div>
+</div>
+
+<div className="space-y-3 rounded-md border border-border p-3">
+<h4 className="text-sm font-medium">cli2</h4>
+<div className="grid gap-2">
+<Label htmlFor="cli2-url">URL</Label>
+<Input
+id="cli2-url"
+value={settings.cliAgents.cli2.url}
+onChange={(event) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: {
+...prev.cliAgents,
+cli2: { ...prev.cliAgents.cli2, url: event.target.value },
+},
+}))
+}
+placeholder="https://claude2.exodus.pp.ua"
+/>
+</div>
+<div className="grid gap-2">
+<Label htmlFor="cli2-label">Label</Label>
+<Input
+id="cli2-label"
+value={settings.cliAgents.cli2.label}
+onChange={(event) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: {
+...prev.cliAgents,
+cli2: { ...prev.cliAgents.cli2, label: event.target.value },
+},
+}))
+}
+placeholder="OrangePi"
+/>
+</div>
+<div className="grid gap-2">
+<Label htmlFor="cli2-key">API Key (optional)</Label>
+<div className="relative">
+<Input
+id="cli2-key"
+type={showCli2Token ? "text" : "password"}
+value={settings.cliAgents.cli2.apiKey}
+onChange={(event) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: {
+...prev.cliAgents,
+cli2: { ...prev.cliAgents.cli2, apiKey: event.target.value },
+},
+}))
+}
+className="pr-10"
+/>
+<button
+type="button"
+className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+onClick={() => setShowCli2Token((prev) => !prev)}
+aria-label="Toggle CLI2 key visibility"
+>
+{showCli2Token ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+</button>
+</div>
+</div>
+</div>
+</div>
 </CardContent>
 </Card>
 
