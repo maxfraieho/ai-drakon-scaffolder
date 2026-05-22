@@ -4,14 +4,16 @@ import { persist } from "zustand/middleware";
 import { sendToCliAgent } from "@/lib/agent-api";
 import { generateId } from "@/lib/utils";
 import { getCliAgentsConfig } from "@/lib/settings-storage";
-import type { CliAgentId, CliMessage } from "@/types/agent-chat";
+import type { CliMessage } from "@/types/agent-chat";
 
 interface CliChatState {
-  selectedAgent: CliAgentId;
+  selectedAgent: string;
   messages: CliMessage[];
+  streamingId: string | null;
+  streamingContent: string;
   loading: boolean;
   error: string | null;
-  setAgent: (id: CliAgentId) => void;
+  setAgent: (id: string) => void;
   sendMessage: (content: string, systemContext?: string) => Promise<void>;
   clearHistory: () => void;
 }
@@ -21,6 +23,8 @@ export const useCliChatStore = create<CliChatState>()(
     (set, get) => ({
       selectedAgent: "cli1",
       messages: [],
+      streamingId: null,
+      streamingContent: "",
       loading: false,
       error: null,
 
@@ -34,22 +38,21 @@ export const useCliChatStore = create<CliChatState>()(
           content,
           timestamp: new Date().toISOString(),
         };
-
-        set({ messages: [...existingMessages, userMsg], loading: true, error: null });
-
         const assistantId = generateId();
-        const assistantMsg: CliMessage = {
-          id: assistantId,
-          role: "assistant",
-          content: "",
-          timestamp: new Date().toISOString(),
-        };
-        set((s) => ({ messages: [...s.messages, assistantMsg] }));
+
+        set({
+          messages: [...existingMessages, userMsg],
+          streamingId: assistantId,
+          streamingContent: "",
+          loading: true,
+          error: null,
+        });
 
         try {
-          const cfg = getCliAgentsConfig();
+          const agents = getCliAgentsConfig();
           const { selectedAgent } = get();
-          const agentCfg = cfg[selectedAgent];
+          const agentCfg = agents.find((a) => a.id === selectedAgent) ?? agents[0];
+          if (!agentCfg) throw new Error("Немає налаштованих CLI агентів");
 
           const apiMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [];
           if (systemContext) {
@@ -62,34 +65,45 @@ export const useCliChatStore = create<CliChatState>()(
             }
           }
 
+          let accumulated = "";
           await sendToCliAgent(agentCfg.url, apiMessages, agentCfg.apiKey || undefined, (chunk) => {
-            set((s) => ({
-              messages: s.messages.map((m) =>
-                m.id === assistantId ? { ...m, content: m.content + chunk } : m,
-              ),
-            }));
+            accumulated += chunk;
+            set({ streamingContent: accumulated });
           });
-        } catch (e) {
-          set((s) => ({ messages: s.messages.filter((m) => m.id !== assistantId) }));
 
+          const assistantMsg: CliMessage = {
+            id: assistantId,
+            role: "assistant",
+            content: accumulated,
+            timestamp: new Date().toISOString(),
+          };
+          set((s) => ({
+            messages: [...s.messages, assistantMsg],
+            streamingId: null,
+            streamingContent: "",
+          }));
+        } catch (e) {
           const raw = e instanceof Error ? e.message : String(e);
           let friendly = raw;
           if (raw.includes("Failed to fetch") || raw.includes("NetworkError") || raw.includes("Load failed")) {
-            friendly = "Не вдалося підключитися до CLI агента. Перевірте мережу або налаштування URL.";
+            friendly = "Не вдалося підключитися до CLI агента. Перевірте мережу або URL.";
           } else if (raw.includes("120") || raw.includes("timeout") || raw.includes("AbortError")) {
             friendly = "CLI агент не відповів за 120с. Спробуйте ще раз.";
           }
-          set({ error: friendly });
+          set({ streamingId: null, streamingContent: "", error: friendly });
         } finally {
           set({ loading: false });
         }
       },
 
-      clearHistory: () => set({ messages: [], error: null }),
+      clearHistory: () => set({ messages: [], streamingId: null, streamingContent: "", error: null }),
     }),
     {
       name: "cli_chat_history",
-      partialize: (s) => ({ messages: s.messages, selectedAgent: s.selectedAgent }),
+      partialize: (s) => ({
+        messages: s.messages,
+        selectedAgent: s.selectedAgent,
+      }),
     },
   ),
 );

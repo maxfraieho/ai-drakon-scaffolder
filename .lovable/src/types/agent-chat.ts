@@ -20,8 +20,6 @@ online: boolean;
 url: string;
 }
 
-export type CliAgentId = "cli1" | "cli2";
-
 export interface CliMessage {
 id: string;
 role: "user" | "assistant";
