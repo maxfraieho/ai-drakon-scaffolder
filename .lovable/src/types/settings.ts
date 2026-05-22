@@ -26,5 +26,9 @@ drakonUrl: string;
 architectUrl: string;
 docsUrl: string;
 };
+cliAgents: {
+cli1: { url: string; label: string; apiKey: string };
+cli2: { url: string; label: string; apiKey: string };
+};
 };
 
