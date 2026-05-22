@@ -96,6 +96,23 @@ localStorage.setItem("docs_repo_name", docsRepoName);
 toast.success("Налаштування документації збережено");
 };
 
+const handleSaveCliAgents = () => {
+const urls = [settings.cliAgents.cli1.url.trim(), settings.cliAgents.cli2.url.trim()];
+if (urls.some((url) => !url.startsWith("https://"))) {
+toast.error("URL для CLI агентів мають починатися з https://");
+return;
+}
+
+try {
+writeSettings(settings);
+toast.success("Налаштування CLI збережено");
+} catch (error) {
+toast.error("Не вдалося зберегти CLI налаштування", {
+description: error instanceof Error ? error.message : "Невідома помилка",
+});
+}
+};
+
 const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner,
 settings.github.token);
 const allRepos = mergeWithKnown(repos);
@@ -644,6 +661,11 @@ aria-label="Toggle CLI2 key visibility"
 </div>
 </div>
 </div>
+</div>
+<div className="flex justify-start">
+<Button type="button" size="sm" onClick={handleSaveCliAgents}>
+Зберегти CLI
+</Button>
 </div>
 </CardContent>
 </Card>
