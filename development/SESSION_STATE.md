@@ -150,3 +150,54 @@ a851b86  (попередні зміни Lovable)
 - Верифікувати CF Pages build для `813777e` (оновити токен або перевірити вручну)
 - Перевірити UX в браузері: граф на `/agents` замість горизонтального ряду boxes
 - Розпочати наступний Lovable промт (якщо є) або завершити платформу
+
+
+---
+
+# SESSION STATE UPDATE — 2026-05-22 (сесії 6–8, prompts 46–55)
+
+## Загальний стан після сесій 6-8
+
+| Sprint / Prompt | Опис | Стан |
+|----------------|------|------|
+| Prompts 46–49 | renamed done-* | ✅ DONE |
+| Prompt 50 | activeProject → docs/notes/graph + fetchNotesGraph authHeaders fix | ✅ DONE |
+| Prompt 51 | DiagramsPage → DrakonEditor inline + IR Sheet + full height layout + docs viewport fix | ✅ DONE |
+| Prompt 52 commit b7a8fcf | PipelineChat.tsx NEW + PipelinesPage chatOpen + WorkspaceShell Sync tab removed | ✅ DONE |
+| Prompts 53–54 | Changes via Lovable | ✅ DONE |
+| Prompt 55 commit 3ec63f9 | Refactoring PipelinesPage list→ir→chat + CLI refactor | ✅ DONE |
+| Collapsible panels | feat shell: collapsible sidebar + file panel commit 14ec930 | ✅ DONE |
+| MinIO sync | feat diagrams: diagram saves → MinIO via CF Worker commit b357984 | ✅ DONE |
+| ResizeObserver fix | fix editor: canvas reflow on panel collapse commit f172f7f | ✅ DONE |
+
+## Git log (2026-05-22, топ коміти)
+
+```
+f172f7f  fix editor: ResizeObserver reflows canvas when panels collapse/expand
+d1a38b0  fix shell: dispatch window.resize after panel collapse so canvas reflows
+2c13446  style shell: narrow toggle strips to 8px, accent color on hover
+14ec930  feat shell: collapsible sidebar col1 and file panel col2
+b357984  feat diagrams: sync diagram saves to MinIO via Cloudflare Worker
+a1319dc  fix mobile: DiagramsPage full-width panel + CLI button label on mobile
+3ec63f9  Виконав промт 55 refactoring
+b7a8fcf  Виконано промт 52 UX-автодослідження (12 files, +428 ins)
+c4acb04  code review fixes (6 fixes applied)
+```
+
+## Ключові нові компоненти (після сесії 5)
+
+- PipelineChat.tsx — NEW: useAgentChatStore + IrDiagram.context + architect.session
+- PipelinesPage.tsx — chatOpen.state + Bot toggle + PipelineChat panel
+- WorkspaceShell.tsx — collapsible sidebar/file panel, Sync tab ВИДАЛЕНО
+- MinIO integration для збереження діаграм
+
+## Стан на кінець сесій 2026-05-22
+
+- all.green — bugs.clear
+- Prompts 46–55: всі виконані
+- CF Pages: деплой активний (перевір токен якщо потрібно)
+
+## Наступні кроки
+
+- Перевірити CF Pages build статус після останніх комітів
+- Продовжити prompt-список (56+) або новий sprint
