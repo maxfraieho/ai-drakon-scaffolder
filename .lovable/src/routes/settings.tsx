@@ -71,8 +71,6 @@ typeof window !== "undefined"
 );
 const [showGithubToken, setShowGithubToken] = useState(false);
 const [showN8nToken, setShowN8nToken] = useState(false);
-const [showCli1Token, setShowCli1Token] = useState(false);
-const [showCli2Token, setShowCli2Token] = useState(false);
 const [isCheckingGithub, setIsCheckingGithub] = useState(false);
 const [isCheckingN8n, setIsCheckingN8n] = useState(false);
 const [isLoadingMinio, setIsLoadingMinio] = useState(false);
@@ -94,23 +92,6 @@ const handleSaveDocs = () => {
 localStorage.setItem("docs_repo_path", docsRepoPath);
 localStorage.setItem("docs_repo_name", docsRepoName);
 toast.success("Налаштування документації збережено");
-};
-
-const handleSaveCliAgents = () => {
-const urls = [settings.cliAgents.cli1.url.trim(), settings.cliAgents.cli2.url.trim()];
-if (urls.some((url) => !url.startsWith("https://"))) {
-toast.error("URL для CLI агентів мають починатися з https://");
-return;
-}
-
-try {
-writeSettings(settings);
-toast.success("Налаштування CLI збережено");
-} catch (error) {
-toast.error("Не вдалося зберегти CLI налаштування", {
-description: error instanceof Error ? error.message : "Невідома помилка",
-});
-}
 };
 
 const { repos, loading: reposLoading } = useGithubRepos(settings.github.owner,
@@ -525,148 +506,100 @@ description: error instanceof Error ? error.message : "Невідома поми
 <CardHeader className="pb-3">
 <CardTitle className="text-base">Agent CLI</CardTitle>
 <CardDescription className="text-xs">
-CLI-агенти для Pipeline Chat (CodeProxy OpenAI-compatible).
+CLI-агенти для Pipeline Chat (OpenAI-compatible). Можна додавати будь-яку кількість.
 </CardDescription>
 </CardHeader>
-<CardContent className="space-y-4">
-<div className="grid gap-4 md:grid-cols-2">
-<div className="space-y-3 rounded-md border border-border p-3">
-<h4 className="text-sm font-medium">cli1</h4>
-<div className="grid gap-2">
-<Label htmlFor="cli1-url">URL</Label>
-<Input
-id="cli1-url"
-value={settings.cliAgents.cli1.url}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-cliAgents: {
-...prev.cliAgents,
-cli1: { ...prev.cliAgents.cli1, url: event.target.value },
-},
-}))
-}
-placeholder="https://claude.exodus.pp.ua"
-/>
-</div>
-<div className="grid gap-2">
-<Label htmlFor="cli1-label">Label</Label>
-<Input
-id="cli1-label"
-value={settings.cliAgents.cli1.label}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-cliAgents: {
-...prev.cliAgents,
-cli1: { ...prev.cliAgents.cli1, label: event.target.value },
-},
-}))
-}
-placeholder="RPi 3B"
-/>
-</div>
-<div className="grid gap-2">
-<Label htmlFor="cli1-key">API Key (optional)</Label>
-<div className="relative">
-<Input
-id="cli1-key"
-type={showCli1Token ? "text" : "password"}
-value={settings.cliAgents.cli1.apiKey}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-cliAgents: {
-...prev.cliAgents,
-cli1: { ...prev.cliAgents.cli1, apiKey: event.target.value },
-},
-}))
-}
-className="pr-10"
-/>
-<button
+<CardContent className="space-y-3">
+{settings.cliAgents.map((agent, idx) => (
+<div key={agent.id} className="rounded-md border border-border p-3 space-y-2">
+<div className="flex items-center justify-between">
+<span className="text-xs font-medium text-muted-foreground font-mono">{agent.label || agent.id}</span>
+<Button
 type="button"
-className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-onClick={() => setShowCli1Token((prev) => !prev)}
-aria-label="Toggle CLI1 key visibility"
+variant="ghost"
+size="sm"
+className="h-6 px-2 text-[11px] text-destructive hover:text-destructive"
+onClick={() =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: prev.cliAgents.filter((_, i) => i !== idx),
+}))
+}
 >
-{showCli1Token ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-</button>
-</div>
-</div>
-</div>
-
-<div className="space-y-3 rounded-md border border-border p-3">
-<h4 className="text-sm font-medium">cli2</h4>
-<div className="grid gap-2">
-<Label htmlFor="cli2-url">URL</Label>
-<Input
-id="cli2-url"
-value={settings.cliAgents.cli2.url}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-cliAgents: {
-...prev.cliAgents,
-cli2: { ...prev.cliAgents.cli2, url: event.target.value },
-},
-}))
-}
-placeholder="https://claude2.exodus.pp.ua"
-/>
-</div>
-<div className="grid gap-2">
-<Label htmlFor="cli2-label">Label</Label>
-<Input
-id="cli2-label"
-value={settings.cliAgents.cli2.label}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-cliAgents: {
-...prev.cliAgents,
-cli2: { ...prev.cliAgents.cli2, label: event.target.value },
-},
-}))
-}
-placeholder="OrangePi"
-/>
-</div>
-<div className="grid gap-2">
-<Label htmlFor="cli2-key">API Key (optional)</Label>
-<div className="relative">
-<Input
-id="cli2-key"
-type={showCli2Token ? "text" : "password"}
-value={settings.cliAgents.cli2.apiKey}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-cliAgents: {
-...prev.cliAgents,
-cli2: { ...prev.cliAgents.cli2, apiKey: event.target.value },
-},
-}))
-}
-className="pr-10"
-/>
-<button
-type="button"
-className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
-onClick={() => setShowCli2Token((prev) => !prev)}
-aria-label="Toggle CLI2 key visibility"
->
-{showCli2Token ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-</button>
-</div>
-</div>
-</div>
-</div>
-<div className="flex justify-start">
-<Button type="button" size="sm" onClick={handleSaveCliAgents}>
-Зберегти CLI
+Видалити
 </Button>
 </div>
+<div className="grid gap-2 sm:grid-cols-2">
+<div className="grid gap-1">
+<Label htmlFor={`cli-label-${idx}`} className="text-xs">Назва</Label>
+<Input
+id={`cli-label-${idx}`}
+value={agent.label}
+placeholder="RPi 3B"
+onChange={(e) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: prev.cliAgents.map((a, i) =>
+i === idx ? { ...a, label: e.target.value } : a,
+),
+}))
+}
+/>
+</div>
+<div className="grid gap-1">
+<Label htmlFor={`cli-url-${idx}`} className="text-xs">URL</Label>
+<Input
+id={`cli-url-${idx}`}
+value={agent.url}
+placeholder="https://claude.exodus.pp.ua"
+onChange={(e) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: prev.cliAgents.map((a, i) =>
+i === idx ? { ...a, url: e.target.value } : a,
+),
+}))
+}
+/>
+</div>
+</div>
+<div className="grid gap-1">
+<Label htmlFor={`cli-key-${idx}`} className="text-xs">API Key (optional)</Label>
+<Input
+id={`cli-key-${idx}`}
+type="password"
+value={agent.apiKey}
+placeholder="sk-..."
+onChange={(e) =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: prev.cliAgents.map((a, i) =>
+i === idx ? { ...a, apiKey: e.target.value } : a,
+),
+}))
+}
+/>
+</div>
+</div>
+))}
+
+<Button
+type="button"
+variant="outline"
+size="sm"
+className="w-full text-xs"
+onClick={() =>
+updateSettings((prev) => ({
+...prev,
+cliAgents: [
+...prev.cliAgents,
+{ id: `cli${prev.cliAgents.length + 1}`, url: "", label: "", apiKey: "" },
+],
+}))
+}
+>
++ Додати агент
+</Button>
 </CardContent>
 </Card>
 

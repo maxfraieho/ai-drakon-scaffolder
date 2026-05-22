@@ -8,10 +8,12 @@ import {
 } from "@/lib/graph-pipeline-api";
 import { PipelineDrakonView } from "./PipelineDrakonView";
 import { PipelineChat } from "./PipelineChat";
-import { Bot, PanelRightClose, PanelRightOpen, RefreshCw, Workflow } from "lucide-react";
+import { ArrowLeft, Bot, PanelRightClose, PanelRightOpen, RefreshCw, Workflow } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+type MobileView = "list" | "ir" | "chat";
 
 export function PipelinesPage() {
   const [pipelines, setPipelines] = useState<PipelineInfo[]>([]);
@@ -20,6 +22,7 @@ export function PipelinesPage() {
   const [loading, setLoading] = useState(false);
   const [listLoading, setListLoading] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [mobileView, setMobileView] = useState<MobileView>("list");
 
   const refreshPipelines = () => {
     setListLoading(true);
@@ -36,6 +39,7 @@ export function PipelinesPage() {
   const handleSelect = async (name: string) => {
     setSelected(name);
     setLoading(true);
+    setMobileView("ir");
     try {
       const data = await getPipeline(name);
       setIr(data);
@@ -50,28 +54,25 @@ export function PipelinesPage() {
     if (!selected) return;
     await savePipeline(selected, updatedIr);
     setIr(updatedIr);
-    toast.success("Пайплайн збережено і перезавантажено");
+    toast.success("Пайплайн збережено");
   };
 
   return (
-    <div className="flex h-full flex-col bg-[var(--bg-base)] md:flex-row">
-      {/* Left panel */}
-      <div className="h-52 shrink-0 border-b border-[var(--border-subtle)] md:h-full md:w-56 md:border-b-0 md:border-r flex flex-col">
-        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-[var(--border-subtle)]">
-          <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--accent-amber)]">
-            Пайплайни
-          </span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6"
-            onClick={refreshPipelines}
-            title="Оновити список"
-          >
-            <RefreshCw className={`h-3.5 w-3.5 ${listLoading ? "animate-spin" : ""}`} />
+    <div className="flex h-full flex-col overflow-hidden bg-[var(--bg-base)] md:flex-row">
+      <div
+        className={cn(
+          "flex flex-col border-[var(--border-subtle)] bg-[var(--bg-base)]",
+          mobileView === "list" ? "flex h-full w-full" : "hidden",
+          "md:flex md:h-full md:w-56 md:shrink-0 md:border-r",
+        )}
+      >
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-[var(--border-subtle)] px-3 py-2">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--accent-amber)]">Пайплайни</span>
+          <Button variant="ghost" size="icon" className="h-6 w-6" onClick={refreshPipelines} title="Оновити">
+            <RefreshCw className={cn("h-3.5 w-3.5", listLoading && "animate-spin")} />
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+        <div className="flex-1 space-y-1 overflow-y-auto p-2">
           {!listLoading && pipelines.length === 0 && (
             <div className="rounded border border-[var(--border-subtle)] px-2.5 py-2 text-[11px] font-mono text-[var(--text-muted)]">
               Немає збережених пайплайнів.
@@ -81,65 +82,112 @@ export function PipelinesPage() {
             <button
               key={p.name}
               onClick={() => handleSelect(p.name)}
-              className={`w-full text-left px-3 py-2 rounded font-mono text-[11px] transition-colors ${
+              className={cn(
+                "w-full rounded px-3 py-2.5 text-left font-mono text-[11px] transition-colors",
                 selected === p.name
-                  ? "bg-[var(--accent-amber)]/10 text-[var(--accent-amber)] border border-[var(--accent-amber)]/30"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]"
-              }`}
+                  ? "border border-[var(--accent-amber)]/30 bg-[var(--accent-amber)]/10 text-[var(--accent-amber)]"
+                  : "text-[var(--text-secondary)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-primary)]",
+              )}
             >
-              <Workflow className="inline h-3 w-3 mr-2 opacity-60" />
+              <Workflow className="mr-2 inline h-3 w-3 opacity-60" />
               {p.display_name}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Main */}
-      <div className="flex flex-1 min-w-0">
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 flex-col overflow-hidden",
+          mobileView === "list" ? "hidden md:flex" : "flex",
+        )}
+      >
         {loading && (
-          <div className="flex items-center justify-center h-full text-[var(--text-muted)] font-mono text-xs">
-            <RefreshCw className="h-4 w-4 animate-spin mr-2" /> Завантаження…
+          <div className="flex h-full items-center justify-center font-mono text-xs text-[var(--text-muted)]">
+            <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> Завантаження…
           </div>
         )}
+
+        {!loading && !ir && (
+          <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center font-mono text-sm text-[var(--text-muted)]">
+            <Button variant="ghost" size="sm" className="mb-2 md:hidden" onClick={() => setMobileView("list")}>
+              <ArrowLeft className="mr-1.5 h-4 w-4" />
+              До списку
+            </Button>
+            <div>Обери пайплайн</div>
+          </div>
+        )}
+
         {!loading && ir && selected && (
-          <>
-            <div className={cn("flex min-w-0 flex-1 flex-col", chatOpen && "hidden md:flex")}>
-              <div className="flex h-8 shrink-0 items-center justify-end gap-2 border-b border-[var(--border-subtle)] px-3">
+          <div className="flex min-h-0 flex-1 overflow-hidden">
+            <div
+              className={cn(
+                "flex min-w-0 flex-1 flex-col overflow-hidden",
+                mobileView === "chat" ? "hidden md:flex" : "flex",
+              )}
+            >
+              <div className="flex h-9 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] px-3">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 gap-1.5 text-[11px]"
-                  onClick={() => setChatOpen((v) => !v)}
+                  className="h-6 gap-1 px-2 text-[10px] md:hidden"
+                  onClick={() => setMobileView("list")}
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  Список
+                </Button>
+
+                <div className="flex-1" />
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 gap-1.5 text-[10px]"
+                  onClick={() => {
+                    if (window.innerWidth < 768) {
+                      setMobileView("chat");
+                    } else {
+                      setChatOpen((v) => !v);
+                    }
+                  }}
                 >
                   <Bot className="h-3.5 w-3.5" />
-                  CLI agent
+                  <span className="hidden sm:inline">Agent CLI</span>
                   {chatOpen ? (
-                    <PanelRightClose className="h-3.5 w-3.5" />
+                    <PanelRightClose className="hidden h-3.5 w-3.5 md:inline" />
                   ) : (
-                    <PanelRightOpen className="h-3.5 w-3.5" />
+                    <PanelRightOpen className="hidden h-3.5 w-3.5 md:inline" />
                   )}
                 </Button>
               </div>
-              <div className="min-h-0 flex-1">
-                <PipelineDrakonView
-                  pipelineName={selected}
-                  ir={ir}
-                  onSave={handleSave}
-                />
+
+              <div className="min-h-0 flex-1 overflow-hidden">
+                <PipelineDrakonView pipelineName={selected} ir={ir} onSave={handleSave} />
               </div>
             </div>
 
-            {chatOpen && (
-              <aside className="w-full shrink-0 border-t border-[var(--border-subtle)] md:w-80 md:border-l md:border-t-0">
-                <PipelineChat pipelineName={selected} ir={ir} />
+            {(chatOpen || mobileView === "chat") && (
+              <aside
+                className={cn(
+                  "flex flex-col overflow-hidden border-[var(--border-subtle)]",
+                  mobileView === "chat" ? "h-full w-full" : "hidden",
+                  "md:flex md:h-full md:w-80 md:shrink-0 md:border-l",
+                )}
+              >
+                <PipelineChat
+                  pipelineName={selected}
+                  ir={ir}
+                  className="h-full"
+                  onBack={() => {
+                    if (window.innerWidth < 768) {
+                      setMobileView("ir");
+                    } else {
+                      setChatOpen(false);
+                    }
+                  }}
+                />
               </aside>
             )}
-          </>
-        )}
-        {!loading && !ir && (
-          <div className="flex h-full flex-col items-center justify-center gap-3 px-4 text-center text-[var(--text-muted)] font-mono text-sm">
-            <div>Обери пайплайн зліва</div>
-            <div className="text-[11px]">Після вибору тут відкриється IR-редактор та чат CLI agent.</div>
           </div>
         )}
       </div>

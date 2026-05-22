@@ -53,6 +53,7 @@ const [selectedFolderSlug, setSelectedFolderSlug] = useState<string>(
 );
 const [diagrams, setDiagrams] = useState<Diagram[]>([]);
 const [selectedDiagram, setSelectedDiagram] = useState<Diagram | null>(null);
+const [showEditor, setShowEditor] = useState(false);
 
 const [analysisOpen, setAnalysisOpen] = useState(false);
 const [generationOpen, setGenerationOpen] = useState(false);
@@ -116,6 +117,7 @@ const target = all.find((d) => d.id === pendingId);
 if (target) {
 setViewMode("local");
 setSelectedDiagram(target);
+setShowEditor(true);
 }
 }, []);
 
@@ -177,6 +179,7 @@ createdAt: new Date().toISOString(),
 updatedAt: new Date().toISOString(),
 diagram: normalizeIrDiagram(name, diagram),
 });
+setShowEditor(true);
 };
 
 const handleSwitchMode = (mode: ViewMode) => {
@@ -279,9 +282,39 @@ const itemCount = selectedDiagram?.diagram.items
 const level = selectedDiagram?.diagram.metadata?.diagramLevel;
 
 return (
-<div className="flex h-full w-full overflow-hidden">
-<div className="flex h-full flex-col overflow-hidden border-r border-[var(--border-subtle)]"
-style={{width: 220}}>
+<div className="flex h-full w-full flex-col overflow-hidden md:flex-row">
+<div className="flex shrink-0 border-b border-[var(--border-subtle)] md:hidden">
+<button
+className={cn(
+"flex-1 py-2 text-[11px] font-mono uppercase tracking-widest transition-colors",
+!showEditor
+? "border-b-2 border-[var(--accent-amber)] text-[var(--accent-amber)]"
+: "text-[var(--text-muted)]",
+)}
+onClick={() => setShowEditor(false)}
+>
+Файли
+</button>
+<button
+className={cn(
+"flex-1 py-2 text-[11px] font-mono uppercase tracking-widest transition-colors",
+showEditor
+? "border-b-2 border-[var(--accent-amber)] text-[var(--accent-amber)]"
+: "text-[var(--text-muted)]",
+)}
+onClick={() => setShowEditor(true)}
+disabled={!selectedDiagram}
+>
+Редактор
+</button>
+</div>
+<div
+className={cn(
+"h-full flex-col overflow-hidden border-r border-[var(--border-subtle)]",
+showEditor ? "hidden md:flex" : "flex",
+)}
+style={{width: 220}}
+>
 <div className="flex h-7 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
 <button
 onClick={() => handleSwitchMode("local")}
@@ -316,6 +349,7 @@ onSelectFolder={setSelectedFolderSlug}
 onSelectDiagram={(d) => {
 setSelectedFolderSlug(d.folderId);
 setSelectedDiagram(d);
+setShowEditor(true);
 }}
 onNewDiagram={openNewDiagram}
 onNewFolder={() => setIsCreateFolderOpen(true)}
@@ -329,7 +363,7 @@ selectedName={selectedIrName}
 </div>
 
 {/* CENTER */}
-<section className="flex flex-1 min-w-0 flex-col overflow-hidden">
+<section className={cn("flex flex-1 min-w-0 flex-col overflow-hidden", showEditor ? "flex" : "hidden md:flex")}>
 <CanvasToolbar
 diagramName={selectedDiagram?.name}
 level={level}
