@@ -58,7 +58,7 @@
 --color-text-secondary: var(--text-secondary);
 --color-text-muted: var(--text-muted);
 
-/* ── Stitch / Drakon Logic System tokens ── */
+/ ── Stitch / Drakon Logic System tokens ── /
 --color-surface: #111318;
 --color-surface-container-lowest: #0c0e13;
 --color-surface-container-low: #1a1b21;
@@ -118,34 +118,34 @@ regardless of theme-class plumbing elsewhere in the app. */
 :root,
 .dark {
 --radius: 0.5rem;
-/* Precision Dark — backgrounds */
+/ Precision Dark — backgrounds /
 --bg-base: #0a0b0e;
 --bg-surface: #111318;
 --bg-elevated: #191c23;
 --bg-overlay: #1e2229;
 
-/* Borders */
+/ Borders /
 --border-subtle: rgba(255, 255, 255, 0.06);
 --border-default: rgba(255, 255, 255, 0.10);
 --border-strong: rgba(255, 255, 255, 0.18);
 
-/* Accent — Amber */
+/ Accent — Amber /
 --accent-amber: #f59e0b;
 --accent-dim: rgba(245, 158, 11, 0.15);
 --accent-glow: 0 0 12px rgba(245, 158, 11, 0.35);
 
-/* Semantic */
+/ Semantic /
 --color-error: #ef4444;
 --color-warning: #f59e0b;
 --color-success: #22c55e;
 --color-info: #3b82f6;
 
-/* Text */
+/ Text /
 --text-primary: rgba(255, 255, 255, 0.92);
 --text-secondary: rgba(255, 255, 255, 0.55);
 --text-muted: rgba(255, 255, 255, 0.30);
 
-/* shadcn semantic tokens mapped onto Precision Dark */
+/ shadcn semantic tokens mapped onto Precision Dark /
 --background: var(--bg-base);
 --foreground: var(--text-primary);
 
@@ -190,7 +190,7 @@ regardless of theme-class plumbing elsewhere in the app. */
 --sidebar-ring: var(--accent-amber);
 }
 
-/* Light theme override — accent (amber) intentionally unchanged. */
+/ Light theme override — accent (amber) intentionally unchanged. /
 [data-theme="light"] {
 --bg-base: #f4f5f7;
 --bg-surface: #ffffff;
@@ -210,7 +210,7 @@ regardless of theme-class plumbing elsewhere in the app. */
 
 --primary-foreground: #ffffff;
 
-/* Stitch / Drakon Logic System — light overrides */
+/ Stitch / Drakon Logic System — light overrides /
 --color-surface: #ffffff;
 --color-surface-container-lowest: #f7f8fa;
 --color-surface-container-low: #f0f1f4;
@@ -249,7 +249,7 @@ p{
 text-wrap: pretty;
 }
 
-/* Tabular numerics for monospaced number contexts */
+/ Tabular numerics for monospaced number contexts /
 code,
 kbd,
 samp,
@@ -260,7 +260,7 @@ font-family: var(--font-mono);
 font-variant-numeric: tabular-nums;
 }
 
-/* Custom scrollbars to fit the dark surfaces */
+/ Custom scrollbars to fit the dark surfaces /
 ::-webkit-scrollbar {
 width: 10px;
 height: 10px;
@@ -277,13 +277,13 @@ border: 2px solid var(--bg-base);
 background: rgba(255, 255, 255, 0.18);
 }
 
-/* Selection — amber */
+/ Selection — amber /
 ::selection {
 background: var(--accent-dim);
 color: var(--text-primary);
 }
 
-/* Buttons & interactive elements: subtle press feedback */
+/ Buttons & interactive elements: subtle press feedback /
 button,
 [role="button"],
 a{
@@ -297,7 +297,7 @@ transform: scale(0.96);
 transition-duration: 100ms;
 }
 
-/* Respect reduced motion */
+/ Respect reduced motion /
 @media (prefers-reduced-motion: reduce) {
 *,
 *::before,
@@ -309,7 +309,7 @@ animation-iteration-count: 1 !important;
 }
 }
 
-/* Mission Control — diagram level badges */
+/ Mission Control — diagram level badges /
 .level-badge {
 display: inline-block;
 font-family: var(--font-mono);
@@ -344,11 +344,11 @@ background: transparent;
 color: var(--text-muted);
 border: 1px solid var(--border-subtle);
 }
-/* Hide scrollbars but keep scroll */
+/ Hide scrollbars but keep scroll /
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Stitch / Drakon Logic System utility classes ── */
+/ ── Stitch / Drakon Logic System utility classes ── /
 .material-symbols-outlined {
 font-family: "Material Symbols Outlined";
 font-weight: normal;
@@ -373,7 +373,7 @@ letter-spacing: 0.02em; }
 line-height: 1.4; }
 .font-mono-code { font-family: var(--font-mono); font-size: 12px; line-height: 1.5; }
 
-/* ReactFlow dark-mode override */
+/ ReactFlow dark-mode override /
 .react-flow__controls-button {
 background: var(--color-surface) !important;
 border-color: var(--color-outline-variant) !important;

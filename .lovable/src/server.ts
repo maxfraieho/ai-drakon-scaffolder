@@ -61,7 +61,7 @@ if (!isCatastrophicSsrErrorBody(body, response.status)) {
 return response;
 }
 
-console.error(consumeLastCapturedError() ?? new Error(`h3 swallowed SSR error: ${body}`));
+console.error(consumeLastCapturedError() ?? new Error(h3 swallowed SSR error: ${body}));
 return brandedErrorResponse();
 }
 

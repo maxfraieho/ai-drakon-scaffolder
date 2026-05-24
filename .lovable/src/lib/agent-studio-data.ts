@@ -38,14 +38,18 @@ shortName: "Pipeline A",
 description: "LangGraph StateGraph · 7 вузлів · Ralph Loop (max 3 iter)",
 nodes: [
 { id: "measure_cc", label: "measure_cc", type: "action", icon: "data_object", description:
-"Вимірює цикломатичну складність через radon.complexity.cc_visit(). Повертає максимальний CC по всіх функціях.", hasPrompt: false, isDeterministic: true },
+"Вимірює цикломатичну складність через radon.complexity.cc_visit(). Повертає
+максимальний CC по всіх функціях.", hasPrompt: false, isDeterministic: true },
 { id: "classify", label: "classify_complexity", type: "decision", icon: "call_split", description:
-"Визначає tree_level: primitive (CC≤10) | silhouette (11-20) | branch (21-50) | deep (>50). Обирає шлях: AST або LLM.", hasPrompt: false, isDeterministic: true },
+"Визначає tree_level: primitive (CC≤10) | silhouette (11-20) | branch (21-50) | deep (>50).
+Обирає шлях: AST або LLM.", hasPrompt: false, isDeterministic: true },
 { id: "ast_translate", label: "ast_translate", type: "action", icon: "data_object", description:
-"Швидкий детерміністичний шлях. PythonAnalyzer: Python AST → DRAKON IR без LLM. Тільки для CC ≤ 10.", hasPrompt: false, isDeterministic: true },
+"Швидкий детерміністичний шлях. PythonAnalyzer: Python AST → DRAKON IR без LLM. Тільки
+для CC ≤ 10.", hasPrompt: false, isDeterministic: true },
 {
 id: "yaml_gen", label: "yaml_gen", type: "action", icon: "generating_tokens",
-description: "LLM: перетворює Python код у спрощений C4-B YAML опис поведінки. Знижує ризик галюцинацій на першому кроці.",
+description: "LLM: перетворює Python код у спрощений C4-B YAML опис поведінки. Знижує
+ризик галюцинацій на першому кроці.",
 hasPrompt: true,
 prompt: `Перетвори Python код у YAML опис алгоритмічної поведінки.
 
@@ -72,7 +76,8 @@ no: "4" # для decision
 },
 {
 id: "ir_gen", label: "ir_gen", type: "action", icon: "generating_tokens",
-description: "LLM: конвертує YAML + оригінальний код → DRAKON IR JSON. Якщо є validation_errors — передаються як контекст. Ralph Loop (max 3 iter).",
+description: "LLM: конвертує YAML + оригінальний код → DRAKON IR JSON. Якщо є
+validation_errors — передаються як контекст. Ralph Loop (max 3 iter).",
 hasPrompt: true,
 prompt: `Конвертуй YAML опис у DRAKON IR JSON.
 
@@ -101,7 +106,9 @@ IR-формат вузла:
 
 Поверни тільки JSON.`,
 },
-{ id: "validate", label: "validate", type: "action", icon: "task_alt", description: "ir_validator.py: перевіряє топологічні правила DRAKON. Якщо invalid і iter < 3 → повертається до ir_gen (Ralph Loop).", hasPrompt: false, isDeterministic: true },
+{ id: "validate", label: "validate", type: "action", icon: "task_alt", description: "ir_validator.py:
+перевіряє топологічні правила DRAKON. Якщо invalid і iter < 3 → повертається до ir_gen
+(Ralph Loop).", hasPrompt: false, isDeterministic: true },
 ],
 },
 {
@@ -113,7 +120,8 @@ description: "LangGraph StateGraph · 3 вузли · Syntax Loop (max 3 iter)",
 nodes: [
 {
 id: "code_gen", label: "code_gen", type: "action", icon: "generating_tokens",
-description: "LLM: отримує DRAKON IR + цільову мову. Якщо є syntax_errors — передаються як контекст. Syntax Loop (max 3).",
+description: "LLM: отримує DRAKON IR + цільову мову. Якщо є syntax_errors — передаються
+як контекст. Syntax Loop (max 3).",
 hasPrompt: true,
 prompt: `Згенеруй код мовою {language} з DRAKON IR.
 
@@ -144,7 +152,8 @@ shortName: "AST Analyzer",
 description: "Детерміністичний транслятор · Python AST → DRAKON IR · без LLM",
 nodes: [
 { id: "ast_visitor", label: "PythonAnalyzer", type: "action", icon: "data_object", description:
-"ast.NodeVisitor: обходить Python AST, маппить конструкції на DRAKON вузли. Детерміністично.", hasPrompt: false, isDeterministic: true },
+"ast.NodeVisitor: обходить Python AST, маппить конструкції на DRAKON вузли.
+Детерміністично.", hasPrompt: false, isDeterministic: true },
 { id: "ir_validator_drakon", label: "validate_ir", type: "action", icon: "task_alt", description:
 "ir_validator.py: топологічні перевірки DRAKON. Повертає validation_errors[].", hasPrompt:
 false, isDeterministic: true },
@@ -157,7 +166,8 @@ name: "Docs Q&A Pipeline",
 shortName: "Docs Chat",
 description: "RAG over knowledge base · 2 вузли",
 nodes: [
-{ id: "retrieve", label: "retrieve_context", type: "action", icon: "database", description: "BM25 + векторний пошук по KB. Повертає top-k релевантних чанків.", hasPrompt: false,
+{ id: "retrieve", label: "retrieve_context", type: "action", icon: "database", description: "BM25 +
+векторний пошук по KB. Повертає top-k релевантних чанків.", hasPrompt: false,
 isDeterministic: true },
 {
 id: "answer", label: "answer", type: "action", icon: "generating_tokens",
@@ -181,12 +191,18 @@ prompt: `Дай відповідь на питання користувача н
 ];
 
 export const KB_FILES: KbFile[] = [
-{ id: "drakon-00", filename: "00-drakon-rules.md", description: "Топологічні інваріанти DRAKON (шампур, заборона перетинів)", agentId: "drakon" },
-{ id: "drakon-01", filename: "01-node-patterns.md", description: "Маппінг Python конструкцій → DRAKON вузли", agentId: "drakon" },
-{ id: "drakon-02", filename: "02-ir-format.md", description: "JSON-схема IR з прикладами та правилами валідації", agentId: "drakon" },
-{ id: "drakon-03", filename: "03-complex-patterns.md", description: "Вкладені цикли, try/except, async/await", agentId: "drakon" },
-{ id: "architect-kb", filename: "architect-kb.md", description: "Знання для architect-agent (CC thresholds, pipeline design)", agentId: "architect" },
-{ id: "docs-kb", filename: "docs-kb.md", description: "Знання для docs-agent (документація, стилі)", agentId: "docs" },
+{ id: "drakon-00", filename: "00-drakon-rules.md", description: "Топологічні інваріанти DRAKON
+(шампур, заборона перетинів)", agentId: "drakon" },
+{ id: "drakon-01", filename: "01-node-patterns.md", description: "Маппінг Python конструкцій
+→ DRAKON вузли", agentId: "drakon" },
+{ id: "drakon-02", filename: "02-ir-format.md", description: "JSON-схема IR з прикладами та
+правилами валідації", agentId: "drakon" },
+{ id: "drakon-03", filename: "03-complex-patterns.md", description: "Вкладені цикли,
+try/except, async/await", agentId: "drakon" },
+{ id: "architect-kb", filename: "architect-kb.md", description: "Знання для architect-agent (CC
+thresholds, pipeline design)", agentId: "architect" },
+{ id: "docs-kb", filename: "docs-kb.md", description: "Знання для docs-agent (документація,
+стилі)", agentId: "docs" },
 ];
 
 export const AGENT_LABELS: Record<AgentId, { label: string; icon: string }> = {

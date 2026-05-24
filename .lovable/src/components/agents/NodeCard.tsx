@@ -16,7 +16,8 @@ className={cn(
 "group flex w-full items-center gap-3 rounded border px-3 py-2.5 text-left transition-colors",
 selected
 ? "border-[var(--color-primary-container)] bg-[var(--color-surface-container-high)]"
-: "border-[var(--color-outline-variant)] bg-[var(--color-surface)] hover:bg-[var(--color-surface-container-low)]"
+: "border-[var(--color-outline-variant)] bg-[var(--color-surface)]
+hover:bg-[var(--color-surface-container-low)]"
 )}
 >
 <span
@@ -49,7 +50,8 @@ isLlm
 </div>
 <span
 className={cn(
-"material-symbols-outlined shrink-0 text-[18px] text-[var(--color-on-surface-variant)] transition-transform",
+"material-symbols-outlined shrink-0 text-[18px] text-[var(--color-on-surface-variant)]
+transition-transform",
 selected && "rotate-90 text-[var(--color-primary-container)]"
 )}
 >

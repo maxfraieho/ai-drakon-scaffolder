@@ -73,6 +73,7 @@ folderSlug?: string;
 isNew?: boolean;
 onSaved?: (diagramId: string) => void;
 onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>;
+onSelectionChanged?: (items: any[] | null) => void;
 className?: string;
 }
 
@@ -103,6 +104,7 @@ folderSlug,
 isNew = false,
 onSaved,
 onSaveOverride,
+onSelectionChanged,
 className,
 }: DrakonEditorProps) {
 const { theme } = useTheme();
@@ -257,8 +259,9 @@ translate: drakonTranslate,
 ...drakonLabels,
 onSelectionChanged: (items) => {
 console.log('[DRK] onSelectionChanged, uiState:', uiStateRef.current, 'items:', items?.length);
-// Do NOT reset pasteMode here — it kills pasteMode immediately after showPaste()
-// pasteMode should only end via: Esc, clickEmpty, or successful socket click
+if (onSelectionChanged) {
+  onSelectionChanged(items);
+}
 },
 onZoomChanged: (newZoom) => {
 setZoomLevel(newZoom);

@@ -61,6 +61,6 @@ return { settings, save, reset };
 
 export function generateVersionName(model: string, maxTokens: number): string {
 const slug = model.replace(/^free\//, "").replace(/-proxy$/, "") || "model";
-return  `${slug}-${maxTokens}`;
+return ${slug}-${maxTokens};
 }
 

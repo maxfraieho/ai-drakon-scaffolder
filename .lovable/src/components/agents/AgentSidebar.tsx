@@ -43,14 +43,16 @@ const agentPipelines = useMemo(
 return (
 <nav
 className={cn(
-"flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--color-outline-variant)] bg-[var(--color-surface)] transition-transform duration-200",
+"flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--color-outline-variant)]
+bg-[var(--color-surface)] transition-transform duration-200",
 "md:relative md:translate-x-0",
 "absolute inset-y-0 left-0 z-40",
 open ? "translate-x-0" : "-translate-x-full md:translate-x-0"
 )}
 >
 <div className="flex flex-col gap-1 border-b border-[var(--color-outline-variant)] p-3">
-<span className="font-headline-sm text-[var(--color-primary-container)]">WORKSPACE</span>
+<span className="font-headline-sm
+text-[var(--color-primary-container)]">WORKSPACE</span>
 <span className="font-mono-label text-[var(--color-on-surface-variant)]">
 {AGENT_LABELS[selectedPipeline.agentId].label}
 </span>
@@ -71,8 +73,10 @@ onClose?.();
 className={cn(
 "flex min-w-0 flex-1 items-center gap-2 border-l-2 px-3 py-1.5 text-left transition-colors",
 selectedPipeline.id === p.id
-? "border-[var(--color-primary-container)] bg-[var(--color-surface-container-high)] text-[var(--color-primary-container)]"
-: "border-transparent text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
+? "border-[var(--color-primary-container)] bg-[var(--color-surface-container-high)]
+text-[var(--color-primary-container)]"
+: "border-transparent text-[var(--color-on-surface-variant)]
+hover:bg-[var(--color-surface-container-low)] hover:text-[var(--color-on-surface)]"
 )}
 >
 <span className="material-symbols-outlined text-[16px]">linear_scale</span>
@@ -82,7 +86,9 @@ selectedPipeline.id === p.id
 to="/pipeline/$pipelineId/edit"
 params={{ pipelineId: p.id }}
 onClick={() => onClose?.()}
-className="mr-2 inline-flex h-8 items-center gap-1 rounded px-2 font-mono text-[10px] uppercase tracking-wider text-[var(--accent-amber)] opacity-60 transition-colors hover:opacity-100 active:scale-[0.96] active:transition-transform active:duration-75"
+className="mr-2 inline-flex h-8 items-center gap-1 rounded px-2 font-mono text-[10px]
+uppercase tracking-wider text-[var(--accent-amber)] opacity-60 transition-colors
+hover:opacity-100 active:scale-[0.96] active:transition-transform active:duration-75"
 >
 Edit
 </Link>
@@ -148,9 +154,11 @@ LLM
 <button
 key={f.id}
 onClick={() => onSelectKbFile(f)}
-className="flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-1.5 text-left transition-colors hover:bg-[var(--color-surface-container-low)]"
+className="flex w-full items-center gap-2 border-l-2 border-transparent px-3 py-1.5 text-left
+transition-colors hover:bg-[var(--color-surface-container-low)]"
 >
-<span className="material-symbols-outlined text-[16px] text-[var(--color-primary-container)]">
+<span className="material-symbols-outlined text-[16px]
+text-[var(--color-primary-container)]">
 description
 </span>
 <span className="font-mono-code truncate text-[var(--color-on-surface-variant)]">

@@ -68,7 +68,8 @@ className={cn("font-normal text-foreground", className)}
 );
 BreadcrumbPage.displayName = "BreadcrumbPage";
 
-const BreadcrumbSeparator = ({ children, className, ...props }: React.ComponentProps<"li">) => (
+const BreadcrumbSeparator = ({ children, className, ...props }: React.ComponentProps<"li">)
+=> (
 <li
 role="presentation"
 aria-hidden="true"

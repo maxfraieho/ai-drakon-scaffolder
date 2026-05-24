@@ -1,4 +1,4 @@
-/* DrakonWidget container isolation */
+/ DrakonWidget container isolation /
 .drakon-container {
 isolation: isolate;
 position: relative;

@@ -110,7 +110,8 @@ onBlur={() => setTimeout(() => setRepoOpen(false), 150)}
 placeholder="repo-name"
 />
 {repoOpen && (
-<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border border-border rounded-md shadow-md">
+<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border
+border-border rounded-md shadow-md">
 {loading && (
 <div className="px-3 py-2 text-sm text-muted-foreground flex items-center">
 <Loader2 className="h-3 w-3 animate-spin inline mr-1" />

@@ -1,184 +1,263 @@
-import { useState } from "react";
-import { AgentSidebar } from "@/components/agents/AgentSidebar";
-import { PipelineFlowGraph } from "@/components/agents/PipelineFlowGraph";
-import { NodeInspector } from "@/components/agents/NodeInspector";
-import { NodeCard } from "@/components/agents/NodeCard";
-import { KbDrawer } from "@/components/agents/KbDrawer";
-import {
-PIPELINES,
-KB_FILES,
-type AgentPipeline,
-type AgentNode,
-type KbFile,
-type AgentId,
-} from "@/lib/agent-studio-data";
-import { cn } from "@/lib/utils";
-
-const TABS: { id: AgentId; label: string }[] = [
-{ id: "architect", label: "Architect" },
-{ id: "drakon", label: "DRAKON" },
-{ id: "docs", label: "Docs" },
-];
+import { useState, useEffect, useCallback } from "react";
+import { PipelineList } from "@/components/agents/PipelineList";
+import { StudioToolbar } from "@/components/agents/StudioToolbar";
+import { PropertiesPanel } from "@/components/agents/PropertiesPanel";
+import { ExecutionPanel } from "@/components/agents/ExecutionPanel";
+import { DrakonEditor } from "@/components/drakon/DrakonEditor";
+import { getPipeline, savePipeline } from "@/lib/graph-pipeline-api";
+import { convertIrToDiagram, convertDiagramToIr } from "@/lib/htse/ir-to-diagram";
+import { usePipelineExecution } from "@/hooks/usePipelineExecution";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
+import type { DrakonDiagram } from "@/types/drakonwidget";
 
 export default function AgentStudioPage() {
-const [activeTab, setActiveTab] = useState<AgentId>("architect");
-const [selectedPipeline, setSelectedPipeline] = useState<AgentPipeline>(
-PIPELINES.find((p) => p.agentId === "architect") ?? PIPELINES[0]
-);
-const [selectedNode, setSelectedNode] = useState<AgentNode | null>(null);
-const [selectedKbFile, setSelectedKbFile] = useState<KbFile | null>(null);
-const [kbOpen, setKbOpen] = useState(false);
-const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [selectedPipelineName, setSelectedPipelineName] = useState<string | null>(null);
+  const [activeDiagram, setActiveDiagram] = useState<DrakonDiagram | undefined>(undefined);
+  const [stateClass, setStateClass] = useState("AnalysisState");
+  const [breakpoints, setBreakpoints] = useState<string[]>([]);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [consoleOpen, setConsoleOpen] = useState(true);
 
-const llmNodes = selectedPipeline.nodes.filter((n) => n.hasPrompt);
-const agentKbFiles = KB_FILES.filter((f) => f.agentId === selectedPipeline.agentId);
+  // SSE Pipeline Execution Hook
+  const {
+    isRunning,
+    activeNode,
+    logs,
+    breakpointNode,
+    breakpointState,
+    runPipeline,
+    stopPipeline,
+    resumePipeline,
+  } = usePipelineExecution();
 
-const handleSelectPipeline = (p: AgentPipeline) => {
-setSelectedPipeline(p);
-setSelectedNode(null);
-};
+  // Load pipeline diagram
+  useEffect(() => {
+    if (!selectedPipelineName) return;
 
-const handleSelectTab = (tab: AgentId) => {
-setActiveTab(tab);
-const next = PIPELINES.find((p) => p.agentId === tab);
-if (next) {
-setSelectedPipeline(next);
-setSelectedNode(null);
-setSelectedKbFile(null);
+    let active = true;
+    async function load() {
+      setIsLoading(true);
+      setSelectedNodeId(null);
+      setIsDirty(false);
+      try {
+        const ir = await getPipeline(selectedPipelineName!);
+        if (active) {
+          // Convert canonical IR to Drakon Editor runtime diagram format
+          const diagram = convertIrToDiagram(ir);
+          setActiveDiagram(diagram);
+          
+          // Load state class and initial breakpoints from schema
+          const irSchema = (ir as any).schema ?? {};
+          setStateClass(irSchema.state_class ?? "AnalysisState");
+          setBreakpoints([]); // resets
+        }
+      } catch (err) {
+        console.error("Failed to load pipeline IR:", err);
+        toast.error("Помилка завантаження конфігурації пайплайну.");
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      active = false;
+    };
+  }, [selectedPipelineName]);
+
+  // Handle Pipeline list selection
+  const handleSelectPipeline = useCallback((name: string) => {
+    if (isDirty) {
+      if (!confirm("У вас є незбережені зміни. Бажаєте продовжити без збереження?")) {
+        return;
+      }
+    }
+    setSelectedPipelineName(name);
+  }, [isDirty]);
+
+  // Handle diagram name edit
+  const handleChangeDiagramName = (name: string) => {
+    if (!activeDiagram) return;
+    setActiveDiagram({ ...activeDiagram, name });
+    setIsDirty(true);
+  };
+
+  // Node property edits
+  const handleUpdateNode = (id: string, updatedNode: any) => {
+    if (!activeDiagram) return;
+    const nextItems = { ...activeDiagram.items, [id]: updatedNode };
+    setActiveDiagram({ ...activeDiagram, items: nextItems });
+    setIsDirty(true);
+    toast.success("Властивості вузла оновлено!");
+  };
+
+  // Diagram change on canvas
+  const handleSaveOverride = async (diagramToSave: DrakonDiagram) => {
+    if (!selectedPipelineName) return false;
+    setIsSaving(true);
+    try {
+      // 1. Convert Editor diagram back to canonical IR
+      const ir = convertDiagramToIr(diagramToSave);
+      
+      // Inject schema updates
+      (ir as any).schema = {
+        state_class: stateClass,
+      };
+
+      // 2. PUT request to commit changes
+      await savePipeline(selectedPipelineName, ir);
+      
+      // Update local state
+      setActiveDiagram(diagramToSave);
+      setIsDirty(false);
+      toast.success("Пайплайн успішно збережено та скомпільовано на бекенді!");
+      return true;
+    } catch (err) {
+      console.error("Save error:", err);
+      toast.error(`Помилка збереження: ${err instanceof Error ? err.message : String(err)}`);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Manual save trigger from toolbar
+  const handleManualSave = () => {
+    if (!activeDiagram) return;
+    handleSaveOverride(activeDiagram);
+  };
+
+  // Export pseudocode
+  const handleExport = () => {
+    if (!activeDiagram) return;
+    const jsonStr = JSON.stringify(convertDiagramToIr(activeDiagram), null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedPipelineName || "pipeline"}.drakon.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success("Файл конфігурації експортовано успішно!");
+  };
+
+  // Breakpoints management
+  const handleToggleBreakpoint = (nodeName: string) => {
+    setBreakpoints((prev) =>
+      prev.includes(nodeName) ? prev.filter((n) => n !== nodeName) : [...prev, nodeName]
+    );
+  };
+
+  // Get list of action nodes in the diagram
+  const getActionNodes = () => {
+    if (!activeDiagram) return [];
+    return Object.entries(activeDiagram.items)
+      .filter(([_, item]: any) => item.type === "action" && item.content)
+      .map(([id, item]: any) => ({ id, name: item.content }));
+  };
+
+  // Handle canvas selection changes
+  const handleSelectionChanged = (items: any[] | null) => {
+    if (items && items.length > 0) {
+      setSelectedNodeId(items[0].id);
+    } else {
+      setSelectedNodeId(null);
+    }
+  };
+
+  // Launch pipeline
+  const handleRun = () => {
+    if (!selectedPipelineName) return;
+    setConsoleOpen(true);
+    runPipeline(selectedPipelineName, {}, breakpoints);
+  };
+
+  // Resume pipeline
+  const handleResume = () => {
+    if (!selectedPipelineName) return;
+    resumePipeline(selectedPipelineName, {});
+  };
+
+  const selectedNode = selectedNodeId && activeDiagram ? activeDiagram.items[selectedNodeId] : null;
+
+  return (
+    <div
+      className="flex h-screen w-full flex-col overflow-hidden text-xs"
+      style={{
+        backgroundColor: "var(--bg-base)",
+        color: "var(--text-primary)",
+      }}
+    >
+      {/* 3-Column Studio Layout */}
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* Column 1: Pipeline Sidebar List */}
+        <PipelineList
+          selectedPipelineName={selectedPipelineName}
+          onSelectPipeline={handleSelectPipeline}
+        />
+
+        {/* Column 2: Center Editor Arena */}
+        <div className="flex flex-col flex-1 min-w-0">
+          <StudioToolbar
+            isRunning={isRunning}
+            isSaving={isSaving}
+            isDirty={isDirty}
+            hasBreakpoint={!!breakpointNode}
+            onRun={handleRun}
+            onStop={stopPipeline}
+            onSave={handleManualSave}
+            onExport={handleExport}
+            onResume={handleResume}
+          />
+
+          <div className="flex-1 relative overflow-hidden bg-muted/10">
+            {isLoading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : activeDiagram && selectedPipelineName ? (
+              <DrakonEditor
+                diagram={activeDiagram}
+                diagramId={selectedPipelineName}
+                onSaveOverride={handleSaveOverride}
+                onSelectionChanged={handleSelectionChanged}
+                className="h-full w-full"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground italic select-none">
+                Оберіть пайплайн із бічної панелі для редагування графа
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Column 3: Properties Sidebar Inspector */}
+        <PropertiesPanel
+          diagramName={activeDiagram?.name || ""}
+          onChangeDiagramName={handleChangeDiagramName}
+          stateClass={stateClass}
+          onChangeStateClass={setStateClass}
+          selectedNodeId={selectedNodeId}
+          selectedNode={selectedNode}
+          onUpdateNode={handleUpdateNode}
+          allNodes={getActionNodes()}
+          breakpoints={breakpoints}
+          onToggleBreakpoint={handleToggleBreakpoint}
+        />
+      </div>
+
+      {/* Docked Execution Log Console */}
+      <ExecutionPanel
+        logs={logs}
+        onClear={() => {}}
+        isOpen={consoleOpen}
+        onToggle={() => setConsoleOpen((v) => !v)}
+      />
+    </div>
+  );
 }
-};
-
-return (
-<div className="font-ui-sm flex h-screen w-full flex-col overflow-hidden bg-[var(--color-surface-container-lowest)] text-[var(--color-on-surface)] antialiased">
-{/* Top Navigation Bar */}
-<header className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--color-outline-variant)] bg-[var(--color-surface)] px-2 md:px-3">
-<button
-onClick={() => setSidebarOpen((v) => !v)}
-className="flex h-6 w-6 shrink-0 items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] md:hidden"
-aria-label="Toggle sidebar"
->
-<span className="material-symbols-outlined text-[18px]">menu</span>
-</button>
-<span className="hidden md:inline font-headline-sm text-[var(--color-on-surface)] shrink-0 mr-4">
-⚙ АГЕНТНА ЛОГІКА
-</span>
-<nav className="flex h-full min-w-0 flex-1 items-center gap-3 md:gap-4 overflow-x-auto no-scrollbar">
-{TABS.map((tab) => (
-<button
-key={tab.id}
-onClick={() => handleSelectTab(tab.id)}
-className={cn(
-"font-ui-sm flex h-full shrink-0 items-center pt-0.5 transition-colors",
-activeTab === tab.id
-? "border-b-2 border-[var(--color-primary-container)] text-[var(--color-primary-container)]"
-: "text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)]"
-)}
->
-{tab.label}
-</button>
-))}
-</nav>
-<div className="flex shrink-0 items-center gap-2 md:gap-3">
-<span className="font-mono-label text-[var(--color-tertiary)]">● LIVE</span>
-<button className="hidden md:flex items-center justify-center text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)]">
-<span className="material-symbols-outlined text-[18px]">sensors</span>
-</button>
-</div>
-</header>
-
-{/* Body */}
-<div className="relative flex flex-1 overflow-hidden">
-{sidebarOpen && (
-<div
-className="absolute inset-0 z-30 bg-black/40 md:hidden"
-onClick={() => setSidebarOpen(false)}
-/>
-)}
-<AgentSidebar
-pipelines={PIPELINES}
-kbFiles={KB_FILES}
-selectedPipeline={selectedPipeline}
-selectedNode={selectedNode}
-onSelectPipeline={handleSelectPipeline}
-onSelectNode={setSelectedNode}
-onSelectKbFile={(f) => {
-setSelectedKbFile(f);
-setKbOpen(true);
-}}
-open={sidebarOpen}
-onClose={() => setSidebarOpen(false)}
-/>
-
-<main className="relative flex flex-1 flex-col overflow-hidden">
-<div className="flex flex-1 flex-col gap-4 overflow-y-auto p-3">
-<div className="flex items-center justify-between">
-<div className="flex flex-col gap-0.5">
-<h1 className="font-headline-sm text-[var(--color-on-surface)]">
-{selectedPipeline.name}
-</h1>
-<span className="font-mono-label text-[var(--color-on-surface-variant)]">
-{selectedPipeline.description}
-</span>
-</div>
-<span className="font-mono-label text-[var(--color-on-surface-variant)]">
-{llmNodes.length} LLM · {selectedPipeline.nodes.length - llmNodes.length} det
-</span>
-</div>
-
-<PipelineFlowGraph
-pipelineId={selectedPipeline.id}
-selectedNodeId={selectedNode?.id ?? null}
-onNodeClick={(nodeId) => {
-const node = selectedPipeline.nodes.find((n) => n.id === nodeId);
-if (node) setSelectedNode(selectedNode?.id === nodeId ? null : node);
-}}
-/>
-
-{llmNodes.length > 0 ? (
-<div className="flex flex-col gap-2">
-<span className="font-mono-label uppercase text-[var(--color-on-surface-variant)]">
-Вузли з промптами
-</span>
-<div className="flex flex-col gap-2">
-{llmNodes.map((node) => (
-<NodeCard
-key={node.id}
-node={node}
-selected={selectedNode?.id === node.id}
-onClick={() =>
-setSelectedNode(selectedNode?.id === node.id ? null : node)
-}
-/>
-))}
-</div>
-</div>
-):(
-<div className="rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface)] p-4 text-center">
-<p className="font-mono-label text-[var(--color-on-surface-variant)]">
-Всі вузли детерміністичні — LLM не використовується
-</p>
-</div>
-)}
-</div>
-
-<KbDrawer
-open={kbOpen}
-kbFiles={agentKbFiles}
-selectedFile={selectedKbFile}
-onToggle={() => setKbOpen((v) => !v)}
-onSelectFile={setSelectedKbFile}
-/>
-</main>
-
-{selectedNode && (
-<NodeInspector
-node={selectedNode}
-pipelineId={selectedPipeline.id}
-onClose={() => setSelectedNode(null)}
-/>
-)}
-</div>
-</div>
-);
-}
-

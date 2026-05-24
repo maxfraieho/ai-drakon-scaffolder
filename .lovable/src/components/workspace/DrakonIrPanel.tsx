@@ -51,25 +51,31 @@ const filtered = diagrams.filter(
 
 return (
 <aside className="flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)]">
-<div className="flex shrink-0 items-start justify-between border-b border-[var(--border-subtle)] px-2.5 py-1">
+<div className="flex shrink-0 items-start justify-between border-b border-[var(--border-subtle)]
+px-2.5 py-1">
 <div className="flex flex-col gap-0.5">
 <div className="flex items-center gap-1.5">
 <GitBranch className="h-3 w-3 text-[var(--accent-amber)]" />
-<span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">DRAKON IR</span>
+<span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em]
+text-[var(--text-muted)]">DRAKON IR</span>
 </div>
 <span className="font-mono text-[9px] text-[var(--text-muted)]">[ {activeProject?.slug ??
 "all-projects"} ]</span>
 </div>
 <div className="flex items-center gap-1">
-<span className="flex h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)] opacity-80 animate-pulse" />
-<button onClick={load} disabled={loading} className="rounded p-0.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:opacity-40">
+<span className="flex h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)] opacity-80
+animate-pulse" />
+<button onClick={load} disabled={loading} className="rounded p-0.5
+text-[var(--text-muted)] hover:text-[var(--text-secondary)] disabled:opacity-40">
 <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
 </button>
 </div>
 </div>
 <div className="shrink-0 border-b border-[var(--border-subtle)] px-2 py-1.5">
 <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Фільтр..."
-className="w-full rounded-sm bg-[var(--bg-base)] px-2 py-1 font-mono text-[10px] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border border-transparent focus:border-[var(--accent-amber)]/40" />
+className="w-full rounded-sm bg-[var(--bg-base)] px-2 py-1 font-mono text-[10px]
+text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none border
+border-transparent focus:border-[var(--accent-amber)]/40" />
 </div>
 <div className="flex-1 overflow-y-auto">
 {loading ? (
@@ -89,8 +95,10 @@ className="w-full rounded-sm bg-[var(--bg-base)] px-2 py-1 font-mono text-[10px]
 {filtered.map((name) => (
 <li key={name}>
 <button onClick={() => handleSelect(name)} disabled={!!loadingItem}
-className={cn("group flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left transition-colors hover:bg-[var(--bg-elevated)]",
-selectedName === name && "bg-[var(--bg-elevated)] border-l-2 border-[var(--accent-amber)]")}>
+className={cn("group flex w-full items-center justify-between gap-2 px-2.5 py-1.5 text-left
+transition-colors hover:bg-[var(--bg-elevated)]",
+selectedName === name && "bg-[var(--bg-elevated)] border-l-2
+border-[var(--accent-amber)]")}>
 <div className="flex min-w-0 items-center gap-1.5">
 {loadingItem === name
 ? <Loader2 className="h-3 w-3 shrink-0 animate-spin text-[var(--accent-amber)]" />
@@ -99,7 +107,8 @@ selectedName === name && "bg-[var(--bg-elevated)] border-l-2 border-[var(--accen
 <span className={cn("truncate font-mono text-[10px]", selectedName === name ?
 "text-[var(--text-primary)]" : "text-[var(--text-secondary)]")}>{name}</span>
 </div>
-<Download className="h-3 w-3 shrink-0 text-[var(--text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
+<Download className="h-3 w-3 shrink-0 text-[var(--text-muted)] opacity-0
+group-hover:opacity-100 transition-opacity" />
 </button>
 </li>
 ))}
