@@ -64,13 +64,13 @@ setAnalysisFolderSlug(localDiagram.folderId || "general");
 setMetadataDraft(withDiagramMetadataDefaults(localDiagram.diagram.metadata));
 setMetadataDirty(false);
 
-const localKey = diagram_${id};
+const localKey = `diagram_${id}`;
 localStorage.setItem(localKey, JSON.stringify(localDiagram));
 }, [id, navigate, setDiagram]);
 
 useEffect(() => {
 setMetrics(null);
-const saved = localStorage.getItem(diagram_metrics_${id});
+const saved = localStorage.getItem(`diagram_metrics_${id}`);
 if (saved) {
 try {
 setMetrics(JSON.parse(saved));
@@ -223,7 +223,7 @@ await api.saveDiagram(diagram.folderId, diagram.id, diagram.diagram);
 }
 
 toast.success(
-Створено ${generated.length} діаграм у папці "${selectedAnalysisFolder.name}",
+`Створено ${generated.length} діаграм у папці "${selectedAnalysisFolder.name}"`,
 );
 } catch (error) {
 toast.error(error instanceof Error ? error.message : "Не вдалося виконати аналіз");
@@ -234,8 +234,7 @@ setIsAnalyzing(false);
 
 if (!currentDiagram) {
 return (
-<div className="flex min-h-screen items-center justify-center bg-background text-sm
-text-muted-foreground">
+<div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
 Завантаження схеми...
 </div>
 );

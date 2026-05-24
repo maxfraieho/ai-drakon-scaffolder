@@ -18,6 +18,7 @@ import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as DevcycleRouteImport } from './routes/devcycle'
+import { Route as CodeRouteImport } from './routes/code'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
@@ -69,6 +70,11 @@ const DevcycleRoute = DevcycleRouteImport.update({
   path: '/devcycle',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CodeRoute = CodeRouteImport.update({
+  id: '/code',
+  path: '/code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgentsRoute = AgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
@@ -98,6 +104,7 @@ const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/code': typeof CodeRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/code': typeof CodeRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -131,6 +139,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/code': typeof CodeRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agents'
+    | '/code'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agents'
+    | '/code'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agents'
+    | '/code'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -198,6 +210,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AgentsRoute: typeof AgentsRoute
+  CodeRoute: typeof CodeRoute
   DevcycleRoute: typeof DevcycleRoute
   DiagramsRoute: typeof DiagramsRoute
   DocsRoute: typeof DocsRoute
@@ -277,6 +290,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevcycleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/code': {
+      id: '/code'
+      path: '/code'
+      fullPath: '/code'
+      preLoaderRoute: typeof CodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agents': {
       id: '/agents'
       path: '/agents'
@@ -318,6 +338,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AgentsRoute: AgentsRoute,
+  CodeRoute: CodeRoute,
   DevcycleRoute: DevcycleRoute,
   DiagramsRoute: DiagramsRoute,
   DocsRoute: DocsRoute,

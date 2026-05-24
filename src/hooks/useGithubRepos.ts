@@ -32,12 +32,11 @@ let cancelled = false;
 setLoading(true);
 
 const headers: Record<string, string> = {};
-if (token?.trim()) headers["Authorization"] = token ${token.trim()};
+if (token?.trim()) headers["Authorization"] = `token ${token.trim()}`;
 
 const url = token?.trim()
-? https://api.github.com/user/repos?per_page=100&sort=updated&type=owner
-: https://api.github.com/users/${encodeURIComponent(owner.trim())}/repos?per_page
-=100&sort=updated;
+? `https://api.github.com/user/repos?per_page=100&sort=updated&type=owner`
+: `https://api.github.com/users/${encodeURIComponent(owner.trim())}/repos?per_page=100&sort=updated`;
 
 fetch(url, { headers })
 .then((r) => r.json())

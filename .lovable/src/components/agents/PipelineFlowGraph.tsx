@@ -81,8 +81,7 @@ className="!bg-[var(--color-outline)]"
 />
 <div
 className={cn(
-"flex min-w-[120px] flex-col gap-0.5 rounded border border-dashed px-2.5 py-2 transition-all
-duration-150",
+"flex min-w-[120px] flex-col gap-0.5 rounded border border-dashed px-2.5 py-2 transition-all duration-150",
 data.selected
 ? "border-[var(--color-primary-container)] shadow-[0_0_0_2px_var(--color-primary-container)]"
 : "border-[var(--color-tertiary)]",
@@ -262,8 +261,7 @@ return { nodes: rfNodes, edges: rfEdges };
 
 if (error) {
 return (
-<div className="flex h-48 items-center justify-center rounded border
-border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
+<div className="flex h-48 items-center justify-center rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
 <span className="font-mono-label text-[var(--color-error)]">{error}</span>
 </div>
 );
@@ -271,8 +269,7 @@ border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
 
 if (!config) {
 return (
-<div className="flex h-48 items-center justify-center rounded border
-border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
+<div className="flex h-48 items-center justify-center rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
 <span className="font-mono-label text-[var(--color-on-surface-variant)]">
 Завантаження…
 </span>
@@ -281,8 +278,7 @@ border-[var(--color-outline-variant)] bg-[var(--color-surface)]">
 }
 
 return (
-<div className="h-72 overflow-hidden rounded border border-[var(--color-outline-variant)]
-bg-[var(--color-surface-container-low)]">
+<div className="h-72 overflow-hidden rounded border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)]">
 <ReactFlow
 nodes={nodes}
 edges={edges}
@@ -510,8 +506,7 @@ onOpenDiagram={handleOpenDiagram}
 ))}
 {isLoading && <TypingDots />}
 {currentError && (
-<div className="flex items-start gap-2 rounded-md border border-destructive/40
-bg-destructive/10 p-3 text-sm text-destructive">
+<div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
 <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
 <div className="flex-1">
 <p className="font-medium">Помилка</p>
@@ -526,8 +521,7 @@ bg-destructive/10 p-3 text-sm text-destructive">
 </ScrollArea>
 
 {/ LLM status bar — завжди показується /}
-<div className="border-t px-3 py-1.5 flex items-center gap-1.5 text-[10px]
-text-muted-foreground bg-muted/30 flex-wrap">
+<div className="border-t px-3 py-1.5 flex items-center gap-1.5 text-[10px] text-muted-foreground bg-muted/30 flex-wrap">
 {!isConfigured && (
 <span className="opacity-60 italic">за замовчуванням:</span>
 )}
@@ -632,12 +626,10 @@ if (message.role === "user") {
 return (
 <div className="flex justify-end">
 <div className="flex max-w-[85%] items-start gap-2">
-<div className="rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground
-whitespace-pre-wrap break-words">
+<div className="rounded-lg bg-primary px-3 py-2 text-sm text-primary-foreground whitespace-pre-wrap break-words">
 {message.content}
 </div>
-<div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full
-bg-muted">
+<div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-muted">
 <UserIcon className="h-3.5 w-3.5" />
 </div>
 </div>
@@ -674,8 +666,7 @@ setSubmitting(false);
 return (
 <div className="flex justify-start">
 <div className="flex max-w-[90%] items-start gap-2">
-<div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full
-bg-muted">
+<div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-muted">
 <Bot className="h-3.5 w-3.5" />
 </div>
 <div className="flex-1 rounded-lg border bg-card px-3 py-2 text-sm">
@@ -750,8 +741,7 @@ function AssistantBubble({ text }: { text: string }) {
 return (
 <div className="flex justify-start">
 <div className="flex max-w-[90%] items-start gap-2">
-<div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full
-bg-muted">
+<div className="mt-1 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-muted">
 <Bot className="h-3.5 w-3.5" />
 </div>
 <div className="rounded-lg border bg-card px-3 py-2 text-sm text-muted-foreground">
@@ -772,10 +762,8 @@ return (
 <div className="flex justify-start">
 <div className="flex flex-col gap-1 rounded-lg border bg-card px-3 py-2">
 <div className="flex items-center gap-1">
-<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground
-[animation-delay:-0.3s]" />
-<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground
-[animation-delay:-0.15s]" />
+<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.3s]" />
+<span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.15s]" />
 <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-muted-foreground" />
 {elapsed > 0 && (
 <span className="ml-2 text-xs text-muted-foreground tabular-nums">
@@ -798,202 +786,14 @@ return s
 .replace(/&/g, "&amp;")
 .replace(/</g, "&lt;")
 .replace(/>/g, "&gt;")
-.replace(/"/g, "&quot;");
-}
-
-function MarkdownLite({ text }: { text: string }) {
-const html = useMemo(() => {
-let t = text;
-t = t.replace(
-/`[\w]\n([\s\S]?)`/g,
-(_, c) =>
-<pre class="my-2 overflow-x-auto rounded bg-muted px-3 py-2 text-xs
-font-mono">${escHtml(c)}</pre>,
-);
-t = t.replace(/\\([^]+)\\*/g, "<strong>$1</strong>");
-t = t.replace(/\([^\n]+)\*/g, "<em>$1</em>");
-const lines = t.split("\n");
-const out: string[] = [];
-let listType = "";
-const closeList = () => {
-if (listType) {
-out.push(</${listType}>);
-listType = "";
-}
-};
-for (const line of lines) {
-const h3 = line.match(/^### (.+)/);
-const h2 = line.match(/^## (.+)/);
-const h1 = line.match(/^# (.+)/);
-const ul = line.match(/^[-*] (.+)/);
-const ol = line.match(/^\d+\. (.+)/);
-if (h3) {
-closeList();
-out.push(<h3 class="mt-3 mb-1 text-sm font-semibold">${h3[1]}</h3>);
-} else if (h2) {
-closeList();
-out.push(<h2 class="mt-4 mb-1 text-sm font-bold">${h2[1]}</h2>);
-} else if (h1) {
-closeList();
-out.push(<h1 class="mt-4 mb-1 text-base font-bold">${h1[1]}</h1>);
-} else if (ul) {
-if (listType !== "ul") {
-closeList();
-out.push('<ul class="my-1 ml-4 list-disc space-y-0.5">');
-listType = "ul";
-}
-out.push(<li class="text-sm">${ul[1]}</li>);
-} else if (ol) {
-if (listType !== "ol") {
-closeList();
-out.push('<ol class="my-1 ml-4 list-decimal space-y-0.5">');
-listType = "ol";
-}
-out.push(<li class="text-sm">${ol[1]}</li>);
-} else {
-closeList();
-out.push(line === "" ? "<br />" : <p class="text-sm leading-relaxed">${line}</p>);
-}
-}
-closeList();
-return out.join("\n");
-}, [text]);
-return (
-<div
-className="prose-sm max-w-none break-words"
-dangerouslySetInnerHTML={{ __html: html }}
-/>
-);
-}
-
- ---
- ### components/agents/KbDrawer.tsx
- **Розмір:** 4,535 байт
-
-
-import { cn } from "@/lib/utils";
-import type { KbFile } from "@/lib/agent-studio-data";
-
-interface Props {
-open: boolean;
-kbFiles: KbFile[];
-selectedFile: KbFile | null;
-onToggle: () => void;
-onSelectFile: (f: KbFile) => void;
-}
-
-const SAMPLE_CONTENT: Record<string, string> = {
-"00-drakon-rules.md": `# DRAKON Topological Invariants
-
-       1. Shampoor (vertical spine) — main success path is always the leftmost vertical line.
-       2. No edge crossings — diagrams must be planar.
-       3. Single START, single END — every diagram has exactly one entry and one exit.
-       4. Decision branches go right — error / negative branches go to the right.
-       5. Loops use loop_start / loop_end pair with explicit body.
-`,
-"01-node-patterns.md": `# Python → DRAKON Node Mapping
-
-Python                                            DRAKON
-
-assignment                                        action
-
-if / elif                                         decision
-
-for/while                                         loop_start + loop_end
-
-return                                            terminator
-
-try/except                                        decision + action
-
-`,
-"02-ir-format.md": `# DRAKON IR JSON schema
-
-{
-"node_id": {
-"type": "action | decision | terminator | loop_start | loop_end",
-"text": "label",
-"next": "id",
-"yes": "id",
-"no": "id"
-}
-}
-`,
-};
-
-export function KbDrawer({ open, kbFiles, selectedFile, onToggle, onSelectFile }: Props) {
-const content =
-selectedFile?.content ??
-(selectedFile ? SAMPLE_CONTENT[selectedFile.filename] ?? "Перегляд недоступний." : "");
-
-return (
-<div
-className={cn(
-"shrink-0 border-t border-[var(--color-outline-variant)] bg-[var(--color-surface)] transition-[height]
-duration-200",
-open ? "h-[260px]" : "h-10"
-)}
->
-<button
-onClick={onToggle}
-className="flex h-10 w-full items-center justify-between border-b
+.replace(/"/g, "&quot;"); }  function MarkdownLite({ text }: { text: string }) { const html = useMemo(() => { let t = text; t = t.replace( /`[\w]\n([\s\S]?)`/g, (_, c) => <pre class="my-2 overflow-x-auto rounded bg-muted px-3 py-2 text-xs
+font-mono">${escHtml(c)}</pre>, ); t = t.replace(/\\([^]+)\\*/g, "<strong>$1</strong>"); t = t.replace(/\([^\n]+)\*/g, "<em>$1</em>"); const lines = t.split("\n"); const out: string[] = []; let listType = ""; const closeList = () => { if (listType) { out.push(</${listType}>); listType = ""; } }; for (const line of lines) { const h3 = line.match(/^### (.+)/); const h2 = line.match(/^## (.+)/); const h1 = line.match(/^# (.+)/); const ul = line.match(/^[-*] (.+)/); const ol = line.match(/^\d+\. (.+)/); if (h3) { closeList(); out.push(<h3 class="mt-3 mb-1 text-sm font-semibold">${h3[1]}</h3>); } else if (h2) { closeList(); out.push(<h2 class="mt-4 mb-1 text-sm font-bold">${h2[1]}</h2>); } else if (h1) { closeList(); out.push(<h1 class="mt-4 mb-1 text-base font-bold">${h1[1]}</h1>); } else if (ul) { if (listType !== "ul") { closeList(); out.push('<ul class="my-1 ml-4 list-disc space-y-0.5">'); listType = "ul"; } out.push(<li class="text-sm">${ul[1]}</li>); } else if (ol) { if (listType !== "ol") { closeList(); out.push('<ol class="my-1 ml-4 list-decimal space-y-0.5">'); listType = "ol"; } out.push(<li class="text-sm">${ol[1]}</li>); } else { closeList(); out.push(line === "" ? "<br />" : <p class="text-sm leading-relaxed">${line}</p>); } } closeList(); return out.join("\n"); }, [text]); return ( <div className="prose-sm max-w-none break-words" dangerouslySetInnerHTML={{ __html: html }} /> ); }  --- ### components/agents/KbDrawer.tsx **Розмір:** 4,535 байт   import { cn } from "@/lib/utils"; import type { KbFile } from "@/lib/agent-studio-data";  interface Props { open: boolean; kbFiles: KbFile[]; selectedFile: KbFile | null; onToggle: () => void; onSelectFile: (f: KbFile) => void; }  const SAMPLE_CONTENT: Record<string, string> = { "00-drakon-rules.md": `# DRAKON Topological Invariants  1. Shampoor (vertical spine) — main success path is always the leftmost vertical line. 2. No edge crossings — diagrams must be planar. 3. Single START, single END — every diagram has exactly one entry and one exit. 4. Decision branches go right — error / negative branches go to the right. 5. Loops use loop_start / loop_end pair with explicit body. `, "01-node-patterns.md": `# Python → DRAKON Node Mapping  Python                                            DRAKON  assignment                                        action  if / elif                                         decision  for/while                                         loop_start + loop_end  return                                            terminator  try/except                                        decision + action  `, "02-ir-format.md": `# DRAKON IR JSON schema  { "node_id": { "type": "action | decision | terminator | loop_start | loop_end", "text": "label", "next": "id", "yes": "id", "no": "id" } } `, };  export function KbDrawer({ open, kbFiles, selectedFile, onToggle, onSelectFile }: Props) { const content = selectedFile?.content ?? (selectedFile ? SAMPLE_CONTENT[selectedFile.filename] ?? "Перегляд недоступний." : "");  return ( <div className={cn( "shrink-0 border-t border-[var(--color-outline-variant)] bg-[var(--color-surface)] transition-[height]
+duration-200", open ? "h-[260px]" : "h-10" )} > <button onClick={onToggle} className="flex h-10 w-full items-center justify-between border-b
 border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] px-3
-hover:bg-[var(--color-surface-container)]"
->
-<div className="flex items-center gap-2">
-<span className="material-symbols-outlined text-[18px]
-text-[var(--color-primary-container)]">
-database
-</span>
-<span className="font-headline-sm text-[var(--color-on-surface)]">БАЗА ЗНАНЬ</span>
-<span className="font-mono-label text-[var(--color-on-surface-variant)]">
-{kbFiles.length} файлів
-</span>
-</div>
-<span
-className={cn(
-"material-symbols-outlined text-[18px] text-[var(--color-on-surface-variant)]
-transition-transform",
-open && "rotate-180"
-)}
->
-expand_less
-</span>
-</button>
-
-{open && (
-<div className="flex h-[calc(100%-2.5rem)]">
-<div className="w-[220px] shrink-0 overflow-y-auto border-r
-border-[var(--color-outline-variant)]">
-{kbFiles.map((f) => (
-<button
-key={f.id}
-onClick={() => onSelectFile(f)}
-className={cn(
-"flex w-full flex-col items-start gap-0.5 border-l-2 px-3 py-2 text-left transition-colors",
-selectedFile?.id === f.id
-? "border-[var(--color-primary-container)] bg-[var(--color-surface-container-high)]"
-: "border-transparent hover:bg-[var(--color-surface-container-low)]"
-)}
->
-<span className="font-mono-code text-[var(--color-on-surface)]">{f.filename}</span>
-<span className="font-ui-sm line-clamp-1 text-[var(--color-on-surface-variant)]">
-{f.description}
-</span>
-</button>
-))}
-{kbFiles.length === 0 && (
-<div className="p-3 font-mono-label text-[var(--color-on-surface-variant)]">
-Немає файлів для цього агента.
-</div>
-)}
-</div>
-<div className="flex-1 overflow-y-auto bg-[var(--color-surface-container-lowest)] p-4">
-{selectedFile ? (
-<pre className="font-mono-code whitespace-pre-wrap text-[var(--color-on-surface)]">
-{content}
-</pre>
-):(
-<p className="font-ui-sm text-[var(--color-on-surface-variant)]">
+hover:bg-[var(--color-surface-container)]" > <div className="flex items-center gap-2"> <span className="material-symbols-outlined text-[18px]
+text-[var(--color-primary-container)]"> database </span> <span className="font-headline-sm text-[var(--color-on-surface)]">БАЗА ЗНАНЬ</span> <span className="font-mono-label text-[var(--color-on-surface-variant)]"> {kbFiles.length} файлів </span> </div> <span className={cn( "material-symbols-outlined text-[18px] text-[var(--color-on-surface-variant)]
+transition-transform", open && "rotate-180" )} > expand_less </span> </button>  {open && ( <div className="flex h-[calc(100%-2.5rem)]"> <div className="w-[220px] shrink-0 overflow-y-auto border-r
+border-[var(--color-outline-variant)]"> {kbFiles.map((f) => ( <button key={f.id} onClick={() => onSelectFile(f)} className={cn( "flex w-full flex-col items-start gap-0.5 border-l-2 px-3 py-2 text-left transition-colors", selectedFile?.id === f.id ? "border-[var(--color-primary-container)] bg-[var(--color-surface-container-high)]" : "border-transparent hover:bg-[var(--color-surface-container-low)]" )} > <span className="font-mono-code text-[var(--color-on-surface)]">{f.filename}</span> <span className="font-ui-sm line-clamp-1 text-[var(--color-on-surface-variant)]"> {f.description} </span> </button> ))} {kbFiles.length === 0 && ( <div className="p-3 font-mono-label text-[var(--color-on-surface-variant)]"> Немає файлів для цього агента. </div> )} </div> <div className="flex-1 overflow-y-auto bg-[var(--color-surface-container-lowest)] p-4"> {selectedFile ? ( <pre className="font-mono-code whitespace-pre-wrap text-[var(--color-on-surface)]"> {content} </pre> ):( <p className="font-ui-sm text-[var(--color-on-surface-variant)]">
 Оберіть файл для перегляду.
 </p>
 )}

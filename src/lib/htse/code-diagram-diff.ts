@@ -71,7 +71,7 @@ const level =
 symbolType === "component" ? "module"
 : symbolType === "function" || symbolType === "hook" ? "flow"
 : "procedure";
-return ${level}.${toKebab(symbolName)};
+return `${level}.${toKebab(symbolName)}`;
 }
 
 interface SymbolEntry {
@@ -120,14 +120,14 @@ if (!meta?.symbolRefs?.length) {
 needsHumanReview.push({
 diagramId: d.id,
 issue: "No symbolRefs in metadata",
-context: L${level} diagram "${d.name}" has no linked code symbols,
+context: `L${level} diagram "${d.name}" has no linked code symbols`,
 });
 }
 if (meta?.confidenceScore !== undefined && meta.confidenceScore < 0.5) {
 needsHumanReview.push({
 diagramId: d.id,
 issue: "Low confidence score",
-context: Score ${meta.confidenceScore} for diagram "${d.name}",
+context: `Score ${meta.confidenceScore} for diagram "${d.name}"`,
 });
 }
 }

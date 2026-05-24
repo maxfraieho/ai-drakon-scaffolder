@@ -3,9 +3,15 @@
     "drakon": {
       "type": "http",
       "url": "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+      "serverUrl": "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
       "headers": {
         "Authorization": "Bearer ${DRAKON_MCP_API_KEY}"
       }
+    },
+    "notebooklm": {
+      "type": "http",
+      "url": "https://notebooklm.exodus.pp.ua/mcp",
+      "serverUrl": "https://notebooklm.exodus.pp.ua/mcp"
     }
   }
 }

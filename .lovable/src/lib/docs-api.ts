@@ -95,36 +95,36 @@ max_tokens: overrides?.maxTokens || davia.maxTokens,
 };
 if (overrides?.outputVersion) body.output_version = overrides.outputVersion;
 
-const res = await fetch(${base}/docs/generate/md, {
+const res = await fetch(`${base}/docs/generate/md`, {
 method: "POST",
 headers: { "Content-Type": "application/json" },
 body: JSON.stringify(body),
 });
-if (!res.ok) throw new Error(Docs generate failed: HTTP ${res.status});
+if (!res.ok) throw new Error(`Docs generate failed: HTTP ${res.status}`);
 return res.json();
 },
 
 async status(jobId: string): Promise<DocsStatusResponse> {
 const base = getDocsAgentUrl();
 const endpoint = jobId.startsWith("md-")
-? /docs/status/md/${encodeURIComponent(jobId)}
-: /docs/status/${encodeURIComponent(jobId)};
-const res = await fetch(${base}${endpoint});
-if (!res.ok) throw new Error(Docs status failed: HTTP ${res.status});
+? `/docs/status/md/${encodeURIComponent(jobId)}`
+: `/docs/status/${encodeURIComponent(jobId)}`;
+const res = await fetch(`${base}${endpoint}`);
+if (!res.ok) throw new Error(`Docs status failed: HTTP ${res.status}`);
 return res.json();
 },
 
 async analysis(): Promise<DocsAnalysisResponse> {
 const base = getDocsAgentUrl();
-const res = await fetch(${base}/docs/analysis);
-if (!res.ok) throw new Error(Docs analysis failed: HTTP ${res.status});
+const res = await fetch(`${base}/docs/analysis`);
+if (!res.ok) throw new Error(`Docs analysis failed: HTTP ${res.status}`);
 return res.json();
 },
 
 async listVersions(): Promise<DocsVersionItem[]> {
 const base = getDocsAgentUrl();
-const res = await fetch(${base}/docs/analysis);
-if (!res.ok) throw new Error(Docs versions failed: HTTP ${res.status});
+const res = await fetch(`${base}/docs/analysis`);
+if (!res.ok) throw new Error(`Docs versions failed: HTTP ${res.status}`);
 const data = (await res.json()) as { versions?: DocsVersionItem[]; analyses?: DocsAnalysisItem[]
 };
 if (Array.isArray(data.versions)) return data.versions;
