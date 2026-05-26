@@ -86,3 +86,4 @@ updated: 2026-05-26
 | Lovable Init Prompt — AI-DRAKON | `templates/lovable-migration/lovable-prompts/00-project-init.md` | active |
 | 00 safe migration init | `templates/lovable-migration/lovable-prompts/00-safe-migration-init.md` | active |
 | AGY Skill 03 — Dataview DQL endpoint + REPO_ROOT fix | `agents/agy/03-dataview-dql/SKILL.md` | active |
+| AGY Skill 04 — PinchTab Test Plan: Research Phase | `agents/agy/04-pinchtab-tests/SKILL.md` | active |
