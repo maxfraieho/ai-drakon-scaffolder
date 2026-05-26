@@ -1,18 +1,13 @@
-import { useState, useRef } from "react";
-import {
-  startExecution,
-  streamExecution,
-  resumeExecution,
-  type IrDiagram,
-  type ExecutionEvent,
-} from "@/lib/graph-pipeline-api";
-import { NodeStateInspector } from "./NodeStateInspector";
-import { Button } from "@/components/ui/button";
-import { Play, StopCircle, Zap, ExternalLink } from "lucide-react";
-import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { ExternalLink, Play, StopCircle, Zap, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { NodeStateInspector } from "./NodeStateInspector";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
 import { upsertDiagramInStorage } from "@/lib/diagram-storage";
+import { usePipelineExecution } from "@/hooks/usePipelineExecution";
+import type { IrDiagram } from "@/lib/graph-pipeline-api";
 import type { Diagram } from "@/types/drakon";
 
 interface Props {
@@ -21,69 +16,43 @@ interface Props {
   onSave: (ir: IrDiagram) => Promise<void>;
 }
 
+// Match a DRAKON IR node against a LangGraph node name.
+// Tries: exact key match, exact content match, content includes node name.
+function matchesActiveNode(itemKey: string, itemContent: string, nodeName: string): boolean {
+  const n = nodeName.toLowerCase();
+  return (
+    itemKey.toLowerCase() === n ||
+    itemContent.toLowerCase() === n ||
+    itemContent.toLowerCase().includes(n)
+  );
+}
+
 type ExecStatus = "idle" | "running" | "breakpoint" | "done" | "error";
 
-export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
+export function PipelineDrakonView({ pipelineName, ir }: Props) {
   const navigate = useNavigate();
-  const [activeNode, setActiveNode] = useState<string | null>(null);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [status, setStatus] = useState<ExecStatus>("idle");
-  const [breakpointState, setBreakpointState] = useState<Record<string, unknown>>({});
-  const [breakpointNode, setBreakpointNode] = useState<string | null>(null);
-  const abortRef = useRef<AbortController | null>(null);
 
-  const handleRun = async () => {
-    try {
-      const jid = await startExecution(pipelineName, {});
-      setJobId(jid);
-      setStatus("running");
-      setActiveNode(null);
-      abortRef.current = new AbortController();
-      streamExecution(
-        pipelineName,
-        jid,
-        (ev: ExecutionEvent) => {
-          if (ev.event === "node_done" && ev.node) setActiveNode(ev.node);
-          if (ev.event === "breakpoint") {
-            setStatus("breakpoint");
-            setBreakpointNode(ev.node);
-            setBreakpointState(ev.state ?? {});
-          }
-          if (ev.event === "done") {
-            setStatus("done");
-            setActiveNode(null);
-            toast.success("Пайплайн завершено");
-          }
-          if (ev.event === "error") {
-            setStatus("error");
-            setActiveNode(null);
-            toast.error(ev.error ?? "Помилка виконання");
-          }
-        },
-        abortRef.current.signal,
-      );
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      toast.error(msg);
-    }
-  };
+  const {
+    isRunning,
+    activeNode,
+    completedNodes,
+    breakpointNode,
+    breakpointState,
+    error: execError,
+    runPipeline,
+    stopPipeline,
+    resumePipeline,
+  } = usePipelineExecution();
 
-  const handleStop = () => {
-    abortRef.current?.abort();
-    setStatus("idle");
-    setActiveNode(null);
-    setJobId(null);
-  };
-
-  const handleResume = async (stateOverride: Record<string, unknown>) => {
-    if (!jobId) return;
-    setStatus("running");
-    try {
-      await resumeExecution(pipelineName, jobId, stateOverride);
-    } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Resume failed");
-    }
-  };
+  const status: ExecStatus = execError
+    ? "error"
+    : breakpointNode
+      ? "breakpoint"
+      : isRunning
+        ? "running"
+        : completedNodes.size > 0
+          ? "done"
+          : "idle";
 
   const statusColors: Record<ExecStatus, string> = {
     idle: "border-[var(--border-subtle)] text-[var(--text-muted)]",
@@ -91,6 +60,14 @@ export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
     breakpoint: "border-yellow-500 text-yellow-500",
     done: "border-green-500 text-green-500",
     error: "border-red-500 text-red-500",
+  };
+
+  const handleRun = async () => {
+    try {
+      await runPipeline(pipelineName);
+    } catch {
+      toast.error("Не вдалося запустити пайплайн");
+    }
   };
 
   const handleOpenInDiagrams = () => {
@@ -120,7 +97,8 @@ export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
         <span className="font-mono text-[10px] uppercase tracking-widest text-[var(--text-muted)] mr-2">
           {pipelineName}
         </span>
-        {(status === "idle" || status === "done" || status === "error") && (
+
+        {!isRunning && !breakpointNode && (
           <Button
             size="sm"
             onClick={handleRun}
@@ -129,16 +107,18 @@ export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
             <Play className="h-3 w-3 mr-1" /> Запустити
           </Button>
         )}
-        {status === "running" && (
+
+        {isRunning && !breakpointNode && (
           <Button
             size="sm"
             variant="destructive"
-            onClick={handleStop}
+            onClick={stopPipeline}
             className="h-7 text-[11px] font-mono"
           >
             <StopCircle className="h-3 w-3 mr-1" /> Зупинити
           </Button>
         )}
+
         <Button
           variant="outline"
           size="sm"
@@ -149,71 +129,100 @@ export function PipelineDrakonView({ pipelineName, ir, onSave }: Props) {
           <ExternalLink className="h-3 w-3 mr-1" />
           Схеми
         </Button>
+
         <div className="ml-auto flex items-center gap-3">
           {activeNode && (
-            <span className="font-mono text-[10px] text-[var(--text-secondary)]">
-              → {activeNode}
+            <span className="font-mono text-[10px] text-[var(--accent-amber)] animate-pulse">
+              ▶ {activeNode}
             </span>
           )}
-          <span
-            className={`font-mono text-[10px] uppercase px-2 py-0.5 rounded border ${statusColors[status]}`}
-          >
+          {!isRunning && completedNodes.size > 0 && (
+            <span className="font-mono text-[10px] text-green-400">
+              ✓ {completedNodes.size}
+            </span>
+          )}
+          <span className={`font-mono text-[10px] uppercase px-2 py-0.5 rounded border ${statusColors[status]}`}>
             {status}
           </span>
         </div>
       </div>
 
+      {execError && (
+        <div className="shrink-0 px-4 py-1.5 bg-red-950/30 border-b border-red-900/40 font-mono text-[11px] text-red-400">
+          {execError}
+        </div>
+      )}
+
       <div className="flex flex-1 min-h-0">
-        {/* IR viewer — simple read-only JSON view until DrakonEditor is fully wired */}
+        {/* IR viewer with 3-state node highlighting */}
         <div className="flex-1 min-w-0 relative overflow-auto p-4">
           <div className="font-mono text-[10px] text-[var(--text-secondary)] space-y-1">
             <div className="text-[var(--accent-amber)] mb-3 uppercase tracking-widest text-[9px]">
               {ir.name}
             </div>
-            {Object.entries(ir.items).map(([id, item]) => (
-              <div
-                key={id}
-                className={`flex items-center gap-2 px-2 py-1 rounded transition-all ${
-                  activeNode === item.content
-                    ? "bg-[var(--accent-amber)]/15 border border-[var(--accent-amber)]/40 text-[var(--accent-amber)]"
-                    : "text-[var(--text-secondary)]"
-                }`}
-              >
-                <span className="w-4 text-right text-[var(--text-muted)] shrink-0">{id}</span>
-                <span
-                  className={`w-16 shrink-0 ${
-                    item.type === "question"
-                      ? "text-yellow-500"
-                      : item.type === "header" || item.type === "end"
-                        ? "text-[var(--text-muted)]"
-                        : "text-[var(--accent-amber)]"
-                  }`}
+
+            {Object.entries(ir.items).map(([id, item]) => {
+              const isActive =
+                activeNode !== null && matchesActiveNode(id, item.content, activeNode);
+              const isDone =
+                !isActive &&
+                [...completedNodes].some((n) => matchesActiveNode(id, item.content, n));
+
+              return (
+                <div
+                  key={id}
+                  className={[
+                    "flex items-center gap-2 px-2 py-1 rounded transition-all duration-300",
+                    isActive
+                      ? "bg-[var(--accent-amber)]/15 border border-[var(--accent-amber)]/50 text-[var(--accent-amber)]"
+                      : isDone
+                        ? "bg-green-900/20 border border-green-700/30 text-green-400/70"
+                        : "text-[var(--text-secondary)]",
+                  ].join(" ")}
                 >
-                  {item.type}
-                </span>
-                <span className="flex-1 truncate">{item.content}</span>
-                {item.one && (
-                  <span className="text-[var(--text-muted)] shrink-0">→{item.one}</span>
-                )}
-                {item.two && (
-                  <span className="text-[var(--text-muted)] shrink-0 text-yellow-600">
-                    ↩{item.two}
+                  <span className="w-6 text-right text-[var(--text-muted)] shrink-0 text-[9px]">
+                    {id}
                   </span>
-                )}
-                {activeNode === item.content && (
-                  <Zap className="h-3 w-3 text-[var(--accent-amber)] animate-pulse shrink-0" />
-                )}
-              </div>
-            ))}
+                  <span
+                    className={[
+                      "w-16 shrink-0",
+                      item.type === "question"
+                        ? "text-yellow-500"
+                        : item.type === "header" || item.type === "end"
+                          ? "text-[var(--text-muted)]"
+                          : isActive
+                            ? "text-[var(--accent-amber)]"
+                            : isDone
+                              ? "text-green-400/70"
+                              : "text-[var(--accent-amber)]/60",
+                    ].join(" ")}
+                  >
+                    {item.type}
+                  </span>
+
+                  <span className="flex-1 truncate">{item.content}</span>
+
+                  {item.one && (
+                    <span className="text-[var(--text-muted)] shrink-0 text-[9px]">→{item.one}</span>
+                  )}
+                  {item.two && (
+                    <span className="text-[var(--text-muted)] shrink-0 text-yellow-600 text-[9px]">↩{item.two}</span>
+                  )}
+
+                  {isActive && <Zap className="h-3 w-3 text-[var(--accent-amber)] animate-pulse shrink-0" />}
+                  {isDone && <CheckCircle2 className="h-3 w-3 text-green-500/60 shrink-0" />}
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Right panel — breakpoint inspector */}
-        {status === "breakpoint" && breakpointNode && (
+        {/* Breakpoint inspector */}
+        {breakpointNode && breakpointState && (
           <NodeStateInspector
             nodeName={breakpointNode}
             state={breakpointState}
-            onResume={handleResume}
+            onResume={(stateOverride) => void resumePipeline(pipelineName, stateOverride)}
             className="w-80 shrink-0"
           />
         )}

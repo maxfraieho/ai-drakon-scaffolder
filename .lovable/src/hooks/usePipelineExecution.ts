@@ -15,6 +15,7 @@ export interface PipelineExecutionLog {
 export function usePipelineExecution() {
   const [isRunning, setIsRunning] = useState(false);
   const [activeNode, setActiveNode] = useState<string | null>(null);
+  const [completedNodes, setCompletedNodes] = useState<Set<string>>(new Set());
   const [logs, setLogs] = useState<PipelineExecutionLog[]>([]);
   const [breakpointNode, setBreakpointNode] = useState<string | null>(null);
   const [breakpointState, setBreakpointState] = useState<Record<string, unknown> | null>(null);
@@ -50,6 +51,7 @@ export function usePipelineExecution() {
       setIsRunning(true);
       setError(null);
       setActiveNode(null);
+      setCompletedNodes(new Set());
       setBreakpointNode(null);
       setBreakpointState(null);
       setLogs([]);
@@ -68,6 +70,9 @@ export function usePipelineExecution() {
           jId,
           (ev: ExecutionEvent) => {
             if (ev.event === "node_done") {
+              if (ev.node) {
+                setCompletedNodes((prev) => new Set(prev).add(ev.node as string));
+              }
               setActiveNode(ev.node);
               addLog("node", `Вузол '${ev.node}' успішно виконано.`);
               if (ev.state) {
@@ -129,6 +134,7 @@ export function usePipelineExecution() {
   return {
     isRunning,
     activeNode,
+    completedNodes,
     logs,
     breakpointNode,
     breakpointState,
