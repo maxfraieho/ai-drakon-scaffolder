@@ -477,6 +477,9 @@ if (!widgetRef.current) return;
 if (onSaveOverride) {
 const raw = JSON.parse(widgetRef.current.exportJson()) as DrakonDiagram;
 raw.name = diagramName;
+if (raw && Array.isArray(raw.params)) {
+raw.params = (raw.params as string[]).join(', ');
+}
 setConversionIssues(convertDiagramToIrWithValidation(raw).issues);
 const ok = await onSaveOverride(raw);
 if (ok) setHasChanges(false);
@@ -487,6 +490,9 @@ const effectiveId = diagramId || (isNew ? slugify(diagramName) : '') || crypto.r
 const jsonString = widgetRef.current.exportJson();
 const diagramData = JSON.parse(jsonString);
 diagramData.name = diagramName;
+if (diagramData && Array.isArray(diagramData.params)) {
+diagramData.params = (diagramData.params as string[]).join(', ');
+}
 setConversionIssues(convertDiagramToIrWithValidation(diagramData as DrakonDiagram).issues);
 
 const targetFolder =
@@ -722,7 +728,7 @@ disabled={!hasChanges || isLoading || isSaving}
 ):(
 <Save className="h-4 w-4 mr-1" />
 )}
-{t.editor?.save || 'Save'}
+{t.editor?.save || 'Зберегти'}
 </Button>
 
 <Button variant="ghost" size="sm" onClick={handleUndo} disabled={isLoading}>
@@ -831,18 +837,18 @@ disabled={isLoading}
 <Button variant="outline" size="sm" onClick={handleExportPseudocode}
 disabled={isLoading}>
 <FileText className="h-4 w-4 mr-1" />
-{t.drakonEditor.pseudocode}
+{t.drakonEditor.pseudocode || 'Псевдокод'}
 </Button>
 </TooltipTrigger>
 <TooltipContent>{t.drakonEditor.exportPseudocode}</TooltipContent>
 </Tooltip>
 <Button variant="outline" size="sm" onClick={handleExportJson} disabled={isLoading}>
 <Download className="h-4 w-4 mr-1" />
-JSON
+Експорт JSON
 </Button>
 <Button variant="outline" size="sm" onClick={handleExportPng} disabled={isLoading}>
 <Download className="h-4 w-4 mr-1" />
-PNG
+Зберегти як PNG
 </Button>
 </div>
 </div>
