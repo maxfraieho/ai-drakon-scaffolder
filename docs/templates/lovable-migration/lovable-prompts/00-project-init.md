@@ -1,3 +1,12 @@
+---
+title: "Lovable Init Prompt — AI-DRAKON"
+type: guide
+tags: [drakon, frontend, typescript]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Lovable Init Prompt — AI-DRAKON
 
 > Використовується при створенні нового Lovable-проекту з нуля (до підключення GitHub з реальним кодом).

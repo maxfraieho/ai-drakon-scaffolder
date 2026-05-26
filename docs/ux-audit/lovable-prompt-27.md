@@ -1,3 +1,12 @@
+---
+title: "Prompt 27: Pipeline UI — Code Analysis + Code Generation panels"
+type: reference
+tags: [drakon, pipeline, security, cloudflare, frontend]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Prompt 27: Pipeline UI — Code Analysis + Code Generation panels
 
 ## What to implement

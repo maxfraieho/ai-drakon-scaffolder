@@ -1,3 +1,12 @@
+---
+title: "JS/TS Support in drakon-agent — Implementation Plan"
+type: plan
+tags: [drakon, agent, frontend, typescript, python]
+status: active
+created: 2026-05-16
+updated: 2026-05-26
+---
+
 # JS/TS Support in drakon-agent — Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.

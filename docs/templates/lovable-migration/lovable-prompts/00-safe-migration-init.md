@@ -1,3 +1,12 @@
+---
+title: "Lovable Safe Migration Init Prompt"
+type: guide
+tags: [drakon, agent, cloudflare, frontend, tracing]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 This is an existing production codebase — **do not generate code or scaffold, do not modify any files.**
 
 Read the existing repo and acknowledge you can see it.

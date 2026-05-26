@@ -1,3 +1,12 @@
+---
+title: "DRAKON-as-Runtime for LangGraph Pipelines — Implementation Plan"
+type: plan
+tags: [drakon, langgraph, pipeline, agent, frontend]
+status: active
+created: 2026-05-21
+updated: 2026-05-26
+---
+
 # DRAKON-as-Runtime for LangGraph Pipelines — Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.

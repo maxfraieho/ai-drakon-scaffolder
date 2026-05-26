@@ -1,3 +1,12 @@
+---
+title: "Pipeline UI Implementation Plan"
+type: plan
+tags: [drakon, pipeline, frontend, typescript, plan]
+status: active
+created: 2026-05-16
+updated: 2026-05-26
+---
+
 # Pipeline UI Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.

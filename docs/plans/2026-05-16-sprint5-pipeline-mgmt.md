@@ -1,3 +1,12 @@
+---
+title: "Sprint 5 — Agent Pipeline Management System"
+type: plan
+tags: [drakon, langgraph, pipeline, agent, cloudflare]
+status: active
+created: 2026-05-16
+updated: 2026-05-26
+---
+
 # Sprint 5 — Agent Pipeline Management System
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.

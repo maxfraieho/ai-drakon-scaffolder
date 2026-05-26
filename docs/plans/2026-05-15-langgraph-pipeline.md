@@ -1,3 +1,12 @@
+---
+title: "LangGraph Pipeline Implementation Plan"
+type: plan
+tags: [drakon, langgraph, pipeline, agent, validation]
+status: active
+created: 2026-05-15
+updated: 2026-05-26
+---
+
 # LangGraph Pipeline Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.

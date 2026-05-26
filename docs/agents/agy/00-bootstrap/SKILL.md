@@ -1,3 +1,12 @@
+---
+title: "AGY Bootstrap — Operational Alignment Skill"
+type: guide
+tags: [agent, cloudflare, agy]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # AGY Bootstrap — Operational Alignment Skill
 
 ## Identity

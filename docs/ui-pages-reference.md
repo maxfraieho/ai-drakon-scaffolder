@@ -1,3 +1,12 @@
+---
+title: "UI Pages Reference — AI-DRAKON Platform"
+type: reference
+tags: [drakon, pipeline, agent, security, frontend]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # UI Pages Reference — AI-DRAKON Platform
 
 Довідник по всіх сторінках фронтенду. Для кожної сторінки: маршрут, призначення, ключові компоненти, API-виклики.

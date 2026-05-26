@@ -1,3 +1,12 @@
+---
+title: "Architectural Redesign and Implementation Strategy for AI-DRAKON"
+type: plan
+tags: [drakon, plan]
+status: active
+created: 2026-05-12
+updated: 2026-05-26
+---
+
 # **Architectural Redesign and Implementation Strategy for the AI-DRAKON Collaborative Engineering Platform**
 
 ## **1\. Systemic Analysis and Architectural Foundations**

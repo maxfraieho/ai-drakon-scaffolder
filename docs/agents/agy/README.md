@@ -1,3 +1,12 @@
+---
+title: "AGY Skills — AI-DRAKON Documentation Agent"
+type: guide
+tags: [drakon, agent, cloudflare, agy]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # AGY Skills — AI-DRAKON Documentation Agent
 
 Skills for `agy` (Antigravity CLI) to configure it as documentation and analysis

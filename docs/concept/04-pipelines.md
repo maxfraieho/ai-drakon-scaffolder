@@ -1,3 +1,12 @@
+---
+title: "04 — Пайплайни: Pipeline A та Pipeline B"
+type: concept
+tags: [drakon, langgraph, pipeline, agent, validation]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # 04 — Пайплайни: Pipeline A та Pipeline B
 
 ## Огляд

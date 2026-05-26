@@ -1,3 +1,12 @@
+---
+title: "03 — Архітектура системи"
+type: concept
+tags: [drakon, langgraph, pipeline, agent, security]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # 03 — Архітектура системи
 
 ## Огляд

@@ -1,3 +1,12 @@
+---
+title: "Lovable Account Migration"
+type: guide
+tags: [drakon, security]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Lovable Account Migration
 
 Переїзд на новий Lovable акаунт зі збереженням CF Pages + усіх налаштувань.

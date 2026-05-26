@@ -1,3 +1,12 @@
+---
+title: "Stitch Design Prompt — Pipeline Panels (CodeAnalysisPanel + CodeGenerationPanel)"
+type: reference
+tags: [drakon, pipeline]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Stitch Design Prompt — Pipeline Panels (CodeAnalysisPanel + CodeGenerationPanel)
 
 Design the **Pipeline Panels** for AI-DRAKON — a right-side drawer that appears on the `/diagrams` page when the user clicks "Аналіз" or "Генерація". These panels let architects trigger AI pipeline jobs and see results inline without leaving the diagram list.

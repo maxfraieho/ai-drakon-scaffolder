@@ -1,3 +1,12 @@
+---
+title: "Stitch Design Prompt — Diagrams Page"
+type: reference
+tags: [drakon, frontend]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 Design a complete workspace shell and two runtime panels for AI-DRAKON — a DRAKON visual algorithm engineering platform used by software architects. This is an IDE-like engineering workspace, not a SaaS dashboard.
 
 ---

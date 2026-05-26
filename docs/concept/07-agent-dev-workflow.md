@@ -1,3 +1,12 @@
+---
+title: "Agent Development Workflow"
+type: concept
+tags: [drakon, agent, concept]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Agent Development Workflow
 
 > Real usage pattern for AI-DRAKON development with Claude Code, goclaw, and Codex.

@@ -1,3 +1,12 @@
+---
+title: "AGY Documentation Agent — Skill"
+type: guide
+tags: [drakon, langgraph, pipeline, agent, frontend]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # AGY Documentation Agent — Skill
 
 ## Purpose

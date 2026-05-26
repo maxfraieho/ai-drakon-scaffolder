@@ -1,3 +1,12 @@
+---
+title: "Lovable Handoff Context — AI-DRAKON"
+type: guide
+tags: [drakon, langgraph, pipeline, frontend, python]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Lovable Handoff Context — AI-DRAKON
 
 > Цей файл надається Lovable після того, як реальний код запушено в новий repo.

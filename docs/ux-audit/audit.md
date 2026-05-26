@@ -1,3 +1,12 @@
+---
+title: "AI-DRAKON UX Audit — 2026-05-15"
+type: reference
+tags: [drakon, pipeline, agent, frontend, typescript]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # AI-DRAKON UX Audit — 2026-05-15
 
 Evidence-based. All observations reference actual source files.

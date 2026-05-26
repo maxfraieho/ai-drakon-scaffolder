@@ -1,3 +1,12 @@
+---
+title: "AI-DRAKON: Документація системи"
+type: concept
+tags: [drakon, pipeline, agent, ir-format, frontend]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # AI-DRAKON: Документація системи
 
 > Система розробки застосунків на основі візуального програмування DRAKON з підтримкою AI-агентів.

@@ -1,3 +1,12 @@
+---
+title: "AGY Repo Analyzer — Skill"
+type: guide
+tags: [drakon, python, agy]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # AGY Repo Analyzer — Skill
 
 ## Purpose

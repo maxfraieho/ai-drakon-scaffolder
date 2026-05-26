@@ -1,3 +1,12 @@
+---
+title: "06 — База знань предметної області"
+type: concept
+tags: [drakon, agent, concept]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # 06 — База знань предметної області
 
 ## Роль бази знань у системі

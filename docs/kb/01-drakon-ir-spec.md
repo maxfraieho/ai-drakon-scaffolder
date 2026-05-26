@@ -1,3 +1,12 @@
+---
+title: "DRAKON IR — Повна база знань для агента (формалізована)"
+type: kb
+tags: [drakon, agent, ir-format, kb]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # DRAKON IR — Повна база знань для агента (формалізована)
 
 ## Призначення

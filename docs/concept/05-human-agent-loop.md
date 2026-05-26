@@ -1,3 +1,12 @@
+---
+title: "05 — Human-Agent Loop: модель взаємодії людини та агента"
+type: concept
+tags: [drakon, agent, frontend, python, concept]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # 05 — Human-Agent Loop: модель взаємодії людини та агента
 
 ## Концепція

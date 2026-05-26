@@ -1,3 +1,12 @@
+---
+title: "Implementation Risks — Pipeline UI"
+type: reference
+tags: [drakon, pipeline, frontend, typescript]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Implementation Risks — Pipeline UI
 
 ## Risk 1: DiagramsPage is large and complex

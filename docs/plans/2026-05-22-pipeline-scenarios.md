@@ -1,3 +1,12 @@
+---
+title: "Pipeline Command Center — Документація сценаріїв"
+type: plan
+tags: [drakon, pipeline, typescript, plan]
+status: active
+created: 2026-05-22
+updated: 2026-05-26
+---
+
 # Pipeline Command Center — Документація сценаріїв
 
 > Документ охоплює всі 7 сценаріїв (`A–G`) платформи AI-DRAKON.  

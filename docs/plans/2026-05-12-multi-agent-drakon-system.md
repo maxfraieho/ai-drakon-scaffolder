@@ -1,3 +1,12 @@
+---
+title: "Multi-Agent DRAKON System — Implementation Plan"
+type: plan
+tags: [drakon, agent, cloudflare, frontend, typescript]
+status: active
+created: 2026-05-12
+updated: 2026-05-26
+---
+
 # Multi-Agent DRAKON System — Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.

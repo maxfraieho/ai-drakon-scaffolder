@@ -1,3 +1,12 @@
+---
+title: "Артефакт 2 — Agent Chat UI + System Prompts + Handoff"
+type: kb
+tags: [drakon, agent, cloudflare, frontend, python]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Артефакт 2 — Agent Chat UI + System Prompts + Handoff
 
 ---

@@ -1,3 +1,12 @@
+---
+title: "Stitch Design Prompt — Agent Logic Studio"
+type: reference
+tags: [drakon, agent, frontend]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # Stitch Design Prompt — Agent Logic Studio
 
 Design the **Agent Logic Studio** page for AI-DRAKON — an IDE-like visual programming platform for software architects. This page visualizes and lets engineers edit the internal logic of three AI agents.

@@ -1,3 +1,12 @@
+---
+title: "01 — Концепція AI-DRAKON"
+type: concept
+tags: [drakon, concept]
+status: active
+created: 2026-05-26
+updated: 2026-05-26
+---
+
 # 01 — Концепція AI-DRAKON
 
 ## Проблема, яку вирішує система
