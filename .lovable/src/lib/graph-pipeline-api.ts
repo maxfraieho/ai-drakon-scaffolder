@@ -49,6 +49,30 @@ export async function savePipeline(name: string, ir: IrDiagram): Promise<void> {
   if (!r.ok) throw new Error(`savePipeline: ${r.status}`);
 }
 
+export async function createPipeline(name: string): Promise<PipelineInfo> {
+  const postResp = await fetch(`${getArchitectBase()}/graph-pipelines`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, display_name: name }),
+  }).catch(() => null);
+
+  if (postResp?.ok) {
+    return postResp.json() as Promise<PipelineInfo>;
+  }
+
+  const skeleton: IrDiagram = {
+    name,
+    access: "private",
+    params: [],
+    items: {
+      h0: { type: "header", content: name },
+      e0: { type: "end", content: "" },
+    },
+  };
+  await savePipeline(name, skeleton);
+  return { name, display_name: name };
+}
+
 export async function startExecution(
   name: string,
   initialState: Record<string, unknown> = {},

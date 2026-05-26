@@ -353,7 +353,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
       <CommandPalette
         open={cmdOpen}
         onOpenChange={setCmdOpen}
-        theme={theme}
+        theme={theme === "system" ? "dark" : theme}
         onToggleTheme={toggleTheme}
         onLogout={logout}
       />

@@ -240,7 +240,7 @@ selected: n.id === selectedNodeId,
 }));
 
 const rfEdges: Edge[] = config.edges.map((e, i) => ({
-id: e-${i},
+id: `e-${i}`,
 source: e.from_node,
 target: e.to_node,
 sourceHandle: e.condition ?? undefined,

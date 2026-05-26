@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { listPipelines, type PipelineInfo } from "@/lib/graph-pipeline-api";
-import { FileText, Loader2, GitFork } from "lucide-react";
+import { listPipelines, createPipeline, type PipelineInfo } from "@/lib/graph-pipeline-api";
+import { FileText, Loader2, GitFork, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface PipelineListProps {
@@ -22,6 +22,7 @@ export function PipelineList({
 }: PipelineListProps) {
   const [pipelines, setPipelines] = useState<PipelineInfo[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -56,6 +57,23 @@ export function PipelineList({
     };
   }, [onSelectPipeline, selectedPipelineName]);
 
+  const handleCreatePipeline = async () => {
+    const rawName = window.prompt("Назва нового пайплайну (латиниця, підкреслення):");
+    if (!rawName?.trim()) return;
+    const name = rawName.trim().toLowerCase().replace(/\s+/g, "_");
+    setIsCreating(true);
+    try {
+      const created = await createPipeline(name);
+      setPipelines((prev) => [...prev, created]);
+      onSelectPipeline(created.name);
+    } catch (e) {
+      console.error("Failed to create pipeline:", e);
+      window.alert(`Помилка створення пайплайну: ${e}`);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
     <div
       className="flex flex-col h-full border-r w-[200px] shrink-0 overflow-y-auto"
@@ -67,7 +85,20 @@ export function PipelineList({
     >
       <div className="flex h-8 shrink-0 items-center justify-between border-b px-2 font-mono text-[10px] uppercase tracking-wider text-muted-foreground">
         <span>Пайплайни (IR)</span>
-        <GitFork className="h-3 w-3" />
+        <div className="flex items-center gap-1">
+          {isCreating ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <button
+              onClick={handleCreatePipeline}
+              title="Новий пайплайн"
+              className="hover:text-foreground transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          )}
+          <GitFork className="h-3 w-3" />
+        </div>
       </div>
 
       <div className="flex-1 p-2 space-y-1">

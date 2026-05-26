@@ -3,6 +3,7 @@ import { PipelineList } from "@/components/agents/PipelineList";
 import { StudioToolbar } from "@/components/agents/StudioToolbar";
 import { PropertiesPanel } from "@/components/agents/PropertiesPanel";
 import { ExecutionPanel } from "@/components/agents/ExecutionPanel";
+import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 import { getPipeline, savePipeline } from "@/lib/graph-pipeline-api";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
@@ -250,6 +251,9 @@ export default function AgentStudioPage() {
           breakpoints={breakpoints}
           onToggleBreakpoint={handleToggleBreakpoint}
         />
+
+        {/* Column 4: Agent Chat Panel */}
+        <AgentChatPanel className="w-[280px] shrink-0 border-l" />
       </div>
 
       {/* Docked Execution Log Console */}
