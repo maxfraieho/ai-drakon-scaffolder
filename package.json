@@ -10,7 +10,7 @@
     "dist-check": "npm run build",
     "build:dev": "npm --prefix .lovable run build:dev",
     "preview": "npm --prefix .lovable run preview",
-    "test": "npm --prefix .lovable exec vitest",
+    "test": "cd .lovable && npx vitest run",
     "build:pages": "npm run build",
     "deploy:pages": "npx wrangler pages deploy dist --functions functions"
   },
