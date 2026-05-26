@@ -42,7 +42,7 @@ body: JSON.stringify({ ir }),
 const data = (await response.json()) as ValidationResult & { error?: string; message?: string };
 
 if (!response.ok) {
-throw new Error(`data.message || data.error || HTTP ${response.status}`);
+throw new Error(data.message ?? data.error ?? `HTTP ${response.status}`);
 }
 
 return data;
