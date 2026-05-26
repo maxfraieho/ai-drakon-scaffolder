@@ -21,6 +21,7 @@ updated: 2026-05-26
 | [04 — Пайплайни](./04-pipelines.md) | Pipeline A (код → IR) та Pipeline B (IR → код) |
 | [05 — Human-Agent Loop](./05-human-agent-loop.md) | Модель взаємодії людини та агента |
 | [06 — База знань](./06-knowledge-base.md) | Роль предметних знань у системі |
+| [08 — Агенти та markdown-KB](./08-agent-docs-integration.md) | DQL, MCP-інструменти, повна інтеграція docs-agent |
 
 ## UI та фронтенд
 

@@ -24,6 +24,7 @@ updated: 2026-05-26
 | 05 — Human-Agent Loop: модель взаємодії людини та агента | `concept/05-human-agent-loop.md` | active |
 | 06 — База знань предметної області | `concept/06-knowledge-base.md` | active |
 | Agent Development Workflow | `concept/07-agent-dev-workflow.md` | active |
+| 08 — Агенти та markdown-база знань: повна інтеграція | `concept/08-agent-docs-integration.md` | active |
 | AI-DRAKON: Документація системи | `concept/README.md` | active |
 
 ## Архітектурні гайди (`type: architecture`)
