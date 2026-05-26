@@ -7,6 +7,8 @@
 import type { DrakonDiagram, DrakonItem } from "@/types/drakonwidget";
 
 import type { IrDiagram, IrItem, IrItemType } from "./ir-types";
+import { validateIrDeterministic } from "./ir-validator-core";
+import type { ValidationIssue } from "./ir-validator-core";
 
 const IR_ITEM_TYPES: ReadonlySet<IrItemType> = new Set([
   "action",
@@ -114,5 +116,31 @@ export function convertDiagramToIr(diagram: DrakonDiagram): IrDiagram {
     access: mapDiagramAccessToIrAccess(diagram.access),
     params: parseDiagramParams(diagram.params),
     items,
+  };
+}
+
+export function convertDiagramToIrWithValidation(diagram: DrakonDiagram): {
+  ir: IrDiagram;
+  issues: ValidationIssue[];
+} {
+  const conversionIssues: ValidationIssue[] = [];
+
+  for (const [id, item] of Object.entries(diagram.items)) {
+    if (!IR_ITEM_TYPES.has(item.type as IrItemType)) {
+      conversionIssues.push({
+        code: "UNKNOWN_ITEM_TYPE",
+        severity: "warning",
+        message: `Unknown item type "${item.type}", mapped to "action"`,
+        nodeId: id,
+      });
+    }
+  }
+
+  const ir = convertDiagramToIr(diagram);
+  const { issues: validationIssues } = validateIrDeterministic(ir);
+
+  return {
+    ir,
+    issues: [...conversionIssues, ...validationIssues],
   };
 }

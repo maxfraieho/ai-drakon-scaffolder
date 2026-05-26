@@ -65,6 +65,8 @@ import { getGithubConfig } from '@/lib/settings-storage';
 import { toast } from 'sonner';
 import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender,
 DrakonConfig } from '@/types/drakonwidget';
+import { convertDiagramToIrWithValidation } from '@/lib/htse/diagram-to-ir';
+import type { ValidationIssue } from '@/lib/htse/ir-validator-core';
 
 interface DrakonEditorProps {
 diagram?: DrakonDiagram;
@@ -115,6 +117,7 @@ const containerRef = useRef<HTMLDivElement>(null);
 const widgetRef = useRef<DrakonWidgetType | null>(null);
 const [isLoading, setIsLoading] = useState(true);
 const [error, setError] = useState<string | null>(null);
+const [conversionIssues, setConversionIssues] = useState<ValidationIssue[]>([]);
 const [hasChanges, setHasChanges] = useState(false);
 const [diagramName, setDiagramName] = useState(diagram?.name ||
 t.drakonEditor.newDiagram);
@@ -327,6 +330,15 @@ if (containerRef.current) containerRef.current.innerHTML = '';
 };
 }, [diagramId]);
 
+// Validate conversion issues whenever diagram prop changes
+useEffect(() => {
+if (!diagram) {
+setConversionIssues([]);
+return;
+}
+setConversionIssues(convertDiagramToIrWithValidation(diagram).issues);
+}, [diagram]);
+
 // Native capture-phase guard: prevent canvas/widget from clearing selection
 // on right-click or while context menu / paste mode is active
 useEffect(() => {
@@ -465,6 +477,7 @@ if (!widgetRef.current) return;
 if (onSaveOverride) {
 const raw = JSON.parse(widgetRef.current.exportJson()) as DrakonDiagram;
 raw.name = diagramName;
+setConversionIssues(convertDiagramToIrWithValidation(raw).issues);
 const ok = await onSaveOverride(raw);
 if (ok) setHasChanges(false);
 return;
@@ -474,6 +487,7 @@ const effectiveId = diagramId || (isNew ? slugify(diagramName) : '') || crypto.r
 const jsonString = widgetRef.current.exportJson();
 const diagramData = JSON.parse(jsonString);
 diagramData.name = diagramName;
+setConversionIssues(convertDiagramToIrWithValidation(diagramData as DrakonDiagram).issues);
 
 const targetFolder =
 (projectFolder.folderSlug || '').trim() || folderSlug || 'general';
@@ -832,6 +846,37 @@ PNG
 </Button>
 </div>
 </div>
+
+{/* Conversion/validation issues */}
+{conversionIssues.length > 0 && (
+<div className="shrink-0 flex flex-wrap gap-1 px-2 py-1 border-b">
+{conversionIssues.map((issue, i) => (
+<Tooltip key={i}>
+<TooltipTrigger asChild>
+<button
+className={cn(
+'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-mono cursor-pointer',
+issue.severity === 'error'
+? 'bg-destructive/10 text-destructive border border-destructive/30'
+: 'bg-amber-500/10 text-amber-600 border border-amber-500/30',
+)}
+onClick={() => issue.nodeId && void navigator.clipboard.writeText(issue.nodeId)}
+>
+<AlertCircle className="h-3 w-3 shrink-0" />
+{issue.nodeId ?? issue.code}
+</button>
+</TooltipTrigger>
+<TooltipContent side="bottom" className="max-w-xs">
+<p className="font-mono text-[10px] text-muted-foreground">{issue.code}</p>
+<p className="text-xs">{issue.message}</p>
+{issue.nodeId && (
+<p className="font-mono text-[10px] text-muted-foreground mt-1">nodeId: {issue.nodeId}</p>
+)}
+</TooltipContent>
+</Tooltip>
+))}
+</div>
+)}
 
 {/* Editor layout with toolbar at bottom */}
 <div className="flex flex-col flex-1 min-h-0 gap-2">
