@@ -13,6 +13,23 @@
 | [05 — Human-Agent Loop](./05-human-agent-loop.md) | Модель взаємодії людини та агента |
 | [06 — База знань](./06-knowledge-base.md) | Роль предметних знань у системі |
 
+## UI та фронтенд
+
+| Документ | Опис |
+|----------|------|
+| [UI Pages Reference](../ui-pages-reference.md) | Всі сторінки: маршрути, компоненти, API-виклики, TypeScript-інтерфейси |
+| [UX Audit](../ux-audit/audit.md) | Детальний аудит UX з доказами та рекомендаціями |
+
+## Архітектурні посібники (LangGraph)
+
+| Документ | Опис |
+|----------|------|
+| [Фаза 1 — LangGraph для початківців](../architecture/01_langgraph_for_beginners.md) | Стан, вузли, ребра, цикли |
+| [Фаза 2 — DRAKON → LangGraph mapping](../architecture/02_drakon_to_langgraph_mapping.md) | Ralph Loop, Syntax Loop |
+| [Фаза 3 — Live Tracing Protocol](../architecture/03_live_tracing_protocol.md) | SSE, node events, підсвічування вузлів |
+| [Фаза 4 — Валідація та помилки](../architecture/04_validation_and_errors.md) | ValidationIssue, геометрична перевірка |
+| [Фаза 5 — Безпека та деплой](../architecture/05_security_and_deployment.md) | JWT, Worker, Cloudflare Pages |
+
 ## Швидкий старт
 
 ```
