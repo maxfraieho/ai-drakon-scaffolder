@@ -25,6 +25,9 @@ export default function AgentStudioPage() {
   const [isDirty, setIsDirty] = useState(false);
   const [consoleOpen, setConsoleOpen] = useState(true);
 
+  const [centerTab, setCenterTab] = useState<"graph" | "logic">("graph");
+  const [logicJson, setLogicJson] = useState("");
+
   // SSE Pipeline Execution Hook
   const {
     isRunning,
@@ -71,6 +74,17 @@ export default function AgentStudioPage() {
       active = false;
     };
   }, [selectedPipelineName]);
+
+  // Sync logic JSON representation when active diagram or active tab changes
+  useEffect(() => {
+    if (activeDiagram && centerTab === "logic") {
+      try {
+        setLogicJson(JSON.stringify(convertDiagramToIr(activeDiagram), null, 2));
+      } catch (err) {
+        console.error("Error converting diagram to IR:", err);
+      }
+    }
+  }, [activeDiagram, centerTab]);
 
   // Handle Pipeline list selection
   const handleSelectPipeline = useCallback((name: string) => {
@@ -125,6 +139,18 @@ export default function AgentStudioPage() {
       return false;
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Save handler for manual JSON logic editing
+  const handleSaveLogicJson = async () => {
+    try {
+      const parsedIr = JSON.parse(logicJson);
+      const diagram = convertIrToDiagram(parsedIr);
+      await handleSaveOverride(diagram);
+    } catch (err) {
+      console.error("JSON parsing error:", err);
+      toast.error(`Помилка валідації JSON: ${err instanceof Error ? err.message : String(err)}`);
     }
   };
 
@@ -217,25 +243,97 @@ export default function AgentStudioPage() {
             onResume={handleResume}
           />
 
-          <div className="flex-1 relative overflow-hidden bg-muted/10">
-            {isLoading ? (
-              <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : activeDiagram && selectedPipelineName ? (
-              <DrakonEditor
-                diagram={activeDiagram}
-                diagramId={selectedPipelineName}
-                onSaveOverride={handleSaveOverride}
-                onSelectionChanged={handleSelectionChanged}
-                className="h-full w-full"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground italic select-none">
-                Оберіть пайплайн із бічної панелі для редагування графа
-              </div>
-            )}
+          {/* Tab Bar */}
+          <div
+            className="flex border-b px-4 shrink-0"
+            style={{
+              backgroundColor: "var(--color-surface-container-high)",
+              borderColor: "rgba(128, 128, 128, 0.2)"
+            }}
+          >
+            <button
+              onClick={() => setCenterTab("graph")}
+              className="px-4 py-2 font-medium focus:outline-none"
+              style={{
+                color: "var(--text-primary)",
+                borderBottom: centerTab === "graph" ? "2px solid var(--color-primary-container)" : "2px solid transparent",
+                opacity: centerTab === "graph" ? 1 : 0.6,
+              }}
+            >
+              Граф
+            </button>
+            <button
+              onClick={() => setCenterTab("logic")}
+              className="px-4 py-2 font-medium focus:outline-none"
+              style={{
+                color: "var(--text-primary)",
+                borderBottom: centerTab === "logic" ? "2px solid var(--color-primary-container)" : "2px solid transparent",
+                opacity: centerTab === "logic" ? 1 : 0.6,
+              }}
+            >
+              DRAKON Logic
+            </button>
           </div>
+
+          {centerTab === "graph" ? (
+            <div className="flex-1 relative overflow-hidden bg-muted/10">
+              {isLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : activeDiagram && selectedPipelineName ? (
+                <DrakonEditor
+                  diagram={activeDiagram}
+                  diagramId={selectedPipelineName}
+                  onSaveOverride={handleSaveOverride}
+                  onSelectionChanged={handleSelectionChanged}
+                  className="h-full w-full"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground italic select-none">
+                  Оберіть пайплайн із бічної панелі для редагування графа
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex-1 flex flex-col p-4 overflow-hidden relative" style={{ backgroundColor: "var(--bg-base)" }}>
+              {isLoading ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : activeDiagram && selectedPipelineName ? (
+                <div className="flex flex-col h-full space-y-2">
+                  <textarea
+                    value={logicJson}
+                    onChange={(e) => setLogicJson(e.target.value)}
+                    className="flex-1 w-full p-3 font-mono text-xs rounded border focus:outline-none"
+                    style={{
+                      backgroundColor: "var(--color-surface-container-high)",
+                      color: "var(--text-primary)",
+                      borderColor: "rgba(128, 128, 128, 0.3)",
+                      resize: "none"
+                    }}
+                  />
+                  <div className="flex justify-end">
+                    <button
+                      onClick={handleSaveLogicJson}
+                      className="px-4 py-2 rounded font-medium text-xs transition-opacity hover:opacity-90"
+                      style={{
+                        backgroundColor: "var(--color-primary-container)",
+                        color: "var(--text-primary)",
+                      }}
+                    >
+                      Зберегти
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center text-muted-foreground italic select-none">
+                  Оберіть пайплайн із бічної панелі для редагування JSON
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Column 3: Properties Sidebar Inspector */}
