@@ -1297,3 +1297,121 @@ DIARY:
   Запиши в diary (agent: agt-ogy):
   "SESSION:2026-05-29|TASK-20:wiki-graph-research|incoming.rules.added|prompts.updated|★★★"
 ```
+
+---
+
+### TASK-21: Виправити incoming-лінки в docs/ за новими принципами
+
+```
+[ ] TASK-21
+
+ПРОБЛЕМА (дані аналізу):
+  [[INDEX]] — 21 incoming (кожен doc лінкує на ROOT — НЕПРАВИЛЬНО)
+  [[01-vision]] — 8 incoming (content-нода стала хабом)
+  [[01-drakon-ir-spec]] — 8 incoming (те саме)
+  [[03-architecture]] — 7 incoming
+
+НОВІ ПРАВИЛА (з docs/META/STANDARD.md, LINKS_RESEARCH.md):
+  - Лінкуй тільки на НАЙБЛИЖЧИЙ _INDEX свого розділу, НЕ на [[INDEX]] (root)
+  - Якщо вже є [[concept/_INDEX]] — НЕ додавай окремо [[01-vision]], [[03-architecture]]
+  - Content-нода: max 5 incoming
+
+КРОК 1 — git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+КРОК 2 — замінити [[INDEX]] на правильний секційний _INDEX
+  Запусти python3 скрипт:
+
+  import os, re, glob
+
+  SECTION_MAP = {
+      "concept/": "concept/_INDEX",
+      "architecture/": "architecture/_INDEX",
+      "plans/": "plans/_INDEX",
+      "kb/": "kb/_INDEX",
+      "manuals/": "manuals/_INDEX",
+      "agents/agy/": "agents/agy/_INDEX",
+      "agents/": "agents/_INDEX",
+      "ux-audit/": "ux-audit/_INDEX",
+      "reports/": "reports/_INDEX",
+      "templates/": "templates/_INDEX",
+      "META/": "META/_INDEX",
+  }
+
+  files = glob.glob("docs/**/*.md", recursive=True)
+  fixed = []
+  for fpath in files:
+      rel = os.path.relpath(fpath, ".")
+      with open(fpath) as f:
+          content = f.read()
+
+      # Знайти секцію Семантичні зв'язки
+      section_match = re.search(r"(## Семантичні зв[^\n]*\n)(.*?)$", content, re.DOTALL)
+      if not section_match:
+          continue
+
+      section = section_match.group(2)
+      original = section
+
+      # Визначити правильний _INDEX для цього файлу
+      correct_index = None
+      for prefix, index in SECTION_MAP.items():
+          if prefix in rel:
+              correct_index = index
+              break
+
+      if correct_index:
+          # Замінити [[INDEX]] на правильний секційний _INDEX
+          section = re.sub(r'\[\[INDEX\]\]', f'[[{correct_index}]]', section)
+          # Видалити дублюючий лінк якщо і sectional _INDEX і root INDEX були
+          lines = section.split('\n')
+          seen_links = set()
+          new_lines = []
+          for line in lines:
+              links_in_line = re.findall(r'\[\[([^\]]+)\]\]', line)
+              if links_in_line:
+                  link = links_in_line[0]
+                  if link in seen_links:
+                      continue  # пропустити дублікат
+                  seen_links.add(link)
+              new_lines.append(line)
+          section = '\n'.join(new_lines)
+
+      if section != original:
+          new_content = content[:section_match.start(2)] + section
+          with open(fpath, 'w') as f:
+              f.write(new_content)
+          fixed.append(rel)
+          print(f"FIXED: {rel}")
+
+  print(f"Total fixed: {len(fixed)}")
+
+КРОК 3 — додатково: якщо в секції вже є [[concept/_INDEX]], видали прямі лінки
+  на [[01-vision]], [[03-architecture]], [[02-drakon-primer]] з тієї ж секції
+  (вони вже доступні через _INDEX за 1 крок — надлишок)
+  Залиш їх ТІЛЬКИ якщо вони єдиний зв'язок у секції.
+
+ВЕРИФІКАЦІЯ:
+  python3 -c "
+  import re, glob
+  from collections import defaultdict
+  files = glob.glob('docs/**/*.md', recursive=True)
+  incoming = defaultdict(list)
+  for f in files:
+      for link in re.findall(r'\[\[([^\]]+)\]\]', open(f).read()):
+          incoming[link].append(f)
+  hubs = [(t,s) for t,s in incoming.items() if len(s)>5 and '_INDEX' not in t and 'INDEX' not in t and 'README' not in t]
+  print('Content hubs >5:', hubs[:10])
+  idx = incoming.get('INDEX', [])
+  print('[[INDEX]] incoming:', len(idx))
+  "
+  (Ціль: [[INDEX]] incoming → 0-2, content hubs → немає з >5)
+
+COMMIT:
+  git add docs/
+  git commit -m "docs(graph): fix incoming links — nearest _INDEX, remove [[INDEX]] root refs (TASK-21)"
+  git push origin main
+
+DIARY:
+  "SESSION:2026-05-29|TASK-21:incoming-links-fixed|INDEX.root.removed|★★★"
+```
