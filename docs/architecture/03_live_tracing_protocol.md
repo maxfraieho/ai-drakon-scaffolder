@@ -115,5 +115,3 @@ function matchesActiveNode(item: DrakonItem, activeNodeName: string | null): boo
 **Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[02_drakon_to_langgraph_mapping]] — Фаза 2: маппінг DRAKON → LangGraph
-- [[04_validation_and_errors]] — Фаза 4: валідація та помилки
-- [[ui-pages-reference]] — референс сторінок UI (DiagramsPage)

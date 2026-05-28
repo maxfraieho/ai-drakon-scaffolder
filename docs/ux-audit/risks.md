@@ -77,5 +77,3 @@ lang: uk
 **Цей документ є частиною:** [[ux-audit/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
-- [[ux-audit/lovable-prompt-27]] — Промпт 27: Інтерфейс пайплайну
-**Читати далі:** [[ux-audit/stitch-prompt]]

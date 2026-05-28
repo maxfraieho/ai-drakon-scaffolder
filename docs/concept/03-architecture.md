@@ -146,5 +146,3 @@ sudo rc-service ai-docs-agent restart
 **Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[01-vision]] — концепція AI-DRAKON
-- [[02-drakon-primer]] — вступ до мови ДРАКОН
-- [[04-pipelines]] — детальний опис пайплайнів

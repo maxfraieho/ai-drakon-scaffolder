@@ -420,5 +420,3 @@ git push origin main && git push drakon-diagram-flow main
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[concept/04-pipelines]] — концепція конвеєрів (pipelines)
-- [[kb/01-drakon-ir-spec]] — специфікація DRAKON IR
-**Читати далі:** [[plans/2026-05-22-pipeline-scenarios]]

@@ -1075,4 +1075,3 @@ POST /feedback → knowledge/{project}/{id}-{ts}.md
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[plans/2026-05-12-multi-agent-drakon-system]] — Мультиагентна система DRAKON — План реалізації
-**Читати далі:** [[plans/2026-05-16-pipeline-ui]]

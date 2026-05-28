@@ -1012,5 +1012,3 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git log --o
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[plans/2026-05-12-multi-agent-drakon-system]] — загальний архітектурний план системи
-- [[kb/02-agent-prompts]] — промпти та налаштування агентів
-**Читати далі:** [[plans/2026-05-16-sprint5-pipeline-mgmt]]

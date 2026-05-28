@@ -216,5 +216,3 @@ lang: uk
 **Цей документ є частиною:** [[ux-audit/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
-- [[ux-audit/stitch-prompt-agent-studio]] — Промпт дизайну Stitch: Студія логіки агентів
-**Читати далі:** [[ux-audit/lovable-prompt-27]]

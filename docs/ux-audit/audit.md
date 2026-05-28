@@ -164,5 +164,3 @@ lang: uk
 **Цей документ є частиною:** [[ux-audit/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[ux-audit/risks]] — Ризики та технічний борг UI/UX платформи AI-DRAKON
-- [[ux-audit/stitch-prompt]] — Промпт для склеювання (Stitch) інтерфейсу
-**Читати далі:** [[ux-audit/lovable-prompt-27]]

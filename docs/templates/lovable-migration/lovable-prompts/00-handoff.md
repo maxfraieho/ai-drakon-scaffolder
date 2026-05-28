@@ -83,5 +83,3 @@ GitHub Action автоматично дзеркалює B → A.
 **Цей документ є частиною:** [[templates/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[templates/lovable-migration/README]] — Інструкція з міграції Lovable
-- [[templates/lovable-migration/lovable-prompts/00-safe-migration-init]] — Промпт ініціалізації безпечної міграції Lovable
-**Читати далі:** [[templates/lovable-migration/lovable-prompts/00-project-init]]

@@ -429,5 +429,3 @@ Worker → jwtVerify(token, JWT_SECRET)
 
 **Цей документ є частиною:** [[docs/INDEX]]
 **Цей документ пов'язаний з:**
-- [[plans/2026-05-22-platform-redesign]] — Редізайн платформи AI-DRAKON — План реалізації
-- [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON

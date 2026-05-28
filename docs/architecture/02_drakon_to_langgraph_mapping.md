@@ -104,5 +104,3 @@ lang: uk
 **Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[01_langgraph_for_beginners]] — Фаза 1: вступ у LangGraph
-- [[03_live_tracing_protocol]] — Фаза 3: протокол трасування в реальному часі
-- [[04-pipelines]] — опис пайплайнів Pipeline A та B

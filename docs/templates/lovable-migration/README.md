@@ -95,5 +95,3 @@ gh run list --repo maxfraieho/<new-repo> --limit 3
 **Цей документ є частиною:** [[templates/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[templates/lovable-migration/lovable-prompts/00-safe-migration-init]] — Промпт ініціалізації безпечної міграції Lovable
-- [[templates/lovable-migration/lovable-prompts/00-project-init]] — Промпт ініціалізації проекту Lovable
-**Читати далі:** [[templates/lovable-migration/lovable-prompts/00-handoff]]

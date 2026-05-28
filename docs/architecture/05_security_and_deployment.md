@@ -136,5 +136,3 @@ async function handleRequest(request, env) {
 **Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[03-architecture]] — архітектура системи AI-DRAKON
-- [[04_validation_and_errors]] — Фаза 4: валідація та помилки
-- [[COLLABORATION]] — посібник з колаборації Claude+AGY

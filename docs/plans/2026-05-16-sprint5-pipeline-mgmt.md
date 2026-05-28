@@ -995,5 +995,3 @@ sshpass -p '805235io.' ssh vokov@192.168.3.184 \
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[plans/2026-05-15-langgraph-pipeline]] — план реалізації конвеєра LangGraph
-- [[ux-audit/stitch-prompt-agent-studio]] — аудит та промпт інтерфейсу студії агентів
-**Читати далі:** [[plans/2026-05-21-ir-scheme-bidirectional-import]]

@@ -270,6 +270,4 @@ services/architect-agent/
 **Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[03-architecture]] — загальна архітектура системи AI-DRAKON
-- [[05-human-agent-loop]] — людина-в-контурі
-- [[01-drakon-ir-spec]] — специфікація DRAKON IR
 ```

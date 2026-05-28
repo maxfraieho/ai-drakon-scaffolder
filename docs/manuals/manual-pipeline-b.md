@@ -118,5 +118,3 @@ def is_positive(num):
 **Цей документ є частиною:** [[manuals/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[04-pipelines]] — опис пайплайнів Pipeline A та B
-- [[manual-pipeline-a]] — інструкція з аналізу коду (Pipeline A)
-- [[01-drakon-ir-spec]] — специфікація DRAKON IR

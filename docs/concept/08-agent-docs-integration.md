@@ -367,4 +367,3 @@ docs.wikilink("architecture/03_live_tracing_protocol")
 **Цей документ є частиною:** [[concept/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[06-knowledge-base]] — інтегрована база знань предметної області
-- [[07-agent-dev-workflow]] — робочий процес розробки агентів

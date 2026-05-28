@@ -1080,5 +1080,3 @@ Wait for deploy (~2 min after git push), then screenshot:
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[plans/2026-05-12-drakon-agent]] — Агент DRAKON — План реалізації
-- [[plans/2026-05-22-pipeline-scenarios]] — Сценарії роботи з пайплайнами — План реалізації
-**Читати далі:** [[plans/2026-05-21-drakon-langgraph-runtime]]

@@ -184,4 +184,3 @@ curl -X POST https://research.exodus.pp.ua/analyze-files \
 **Цей документ є частиною:** [[concept/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[05-human-agent-loop]] — взаємодія людини та агента
-- [[06-knowledge-base]] — інтегрована база знань

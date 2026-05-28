@@ -328,5 +328,3 @@ git push origin master
 **Цей документ є частиною:** [[agents/agy/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[manuals/manual-agent-studio]] — мануал Agent Studio
-- [[agents/agy/04-pinchtab-tests/SKILL]] — PinchTab тестування
-**Цей документ доповнює:** [[agents/agy/README]]

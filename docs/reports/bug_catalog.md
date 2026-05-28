@@ -39,4 +39,3 @@ lang: uk
 **Цей документ є частиною:** [[reports/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[plans/2026-05-26-pinchtab-test-plan]] — План тестування PinchTab — Платформа AI-DRAKON
-- [[plans/pinchtab-test-results-extended-2026-05-26]] — Розширені результати тестування PinchTab

@@ -140,4 +140,3 @@ def validate_ir(ir: dict) -> ValidationResult:
 **Цей документ є частиною:** [[concept/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[05-human-agent-loop]] — взаємодія людини та агента
-- [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR

@@ -205,5 +205,3 @@ import/stitch_pipeline_panels/04-code-generation-panel.jpg — відкрити�
 **Цей документ є частиною:** [[ux-audit/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
-- [[ux-audit/stitch-prompt]] — Промпт дизайну Stitch: Робоча область та панелі Diagrams
-**Читати далі:** [[lovable-prompt-27]]

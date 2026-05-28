@@ -72,5 +72,3 @@ lang: uk
 **Цей документ є частиною:** [[manuals/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[02-agent-prompts]] — промпти та навички для ШІ-агентів
-- [[08-agent-docs-integration]] — інтеграція docs-agent
-- [[ui-pages-reference]] — референс сторінок UI

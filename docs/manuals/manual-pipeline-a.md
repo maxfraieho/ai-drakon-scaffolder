@@ -130,5 +130,3 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 **Цей документ є частиною:** [[manuals/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[04-pipelines]] — опис пайплайнів Pipeline A та B
-- [[manual-pipeline-b]] — інструкція з генерації коду (Pipeline B)
-- [[01-drakon-ir-spec]] — специфікація DRAKON IR

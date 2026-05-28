@@ -295,5 +295,3 @@ def greet(name: str) -> str:
 **Цей документ є частиною:** [[kb/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[02-drakon-primer]] — вступ до мови ДРАКОН
-- [[04-pipelines]] — опис пайплайнів Pipeline A та B
-- [[02_drakon_to_langgraph_mapping]] — Фаза 2: маппінг DRAKON → LangGraph

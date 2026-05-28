@@ -147,6 +147,4 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 **Цей документ є частиною:** [[manuals/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[08-agent-docs-integration]] — повна інтеграція docs-agent та DQL
-- [[manual-agent-studio]] — посібник користувача з Agent Studio
-- [[02-agent-prompts]] — промпти та навички для ШІ-агентів
 ```
