@@ -102,27 +102,27 @@ chipText: "text-emerald-600 dark:text-emerald-400",
 };
 
 function readFromStorage(agentId: string) {
-if (typeof window === "undefined") return null;
-const protocol =
-(localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | "agy" | null) || "openai";
-return {
-protocol,
-baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || "",
-apiKey: localStorage.getItem(`${agentId}_llm_api_key`) || "freecc",
-model: localStorage.getItem(`${agentId}_llm_model`) || "",
-maxTokens: localStorage.getItem(`${agentId}_llm_max_tokens`) || "",
-};
+  if (typeof window === "undefined") return null;
+  const protocol =
+    (localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | "agy" | null) || "agy";
+  return {
+    protocol,
+    baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || "",
+    apiKey: localStorage.getItem(`${agentId}_llm_api_key`) || "freecc",
+    model: localStorage.getItem(`${agentId}_llm_model`) || "",
+    maxTokens: localStorage.getItem(`${agentId}_llm_max_tokens`) || "",
+  };
 }
 
 export function AgentLlmCard({
-agentId,
-agentLabel,
-agentColor,
-agentDescription,
-agentIcon,
+  agentId,
+  agentLabel,
+  agentColor,
+  agentDescription,
+  agentIcon,
 }: AgentLlmCardProps) {
-const saved = readFromStorage(agentId);
-const initialProtocol = (saved?.protocol ?? "openai") as "openai" | "anthropic" | "agy";
+  const saved = readFromStorage(agentId);
+  const initialProtocol = (saved?.protocol ?? "agy") as "openai" | "anthropic" | "agy";
 const [protocol, setProtocol] = useState<"openai" | "anthropic" | "agy">(initialProtocol);
 const [baseUrl, setBaseUrl] = useState(
 saved?.baseUrl || PROTOCOL_PRESETS[initialProtocol].baseUrl,
