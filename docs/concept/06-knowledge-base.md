@@ -137,9 +137,7 @@ def validate_ir(ir: dict) -> ValidationResult:
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[concept/_INDEX]]
 **Цей документ пов'язаний з:**
-- [[01-vision]] — концепція AI-DRAKON
 - [[05-human-agent-loop]] — взаємодія людини та агента
 - [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR

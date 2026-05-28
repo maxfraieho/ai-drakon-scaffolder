@@ -364,9 +364,7 @@ docs.wikilink("architecture/03_live_tracing_protocol")
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[concept/_INDEX]]
 **Цей документ пов'язаний з:**
-- [[01-vision]] — концепція AI-DRAKON
 - [[06-knowledge-base]] — інтегрована база знань предметної області
 - [[07-agent-dev-workflow]] — робочий процес розробки агентів

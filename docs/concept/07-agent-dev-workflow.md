@@ -181,9 +181,7 @@ curl -X POST https://research.exodus.pp.ua/analyze-files \
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[concept/_INDEX]]
 **Цей документ пов'язаний з:**
-- [[01-vision]] — загальна концепція AI-DRAKON
 - [[05-human-agent-loop]] — взаємодія людини та агента
 - [[06-knowledge-base]] — інтегрована база знань

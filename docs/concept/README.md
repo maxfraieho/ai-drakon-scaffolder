@@ -58,9 +58,6 @@ DRAKON IR  ←→  Редактор (Lovable frontend)
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[concept/_INDEX]]
 **Цей документ пов'язаний з:**
-- [[01-vision]] — концепція AI-DRAKON
-- [[03-architecture]] — архітектура системи AI-DRAKON
 - [[ui-pages-reference]] — референс сторінок UI

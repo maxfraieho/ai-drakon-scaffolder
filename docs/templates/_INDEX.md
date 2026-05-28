@@ -22,6 +22,4 @@ lang: uk
 | [[templates/lovable-migration/lovable-prompts/00-handoff]] | Контекст архітектури та обмежень для передачі в Lovable | active | 2 |
 
 ## Семантичні зв'язки
-
-**Батьківський індекс:** [[INDEX]]
-**Цей документ є частиною:** [[INDEX]]
+**Батьківський індекс:** [[templates/_INDEX]]
