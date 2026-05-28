@@ -1010,3 +1010,11 @@ REMOTE
   Автозапуск: termux-services (sv status agy-proxy: run)
   Наступний крок: встановити AGY CLI на планшет
 ```
+
+### TASK-17: Налаштування ai-memory хуків на планшеті
+```
+[x] TASK-17 — ВИКОНАНО 2026-05-28
+  Налаштовано скрипти автозапуску та зупинки ai-memory хуків на планшеті.
+  Скрипти: ~/bin/ai-memory-start.sh, ~/bin/ai-memory-end.sh
+  Автозапуск: додано до ~/.termux/boot/start-agy-proxy.sh
+```
