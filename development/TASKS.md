@@ -246,6 +246,64 @@
     генерація artifacts (podcasts, mind maps), ручне куратурство знань
   - ВИСНОВОК (попередній Claude): РАЗОМ — NLM=знання-база, MemPalace=робоча пам'ять
 ```
+
+### TASK-17: ai-memory hooks — всі агенти → 192.168.3.184:49374
+```
+[ ] TASK-17
+  МЕТА: Всі агенти (Claude Code OrangePi, AGY phone, AGY3 tablet) синхронізуються
+        з єдиним ai-memory сервером на 192.168.3.184:49374.
+        Без бінарника — тільки curl POST.
+
+  СТАТУС:
+    [x] Claude Code (OrangePi) — хуки додано в session-start.sh + mempalace-save.sh
+    [x] AGY (phone) — ~/bin/ai-memory-start.sh та ~/bin/ai-memory-end.sh (TASK-9)
+    [ ] AGY3 (tablet 192.168.3.162) — потрібно створити
+
+  === AGY3 TABLET — виконати ===
+
+  КРОК 1: Перевір чи вже є скрипти
+    ls ~/bin/ai-memory-start.sh 2>/dev/null && echo "вже є" || echo "треба створити"
+
+  КРОК 2: Якщо немає — створи ~/bin/
+    mkdir -p ~/bin
+
+  КРОК 3: Створи ~/bin/ai-memory-start.sh
+    cat > ~/bin/ai-memory-start.sh << 'SCRIPT'
+#!/data/data/com.termux/files/usr/bin/bash
+SESSION_ID="agy3-tablet-$(date +%Y%m%d-%H%M%S)"
+curl -sf -X POST "http://192.168.3.184:49374/hook?event=SessionStart"   -H "Content-Type: application/json"   -d "{"session_id":"$SESSION_ID","cwd":"$(pwd)","agent":"agt-ogy3"}"   --max-time 3 > /dev/null 2>&1
+echo "ai-memory: session started [$SESSION_ID]"
+SCRIPT
+    chmod +x ~/bin/ai-memory-start.sh
+
+  КРОК 4: Створи ~/bin/ai-memory-end.sh
+    cat > ~/bin/ai-memory-end.sh << 'SCRIPT'
+#!/data/data/com.termux/files/usr/bin/bash
+SESSION_ID="${1:-agy3-tablet-$(date +%Y%m%d)}"
+SUMMARY="${2:-session ended}"
+curl -sf -X POST "http://192.168.3.184:49374/hook?event=Stop"   -H "Content-Type: application/json"   -d "{"session_id":"$SESSION_ID","summary":"$SUMMARY","agent":"agt-ogy3"}"   --max-time 3 > /dev/null 2>&1
+echo "ai-memory: session stopped"
+SCRIPT
+    chmod +x ~/bin/ai-memory-end.sh
+
+  КРОК 5: Тест
+    curl -s -X POST "http://192.168.3.184:49374/hook?event=SessionStart"       -H "Content-Type: application/json"       -d '{"session_id":"agy3-setup-test","cwd":"/","agent":"agt-ogy3"}'       --max-time 5
+    → має повернути: queued
+
+  КРОК 6: Додай виклик в ~/.termux/boot/start-agy-proxy.sh
+    echo '' >> ~/.termux/boot/start-agy-proxy.sh
+    echo '# ai-memory session start' >> ~/.termux/boot/start-agy-proxy.sh
+    echo '~/bin/ai-memory-start.sh &' >> ~/.termux/boot/start-agy-proxy.sh
+
+  КРОК 7: Перевір ai-memory web UI (переконайся що записи з'явились):
+    curl -s http://192.168.3.184:49374/health
+
+  КРОК 8: Зафіксуй в git та diary
+    sshpass -p '123456' ssh -o StrictHostKeyChecking=no -p 8022 u0_a284@192.168.3.195 'cd ~/workspace/ai-drakon-scaffolder && sed -i "s/^\[ \] TASK-17/[x] TASK-17/" development/TASKS.md && git add development/TASKS.md && git commit -m "chore(tasks): TASK-17 ai-memory hooks AGY3 tablet" && git push origin main'
+
+    python3 -m mempalace diary write --agent agt-ogy       "SESSION:2026-05-28|TASK-17:ai-memory-hooks|AGY3.tablet.DONE|server:192.168.3.184:49374|★★"
+```
+
 ## Завершені задачі
 
 ```
