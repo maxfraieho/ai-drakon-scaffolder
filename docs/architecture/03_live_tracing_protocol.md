@@ -1,10 +1,13 @@
 ---
-title: "Фаза 3: Протокол «Живого трасування» — Як схема оживає в UI"
-type: architecture
-tags: [drakon, langgraph, frontend, tracing, architecture]
-status: active
+tags:
+  - domain:architecture
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Фаза 3: Протокол «Живого трасування»"
+lang: uk
 ---
 
 # Фаза 3: Протокол «Живого трасування» — Як схема оживає в UI
@@ -104,3 +107,14 @@ function matchesActiveNode(item: DrakonItem, activeNodeName: string | null): boo
 3. **Червоний колір (Red):** Свідчить про те, що на даному кроці сталася помилка виконання. Граф зупинено, а деталі помилки виведено в термінальну панель логів.
 
 Завдяки цьому протоколу, виконання складного ШІ-графа перетворюється на захопливий «живий» процес, де користувач бачить кожен рух думки штучного інтелекту!
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[architecture/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[02_drakon_to_langgraph_mapping]] — Фаза 2: маппінг DRAKON → LangGraph
+- [[04_validation_and_errors]] — Фаза 4: валідація та помилки
+- [[ui-pages-reference]] — референс сторінок UI (DiagramsPage)
+**Читати далі:** [[04_validation_and_errors]]

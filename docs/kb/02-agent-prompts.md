@@ -1,10 +1,13 @@
 ---
-title: "Артефакт 2 — Agent Chat UI + System Prompts + Handoff"
-type: kb
-tags: [drakon, agent, cloudflare, frontend, python]
-status: active
+tags:
+  - domain:kb
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Промпти та навички для ШІ-агентів"
+lang: uk
 ---
 
 # Артефакт 2 — Agent Chat UI + System Prompts + Handoff
@@ -319,3 +322,14 @@ cd services/drakon-agent && .venv/bin/python3 main.py &
 cd services/architect-agent && .venv/bin/python3 main.py &
 cd services/docs-agent && .venv/bin/python3 main.py &
 ```
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[kb/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR
+- [[07-agent-dev-workflow]] — робочий процес розробки агентів
+- [[manual-agent-studio]] — посібник користувача з Agent Studio
+**Читати далі:** [[manuals/_INDEX]]

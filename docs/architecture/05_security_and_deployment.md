@@ -1,10 +1,13 @@
 ---
-title: "Фаза 5: Безпека, Авторизація та Деплоймент системи"
-type: architecture
-tags: [agent, security, cloudflare, frontend, architecture]
-status: active
+tags:
+  - domain:architecture
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Фаза 5: Безпека, Авторизація та Деплоймент"
+lang: uk
 ---
 
 # Фаза 5: Безпека, Авторизація та Деплоймент системи
@@ -125,3 +128,14 @@ async function handleRequest(request, env) {
    Воркер буде розгорнутий за адресою `https://drakon-mcp-worker.maxfraieho.workers.dev`.
 
 Завдяки поєднанню **авторизації через JWT**, **захищених тунелів проксі** та **serverless архітектури Cloudflare**, наша система забезпечує максимальний рівень безпеки промислового класу при нульових витратах на інфраструктуру!
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[architecture/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[03-architecture]] — архітектура системи AI-DRAKON
+- [[04_validation_and_errors]] — Фаза 4: валідація та помилки
+- [[COLLABORATION]] — посібник з колаборації Claude+AGY
+**Читати далі:** [[kb/_INDEX]]

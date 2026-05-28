@@ -1,10 +1,13 @@
 ---
-title: "Фаза 1: Вступ у LangGraph з нуля — Концептуальний посібник для початківців"
-type: architecture
-tags: [langgraph, agent, architecture]
-status: active
+tags:
+  - domain:architecture
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Фаза 1: Вступ у LangGraph з нуля"
+lang: uk
 ---
 
 # Фаза 1: Вступ у LangGraph з нуля — Концептуальний посібник для початківців
@@ -171,3 +174,13 @@ app = workflow.compile()
 ```
 
 Ця проста та елегантна структура лежить в основі нашого проекту. Завдяки розумінню цих трьох елементів — **Стану, Вузлів та Ребер** — ви тепер можете вільно орієнтуватися в роботі будь-яких автономних ШІ-агентів, побудованих на LangGraph!
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[architecture/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[03-architecture]] — архітектура системи AI-DRAKON
+- [[02_drakon_to_langgraph_mapping]] — Фаза 2: маппінг DRAKON → LangGraph
+**Читати далі:** [[02_drakon_to_langgraph_mapping]]

@@ -1,10 +1,13 @@
 ---
-title: "Фаза 2: Міст між мовою ДРАКОН та ШІ — Мапінг концепцій у LangGraph"
-type: architecture
-tags: [drakon, langgraph, pipeline, agent, architecture]
-status: active
+tags:
+  - domain:architecture
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Фаза 2: Міст між мовою ДРАКОН та ШІ"
+lang: uk
 ---
 
 # Фаза 2: Міст між мовою ДРАКОН та ШІ — Мапінг концепцій у LangGraph
@@ -93,3 +96,15 @@ updated: 2026-05-26
    * Тільки після того, як `ast.parse` дасть «зелене світло» (код успішно компілюється без помилок), граф завершує свою роботу та віддає результат користувачу.
 
 Завдяки цим двом циклам — **Ralph Loop** та **Syntax Loop** — наш додаток гарантує, що схеми завжди будуть геометрично правильними, а згенерований код завжди буде синтаксично чистим і готовим до виконання!
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[architecture/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01_langgraph_for_beginners]] — Фаза 1: вступ у LangGraph
+- [[03_live_tracing_protocol]] — Фаза 3: протокол трасування в реальному часі
+- [[04-pipelines]] — опис пайплайнів Pipeline A та B
+- [[01-drakon-ir-spec]] — специфікація DRAKON IR
+**Читати далі:** [[03_live_tracing_protocol]]

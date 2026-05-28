@@ -1,10 +1,13 @@
 ---
-title: "DRAKON IR — Повна база знань для агента (формалізована)"
-type: kb
-tags: [drakon, agent, ir-format, kb]
-status: active
+tags:
+  - domain:kb
+  - status:canonical
+  - format:spec
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 1
+title: "DRAKON IR — База знань для агента"
+lang: uk
 ---
 
 # DRAKON IR — Повна база знань для агента (формалізована)
@@ -284,3 +287,16 @@ def greet(name: str) -> str:
 | `content` сирий Python | Переписати на людиночитаємо |
 | question content без `?` | Додати `?` в кінець |
 | `one` вказує на неіснуючий id | Виправити id або створити вузол |
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[kb/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[02-drakon-primer]] — вступ до мови ДРАКОН
+- [[04-pipelines]] — опис пайплайнів Pipeline A та B
+- [[02_drakon_to_langgraph_mapping]] — Фаза 2: маппінг DRAKON → LangGraph
+- [[04_validation_and_errors]] — Фаза 4: робота з помилками та геометрична валідація
+- [[02-agent-prompts]] — промпти для ШІ-агентів
+**Читати далі:** [[02-agent-prompts]]
