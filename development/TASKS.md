@@ -43,7 +43,7 @@
 
 ### TASK-3: Add AGY as LLM Provider in AgentLlmCard.tsx
 ```
-[ ] TASK-3
+[x] TASK-3
   Files to edit (BOTH copies):
     ~/workspace/ai-drakon-scaffolder/src/components/agents/AgentLlmCard.tsx
     ~/workspace/ai-drakon-scaffolder/.lovable/src/components/agents/AgentLlmCard.tsx
@@ -94,7 +94,7 @@
 
 ### TASK-4: Add AGY to DEFAULT_SETTINGS.cliAgents
 ```
-[ ] TASK-4
+[x] TASK-4
   Files to edit (BOTH copies):
     ~/workspace/ai-drakon-scaffolder/src/lib/settings-storage.ts
     ~/workspace/ai-drakon-scaffolder/.lovable/src/lib/settings-storage.ts
