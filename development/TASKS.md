@@ -358,3 +358,151 @@ REMOTE
   git commit -m "chore(tasks): TASK-9 ai-memory install result"
   git push origin main
 ```
+
+
+### TASK-10: Save AGY proxy to maxfraieho/antigravity-claude-proxy on GitHub
+```
+[ ] TASK-10
+  META: The AGY proxy (~/CLIProxyAPI/antigravity-claude-proxy) was enhanced with
+        /v1/chat/completions OpenAI-compatible endpoint. Save this to GitHub under
+        maxfraieho account. Add README describing integration potential with
+        free-claude-code-proxy on 192.168.3.184.
+
+  Source repo on Termux: ~/CLIProxyAPI/antigravity-claude-proxy
+  Parent upstream: https://github.com/badrisnarayanan/antigravity-claude-proxy
+  Target: https://github.com/maxfraieho/antigravity-claude-proxy
+
+  === STEP 1: Clone from Termux onto 192.168.3.184 ===
+
+  sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 bash << 'REMOTE'
+    # Clone from Termux via SSH
+    rm -rf /tmp/agy-proxy-export
+    sshpass -p "123456" git clone \
+      ssh://u0_a284@192.168.3.195:8022/data/data/com.termux/files/home/CLIProxyAPI/antigravity-claude-proxy \
+      /tmp/agy-proxy-export 2>/dev/null || \
+    sshpass -p "123456" rsync -a \
+      --exclude=node_modules --exclude=.git \
+      -e "ssh -o StrictHostKeyChecking=no -p 8022" \
+      u0_a284@192.168.3.195:CLIProxyAPI/antigravity-claude-proxy/ \
+      /tmp/agy-proxy-export/
+    echo "CLONE DONE"
+    ls /tmp/agy-proxy-export/src/ | head -10
+REMOTE
+
+  === STEP 2: Create GitHub repo via gh on 192.168.3.184 ===
+
+  sshpass -p "805235io." ssh vokov@192.168.3.184 bash << 'REMOTE'
+    gh repo create maxfraieho/antigravity-claude-proxy \
+      --public \
+      --description "AGY Proxy: Anthropic+OpenAI-compatible API for Google Cloud Code (Gemini). Extends antigravity-cli with /v1/chat/completions endpoint." \
+      || echo "Repo may already exist, continuing..."
+REMOTE
+
+  === STEP 3: Add README and push ===
+
+  sshpass -p "805235io." ssh vokov@192.168.3.184 bash << 'REMOTE'
+    cd /tmp/agy-proxy-export
+
+    # Init git if needed (rsync path)
+    git init 2>/dev/null || true
+    git checkout -b main 2>/dev/null || true
+
+    # Write README
+    cat > README.md << 'READMEEOF'
+# antigravity-claude-proxy
+
+> Fork of [badrisnarayanan/antigravity-claude-proxy](https://github.com/badrisnarayanan/antigravity-claude-proxy)
+
+AGY Proxy runs on Android/Termux and provides **dual-protocol API access** to Google Cloud Code (Gemini models via Antigravity CLI):
+
+## Features
+
+- **Anthropic-compatible** `/v1/messages` endpoint (original)
+- **OpenAI-compatible** `/v1/chat/completions` endpoint (**added in this fork**)
+- Multi-account rotation with rate-limit handling
+- SSE streaming support for both protocols
+- Web dashboard at `:8080`
+
+## What was added in this fork
+
+```
+feat(server): add OpenAI-compatible /v1/chat/completions endpoint
+```
+
+Transforms OpenAI-format requests to Anthropic format internally, handles SSE streaming,
+enables direct integration with any OpenAI-compatible agent system.
+
+## Deployment
+
+Runs on Android/Termux at port `8080`. Exposed publicly via Cloudflare tunnel:
+`https://agy.exodus.pp.ua`
+
+## Integration: free-claude-code-proxy (192.168.3.184)
+
+This proxy can be registered as a custom provider in
+[free-claude-code-proxy](https://github.com/maxfraieho/free-claude-code) —
+the OpenAI-compatible LLM routing proxy running on dev server.
+
+Integration path:
+1. Register `agy-tunnel` provider pointing to `https://agy.exodus.pp.ua/v1`
+2. Map Claude/Gemini model slots to AGY models:
+   - `sonnet` slot → `gemini-2.5-pro` (reasoning)
+   - `haiku` slot → `gemini-2.5-flash` (fast)
+3. Rate-limit fallback: if AGY Google account is rate-limited, fall back to NIM models
+
+This creates a hybrid routing layer: free Gemini via AGY + free NIM models as fallback.
+
+## Models available (via AGY health endpoint)
+
+See `/health` for live model availability and rate-limit status.
+
+Primary models:
+- `gemini-2.5-pro` — best reasoning
+- `gemini-2.5-flash` — fast
+- `claude-sonnet-4-6` — via Claude MAX plan
+- `claude-opus-4-6-thinking` — extended thinking
+
+## Quick test
+
+```bash
+curl https://agy.exodus.pp.ua/health
+curl -X POST https://agy.exodus.pp.ua/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gemini-2.5-flash","max_tokens":100,"messages":[{"role":"user","content":"Hi"}]}'
+```
+READMEEOF
+
+    # Add .gitignore
+    cat > .gitignore << 'GITEOF'
+node_modules/
+.env
+*.log
+config/accounts.json
+GITEOF
+
+    git add -A
+    git commit -m "feat: fork with OpenAI-compatible /v1/chat/completions + README" \
+      --author "AGY <agt-ogy@ai-drakon>" 2>/dev/null || \
+    git commit --allow-empty -m "feat: fork with OpenAI-compatible /v1/chat/completions + README"
+
+    # Set remote and push
+    git remote remove maxfraieho 2>/dev/null || true
+    git remote add maxfraieho https://github.com/maxfraieho/antigravity-claude-proxy.git
+    git push maxfraieho main --force 2>&1
+    echo "PUSH DONE: $?"
+REMOTE
+
+  === STEP 4: Verify ===
+
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    'gh repo view maxfraieho/antigravity-claude-proxy --json url,description,createdAt 2>/dev/null | python3 -m json.tool'
+
+  === STEP 5: Diary + TASKS.md update ===
+
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-28|TASK-10:agy-proxy-github|REPO:maxfraieho/antigravity-claude-proxy|STATUS:<OK/FAIL>|***"
+
+  git add development/TASKS.md
+  git commit -m "chore(tasks): TASK-10 agy-proxy GitHub repo result"
+  git push origin main
+```
