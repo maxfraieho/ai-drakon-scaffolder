@@ -121,7 +121,7 @@
 
 ### TASK-5: Update PROTOCOL_PRESETS defaults for agents
 ```
-[ ] TASK-5
+[x] TASK-5
   Context: Q wants project agents (drakon, architect, docs) to use AGY instead of NIM models.
   Default openai preset currently points to openai-proxy.exodus.pp.ua (free Nvidia NIM).
   
@@ -899,4 +899,16 @@ REMOTE
     - Секція "## Семантичні зв'язки" (обов'язкова для кожного документу)
   Сервіс перезапущено: sudo rc-service ai-docs-agent restart → OK
   Commit: f1fca78 (drakon-flow-90aa2999/main)
+```
+
+
+### TASK-14: AGY2 (ноутбук) — авторизація та конфігурація
+```
+[ ] TASK-14 — виконати коли квота відновиться (~103h)
+  Хост: 192.168.3.30, SSH: vokov/0523, Proxy: agy2.exodus.pp.ua LIVE
+  1. http://localhost:8080 -> Add Account -> Google OAuth
+  2. curl http://localhost:8080/health -> accounts > 0
+  3. Читати GEMINI.md -> налаштувати контекст
+  4. ai-memory: curl -X POST http://192.168.3.184:49374/hook?event=SessionStart
+  5. Diary: SESSION:2026-05-28|AGY2-setup|DONE
 ```
