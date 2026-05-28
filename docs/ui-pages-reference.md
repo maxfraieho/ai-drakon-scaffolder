@@ -429,3 +429,5 @@ Worker → jwtVerify(token, JWT_SECRET)
 
 **Цей документ є частиною:** [[docs/INDEX]]
 **Цей документ пов'язаний з:**
+- [[concept/03-architecture]] — загальна системна архітектура
+- [[COLLABORATION]] — керівництво по спільній роботі

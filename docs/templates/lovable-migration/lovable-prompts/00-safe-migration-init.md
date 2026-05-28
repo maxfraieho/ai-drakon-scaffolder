@@ -35,3 +35,4 @@ lang: uk
 **Цей документ є частиною:** [[templates/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[templates/lovable-migration/README]] — Інструкція з міграції Lovable
+- [[templates/lovable-migration/lovable-prompts/00-project-init]] — ініціалізація проекту Lovable

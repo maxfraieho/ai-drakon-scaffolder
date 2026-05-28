@@ -756,3 +756,4 @@ function GithubBrowser() {
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[plans/2026-05-12-multi-agent-drakon-system]] — архітектурний план мультиагентної системи
+- [[plans/2026-05-22-platform-redesign]] — план реалізації редизайну

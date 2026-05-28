@@ -260,3 +260,4 @@ graph TD
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[plans/2026-05-22-platform-redesign]] — Редізайн платформи AI-DRAKON — План реалізації
+- [[plans/pinchtab-test-results-extended-2026-05-26]] — результати тестування PinchTab

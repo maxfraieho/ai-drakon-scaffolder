@@ -599,3 +599,4 @@ jobId: string | null
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[plans/2026-05-16-pipeline-ui]] — Інтерфейс пайплайну — План реалізації
+- [[plans/2026-05-21-drakon-langgraph-runtime]] — конвеєр як рантайм для LangGraph

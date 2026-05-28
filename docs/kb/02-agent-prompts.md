@@ -330,3 +330,4 @@ cd services/docs-agent && .venv/bin/python3 main.py &
 **Цей документ є частиною:** [[kb/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR
+- [[manuals/manual-agent-studio]] — редактор логіки агентів Agent Studio

@@ -549,3 +549,4 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "
 **Цей документ є частиною:** [[agents/agy/04-pinchtab-tests/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[04-pinchtab-tests/SKILL]] — навичка запусків тестів PinchTab
+- [[agents/agy/04-pinchtab-tests/PHASE2-EXECUTION]] — виконання другої фази тестування

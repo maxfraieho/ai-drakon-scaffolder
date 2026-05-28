@@ -122,3 +122,4 @@ export function convertDiagramToIrWithValidation(diagram: DrakonDiagram): {
 **Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[03_live_tracing_protocol]] — Фаза 3: протокол трасування
+- [[architecture/05_security_and_deployment]] — безпека та деплоймент

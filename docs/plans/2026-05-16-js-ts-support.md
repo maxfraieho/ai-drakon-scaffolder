@@ -643,3 +643,4 @@ git push origin main && git push drakon-flow-new main
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[concept/02-drakon-primer]] — вступ до мови ДРАКОН
+- [[plans/2026-05-12-drakon-agent]] — план drakon-agent

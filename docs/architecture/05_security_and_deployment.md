@@ -136,3 +136,4 @@ async function handleRequest(request, env) {
 **Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[03-architecture]] — архітектура системи AI-DRAKON
+- [[architecture/04_validation_and_errors]] — робота з помилками та геометрична валідація

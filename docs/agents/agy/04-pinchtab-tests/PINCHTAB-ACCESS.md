@@ -309,4 +309,5 @@ for n in json.load(sys.stdin).get('nodes',[]):
 **Цей документ є частиною:** [[agents/agy/04-pinchtab-tests/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[04-pinchtab-tests/SKILL]] — навичка запусків тестів PinchTab
+- [[agents/agy/04-pinchtab-tests/PHASE2-EXECUTION]] — виконання другої фази тестування
 ```

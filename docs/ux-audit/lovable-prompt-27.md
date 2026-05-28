@@ -253,3 +253,4 @@ interface CodeGenerationPanelProps {
 **Цей документ є частиною:** [[ux-audit/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
+- [[ux-audit/risks]] — ризики та технічний борг UI/UX платформи

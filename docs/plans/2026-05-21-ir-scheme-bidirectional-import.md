@@ -420,3 +420,4 @@ git push origin main && git push drakon-diagram-flow main
 **Цей документ є частиною:** [[plans/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[concept/04-pipelines]] — концепція конвеєрів (pipelines)
+- [[plans/2026-05-16-js-ts-support]] — підтримка JS/TS в drakon-agent

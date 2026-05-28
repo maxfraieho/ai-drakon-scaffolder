@@ -1421,7 +1421,7 @@ DIARY:
 ### TASK-22: Відновити 3 лінки на doc (parent + 2 related)
 
 ```
-[ ] TASK-22
+[x] TASK-22
 
 КОНТЕКСТ:
   Після агресивного обрізання (TASK-21 cleanup) більшість docs мають лише 1 лінк.
@@ -1476,7 +1476,7 @@ DIARY:
 ### TASK-23: Знайти та змінити layout графу в folder.pages.dev
 
 ```
-[ ] TASK-23
+[x] TASK-23
 
 КОНТЕКСТ:
   folder.pages.dev — CF Pages проект що читає docs/ з maxfraieho/ai-drakon-scaffolder.

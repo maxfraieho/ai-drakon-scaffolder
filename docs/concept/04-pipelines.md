@@ -270,4 +270,5 @@ services/architect-agent/
 **Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[03-architecture]] — загальна архітектура системи AI-DRAKON
+- [[concept/05-human-agent-loop]] — модель взаємодії людини та агента
 ```

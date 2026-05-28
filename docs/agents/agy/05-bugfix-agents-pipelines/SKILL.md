@@ -328,3 +328,4 @@ git push origin master
 **Цей документ є частиною:** [[agents/agy/_INDEX]]
 **Цей документ пов'язаний з:**
 - [[manuals/manual-agent-studio]] — мануал Agent Studio
+- [[agents/agy/01-docs-agent/SKILL]] — навичка генерації документації
