@@ -16,7 +16,7 @@
 
 ### TASK-1: NotebookLM bootstrap alignment
 ```
-[ ] TASK-1
+[x] TASK-1
   1. notebooklm_chat_ask(notebook_id="6139067a-5776-4b29-8869-7c9f9aed475c",
        query="Дай огляд поточного стану проекту AI-DRAKON: що реалізовано, які відкриті задачі, наступні кроки")
   2. Зберегти відповідь в MemPalace:
