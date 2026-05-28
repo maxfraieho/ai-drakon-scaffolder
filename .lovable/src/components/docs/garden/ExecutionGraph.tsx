@@ -63,9 +63,9 @@ return map;
 }
 
 const EDGE_TYPE_CONFIG: Record<string, { color: string; width: number; label: string }> = {
-structural: { color: 'hsl(var(--primary))', width: 2.4, label: 'Structural' },
-semantic: { color: 'hsl(var(--accent-foreground))', width: 1.8, label: 'Semantic' },
-navigational: { color: 'hsl(var(--muted-foreground))', width: 1.4, label: 'Navigational' },
+structural: { color: 'var(--primary)', width: 2.4, label: 'Structural' },
+semantic: { color: 'var(--accent-foreground)', width: 1.8, label: 'Semantic' },
+navigational: { color: 'var(--muted-foreground)', width: 1.4, label: 'Navigational' },
 };
 
 function initSimulation(nodes: GraphNode[], edges: GraphEdge[]): SimNode[] {
@@ -491,7 +491,7 @@ let stroke = typeConfig.color;
 if (hasFocus) {
   if (directToFocus) { strokeWidth = typeConfig.width * 2; strokeOpacity = 0.98; }
   else if (highlighted) { strokeWidth = typeConfig.width * 1.4; strokeOpacity = 0.75; }
-  else { strokeWidth = 0.8; strokeOpacity = 0.15; stroke = 'hsl(var(--muted-foreground))'; }
+  else { strokeWidth = 0.8; strokeOpacity = 0.15; stroke = 'var(--muted-foreground)'; }
   } else if (hovered) { strokeWidth = typeConfig.width * 1.6; strokeOpacity = 0.9; }
 return { strokeWidth, strokeOpacity, stroke };
 };
