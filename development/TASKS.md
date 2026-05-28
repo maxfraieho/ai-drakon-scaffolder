@@ -249,7 +249,7 @@
 
 ### TASK-17: ai-memory hooks — всі агенти → 192.168.3.184:49374
 ```
-[ ] TASK-17
+[x] TASK-17
   МЕТА: Всі агенти (Claude Code OrangePi, AGY phone, AGY3 tablet) синхронізуються
         з єдиним ai-memory сервером на 192.168.3.184:49374.
         Без бінарника — тільки curl POST.
