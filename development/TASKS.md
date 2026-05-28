@@ -1187,3 +1187,113 @@ DIARY:
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-19:link-budget-trim|27.files.fixed|max4.per.doc|★★★"
 ```
+
+---
+
+### TASK-20: Дослідження та впровадження кращих практик структури wiki-графу
+
+```
+[ ] TASK-20
+
+КОНТЕКСТ:
+  Граф wiki-посилань у docs/ все ще "заплутаний" після TASK-19.
+  Проблема: ми обмежили вихідні зв'язки (outgoing, max 4), але
+  не контролюємо ВХІДНІ (incoming) — кілька вузлів стали перевантаженими хабами.
+  Скріншоти до/після: docs/screenshot/Screenshot_20260528-*.png
+
+═══════════════════════════════════════════════
+ФАЗА 1: ДОСЛІДЖЕННЯ (web search + збереження)
+═══════════════════════════════════════════════
+
+1.1. Досліди онлайн кращий досвід по темі:
+  - "knowledge graph wiki link density best practices"
+  - "Obsidian vault graph structure MOC hub vs index"
+  - "roam research graph density tidy knowledge base"
+  - "zettelkasten link structure incoming outgoing balance"
+  - "knowledge base graph hub spoke vs distributed pattern"
+
+  Питання для пошуку:
+  a) Скільки ВХІДНИХ посилань допустимо на один вузол?
+  b) Що краще: MOC-хаби чи плоска структура?
+  c) Як розрізнити "семантичний зв'язок" від "навігаційного"?
+  d) Чи _INDEX.md мають отримувати посилання від усіх дочірніх?
+
+1.2. Збережи знахідки у NotebookLM (drn-ai notebook):
+  notebook_id = "6139067a-5776-4b29-8869-7c9f9aed475c"
+  - Додай джерела або текстовий summary знахідок як нотатку
+
+1.3. Запиши summary в MemPalace:
+  python3 -m mempalace add --wing ai-drakon --room docs \
+    title="wiki-graph-research-2026-05-29" \
+    content="<знахідки з дослідження>"
+
+═══════════════════════════════════════════════
+ФАЗА 2: АНАЛІЗ поточного графу
+═══════════════════════════════════════════════
+
+2.1. Побудуй таблицю incoming-лінків:
+  cd ~/workspace/ai-drakon-scaffolder
+  python3 - << 'PYEOF'
+import os, re, glob
+from collections import defaultdict
+
+repo = os.path.expanduser("~/workspace/ai-drakon-scaffolder")
+files = glob.glob(os.path.join(repo, "docs/**/*.md"), recursive=True)
+
+# Підрахунок incoming посилань на кожен файл
+incoming = defaultdict(list)
+for fpath in files:
+    rel = os.path.relpath(fpath, repo)
+    with open(fpath) as f:
+        content = f.read()
+    links = re.findall(r'\[\[([^\]]+)\]\]', content)
+    for link in links:
+        incoming[link].append(rel)
+
+# Сортування: хто найбільше отримує посилань
+print("=== TOP INCOMING HUBS ===")
+for target, sources in sorted(incoming.items(), key=lambda x: -len(x[1]))[:20]:
+    print(f"{len(sources):3d}  [[{target}]]")
+PYEOF
+
+2.2. Зафіксуй: які вузли є перевантаженими хабами (>5 incoming)?
+  Записати у docs/screenshot/graph-analysis-2026-05-29.md
+
+═══════════════════════════════════════════════
+ФАЗА 3: ВПРОВАДЖЕННЯ нових правил
+═══════════════════════════════════════════════
+
+На основі фаз 1+2 оновити три файли:
+
+3.1. development/LINKS_RESEARCH.md — додати секцію:
+  ## 4. Правила управління ВХІДНИМИ зв'язками
+  <нові правила з дослідження>
+  Максимум incoming для звичайного документа: <N>
+  Максимум incoming для _INDEX: <N>
+  Стратегія: <що обрали — MOC / flat / ієрархія>
+
+3.2. docs/META/STANDARD.md — оновити секцію "Вікі-посилання":
+  Додати підсекцію "Контроль вхідних зв'язків" з нових правил
+
+3.3. services/docs-agent/prompts.py — оновити DOCS_SYSTEM_PROMPT:
+  Додати до "Правил" нові обмеження на incoming-зв'язки:
+  - Пояснення що _INDEX.md є навігаційним хабом — не перевантажувати прямими лінками
+  - Якщо документ вже пов'язаний через _INDEX — не додавати прямий зв'язок до нього
+  - Семантичний зв'язок = тільки якщо розуміння цільового документа критичне
+
+3.4. Якщо є конкретні docs/ файли що посилаються надлишково на хаби — виправити.
+
+ВЕРИФІКАЦІЯ:
+  Перевір що prompts.py містить нові правила:
+  grep -A5 "incoming\|вхідн" services/docs-agent/prompts.py
+
+COMMIT:
+  git add development/LINKS_RESEARCH.md docs/META/STANDARD.md \
+         services/docs-agent/prompts.py docs/screenshot/
+  git commit -m "docs(graph): research + implement incoming link control rules (TASK-20)"
+  git push origin main
+
+DIARY:
+  Запиши в diary (agent: agt-ogy):
+  "SESSION:2026-05-29|TASK-20:wiki-graph-research|incoming.rules.added|prompts.updated|★★★"
+```
