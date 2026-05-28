@@ -1,3 +1,15 @@
+---
+tags:
+  - domain:manual
+  - status:active
+  - format:guide
+created: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Мануал: Pipeline A — Аналіз коду та генерація DRAKON IR"
+lang: uk
+---
+
 # Мануал: Pipeline A — Аналіз коду та генерація DRAKON IR
 
 ## 1. Призначення та архітектура
@@ -110,3 +122,14 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 ### 2. Синтаксична помилка парсингу (Syntax Error)
 * **Причина**: Надісланий Python-код містить грубі порушення синтаксису (наприклад, нерівні відступи `IndentationError` або пропущені двокрапки).
 * **Вирішення**: Переконайтеся, що код є робочим та успішно компілюється локальним інтерпретатором Python перед відправкою на аналіз.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[manuals/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[04-pipelines]] — опис пайплайнів Pipeline A та B
+- [[manual-pipeline-b]] — інструкція з генерації коду (Pipeline B)
+- [[01-drakon-ir-spec]] — специфікація DRAKON IR
+**Читати далі:** [[manual-pipeline-b]]

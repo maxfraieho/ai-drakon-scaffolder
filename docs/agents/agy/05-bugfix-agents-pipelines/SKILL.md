@@ -1,9 +1,13 @@
 ---
-name: bugfix-agents-pipelines
-description: >
-  AGY implementation prompt для виправлення BUG-6 (відсутній чат-інтерфейс на /agents)
-  та BUG-7 (відсутня кнопка «Новий пайплайн» у PipelineList). Використовується агентом AGY
-  після завершення Phase 2 PinchTab-тестування та підтвердження обох багів.
+tags:
+  - domain:agent
+  - status:active
+  - format:skill
+created: 2026-05-28
+updated: 2026-05-28
+tier: 2
+title: "Навичка AGY: Виправлення BUG-6 та BUG-7"
+lang: uk
 ---
 
 # AGY: Виправлення BUG-6 та BUG-7
@@ -316,3 +320,14 @@ git push origin master
 - React input: завжди `click` потім `type`, ніколи `fill`
 - Screenshot: `curl | python3 -c 'import sys,json,base64; ...'`
 - Деталі: `docs/agents/agy/04-pinchtab-tests/PINCHTAB-ACCESS.md`
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[agents/agy/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[manuals/manual-agent-studio]] — мануал Agent Studio
+- [[agents/agy/04-pinchtab-tests/SKILL]] — PinchTab тестування
+**Цей документ доповнює:** [[agents/agy/README]]
+**Читати далі:** [[agents/agy/_INDEX]]

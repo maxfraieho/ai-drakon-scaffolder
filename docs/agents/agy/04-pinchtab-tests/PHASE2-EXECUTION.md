@@ -1,10 +1,13 @@
 ---
-title: "AGY Skill 04 — PinchTab Execution: Phase 2"
-type: guide
-tags: [agy, pinchtab, testing, ui, browser-automation, execution]
-status: active
+tags:
+  - domain:agent
+  - status:active
+  - format:plan
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "AGY Skill 04 — PinchTab Execution: Phase 2"
+lang: uk
 ---
 
 # AGY Skill 04 — PinchTab Test Execution (Phase 2)
@@ -523,3 +526,15 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "
 4. **PIPE-A-01 timeout**: LLM-агент може відповідати до 30 сек. Встановити `timeout=30000` для `wait_for_text`.
 5. **Якщо тест FAIL**: зробити screenshot, записати фактичний vs очікуваний результат, продовжити з наступним тестом.
 6. **Worker URL**: якщо `https://drakon-mcp-worker.maxfraieho.workers.dev` не відповідає — перевірити в `/settings` поточне значення або запитати Q.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[agents/agy/04-pinchtab-tests/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[04-pinchtab-tests/SKILL]] — навичка запусків тестів PinchTab
+- [[04-pinchtab-tests/PHASE2-EXTENDED]] — розширені тести PinchTab Phase 2
+- [[04-pinchtab-tests/PINCHTAB-ACCESS]] — доступ до PinchTab
+- [[2026-05-26-pinchtab-test-plan]] — загальний план тестів PinchTab
+**Читати далі:** [[04-pinchtab-tests/PHASE2-EXTENDED]]

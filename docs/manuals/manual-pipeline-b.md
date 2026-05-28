@@ -1,3 +1,15 @@
+---
+tags:
+  - domain:manual
+  - status:active
+  - format:guide
+created: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Мануал: Pipeline B — Генерація коду з DRAKON IR"
+lang: uk
+---
+
 # Мануал: Pipeline B — Генерація коду з DRAKON IR
 
 ## 1. Призначення та архітектура
@@ -98,3 +110,14 @@ def is_positive(num):
 ### 2. Непідтримувана цільова мова
 * **Симптоми**: Помилка `Invalid target language: golang`.
 * **Вирішення**: Наразі платформа офіційно підтримує генерацію лише для `python` та `javascript`. Змініть аргумент `target_language` на один із підтримуваних.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[manuals/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[04-pipelines]] — опис пайплайнів Pipeline A та B
+- [[manual-pipeline-a]] — інструкція з аналізу коду (Pipeline A)
+- [[01-drakon-ir-spec]] — специфікація DRAKON IR
+**Читати далі:** [[agents/_INDEX]]

@@ -1,3 +1,15 @@
+---
+tags:
+  - domain:manual
+  - status:active
+  - format:guide
+created: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Мануал: MCP-доступ для розробників та агентів"
+lang: uk
+---
+
 # Мануал: MCP-доступ для розробників та агентів
 
 ## 1. Протокол MCP та авторизація
@@ -127,4 +139,14 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
       }
     }
   }'
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[manuals/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[08-agent-docs-integration]] — повна інтеграція docs-agent та DQL
+- [[manual-agent-studio]] — посібник користувача з Agent Studio
+- [[02-agent-prompts]] — промпти та навички для ШІ-агентів
 ```

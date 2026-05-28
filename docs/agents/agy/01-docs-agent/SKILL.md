@@ -1,25 +1,26 @@
 ---
-title: "AGY Documentation Agent — Skill"
-type: guide
-tags: [drakon, langgraph, pipeline, agent, frontend]
-status: active
+tags:
+  - domain:agent
+  - status:active
+  - format:skill
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Навичка AGY: Документування (Docs Agent)"
+lang: uk
 ---
 
-# AGY Documentation Agent — Skill
+# Навичка AGY: Документування (Docs Agent)
 
-## Purpose
+## Призначення
 
-Generate comprehensive technical documentation for the AI-DRAKON platform,
-specifically covering **LangGraph agent pipelines**, **DRAKON IR runtime**, and
-**frontend component architecture**.
+Генерація вичерпної технічної документації для платформи AI-DRAKON, зокрема опис **агентських пайплайнів LangGraph**, **середовища виконання DRAKON IR** та **архітектури компонентів фронтенду**.
 
-Documentation derives from **real execution semantics**, not just code structure.
+Документація базується на **реальній семантиці виконання**, а не лише на структурі вихідного коду.
 
 ---
 
-## Pre-flight (ALWAYS run first)
+## Перевірка готовності (ЗАВЖДИ виконувати спочатку)
 
 ```
 1. mempalace_search("ai-drakon architecture")
@@ -28,15 +29,15 @@ Documentation derives from **real execution semantics**, not just code structure
 4. notebooklm_ask("drn-ai", "How does DRAKON IR map to agent execution?")
 ```
 
-If MemPalace has fresh data (< 7 days) → use it directly.
-If stale → run `02-repo-analyzer` skill first, then return here.
+Якщо MemPalace містить свіжі дані (< 7 днів) → використовуйте їх безпосередньо.
+Якщо дані застаріли → спочатку запустіть навичку `02-repo-analyzer`, а потім поверніться сюди.
 
 ---
 
-## Documentation Pipeline
+## Конвеєр документування
 
-### Phase 1 — Architecture Extraction
-Target files (on 192.168.3.184):
+### Фаза 1 — Вилучення архітектурних даних
+Цільові файли (на 192.168.3.184):
 ```bash
 # Core architecture
 ~/workspace/ai-drakon-scaffolder/docs/architecture.md
@@ -46,81 +47,81 @@ Target files (on 192.168.3.184):
 ~/workspace/ai-drakon-scaffolder/cloudflare-worker/worker-mcp-drakon.js
 ```
 
-Read via SSH. Extract:
-- Service responsibilities and API contracts
-- LangGraph node definitions and pipeline topology
-- DRAKON IR format (items: Record<string, IrItem>)
-- MCP tool definitions from worker
+Прочитайте через SSH. Вилучіть:
+- Обов'язки сервісів та контракти API.
+- Визначення вузлів LangGraph та топологію пайплайнів.
+- Формат DRAKON IR (items: Record<string, IrItem>).
+- Визначення інструментів MCP з коду воркера.
 
-### Phase 2 — LangGraph Documentation (PRIORITY)
-Document these patterns from `architect-agent`:
-- Pipeline definition format (JSON configs in `drn/`)
-- Deterministic nodes vs. LLM nodes
-- State class structure
-- Graph execution flow (start → nodes → END)
-- Breakpoints and resume mechanism
-- SSE streaming protocol (`/graph-pipelines/{name}/execute/{id}/stream`)
+### Фаза 2 — Документування LangGraph (ПРІОРИТЕТ)
+Задокументуйте такі патерни з `architect-agent`:
+- Формат визначення пайплайнів (JSON конфіги в `drn/`).
+- Детерміновані вузли проти ШІ-вузлів (LLM nodes).
+- Структура класу Стан (`State`).
+- Потік виконання графа (start → nodes → END).
+- Точки зупинки (breakpoints) та механізм відновлення (resume).
+- Протокол SSE-стрімінгу (`/graph-pipelines/{name}/execute/{id}/stream`).
 
-Output: `docs/generated/langgraph-architecture.md`
+Результат: `docs/generated/langgraph-architecture.md`
 
-### Phase 3 — DRAKON IR Documentation
-Document from `src/lib/htse/`:
-- `IrDiagram` format: `{name, access, params, items: Record<nodeId, IrItem>}`
-- `IrItem` types: action | question | select | case | header | end | address | branch | insertion | input | output | shelf | process | timer | duration
-- Conversion pipeline: code → AST → raw IR → refined IR → drakonwidget.js
-- Validation (`ir-validator-core.ts`)
-- Bidirectional conversion (`diagram-to-ir.ts`, `ir-to-diagram.ts`)
+### Документування Фази 3 — Специфікація DRAKON IR
+Задокументуйте на основі `src/lib/htse/`:
+- Формат `IrDiagram`: `{name, access, params, items: Record<nodeId, IrItem>}`.
+- Типи `IrItem`: action | question | select | case | header | end | address | branch | insertion | input | output | shelf | process | timer | duration.
+- Конвеєр конвертації: код → AST → сирий IR → очищений IR → drakonwidget.js.
+- Валідація (`ir-validator-core.ts`).
+- Двонаправлена конвертація (`diagram-to-ir.ts`, `ir-to-diagram.ts`).
 
-Output: `docs/generated/drakon-ir-spec.md`
+Результат: `docs/generated/drakon-ir-spec.md`
 
-### Phase 4 — Frontend Component Documentation
-Document key components:
+### Фаза 4 — Документування компонентів фронтенду
+Задокументуйте ключові компоненти:
 ```
-WorkspaceShell.tsx    — 3-column IDE layout, collapsible panels
-DiagramsPage.tsx      — DRAKON editor + IR Sheet (Col1+Col2)
-AgentStudioPage.tsx   — DRAKON graph editor (CELESTINE GERONIMO)
-PipelinesPage.tsx     — mobile-first: list→ir→chat flow
-PipelineChat.tsx      — SSE streaming chat with agents
-ProjectContext.tsx    — active project state management
+WorkspaceShell.tsx    — 3-колонковий IDE-макет, висувні панелі
+DiagramsPage.tsx      — редактор DRAKON + IR таблиця (Колонка 1 + Колонка 2)
+AgentStudioPage.tsx   — редактор графів DRAKON (CELESTINE GERONIMO)
+PipelinesPage.tsx     — mobile-first: потік list→ir→chat
+PipelineChat.tsx      — SSE-стрімінг чату з агентами
+ProjectContext.tsx    — керування станом активного проекту
 ```
 
-Output: `docs/generated/frontend-components.md`
+Результат: `docs/generated/frontend-components.md`
 
-### Phase 5 — Worker API Reference
-Extract all routes from `cloudflare-worker/worker-mcp-drakon.js`:
-- Group by domain: auth, drakon, analysis, github, projects, notes, pipeline
-- Document request/response schemas
-- Mark auth requirements
+### Фаза 5 — Референс API Cloudflare Worker
+Вилучіть усі маршрути (routes) з `cloudflare-worker/worker-mcp-drakon.js`:
+- Згрупуйте за доменами: auth, drakon, analysis, github, projects, notes, pipeline.
+- Задокументуйте схеми запитів/відповідей (request/response).
+- Вкажіть вимоги до авторизації.
 
-Output: `docs/generated/worker-api-reference.md`
+Результат: `docs/generated/worker-api-reference.md`
 
 ---
 
-## NotebookLM Integration
+## Інтеграція з NotebookLM
 
-After generating each doc section:
+Після генерації кожного розділу документації:
 ```bash
 notebooklm source add --notebook drn-ai ./docs/generated/<file>.md
 ```
 
-Then query to enrich:
+Потім надішліть запити для збагачення:
 ```bash
 notebooklm ask "drn-ai" "Explain the execution flow of this pipeline from a developer perspective"
 notebooklm generate report --notebook drn-ai --format study-guide
 ```
 
-Use NotebookLM response to add "Developer Notes" section to each doc.
+Використовуйте відповіді NotebookLM для додавання секції "Developer Notes" до кожного документа.
 
 ---
 
-## Output Standards
+## Стандарти оформлення
 
-All generated docs use this structure:
+Усі згенеровані документи використовують таку структуру:
 ```markdown
 ---
-title: <component name>
+title: <назва компоненту>
 type: generated-docs
-generated: <ISO date>
+generated: <ISO дата>
 project: ai-drakon-scaffolder
 status: draft
 ---
@@ -134,19 +135,19 @@ status: draft
 ## Known Issues / TODOs
 ```
 
-Language: Ukrainian (technical terms in English).
+Мова: Українська (технічні терміни англійською).
 
 ---
 
-## Artifact Storage
+## Збереження артефактів
 
-- Intermediate: `~/.gemini/antigravity-cli/brain/ai-drakon-docs/`
-- Final: `~/workspace/ai-drakon-scaffolder/docs/generated/`
-- Git commit after each Phase: `docs: generate <component> documentation [agy]`
+- Тимчасові: `~/.gemini/antigravity-cli/brain/ai-drakon-docs/`
+- Фінальні: `~/workspace/ai-drakon-scaffolder/docs/generated/`
+- Git commit після кожної фази: `docs: generate <component> documentation [agy]`
 
 ---
 
-## MemPalace Indexing (after each Phase)
+## Індексація в MemPalace (після кожної Фази)
 
 ```python
 mempalace_add_drawer(
@@ -159,9 +160,9 @@ mempalace_add_drawer(
 
 ---
 
-## Report to Claude
+## Звіт для Claude
 
-After full pipeline completion, send compressed summary:
+Після повного виконання конвеєра надішліть стисле резюме:
 ```
 DOCS COMPLETE:
 - Phase 1-5: [done/partial/blocked]
@@ -170,3 +171,14 @@ DOCS COMPLETE:
 - NotebookLM: [what was added to drn-ai]
 - Blockers: [any]
 ```
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[agents/agy/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[00-bootstrap/SKILL]] — навичка початкового запуску та налаштування
+- [[02-repo-analyzer/SKILL]] — навичка аналізу репозиторію
+- [[03-dataview-dql/SKILL]] — навичка роботи з DQL-запитами
+**Читати далі:** [[02-repo-analyzer/SKILL]]

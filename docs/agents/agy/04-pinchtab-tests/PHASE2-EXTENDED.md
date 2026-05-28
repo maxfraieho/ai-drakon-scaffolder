@@ -1,10 +1,13 @@
 ---
-title: "AGY Skill 04 — Phase 2 Extended: Full Platform + MCP + Agent Studio"
-type: guide
-tags: [agy, pinchtab, testing, mcp, agents, drakon-editor, pipelines, manuals]
-status: active
+tags:
+  - domain:agent
+  - status:active
+  - format:plan
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "AGY Skill 04 — Phase 2 Extended: Full Platform + MCP + Agent Studio"
+lang: uk
 ---
 
 # AGY Skill 04 — Розширене тестування: MCP + Agent Studio + Мануали
@@ -538,3 +541,15 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "
 ## Примітка AGY
 
 Очікуй **багато помилок** в зоні Agent Studio та DRAKON-редактора для логіки агентів — ця частина, найімовірніше, ще не повністю реалізована у frontend. **Не зупиняйся на помилках** — документуй кожну в Bug Catalog і продовжуй з наступним тестом. Мета фази — максимальне покриття та чесна картина стану платформи, не ідеальні результати.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[agents/agy/04-pinchtab-tests/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[04-pinchtab-tests/SKILL]] — навичка запусків тестів PinchTab
+- [[04-pinchtab-tests/PHASE2-EXECUTION]] — виконання тестів PinchTab Phase 2
+- [[04-pinchtab-tests/PINCHTAB-ACCESS]] — доступ до PinchTab
+- [[2026-05-26-pinchtab-test-plan]] — загальний план тестів PinchTab
+**Читати далі:** [[04-pinchtab-tests/PINCHTAB-ACCESS]]

@@ -1,10 +1,13 @@
 ---
-title: "PinchTab Access — AGY Configuration"
-type: guide
-tags: [agy, pinchtab, browser-automation, access]
-status: active
+tags:
+  - domain:agent
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "PinchTab Access — AGY Configuration"
+lang: uk
 ---
 
 # PinchTab — Доступ для AGY
@@ -298,4 +301,16 @@ for n in json.load(sys.stdin).get('nodes',[]):
         print(f\"  {n['ref']} [{n['role']}] {n.get('name','')!r}\")
 "
 }
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[agents/agy/04-pinchtab-tests/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[04-pinchtab-tests/SKILL]] — навичка запусків тестів PinchTab
+- [[04-pinchtab-tests/PHASE2-EXECUTION]] — виконання тестів PinchTab Phase 2
+- [[04-pinchtab-tests/PHASE2-EXTENDED]] — розширені тести PinchTab Phase 2
+- [[2026-05-26-pinchtab-test-plan]] — загальний план тестів PinchTab
+**Читати далі:** [[04-pinchtab-tests/SKILL]]
 ```

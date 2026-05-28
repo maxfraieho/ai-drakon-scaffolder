@@ -1,20 +1,22 @@
 ---
-title: "AGY Skills — AI-DRAKON Documentation Agent"
-type: guide
-tags: [drakon, agent, cloudflare, agy]
-status: active
+tags:
+  - domain:agent
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Довідник навичок AGY (AGY Skills)"
+lang: uk
 ---
 
-# AGY Skills — AI-DRAKON Documentation Agent
+# Довідник навичок AGY (AGY Skills)
 
-Skills for `agy` (Antigravity CLI) to configure it as documentation and analysis
-worker for the AI-DRAKON platform.
+Навички для `agy` (Antigravity CLI) для його конфігурації як виконавця документації та аналізу для платформи AI-DRAKON.
 
-## Install on Windows
+## Встановлення на Windows
 
-Copy each skill folder to your plugins directory:
+Скопіюйте кожну папку навички у вашу директорію плагінів:
 
 ```
 C:\Users\vokov\.gemini\config\plugins\ai-drakon\skills\
@@ -23,7 +25,7 @@ C:\Users\vokov\.gemini\config\plugins\ai-drakon\skills\
 └── 02-repo-analyzer\SKILL.md
 ```
 
-PowerShell (run from project root after `git pull`):
+PowerShell (запустіть з кореня проекту після `git pull`):
 ```powershell
 $dest = "C:\Users\vokov\.gemini\config\plugins\ai-drakon\skills"
 New-Item -ItemType Directory -Force -Path $dest
@@ -32,15 +34,15 @@ Copy-Item -Recurse -Force .\docs\agents\agy\01-docs-agent $dest\
 Copy-Item -Recurse -Force .\docs\agents\agy\02-repo-analyzer $dest\
 ```
 
-## Execution Order
+## Порядок виконання
 
-1. **`00-bootstrap`** — завжди першим. AGY вивчає NotebookLM `drn-ai`, синхронізує MemPalace.
-2. **`02-repo-analyzer`** — якщо дані застарілі або після нового спринту.
+1. **`00-bootstrap`** — завжди першим. AGY вивчає блокнот NotebookLM `drn-ai`, синхронізує MemPalace.
+2. **`02-repo-analyzer`** — якщо дані застарілі або після завершення нового спринту розробки.
 3. **`01-docs-agent`** — генерує документацію (LangGraph, DRAKON IR, frontend, worker API).
 
-## MCP Requirements
+## Вимоги до MCP
 
-MemPalace MCP must be in `mcp_config.json`:
+Сервер MemPalace MCP має бути налаштований у `mcp_config.json`:
 ```json
 {
   "mcpServers": {
@@ -55,8 +57,20 @@ MemPalace MCP must be in `mcp_config.json`:
 }
 ```
 
-## NotebookLM Notebook
+## Блокнот NotebookLM
 
-Notebook: `drn-ai`
-Contents: PDFs of Claude Code config, project architecture, skills, hooks.
-AGY reads this as its primary knowledge source during bootstrap.
+Блокнот: `drn-ai`
+Вміст: PDF-файли з налаштуваннями Claude Code, архітектурою проекту, навичками та хуками.
+AGY читає це як своє первинне джерело знань під час етапу bootstrap.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[agents/agy/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[00-bootstrap/SKILL]] — навичка початкового запуску
+- [[01-docs-agent/SKILL]] — навичка документування
+- [[02-repo-analyzer/SKILL]] — навичка аналізу репозиторію
+- [[03-dataview-dql/SKILL]] — навичка роботи з DQL
+**Читати далі:** [[00-bootstrap/SKILL]]

@@ -1,10 +1,13 @@
 ---
-title: "AGY Skill 04 — PinchTab Test Plan: Research Phase"
-type: guide
-tags: [agy, pinchtab, testing, ui, browser-automation]
-status: active
+tags:
+  - domain:agent
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "AGY Skill 04 — PinchTab Test Plan: Research Phase"
+lang: uk
 ---
 
 # AGY Skill 04 — PinchTab Test Plan: Research Phase
@@ -396,3 +399,14 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "
 - [ ] HTTP health checks всіх сервісів виконані
 - [ ] Файл плану збережений та закомічений
 - [ ] Відповідь Q з усіма 8 пунктами надана
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[agents/agy/04-pinchtab-tests/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[04-pinchtab-tests/PHASE2-EXECUTION]] — виконання тестів PinchTab Phase 2
+- [[04-pinchtab-tests/PHASE2-EXTENDED]] — розширені тести PinchTab Phase 2
+- [[04-pinchtab-tests/PINCHTAB-ACCESS]] — доступ до PinchTab
+- [[2026-05-26-pinchtab-test-plan]] — загальний план тестів PinchTab

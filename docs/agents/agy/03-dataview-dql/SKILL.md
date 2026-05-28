@@ -1,46 +1,49 @@
 ---
-title: "AGY Skill 03 — Dataview DQL endpoint + REPO_ROOT fix"
-type: guide
-tags: [agy, docs-agent, dataview, dql, fix]
-status: active
+tags:
+  - domain:agent
+  - status:active
+  - format:skill
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Навичка AGY: Кінцева точка Dataview DQL та виправлення REPO_ROOT"
+lang: uk
 ---
 
-# AGY Skill 03 — Docs-agent: Dataview DQL endpoint + REPO_ROOT fix
+# Навичка AGY: Кінцева точка Dataview DQL та виправлення REPO_ROOT
 
-> **One-time implementation task.** Pull `ai-drakon-setup`, implement `/docs/dataview/query`, fix `REPO_ROOT` in init script, commit+push, restart service.
+> **Одноразова задача імплементації.** Стягнути зміни з `ai-drakon-setup`, реалізувати кінцеву точку `/docs/dataview/query`, виправити змінну `REPO_ROOT` у скрипті ініціалізації, зробити commit+push змін та перезапустити сервіс.
 
 ---
 
-## Context
+## Контекст
 
-`docs-agent` (FastAPI :8767, dev server `192.168.3.184`) exposes docs via two endpoints:
-- `GET /docs/list` — file tree
-- `GET /docs/read` — read one file
+Сервіс `docs-agent` (FastAPI :8767, розгорнутий на сервері розробки `192.168.3.184`) надає доступ до документів через дві кінцеві точки:
+- `GET /docs/list` — дерево файлів.
+- `GET /docs/read` — читання одного файлу.
 
-The Cloudflare Worker tool `docs.query` calls `POST /docs/dataview/query` — but **this endpoint does not exist** yet (returns 404).
+Інструмент Cloudflare Worker `docs.query` робить виклик до `POST /docs/dataview/query`, проте **ця кінцева точка ще не існує** (повертає помилку 404).
 
-Additionally, the OpenRC service `/etc/init.d/ai-docs-agent` has:
+Крім того, скрипт ініціалізації OpenRC `/etc/init.d/ai-docs-agent` містить:
 ```
 environment="REPO_ROOT=/home/vokov/workspace/sharon-global ..."
 ```
-This is **wrong** — docs live in `/home/vokov/workspace/ai-drakon-scaffolder/docs/`. Must be fixed to `REPO_ROOT=/home/vokov/workspace/ai-drakon-scaffolder`.
+Це **невірно** — документи знаходяться у `/home/vokov/workspace/ai-drakon-scaffolder/docs/`. Необхідно виправити на `REPO_ROOT=/home/vokov/workspace/ai-drakon-scaffolder`.
 
 ---
 
-## Repositories
+## Репозиторії
 
-| Repo | Path on dev server | GitHub |
+| Репозиторій | Шлях на сервері | GitHub |
 |------|--------------------|--------|
-| `ai-drakon-setup` (backend services) | `/home/vokov/workspace/ai-drakon-setup/` | `https://github.com/maxfraieho/ai-drakon-setup.git` |
-| `ai-drakon-scaffolder` (frontend + docs) | `/home/vokov/workspace/ai-drakon-scaffolder/` | `https://github.com/maxfraieho/ai-drakon-scaffolder.git` |
+| `ai-drakon-setup` (бекэнд-сервіси) | `/home/vokov/workspace/ai-drakon-setup/` | `https://github.com/maxfraieho/ai-drakon-setup.git` |
+| `ai-drakon-scaffolder` (фронтенд + документи) | `/home/vokov/workspace/ai-drakon-scaffolder/` | `https://github.com/maxfraieho/ai-drakon-scaffolder.git` |
 
-Dev server SSH: `sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184`
+Доступ до сервера по SSH: `sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184`
 
 ---
 
-## Task 1: Pull ai-drakon-setup on dev server
+## Задача 1: Оновлення ai-drakon-setup на сервері
 
 ```bash
 sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
@@ -49,11 +52,11 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
 
 ---
 
-## Task 2: Create `dataview_route.py`
+## Задача 2: Створення `dataview_route.py`
 
-**File to create:** `/home/vokov/workspace/ai-drakon-setup/services/docs-agent/dataview_route.py`
+**Файл для створення:** `/home/vokov/workspace/ai-drakon-setup/services/docs-agent/dataview_route.py`
 
-Write this file **exactly** (scp or heredoc via SSH):
+Запишіть цей файл **точно** (через scp або heredoc через SSH):
 
 ```python
 """Dataview DQL query endpoint for docs-agent.
@@ -240,11 +243,11 @@ def dataview_query(req: DataviewQueryRequest):
 
 ---
 
-## Task 3: Wire router into `main.py`
+## Задача 3: Підключення роутера в `main.py`
 
-**File to modify:** `/home/vokov/workspace/ai-drakon-setup/services/docs-agent/main.py`
+**Файл для модифікації:** `/home/vokov/workspace/ai-drakon-setup/services/docs-agent/main.py`
 
-Find the block that imports routers (around line 20–25):
+Знайдіть блок імпорту роутерів (приблизно 20–25 рядки):
 ```python
 from docs_route import router as docs_router
 from notes_route import router as notes_router
@@ -252,12 +255,12 @@ from drakon_ir_route import router as drakon_ir_router
 from projects_route import router as projects_router
 ```
 
-Add one line **after** `from projects_route import router as projects_router`:
+Додайте один рядок **після** `from projects_route import router as projects_router`:
 ```python
 from dataview_route import router as dataview_router
 ```
 
-Find the block that includes routers (around line 40–45):
+Знайдіть блок включення роутерів в додаток (приблизно 40–45 рядки):
 ```python
 app.include_router(docs_router)
 app.include_router(notes_router)
@@ -265,45 +268,45 @@ app.include_router(drakon_ir_router)
 app.include_router(projects_router)
 ```
 
-Add one line after `app.include_router(projects_router)`:
+Додайте один рядок після `app.include_router(projects_router)`:
 ```python
 app.include_router(dataview_router)
 ```
 
 ---
 
-## Task 4: Fix REPO_ROOT in init script
+## Задача 4: Виправлення REPO_ROOT у скрипті ініціалізації
 
-**File to modify:** `/etc/init.d/ai-docs-agent` on dev server (requires sudo)
+**Файл для модифікації:** `/etc/init.d/ai-docs-agent` на сервері (потребує прав sudo)
 
-Current line:
+Поточний рядок:
 ```
 environment="REPO_ROOT=/home/vokov/workspace/sharon-global PROXY_URL=http://localhost:8082 PROXY_TOKEN=freecc PROXY_MODEL=claude-haiku-4-5 PROXY_PROTOCOL=anthropic"
 ```
 
-Change `sharon-global` to `ai-drakon-scaffolder`:
+Змініть `sharon-global` на `ai-drakon-scaffolder`:
 ```
 environment="REPO_ROOT=/home/vokov/workspace/ai-drakon-scaffolder PROXY_URL=http://localhost:8082 PROXY_TOKEN=freecc PROXY_MODEL=claude-haiku-4-5 PROXY_PROTOCOL=anthropic"
 ```
 
-SSH command:
+Команда SSH:
 ```bash
 sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
   "sudo sed -i 's|REPO_ROOT=/home/vokov/workspace/sharon-global|REPO_ROOT=/home/vokov/workspace/ai-drakon-scaffolder|g' /etc/init.d/ai-docs-agent"
 ```
 
-Verify the change:
+Перевірте зміни:
 ```bash
 sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
   "grep REPO_ROOT /etc/init.d/ai-docs-agent"
 ```
-Expected output must contain `ai-drakon-scaffolder`.
+Очікуваний вивід має містити `ai-drakon-scaffolder`.
 
 ---
 
-## Task 5: Commit and push to ai-drakon-setup
+## Задача 5: Commit та push до репозиторію ai-drakon-setup
 
-On dev server:
+На сервері розробки:
 ```bash
 sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "
   cd /home/vokov/workspace/ai-drakon-setup &&
@@ -315,50 +318,48 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "
 
 ---
 
-## Task 6: Restart ai-docs-agent service
+## Задача 6: Перезапуск сервісу ai-docs-agent
 
 ```bash
 sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
   "sudo rc-service ai-docs-agent restart"
 ```
 
-Wait 3 seconds, then check health:
+Зачекайте 3 секунди, а потім перевірте стан здоров'я (health check):
 ```bash
 sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
   "curl -s http://localhost:8767/health"
 ```
-Expected: `{"status":"ok","service":"docs-agent","port":8767}`
+Має повернути: `{"status":"ok","service":"docs-agent","port":8767}`
 
 ---
 
-## Task 7: Verify endpoint
+## Задача 7: Верифікація кінцевої точки
 
 ```bash
 curl -s -X POST http://192.168.3.184:8767/docs/dataview/query \
   -H "Content-Type: application/json" \
   -d '{"query": "LIST FROM \"docs\" LIMIT 3"}'
 ```
+Очікується: JSON з полями `{"type":"LIST","rows":[...],"count":3}`, де рядки мають параметри `path` та `title`.
 
-Expected: JSON with `{"type":"LIST","rows":[...],"count":3}` where rows have `path` and `title`.
-
-Second test — TABLE query:
+Другий тест — табличний запит:
 ```bash
 curl -s -X POST http://192.168.3.184:8767/docs/dataview/query \
   -H "Content-Type: application/json" \
   -d '{"query": "TABLE title, type, status FROM \"docs\" WHERE file.name != \"INDEX\" SORT type ASC LIMIT 5"}'
 ```
-
-Expected: `{"type":"TABLE","fields":["title","type","status"],"rows":[...],"count":5}`
+Очікується: `{"type":"TABLE","fields":["title","type","status"],"rows":[...],"count":5}`
 
 ---
 
-## Task 8: Index new endpoint in MemPalace
+## Задача 8: Індексація нової кінцевої точки в MemPalace
 
-After successful verification, index the new endpoint in MemPalace wing `ai-drakon`:
+Після успішної перевірки проіндексуйте нову кінцеву точку в зоні (wing) `ai-drakon` в MemPalace:
 
 ```
 Wing: ai-drakon
-Room: source-services  (або source-worker якщо room вже є)
+Room: source-services
 Drawer: dataview-dql-endpoint
 Content: POST /docs/dataview/query — DQL query over docs YAML frontmatter.
   Supported: LIST/TABLE FROM "path"|#tag WHERE field="val"|field!="val" SORT field ASC|DESC LIMIT N.
@@ -369,12 +370,23 @@ Content: POST /docs/dataview/query — DQL query over docs YAML frontmatter.
 
 ---
 
-## Checklist
+## Контрольний список (Checklist)
 
-- [ ] `dataview_route.py` created on dev server
-- [ ] `main.py` imports + includes `dataview_router`
-- [ ] `/etc/init.d/ai-docs-agent` REPO_ROOT = `ai-drakon-scaffolder`
-- [ ] `git commit + push` to `ai-drakon-setup`
-- [ ] `ai-docs-agent` service restarted + health OK
-- [ ] `POST /docs/dataview/query` returns valid JSON (not 404)
-- [ ] MemPalace drawer updated
+- [ ] `dataview_route.py` створено на сервері.
+- [ ] `main.py` імпортує та включає `dataview_router`.
+- [ ] `/etc/init.d/ai-docs-agent` містить REPO_ROOT = `ai-drakon-scaffolder`.
+- [ ] Виконано `git commit + push` до репозиторію `ai-drakon-setup`.
+- [ ] Сервіс `ai-docs-agent` успішно перезапущено + стан здоров'я OK.
+- [ ] `POST /docs/dataview/query` успішно повертає валідний JSON.
+- [ ] Оновлено шухляду (drawer) в MemPalace.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[agents/agy/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01-docs-agent/SKILL]] — навичка роботи з документацією
+- [[02-repo-analyzer/SKILL]] — навичка аналізу репозиторію
+- [[manual-mcp-access]] — посібник користувача з доступу до MCP
+**Читати далі:** [[docs/INDEX]]
