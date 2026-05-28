@@ -268,3 +268,93 @@
 - API тест: curl https://agy.exodus.pp.ua/health → {"status":"ok",...}
 - Потрібен "anthropic" або "openai" протокол (обидва підтримуються проксі)
 - AGY моделі: gemini-2.5-pro (найкраща), gemini-2.5-flash (швидка), claude-sonnet-4-6
+
+
+### TASK-9: Install ai-memory — cross-agent handoff Claude<->AGY
+```
+[ ] TASK-9
+  META: Install akitaonrails/ai-memory on 192.168.3.184 as shared memory layer
+        between Claude Code (OrangePi) and AGY (Termux).
+        ai-memory = automatic session capture + handoff between agents.
+  
+  SOURCE: https://github.com/akitaonrails/ai-memory
+  NotebookLM: 9386840e-d2e2-4c16-996a-a13f87898667 (AI-Memory notebook already in NLM)
+
+  === STEP 1: Install server on 192.168.3.184 ===
+  
+  sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 bash << 'REMOTE'
+    set -e
+    docker --version
+    mkdir -p ~/ai-memory-data
+    docker pull ghcr.io/akitaonrails/ai-memory:latest || docker pull akitaonrails/ai-memory:latest
+    docker rm -f ai-memory 2>/dev/null || true
+    docker run -d \
+      --name ai-memory \
+      --restart unless-stopped \
+      -p 8790:8790 \
+      -v ~/ai-memory-data:/data \
+      ghcr.io/akitaonrails/ai-memory:latest
+    sleep 3
+    curl -s http://localhost:8790/health || echo "NOT UP - check docker logs ai-memory"
+    docker logs ai-memory 2>&1 | tail -20
+REMOTE
+
+  -> Log result in diary: ai-memory running at 192.168.3.184:8790
+
+  === STEP 2: Create .ai-memory.toml workspace markers ===
+  
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    'printf "[workspace]\nname = ai-drakon\nserver = http://192.168.3.184:8790\n" > ~/ai-memory-data/.ai-memory.toml'
+
+  === STEP 3: Configure session scripts for AGY/Termux ===
+  
+  Create ~/bin/ai-memory-start.sh:
+    #!/data/data/com.termux/files/usr/bin/bash
+    SESSION_ID="agt-ogy-$(date +%Y%m%d-%H%M%S)"
+    curl -sf -X POST http://192.168.3.184:8790/api/sessions \
+      -H "Content-Type: application/json" \
+      -d "{\"agent\":\"agt-ogy\",\"session_id\":\"$SESSION_ID\",\"action\":\"start\"}" \
+      || echo "[ai-memory] unreachable"
+    echo "$SESSION_ID" > /tmp/.current-ai-memory-session
+  chmod +x ~/bin/ai-memory-start.sh
+  
+  Create ~/bin/ai-memory-end.sh:
+    #!/data/data/com.termux/files/usr/bin/bash
+    SESSION_ID=$(cat /tmp/.current-ai-memory-session 2>/dev/null || echo "unknown")
+    curl -sf -X POST http://192.168.3.184:8790/api/sessions \
+      -H "Content-Type: application/json" \
+      -d "{\"agent\":\"agt-ogy\",\"session_id\":\"$SESSION_ID\",\"action\":\"end\"}" \
+      || true
+  chmod +x ~/bin/ai-memory-end.sh
+
+  === STEP 4: Test ===
+  
+  curl -s http://192.168.3.184:8790/health
+  -> should return JSON with status ok
+  
+  curl -s -X POST http://192.168.3.184:8790/api/notes \
+    -H "Content-Type: application/json" \
+    -d '{"agent":"agt-ogy","content":"AGY connected to ai-memory 2026-05-28","tags":["test","setup"]}'
+  -> should return JSON with id
+
+  === STEP 5: Leave instructions for Claude in TASKS.md ===
+  
+  Append after this task block:
+  
+  ## ai-memory server info (for Claude — OrangePi hooks)
+  Server: http://192.168.3.184:8790
+  Web UI: http://192.168.3.184:8790/web
+  Claude Code hooks to install on OrangePi:
+    curl -fsSL https://raw.githubusercontent.com/akitaonrails/ai-memory/main/scripts/install.sh | bash
+    ai-memory install-hooks --agent claude-code --server http://192.168.3.184:8790 --apply
+    ai-memory install-mcp --client claude-code --server http://192.168.3.184:8790 --apply
+
+  === STEP 6: Diary + commit ===
+  
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-28|TASK-9:ai-memory-install|SERVER:192.168.3.184:8790|STATUS:<UP/FAILED>|AGY-HOOKS:<yes/no>|***"
+  
+  git add development/TASKS.md
+  git commit -m "chore(tasks): TASK-9 ai-memory install result"
+  git push origin main
+```
