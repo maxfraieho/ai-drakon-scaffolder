@@ -171,7 +171,7 @@
 
 ### TASK-7: Final session handoff
 ```
-[ ] TASK-7 (завжди виконувати останньою!)
+[x] TASK-7 (завжди виконувати останньою!)
   1. Перевірити статус всіх задач в цьому файлі
   2. git status → зробити commit якщо є незакоміченні зміни в TASKS.md
   3. Оновити ~/workspace/ai-drakon-scaffolder/development/HANDOFF.md:
