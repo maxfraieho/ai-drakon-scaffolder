@@ -58,5 +58,4 @@ mempalace search "ключовий_запит"
 **Цей документ є частиною:** [[kb/_INDEX]]
 
 **Цей документ пов'язаний з:**
-- [[agents/agy/01-docs-agent/SKILL]] — навичка документування Docs Agent
-- [[kb/_INDEX]] — переглянути всі документи розділу
+- [[agents/agy/01-docs-agent/SKILL]] — пов'язаний документ (SKILL)

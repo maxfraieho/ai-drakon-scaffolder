@@ -178,5 +178,4 @@ DOCS COMPLETE:
 **Цей документ є частиною:** [[agents/_INDEX]]
 
 **Цей документ пов'язаний з:**
-- [[kb/zettelkasten-mempalace-principles]] — принципи балансування Вікі-графу та оновлення пам'яті
-- [[agents/_INDEX]] — переглянути всі документи розділу
+- [[kb/zettelkasten-mempalace-principles]] — пов'язаний документ (zettelkasten mempalace principles)
