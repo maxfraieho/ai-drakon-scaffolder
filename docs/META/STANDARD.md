@@ -56,6 +56,25 @@ lang: uk
 
 Приклади: `[[01-vision]]`, `[[01-drakon-ir-spec]]`, `[[manual-pipeline-a]]`.
 
+### Два типи вузлів графу
+
+| Тип | Файли | Incoming limit |
+|-----|-------|---------------|
+| **MOC / Index** | `_INDEX.md`, `INDEX.md`, `README.md` | Необмежено — це їх призначення |
+| **Leaf / Content** | Всі інші `.md` | Max 5 incoming |
+
+### Контроль вхідних зв'язків (Incoming Link Control)
+
+**Правило Nearest Ancestor:** Посилай завжди на `_INDEX` СВОГО розділу, а не на root `[[INDEX]]`.
+- `docs/concept/03-architecture.md` → `[[concept/_INDEX]]` ✅
+- `docs/concept/03-architecture.md` → `[[INDEX]]` ❌
+
+**Правило No Content Hubs:** Не перетворюй leaf-ноти на хаби.
+Якщо doc X вже досяжний через `_INDEX` за 1 перехід — пряме посилання на X надлишкове.
+- `[[concept/_INDEX]]` достатньо, не додавай ще `[[01-vision]]` в ту ж секцію.
+
+**Виняток:** Специфікації та API-документи (`[[01-drakon-ir-spec]]`) можуть бути прямими цілями, якщо поточний doc безпосередньо залежить від них (не просто "пов'язаний з темою").
+
 ---
 
 ## Секція семантичних зв'язків

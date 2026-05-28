@@ -39,3 +39,56 @@
 3. **Суміжні зв'язки (Related)** — максимум 1-2 лінки на найбільш критичні суміжні документи.
 
 Загальна сума вихідних посилань у секції `## Семантичні зв'язки` не повинна перевищувати 4.
+
+---
+
+## 4. Управління ВХІДНИМИ зв'язками (Incoming Links) — TASK-20
+
+> Дослідження: Obsidian MOC pattern, Zettelkasten hub/leaf model, аналіз поточного графу (2026-05-29)
+
+### Два типи вузлів
+
+| Тип | Приклади | Роль | Incoming limit |
+|-----|---------|------|---------------|
+| **MOC / Index** | `_INDEX.md`, `INDEX.md`, `README.md` | Навігаційний хаб — збирає посилання від дочірніх | Необмежено (це нормально) |
+| **Content node** | Звичайні docs, плани, мануали | Листова нота з контентом | **Max 5 incoming** |
+
+### Діагноз поточного графу (70 docs, 107 unique targets)
+
+Перевантажені хаби ПІСЛЯ TASK-19:
+- `[[INDEX]]` — 21 incoming ← **корінь проблеми**: кожен doc лінкує на root
+- `[[01-drakon-ir-spec]]` — 8 incoming ← content-нода стала хабом
+- `[[01-vision]]` — 8 incoming ← те саме
+- `[[plans/_INDEX]]` — 16 incoming ← MOC, це ок
+- `[[ux-audit/_INDEX]]` — 8 incoming ← MOC, ок
+
+### Нові правила (incoming control)
+
+**Правило 1 — Nearest Ancestor (найближчий батько):**
+Посилай тільки на `_INDEX` свого розділу, НЕ на root `[[INDEX]]`.
+`docs/concept/01-vision.md` → `[[concept/_INDEX]]`, не `[[INDEX]]`.
+
+**Правило 2 — No Content Hubs:**
+Content-нода з incoming > 5 — ознака проблеми.
+Якщо багато docs посилаються на той самий content-doc → він має стати `_INDEX` або бути доступним через нього.
+Не додавай прямий `[[01-vision]]` якщо `[[concept/_INDEX]]` вже є у секції зв'язків.
+
+**Правило 3 — Hub vs Leaf розрізнення:**
+- `_INDEX.md` = **MOC (Map of Content)** — навігація, може мати 10-20+ incoming, завжди є `tier:1`
+- Звичайний `.md` = **Leaf note** — контент, incoming ≤ 5
+
+**Правило 4 — Транзитивна доступність:**
+Якщо документ X вже досяжний через `_INDEX` за 1 перехід — пряме посилання надлишкове.
+Виняток: якщо X є прямою залежністю (специфікація, що імпортується).
+
+### Очікуваний вигляд здорового графу
+
+- Кожна секція (`concept/`, `architecture/`, `plans/`) = зірка навколо свого `_INDEX`
+- `INDEX.md` = центральна зірка, але лише з `_INDEX` секцій (не з leaf-нот)
+- Leaf-ноти → лінкують тільки вгору до свого `_INDEX` + max 2 critical related
+- Граф: кластери з чіткими центрами, мало "павутини" між кластерами
+
+Sources:
+- [Obsidian MOC pattern](https://obsidian.rocks/maps-of-content-effortless-organization-for-notes/)
+- [Zettelkasten hub notes](https://zettelkasten.de/posts/kinds-of-ties/)
+- [ObsidianMOC GitHub](https://github.com/seqis/ObsidianMOC)
