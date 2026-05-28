@@ -28,7 +28,7 @@
 
 ### TASK-2: Sync GEMINI.md → drn-ai notebook
 ```
-[ ] TASK-2
+[x] TASK-2
   1. Прочитати ~/workspace/ai-drakon-scaffolder/GEMINI.md
   2. notebooklm_list_sources(notebook_id="6139067a-5776-4b29-8869-7c9f9aed475c")
      → перевірити чи "GEMINI.md 2026-05-28" вже є
