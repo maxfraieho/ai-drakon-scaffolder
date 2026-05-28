@@ -20,6 +20,7 @@ HEAD: 92e6d53
 - [x] **TASK-4**: Додано `AGY (Gemini)` до стандартних CLI-агентів в `settings-storage.ts`
 - [x] **TASK-9**: Встановлено `ai-memory` сервер на `192.168.3.184:8790` та створено запускні/завершальні хук-скрипти `ai-memory-start.sh` / `ai-memory-end.sh` на Termux
 - [x] **TASK-10**: Створено та опубліковано GitHub-репозиторій `maxfraieho/antigravity-claude-proxy` із покращеним форком проксі (підтримка OpenAI `/v1/chat/completions`) та README
+- [x] **TASK-12**: Стандартизація документації Garden Bloom (59 файлів). Перекладено 19 EN файлів, відформатовано всі файли з додаванням frontmatter і семантичних зв'язків, створено 11 файлів `_INDEX.md`, оновлено головний `docs/INDEX.md` (Batch 1-6 complete). Commits: `63cb514` (Batch 1 & 2), `9932167` (Batch 3), `b348a90` (Batch 4), `b9f18c2` (Batch 5), `12b567e` (Batch 6)
 
 ## Пропущені задачі (опціонально / на свій розсуд)
 - [ ] **TASK-5**: skipped (автоматичне налаштування провайдера у localStorage при чистій сесії, необов'язково для MVP)

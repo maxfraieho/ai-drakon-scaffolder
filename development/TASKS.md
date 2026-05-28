@@ -701,7 +701,7 @@ REMOTE
 
 ### TASK-12: Docs standardization — translate EN→UA + apply Garden formatting
 ```
-[ ] TASK-12
+[x] TASK-12
   META: 57 markdown files in docs/ need (1) translation EN→UA and (2) formatting
         per Garden Bloom documentation standard (from garden-seedling-stage project).
         Result: unified Ukrainian wiki with wikilinks, frontmatter, _INDEX.md per folder.
