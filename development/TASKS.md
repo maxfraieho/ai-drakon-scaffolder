@@ -304,6 +304,103 @@ SCRIPT
     python3 -m mempalace diary write --agent agt-ogy       "SESSION:2026-05-28|TASK-17:ai-memory-hooks|AGY3.tablet.DONE|server:192.168.3.184:49374|★★"
 ```
 
+
+### TASK-18: Дослідження та покращення логіки семантичних зв'язків
+```
+[ ] TASK-18
+  МЕТА: Граф документів виглядає перевантажено — занадто багато зв'язків на документ.
+        Дослідити best practices побудови knowledge graph links і переписати
+        відповідну секцію DOCS_SYSTEM_PROMPT.
+
+  ФАЙЛ ДЛЯ ЗМІНИ:
+    /home/vokov/workspace/ai-drakon-scaffolder/services/docs-agent/prompts.py
+    (через SSH до 192.168.3.184)
+
+  КРОК 1: Проаналізуй поточну щільність зв'язків
+    sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184       "grep -r '\[\[' ~/workspace/ai-drakon-scaffolder/docs/ --include='*.md' | wc -l"
+    sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184       "grep -rc '\[\[' ~/workspace/ai-drakon-scaffolder/docs/ --include='*.md' | sort -t: -k2 -rn | head -10"
+    → Визнач: скільки зв'язків в середньому на документ? Де максимум?
+
+  КРОК 2: Глибоке дослідження через Gemini Pro
+    Використай gemini-2.5-pro (або gemini-3.1-pro-high) і задай ці питання:
+
+    Q1: "What are best practices for semantic link density in knowledge graphs?
+         Specifically: how many outgoing links per document is optimal?
+         Zettelkasten approach vs. Wikipedia approach vs. ontology approach.
+         Give concrete rules for an AI agent generating links."
+
+    Q2: "In a knowledge base with ~60 markdown documents organized by domain tags
+         (concept, architecture, kb, manual, plan, report, agent, ux, meta)
+         and tiers (1=canonical, 2=active, 3=reference),
+         what linking rules would produce a clean, navigable graph?
+         Specifically: when should a link be created vs. omitted?"
+
+    Q3: "Review this prompt section for an AI documentation agent and suggest
+         improvements to make it generate fewer, more meaningful links:
+         [вставити поточну секцію ## Семантичні зв'язки з prompts.py]"
+
+  КРОК 3: Прочитай поточний промпт
+    sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184       "cat ~/workspace/ai-drakon-scaffolder/services/docs-agent/prompts.py" |       grep -A 30 "Семантичні зв'язки"
+
+  КРОК 4: Сформулюй нові правила (на основі дослідження)
+    Цільові метрики:
+    - Максимум 3-5 вихідних зв'язків на документ
+    - Tier-1 документи не отримують зв'язків "для повноти"
+    - Зв'язок створюється тільки якщо: a) читач ПОТРЕБУЄ цей контекст,
+      або b) документи є частинами одного процесу
+
+  КРОК 5: Оновити DOCS_SYSTEM_PROMPT
+    Через SSH змінити секцію "Обов'язкова кінцева секція" і "Правила" в prompts.py.
+    Додати конкретні обмеження:
+    - "Максимум 3 посилання в секції Семантичні зв'язки"
+    - "Не додавай зв'язок якщо він очевидний або його можна знайти через _INDEX"
+    - "Посилання тільки на документи що БЕЗПОСЕРЕДНЬО потрібні для розуміння"
+
+  КРОК 6: Зберегти дослідження
+    sshpass -p "805235io." ssh -o StrictHostKeyChecник=no vokov@192.168.3.184 bash << 'SSHEOF'
+    cat > /home/vokov/workspace/ai-drakon-scaffolder/development/LINKS_RESEARCH.md << 'EOF'
+---
+tags:
+  - domain:kb
+  - status:active
+  - format:reference
+created: 2026-05-28
+updated: 2026-05-28
+tier: 2
+title: "Дослідження: оптимальна щільність семантичних зв'язків"
+lang: uk
+---
+
+# Дослідження: семантичні зв'язки в Knowledge Graph
+
+## Висновки Gemini Pro
+<вставити висновки з Кроку 2>
+
+## Нові правила для docs-agent
+<вставити нові правила>
+
+## Зміни в DOCS_SYSTEM_PROMPT
+<вставити diff або опис змін>
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[development/_INDEX]]
+**Пов'язано з:** [[docs/META/STANDARD]] — стандарт Garden Bloom
+EOF
+    cd /home/vokov/workspace/ai-drakon-scaffolder
+    git add development/LINKS_RESEARCH.md services/docs-agent/prompts.py
+    git commit -m "docs(research): link density rules + update DOCS_SYSTEM_PROMPT"
+    git push origin main
+    SSHEOF
+
+  КРОК 7: Diary + TASKS.md
+    python3 -m mempalace diary write --agent agt-ogy       "SESSION:2026-05-28|TASK-18:links-research|VERDICT:<висновок>|PROMPT_UPDATED:yes|★★★"
+
+    sshpass -p '123456' ssh -o StrictHostKeyChecking=no -p 8022 u0_a284@192.168.3.195       'cd ~/workspace/ai-drakon-scaffolder && sed -i "s/^\[ \] TASK-18/[x] TASK-18/" development/TASKS.md && git add development/TASKS.md && git commit -m "chore(tasks): TASK-18 links research done" && git push origin main'
+```
+
 ## Завершені задачі
 
 ```
