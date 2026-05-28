@@ -179,6 +179,6 @@ app = workflow.compile()
 
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[architecture/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[03-architecture]] — архітектура системи AI-DRAKON
-- [[architecture/02_drakon_to_langgraph_mapping]] — мапінг концепцій у LangGraph
+- [[architecture/02_drakon_to_langgraph_mapping]] — наступний розділ (02 drakon to langgraph mapping)

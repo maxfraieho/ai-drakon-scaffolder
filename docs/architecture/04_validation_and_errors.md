@@ -118,8 +118,7 @@ export function convertDiagramToIrWithValidation(diagram: DrakonDiagram): {
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[architecture/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[03_live_tracing_protocol]] — Фаза 3: протокол трасування
-- [[architecture/05_security_and_deployment]] — безпека та деплоймент
+- [[architecture/05_security_and_deployment]] — наступний розділ (05 security and deployment)

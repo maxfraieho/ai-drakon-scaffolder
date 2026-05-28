@@ -91,8 +91,7 @@ gh run list --repo maxfraieho/<new-repo> --limit 3
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[templates/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[templates/lovable-migration/lovable-prompts/00-safe-migration-init]] — Промпт ініціалізації безпечної міграції Lovable
-- [[templates/lovable-migration/lovable-prompts/00-project-init]] — ініціалізація проекту Lovable
+- [[templates/_INDEX]] — переглянути всі документи розділу

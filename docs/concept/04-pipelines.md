@@ -266,9 +266,7 @@ services/architect-agent/
 ---
 
 ## Семантичні зв'язки
+**Цей документ є частиною:** [[concept/_INDEX]]
 
-**Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
-- [[03-architecture]] — загальна архітектура системи AI-DRAKON
-- [[concept/05-human-agent-loop]] — модель взаємодії людини та агента
-```
+- [[concept/05-human-agent-loop]] — наступний розділ (05 human agent loop)

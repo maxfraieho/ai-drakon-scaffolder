@@ -151,6 +151,6 @@ drakon-agent (валідує, рендерить)
 
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[concept/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[04-pipelines]] — пайплайни Pipeline A та B
-- [[concept/07-agent-dev-workflow]] — робочий процес розробки агентів
+- [[concept/06-knowledge-base]] — наступний розділ (06 knowledge base)

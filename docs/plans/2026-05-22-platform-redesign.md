@@ -81,8 +81,7 @@ lang: uk
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[plans/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[plans/2026-05-12-platform-redesign-proposal]] — Пропозиція редизайну платформи — План реалізації
-- [[plans/2026-05-26-pinchtab-test-plan]] — план тестування PinchTab
+- [[plans/2026-05-26-pinchtab-test-plan]] — наступний розділ (2026 05 26 pinchtab test plan)

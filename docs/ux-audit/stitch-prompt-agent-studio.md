@@ -208,8 +208,7 @@ lang: uk
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[ux-audit/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
-- [[ux-audit/stitch-prompt]] — промпт дизайну Diagrams Page & Workspace Shell
+- [[ux-audit/_INDEX]] — переглянути всі документи розділу

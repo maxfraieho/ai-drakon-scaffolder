@@ -146,6 +146,6 @@ CC > 50   → Silhouette (рівень "deep": обов'язкова ручна 
 
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[concept/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR
-- [[concept/01-vision]] — концепція AI-DRAKON
+- [[concept/03-architecture]] — наступний розділ (03 architecture)

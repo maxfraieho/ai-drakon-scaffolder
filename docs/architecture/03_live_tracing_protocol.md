@@ -111,8 +111,7 @@ function matchesActiveNode(item: DrakonItem, activeNodeName: string | null): boo
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[architecture/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[02_drakon_to_langgraph_mapping]] — Фаза 2: маппінг DRAKON → LangGraph
-- [[architecture/04_validation_and_errors]] — робота з помилками та геометрична валідація
+- [[architecture/04_validation_and_errors]] — наступний розділ (04 validation and errors)

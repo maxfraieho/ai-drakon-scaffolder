@@ -93,5 +93,4 @@ DRAKON IR — це JSON-структура з вузлами та зв'язка�
 **Цей документ є частиною:** [[concept/_INDEX]]
 
 **Цей документ пов'язаний з:**
-- [[concept/02-drakon-primer]] — мова DRAKON: основи
-- [[concept/03-architecture]] — архітектура системи
+- [[concept/02-drakon-primer]] — наступний розділ (02 drakon primer)

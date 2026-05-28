@@ -182,6 +182,6 @@ curl -X POST https://research.exodus.pp.ua/analyze-files \
 
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[concept/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[05-human-agent-loop]] — взаємодія людини та агента
-- [[concept/08-agent-docs-integration]] — інтеграція агентів та документації
+- [[concept/08-agent-docs-integration]] — наступний розділ (08 agent docs integration)

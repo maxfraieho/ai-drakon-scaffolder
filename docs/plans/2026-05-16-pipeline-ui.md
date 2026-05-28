@@ -1076,8 +1076,7 @@ Wait for deploy (~2 min after git push), then screenshot:
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[plans/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[plans/2026-05-12-drakon-agent]] — Агент DRAKON — План реалізації
-- [[plans/2026-05-21-drakon-langgraph-runtime]] — конвеєр як рантайм для LangGraph
+- [[plans/2026-05-16-sprint5-pipeline-mgmt]] — наступний розділ (2026 05 16 sprint5 pipeline mgmt)

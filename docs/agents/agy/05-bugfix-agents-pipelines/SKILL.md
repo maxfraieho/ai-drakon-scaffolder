@@ -324,8 +324,7 @@ git push origin master
 ---
 
 ## Семантичні зв'язки
+**Цей документ є частиною:** [[agents/_INDEX]]
 
-**Цей документ є частиною:** [[agents/agy/_INDEX]]
 **Цей документ пов'язаний з:**
-- [[manuals/manual-agent-studio]] — мануал Agent Studio
-- [[agents/agy/01-docs-agent/SKILL]] — навичка генерації документації
+- [[agents/_INDEX]] — переглянути всі документи розділу

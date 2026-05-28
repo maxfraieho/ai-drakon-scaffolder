@@ -1020,8 +1020,7 @@ git push origin main && git push drakon-diagram-flow main
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[plans/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[plans/2026-05-16-pipeline-ui]] — Інтерфейс пайплайну — План реалізації
-- [[plans/2026-05-22-pipeline-scenarios]] — документація сценаріїв Pipeline Command Center
+- [[plans/2026-05-21-ir-scheme-bidirectional-import]] — наступний розділ (2026 05 21 ir scheme bidirectional import)

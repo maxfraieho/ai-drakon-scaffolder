@@ -142,8 +142,7 @@ sudo rc-service ai-docs-agent restart
 ---
 
 ## Семантичні зв'язки
+**Цей документ є частиною:** [[concept/_INDEX]]
 
-**Цей документ є частиною:** [[architecture/_INDEX]]
 **Цей документ пов'язаний з:**
-- [[01-vision]] — концепція AI-DRAKON
-- [[concept/04-pipelines]] — пайплайни A та B
+- [[concept/04-pipelines]] — наступний розділ (04 pipelines)

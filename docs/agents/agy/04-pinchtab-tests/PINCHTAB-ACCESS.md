@@ -305,9 +305,7 @@ for n in json.load(sys.stdin).get('nodes',[]):
 ---
 
 ## Семантичні зв'язки
+**Цей документ є частиною:** [[agents/_INDEX]]
 
-**Цей документ є частиною:** [[agents/agy/04-pinchtab-tests/_INDEX]]
 **Цей документ пов'язаний з:**
-- [[04-pinchtab-tests/SKILL]] — навичка запусків тестів PinchTab
-- [[agents/agy/04-pinchtab-tests/PHASE2-EXECUTION]] — виконання другої фази тестування
-```
+- [[agents/_INDEX]] — переглянути всі документи розділу

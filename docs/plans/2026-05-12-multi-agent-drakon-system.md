@@ -1022,8 +1022,7 @@ ai-drakon-setup/
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[plans/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[plans/2026-05-12-drakon-agent]] — загальний опис та план drakon-agent
-- [[plans/2026-05-12-platform-redesign-proposal]] — пропозиція архітектурного редизайну
+- [[plans/2026-05-12-platform-redesign-proposal]] — наступний розділ (2026 05 12 platform redesign proposal)

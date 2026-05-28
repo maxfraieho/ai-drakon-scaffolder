@@ -1008,8 +1008,7 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git log --o
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[plans/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[plans/2026-05-12-multi-agent-drakon-system]] — загальний архітектурний план системи
-- [[plans/2026-05-16-sprint5-pipeline-mgmt]] — система керування конвеєрами
+- [[plans/2026-05-16-js-ts-support]] — наступний розділ (2026 05 16 js ts support)

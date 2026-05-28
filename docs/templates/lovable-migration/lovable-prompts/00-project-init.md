@@ -122,8 +122,7 @@ lang: uk
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[templates/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[templates/lovable-migration/README]] — Інструкція з міграції Lovable
-- [[templates/lovable-migration/lovable-prompts/00-safe-migration-init]] — безпечна міграція Lovable
+- [[templates/lovable-migration/lovable-prompts/00-safe-migration-init]] — наступний розділ (00 safe migration init)

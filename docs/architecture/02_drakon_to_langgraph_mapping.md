@@ -100,8 +100,7 @@ lang: uk
 ---
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[architecture/_INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[01_langgraph_for_beginners]] — Фаза 1: вступ у LangGraph
-- [[architecture/03_live_tracing_protocol]] — протокол живого трасування
+- [[architecture/03_live_tracing_protocol]] — наступний розділ (03 live tracing protocol)
