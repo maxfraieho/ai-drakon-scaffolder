@@ -886,3 +886,17 @@ REMOTE
     TRANSLATED:<N>.files|REFORMATTED:<N>.files|INDEXES:<N>.created|
     STANDARD:docs/META/STANDARD.md|COMMIT:<hash>|★★★"
 ```
+
+### TASK-13: Оновити DOCS_SYSTEM_PROMPT — Garden Bloom стандарт
+```
+[x] TASK-13 — ВИКОНАНО Claude (AGY quota) 2026-05-28
+  Файл: /home/vokov/workspace/drakon-flow-90aa2999/services/docs-agent/prompts.py
+  Дія: DOCS_SYSTEM_PROMPT розширено інструкціями Garden Bloom стандарту:
+    - YAML frontmatter шаблон (domain/status/format/tier/lang)
+    - Доменна таксономія (9 доменів)
+    - Рівні tier (1=canonical, 2=active, 3=reference)
+    - Wikilinks [[назва-файлу]]
+    - Секція "## Семантичні зв'язки" (обов'язкова для кожного документу)
+  Сервіс перезапущено: sudo rc-service ai-docs-agent restart → OK
+  Commit: f1fca78 (drakon-flow-90aa2999/main)
+```
