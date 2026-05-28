@@ -28,4 +28,3 @@ lang: uk
 | [[agents/agy/05-bugfix-agents-pipelines/SKILL]] | Навичка налагодження та виправлення багів у пайплайнах | active | 2 |
 
 ## Семантичні зв'язки
-**Батьківський індекс:** [[agents/_INDEX]]
