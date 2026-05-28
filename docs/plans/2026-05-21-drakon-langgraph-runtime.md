@@ -1,10 +1,13 @@
 ---
-title: "DRAKON-as-Runtime for LangGraph Pipelines — Implementation Plan"
-type: plan
-tags: [drakon, langgraph, pipeline, agent, frontend]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-21
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "DRAKON як Runtime для LangGraph пайплайнів — План реалізації"
+lang: uk
 ---
 
 # DRAKON-as-Runtime for LangGraph Pipelines — Implementation Plan
@@ -1013,4 +1016,14 @@ git push origin main && git push drakon-diagram-flow main
 | graph-pipeline-api.ts | 1 новий | Низька |
 | PipelinesPage + компоненти | 3 нових + route | Середня |
 | Lovable prompt 49 | 1 новий | — |
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-16-pipeline-ui]] — Інтерфейс пайплайну — План реалізації
+- [[plans/2026-05-22-pipeline-scenarios]] — Сценарії роботи з пайплайнами — План реалізації
+**Читати далі:** [[plans/2026-05-22-platform-redesign]]
 

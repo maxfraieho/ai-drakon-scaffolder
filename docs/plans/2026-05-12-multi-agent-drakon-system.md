@@ -1,153 +1,157 @@
 ---
-title: "Multi-Agent DRAKON System — Implementation Plan"
-type: plan
-tags: [drakon, agent, cloudflare, frontend, typescript]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-12
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Мультиагентна система DRAKON — План реалізації"
+lang: uk
 ---
 
-# Multi-Agent DRAKON System — Implementation Plan
+# Мультиагентна система DRAKON — План реалізації
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **Для Claude:** НЕОБХІДНИЙ SUB-SKILL: Використовуйте superpowers:executing-plans для реалізації цього плану завдання за завданням.
 
-**Goal:** Extend the AI-DRAKON platform with two specialist agents (Architect + Docs) that share a knowledge base with the existing `drakon-agent`, communicate through a unified chat UI, and persist their memory to the git repository.
+**Мета:** Розширити платформу AI-DRAKON двома спеціалізованими агентами (Architect + Docs), які мають спільну базу знань з існуючим `drakon-agent`, спілкуються через єдиний чат-інтерфейс та зберігають свою пам'ять у репозиторії git.
 
-**Architecture:** Three FastAPI agents sharing one BM25 knowledge base directory; each agent has a `memory/` sub-namespace in the repo; the Cloudflare Worker exposes new MCP tools for the agents; the React frontend adds `AgentChatPanel` components wired to the existing `DiagramsPage`.
+**Архітектура:** Три агенти FastAPI, які використовують спільну директорію бази знань BM25; кожен агент має підпростір імен `memory/` у репозиторії; Cloudflare Worker надає нові інструменти MCP для агентів; фронтенд React додає компоненти `AgentChatPanel`, інтегровані з існуючою сторінкою `DiagramsPage`.
 
-**Tech Stack:** Python 3.11 FastAPI (agents), TypeScript/React (frontend), Cloudflare Worker (MCP broker), MinIO (diagrams), GitHub API (memory persistence), BM25Okapi (KB retrieval).
+**Стек технологій:** Python 3.11 FastAPI (агенти), TypeScript/React (фронтенд), Cloudflare Worker (MCP-брокер), MinIO (діаграми), GitHub API (збереження пам'яті), BM25Okapi (отримання даних із бази знань).
 
 ---
 
-## Executive Summary
+## Загальний огляд (Executive Summary)
 
-### Current State (2026-05-12)
+### Поточний стан (2026-05-12)
 
-The platform has three working layers:
+Платформа має три робочі рівні:
 
 ```
 ┌─────────────────────────────────────────────────┐
 │  FRONTEND (CF Pages → ai-drakon-setup.pages.dev) │
 │  React 19 / TanStack Router / Zustand            │
-│  DiagramsPage: folder tree + DRAKON diagram grid │
-│  DiagramEditorPage: drakonwidget.js editor        │
+│  DiagramsPage: дерево папок + сітка діаграм      │
+│  DiagramEditorPage: редактор drakonwidget.js      │
 └───────────────┬─────────────────────────────────┘
                 │ MCP HTTP (Authorization: Bearer drakon-mcp-2026)
 ┌───────────────▼─────────────────────────────────┐
 │  CLOUDFLARE WORKER (drakon-mcp-worker)            │
 │  drakon.listdiagrams / savediagram / deletediagram│
 │  drakon.validateir / mutatediagram               │
-│  drakon.analyzecodebase (→ AST microservice)     │
+│  drakon.analyzecodebase (→ AST мікросервіс)      │
 │  drakon.savetogit / listgitdiagrams / getgitdiagram│
 │  drakon.diffcodevsdiagram                        │
 └───────┬───────────────────────────────┬──────────┘
         │                               │
 ┌───────▼────────┐            ┌─────────▼──────────┐
 │  MinIO S3      │            │  GitHub API         │
-│  apiminio.…ua  │            │  drn/ folder in repos│
-│  bucket=drakon │            │  memory/*.md files  │
+│  apiminio.…ua  │            │  drn/ папка в репо  │
+│  bucket=drakon │            │  memory/*.md файли  │
 └────────────────┘            └────────────────────┘
 
 ┌─────────────────────────────────────────────────┐
 │  DRAKON-AGENT (192.168.3.184:8765)               │
-│  FastAPI + Python AST analyzer                   │
-│  BM25 knowledge base (knowledge/*.md)            │
-│  AI refiner → proxy :18880 (coding-proxy model)  │
-│  Validator (b0/end/question/action integrity)    │
+│  FastAPI + Python AST аналізатор                 │
+│  База знань BM25 (knowledge/*.md)                │
+│  AI покращувач → проксі :18880 (coding-proxy)    │
+│  Валідатор (цілісність b0/end/question/action)   │
 │  POST /analyze  GET /health  POST /feedback      │
 └─────────────────────────────────────────────────┘
 ```
 
-### DRAKON IR Contract (canonical, never break)
+### Контракт DRAKON IR (канонічний, ніколи не порушувати)
 
 ```typescript
-// src/lib/htse/ir-types.ts — the single source of truth
+// src/lib/htse/ir-types.ts — єдине джерело правди
 interface IrItem {
   type: "action"|"question"|"select"|"case"|"header"|"end"|
         "address"|"branch"|"insertion"|"input"|"output"|
         "shelf"|"process"|"timer"|"duration";
   content: string;
-  one?: string;   // next / YES branch
-  two?: string;   // NO branch (questions only)
+  one?: string;   // наступний вузол / гілка ТАК
+  two?: string;   // гілка НІ (тільки для питань)
   side?: string;
   branchId?: string;
 }
 interface IrDiagram {
   name: string;
   access: "public"|"private";
-  params: string[];       // array in frontend, string in drakon-agent (legacy)
+  params: string[];       // масив у фронтенді, рядок у drakon-agent (застаріле)
   items: Record<string, IrItem>;
 }
 ```
 
-**Rule:** `b0` (type: "branch", branchId: 0) MUST exist. `end` (type: "end") MUST exist. Without `b0`, drakonwidget renders only the header, no flowchart.
+**Правило:** `b0` (type: "branch", branchId: 0) МУСИТЬ існувати. `end` (type: "end") МУСИТЬ існувати. Без `b0` drakonwidget рендерить тільки заголовок, а не блок-схему.
 
 ---
 
-## Vision: Multi-Agent Platform
+## Концепція: Мультиагентна платформа
 
-### Three Agents, One UI
+### Три агенти, один інтерфейс користувача (UI)
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  AI-DRAKON UI  (DiagramsPage — main screen)                       │
+│  AI-DRAKON UI  (DiagramsPage — головний екран)                   │
 │                                                                  │
 │  ┌─────────────────┐  ┌──────────────────────────────────────┐  │
-│  │ Folder Tree      │  │  Agent Chat Sidebar                  │  │
-│  │ (GitHub repo)   │  │  ┌──────────┬──────────┬──────────┐  │  │
+│  │ Дерево папок    │  │  Бічна панель чату з агентом         │  │
+│  │ (GitHub репо)   │  │  ┌──────────┬──────────┬──────────┐  │  │
 │  │                 │  │  │Architect │  Docs    │ Editor   │  │  │
 │  │ project/        │  │  └──────────┴──────────┴──────────┘  │  │
-│  │  ├─ src/        │  │  [Chat messages + suggested actions]  │  │
-│  │  │   └─ *.py   │  │  [Apply] [Reject] [Ask follow-up]    │  │
+│  │  ├─ src/        │  │  [Повідомлення чату + дії]           │  │
+│  │  │   └─ *.py   │  │  [Застосувати] [Відхилити] [Запитати]│  │
 │  │  └─ docs/       │  └──────────────────────────────────────┘  │
+│  │                 │                                             │
 │  └─────────────────┘                                             │
 │                                                                  │
 │  ┌──────────────────────────────────────────────────────────┐   │
-│  │  DRAKON Diagram Grid (folders + diagram thumbnails)       │   │
+│  │  Сітка діаграм DRAKON (папки + мініатюри діаграм)        │   │
 │  └──────────────────────────────────────────────────────────┘   │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-### Agent Roles
+### Ролі агентів
 
-| Agent | Port | Responsibility | Zone of Change |
-|-------|------|----------------|----------------|
-| **drakon-agent** (existing) | 8765 | Python AST → DRAKON IR | `POST /analyze` diagrams |
-| **architect-agent** (new) | 8766 | Project structure, module diagrams, architecture decisions | `memory/architect/*.md`, project DRAKON diagrams in `architecture/` folder |
-| **docs-agent** (new) | 8767 | Documentation management, API docs, README generation | `memory/docs/*.md`, docs DRAKON diagrams in `documentation/` folder |
+| Агент | Порт | Відповідальність | Зона змін |
+|-------|------|------------------|-----------|
+| **drakon-agent** (існуючий) | 8765 | Python AST → DRAKON IR | `POST /analyze` діаграми |
+| **architect-agent** (новий) | 8766 | Структура проекту, діаграми модулів, архітектурні рішення | `memory/architect/*.md`, діаграми DRAKON проекту в папці `architecture/` |
+| **docs-agent** (новий) | 8767 | Керування документацією, API docs, генерація README | `memory/docs/*.md`, діаграми DRAKON документації в папці `documentation/` |
 
-### Memory Architecture (git-persisted)
+### Архітектура пам'яті (із збереженням в git)
 
-Each agent has its own namespace in the repo's `memory/` directory:
+Кожен агент має свій простір імен у директорії `memory/` репозиторію:
 
 ```
 memory/
 ├── architect/
-│   ├── MEMORY.md          # index (≤200 lines)
+│   ├── MEMORY.md          # індекс (≤200 рядків)
 │   ├── project-structure.md
-│   ├── decisions/         # ADR-style records
+│   ├── decisions/         # записи у стилі ADR
 │   │   └── 2026-05-12-use-fastapi.md
-│   └── diagrams-index.md  # which diagrams represent what
+│   └── diagrams-index.md  # які діаграми що описують
 ├── docs/
 │   ├── MEMORY.md
-│   ├── api-coverage.md    # which endpoints are documented
+│   ├── api-coverage.md    # які кінцеві точки задокументовані
 │   ├── glossary.md
 │   └── documentation-map.md
 └── shared/
     ├── MEMORY.md
-    └── project-context.md # project-level facts both agents need
+    └── project-context.md # факти на рівні проекту, потрібні обом агентам
 ```
 
-**Bootstrap rule:** If `memory/` doesn't exist in a cloned repo, agents create it and push a first commit automatically on startup.
+**Правило ініціалізації:** Якщо `memory/` не існує в клонованому репозиторії, агенти автоматично створюють її та роблять перший коміт при запуску.
 
-### Shared Knowledge Base
+### Спільна база знань
 
-All three agents READ from `services/drakon-agent/knowledge/`:
+Усі три агенти читають з `services/drakon-agent/knowledge/`:
 
 ```
 services/drakon-agent/knowledge/
-├── drakon-ir-format.md        # existing
-├── 01-diagram-types.md        # from Gemini KB research (planned)
+├── drakon-ir-format.md        # існуючий
+├── 01-diagram-types.md        # з досліджень Gemini KB (планується)
 ├── 02-icon-semantics.md
 ├── 03-content-labeling.md
 ├── 04-ast-mapping.md
@@ -157,37 +161,37 @@ services/drakon-agent/knowledge/
 └── 08-bm25-index.md
 ```
 
-**Architect-agent additionally reads:** `memory/architect/` for project-specific context.
-**Docs-agent additionally reads:** `memory/docs/` + `memory/shared/`.
+**Architect-agent додатково читає:** `memory/architect/` для контексту конкретного проекту.  
+**Docs-agent додатково читає:** `memory/docs/` + `memory/shared/`.
 
-### MCP Tool Extensions (new Worker tools)
+### Розширення інструментів MCP (нові інструменти воркера)
 
-New tools needed in the Cloudflare Worker:
+Нові інструменти, необхідні в Cloudflare Worker:
 
 ```javascript
-// New tools to add to worker-mcp-drakon.js:
+// Нові визначення інструментів для додавання в worker-mcp-drakon.js:
 
-drakon.listmemory      // { agent: "architect"|"docs"|"shared" } → memory file list
-drakon.getmemory       // { agent, file } → file content
+drakon.listmemory      // { agent: "architect"|"docs"|"shared" } → список файлів пам'яті
+drakon.getmemory       // { agent, file } → вміст файлу
 drakon.savememory      // { agent, file, content, commitMsg } → git push
-drakon.listproject     // { owner, repo, branch, path? } → recursive file tree
-drakon.getfile         // { owner, repo, branch, path } → file content
-drakon.agentchat       // { agent, message, context } → proxied to agent service
+drakon.listproject     // { owner, repo, branch, path? } → рекурсивне дерево файлів
+drakon.getfile         // { owner, repo, branch, path } → вміст файлу
+drakon.agentchat       // { agent, message, context } → проксіюється на сервіс агента
 ```
 
 ---
 
-## Implementation Tasks
+## Порядок виконання
 
-### Task 1: Repository Memory Bootstrap System
+### Завдання 1: Система автозапуску пам'яті репозиторію
 
-**Files:**
-- Create: `services/drakon-agent/memory_manager.py`
-- Create: `memory/.gitkeep` (placeholder)
-- Create: `memory/shared/MEMORY.md`
-- Create: `memory/shared/project-context.md`
+**Файли:**
+- Створити: `services/drakon-agent/memory_manager.py`
+- Створити: `memory/.gitkeep` (заповнювач)
+- Створити: `memory/shared/MEMORY.md`
+- Створити: `memory/shared/project-context.md`
 
-**What it does:** On agent startup, check if `memory/{agent_name}/` exists in the GitHub repo. If not, create it with empty `MEMORY.md`. Push initial commit.
+**Що це робить:** При запуску агента перевірити, чи існує `memory/{agent_name}/` в репозиторії GitHub. Якщо ні, створити її з порожнім `MEMORY.md`. Зробити початковий коміт.
 
 ```python
 # memory_manager.py
@@ -209,9 +213,9 @@ def ensure_agent_memory(agent_name: str) -> bool:
     
     resp = httpx.get(check_url, headers=headers)
     if resp.status_code == 200:
-        return False  # already exists
+        return False  # вже існує
     
-    # Create initial MEMORY.md
+    # Створити початковий MEMORY.md
     import base64
     content = f"# {agent_name.title()} Agent Memory\n\n(auto-created on first startup)\n"
     encoded = base64.b64encode(content.encode()).decode()
@@ -233,7 +237,7 @@ def save_memory(agent_name: str, filename: str, content: str, commit_msg: str) -
     path = f"{MEMORY_BASE}/{agent_name}/{filename}"
     url = f"https://api.github.com/repos/{GITHUB_REPO}/contents/{path}"
     
-    # Get current SHA if file exists (needed for update)
+    # Отримати поточний SHA, якщо файл існує (потрібно для оновлення)
     existing = httpx.get(url, headers=headers)
     sha = existing.json().get("sha") if existing.status_code == 200 else None
     
@@ -261,23 +265,23 @@ def get_memory(agent_name: str, filename: str) -> str | None:
     return base64.b64decode(resp.json()["content"]).decode()
 ```
 
-**Step 1:** Write test: `pytest services/drakon-agent/tests/test_memory_manager.py::test_ensure_creates_namespace`  
-**Step 2:** Run test → FAIL  
-**Step 3:** Implement `ensure_agent_memory()` + `save_memory()` + `get_memory()`  
-**Step 4:** Run test → PASS  
-**Step 5:** Commit: `feat: add memory_manager for git-persisted agent memory`
+**Крок 1:** Написати тест: `pytest services/drakon-agent/tests/test_memory_manager.py::test_ensure_creates_namespace`  
+**Крок 2:** Запустити тест → FAIL  
+**Крок 3:** Реалізувати `ensure_agent_memory()` + `save_memory()` + `get_memory()`  
+**Крок 4:** Запустити тест → PASS  
+**Крок 5:** Коміт: `feat: add memory_manager for git-persisted agent memory`
 
 ---
 
-### Task 2: Architect Agent Service
+### Завдання 2: Сервіс архітектурного агента (Architect Agent)
 
-**Files:**
-- Create: `services/architect-agent/main.py`
-- Create: `services/architect-agent/analyzer/structure_analyzer.py`
-- Create: `services/architect-agent/ai_chat/architect_chat.py`
-- Create: `services/architect-agent/pyproject.toml`
-- Create: `services/architect-agent/.env.example`
-- Create: `memory/architect/MEMORY.md` (bootstrap)
+**Файли:**
+- Створити: `services/architect-agent/main.py`
+- Створити: `services/architect-agent/analyzer/structure_analyzer.py`
+- Створити: `services/architect-agent/ai_chat/architect_chat.py`
+- Створити: `services/architect-agent/pyproject.toml`
+- Створити: `services/architect-agent/.env.example`
+- Створити: `memory/architect/MEMORY.md` (bootstrap)
 
 **API:**
 ```
@@ -289,7 +293,7 @@ GET  /memory/list   → { files: string[] }
 GET  /memory/get    { file } → { content }
 ```
 
-**Core logic — `architect_chat.py`:**
+**Основна логіка — `architect_chat.py`:**
 ```python
 from typing import Optional
 import httpx, os, json
@@ -357,7 +361,7 @@ def architect_chat(
     resp.raise_for_status()
     content = resp.json()["choices"][0]["message"]["content"]
     
-    # Try to extract MutationOp JSON if present
+    # Спробувати витягнути MutationOp JSON, якщо він присутній
     mutations = None
     if "```json" in content:
         import re
@@ -371,24 +375,24 @@ def architect_chat(
     return {"reply": content, "suggested_mutations": mutations}
 ```
 
-**Step 1:** Write test for `architect_chat` with mocked proxy  
-**Step 2:** Run test → FAIL  
-**Step 3:** Implement `architect_chat.py`  
-**Step 4:** Run test → PASS  
-**Step 5:** Implement `main.py` (FastAPI with /health, /chat, /analyze-repo, /memory/*)  
-**Step 6:** Start service: `cd services/architect-agent && .venv/bin/python3 main.py`  
-**Step 7:** Smoke test: `curl http://localhost:8766/health`  
-**Step 8:** Commit: `feat: architect-agent service (port 8766) with chat + memory API`
+**Крок 1:** Написати тест для `architect_chat` з імітованим проксі  
+**Крок 2:** Запустити тест → FAIL  
+**Крок 3:** Реалізувати `architect_chat.py`  
+**Крок 4:** Запустити тест → PASS  
+**Крок 5:** Реалізувати `main.py` (FastAPI з /health, /chat, /analyze-repo, /memory/*)  
+**Крок 6:** Запустити сервіс: `cd services/architect-agent && .venv/bin/python3 main.py`  
+**Крок 7:** Димовий тест (smoke test): `curl http://localhost:8766/health`  
+**Крок 8:** Коміт: `feat: architect-agent service (port 8766) with chat + memory API`
 
 ---
 
-### Task 3: Docs Agent Service
+### Завдання 3: Сервіс агента документації (Docs Agent)
 
-**Files:**
-- Create: `services/docs-agent/main.py`
-- Create: `services/docs-agent/ai_chat/docs_chat.py`
-- Create: `services/docs-agent/analyzer/doc_coverage.py`
-- Create: `memory/docs/MEMORY.md` (bootstrap)
+**Файли:**
+- Створити: `services/docs-agent/main.py`
+- Створити: `services/docs-agent/ai_chat/docs_chat.py`
+- Створити: `services/docs-agent/analyzer/doc_coverage.py`
+- Створити: `memory/docs/MEMORY.md` (bootstrap)
 
 **API:**
 ```
@@ -399,7 +403,7 @@ POST /memory/save   { file, content, commit_msg } → { success }
 GET  /memory/list   → { files: string[] }
 ```
 
-**Core logic — `doc_coverage.py`:**
+**Основна логіка — `doc_coverage.py`:**
 ```python
 """Analyze which files/functions lack documentation."""
 import re
@@ -410,7 +414,7 @@ def analyze_doc_coverage(file_tree: dict) -> dict:
     missing = []
     for f in py_files:
         path = f["path"]
-        # Heuristic: files in src/ without corresponding docs/ entry
+        # Евристика: файли в src/ без відповідного запису в docs/
         if path.startswith("src/") and not any(
             d["path"].startswith(f"docs/{path.replace('src/','').replace('.py','')}") 
             for d in file_tree.get("tree", [])
@@ -419,19 +423,19 @@ def analyze_doc_coverage(file_tree: dict) -> dict:
     return {"py_files": len(py_files), "missing_docs": missing[:20]}
 ```
 
-**Step 1-8:** Same pattern as Task 2 but for docs-agent (port 8767)  
-**Step 9:** Commit: `feat: docs-agent service (port 8767) with chat + doc coverage`
+**Крок 1-8:** Той самий шаблон, що й для Завдання 2, але для docs-agent (порт 8767)  
+**Крок 9:** Коміт: `feat: docs-agent service (port 8767) with chat + doc coverage`
 
 ---
 
-### Task 4: Knowledge Base Contribution Endpoints
+### Завдання 4: Кінцеві точки для внесення внесків до бази знань
 
-Each agent adds context to the shared KB. Add to both architect-agent and docs-agent:
+Кожен агент додає контекст до спільної бази знань. Додати до обох агентів (architect та docs):
 
-**Files:**
-- Modify: `services/architect-agent/main.py` — add `POST /kb/contribute`
-- Modify: `services/docs-agent/main.py` — add `POST /kb/contribute`
-- Shared lib: `services/shared/kb_writer.py` (symlinked or copied)
+**Файли:**
+- Змінити: `services/architect-agent/main.py` — додати `POST /kb/contribute`
+- Змінити: `services/docs-agent/main.py` — додати `POST /kb/contribute`
+- Спільна бібліотека: `services/shared/kb_writer.py` (символічне посилання або копія)
 
 ```python
 # services/shared/kb_writer.py
@@ -448,29 +452,29 @@ def contribute_to_kb(filename: str, content: str, agent_name: str) -> str:
     path = Path(KB_DIR) / filename
     existing = path.read_text() if path.exists() else ""
     if hashlib.md5(content.encode()).hexdigest() == hashlib.md5(existing.encode()).hexdigest():
-        return str(path)  # unchanged
+        return str(path)  # без змін
     with open(path, "w") as f:
         f.write(f"<!-- contributed by {agent_name} -->\n{content}")
     return str(path)
 ```
 
-**Step 1:** Write test for `contribute_to_kb`  
-**Step 2:** Run → FAIL  
-**Step 3:** Implement  
-**Step 4:** Run → PASS  
-**Step 5:** Add endpoint to both agents  
-**Step 6:** Commit: `feat: KB contribution endpoint for architect+docs agents`
+**Крок 1:** Написати тест для `contribute_to_kb`  
+**Крок 2:** Запустити → FAIL  
+**Крок 3:** Реалізувати  
+**Крок 4:** Запустити → PASS  
+**Крок 5:** Додати кінцеву точку до обох агентів  
+**Крок 6:** Коміт: `feat: KB contribution endpoint for architect+docs agents`
 
 ---
 
-### Task 5: New MCP Tools in Cloudflare Worker
+### Завдання 5: Нові інструменти MCP у воркері Cloudflare
 
-**File:** `cloudflare-worker/worker-mcp-drakon.js`
+**Файл:** `cloudflare-worker/worker-mcp-drakon.js`
 
-Add to `tools/list` response and `tools/call` handler:
+Додати до відповіді `tools/list` та обробника `tools/call`:
 
 ```javascript
-// New tool definitions (add to the tools array ~line 1170):
+// Нові описи інструментів (додати до масиву tools ~рядок 1170):
 
 { name: 'drakon.listmemory',
   description: 'List memory files for an agent namespace',
@@ -500,14 +504,14 @@ Add to `tools/list` response and `tools/call` handler:
   }, required:['agent','message'] }
 },
 
-// Handler (add to tools/call switch ~line 1530):
+// Обробник (додати до switch tools/call ~рядок 1530):
 if (name === 'drakon.agentchat') {
   const { agent, message, context = {} } = params;
   const portMap = { architect: 8766, docs: 8767 };
   const port = portMap[agent];
   if (!port) return errorResponse('Unknown agent', 400);
   
-  // In production: use internal service URL, not localhost
+  // У продакшені: використовувати внутрішній URL сервісу, а не localhost
   const agentUrl = env[`${agent.toUpperCase()}_AGENT_URL`] 
     || `http://localhost:${port}`;
   
@@ -525,7 +529,7 @@ if (name === 'drakon.savememory') {
   const requestToken = request.headers.get('X-Github-Token') || '';
   
   const path = `memory/${agent}/${file}`;
-  // Reuse existing savetogit logic but for memory path
+  // Повторно використати існуючу логіку savetogit, але для шляху пам'яті
   const result = await saveFileToGit(env, {
     owner: 'maxfraieho', repo: 'ai-drakon-setup',
     branch: 'main', path, content, message: commit_msg
@@ -534,25 +538,25 @@ if (name === 'drakon.savememory') {
 }
 ```
 
-**Step 1:** Test current worker locally or via curl  
-**Step 2:** Add tool definitions  
-**Step 3:** Add handlers  
-**Step 4:** Deploy: `CLOUDFLARE_API_TOKEN=<token> npx wrangler@latest deploy`  
-**Step 5:** Test: `curl -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp -H "Authorization: Bearer drakon-mcp-2026" -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'`  
-**Step 6:** Verify new tools appear in list  
-**Step 7:** Commit: `feat: worker MCP tools for agent memory + chat routing`
+**Крок 1:** Протестувати поточний воркер локально або через curl  
+**Крок 2:** Додати описи інструментів  
+**Крок 3:** Додати обробники  
+**Крок 4:** Деплой: `CLOUDFLARE_API_TOKEN=<token> npx wrangler@latest deploy`  
+**Крок 5:** Протестувати: `curl -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp -H "Authorization: Bearer drakon-mcp-2026" -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'`  
+**Крок 6:** Перевірити, що нові інструменти з'явилися у списку  
+**Крок 7:** Коміт: `feat: worker MCP tools for agent memory + chat routing`
 
 ---
 
-### Task 6: Frontend — AgentChatPanel Component
+### Завдання 6: Фронтенд — Компонент AgentChatPanel
 
-**Files:**
-- Create: `src/components/agents/AgentChatPanel.tsx`
-- Create: `src/components/agents/AgentMessage.tsx`
-- Create: `src/hooks/useAgentChat.ts`
-- Modify: `src/pages/DiagramsPage.tsx` — add agent sidebar
+**Файли:**
+- Створити: `src/components/agents/AgentChatPanel.tsx`
+- Створити: `src/components/agents/AgentMessage.tsx`
+- Створити: `src/hooks/useAgentChat.ts`
+- Змінити: `src/pages/DiagramsPage.tsx` — додати бічну панель агентів
 
-**`AgentChatPanel.tsx` structure:**
+**Структура `AgentChatPanel.tsx`:**
 ```typescript
 // src/components/agents/AgentChatPanel.tsx
 import { useState } from "react";
@@ -609,43 +613,36 @@ export function AgentChatPanel({ agent, projectContext }: Props) {
 }
 ```
 
-**`AgentMessage.tsx`** — renders agent reply with optional "Apply mutations" button:
-```typescript
-// Detects if message.suggested_mutations exists → shows [Apply] button
-// [Apply] → calls mcpCall("drakon.mutatediagram", { mutations })
-// Shows mutations as collapsible JSON preview
-```
+**`AgentMessage.tsx`** — рендерить відповідь агента з додатковою кнопкою "Застосувати зміни" (Apply mutations):
+- Виявляє, якщо `message.suggested_mutations` існує → показує кнопку `[Apply]`.
+- `[Apply]` → викликає `mcpCall("drakon.mutatediagram", { mutations })`.
+- Показує мутації як згорнутий JSON-перегляд.
 
 **`useAgentChat.ts`:**
-```typescript
-// Calls mcpCall("drakon.agentchat", { agent, message, context })
-// Maintains message history array
-// Returns { messages, sendMessage, isLoading }
-```
+- Викликає `mcpCall("drakon.agentchat", { agent, message, context })`.
+- Зберігає масив історії повідомлень.
+- Повертає `{ messages, sendMessage, isLoading }`.
 
-**Modify DiagramsPage.tsx:** Add agent sidebar as a Sheet/Panel:
-```typescript
-// Add to DiagramsPage:
-// - State: agentSidebarOpen, activeAgent: "architect"|"docs"|null
-// - Button in toolbar: <Bot /> "Agents" → opens Sheet
-// - Sheet content: Tabs ["Architect" | "Docs"]
-// - Each tab: <AgentChatPanel agent={...} projectContext={{fileTree: githubFileTree, folderSlug}} />
-```
+**Зміна DiagramsPage.tsx:** Додати бічну панель агента у вигляді Sheet/Panel:
+- Стан: `agentSidebarOpen`, `activeAgent: "architect"|"docs"|null`.
+- Кнопка на панелі інструментів: `<Bot /> "Agents"` → відкриває Sheet.
+- Вміст Sheet: Вкладки `["Architect" | "Docs"]`.
+- Кожна вкладка: `<AgentChatPanel agent={...} projectContext={{fileTree: githubFileTree, folderSlug}} />`.
 
-**Step 1:** Create `AgentChatPanel.tsx` with hardcoded mock messages  
-**Step 2:** Add to DiagramsPage behind a sidebar toggle button  
-**Step 3:** Verify it renders in browser  
-**Step 4:** Create `useAgentChat.ts` wired to `drakon.agentchat` MCP tool  
-**Step 5:** Test sending a real message to architect-agent  
-**Step 6:** Add `AgentMessage.tsx` with mutation Apply button  
-**Step 7:** Test applying suggested mutations to current diagram  
-**Step 8:** Commit: `feat: AgentChatPanel + useAgentChat hook in DiagramsPage sidebar`
+**Крок 1:** Створити `AgentChatPanel.tsx` з фіксованими тестовими повідомленнями  
+**Крок 2:** Додати до DiagramsPage за кнопкою перемикання бічної панелі  
+**Крок 3:** Перевірити рендеринг у браузері  
+**Крок 4:** Створити `useAgentChat.ts`, підключений до інструменту MCP `drakon.agentchat`  
+**Крок 5:** Протестувати надсилання реального повідомлення до architect-agent  
+**Крок 6:** Додати `AgentMessage.tsx` з кнопкою застосування мутацій  
+**Крок 7:** Протестувати застосування запропонованих мутацій до поточної діаграми  
+**Крок 8:** Коміт: `feat: AgentChatPanel + useAgentChat hook in DiagramsPage sidebar`
 
 ---
 
-### Task 7: Architect Agent — Project Structure Analysis
+### Завдання 7: Архітектурний агент — Аналіз структури проекту
 
-**File:** `services/architect-agent/analyzer/structure_analyzer.py`
+**Файл:** `services/architect-agent/analyzer/structure_analyzer.py`
 
 ```python
 """Analyze GitHub repo structure and generate DRAKON architecture diagrams."""
@@ -679,13 +676,13 @@ def repo_to_architecture_ir(owner: str, repo: str, branch: str = "main") -> dict
     """Generate a high-level architecture DRAKON IR from repo structure."""
     nodes = fetch_repo_tree(owner, repo, branch)
     
-    # Group by top-level directory
+    # Групувати за директорією верхнього рівня
     dirs = {}
     for n in nodes:
         top = n.path.split("/")[0] if "/" in n.path else n.path
         dirs.setdefault(top, []).append(n)
     
-    # Build DRAKON IR: one action per top-level module
+    # Побудувати DRAKON IR: одна дія (action) на модуль верхнього рівня
     items = {"end": {"type": "end"}}
     node_ids = []
     for i, (dirname, files) in enumerate(sorted(dirs.items())):
@@ -700,7 +697,7 @@ def repo_to_architecture_ir(owner: str, repo: str, branch: str = "main") -> dict
         }
         node_ids.append(nid)
     
-    # Chain nodes
+    # Зв'язати вузли
     for i, nid in enumerate(node_ids):
         items[nid]["one"] = node_ids[i+1] if i+1 < len(node_ids) else "end"
     
@@ -713,17 +710,17 @@ def repo_to_architecture_ir(owner: str, repo: str, branch: str = "main") -> dict
     }
 ```
 
-**Step 1:** Write test: `test_repo_to_architecture_ir` with mocked GitHub API  
-**Step 2-5:** TDD cycle  
-**Step 6:** Wire into `POST /analyze-repo` endpoint  
-**Step 7:** Test: `curl -X POST http://localhost:8766/analyze-repo -d '{"owner":"maxfraieho","repo":"ai-drakon-setup","branch":"main"}'`  
-**Step 8:** Commit: `feat: architect-agent repo structure → DRAKON IR analysis`
+**Крок 1:** Написати тест: `test_repo_to_architecture_ir` з імітованим API GitHub  
+**Крок 2-5:** Цикл TDD  
+**Крок 6:** Підключити до кінцевої точки `POST /analyze-repo`  
+**Крок 7:** Протестувати: `curl -X POST http://localhost:8766/analyze-repo -d '{"owner":"maxfraieho","repo":"ai-drakon-setup","branch":"main"}'`  
+**Крок 8:** Коміт: `feat: architect-agent repo structure → DRAKON IR analysis`
 
 ---
 
-### Task 8: Auto-Bootstrap on New Project Clone
+### Завдання 8: Автоматичний bootstrap при клонуванні нового проекту
 
-**File:** `scripts/bootstrap.py`
+**Файл:** `scripts/bootstrap.py`
 
 ```python
 #!/usr/bin/env python3
@@ -788,133 +785,133 @@ if __name__ == "__main__":
     main()
 ```
 
-**Step 1:** Write test for bootstrap directory creation  
-**Step 2-5:** TDD cycle  
-**Step 6:** Add `scripts/bootstrap.sh` wrapper:
+**Крок 1:** Написати тест для створення директорій bootstrap  
+**Крок 2-5:** Цикл TDD  
+**Крок 6:** Додати скрипт-обгортку `scripts/bootstrap.sh`:
 ```bash
 #!/bin/bash
 python3 "$(dirname "$0")/bootstrap.py" "$@"
 ```
-**Step 7:** Test: `python3 scripts/bootstrap.py` on clean checkout  
-**Step 8:** Commit: `feat: bootstrap.py auto-creates memory dirs + .env files`
+**Крок 7:** Протестувати: `python3 scripts/bootstrap.py` при чистому клонуванні репозиторію  
+**Крок 8:** Коміт: `feat: bootstrap.py auto-creates memory dirs + .env files`
 
 ---
 
-## Use Cases
+## Сценарії використання (Use Cases)
 
-### UC-1: "Explain the architecture of this repo"
+### UC-1: "Поясни архітектуру цього репозиторію"
 
 ```
-User opens DiagramsPage → clicks "Agents" button → selects "Architect" tab
-User types: "Explain the overall architecture of the ai-drakon-setup repo"
+Користувач відкриває DiagramsPage → натискає кнопку "Agents" → вибирає вкладку "Architect"
+Користувач пише: "Explain the overall architecture of the ai-drakon-setup repo"
 
-Flow:
-1. Frontend sends to drakon.agentchat { agent:"architect", message:"...", 
+Потік (Flow):
+1. Фронтенд надсилає до drakon.agentchat { agent:"architect", message:"...", 
    context:{ fileTree: <github tree>, folderSlug:"architecture" }}
-2. Worker proxies to http://localhost:8766/chat
+2. Воркер проксіює запит на http://localhost:8766/chat
 3. architect-agent:
-   a. retrieve_text(message) from shared KB → DRAKON rules context
-   b. read memory/architect/MEMORY.md → previous decisions context
-   c. architect_chat(message, file_tree, memory) → LLM response
-4. Returns: "The repo has 4 main layers: Frontend (React/CF Pages), 
+   a. retrieve_text(message) зі спільної KB → контекст правил DRAKON
+   b. читає memory/architect/MEMORY.md → контекст попередніх рішень
+   c. architect_chat(message, file_tree, memory) → відповідь LLM
+4. Повертає: "The repo has 4 main layers: Frontend (React/CF Pages), 
    Worker (MCP broker), drakon-agent (AST analysis), MinIO (storage).
    
    Here's an architecture diagram I can create:
-   [Expand to see diagram IR]
+   [Розгорнути, щоб побачити diagram IR]
    [Apply as new diagram]"
-5. User clicks [Apply] → creates new DRAKON diagram in "architecture/" folder
+5. Користувач натискає [Apply] → створює нову діаграму DRAKON у папці "architecture/"
 ```
 
-### UC-2: "Update docs for the analyze endpoint"
+### UC-2: "Онови документацію для кінцевої точки analyze"
 
 ```
-User opens Docs tab
-User types: "The /analyze endpoint now supports refine=false parameter, update the docs"
+Користувач відкриває вкладку Docs
+Користувач пише: "The /analyze endpoint now supports refine=false parameter, update the docs"
 
-Flow:
-1. Worker → http://localhost:8767/chat
+Потік (Flow):
+1. Воркер → http://localhost:8767/chat
 2. docs-agent:
-   a. retrieve_text from KB → API docs rules
-   b. read memory/docs/api-coverage.md
-   c. docs_chat(message) → response with suggested doc update
-3. Returns: "Updated docs for POST /analyze:
+   a. retrieve_text з KB → правила API docs
+   b. читає memory/docs/api-coverage.md
+   c. docs_chat(message) → відповідь із запропонованим оновленням документації
+3. Повертає: "Updated docs for POST /analyze:
    Added: refine (bool, default true) - set false to skip AI refiner
    Updated: example curl command
    
    [Apply to memory/docs/api-coverage.md]"
-4. User clicks [Apply] → docs-agent calls save_memory() → git push
+4. Користувач натискає [Apply] → docs-agent викликає save_memory() → git push
 ```
 
-### UC-3: "Architect creates module structure diagram"
+### UC-3: "Архітектор створює діаграму структури модуля"
 
 ```
-User opens Architect tab, selects folder "src/lib/htse" in file tree
-User types: "Create a DRAKON diagram showing the HTSE pipeline flow"
+Користувач відкриває вкладку Architect, вибирає папку "src/lib/htse" в дереві файлів
+Користувач пише: "Create a DRAKON diagram showing the HTSE pipeline flow"
 
-Flow:
-1. architect-agent analyzes files in src/lib/htse/
-2. Identifies: ir-types → ir-validator-core → diagram-to-ir → ir-to-diagram
-3. Generates IrDiagram with action nodes per module + question for validation
-4. Returns diagram + mutation list
-5. User clicks [Apply] → drakon.mutatediagram → diagram appears in "architecture/" folder
-6. architect-agent saves summary to memory/architect/diagrams-index.md
-7. Pushes to git
+Потік (Flow):
+1. architect-agent аналізує файли в src/lib/htse/
+2. Визначає: ir-types → ir-validator-core → diagram-to-ir → ir-to-diagram
+3. Генерує IrDiagram з вузлами action на модуль + question для валідації
+4. Повертає діаграму + список мутацій
+5. Користувач натискає [Apply] → drakon.mutatediagram → діаграма з'являється у папці "architecture/"
+6. architect-agent зберігає резюме в memory/architect/diagrams-index.md
+7. Робить пуш у git
 ```
 
-### UC-4: "New developer clones repo"
+### UC-4: "Новий розробник клонує репозиторій"
 
 ```
-Developer clones ai-drakon-setup
-Runs: python3 scripts/bootstrap.py
-Output:
+Розробник клонує ai-drakon-setup
+Запускає: python3 scripts/bootstrap.py
+Вивід:
   ✅ Directories created (memory/architect, memory/docs, memory/shared)
   ✅ Created .env files from examples
   ✅ Virtual environments ready
 
-Developer edits .env files (adds GITHUB_TOKEN, PROXY_URL)
-Starts services:
-  .venv/bin/python3 services/drakon-agent/main.py &   (port 8765)
-  .venv/bin/python3 services/architect-agent/main.py & (port 8766)
-  .venv/bin/python3 services/docs-agent/main.py &      (port 8767)
+Розробник редагує .env файли (додає GITHUB_TOKEN, PROXY_URL)
+Запускає сервіси:
+  .venv/bin/python3 services/drakon-agent/main.py &   (порт 8765)
+  .venv/bin/python3 services/architect-agent/main.py & (порт 8766)
+  .venv/bin/python3 services/docs-agent/main.py &      (порт 8767)
 
-On first startup, each agent calls ensure_agent_memory() →
-creates memory/{agent}/MEMORY.md in GitHub repo if missing →
-developer sees clean starting state in repo
+При першому запуску кожен агент викликає ensure_agent_memory() →
+створює memory/{agent}/MEMORY.md у репозиторії GitHub, якщо він відсутній →
+розробник бачить чистий початковий стан у репозиторії
 ```
 
 ---
 
-## Environment Variables Reference
+## Довідка щодо змінних оточення
 
-### All Services (.env)
+### Усі сервіси (.env)
 ```
-# OpenAI-compatible proxy
+# OpenAI-сумісний проксі
 PROXY_URL=http://localhost:18880/v1
 PROXY_TOKEN=freecc
 PROXY_MODEL=coding-proxy
 
-# GitHub (for memory persistence)
+# GitHub (для збереження пам'яті)
 GITHUB_TOKEN=ghp_...
 GITHUB_REPO=maxfraieho/ai-drakon-setup
 GITHUB_BRANCH=main
 
-# KB directory (relative to service)
+# Директорія KB (відносно сервісу)
 KB_DIR=../drakon-agent/knowledge
 ```
 
-### Architect Agent (extra)
+### Архітектурний агент (додатково)
 ```
 PORT=8766
 AGENT_NAME=architect
 ```
 
-### Docs Agent (extra)
+### Агент документації (додатково)
 ```
 PORT=8767
 AGENT_NAME=docs
 ```
 
-### Cloudflare Worker Secrets (add via wrangler)
+### Секрети воркера Cloudflare (додати через wrangler)
 ```
 ARCHITECT_AGENT_URL=http://192.168.3.184:8766
 DOCS_AGENT_URL=http://192.168.3.184:8767
@@ -922,11 +919,11 @@ DOCS_AGENT_URL=http://192.168.3.184:8767
 
 ---
 
-## File Structure After Implementation
+## Структура файлів після реалізації
 
 ```
 ai-drakon-setup/
-├── memory/                          # NEW — git-persisted agent memory
+├── memory/                          # НОВЕ — пам'ять агентів з фіксацією в git
 │   ├── architect/
 │   │   ├── MEMORY.md
 │   │   └── diagrams-index.md
@@ -938,21 +935,21 @@ ai-drakon-setup/
 │       └── project-context.md
 │
 ├── services/
-│   ├── drakon-agent/               # existing (port 8765)
-│   │   ├── knowledge/              # SHARED KB ← all agents read
+│   ├── drakon-agent/               # існуючий (порт 8765)
+│   │   ├── knowledge/              # СПІЛЬНА KB ← усі агенти читають
 │   │   │   ├── drakon-ir-format.md
-│   │   │   └── (Gemini KB files 01-08)
-│   │   ├── memory_manager.py       # NEW — shared utility
+│   │   │   └── (Gemini KB файли 01-08)
+│   │   ├── memory_manager.py       # НОВЕ — спільна утиліта
 │   │   └── ...
 │   │
-│   ├── architect-agent/            # NEW (port 8766)
+│   ├── architect-agent/            # НОВИЙ (порт 8766)
 │   │   ├── main.py
 │   │   ├── analyzer/structure_analyzer.py
 │   │   ├── ai_chat/architect_chat.py
 │   │   ├── pyproject.toml
 │   │   └── .env.example
 │   │
-│   └── docs-agent/                 # NEW (port 8767)
+│   └── docs-agent/                 # НОВИЙ (порт 8767)
 │       ├── main.py
 │       ├── ai_chat/docs_chat.py
 │       ├── analyzer/doc_coverage.py
@@ -960,64 +957,74 @@ ai-drakon-setup/
 │       └── .env.example
 │
 ├── scripts/
-│   ├── bootstrap.py                # NEW
-│   ├── bootstrap.sh                # NEW
+│   ├── bootstrap.py                # НОВЕ
+│   ├── bootstrap.sh                # НОВЕ
 │   └── codetomd/...
 │
 ├── src/
 │   ├── components/
-│   │   ├── agents/                 # NEW
+│   │   ├── agents/                 # НОВЕ
 │   │   │   ├── AgentChatPanel.tsx
 │   │   │   └── AgentMessage.tsx
 │   │   └── ...
 │   ├── hooks/
-│   │   ├── useAgentChat.ts         # NEW
+│   │   ├── useAgentChat.ts         # НОВЕ
 │   │   └── ...
 │   └── pages/
-│       └── DiagramsPage.tsx        # MODIFIED — add agent sidebar
+│       └── DiagramsPage.tsx        # ЗМІНЕНО — додано бічну панель агентів
 │
 └── cloudflare-worker/
-    └── worker-mcp-drakon.js        # MODIFIED — add 4 new MCP tools
+    └── worker-mcp-drakon.js        # ЗМІНЕНО — додано 4 нові інструменти MCP
 ```
 
 ---
 
-## Constraints & Known Issues
+## Обмеження та відомі проблеми
 
-| Constraint | Detail |
+| Обмеження | Деталі |
 |-----------|--------|
-| AMD C-60 CPU (no AVX) | Services must use `python3 -m venv .venv --system-site-packages` |
-| Worker runs at CF edge | Agent services must be callable from Worker (use ngrok or cloudflared for local dev) |
-| Single GITHUB_TOKEN | Memory pushes from all 3 agents share one token — risk of write conflict on same file |
-| drakonwidget.js | Do NOT modify. It has no external deps and must stay as-is |
-| IR format contract | `IrDiagram.params` is `string[]` in frontend types, but `string` in drakon-agent — normalize at boundary |
-| Agent memory growth | `MEMORY.md` index must stay ≤200 lines; old entries move to dated archive files |
+| Процесор AMD C-60 (без AVX) | Сервіси повинні використовувати `python3 -m venv .venv --system-site-packages` |
+| Воркер на CF Edge | Сервіси агентів повинні бути доступні для Воркера (використовуйте ngrok або cloudflared для локальної розробки) |
+| Єдиний GITHUB_TOKEN | Збереження пам'яті від усіх 3 агентів використовує один токен — ризик конфлікту запису в один файл |
+| drakonwidget.js | НЕ модифікувати. Він не має зовнішніх залежностей і повинен залишатися без змін |
+| Контракт формату IR | `IrDiagram.params` — це `string[]` у типах фронтенду, але `string` у drakon-agent — нормалізувати на межі |
+| Зростання пам'яті агентів | Індекс `MEMORY.md` має залишатися ≤200 рядків; старі записи переміщуються в архівовані файли з датами |
 
 ---
 
-## Quick Reference: Key Addresses
+## Швидка довідка: Ключові адреси
 
-| Service | Address | Auth |
-|---------|---------|------|
-| Frontend | https://ai-drakon-setup.pages.dev | JWT (login page) |
-| Worker MCP | https://drakon-mcp-worker.maxfraieho.workers.dev/mcp | Bearer drakon-mcp-2026 |
-| drakon-agent | http://192.168.3.184:8765 | none (local) |
-| architect-agent | http://192.168.3.184:8766 | none (local) |
-| docs-agent | http://192.168.3.184:8767 | none (local) |
+| Сервіс | Адреса | Авторизація |
+|--------|--------|-------------|
+| Фронтенд | https://ai-drakon-setup.pages.dev | JWT (сторінка входу) |
+| Воркер MCP | https://drakon-mcp-worker.maxfraieho.workers.dev/mcp | Bearer drakon-mcp-2026 |
+| drakon-agent | http://192.168.3.184:8765 | немає (локально) |
+| architect-agent | http://192.168.3.184:8766 | немає (локально) |
+| docs-agent | http://192.168.3.184:8767 | немає (локально) |
 | MinIO API | https://apiminio.exodus.pp.ua | MINIO_ACCESS_KEY=vokov / MINIO_SECRET_KEY=805235io |
 | OpenAI Proxy | http://192.168.3.184:18880/v1 | Bearer freecc |
 
 ---
 
-## Execution Order
+## Порядок виконання
 
-1. **Task 1** — memory_manager.py (foundation for all persistence)
-2. **Task 8** — bootstrap.py (run once on each new clone)
-3. **Task 2** — architect-agent service
-4. **Task 3** — docs-agent service  
-5. **Task 4** — KB contribution endpoints
-6. **Task 5** — Worker new MCP tools
-7. **Task 6** — Frontend AgentChatPanel
-8. **Task 7** — Architect repo analysis
+1. **Завдання 1** — `memory_manager.py` (основа для збереження)
+2. **Завдання 8** — `bootstrap.py` (запуск один раз на кожному новому клоні)
+3. **Завдання 2** — сервіс `architect-agent`
+4. **Завдання 3** — сервіс `docs-agent`
+5. **Завдання 4** — кінцеві точки внесків до KB
+6. **Завдання 5** — нові інструменти воркера MCP
+7. **Завдання 6** — фронтенд `AgentChatPanel`
+8. **Завдання 7** — аналіз структури репозиторію Architect
 
-Each task is independently deployable. Start with Task 1+8 (pure Python, no dependencies on other tasks).
+Кожне завдання можна розгортати незалежно. Починайте із Завдань 1+8 (чистий Python, жодних залежностей від інших завдань).
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-12-drakon-agent]] — загальний опис та план drakon-agent
+- [[kb/02-agent-prompts]] — специфікація та промпти агентів
+**Читати далі:** [[plans/2026-05-12-platform-redesign-proposal]]

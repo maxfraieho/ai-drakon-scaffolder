@@ -1,291 +1,316 @@
 ---
-title: "Implementation Report: Multi-Agent DRAKON System Architecture"
-type: plan
-tags: [drakon, agent, python, plan]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Звіт про реалізацію: Архітектура мультиагентної системи DRAKON"
+lang: uk
 ---
 
-# **Implementation and Architecture Report: Multi-Agent DRAKON System**
+# **Звіт про реалізацію та архітектуру: Мультиагентна система DRAKON**
 
-## **Executive Synthesis of the Multi-Agent Paradigm**
+## **Виконавчий синтез мультиагентної парадигми (Executive Synthesis)**
 
-The evolution of the AI-DRAKON platform from a singular processing entity to a federated, multi-agent architecture represents a pivotal transition in system complexity, operational scalability, and cognitive mapping. The current deployment state relies on a monolithic drakon-agent running on a localized FastAPI instance (port 8765\) to process Python Abstract Syntax Trees (AST) into deterministic DRAKON Intermediate Representation (IR) flowcharts. While functional, this monolithic approach suffers from the inherent limitations of massive context windows, wherein a single Large Language Model (LLM) must simultaneously balance architectural analysis, codebase documentation, and strict visual grammar mapping.
+Еволюція платформи AI-DRAKON від єдиного обчислювального модуля до федеративної мультиагентної архітектури є ключовим переходом у складності системи, оперативній масштабованості та когнітивному моделюванні. Поточний стан розгортання покладається на монолітний `drakon-agent`, що працює на локальному екземплярі FastAPI (порт 8765) для перетворення абстрактних синтаксичних дерев (AST) Python на детерміновані блок-схеми проміжного представлення (IR) DRAKON. Хоча цей підхід є робочим, він страждає від обмежень гігантських вікон контексту, коли одна велика мовна модель (LLM) повинна одночасно балансувати між архітектурним аналізом, документуванням кодової бази та строгим мапінгом візуальної граматики.
 
-The architectural mandate detailed in this report outlines the deployment of a highly specialized, tripartite agent network. By introducing an architect-agent (port 8766\) and a docs-agent (port 8767\) alongside the existing infrastructure, the system enforces strict domain boundaries.1 This multi-agent topology mitigates latency and context-dilution issues, as each agent operates with a focused system prompt and a highly relevant localized memory namespace, thereby drastically reducing the probability of hallucination propagation—a critical failure mode in complex peer-to-peer agent networks where downstream agents inherit flawed upstream data.2
+Архітектурний мандат, детально описаний у цьому звіті, окреслює розгортання високоспеціалізованої мережі з трьох агентів. Шляхом впровадження `architect-agent` (порт 8766) та `docs-agent` (порт 8767) разом з існуючою інфраструктурою система встановлює суворі межі предметних областей. Ця мультиагентна топологія пом'якшує проблеми з затримками та розмиванням контексту, оскільки кожен агент працює з цілеспрямованим системним промптом та високорелевантним локальним простором імен пам'яті, тим самим різко знижуючи ймовірність поширення галюцинацій — критичного режиму збоїв у складних однорангових мережах агентів, де залежні агенти успадковують помилкові дані від попередніх кроків.
 
-This federated backend is unified by a React 19 frontend utilizing Zustand for state management and TanStack Router for navigation. The critical boundary layer between the client-side user interface and the internal FastAPI network is brokered by a Cloudflare Worker operating as a Model Context Protocol (MCP) gateway.3 Furthermore, the system entirely decentralizes its state management, relying on a shared BM25 lexical retrieval index for static knowledge and the GitHub REST API for persistent, version-controlled memory storage.4
+Цей федеративний бекенд об'єднаний фронтендом React 19, що використовує Zustand для керування станом та TanStack Router для навігації. Критичний граничний рівень між інтерфейсом користувача на стороні клієнта та внутрішньою мережею FastAPI обслуговується воркером Cloudflare, який працює як шлюз Model Context Protocol (MCP). Крім того, система повністю децентралізує керування станом, спираючись на спільний індекс лексичного пошуку BM25 для статичних знань та GitHub REST API для персистентного збереження пам'яті з контролем версій.
 
-This report provides an exhaustive, task-by-task architectural implementation directive, synthesizing structural requirements, severe hardware constraints, protocol specifications, and the rigorous visual grammar of the DRAKON programming language to realize this multi-agent ecosystem.
+Цей звіт містить вичерпну покрокову інструкцію щодо впровадження архітектури, синтезуючи структурні вимоги, жорсткі апаратні обмеження, специфікації протоколів та строгу візуальну граматику мови програмування DRAKON для реалізації цього мультиагентного всесвіту.
 
-## **Foundational Systems and Environmental Constraints**
+---
 
-### **Hardware Compatibility and Numerical Processing Limitations**
+## **Фундаментальні системи та обмеження оточення**
 
-The deployment environment for the AI-DRAKON backend introduces a severe and unavoidable hardware constraint: the utilization of an AMD C-60 CPU. This specific processor architecture entirely lacks support for Advanced Vector Extensions (AVX), AVX2, and FMA3 instruction sets.6 This limitation profoundly impacts the deployment of high-performance numerical and mathematical libraries in Python, most notably NumPy and SciPy, which serve as the foundational engines for vector-based operations, embedding computations, and the lexical search indices required by the knowledge base.8
+### **Сумісність апаратного забезпечення та обмеження чисельної обробки**
 
-Modern versions of NumPy (specifically the 2.x release candidates and above) compile against a newer C API (version 0x10) and inherently assume the presence of AVX or modern SIMD (Single Instruction, Multiple Data) features during runtime execution.9 Attempting to execute these compiled binaries on the AMD C-60 architecture results in immediate, fatal Illegal Instruction runtime errors, or triggers cascading RuntimeError: Numpy is not available exceptions within dependent downstream libraries.9
+Середовище розгортання для бекенду AI-DRAKON має жорстке та неминуче апаратне обмеження: використання процесора AMD C-60. У цій архітектурі процесора повністю відсутня підтримка інструкцій Advanced Vector Extensions (AVX), AVX2 та FMA3. Це обмеження глибоко впливає на розгортання високопродуктивних чисельних та математичних бібліотек на Python, насамперед NumPy та SciPy, які служать базовими рушіями для векторних операцій, обчислень ембеддінгів та індексів лексичного пошуку, необхідних для бази знань.
 
-To ensure absolute operational stability across the federated FastAPI agent network, the implementation must strictly enforce backwards-compatible dependencies. The optimal workaround involves pinning the numerical processing libraries to pre-AVX mandatory versions. The Python 3.11 environment specifications must enforce the installation of numpy\<2, specifically targeting version 1.26.4, which maintains robust compatibility with older CPU architectures while satisfying the dependency requirements of the broader ecosystem.9
+Сучасні версії NumPy (зокрема, кандидати на випуск 2.x та вище) компілюються під нове API C (версія 0x10) і неявно припускають наявність функцій AVX або сучасних інструкцій SIMD (Single Instruction, Multiple Data) під час виконання. Спроба запустити ці скомпільовані бінарні файли на архітектурі AMD C-60 призводить до миттєвих фатальних помилок часу виконання Illegal Instruction або викликає каскадні виключення `RuntimeError: Numpy is not available` у залежних бібліотеках.
 
-Furthermore, during the virtual environment bootstrapping phase, the runtime must be heavily configured to bypass modern CPU feature dispatching. The injection of specific environment variables is required to explicitly disable SIMD features. By establishing NPY\_DISABLE\_CPU\_FEATURES="AVX2,FMA3" within the service initialization scripts, the interpreter is forced to gracefully degrade to standard SSE or base-level instructions rather than attempting to execute unsupported vector math.8 Additionally, if the NumPy wheel relies on OpenBLAS for matrix acceleration, setting the OPENBLAS\_CORETYPE environment variable to a minimal baseline architecture (such as Haswell or generic x86\_64) prevents the backend from invoking incompatible hardware optimizations.11
+Для забезпечення абсолютної стабільності роботи в федеративній мережі агентів FastAPI реалізація повинна суворо вимагати зворотно-сумісних залежностей. Оптимальний обхідний шлях полягає в зафіксуванні версій бібліотек чисельної обробки до обов'язкових версій перед AVX. Специфікації середовища Python 3.11 повинні вимагати встановлення `numpy<2`, зокрема версії 1.26.4, яка зберігає надійну сумісність зі старими архітектурами процесорів, одночасно задовольняючи вимоги до залежностей ширшої екосистеми.
 
-Because of these hardware-specific compilation requirements, the deployment protocol must utilize the python3 \-m venv.venv \--system-site-packages command. This permits the virtual environment to fall back on host-level OS packages if specific wheel compilations fail during the standard pip install process.13
+Крім того, на етапі запуску віртуального середовища час виконання має бути налаштований так, щоб повністю обходити диспетчеризацію сучасних функцій процесора. Необхідно впровадити спеціальні змінні оточення для явного відключення функцій SIMD. Шляхом встановлення `NPY_DISABLE_CPU_FEATURES="AVX2,FMA3"` у скриптах ініціалізації сервісу інтерпретатор змушений плавно деградувати до стандартних інструкцій SSE або базового рівня, замість спроб виконати непідтримувану векторну математику. Крім того, якщо збірка NumPy спирається на OpenBLAS для матричного прискорення, встановлення змінної оточення `OPENBLAS_CORETYPE` у мінімальну базову архітектуру (таку як Haswell або загальну x86_64) запобігає виклику бекендом несумісних апаратних оптимізацій.
 
-### **Lexical Knowledge Base and Retrieval Mechanisms**
+Через ці специфічні вимоги до компіляції під апаратне забезпечення протокол розгортання повинен використовувати команду `python3 -m venv .venv --system-site-packages`. Це дозволяє віртуальному середовищу використовувати пакети ОС на рівні хоста, якщо збірка конкретних пакетів зазнає невдачі під час стандартного процесу `pip install`.
 
-The multi-agent system relies intrinsically on a shared knowledge base—located physically at services/drakon-agent/knowledge/—to ingest, index, and retrieve canonical DRAKON IR rules, codebase patterns, API definitions, and architectural constraints. Because the agents operate autonomously, they require rapid, localized context retrieval without invoking costly, high-latency LLM-based vector embedding generation for every sub-query.
+### **Лексична база знань та механізми пошуку**
 
-The architectural design specifies a BM25 retrieval system, which operates on term frequency-inverse document frequency (TF-IDF) principles, refined to prevent term saturation and account for document length normalization.14 While rank-bm25 is a traditional implementation, it suffers from severe performance bottlenecks in pure Python environments when scaling beyond baseline document counts, frequently resulting in unacceptable queries-per-second (QPS) throughput.15 Given the CPU constraints of the AMD C-60, the system requires a highly optimized algorithmic implementation.
+Мультиагентна система спирається на спільну базу знань, розташовану за шляхом `services/drakon-agent/knowledge/`, для отримання, індексування та пошуку канонічних правил DRAKON IR, шаблонів кодової бази, визначень API та архітектурних обмежень. Оскільки агенти працюють автономно, вони вимагають швидкого, локалізованого пошуку контексту без використання високовартісної генерації векторних ембеддінгів на основі LLM з високою затримкою для кожного підзапиту.
 
-The bm25s library presents the optimal, pure-Python solution. Designed to bypass the overhead of standard iterative loops, bm25s leverages SciPy sparse matrices to pre-compute and eagerly store document token scores.16 When an agent submits a query, the system simply sums the relevant tokens via highly optimized sparse matrix operations, achieving processing throughput orders of magnitude faster than standard implementations.15
+Архітектурний дизайн визначає пошукову систему BM25, яка працює на принципах частоти термінів-оберненої частоти документів (TF-IDF), вдосконаленої для запобігання насиченню термінів та врахування нормалізації довжини документа. Хоча `rank-bm25` є традиційною реалізацією, вона має серйозні проблеми з продуктивністю в чистих середовищах Python при масштабуванні за межі базової кількості документів, що часто призводить до неприйнятної пропускної здатності запитів за секунду (QPS). З огляду на обмеження процесора AMD C-60, система вимагає високоефективної алгоритмічної реалізації.
 
-To conserve the highly constrained RAM of the host system, the implementation will utilize memory-mapped arrays. By initializing the index with the mmap=True parameter, the agents can read the indexed corpus directly from disk storage.15 This architectural decision facilitates highly efficient, concurrent read operations across the drakon-agent, architect-agent, and docs-agent instances without duplicating the knowledge base footprint in active memory.
+Бібліотека `bm25s` представляє оптимальне рішення на чистому Python. Розроблена для обходу накладних витрат стандартних ітераційних циклів, `bm25s` використовує розріджені матриці SciPy для попереднього обчислення та збереження оцінок токенів документів. Коли агент надсилає запит, система просто підсумовує відповідні токени за допомогою оптимізованих операцій з розрідженими матрицями, досягаючи швидкості обробки на порядки вище за стандартні реалізації.
 
-| BM25 Implementation | Core Technology | Speed/Throughput | Infrastructure Requirement |
+Щоб зберегти обмежену оперативну пам'ять хост-системи, реалізація використовуватиме файли, що відображаються в пам'ять (memory-mapped arrays). Шляхом ініціалізації індексу з параметром `mmap=True` агенти можуть читати індексований корпус безпосередньо з дискового сховища. Це архітектурне рішення забезпечує високоефективні паралельні операції читання між екземплярами `drakon-agent`, `architect-agent` та `docs-agent` без дублювання обсягу бази знань в активній пам'яті.
+
+| Реалізація BM25 | Основна технологія | Швидкість/Пропускна здатність | Вимоги до інфраструктури |
 | :---- | :---- | :---- | :---- |
-| **Elasticsearch** | Java / Apache Lucene | Extremely High | Requires dedicated server/JVM 16 |
-| **rank-bm25** | Pure Python | Low | None (High CPU load during query) 19 |
-| **bm25s** (Selected) | SciPy Sparse Matrices | High | None (Supports memory mapping) 15 |
+| **Elasticsearch** | Java / Apache Lucene | Надзвичайно висока | Вимагає окремого сервера/JVM |
+| **rank-bm25** | Чистий Python | Низька | Немає (Високе навантаження на процесор під час запиту) |
+| **bm25s** (Вибрано) | Розріджені матриці SciPy | Висока | Немає (Підтримує відображення в пам'ять) |
 
-## **Edge Orchestration via Model Context Protocol**
+---
 
-### **Cloudflare Worker Gateway Routing**
+## **Оркестрація на межі (Edge) через Model Context Protocol**
 
-The perimeter of the AI-DRAKON platform is secured, authorized, and orchestrated by a Cloudflare Worker acting as a Model Context Protocol (MCP) broker. MCP establishes a standardized communication vector between LLM clients (such as the React frontend communicating on behalf of the user) and external computational tools.20 By utilizing a Cloudflare Worker, the architecture pushes the routing and authorization logic to the edge, isolating the internal FastAPI agents from direct public exposure.22
+### **Маршрутизація шлюзу Cloudflare Worker**
 
-Recent iterations of the MCP specification deprecate legacy Server-Sent Events (SSE) in favor of Streamable HTTP transports for standard client-server communication.20 Accordingly, the Cloudflare Worker must expose a single /mcp endpoint accepting both POST and GET HTTP methods.20 All JSON-RPC messages originating from the frontend must be transmitted as POST requests, carrying an Accept header that explicitly lists both application/json and text/event-stream.20
+Периметр платформи AI-DRAKON захищений, авторизований та оркестрований воркером Cloudflare, який діє як брокер Model Context Protocol (MCP). MCP встановлює стандартизований вектор зв'язку між клієнтами LLM (такими як React-фронтенд, що спілкується від імені користувача) та зовнішніми обчислювальними інструментами. Використовуючи Cloudflare Worker, архітектура переносить логіку маршрутизації та авторизації на межу (edge), ізолюючи внутрішніх агентів FastAPI від прямого публічного доступу.
 
-To prevent DNS rebinding attacks and cross-site request forgery, the worker must rigorously validate the Origin header of all incoming connections.20 Authentication is managed at this edge layer; the worker intercepts the request, validates the Authorization: Bearer drakon-mcp-2026 token, and only upon successful verification does it parse the internal JSON-RPC payload.23
+Останні версії специфікації MCP замінюють застарілі події Server-Sent Events (SSE) на користь транспорту Streamable HTTP для стандартного зв'язку клієнт-сервер. Відповідно, Cloudflare Worker повинен відкривати єдину кінцеву точку `/mcp`, яка приймає як POST, так і GET HTTP-методи. Усі повідомлення JSON-RPC, що надходять від фронтенду, повинні передаватися як POST-запити із заголовком `Accept`, який явно містить як `application/json`, так і `text/event-stream`.
 
-The worker script (worker-mcp-drakon.js) is responsible for defining the schemas of the available tools and proxying the invocations to the internal network. When the frontend invokes the drakon.agentchat tool, the worker extracts the agent target ("architect" or "docs"), maps it to the corresponding internal IP and port configuration (e.g., http://192.168.3.184:8766), and utilizes the native fetch API to asynchronously transmit the payload.3 This proxy pattern ensures that the internal FastAPI servers can bind securely to localhost or internal subnets, complying with MCP security best practices while remaining accessible to the authorized frontend.20
+Для запобігання атакам DNS-rebinding та підробці міжсайтових запитів воркер повинен суворо перевіряти заголовок `Origin` усіх вхідних з'єднань. Авторизація керується на цьому граничному рівні; воркер перехоплює запит, перевіряє токен `Authorization: Bearer drakon-mcp-2026` і лише після успішної верифікації розбирає внутрішній вміст JSON-RPC.
 
-### **Optimistic Concurrency and State Lifecycle Management**
+Скрипт воркера (`worker-mcp-drakon.js`) відповідає за визначення схем доступних інструментів та проксіювання викликів у внутрішню мережу. Коли фронтенд викликає інструмент `drakon.agentchat`, воркер витягує цільового агента ("architect" або "docs"), зіставляє його з відповідною конфігурацією внутрішньої IP-адреси та порту (наприклад, `http://192.168.3.184:8766`) і використовує вбудований API `fetch` для асинхронної передачі корисного навантаження. Цей шаблон проксі гарантує, що внутрішні сервери FastAPI можуть безпечно прив'язуватися до localhost або внутрішніх підмереж, відповідаючи найкращим практикам безпеки MCP, залишаючись доступними для авторизованого фронтенду.
 
-To avoid the overhead and operational complexity of a traditional relational database, the multi-agent system utilizes the project's own GitHub repository as a persistent, version-controlled state ledger. Each agent operates within a dedicated sub-namespace in the memory/ directory (e.g., memory/architect/MEMORY.md, memory/docs/api-coverage.md).
+### **Оптимістичне паралельне виконання та керування життєвим циклом стану**
 
-Relying on the GitHub REST API for high-frequency agent memory persistence introduces a significant distributed systems challenge: race conditions. When multiple agents, or an agent and a human developer, attempt to modify the repository simultaneously, the API will frequently return an HTTP 409 Conflict error.24
+Щоб уникнути накладних витрат та операційної складності традиційної реляційної бази даних, мультиагентна система використовує власний репозиторій GitHub проєкту як стійкий реєстр станів з контролем версій. Кожен агент працює у виділеному просторі імен у директорії `memory/` репозиторію (наприклад, `memory/architect/MEMORY.md`, `memory/docs/api-coverage.md`).
 
-The 409 Conflict status code indicates a fundamental disagreement with the current state of the target resource.26 In the context of the GitHub API, this occurs during a PUT request if the provided sha (Secure Hash Algorithm identifier) representing the file being updated does not exactly match the latest commit hash on the target branch.27 This version mismatch signifies that another entity has committed a change between the time the agent fetched the file and the time it attempted to save its modifications.28
+Спирання на GitHub REST API для високочастотного збереження пам'яті агентів створює значну проблему для розподілених систем: стани перегонів (race conditions). Коли кілька агентів, або агент і розробник-людина, намагаються одночасно змінити репозиторій, API часто повертає помилку `HTTP 409 Conflict`.
 
-To ensure absolute data integrity and prevent the catastrophic loss of agent context, the backend memory\_manager.py utility must implement a rigorous optimistic concurrency control pattern. The resolution strategy operates as follows:
+Код статусу `409 Conflict` вказує на фундаментальну невідповідність із поточним станом цільового ресурсу. У контексті GitHub API це відбувається під час запиту PUT, якщо наданий `sha` (ідентифікатор алгоритму безпечного хешування), який представляє оновлюваний файл, не збігається точно з останнім хешем коміту в цільовій гілці. Ця невідповідність версій означає, що інший суб'єкт вніс зміни в період між тим, як агент отримав файл, і тим, як він спробував зберегти свої модифікації.
 
-1. The agent issues a PUT request containing the intended markdown content, the commit message, and the originally fetched sha.  
-2. If the GitHub API responds with a 409 Conflict, the HTTP client (utilizing httpx) catches the exception.  
-3. The system initiates an exponential backoff sequence (e.g., waiting 500ms, then 1000ms) to allow concurrent API operations to settle.29  
-4. The agent issues a fresh GET request to the file's endpoint to retrieve the newly updated content and the newly minted sha token.  
-5. The agent programmatically merges its intended modifications with the newly fetched content (e.g., appending its logs to the bottom of the file).  
-6. The agent re-issues the PUT request with the updated payload and the correct sha.
+Щоб забезпечити абсолютну цілісність даних та запобігти втраті контексту агента, утиліта бекенду `memory_manager.py` повинна реалізувати суворий шаблон оптимістичного контролю паралельного виконання. Стратегія вирішення конфліктів працює наступним чином:
 
-This retry logic guarantees that the GitHub repository remains a mathematically consistent state ledger, seamlessly resolving multi-agent push conflicts without requiring manual human intervention.31
+1. Агент надсилає запит PUT, що містить запланований вміст markdown, повідомлення коміту та спочатку отриманий `sha`.  
+2. Якщо GitHub API відповідає кодом 409 Conflict, клієнт HTTP (за допомогою `httpx`) перехоплює виключення.  
+3. Система запускає послідовність експоненціального затримання (наприклад, очікування 500 мс, потім 1000 мс), щоб дозволити паралельним операціям API завершитися.  
+4. Агент надсилає новий запит GET до кінцевої точки файлу, щоб отримати щойно оновлений вміст та новий токен `sha`.  
+5. Агент програмно об'єднує свої заплановані зміни з щойно отриманим вмістом (наприклад, додаючи свої журнали в кінець файлу).  
+6. Агент повторно надсилає запит PUT з оновленим корисним навантаженням та правильним `sha`.
 
-## **The DRAKON Visual Grammar and Abstract Syntax Tree Translation**
+Ця логіка повторних спроб гарантує, що репозиторій GitHub залишається несуперечливим реєстром станів, безперешкодно вирішуючи конфлікти паралельних записів агентів без необхідності ручного втручання людини.
 
-### **Cognitive Ergonomics of the DRAKON Language**
+---
 
-The fundamental value proposition of the AI-DRAKON platform lies in its ability to translate dense, textual Python code and abstract architectural concepts into visually deterministic flowcharts. The DRAKON language, originally engineered for the Soviet Buran space program, enforces a rigid set of graphical rules specifically designed to optimize human cognitive processing, eliminate visual noise, and prevent the tangled "spaghetti" logic common in standard UML or flowcharting tools.33
+## **Візуальна граматика DRAKON та трансляція абстрактного синтаксичного дерева (AST)**
 
-The architectural mapping from the backend AI agents (synthesizing ASTs or repository structures) to the frontend drakonwidget.js rendering engine relies on absolute adherence to three foundational visual principles:
+### **Когнітивна ергономіка мови DRAKON**
 
-1. **The Skewer (The Happy Path):** DRAKON dictates that the most common, successful, or desirable execution path through an algorithm must form a completely straight, uninterrupted vertical line descending from the top of the diagram to the bottom.35 Line intersections and unnecessary angles are strictly forbidden.37 When the drakon-agent or architect-agent generates an Intermediate Representation (IR), the default logic flow must continuously map to the one branch in the JSON contract, chaining directly downward. In the absence of a Skewer, a branch is considered visually broken and cognitively dissonant.36  
-2. **The Silhouette:** To manage vast systemic complexity, extensive algorithms or architectural diagrams are fractured into independent, logical blocks arranged horizontally from left to right.35 Each block represents a distinct state, microservice, or sub-process.39 The architect-agent, when analyzing broad repository structures, will utilize the Silhouette pattern to represent different top-level directories, ensuring the visual representation scales cleanly without overwhelming the viewer.35  
-3. **Rightward Degradation:** A defining characteristic of DRAKON is its spatial handling of exceptions. Conditional branches, errors, and edge cases are systematically routed to the right of the central Skewer.35 The heuristic rule dictates: "the further to the right, the worse the situation".36 When an AI agent maps Python try/except blocks or if/else error checks, it must mathematically map the failure state to the two (rightward) branch of the JSON IR.36 This spatial consistency ensures that a developer can instantly identify the "happy path" (straight down) versus error handling (branching right) without reading a single line of text.37
+Фундаментальна цінність платформи AI-DRAKON полягає в її здатності перекладати щільний текстовий код Python та абстрактні архітектурні концепції на візуально детерміновані блок-схеми. Мова DRAKON, спочатку розроблена для радянської космічної програми "Буран", накладає жорсткий набір графічних правил, спеціально розроблених для оптимізації когнітивної обробки людиною, усунення візуального шуму та запобігання заплутаній логіці, спільній для стандартних інструментів UML чи блок-схем.
 
-### **Intermediate Representation (IR) Contracts**
+Архітектурний перехід від бекенд-агентів ШІ (які аналізують AST або структури репозиторіїв) до механізму рендерингу фронтенду `drakonwidget.js` спирається на абсолютне дотримання трьох фундаментальних візуальних принципів:
 
-The canonical data contract between the Python FastAPI agents and the React frontend is defined by the IrDiagram object. The integrity of this JSON structure is paramount, as the drakonwidget.js engine possesses no external dependencies and relies entirely on strict input formatting.
+1. **Шампур (Основний шлях):** DRAKON вимагає, щоб найпоширеніший, успішний або бажаний шлях виконання алгоритму формував повністю пряму, безперервну вертикальну лінію, що спускається зверху вниз діаграми. Перетини ліній та непотрібні кути суворо заборонені. Коли `drakon-agent` або `architect-agent` генерує проміжне представлення (IR), стандартний потік логіки повинен постійно мапуватися на гілку `one` в контракті JSON, з'єднуючись безпосередньо вниз. За відсутності Шампура гілка вважається візуально зламаною та когнітивно невідповідною.  
+2. **Силует:** Для керування великою складністю системи великі алгоритми або архітектурні діаграми розбиваються на незалежні, логічні блоки, розташовані горизонтально зліва направо. Кожен блок представляє окремий стан, мікросервіс або підпроцес. `architect-agent` під час аналізу загальної структури репозиторію використовуватиме шаблон Силует для представлення різних каталогів верхнього рівня, забезпечуючи чисте масштабування візуального представлення без перевантаження глядача.  
+3. **Правобічна деградація:** Визначальною характеристикою DRAKON є просторова обробка виключень. Умовні розгалуження, помилки та крайні випадки систематично направляються праворуч від центрального Шампура. Евристичне правило говорить: "чим далі вправо, тим гірша ситуація". Коли агент ШІ обробляє блоки Python `try/except` або перевірки помилок `if/else`, він повинен математично зіставляти стан помилки з гілкою `two` (праворуч) проміжного представлення JSON. Ця просторова послідовність гарантує, що розробник може миттєво визначити "щасливий шлях" (прямо вниз) на відміну від обробки помилок (відгалуження вправо) без читання жодного рядка тексту.
 
-The system requires two mandatory invariants for a diagram to render successfully:
+### **Контракти проміжного представлення (IR)**
 
-* **Initialization Node:** A branch initialization node (b0, type: "branch", branchId: 0\) must exist. This serves as the anchor point for the Skewer.  
-* **Termination Node:** An explicitly defined termination node (end, type: "end") must exist to cap the vertical flow.  
-  Without these anchors, the rendering engine fails to construct the topological graph, outputting only the header metadata.
+Канонічний контракт даних між агентами Python FastAPI та фронтендом React визначається об'єктом `IrDiagram`. Цілісність цієї структури JSON є першорядною, оскільки рушій `drakonwidget.js` не має зовнішніх залежностей і повністю покладається на строге форматування введення.
 
-Furthermore, legacy architectural debt necessitates a precise boundary transformation: the params field is defined as an array of strings (string) within the TypeScript frontend definitions, but it is historically processed as a single, comma-separated string within the legacy drakon-agent. The MCP proxy layer or the specific FastAPI agent endpoints must actively intercept and normalize this data type during serialization to prevent silent parsing failures.
+Для успішного рендерингу діаграми системі потрібні два обов'язкові інваріанти:
 
-## **Exhaustive Implementation Directives: Task Execution**
+* **Вузол ініціалізації:** Вузол ініціалізації гілки (`b0`, type: "branch", branchId: 0) повинен існувати. Він служить точкою прив'язки для Шампура.  
+* **Вузол завершення:** Явно визначений вузол завершення (`end`, type: "end") повинен існувати, щоб обмежити вертикальний потік.  
+  Без цих якорів механізм рендерингу не може побудувати топологічний граф, виводячи лише метадані заголовка.
 
-The realization of the multi-agent system requires the precise, sequential execution of eight distinct tasks. The following sections detail the exhaustive implementation logic, structural considerations, and algorithmic strategies required for successful deployment.
+Крім того, спадщина минулих реалізацій вимагає точного перетворення меж: поле `params` визначено як масив рядків (`string[]`) у типах фронтенду TypeScript, але історично воно обробляється як єдиний рядок із розділенням комами (`string`) всередині застарілого `drakon-agent`. Рівень MCP проксі або конкретні кінцеві точки агентів FastAPI повинні активно перехоплювати та нормалізувати цей тип даних під час серіалізації для запобігання прихованим помилкам парсингу.
 
-### **Task 1: Repository Memory Bootstrap and Concurrency System**
+---
 
-The instantiation of the services/drakon-agent/memory\_manager.py utility serves as the foundational persistence layer for the entire network. This module interfaces directly with the GitHub REST API to synchronize the localized agent state with the remote origin repository.
+## **Вичерпні директиви щодо впровадження: виконання завдань`**
 
-The implementation requires the construction of three core functions: ensure\_agent\_memory, save\_memory, and get\_memory. The initialization process operates on a lazy-loading paradigm designed to minimize unnecessary API calls. Upon the startup sequence of any FastAPI agent, the ensure\_agent\_memory function executes a non-blocking HTTP GET request to verify the existence of the memory/{agent\_name}/MEMORY.md index file in the target repository. If a 404 Not Found response is returned, the agent autonomously generates a baseline markdown file. Because the GitHub API requires binary safety for file uploads, the content must be encoded in Base64 before being wrapped in the JSON payload and committed.27
+Реалізація мультиагентної системи вимагає точного, послідовного виконання восьми окремих завдань. У наступних розділах детально описано вичерпну логіку впровадження, структурні міркування та алгоритмічні стратегії, необхідні для успішного розгортання.
 
-The save\_memory function requires the direct implementation of the optimistic concurrency control discussed previously. The algorithmic flow must execute as follows:
+### **Завдання 1: Система автозапуску пам'яті репозиторію та паралельного виконання**
 
-1. Execute a GET request to the target file path via httpx.  
-2. Extract the existing sha token from the JSON payload.  
-3. Encode the new combined memory content into Base64.  
-4. Construct the PUT payload containing the message, content, branch, and the acquired sha.  
-5. Execute the PUT request.  
-6. If the response status code is 409 26, trigger an asyncio.sleep() mechanism, recursively invoke step 1 to acquire the newly minted sha from the conflicting commit, and attempt the PUT operation again. This robust implementation ensures idempotency and guarantees the preservation of agent memory across the network.
+Створення утиліти `services/drakon-agent/memory_manager.py` є фундаментальним рівнем збереження для всієї мережі. Цей модуль взаємодіє безпосередньо з GitHub REST API для синхронізації локального стану агента з віддаленим репозиторієм.
 
-### **Task 2: Architect Agent Service Deployment**
+Реалізація вимагає побудови трьох основних функцій: `ensure_agent_memory`, `save_memory` та `get_memory`. Процес ініціалізації працює на парадигмі лінивого завантаження, розробленій для мінімізації непотрібних викликів API. Під час запуску будь-якого агента FastAPI функція `ensure_agent_memory` виконує неблокуючий запит HTTP GET для перевірки існування індексного файлу `memory/{agent_name}/MEMORY.md` у цільовому репозиторії. Якщо повертається відповідь 404 Not Found, агент автономно генерує базовий markdown-файл. Оскільки API GitHub вимагає бінарної безпеки для завантаження файлів, вміст перед упаковкою в корисне навантаження JSON та відправкою повинен бути закодований в Base64.
 
-The Architect agent operates on port 8766 and is responsible for systemic code analysis, repository structural integrity, and the generation of macroscopic DRAKON diagrams representing the project's topology. The service is built upon the FastAPI framework, leveraging its native asynchronous support (async def) and Pydantic data validation to handle concurrent MCP tool requests securely and efficiently.44
+Функція `save_memory` вимагає прямої реалізації описаного раніше оптимістичного контролю паралельного виконання. Алгоритмічний потік повинен виконуватися наступним чином:
 
-The core prompt engineering and context orchestration resides within the ai\_chat/architect\_chat.py module. To generate hyper-accurate, non-hallucinated responses, the agent synthesizes four distinct data streams into its LLM context window:
+1. Виконати запит GET до цільового шляху файлу через `httpx`.  
+2. Витягти існуючий токен `sha` з корисного навантаження JSON.  
+3. Закодувати новий об'єднаний вміст пам'яті в Base64.  
+4. Побудувати корисне навантаження PUT, що містить повідомлення, вміст, гілку та отриманий `sha`.  
+5. Виконати запит PUT.  
+6. Якщо код статусу відповіді 409, запустити механізм `asyncio.sleep()`, рекурсивно викликати крок 1 для отримання нового `sha` з конфліктного коміту та спробувати операцію PUT знову. Ця надійна реалізація гарантує ідемпотентність та збереження пам'яті агентів у всій мережі.
 
-1. **Project Context:** The complete hierarchical file tree fetched from the GitHub origin.  
-2. **Visual State:** The JSON representation of the currently active DRAKON diagram being viewed by the user.  
-3. **Historical Memory:** Content extracted from memory/architect/MEMORY.md, ensuring the agent recalls previous Architectural Decision Records (ADRs) and structural mandates.  
-4. **Epistemological Rules:** Strict DRAKON IR formatting rules injected dynamically from the shared BM25 knowledge base.
+### **Завдання 2: Розгортання сервісу Architect Agent**
 
-The interaction with the underlying LLM (routed via an OpenAI-compatible proxy at http://localhost:18880/v1) requires a low temperature setting (e.g., 0.2) to minimize creative deviation and enforce highly deterministic JSON output. The agent utilizes a Regular Expression (Regex) parsing heuristic to locate and extract MutationOp arrays embedded within markdown code blocks (e.g., \`\`\`json) in the LLM's response. These extracted mutations are subsequently routed back through the MCP broker to the frontend, where they can be executed against the drakonwidget.js canvas.
+Architect-агент працює на порту 8766 і відповідає за системний аналіз коду, структурну цілісність репозиторію та генерацію макроскопічних діаграм DRAKON, що представляють топологію проєкту. Сервіс побудований на базі FastAPI, використовуючи його нативну асинхронну підтримку (`async def`) та валідацію даних Pydantic для безпечної та ефективної обробки паралельних запитів інструментів MCP.
 
-### **Task 3: Documentation Agent Service Deployment**
+Основна інженерія промптів та оркестрація контексту знаходиться в модулі `ai_chat/architect_chat.py`. Для генерації високоточних відповідей без галюцинацій агент об'єднує чотири окремі потоки даних у своє вікно контексту LLM:
 
-Operating on port 8767, the Documentation agent (docs-agent) is dedicated to monitoring, generating, and persisting project documentation. Similar to the Architect agent, it relies on FastAPI for HTTP transport but utilizes highly specialized analytical modules tailored for textual analysis.44
+1. **Контекст проєкту:** Повне ієрархічне дерево файлів, отримане з GitHub.  
+2. **Візуальний стан:** Подання JSON поточної діаграми DRAKON, яку переглядає користувач.  
+3. **Історична пам'ять:** Вміст, витягнутий з `memory/architect/MEMORY.md`, що гарантує збереження попередніх рішень (ADR) та структурних мандатів.  
+4. **Епістемологічні правила:** Строгі правила формату DRAKON IR, що динамічно впроваджуються зі спільної бази знань BM25.
 
-The primary heuristic engine for this agent resides in analyzer/doc\_coverage.py. The algorithm conducts a comparative topological analysis between the source code directory and the documentation namespace. By parsing the GitHub file tree, it identifies modules located in src/ (e.g., src/api/routes.py) that lack corresponding markdown definitions in the docs/ namespace (e.g., docs/api/routes.md).
+Взаємодія з базовою моделлю LLM (що направляється через OpenAI-сумісний проксі за адресою `http://localhost:18880/v1`) вимагає низького налаштування температури (наприклад, 0.2), щоб звести до мінімуму творчі відхилення та забезпечити суворо детермінований вивід JSON. Агент використовує евристику парсингу регулярних виразів (Regex) для пошуку та вилучення масивів `MutationOp`, вбудованих у блоки коду markdown (наприклад, \`\`\`json) у відповіді LLM. Ці вилучені мутації згодом направляються через брокера MCP до фронтенду, де вони можуть бути виконані на полотні `drakonwidget.js`.
 
-Advanced implementations of this module will invoke Python's native ast library to parse the raw source code of targeted Python files.47 By traversing the Abstract Syntax Tree, the agent isolates FunctionDef and ClassDef nodes, inspecting them for the presence of native docstrings via ast.get\_docstring().49 Nodes lacking adequate documentation are flagged, compiled into a coverage deficit report, and appended to the memory/docs/api-coverage.md ledger via the GitHub persistence layer. When engaged in conversation by a developer, the agent utilizes this localized report to proactively suggest documentation enhancements.
+### **Завдання 3: Розгортання сервісу Docs Agent**
 
-### **Task 4: Federated Knowledge Base Contribution**
+Працюючи на порту 8767, агент документації (`docs-agent`) призначений для моніторингу, генерації та збереження документації проєкту. Подібно до Architect-агента, він спирається на FastAPI для транспорту HTTP, але використовує високоспеціалізовані аналітичні модулі, пристосовані для аналізу тексту.
 
-A defining characteristic of a truly autonomous multi-agent paradigm is the capacity for agents to dynamically enrich their shared epistemological foundation without human bottlenecking. The services/shared/kb\_writer.py library enables both the Architect and Documentation agents to write new heuristic rules or code patterns directly to the shared services/drakon-agent/knowledge/ directory.
+Основний аналітичний рушій для цього агента знаходиться в `analyzer/doc_coverage.py`. Алгоритм проводить порівняльний аналіз топології між каталогом вихідного коду та простором імен документації. Розбираючи дерево файлів GitHub, він ідентифікує модулі, розташовані в `src/` (наприклад, `src/api/routes.py`), які не мають відповідних визначень markdown у просторі імен `docs/` (наприклад, `docs/api/routes.md`).
 
-To prevent cascading infinite loops of redundant knowledge generation (where agents repeatedly save identical insights), the contribute\_to\_kb function employs strict cryptographic hashing. Before committing a write operation to disk, the function computes the MD5 hash of the proposed markdown content and compares it against the MD5 hash of the existing file. If the hashes are identical, the write operation is aborted, conserving valuable I/O cycles.
+Додаткові реалізації цього модуля викликатимуть вбудовану бібліотеку Python `ast` для аналізу вихідного коду цільових файлів Python. Шляхом обходу абстрактного синтаксичного дерева він виділяє вузли `FunctionDef` та `ClassDef`, перевіряючи їх на наявність вбудованих докстрінгів через `ast.get_docstring()`. Вузли, які не мають належної документації, маркуються, комбінуються у звіт про дефіцит покриття та вносяться до реєстру `memory/docs/api-coverage.md` через рівень персистентності GitHub. Під час спілкування з розробником агент використовує цей локальний звіт, щоб проактивно пропонувати покращення документації.
 
-Newly generated files are automatically prefixed with an HTML-style metadata tag (e.g., \`\`) to maintain a clear provenance ledger. Once written to the filesystem, the BM25 retrieval index must be asynchronously instructed to re-parse the directory, tokenize the new corpus, and eagerly compute the updated sparse matrix scores. This ensures the newly synthesized knowledge is immediately retrievable by all peer agents in the network.16
+### **Завдання 4: Федеративне внесення внесків до бази знань**
 
-### **Task 5: Cloudflare Worker Tool Definitions and Proxy Logic**
+Визначальною характеристикою дійсно автономної мультиагентної парадигми є здатність агентів динамічно збагачувати свій спільний епістемологічний фундамент без створення вузьких місць з боку людини. Бібліотека `services/shared/kb_writer.py` дозволяє агентам Architect та Docs записувати нові евристичні правила або шаблони коду безпосередньо у спільний каталог `services/drakon-agent/knowledge/`.
 
-The Cloudflare Worker (worker-mcp-drakon.js) must be heavily modified to instantiate four new MCP tools, expanding the protocol's capabilities to handle multi-agent routing and memory access. These tools are defined using rigorous JSON Schema specifications, which the MCP protocol exposes to the connected React client.4
+Щоб запобігти каскадним нескінченним циклам надлишкової генерації знань (коли агенти неодноразово зберігають однакові висновки), функція `contribute_to_kb` використовує суворе криптографічне хешування. Перед виконанням операції запису на диск функція обчислює хеш MD5 запропонованого вмісту markdown і порівнює його з хешем MD5 існуючого файлу. Якщо хеші ідентичні, операція запису скасовується, зберігаючи цінні цикли введення-виведення.
 
-The required tool schemas include:
+Нові файли автоматично позначаються префіксом у вигляді метаданих HTML-стилю (наприклад, `<!-- contributed by architect -->`), щоб підтримувати чіткий облік походження знань. Після запису у файлову систему асинхронно запускається переіндексація індексу BM25, яка токенізує новий корпус та заново обчислює оцінки розріджених матриць. Це гарантує, що нещодавно синтезовані знання негайно стають доступними для пошуку всіма іншими агентами в мережі.
 
-* drakon.listmemory: Enumerates the markdown files mapped to a specific agent's memory/ namespace.  
-* drakon.getmemory: Retrieves the decoded Base64 content of a target memory file.  
-* drakon.savememory: Executes the Git persistence logic, invoking the necessary API calls to update the remote repository.  
-* drakon.agentchat: The primary communication conduit, proxying natural language queries and context payloads to the specialist agents.
+### **Завдання 5: Визначення інструментів Cloudflare Worker та логіка проксі**
 
-Within the worker's execution context, the tools/call handler intercepts the drakon.agentchat payload. It extracts the agent parameter ("architect" or "docs") and maps it to the corresponding internal URL configured in the worker's environment variables (ARCHITECT\_AGENT\_URL or DOCS\_AGENT\_URL). The worker utilizes the native V8 fetch API to asynchronously transmit the payload via POST to the internal FastAPI instance.3 This precise proxy pattern guarantees that the external frontend remains securely isolated from the internal network topology, while the worker absorbs HTTP latency and manages authentication at the edge.22
+Воркер Cloudflare (`worker-mcp-drakon.js`) має бути модифікований для створення чотирьох нових інструментів MCP, розширюючи можливості протоколу для обробки мультиагентної маршрутизації та доступу до пам'яті. Ці інструменти визначаються з використанням строгих специфікацій JSON Schema, які протокол MCP відкриває для підключеного клієнта React.
 
-| MCP Tool Name | Function | Input Schema Requirements | Target System |
+Необхідні схеми інструментів включають:
+
+* `drakon.listmemory`: Перераховує файли markdown, зіставлені з конкретним простором імен `memory/` агента.  
+* `drakon.getmemory`: Отримує декодований вміст Base64 цільового файлу пам'яті.  
+* `drakon.savememory`: Виконує логіку збереження Git, викликаючи необхідні API-запити для оновлення віддаленого репозиторію.  
+* `drakon.agentchat`: Основний комунікаційний канал, що проксіює запити природною мовою та контекстні дані до спеціалізованих агентів.
+
+У контексті виконання воркера обробник `tools/call` перехоплює корисне навантаження `drakon.agentchat`. Він витягує параметр агента ("architect" або "docs") і зіставляє його з відповідним внутрішнім URL, налаштованим у змінних оточення воркера (`ARCHITECT_AGENT_URL` або `DOCS_AGENT_URL`). Воркер використовує вбудований API `fetch` для асинхронної передачі корисного навантаження через POST на внутрішній екземпляр FastAPI. Цей точний шаблон проксі гарантує, що зовнішній фронтенд залишається безпечно ізольованим від внутрішньої топології мережі, тоді як воркер поглинає мережеві затримки HTTP та керує автентифікацією на межі.
+
+| Назва інструменту MCP | Функція | Вимоги до вхідної схеми | Цільова система |
 | :---- | :---- | :---- | :---- |
-| drakon.listmemory | Directory traversal | agent (enum) | GitHub API |
-| drakon.savememory | State persistence | agent, file, content, commit\_msg | GitHub API |
-| drakon.agentchat | Contextual LLM chat | agent (enum), message, context | Internal FastAPI (8766/8767) |
+| `drakon.listmemory` | Обхід директорії | `agent` (enum) | GitHub API |
+| `drakon.savememory` | Збереження стану | `agent`, `file`, `content`, `commit_msg` | GitHub API |
+| `drakon.agentchat` | Контекстний чат LLM | `agent` (enum), `message`, `context` | Внутрішній FastAPI (8766/8767) |
 
-### **Task 6: Frontend React and Zustand Integration**
+### **Завдання 6: Інтеграція фронтенду React та Zustand**
 
-The frontend architecture necessitates the integration of a unified agent interaction interface seamlessly positioned alongside the existing DiagramsPage and the drakonwidget.js canvas. Built upon React 19 and utilizing Zustand for highly performant global state management 51, the new components (AgentChatPanel.tsx and AgentMessage.tsx) provide a persistent communication sidebar.
+Архітектура фронтенду вимагає інтеграції уніфікованого інтерфейсу взаємодії з агентами, розташованого поряд з існуючою сторінкою `DiagramsPage` та полотном `drakonwidget.js`. Побудовані на React 19 та Zustand для високопродуктивного керування глобальним станом, нові компоненти (`AgentChatPanel.tsx` та `AgentMessage.tsx`) забезпечують постійну бічну панель спілкування.
 
-The useAgentChat.ts React hook manages the complex lifecycle of the HTTP JSON-RPC invocations to the Cloudflare Worker. It maintains a localized state array of message histories and handles asynchronous loading spinners to provide visual feedback during LLM generation.
+Хук React `useAgentChat.ts` керує складним життєвим циклом викликів JSON-RPC до воркера Cloudflare. Він підтримує локалізований масив історії повідомлень та керує асинхронними індикаторами завантаження для забезпечення візуального зворотного зв'язку під час генерації відповідей LLM.
 
-A critical and complex design pattern within the AgentMessage.tsx component is the conditional rendering of the "Apply Mutations" interface. When an agent (such as the Architect) returns a JSON payload containing suggested\_mutations, the component detects this array and renders a discrete, actionable button alongside a collapsible JSON preview. Upon user interaction, this button executes the drakon.mutatediagram MCP tool, pushing the generated JSON operations directly into the active diagram state managed by Zustand. This creates a highly efficient feedback loop: the agent analyzes the repository, proposes structural changes mathematically mapped to DRAKON IR, and the human user executes the changes with a single click, instantly updating the visual flowchart without manual vector drawing.
+Важливим і складним шаблоном проектування в компоненті `AgentMessage.tsx` є умовний рендеринг інтерфейсу "Застосувати мутації" (Apply Mutations). Коли агент (наприклад, Architect) повертає корисне навантаження JSON, що містить `suggested_mutations`, компонент виявляє цей масив і відображає окрему активну кнопку поряд із згорнутим попереднім переглядом JSON. При взаємодії користувача ця кнопка виконує інструмент MCP `drakon.mutatediagram`, впроваджуючи згенеровані операції JSON безпосередньо в активний стан діаграми, керований Zustand. Це створює високоефективну петлю зворотного зв'язку: агент аналізує репозиторій, пропонує структурні зміни, математично зіставлені з DRAKON IR, а користувач-людина виконує ці зміни одним кліком, миттєво оновлюючи візуальну блок-схему без ручного малювання векторів.
 
-### **Task 7: Architectural Traversal and Generation**
+### **Завдання 7: Архітектурний обхід та генерація**
 
-The repo\_to\_architecture\_ir algorithm residing within the Architect agent represents a complex topological mapping operation. It is tasked with translating a standard, deeply nested hierarchical file directory into a flat, interconnected, and visually compliant DRAKON graph.
+Алгоритм `repo_to_architecture_ir`, розташований всередині Architect-агента, являє собою складну операцію топологічного мапування. Перед ним стоїть завдання перетворити стандартну, глибоко вкладену ієрархічну структуру файлів на плоский, взаємопов'язаний і візуально сумісний граф DRAKON.
 
-The algorithm executes through a strict pipeline:
+Алгоритм виконується за чітким конвеєром:
 
-1. **Ingestion:** The agent executes a recursive GET request to the GitHub Trees API (/git/trees/{sha}?recursive=1), pulling the complete repository structure into memory as a flat array of nodes.32  
-2. **Clustering:** The file nodes are iterated and grouped dynamically by their top-level directory names. Hidden files and directories (prefixed with .) are discarded to reduce visual noise.  
-3. **Heuristic Analysis:** For each directory cluster, the algorithm counts the distribution of significant file types (e.g., .py, .ts, .tsx), generating a contextual string summarizing the module's technological footprint.  
-4. **Graph Generation:** The algorithm instantiates the mandatory b0 branch node. It then iterates through the sorted directory clusters, generating a discrete DRAKON action node for each cluster.  
-5. **Chaining:** The one parameter of each action node is explicitly linked to the string id of the subsequent node. This mathematical linking forms a perfect vertical line, mapping the repository structure directly to the DRAKON "Skewer" principle.35 The final node is securely linked to the mandatory end node.
+1. **Отримання даних:** Агент виконує рекурсивний запит GET до GitHub Trees API (`/git/trees/{sha}?recursive=1`), завантажуючи повну структуру репозиторію в пам'ять як плоский масив вузлів.  
+2. **Групування:** Вузли файлів ітеруються та динамічно групуються за іменами каталогів верхнього рівня. Приховані файли та каталоги (що починаються з `.`) відкидаються для зменшення візуального шуму.  
+3. **Евристичний аналіз:** Для кожного кластера каталогів алгоритм підраховує розподіл важливих типів файлів (наприклад, `.py`, `.ts`, `.tsx`), генеруючи контекстний рядок, який підсумовує технологічний слід модуля.  
+4. **Генерація графа:** Алгоритм створює обов'язковий початковий вузол гілки `b0`. Потім він ітерує відсортовані кластери каталогів, генеруючи окремий вузол дії DRAKON для кожного кластера.  
+5. **Зв'язування:** Параметр `one` кожного вузла дії явно зв'язується з рядковим ідентифікатором наступного вузла. Це математичне зв'язування формує ідеальну вертикальну лінію, відображаючи структуру репозиторію безпосередньо на принцип "Шампура" в DRAKON. Кінцевий вузол надійно зв'язується з обов'язковим вузлом `end`.
 
-This algorithmic approach guarantees that any repository, regardless of depth or complexity, can be instantly visualized as a strict, ergonomically sound flowchart representing its macroscopic architecture.
+Цей алгоритмічний підхід гарантує, що будь-який репозиторій, незалежно від глибини чи складності, може бути миттєво візуалізований як строга, ергономічна блок-схема, що відображає його макроскопічну архітектуру.
 
-### **Task 8: Automated Bootstrapping on Constrained Hardware**
+### **Завдання 8: Автоматичний запуск (bootstrap) на обмеженому апаратному забезпеченні**
 
-Given the unique environmental constraints of the deployment hardware (AMD C-60 CPU, complete absence of AVX/SIMD instructions), the instantiation of the system on a new machine requires a highly controlled, fault-tolerant bootstrapping script (scripts/bootstrap.py).
+Враховуючи унікальні обмеження розгортання апаратного забезпечення (процесор AMD C-60, повна відсутність інструкцій AVX/SIMD), запуск системи на новій машині вимагає використання строго контрольованого, відмовостійкого скрипту ініціалізації (`scripts/bootstrap.py`).
 
-The script is responsible for idempotently generating the required memory directories (memory/architect, memory/docs, memory/shared) and injecting .gitkeep placeholders to ensure proper repository tracking by Git. Furthermore, it duplicates .env.example files to establish the baseline configuration for local execution.
+Скрипт відповідає за ідемпотентне створення необхідних каталогів пам'яті (`memory/architect`, `memory/docs`, `memory/shared`) та додавання заповнювачів `.gitkeep` для забезпечення належного відстеження репозиторію через Git. Крім того, він копіює файли `.env.example` для встановлення базової конфігурації локального запуску.
 
-The most critical operation executed by the bootstrap script is the creation of the Python virtual environments for the three FastAPI services. Because the host system is severely hardware-constrained, the script must invoke the venv module with the \--system-site-packages flag. This specific configuration is vital; it allows the virtual environment to fall back on host-level OS packages if specific PyPI wheel compilations fail due to the missing AVX instruction sets.6
+Найбільш критичною операцією, яку виконує скрипт ініціалізації, є створення віртуальних середовищ Python для трьох сервісів FastAPI. Оскільки хост-система сильно обмежена апаратно, скрипт повинен викликати модуль `venv` із прапорцем `--system-site-packages`. Ця конкретна конфігурація є життєво важливою; вона дозволяє віртуальному середовищу використовувати системні пакети ОС хоста, якщо збірка конкретних пакетів PyPI зазнає невдачі через відсутність наборів інструкцій AVX.
 
-Following the venv creation, the script triggers the pip install \-r requirements.txt execution via a subprocess command. As mandated by the architecture, the requirements files must be strictly pinned to numpy\<2 (e.g., numpy==1.26.4) to prevent the installation of incompatible 2.x binaries.9 By strictly controlling this environment initialization, the bootstrap script effectively inoculates the system against unexpected binary incompatibilities, ensuring that the local FastAPI agents, the BM25 bm25s retrieval engine, and the AST parsers deploy cleanly without requiring deep manual intervention or C-compiler debugging from the developer.
+Після створення `venv` скрипт запускає команду `pip install -r requirements.txt` через підпроцес. Згідно з вимогами архітектури, файли вимог повинні суворо обмежувати версії до `numpy<2` (наприклад, `numpy==1.26.4`), щоб запобігти встановленню несумісних бінарних файлів 2.x. Шляхом суворого контролю цієї ініціалізації середовища скрипт ініціалізації ефективно захищає систему від непередбачених бінарних несумісностей, гарантуючи, що локальні агенти FastAPI, пошуковий двигун `bm25s` та парсери AST розгортаються чисто, не вимагаючи глибокого ручного втручання чи налагодження компілятора C з боку розробника.
 
-## **Systemic Operational Scenarios**
+---
 
-To fully illustrate the efficacy and integration of the multi-agent DRAKON platform, an analysis of the system's operational flow under specific user interactions is required.
+## **Системні операційні сценарії**
 
-### **Operational Flow: Architectural Diagramming (UC-1 / UC-3)**
+Щоб повністю проілюструвати ефективність та інтеграцію мультиагентної платформи DRAKON, необхідно проаналізувати роботу системи за конкретних сценаріїв взаємодії з користувачем.
 
-When a developer interacts with the frontend DiagramsPage and requests an architectural breakdown of a specific module (e.g., typing "Create a DRAKON diagram showing the HTSE pipeline flow" into the chat interface), the event cascade is highly orchestrated.
+### **Операційний потік: архітектурне діаграмування (UC-1 / UC-3)**
 
-The React frontend dispatches an RPC request containing the current repository file tree, the active folder slug, and the user's prompt to the Cloudflare Worker via Streamable HTTP. The worker validates the JWT/Bearer token and routes the request securely to port 8766 (Architect Agent).
+Коли розробник взаємодіє з фронтендом `DiagramsPage` і запитує архітектурний аналіз конкретного модуля (наприклад, вводячи "Create a DRAKON diagram showing the HTSE pipeline flow" в інтерфейс чату), каскад подій є чітко скоординованим.
 
-Upon receiving the payload, the Architect agent first executes an internal retrieval request against the shared knowledge/ directory using the bm25s engine. Because bm25s relies on memory-mapped sparse matrices 15, the retrieval of the relevant DRAKON IR format rules occurs in milliseconds, completely bypassing Python's standard looping overhead. Concurrently, the agent reads its specific MEMORY.md file from the local repository clone to establish historical architectural context.
+Фронтенд React надсилає запит RPC, що містить поточне дерево файлів репозиторію, активний слаг папки та промпт користувача до воркера Cloudflare через Streamable HTTP. Воркер перевіряє токен JWT/Bearer і безпечно направляє запит на порт 8766 (Architect Agent).
 
-The agent packages this context alongside the GitHub file tree and transmits it to the local LLM proxy. The LLM processes the prompt and returns a deterministic JSON payload representing the DRAKON IR. Crucially, the generated IR strictly adheres to the visual grammar rules: a central Skewer is established through a chain of action nodes, and any validation logic is mapped to question nodes with the failure path routed to the right (two branch), adhering strictly to rightward degradation.35
+Отримавши корисне навантаження, Architect-агент спочатку виконує внутрішній запит на пошук у спільному каталозі `knowledge/` за допомогою двигуна `bm25s`. Оскільки `bm25s` спирається на розріджені матриці, відображені в пам'ять, пошук релевантних правил форматування DRAKON IR відбувається за мілісекунди, повністю обходячи стандартні накладні витрати на цикли в Python. Одночасно агент читає свій конкретний файл `MEMORY.md` з локального клону репозиторію для встановлення історичного архітектурного контексту.
 
-The payload is relayed back through the worker to the React frontend, where the AgentChatPanel renders the "Apply Mutations" interface. Upon execution, the drakonwidget.js canvas natively renders the flowchart. Finally, the Architect agent triggers the save\_memory function, executing a GitHub API PUT request with optimistic concurrency control to update its diagrams-index.md ledger, creating a permanent record of the newly generated architecture.
+Агент упаковує цей контекст разом із деревом файлів GitHub та передає його локальному проксі LLM. LLM обробляє промпт і повертає детермінований JSON, що представляє DRAKON IR. Важливо, що згенерований IR строго відповідає правилам візуальної граматики: центральний Шампур створюється через ланцюжок вузлів дій, а будь-яка логіка валідації зіставляється з вузлами питань, причому шлях відмови направляється вправо (гілка `two`), суворо дотримуючись правила правобічної деградації.
 
-### **Operational Flow: Automated Documentation Sync (UC-2)**
+Корисне навантаження повертається через воркер на фронтенд React, де `AgentChatPanel` рендерить інтерфейс "Застосувати мутації". Після виконання полотно `drakonwidget.js` нативно рендерить блок-схему. Нарешті, Architect-агент запускає функцію `save_memory`, виконуючи запит PUT до GitHub API з оптимістичним контролем паралельного виконання для оновлення свого реєстру `diagrams-index.md`, створюючи постійний запис про щойно згенеровану архітектуру.
 
-In a scenario where a backend endpoint is modified, the developer engages the Docs agent. The request ("The /analyze endpoint now supports refine=false parameter, update the docs") initiates a similar transit path, routed by the Cloudflare Worker to port 8767\.
+### **Операційний потік: автоматична синхронізація документації (UC-2)**
 
-The Docs agent queries the BM25 index for specific API documentation standards. It then utilizes its AST parser (doc\_coverage.py) to verify the structure of the /analyze endpoint within the codebase, ensuring the user's claim matches the physical Python file parameters.47
+У сценарії, коли бекенд-ендпоінт модифікується, розробник звертається до Docs-агента. Запит ("The /analyze endpoint now supports refine=false parameter, update the docs") ініціює аналогічний шлях транзиту, що спрямовується воркером Cloudflare на порт 8767.
 
-The agent generates the markdown update and formulates a mutation payload. When the developer approves the proposed documentation change in the UI, the agent leverages the memory\_manager.py utility to commit the update directly to memory/docs/api-coverage.md. If a simultaneous commit occurs from another developer, the 409 Conflict trap intercepts the failure, recalculates the SHA, and ensures the documentation update is merged seamlessly without data loss.30
+Docs-агент запитує індекс BM25 щодо конкретних стандартів документації API. Потім він використовує свій парсер AST (`doc_coverage.py`) для перевірки структури кінцевої точки `/analyze` всередині кодової бази, переконуючись, що твердження користувача збігається з фізичними параметрами файлу Python.
 
-### **Operational Flow: New Developer Onboarding (UC-4)**
+Агент генерує оновлення markdown та формує корисне навантаження мутації. Коли розробник схвалює запропоновану зміну документації в інтерфейсі користувача, агент використовує утиліту `memory_manager.py` для запису оновлення безпосередньо в `memory/docs/api-coverage.md`. Якщо відбувається одночасний коміт від іншого розробника, обробка конфлікту 409 перехоплює збій, перераховує `sha` і гарантує, що оновлення документації буде безперешкодно інтегровано без втрати даних.
 
-When a new developer clones the ai-drakon-setup repository onto a fresh machine, the environmental setup is entirely automated. The developer executes python3 scripts/bootstrap.py.
+### **Операційний потік: адаптація нового розробника (UC-4)**
 
-The script immediately generates the memory/architect, memory/docs, and memory/shared directories. It copies the .env.example files to establish baseline configurations. It provisions the virtual environments utilizing the \--system-site-packages flag and installs the numpy\<2 dependencies, ensuring immediate compatibility with the constrained AMD C-60 hardware.6
+Коли новий розробник клонує репозиторій `ai-drakon-setup` на нову машину, налаштування середовища повністю автоматизовано. Розробник запускає `python3 scripts/bootstrap.py`.
 
-Once the developer adds their GITHUB\_TOKEN and starts the FastAPI services, the agents initialize. On first startup, each agent independently calls ensure\_agent\_memory(). Detecting that their respective MEMORY.md files do not exist in the remote repository, they automatically generate the initial markdown files, encode them in Base64, and push the first commit to the repository.27 The developer is instantly presented with a clean, fully initialized, and state-aware multi-agent ecosystem ready for immediate architectural analysis and diagrammatic generation.
+Скрипт негайно створює каталоги `memory/architect`, `memory/docs` та `memory/shared`. Він копіює файли `.env.example` для встановлення базових конфігурацій. Він створює віртуальні середовища за допомогою прапорця `--system-site-packages` та встановлює залежності `numpy<2`, забезпечуючи негайну сумісність з обмеженим апаратним забезпеченням AMD C-60.
 
-#### **Джерела**
+Після того, як розробник додає свій `GITHUB_TOKEN` та запускає сервіси FastAPI, агенти ініціалізуються. При першому запуску кожен агент незалежно викликає `ensure_agent_memory()`. Виявивши, що їхні відповідні файли `MEMORY.md` відсутні у віддаленому репозиторії, вони автоматично генерують початкові markdown-файли, кодують їх у Base64 та роблять перший коміт у репозиторій. Розробник миттєво отримує чисту, повністю ініціалізовану та готову до роботи мультиагентну екосистему для архітектурного аналізу та генерації діаграм.
 
-1. Build a multi-source knowledge base with routing \- Docs by LangChain, доступ отримано травня 12, 2026, [https://docs.langchain.com/oss/python/langchain/multi-agent/router-knowledge-base](https://docs.langchain.com/oss/python/langchain/multi-agent/router-knowledge-base)  
+---
+
+## **Джерела**
+
+1. Build a multi-source knowledge base with routing - Docs by LangChain, доступ отримано травня 12, 2026, [https://docs.langchain.com/oss/python/langchain/multi-agent/router-knowledge-base](https://docs.langchain.com/oss/python/langchain/multi-agent/router-knowledge-base)  
 2. Multi-Agent AI Systems: Architecture & Failure Modes | Augment Code, доступ отримано травня 12, 2026, [https://www.augmentcode.com/guides/multi-agent-ai-systems](https://www.augmentcode.com/guides/multi-agent-ai-systems)  
-3. Cloudflare Workers MCP \- Model Context Protocol Integration for Cursor IDE | MCPCursor, доступ отримано травня 12, 2026, [https://mcpcursor.com/server/cloudflare-workers-mcp](https://mcpcursor.com/server/cloudflare-workers-mcp)  
+3. Cloudflare Workers MCP - Model Context Protocol Integration for Cursor IDE | MCPCursor, доступ отримано травня 12, 2026, [https://mcpcursor.com/server/cloudflare-workers-mcp](https://mcpcursor.com/server/cloudflare-workers-mcp)  
 4. FastAPI with MCP: build enterprise AI agents for api-driven apps | MintMCP Blog, доступ отримано травня 12, 2026, [https://www.mintmcp.com/blog/build-enterprise-ai-agents](https://www.mintmcp.com/blog/build-enterprise-ai-agents)  
-5. Building Multi-Agent Systems with Shared Memory Guide \- Hindsight, доступ отримано травня 12, 2026, [https://hindsight.vectorize.io/guides/2026/04/21/guide-building-multi-agent-systems-with-shared-memory](https://hindsight.vectorize.io/guides/2026/04/21/guide-building-multi-agent-systems-with-shared-memory)  
+5. Building Multi-Agent Systems with Shared Memory Guide - Hindsight, доступ отримано травня 12, 2026, [https://hindsight.vectorize.io/guides/2026/04/21/guide-building-multi-agent-systems-with-shared-memory](https://hindsight.vectorize.io/guides/2026/04/21/guide-building-multi-agent-systems-with-shared-memory)  
 6. CPU build options — NumPy v2.2 Manual, доступ отримано травня 12, 2026, [https://numpy.org/doc/2.2/reference/simd/build-options.html](https://numpy.org/doc/2.2/reference/simd/build-options.html)  
-7. Support for CPU without AVX instruction · Issue \#2298 · blakeblackshear/frigate \- GitHub, доступ отримано травня 12, 2026, [https://github.com/blakeblackshear/frigate/issues/2298](https://github.com/blakeblackshear/frigate/issues/2298)  
+7. Support for CPU without AVX instruction · Issue #2298 · blakeblackshear/frigate - GitHub, доступ отримано травня 12, 2026, [https://github.com/blakeblackshear/frigate/issues/2298](https://github.com/blakeblackshear/frigate/issues/2298)  
 8. CPU build options — NumPy v2.1 Manual, доступ отримано травня 12, 2026, [https://numpy.org/doc/2.1/reference/simd/build-options.html](https://numpy.org/doc/2.1/reference/simd/build-options.html)  
-9. How to solve the pytorch RuntimeError: Numpy is not available without upgrading numpy to the latest version because of other dependencies \- Stack Overflow, доступ отримано травня 12, 2026, [https://stackoverflow.com/questions/71689095/how-to-solve-the-pytorch-runtimeerror-numpy-is-not-available-without-upgrading](https://stackoverflow.com/questions/71689095/how-to-solve-the-pytorch-runtimeerror-numpy-is-not-available-without-upgrading)  
-10. Module API version issue when numpy is installed from source and numpy version is older than \`oldest-supported-numpy\` · Issue \#67 · scipy/oldest-supported-numpy \- GitHub, доступ отримано травня 12, 2026, [https://github.com/scipy/oldest-supported-numpy/issues/67](https://github.com/scipy/oldest-supported-numpy/issues/67)  
+9. How to solve the pytorch RuntimeError: Numpy is not available without upgrading numpy to the latest version because of other dependencies - Stack Overflow, доступ отримано травня 12, 2026, [https://stackoverflow.com/questions/71689095/how-to-solve-the-pytorch-runtimeerror-numpy-is-not-available-without-upgrading](https://stackoverflow.com/questions/71689095/how-to-solve-the-pytorch-runtimeerror-numpy-is-not-available-without-upgrading)  
+10. Module API version issue when numpy is installed from source and numpy version is older than `oldest-supported-numpy` · Issue #67 · scipy/oldest-supported-numpy - GitHub, доступ отримано травня 12, 2026, [https://github.com/scipy/oldest-supported-numpy/issues/67](https://github.com/scipy/oldest-supported-numpy/issues/67)  
 11. Troubleshooting — NumPy v2.4 Manual, доступ отримано травня 12, 2026, [https://numpy.org/doc/stable/user/troubleshooting-importerror.html](https://numpy.org/doc/stable/user/troubleshooting-importerror.html)  
-12. How can I make numpy use SSE4\_2 instead of AVX? \- Stack Overflow, доступ отримано травня 12, 2026, [https://stackoverflow.com/questions/56012936/how-can-i-make-numpy-use-sse4-2-instead-of-avx](https://stackoverflow.com/questions/56012936/how-can-i-make-numpy-use-sse4-2-instead-of-avx)  
-13. Setting up and Optimizing Python for Data Science on Intel, AMD, and ARM (including Apple) Computers \- Syllepsis, доступ отримано травня 12, 2026, [https://syllepsis.live/2022/01/17/setting-up-and-optimizing-python-for-data-science-on-intel-amd-and-arm-including-apple-computers/](https://syllepsis.live/2022/01/17/setting-up-and-optimizing-python-for-data-science-on-intel-amd-and-arm-including-apple-computers/)  
-14. BM25-Search \- GitHub Pages, доступ отримано травня 12, 2026, [https://millet04.github.io/bm25-search/](https://millet04.github.io/bm25-search/)  
+12. How can I make numpy use SSE4_2 instead of AVX? - Stack Overflow, доступ отримано травня 12, 2026, [https://stackoverflow.com/questions/56012936/how-can-i-make-numpy-use-sse4-2-instead-of-avx](https://stackoverflow.com/questions/56012936/how-can-i-make-numpy-use-sse4-2-instead-of-avx)  
+13. Setting up and Optimizing Python for Data Science on Intel, AMD, and ARM (including Apple) Computers - Syllepsis, доступ отримано травня 12, 2026, [https://syllepsis.live/2022/01/17/setting-up-and-optimizing-python-for-data-science-on-intel-amd-and-arm-including-apple-computers/](https://syllepsis.live/2022/01/17/setting-up-and-optimizing-python-for-data-science-on-intel-amd-and-arm-including-apple-computers/)  
+14. BM25-Search - GitHub Pages, доступ отримано травня 12, 2026, [https://millet04.github.io/bm25-search/](https://millet04.github.io/bm25-search/)  
 15. bm25s · PyPI, доступ отримано травня 12, 2026, [https://pypi.org/project/bm25s/](https://pypi.org/project/bm25s/)  
-16. BM25 for Python: Achieving high performance while simplifying dependencies with \*BM25S\* \- Hugging Face, доступ отримано травня 12, 2026, [https://huggingface.co/blog/xhluca/bm25s](https://huggingface.co/blog/xhluca/bm25s)  
-17. xhluca/bm25s: Fast BM25 search in Python, powered by Numpy and Numba \- GitHub, доступ отримано травня 12, 2026, [https://github.com/xhluca/bm25s](https://github.com/xhluca/bm25s)  
-18. BM25 for Python: Achieving high performance while simplifying dependencies with BM25S \- Reddit, доступ отримано травня 12, 2026, [https://www.reddit.com/r/Python/comments/1dmwfbf/bm25\_for\_python\_achieving\_high\_performance\_while/](https://www.reddit.com/r/Python/comments/1dmwfbf/bm25_for_python_achieving_high_performance_while/)  
-19. GitHub \- dorianbrown/rank\_bm25: A Collection of BM25 Algorithms in Python, доступ отримано травня 12, 2026, [https://github.com/dorianbrown/rank\_bm25](https://github.com/dorianbrown/rank_bm25)  
-20. Transports \- Model Context Protocol, доступ отримано травня 12, 2026, [https://modelcontextprotocol.io/docs/concepts/transports\#http-with-sse](https://modelcontextprotocol.io/docs/concepts/transports#http-with-sse)  
-21. Control Cloudflare Infrastructure Using AI \+ MCP (with Python Example) \- DEV Community, доступ отримано травня 12, 2026, [https://dev.to/extinctsion/control-cloudflare-infrastructure-using-ai-mcp-with-python-example-1bak](https://dev.to/extinctsion/control-cloudflare-infrastructure-using-ai-mcp-with-python-example-1bak)  
+16. BM25 for Python: Achieving high performance while simplifying dependencies with *BM25S* - Hugging Face, доступ отримано травня 12, 2026, [https://huggingface.co/blog/xhluca/bm25s](https://huggingface.co/blog/xhluca/bm25s)  
+17. xhluca/bm25s: Fast BM25 search in Python, powered by Numpy and Numba - GitHub, доступ отримано травня 12, 2026, [https://github.com/xhluca/bm25s](https://github.com/xhluca/bm25s)  
+18. BM25 for Python: Achieving high performance while simplifying dependencies with BM25S - Reddit, доступ отримано травня 12, 2026, [https://www.reddit.com/r/Python/comments/1dmwfbf/bm25_for_python_achieving_high_performance_while/](https://www.reddit.com/r/Python/comments/1dmwfbf/bm25_for_python_achieving_high_performance_while/)  
+19. GitHub - dorianbrown/rank_bm25: A Collection of BM25 Algorithms in Python, доступ отримано травня 12, 2026, [https://github.com/dorianbrown/rank_bm25](https://github.com/dorianbrown/rank_bm25)  
+20. Transports - Model Context Protocol, доступ отримано травня 12, 2026, [https://modelcontextprotocol.io/docs/concepts/transports#http-with-sse](https://modelcontextprotocol.io/docs/concepts/transports#http-with-sse)  
+21. Control Cloudflare Infrastructure Using AI + MCP (with Python Example) - DEV Community, доступ отримано травня 12, 2026, [https://dev.to/extinctsion/control-cloudflare-infrastructure-using-ai-mcp-with-python-example-1bak](https://dev.to/extinctsion/control-cloudflare-infrastructure-using-ai-mcp-with-python-example-1bak)  
 22. Build and deploy Remote Model Context Protocol (MCP) servers to Cloudflare, доступ отримано травня 12, 2026, [https://blog.cloudflare.com/remote-model-context-protocol-servers-mcp/](https://blog.cloudflare.com/remote-model-context-protocol-servers-mcp/)  
 23. How to Connect Cloudflare Worker to MCP: Enterprise Guide | MintMCP Blog, доступ отримано травня 12, 2026, [https://www.mintmcp.com/blog/connect-cloudflare-worker-with-mcp](https://www.mintmcp.com/blog/connect-cloudflare-worker-with-mcp)  
-24. GitHub API: 409 Conflict When Adding or Updating Repository Content \- Stack Overflow, доступ отримано травня 12, 2026, [https://stackoverflow.com/questions/78876325/github-api-409-conflict-when-adding-or-updating-repository-content](https://stackoverflow.com/questions/78876325/github-api-409-conflict-when-adding-or-updating-repository-content)  
-25. Getting a lot of 409 Conflict errors in response and the error message is unclear · Issue \#1787 \- GitHub, доступ отримано травня 12, 2026, [https://github.com/PyGithub/PyGithub/issues/1787](https://github.com/PyGithub/PyGithub/issues/1787)  
-26. HTTP 409 Conflict Error \- Meaning & Fix \- Oxylabs, доступ отримано травня 12, 2026, [https://oxylabs.io/resources/error-codes/409](https://oxylabs.io/resources/error-codes/409)  
-27. 2\. replace or update file in repo | GitHub API \- 2\. Advanced (with Auth) \- Postman, доступ отримано травня 12, 2026, [https://www.postman.com/postman/postman-api-101-with-auth/request/1s01he3/2-replace-or-update-file-in-repo](https://www.postman.com/postman/postman-api-101-with-auth/request/1s01he3/2-replace-or-update-file-in-repo)  
-28. What is HTTP 409 Error? (Conflict) \- Scrapfly Blog, доступ отримано травня 12, 2026, [https://scrapfly.io/blog/posts/what-is-http-409-status-code-conflict](https://scrapfly.io/blog/posts/what-is-http-409-status-code-conflict)  
-29. 409 Conflict \- HTTP status code explained, доступ отримано травня 12, 2026, [https://http.dev/409](https://http.dev/409)  
-30. 409 Conflict: What It Is And How To Fix It \- Mageplaza, доступ отримано травня 12, 2026, [https://www.mageplaza.com/insights/409-conflict.html](https://www.mageplaza.com/insights/409-conflict.html)  
-31. 409 Conflict \- What is it & How to Fix the 409 Error? (7 Ways) \- SiteGround, доступ отримано травня 12, 2026, [https://www.siteground.com/kb/409-conflict-error/](https://www.siteground.com/kb/409-conflict-error/)  
+24. GitHub API: 409 Conflict When Adding or Updating Repository Content - Stack Overflow, доступ отримано травня 12, 2026, [https://stackoverflow.com/questions/78876325/github-api-409-conflict-when-adding-or-updating-repository-content](https://stackoverflow.com/questions/78876325/github-api-409-conflict-when-adding-or-updating-repository-content)  
+25. Getting a lot of 409 Conflict errors in response and the error message is unclear · Issue #1787 - GitHub, доступ отримано травня 12, 2026, [https://github.com/PyGithub/PyGithub/issues/1787](https://github.com/PyGithub/PyGithub/issues/1787)  
+26. HTTP 409 Conflict Error - Meaning & Fix - Oxylabs, доступ отримано травня 12, 2026, [https://oxylabs.io/resources/error-codes/409](https://oxylabs.io/resources/error-codes/409)  
+27. 2. replace or update file in repo | GitHub API - 2. Advanced (with Auth) - Postman, доступ отримано травня 12, 2026, [https://www.postman.com/postman/postman-api-101-with-auth/request/1s01he3/2-replace-or-update-file-in-repo](https://www.postman.com/postman/postman-api-101-with-auth/request/1s01he3/2-replace-or-update-file-in-repo)  
+28. What is HTTP 409 Error? (Conflict) - Scrapfly Blog, доступ отримано травня 12, 2026, [https://scrapfly.io/blog/posts/what-is-http-409-status-code-conflict](https://scrapfly.io/blog/posts/what-is-http-409-status-code-conflict)  
+29. 409 Conflict - HTTP status code explained, доступ отримано травня 12, 2026, [https://http.dev/409](https://http.dev/409)  
+30. 409 Conflict: What It Is And How To Fix It - Mageplaza, доступ отримано травня 12, 2026, [https://www.mageplaza.com/insights/409-conflict.html](https://www.mageplaza.com/insights/409-conflict.html)  
+31. 409 Conflict - What is it & How to Fix the 409 Error? (7 Ways) - SiteGround, доступ отримано травня 12, 2026, [https://www.siteground.com/kb/409-conflict-error/](https://www.siteground.com/kb/409-conflict-error/)  
 32. GitHub REST APIs, доступ отримано травня 12, 2026, [https://developers.thoughtspot.com/docs/git-api](https://developers.thoughtspot.com/docs/git-api)  
-33. The DRAKON Language \- DrakonFlow, доступ отримано травня 12, 2026, [https://drakonflow.com/read/drakon](https://drakonflow.com/read/drakon)  
-34. DRAKON \- Wikipedia, доступ отримано травня 12, 2026, [https://en.wikipedia.org/wiki/DRAKON](https://en.wikipedia.org/wiki/DRAKON)  
-35. Our Accelerators | Drakon Mapping \- VMG Labs, доступ отримано травня 12, 2026, [https://vmglabs.com/drakon-mapping](https://vmglabs.com/drakon-mapping)  
+33. The DRAKON Language - DrakonFlow, доступ отримано травня 12, 2026, [https://drakonflow.com/read/drakon](https://drakonflow.com/read/drakon)  
+34. DRAKON - Wikipedia, доступ отримано травня 12, 2026, [https://en.wikipedia.org/wiki/DRAKON](https://en.wikipedia.org/wiki/DRAKON)  
+35. Our Accelerators | Drakon Mapping - VMG Labs, доступ отримано травня 12, 2026, [https://vmglabs.com/drakon-mapping](https://vmglabs.com/drakon-mapping)  
 36. DRAKON.pdf, доступ отримано травня 12, 2026, [https://drakon-editor.sourceforge.net/DRAKON.pdf](https://drakon-editor.sourceforge.net/DRAKON.pdf)  
-37. DRAKON Flowchart Tutorial Part 1 | PDF | Algorithms And Data Structures \- Scribd, доступ отримано травня 12, 2026, [https://www.scribd.com/document/465913032/drakon-part1-eng-pdf](https://www.scribd.com/document/465913032/drakon-part1-eng-pdf)  
-38. DRAKON Visual Language: Tutorial. Part 1 | PDF \- Slideshare, доступ отримано травня 12, 2026, [https://www.slideshare.net/slideshow/drakon-part1-eng/22563246](https://www.slideshare.net/slideshow/drakon-part1-eng/22563246)  
+37. DRAKON Flowchart Tutorial Part 1 | PDF | Algorithms And Data Structures - Scribd, доступ отримано травня 12, 2026, [https://www.scribd.com/document/465913032/drakon-part1-eng-pdf](https://www.scribd.com/document/465913032/drakon-part1-eng-pdf)  
+38. DRAKON Visual Language: Tutorial. Part 1 | PDF - Slideshare, доступ отримано травня 12, 2026, [https://www.slideshare.net/slideshow/drakon-part1-eng/22563246](https://www.slideshare.net/slideshow/drakon-part1-eng/22563246)  
 39. DRAKON-Erlang part 6, доступ отримано травня 12, 2026, [https://drakon-editor.sourceforge.net/drakon-erlang/silh.html](https://drakon-editor.sourceforge.net/drakon-erlang/silh.html)  
 40. Free flowchart, mind map, and checklist software—DrakonHub, доступ отримано травня 12, 2026, [https://drakonhub.myhybridlab.com/](https://drakonhub.myhybridlab.com/)  
 41. DRAKON the Codinator — Visual Programming Language | by Ryan von Kunes Newton, доступ отримано травня 12, 2026, [https://vonkunesnewton.medium.com/drakon-the-codinator-visual-programming-language-9355959b09d1](https://vonkunesnewton.medium.com/drakon-the-codinator-visual-programming-language-9355959b09d1)  
 42. DRAKON | Hacker News, доступ отримано травня 12, 2026, [https://news.ycombinator.com/item?id=41292757](https://news.ycombinator.com/item?id=41292757)  
-43. 409 Conflict \- HTTP \- MDN Web Docs \- Mozilla, доступ отримано травня 12, 2026, [https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/409](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/409)  
-44. Bigger Applications \- Multiple Files \- FastAPI, доступ отримано травня 12, 2026, [https://fastapi.tiangolo.com/tutorial/bigger-applications/](https://fastapi.tiangolo.com/tutorial/bigger-applications/)  
-45. From Localhost to API: Serving Your Multi-Agent AI System with FastAPI \- Medium, доступ отримано травня 12, 2026, [https://medium.com/@ayushmathur1000/from-localhost-to-api-serving-your-multi-agent-ai-system-with-fastapi-4fe9cdb4b534](https://medium.com/@ayushmathur1000/from-localhost-to-api-serving-your-multi-agent-ai-system-with-fastapi-4fe9cdb4b534)  
+43. 409 Conflict - HTTP - MDN Web Docs - Mozilla, доступ отримано травня 12, 2026, [https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/409](https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Status/409)  
+44. Bigger Applications - Multiple Files - FastAPI, доступ отримано травня 12, 2026, [https://fastapi.tiangolo.com/tutorial/bigger-applications/](https://fastapi.tiangolo.com/tutorial/bigger-applications/)  
+45. From Localhost to API: Serving Your Multi-Agent AI System with FastAPI - Medium, доступ отримано травня 12, 2026, [https://medium.com/@ayushmathur1000/from-localhost-to-api-serving-your-multi-agent-ai-system-with-fastapi-4fe9cdb4b534](https://medium.com/@ayushmathur1000/from-localhost-to-api-serving-your-multi-agent-ai-system-with-fastapi-4fe9cdb4b534)  
 46. Best Practices in FastAPI Architecture: A Complete Guide to Building Scalable, Modern APIs, доступ отримано травня 12, 2026, [https://zyneto.com/blog/best-practices-in-fastapi-architecture](https://zyneto.com/blog/best-practices-in-fastapi-architecture)  
-47. Create flow chart from python script \- Esri Community, доступ отримано травня 12, 2026, [https://community.esri.com/t5/arcgis-pro-questions/create-flow-chart-from-python-script/td-p/1651132](https://community.esri.com/t5/arcgis-pro-questions/create-flow-chart-from-python-script/td-p/1651132)  
-48. I built a tool that uses the 'ast' module to auto-generate interactive flowcharts from any Python. \- Reddit, доступ отримано травня 12, 2026, [https://www.reddit.com/r/Python/comments/1mngei8/i\_built\_a\_tool\_that\_uses\_the\_ast\_module\_to/](https://www.reddit.com/r/Python/comments/1mngei8/i_built_a_tool_that_uses_the_ast_module_to/)  
-49. Supercharge your Python library using AST parsing \- Adam Glustein \- YouTube, доступ отримано травня 12, 2026, [https://www.youtube.com/watch?v=A0vR3l1X-CU](https://www.youtube.com/watch?v=A0vR3l1X-CU)  
+47. Create flow chart from python script - Esri Community, доступ отримано травня 12, 2026, [https://community.esri.com/t5/arcgis-pro-questions/create-flow-chart-from-python-script/td-p/1651132](https://community.esri.com/t5/arcgis-pro-questions/create-flow-chart-from-python-script/td-p/1651132)  
+48. I built a tool that uses the 'ast' module to auto-generate interactive flowcharts from any Python. - Reddit, доступ отримано травня 12, 2026, [https://www.reddit.com/r/Python/comments/1mngei8/i_built_a_tool_that_uses_the_ast_module_to/](https://www.reddit.com/r/Python/comments/1mngei8/i_built_a_tool_that_uses_the_ast_module_to/)  
+49. Supercharge your Python library using AST parsing - Adam Glustein - YouTube, доступ отримано травня 12, 2026, [https://www.youtube.com/watch?v=A0vR3l1X-CU](https://www.youtube.com/watch?v=A0vR3l1X-CU)  
 50. Securing MCP servers · Cloudflare Agents docs, доступ отримано травня 12, 2026, [https://developers.cloudflare.com/agents/guides/securing-mcp-server/](https://developers.cloudflare.com/agents/guides/securing-mcp-server/)  
-51. React — Managing Chaos with Zustand | by Jan Lewandoski \- Medium, доступ отримано травня 12, 2026, [https://medium.com/@janek.lewandoski/react-managing-chaos-with-zustand-78b42acd70ba](https://medium.com/@janek.lewandoski/react-managing-chaos-with-zustand-78b42acd70ba)  
-52. REST API endpoints for commits \- GitHub Docs, доступ отримано травня 12, 2026, [https://docs.github.com/en/rest/commits/commits](https://docs.github.com/en/rest/commits/commits)
+51. React — Managing Chaos with Zustand | by Jan Lewandoski - Medium, доступ отримано травня 12, 2026, [https://medium.com/@janek.lewandoski/react-managing-chaos-with-zustand-78b42acd70ba](https://medium.com/@janek.lewandoski/react-managing-chaos-with-zustand-78b42acd70ba)  
+52. REST API endpoints for commits - GitHub Docs, доступ отримано травня 12, 2026, [https://docs.github.com/en/rest/commits/commits](https://docs.github.com/en/rest/commits/commits)
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-12-drakon-agent]] — загальний план drakon-agent
+- [[plans/2026-05-12-multi-agent-drakon-system]] — детальний опис архітектури мультиагентної системи
+**Читати далі:** [[plans/2026-05-15-langgraph-pipeline]]

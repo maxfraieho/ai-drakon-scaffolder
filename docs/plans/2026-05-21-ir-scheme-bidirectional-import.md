@@ -1,31 +1,34 @@
 ---
-title: "DRAKON IR ↔ Scheme Bidirectional Import — Implementation Plan"
-type: plan
-tags: [drakon, pipeline, agent, ir-format, frontend]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-21
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Двонаправлений імпорт DRAKON IR ↔ Scheme — План реалізації"
+lang: uk
 ---
 
-# DRAKON IR ↔ Scheme Bidirectional Import — Implementation Plan
+# Двонаправлений імпорт DRAKON IR ↔ Scheme — План реалізації
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **Для Claude:** НЕОБХІДНИЙ SUB-SKILL: Використовуйте superpowers:executing-plans для реалізації цього плану завдання за завданням.
 
-**Goal:** Enable bidirectional import between /pipelines (DRAKON IR JSON) and /diagrams (visual DRAKON editor), using IrDiagram as the single canonical format.
+**Мета:** Увімкнути двонаправлений імпорт між `/pipelines` (DRAKON IR JSON) та `/diagrams` (візуальний редактор DRAKON), використовуючи `IrDiagram` як єдиний канонічний формат.
 
-**Architecture:** Extend `IrDiagram` with optional `meta` field for pipeline-specific data. Add "Open in Diagrams" button to PipelineDrakonView that converts IrDiagram → DrakonDiagram → localStorage → navigate /diagrams. Add "Save as Pipeline" button to CanvasToolbar that converts DrakonDiagram → IrDiagram → PUT to architect-agent.
+**Архітектура:** Розширити `IrDiagram` додатковим полем `meta` для специфічних даних конвеєра (pipeline). Додати кнопку "Відкрити в Схемах" (Open in Diagrams) до `PipelineDrakonView`, яка конвертує `IrDiagram` → `DrakonDiagram` → `localStorage` → навігація на `/diagrams`. Додати кнопку "Зберегти як пайплайн" (Save as Pipeline) до `CanvasToolbar`, яка конвертує `DrakonDiagram` → `IrDiagram` → `PUT` до `architect-agent`.
 
-**Tech Stack:** TypeScript/React, TanStack Router, `ir-to-diagram.ts` / `diagram-to-ir.ts` (already in codebase), `upsertDiagramInStorage`, `savePipeline` API.
+**Стек технологій:** TypeScript/React, TanStack Router, `ir-to-diagram.ts` / `diagram-to-ir.ts` (вже є в кодовій базі), `upsertDiagramInStorage`, API `savePipeline`.
 
 ---
 
-### Task 1: Extend IrDiagram with `meta` field
+### Завдання 1: Розширення IrDiagram полем `meta`
 
-**Files:**
-- Modify: `.lovable/src/lib/htse/ir-types.ts`
-- Modify: `src/lib/htse/ir-types.ts`
+**Файли:**
+- Змінити: `.lovable/src/lib/htse/ir-types.ts`
+- Змінити: `src/lib/htse/ir-types.ts`
 
-**Step 1:** In both files, add `meta` to `IrDiagram`:
+**Крок 1:** В обох файлах додати `meta` до `IrDiagram`:
 
 ```typescript
 export interface IrDiagramMeta {
@@ -41,13 +44,13 @@ export interface IrDiagram {
   access: "public" | "private";
   params: string[];
   items: Record<string, IrItem>;
-  meta?: IrDiagramMeta;  // ADD THIS LINE
+  meta?: IrDiagramMeta;  // ДОДАТИ ЦЕЙ РЯДОК
 }
 ```
 
-**Step 2:** Verify TypeScript compiles (no errors in the imports of IrDiagram).
+**Крок 2:** Перевірити, що TypeScript компілюється (без помилок в імпортах `IrDiagram`).
 
-**Step 3:** Commit:
+**Крок 3:** Коміт:
 ```bash
 git add .lovable/src/lib/htse/ir-types.ts src/lib/htse/ir-types.ts
 git commit -m "feat(ir): add meta field to IrDiagram for pipeline metadata"
@@ -55,33 +58,33 @@ git commit -m "feat(ir): add meta field to IrDiagram for pipeline metadata"
 
 ---
 
-### Task 2: Migrate `graph-pipeline-api.ts` to use IrDiagram
+### Завдання 2: Міграція `graph-pipeline-api.ts` на використання `IrDiagram`
 
-**Files:**
-- Modify: `.lovable/src/lib/graph-pipeline-api.ts`
-- Modify: `src/lib/graph-pipeline-api.ts`
+**Файли:**
+- Змінити: `.lovable/src/lib/graph-pipeline-api.ts`
+- Змінити: `src/lib/graph-pipeline-api.ts`
 
-**Step 1:** Replace `DrakonIR` with `IrDiagram` import and usage in both files:
+**Крок 1:** Замінити імпорт та використання `DrakonIR` на `IrDiagram` в обох файлах:
 
 ```typescript
-// REMOVE:
+// ВИДАЛИТИ:
 // export interface DrakonIRItem { ... }
 // export interface DrakonIR { ... }
 
-// ADD at top:
+// ДОДАТИ вгорі:
 import type { IrDiagram } from "@/lib/htse/ir-types";
-export type { IrDiagram };  // re-export for consumers
+export type { IrDiagram };  // реекспорт для споживачів
 
-// UPDATE all uses of DrakonIR → IrDiagram
-// listPipelines, getPipeline, savePipeline signatures stay same but type changes:
+// ОНОВИТИ всі використання DrakonIR → IrDiagram
+// Сигнатури listPipelines, getPipeline, savePipeline залишаються тими ж, але змінюється тип:
 export async function savePipeline(name: string, ir: IrDiagram): Promise<void> { ... }
 ```
 
-**Step 2:** Update `PipelinesPage.tsx` and `PipelineDrakonView.tsx` to import `IrDiagram` from `graph-pipeline-api` instead of `DrakonIR`.
+**Крок 2:** Оновити `PipelinesPage.tsx` та `PipelineDrakonView.tsx` для імпорту `IrDiagram` з `graph-pipeline-api` замість `DrakonIR`.
 
-**Step 3:** Verify no TypeScript errors. The `ir.items` values have compatible fields (IrItem is a superset of old DrakonIRItem).
+**Крок 3:** Перевірити відсутність помилок TypeScript. Значення `ir.items` мають сумісні поля (`IrItem` є надмножиною старого `DrakonIRItem`).
 
-**Step 4:** Commit:
+**Крок 4:** Коміт:
 ```bash
 git add .lovable/src/lib/graph-pipeline-api.ts src/lib/graph-pipeline-api.ts
 git add .lovable/src/components/pipelines/
@@ -90,17 +93,17 @@ git commit -m "feat(pipeline): use IrDiagram as canonical type replacing DrakonI
 
 ---
 
-### Task 3: Migrate .drakon.json files to IrDiagram format (backend)
+### Завдання 3: Міграція файлів .drakon.json до формату IrDiagram (бекенд)
 
-**Files:**
-- Modify: `services/architect-agent/pipelines/*.drakon.json` (all 5 files)
+**Файли:**
+- Змінити: `services/architect-agent/pipelines/*.drakon.json` (всі 5 файлів)
 
-**Step 1:** Run migration script on server (192.168.3.184):
+**Крок 1:** Запустити скрипт міграції на сервері (192.168.3.184):
 ```bash
 python3 /tmp/migrate_pipeline_ir.py
 ```
 
-Script content (`/tmp/migrate_pipeline_ir.py`):
+Вміст скрипту (`/tmp/migrate_pipeline_ir.py`):
 ```python
 import json, os, glob
 
@@ -142,11 +145,11 @@ for path in glob.glob(f"{PIPELINES}/*.drakon.json"):
     print(f"Migrated: {os.path.basename(path)}")
 ```
 
-**Step 2:** Verify each file looks correct (has `access`, `params`, `items`, optional `meta`).
+**Крок 2:** Перевірити правильність кожного файлу (наявність `access`, `params`, `items`, опціонального `meta`).
 
-**Step 3:** Test via API: `curl http://localhost:8766/graph-pipelines/pipeline_a` — should return new format.
+**Крок 3:** Протестувати через API: `curl http://localhost:8766/graph-pipelines/pipeline_a` — має повертати новий формат.
 
-**Step 4:** Commit:
+**Крок 4:** Коміт:
 ```bash
 cd /home/vokov/workspace/ai-drakon-setup
 git add services/architect-agent/pipelines/
@@ -156,13 +159,13 @@ git push origin main && git push drakon-diagram-flow main
 
 ---
 
-### Task 4: Add "Відкрити в Схемах" button in PipelineDrakonView
+### Завдання 4: Додавання кнопки "Відкрити в Схемах" у PipelineDrakonView
 
-**Files:**
-- Modify: `.lovable/src/components/pipelines/PipelineDrakonView.tsx`
-- Modify: `src/components/pipelines/PipelineDrakonView.tsx`
+**Файли:**
+- Змінити: `.lovable/src/components/pipelines/PipelineDrakonView.tsx`
+- Змінити: `src/components/pipelines/PipelineDrakonView.tsx`
 
-**Step 1:** Add imports at top of file:
+**Крок 1:** Додати імпорти на початку файлу:
 ```typescript
 import { useNavigate } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
@@ -171,12 +174,12 @@ import { upsertDiagramInStorage } from "@/lib/diagram-storage";
 import type { Diagram } from "@/types/drakon";
 ```
 
-**Step 2:** Add `navigate` hook inside component:
+**Крок 2:** Додати хук `navigate` всередині компонента:
 ```typescript
 const navigate = useNavigate();
 ```
 
-**Step 3:** Add handler function:
+**Крок 3:** Додати функцію-обробник:
 ```typescript
 const handleOpenInDiagrams = () => {
   try {
@@ -199,7 +202,7 @@ const handleOpenInDiagrams = () => {
 };
 ```
 
-**Step 4:** Add button to the toolbar row (near Run/Stop buttons):
+**Крок 4:** Додати кнопку до рядка панелі інструментів (біля кнопок Run/Stop):
 ```tsx
 <Button
   variant="outline"
@@ -213,9 +216,9 @@ const handleOpenInDiagrams = () => {
 </Button>
 ```
 
-**Step 5:** Verify: clicking button saves diagram to localStorage and navigates to /diagrams.
+**Крок 5:** Перевірити: натискання кнопки зберігає схему в localStorage та перенаправляє на /diagrams.
 
-**Step 6:** Commit:
+**Крок 6:** Коміт:
 ```bash
 git add .lovable/src/components/pipelines/PipelineDrakonView.tsx
 git add src/components/pipelines/PipelineDrakonView.tsx
@@ -224,16 +227,16 @@ git commit -m "feat(pipelines): add 'Open in Diagrams' button — converts IR to
 
 ---
 
-### Task 5: Auto-select imported diagram in DiagramsPage
+### Завдання 5: Автовибір імпортованої схеми на сторінці DiagramsPage
 
-**Files:**
-- Modify: `.lovable/src/pages/DiagramsPage.tsx`
-- Modify: `src/pages/DiagramsPage.tsx`
+**Файли:**
+- Змінити: `.lovable/src/pages/DiagramsPage.tsx`
+- Змінити: `src/pages/DiagramsPage.tsx`
 
-**Step 1:** In `DiagramsPage`, add `useEffect` that runs after diagrams load, reads localStorage flag, and auto-selects:
+**Крок 1:** У `DiagramsPage` додати `useEffect`, який запускається після завантаження схем, зчитує прапорець localStorage та автоматично вибирає її:
 
 ```typescript
-// Add near other useEffects (after diagrams state is set):
+// Додати біля інших useEffects (після встановлення стану diagrams):
 useEffect(() => {
   const pendingId = localStorage.getItem("_pending_open_diagram_id");
   if (!pendingId) return;
@@ -242,27 +245,27 @@ useEffect(() => {
   const all = readDiagramsFromStorage();
   const target = all.find((d) => d.id === pendingId);
   if (target) {
-    // Switch to local view mode and select the diagram
+    // Переключити на локальний режим та вибрати схему
     setViewMode("local");
     setSelectedFolderSlug("__pipelines__");
     setSelectedDiagram(target);
   }
-}, []);  // runs once on mount
+}, []);  // запускається один раз при монтуванні
 ```
 
-**Step 2:** Ensure the `"__pipelines__"` folder is handled — it might need to be added to the folders list if it's not already there. Add a virtual folder display for pipeline-imported diagrams:
+**Крок 2:** Переконатися, що папка `"__pipelines__"` обробляється — її може знадобитися додати до списку папок, якщо її там немає. Додати відображення віртуальної папки для схем, імпортованих із пайплайнів:
 
 ```typescript
-// In the folders list display, add:
-// Virtual folder for pipeline imports (only if exists)
+// У списку відображення папок додати:
+// Віртуальна папка для імпорту пайплайнів (тільки якщо вона існує)
 const pipelineDiagrams = readDiagramsFromStorage().filter(d => d.folderId === "__pipelines__");
 ```
 
-Actually, for simplicity: set `folderId` to the default folder slug (`"general"`) instead of `"__pipelines__"`. Then auto-select just finds the diagram in the default folder.
+Насправді, для спрощення: встановити `folderId` у значення папки за замовчуванням (`"general"`) замість `"__pipelines__"`. Тоді автовибір просто знайде схему в папці за замовчуванням.
 
-**Step 3:** Verify: after clicking "Схеми" in /pipelines, the diagram appears selected and visible in /diagrams.
+**Крок 3:** Перевірити: після кліку на "Схеми" в /pipelines, схема з'являється вибраною та видимою на сторінці /diagrams.
 
-**Step 4:** Commit:
+**Крок 4:** Коміт:
 ```bash
 git add .lovable/src/pages/DiagramsPage.tsx src/pages/DiagramsPage.tsx
 git commit -m "feat(diagrams): auto-select imported pipeline diagram on navigation"
@@ -270,23 +273,23 @@ git commit -m "feat(diagrams): auto-select imported pipeline diagram on navigati
 
 ---
 
-### Task 6: Add "Зберегти як пайплайн" to CanvasToolbar + DiagramsPage
+### Завдання 6: Додавання "Зберегти як пайплайн" до CanvasToolbar + DiagramsPage
 
-**Files:**
-- Modify: `.lovable/src/components/workspace/CanvasToolbar.tsx`
-- Modify: `src/components/workspace/CanvasToolbar.tsx`
-- Modify: `.lovable/src/pages/DiagramsPage.tsx`
-- Modify: `src/pages/DiagramsPage.tsx`
+**Файли:**
+- Змінити: `.lovable/src/components/workspace/CanvasToolbar.tsx`
+- Змінити: `src/components/workspace/CanvasToolbar.tsx`
+- Змінити: `.lovable/src/pages/DiagramsPage.tsx`
+- Змінити: `src/pages/DiagramsPage.tsx`
 
-**Step 1:** Add `onSaveAsPipeline?: () => void` prop to `CanvasToolbarProps`:
+**Крок 1:** Додати проп `onSaveAsPipeline?: () => void` до `CanvasToolbarProps`:
 ```typescript
 interface CanvasToolbarProps {
-  // ... existing props ...
+  // ... існуючі пропси ...
   onSaveAsPipeline?: () => void;
 }
 ```
 
-**Step 2:** Add button in CanvasToolbar JSX (after existing buttons):
+**Крок 2:** Додати кнопку в CanvasToolbar JSX (після існуючих кнопок):
 ```tsx
 {onSaveAsPipeline && (
   <button
@@ -301,16 +304,16 @@ interface CanvasToolbarProps {
 )}
 ```
 
-Add `Download` to the lucide-react import.
+Додати `Download` до імпорту `lucide-react`.
 
-**Step 3:** In `DiagramsPage.tsx`, add state for the save pipeline modal:
+**Крок 3:** У `DiagramsPage.tsx` додати стан для модального вікна збереження пайплайну:
 ```typescript
 const [savePipelineOpen, setSavePipelineOpen] = useState(false);
 const [pipelineName, setPipelineName] = useState("");
 const [savingPipeline, setSavingPipeline] = useState(false);
 ```
 
-**Step 4:** Add `handleSaveAsPipeline` function in DiagramsPage:
+**Крок 4:** Додати функцію `handleSaveAsPipeline` в DiagramsPage:
 ```typescript
 const handleSaveAsPipeline = async () => {
   if (!selectedDiagram || !pipelineName.trim()) return;
@@ -319,7 +322,7 @@ const handleSaveAsPipeline = async () => {
     const { convertDiagramToIr } = await import("@/lib/htse/diagram-to-ir");
     const { savePipeline } = await import("@/lib/graph-pipeline-api");
     const irDiagram = convertDiagramToIr(selectedDiagram.diagram);
-    // Slugify name for API
+    // Створити слаг з назви для API
     const slug = pipelineName.trim().toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
     await savePipeline(slug, irDiagram);
     setSavePipelineOpen(false);
@@ -334,7 +337,7 @@ const handleSaveAsPipeline = async () => {
 };
 ```
 
-**Step 5:** Add modal JSX in DiagramsPage render:
+**Крок 5:** Додати модальне вікно JSX у рендер DiagramsPage:
 ```tsx
 <Dialog open={savePipelineOpen} onOpenChange={setSavePipelineOpen}>
   <DialogContent className="sm:max-w-sm">
@@ -360,21 +363,21 @@ const handleSaveAsPipeline = async () => {
 </Dialog>
 ```
 
-**Step 6:** Pass `onSaveAsPipeline` to CanvasToolbar:
+**Крок 6:** Передати `onSaveAsPipeline` до CanvasToolbar:
 ```tsx
 <CanvasToolbar
-  ...existingProps...
+  ...існуючіПропси...
   onSaveAsPipeline={selectedDiagram && !currentDiagramIsIr ? () => setSavePipelineOpen(true) : undefined}
 />
 ```
 
-**Step 7:** Verify end-to-end:
-- Open diagram in /diagrams
-- Click "Пайплайн" button in toolbar
-- Enter name in modal
-- Confirm → navigate to /pipelines → new pipeline appears in list
+**Крок 7:** Перевірити наскрізний сценарій (end-to-end):
+- Відкрити схему в /diagrams
+- Натиснути кнопку "Пайплайн" у CanvasToolbar
+- Ввести назву в модальному вікні
+- Підтвердити → перенаправлення на /pipelines → новий пайплайн з'являється у списку
 
-**Step 8:** Commit:
+**Крок 8:** Коміт:
 ```bash
 git add .lovable/src/components/workspace/CanvasToolbar.tsx src/components/workspace/CanvasToolbar.tsx
 git add .lovable/src/pages/DiagramsPage.tsx src/pages/DiagramsPage.tsx
@@ -384,28 +387,38 @@ git push origin main && git push drakon-diagram-flow main
 
 ---
 
-### Task 7: End-to-end test and final push
+### Завдання 7: Наскрізне тестування та фінальний пуш
 
-**Step 1:** Test flow A (Pipeline → Diagrams):
-1. Go to `/pipelines`
-2. Select "Sharon LangGraph Pipeline"
-3. Click "Схеми" button
-4. Verify: navigated to /diagrams, Sharon diagram selected, nodes visible
+**Крок 1:** Протестувати сценарій А (Пайплайн → Схеми):
+1. Перейти на сторінку `/pipelines`
+2. Вибрати "Sharon LangGraph Pipeline"
+3. Натиснути кнопку "Схеми"
+4. Перевірити: перенаправлено на сторінку /diagrams, вибрано схему Sharon, відображаються блоки
 
-**Step 2:** Test flow B (Diagrams → Pipeline):
-1. Edit the Sharon diagram in /diagrams
-2. Click "Пайплайн" in CanvasToolbar
-3. Enter `sharon_consultant_graph_v2`
-4. Verify: navigate to /pipelines, new pipeline in list, can be executed
+**Крок 2:** Протестувати сценарій Б (Схеми → Пайплайн):
+1. Відредагувати схему Sharon в /diagrams
+2. Натиснути "Пайплайн" у CanvasToolbar
+3. Ввести `sharon_consultant_graph_v2`
+4. Перевірити: перенаправлено на /pipelines, новий пайплайн у списку, його можна запустити
 
-**Step 3:** Test pipeline execution still works after format migration:
+**Крок 3:** Перевірити, що виконання пайплайну все ще працює після міграції формату:
 ```bash
 curl http://localhost:8766/graph-pipelines/pipeline_a
 curl -X POST http://localhost:8766/graph-pipelines/pipeline_a/execute \
   -H "Content-Type: application/json" -d '{"code":"def hello(): return 42"}'
 ```
 
-**Step 4:** Final commit:
+**Крок 4:** Фінальний коміт:
 ```bash
 git push origin main && git push drakon-diagram-flow main
 ```
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[concept/04-pipelines]] — концепція конвеєрів (pipelines)
+- [[kb/01-drakon-ir-spec]] — специфікація DRAKON IR
+**Читати далі:** [[plans/2026-05-22-pipeline-scenarios]]

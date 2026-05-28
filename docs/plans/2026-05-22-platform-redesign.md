@@ -1,13 +1,16 @@
 ---
-title: "AI-DRAKON Platform Redesign — 2026-05-22"
-type: plan
-tags: [drakon, pipeline, agent, plan]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-22
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Редізайн платформи AI-DRAKON — План реалізації"
+lang: uk
 ---
 
-# AI-DRAKON Platform Redesign — 2026-05-22
+# Редізайн платформи AI-DRAKON — План реалізації
 
 ## Мета
 
@@ -74,3 +77,13 @@ updated: 2026-05-26
 3. Глобальний агент-статус-бар у WorkspaceShell
 4. /code: Monaco + GitHub picker + Pipeline A sidebar
 5. Settings: вибір моделі per-agent
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-12-platform-redesign-proposal]] — Пропозиція редизайну платформи — План реалізації
+- [[plans/2026-05-21-drakon-langgraph-runtime]] — DRAKON як Runtime для LangGraph пайплайнів — План реалізації
+**Читати далі:** [[plans/2026-05-26-pinchtab-test-plan]]

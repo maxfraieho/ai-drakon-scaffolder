@@ -1,3 +1,15 @@
+---
+tags:
+  - domain:plan
+  - status:active
+  - format:report
+created: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Розширені результати тестування PinchTab"
+lang: uk
+---
+
 # PinchTab Test Results — 2026-05-26
 
 ## Результати тестування
@@ -20,4 +32,14 @@
 - Submit Button: `button[type="submit"]`
 - Canvas Container: `#drakon-widget-container`
 - Save Button: `button:has-text("Зберегти")`
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-26-pinchtab-test-plan]] — План тестування PinchTab — Платформа AI-DRAKON
+- [[plans/2026-05-22-platform-redesign]] — Редізайн платформи AI-DRAKON — План реалізації
+
 

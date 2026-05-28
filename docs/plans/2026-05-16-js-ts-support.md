@@ -1,30 +1,33 @@
 ---
-title: "JS/TS Support in drakon-agent — Implementation Plan"
-type: plan
-tags: [drakon, agent, frontend, typescript, python]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-16
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Підтримка JS/TS в drakon-agent — План реалізації"
+lang: uk
 ---
 
-# JS/TS Support in drakon-agent — Implementation Plan
+# Підтримка JS/TS в drakon-agent — План реалізації
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **Для Claude:** НЕОБХІДНИЙ SUB-SKILL: Використовуйте superpowers:executing-plans для реалізації цього плану завдання за завданням.
 
-**Goal:** Add JavaScript and TypeScript code analysis to drakon-agent, routing by file extension.
+**Мета:** Додати аналіз коду JavaScript та TypeScript до `drakon-agent` з маршрутизацією за розширенням файлу.
 
-**Architecture:** New `analyzer/js_analyzer.py` with `JSAnalyzer` class using tree-sitter. Route `/analyze` detects language from `filename` extension and dispatches to `PythonAnalyzer` or `JSAnalyzer`. Reuses existing `DrakonIR` builder unchanged.
+**Архітектура:** Новий `analyzer/js_analyzer.py` з класом `JSAnalyzer`, що використовує tree-sitter. Маршрут `/analyze` визначає мову за розширенням `filename` та перенаправляє запит на `PythonAnalyzer` або `JSAnalyzer`. Поточний побудовник `DrakonIR` повторно використовується без змін.
 
-**Tech Stack:** Python 3.12, tree-sitter 0.25, tree-sitter-javascript 0.25, tree-sitter-typescript 0.23, FastAPI, pytest
+**Стек технологій:** Python 3.12, tree-sitter 0.25, tree-sitter-javascript 0.25, tree-sitter-typescript 0.23, FastAPI, pytest.
 
 ---
 
-### Task 1: Add tree-sitter to pyproject.toml dependencies
+### Завдання 1: Додавання tree-sitter до залежностей у pyproject.toml
 
-**Files:**
-- Modify: `services/drakon-agent/pyproject.toml`
+**Файли:**
+- Змінити: `services/drakon-agent/pyproject.toml`
 
-**Step 1: Add deps to pyproject.toml**
+**Крок 1: Додати залежності у pyproject.toml**
 
 ```toml
 dependencies = [
@@ -40,7 +43,7 @@ dependencies = [
 ]
 ```
 
-**Step 2: Commit**
+**Крок 2: Коміт**
 
 ```bash
 cd ~/workspace/ai-drakon-setup
@@ -51,12 +54,12 @@ git push origin main && git push drakon-flow-new main
 
 ---
 
-### Task 2: Write failing tests for JSAnalyzer
+### Завдання 2: Написання тестів для JSAnalyzer, які не проходять
 
-**Files:**
-- Create: `services/drakon-agent/tests/test_js_analyzer.py`
+**Файли:**
+- Створити: `services/drakon-agent/tests/test_js_analyzer.py`
 
-**Step 1: Write failing tests**
+**Крок 1: Написати тести, що падають**
 
 ```python
 """Tests for JSAnalyzer — JS/TS → DRAKON IR."""
@@ -136,16 +139,16 @@ def test_for_loop_creates_question():
     assert len(question_nodes) >= 1
 ```
 
-**Step 2: Run tests to verify they fail**
+**Крок 2: Запустити тести, щоб перевірити їхнє падіння**
 
 ```bash
 cd ~/workspace/ai-drakon-setup/services/drakon-agent
 .venv/bin/pytest tests/test_js_analyzer.py -v 2>&1 | head -20
 ```
 
-Expected: `ModuleNotFoundError: No module named 'analyzer.js_analyzer'`
+Очікуваний результат: `ModuleNotFoundError: No module named 'analyzer.js_analyzer'`
 
-**Step 3: Commit failing tests**
+**Крок 3: Закомітити тести, що падають**
 
 ```bash
 git add services/drakon-agent/tests/test_js_analyzer.py
@@ -154,12 +157,12 @@ git commit -m "test(drakon-agent): failing tests for JSAnalyzer"
 
 ---
 
-### Task 3: Implement JSAnalyzer
+### Завдання 3: Реалізація JSAnalyzer
 
-**Files:**
-- Create: `services/drakon-agent/analyzer/js_analyzer.py`
+**Файли:**
+- Створити: `services/drakon-agent/analyzer/js_analyzer.py`
 
-**Step 1: Write minimal implementation**
+**Крок 1: Написати мінімальну реалізацію**
 
 ```python
 """JavaScript/TypeScript → DRAKON IR analyzer using tree-sitter."""
@@ -385,16 +388,16 @@ class JSAnalyzer:
             self._walk(child, results)
 ```
 
-**Step 2: Run tests**
+**Крок 2: Запустити тести**
 
 ```bash
 cd ~/workspace/ai-drakon-setup/services/drakon-agent
 .venv/bin/pytest tests/test_js_analyzer.py -v
 ```
 
-Expected: all 8 tests PASS
+Очікуваний результат: всі 8 тестів проходять (PASS)
 
-**Step 3: Commit**
+**Крок 3: Коміт**
 
 ```bash
 git add services/drakon-agent/analyzer/js_analyzer.py
@@ -403,14 +406,14 @@ git commit -m "feat(drakon-agent): JSAnalyzer — JS/TS → DRAKON IR via tree-s
 
 ---
 
-### Task 4: Wire language routing in /analyze route
+### Завдання 4: Підключення маршрутизації за мовою у `/analyze`
 
-**Files:**
-- Modify: `services/drakon-agent/routes/analyze.py`
+**Файли:**
+- Змінити: `services/drakon-agent/routes/analyze.py`
 
-**Step 1: Write failing test for routing**
+**Крок 1: Написати тест для маршрутизації, який падає**
 
-Add to `tests/test_js_analyzer.py`:
+Додати до `tests/test_js_analyzer.py`:
 
 ```python
 from fastapi.testclient import TestClient
@@ -450,15 +453,15 @@ def test_route_python_still_works():
     assert resp.json()["count"] == 1
 ```
 
-**Step 2: Run to see failure**
+**Крок 2: Запустити, щоб побачити падіння**
 
 ```bash
 .venv/bin/pytest tests/test_js_analyzer.py::test_route_js_by_filename -v
 ```
 
-Expected: FAIL — route uses `PythonAnalyzer` regardless of extension
+Очікуваний результат: FAIL — маршрут використовує `PythonAnalyzer` незалежно від розширення файлу.
 
-**Step 3: Update routes/analyze.py**
+**Крок 3: Оновити routes/analyze.py**
 
 Замінити рядок:
 ```python
@@ -487,23 +490,23 @@ except ValueError as e:
     raise HTTPException(status_code=400, detail=str(e))
 ```
 
-**Step 4: Run all routing tests**
+**Крок 4: Запустити всі тести маршрутизації**
 
 ```bash
 .venv/bin/pytest tests/test_js_analyzer.py -v -k "route"
 ```
 
-Expected: 3/3 PASS
+Очікуваний результат: 3/3 проходять (PASS)
 
-**Step 5: Run full test suite**
+**Крок 5: Запустити повний набір тестів**
 
 ```bash
 .venv/bin/pytest tests/ -v
 ```
 
-Expected: all tests PASS (no regressions)
+Очікуваний результат: всі тести проходять (без регресій)
 
-**Step 6: Commit**
+**Крок 6: Коміт**
 
 ```bash
 git add services/drakon-agent/routes/analyze.py
@@ -513,9 +516,9 @@ git push origin main && git push drakon-flow-new main
 
 ---
 
-### Task 5: Restart drakon-agent + smoke test
+### Завдання 5: Перезапуск drakon-agent та димове тестування (smoke test)
 
-**Step 1: Restart agent**
+**Крок 1: Перезапустити агент**
 
 ```bash
 pkill -f 'services/drakon-agent/main.py' 2>/dev/null; sleep 1
@@ -526,7 +529,7 @@ REPO_ROOT=~/workspace/ai-drakon-setup PROXY_URL=http://localhost:18880/v1 \
 sleep 3
 ```
 
-**Step 2: Smoke test JS via HTTP**
+**Крок 2: Димове тестування JS через HTTP**
 
 ```bash
 curl -s http://localhost:8765/analyze \
@@ -535,9 +538,9 @@ curl -s http://localhost:8765/analyze \
   | python3 -m json.tool
 ```
 
-Expected: `{"filename":"utils.js","diagrams":[{"name":"add",...}],"count":1}`
+Очікуваний результат: `{"filename":"utils.js","diagrams":[{"name":"add",...}],"count":1}`
 
-**Step 3: Smoke test TS**
+**Крок 3: Димове тестування TS**
 
 ```bash
 curl -s http://localhost:8765/analyze \
@@ -546,9 +549,9 @@ curl -s http://localhost:8765/analyze \
   | python3 -m json.tool
 ```
 
-Expected: `count: 1, name: "greet"`
+Очікуваний результат: `count: 1, name: "greet"`
 
-**Step 4: Verify Python still works**
+**Крок 4: Перевірити, що Python все ще працює**
 
 ```bash
 curl -s http://localhost:8765/analyze \
@@ -557,18 +560,18 @@ curl -s http://localhost:8765/analyze \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print('OK:', d['count'])"
 ```
 
-Expected: `OK: 1`
+Очікуваний результат: `OK: 1`
 
 ---
 
-### Task 6: Update frontend — Lovable prompt 39
+### Завдання 6: Оновлення фронтенду — Lovable prompt 39
 
-**File:** `lovable-prompts/39-js-ts-support-frontend.md`
+**Файл:** `lovable-prompts/39-js-ts-support-frontend.md`
 
-Цей промт оновлює CodeAnalysisPanel — додає перемикач мови (PY/JS/TS) і передає правильний `filename` при аналізі.
+Цей промт оновлює `CodeAnalysisPanel` — додає перемикач мови (PY/JS/TS) і передає правильний `filename` при аналізі.
 
 ```markdown
-# Prompt 39 — JS/TS language selector in CodeAnalysisPanel
+# Промпт 39 — Вибір мови JS/TS у CodeAnalysisPanel
 
 ## Мета
 CodeAnalysisPanel має перемикач PY/JS/TS/TSX. При виборі мови змінюється `filename` у запиті до `/v1/pipeline/analyze`.
@@ -624,11 +627,21 @@ body: JSON.stringify({
 - Monaco Editor у CodeGenerationPanel — без змін
 ```
 
-**Step 1: Зберегти промт і закомітити**
+**Крок 1: Зберегти промт і закомітити**
 
 ```bash
-# Save prompt file and commit
+# Зберегти файл промту та закомітити
 git add lovable-prompts/39-js-ts-support-frontend.md
 git commit -m "feat(lovable-39): JS/TS language selector in CodeAnalysisPanel"
 git push origin main && git push drakon-flow-new main
 ```
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[concept/02-drakon-primer]] — вступ до мови ДРАКОН
+- [[architecture/02_drakon_to_langgraph_mapping]] — відповідність ДРАКОН та LangGraph
+**Читати далі:** [[plans/2026-05-16-pipeline-ui]]

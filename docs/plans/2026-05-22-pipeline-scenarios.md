@@ -1,10 +1,13 @@
 ---
-title: "Pipeline Command Center — Документація сценаріїв"
-type: plan
-tags: [drakon, pipeline, typescript, plan]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-22
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Pipeline Command Center — Документація сценаріїв"
+lang: uk
 ---
 
 # Pipeline Command Center — Документація сценаріїв
@@ -588,3 +591,13 @@ jobId: string | null
 | Є специфікація/вимоги | **F — Специфікація** |
 | Хочу переглянути/змінити IR | **A — Код** |
 | Хочу побачити якість всього файлу | **G — Batch аналіз** |
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-16-pipeline-ui]] — Інтерфейс пайплайну — План реалізації
+- [[plans/2026-05-21-drakon-langgraph-runtime]] — DRAKON як Runtime для LangGraph пайплайнів — План реалізації
+**Читати далі:** [[plans/2026-05-22-platform-redesign]]

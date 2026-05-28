@@ -1,36 +1,39 @@
 ---
-title: "Sprint 5 — Agent Pipeline Management System"
-type: plan
-tags: [drakon, langgraph, pipeline, agent, cloudflare]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-16
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Спринт 5 — Система керування конвеєрами агентів"
+lang: uk
 ---
 
-# Sprint 5 — Agent Pipeline Management System
+# Спринт 5 — Система керування конвеєрами агентів
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **Для Claude:** НЕОБХІДНИЙ SUB-SKILL: Використовуйте superpowers:executing-plans для реалізації цього плану завдання за завданням.
 
-**Goal:** Shared pipeline config registry (architect-agent) + DRAKON widget pipeline editor at `/agents/pipeline/:id/edit`.
+**Мета:** Спільний реєстр конфігурацій конвеєрів (architect-agent) + редактор конвеєрів на основі віджета DRAKON за адресою `/agents/pipeline/:id/edit`.
 
-**Architecture:** `services/shared/drakon_shared/` Python package (pip install -e, shared venv) → FastAPI router on architect-agent → Worker proxy `/v1/agents/pipeline*` → Frontend TS converters `PipelineConfig ↔ DrakonDiagram` → PipelineEditorPage wraps DrakonEditor with `onSaveOverride`.
+**Архітектура:** Пакет Python `services/shared/drakon_shared/` (`pip install -e`, спільне віртуальне оточення `venv`) → роутер FastAPI на `architect-agent` → проксі-воркер `/v1/agents/pipeline*` → фронтенд-конвертери TS `PipelineConfig ↔ DrakonDiagram` → `PipelineEditorPage` огортає `DrakonEditor` за допомогою `onSaveOverride`.
 
-**Tech Stack:** Python 3.12, FastAPI, Pydantic v2, hatchling, TypeScript, TanStack Router, DrakonWidget (drakonwidget.js — НЕ ЧІПАТИ)
+**Стек технологій:** Python 3.12, FastAPI, Pydantic v2, hatchling, TypeScript, TanStack Router, DrakonWidget (`drakonwidget.js` — НЕ ЧІПАТИ).
 
 ---
 
 ## ЗМІНИ ВІДНОСНО ОРИГІНАЛЬНОГО ПЛАНУ Q
 
-- Tasks 1+2 (аудит + pip install LangGraph) **ВИДАЛЕНО** — LangGraph 1.2.0 вже у shared venv
-- `sys.path.insert` → `pip install -e services/shared/` (один раз у drakon-agent/.venv)
-- ReactFlow → **DRAKON widget** для редагування топології (нуль нових залежностей, ідеальна концептуальна узгодженість)
-- DrakonEditor отримує prop `onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>`
-- architect-agent = центральний реєстр; drakon-agent та docs-agent НЕ потребують pipeline router
-- `agent-studio-data.ts` залишається як fallback поки API недоступний
+- Завдання 1+2 (аудит + pip install LangGraph) **ВИДАЛЕНО** — LangGraph 1.2.0 вже у спільному venv.
+- `sys.path.insert` → `pip install -e services/shared/` (один раз у drakon-agent/.venv).
+- ReactFlow → **DRAKON widget** для редагування топології (нуль нових залежностей, ідеальна концептуальна узгодженість).
+- DrakonEditor отримує проп `onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>`.
+- architect-agent = центральний реєстр; drakon-agent та docs-agent НЕ потребують pipeline router.
+- `agent-studio-data.ts` залишається як fallback, поки API недоступний.
 
 ---
 
-## Task 1 — services/shared/ Python package
+## Завдання 1 — services/shared/ Python package
 
 **Файли:**
 - Створити: `services/shared/pyproject.toml`
@@ -229,23 +232,23 @@ def validate_pipeline_route(pipeline_id: str):
     return {"valid": len(errors) == 0, "errors": errors}
 ```
 
-### Крок 7: pip install -e (ОДИН РАЗ — shared venv)
+### Крок 7: pip install -e (ОДИН РАЗ — спільний venv)
 
 ```bash
 cd ~/workspace/ai-drakon-setup
 services/drakon-agent/.venv/bin/pip install -e services/shared/ --quiet
 ```
 
-**Assert:**
+**Перевірка (Assert):**
 
 ```bash
 services/drakon-agent/.venv/bin/python -c \
   "from drakon_shared.pipeline_schema import PipelineConfig; print('✓ drakon_shared OK')"
 ```
 
-Expected: `✓ drakon_shared OK`
+Очікуваний результат: `✓ drakon_shared OK`
 
-### Крок 8: Commit
+### Крок 8: Коміт
 
 ```bash
 cd ~/workspace/ai-drakon-setup
@@ -256,7 +259,7 @@ git push origin main && git push drakon-flow-new main
 
 ---
 
-## Task 2 — Pipeline JSON configs (4 файли)
+## Завдання 2 — Конфіги JSON пайплайнів (4 файли)
 
 **Файли:** `services/shared/drakon_shared/configs/*.json`
 
@@ -370,7 +373,7 @@ for c in list_pipelines():
 "
 ```
 
-Expected:
+Очікуваний результат:
 ```
   ✓ architect-a: 6 nodes, 9 edges
   ✓ architect-b: 2 nodes, 4 edges
@@ -378,7 +381,7 @@ Expected:
   ✓ drakon-analyze: 2 nodes, 3 edges
 ```
 
-### 2.6 Commit
+### 2.6 Коміт
 
 ```bash
 cd ~/workspace/ai-drakon-setup
@@ -389,19 +392,19 @@ git push origin main && git push drakon-flow-new main
 
 ---
 
-## Task 3 — Mount pipeline_config_router на architect-agent
+## Завдання 3 — Підключення pipeline_config_router до architect-agent
 
 **Файл:** `services/architect-agent/main.py`
 
-**УВАГА:** pipeline_config_router (prefix `/v1/agents/pipeline`) — НЕ те саме що pipeline_router (prefix `/pipeline` — execution). Обидва монтуються разом, не конфліктують.
+**УВАГА:** `pipeline_config_router` (префікс `/v1/agents/pipeline`) — НЕ те саме, що `pipeline_router` (префікс `/pipeline` — запуск). Обидва монтуються разом, не конфліктують.
 
-### Крок 1: Перевірити поточні imports
+### Крок 1: Перевірити поточні імпорти
 
 ```bash
 grep -n "from\|import\|include_router" ~/workspace/ai-drakon-setup/services/architect-agent/main.py
 ```
 
-### Крок 2: Додати import та include_router
+### Крок 2: Додати імпорт та include_router
 
 Після рядку `from kb_route import router as kb_router` додати:
 
@@ -429,15 +432,15 @@ REPO_ROOT=~/workspace/ai-drakon-setup \
 sleep 3
 ```
 
-### Крок 4: Smoke test
+### Крок 4: Димовий тест (smoke test)
 
 ```bash
 curl -s http://localhost:8766/v1/agents/pipeline | python3 -m json.tool | head -10
 ```
 
-**Assert:** JSON-масив з 4 елементами. При 500 → `tail -30 /tmp/architect-agent.log`
+**Перевірка (Assert):** JSON-масив з 4 елементами. При помилці 500 дивіться: `tail -30 /tmp/architect-agent.log`
 
-### Крок 5: Commit
+### Крок 5: Коміт
 
 ```bash
 cd ~/workspace/ai-drakon-setup
@@ -448,7 +451,7 @@ git push origin main && git push drakon-flow-new main
 
 ---
 
-## Task 4 — Cloudflare Worker proxy для /v1/agents/pipeline
+## Завдання 4 — Cloudflare Worker proxy для /v1/agents/pipeline
 
 **Файл:** `cloudflare-worker/worker-mcp-drakon.js`
 
@@ -478,7 +481,7 @@ if (path.startsWith("/v1/agents/pipeline")) {
 
 **ПРИМІТКА:** `architectUrl` вже визначений у Worker як URL архітект-агента.
 
-### Крок 3: Deploy
+### Крок 3: Деплой
 
 ```bash
 cd ~/workspace/ai-drakon-setup
@@ -490,7 +493,7 @@ CLOUDFLARE_API_TOKEN=$(grep CLOUDFLARE_API_TOKEN .env | cut -d= -f2) \
   cloudflare-worker/worker-mcp-drakon.js
 ```
 
-### Крок 4: Публічний smoke test
+### Крок 4: Публічний димовий тест
 
 ```bash
 JWT=$(grep JWT_SECRET ~/workspace/ai-drakon-setup/.env | cut -d= -f2)
@@ -500,9 +503,9 @@ curl -s \
   | python3 -m json.tool | head -10
 ```
 
-**Assert:** 4 pipeline configs у масиві.
+**Перевірка (Assert):** 4 pipeline configs у масиві.
 
-### Крок 5: Commit
+### Крок 5: Коміт
 
 ```bash
 cd ~/workspace/ai-drakon-setup
@@ -513,9 +516,9 @@ git push origin main && git push drakon-flow-new main
 
 ---
 
-## Task 5 — Frontend: pipeline-config-api.ts
+## Завдання 5 — Фронтенд: pipeline-config-api.ts
 
-**Файл:** `src/lib/pipeline-config-api.ts` (і `.lovable/src/lib/pipeline-config-api.ts`)
+**Файл:** `src/lib/pipeline-config-api.ts` (та `.lovable/src/lib/pipeline-config-api.ts`)
 
 ```typescript
 // src/lib/pipeline-config-api.ts
@@ -605,7 +608,7 @@ export async function validatePipeline(id: string): Promise<ValidationResult> {
 }
 ```
 
-**Commit:**
+**Коміт:**
 
 ```bash
 cd ~/workspace/ai-drakon-setup
@@ -617,19 +620,19 @@ git push origin main && git push drakon-flow-new main
 
 ---
 
-## Task 6 — Frontend: pipeline-to-drakon.ts (конвертори)
+## Завдання 6 — Фронтенд: pipeline-to-drakon.ts (конвертори)
 
-**Файл:** `src/lib/pipeline-to-drakon.ts` (і `.lovable/src/lib/pipeline-to-drakon.ts`)
+**Файл:** `src/lib/pipeline-to-drakon.ts` (та `.lovable/src/lib/pipeline-to-drakon.ts`)
 
 **Концепція:**
-- `pipelineToIR`: NodeConfig(action/decision) → IrItem(action/question), EdgeConfig → one/two connections
-- `irToPipeline`: зворотньо, зберігаючи metadata (is_llm, prompt_key тощо) з оригінального config
+- `pipelineToIR`: NodeConfig(action/decision) → IrItem(action/question), EdgeConfig → one/two connections.
+- `irToPipeline`: зворотньо, зберігаючи metadata (is_llm, prompt_key тощо) з оригінального config.
 
-**DRAKON IR invariants (НЕ порушувати):**
-- `b0`: entry branch node, `one` → перший вузол
-- `end`: terminal, завжди присутній
-- `one` = YES / down, `two` = NO / right
-- Всі items — `Record<string, DrakonItem>`
+**DRAKON IR інваріанти (НЕ порушувати):**
+- `b0`: entry branch node, `one` → перший вузол.
+- `end`: terminal, завжди присутній.
+- `one` = YES / down, `two` = NO / right.
+- Всі items — `Record<string, DrakonItem>`.
 
 ```typescript
 // src/lib/pipeline-to-drakon.ts
@@ -732,7 +735,7 @@ function slugify(text: string): string {
 }
 ```
 
-**Commit:**
+**Коміт:**
 
 ```bash
 cd ~/workspace/ai-drakon-setup
@@ -744,26 +747,23 @@ git push origin main && git push drakon-flow-new main
 
 ---
 
-## Lovable Prompt 40 — Pipeline Editor (DRAKON widget)
+## Промпт Lovable 40 — Редактор конвеєрів (віджет DRAKON)
 
-> **Зберегти в:** `lovable-prompts/40-pipeline-editor.md`
-> **Застосувати:** вставити текст у Lovable chat
+**Зберегти в:** `lovable-prompts/40-pipeline-editor.md`  
+**Застосувати:** вставити текст у Lovable chat
 
-**Зміст промту:**
-
-```
-## Мета
+### Мета
 Додати `/agents/pipeline/:id/edit` — редактор топології пайплайну на основі існуючого DrakonEditor з кастомним збереженням через PATCH `/v1/agents/pipeline/:id`.
 
-## Нові файли
+### Нові файли
 - `src/routes/pipeline-editor.tsx` — TanStack Router route
 - `src/pages/PipelineEditorPage.tsx` — сторінка
 
-## Зміни у існуючих файлах
+### Зміни в існуючих файлах
 - `src/components/drakon/DrakonEditor.tsx` — додати prop `onSaveOverride`
 - `src/__root.tsx` — hideChrome для `/agents/pipeline/`
 
-## 1. DrakonEditor — додати onSaveOverride
+### 1. DrakonEditor — додати onSaveOverride
 
 В `DrakonEditorProps` інтерфейс (~рядок 66) додати:
 ```typescript
@@ -782,7 +782,7 @@ if (onSaveOverride && widgetRef.current) {
 // ... далі існуючий код збереження
 ```
 
-## 2. src/routes/pipeline-editor.tsx
+### 2. src/routes/pipeline-editor.tsx
 
 ```typescript
 import { createFileRoute } from "@tanstack/react-router";
@@ -793,7 +793,7 @@ export const Route = createFileRoute("/agents/pipeline/$pipelineId/edit")({
 });
 ```
 
-## 3. src/pages/PipelineEditorPage.tsx
+### 3. src/pages/PipelineEditorPage.tsx
 
 ```typescript
 import { useParams } from "@tanstack/react-router";
@@ -900,14 +900,14 @@ export default function PipelineEditorPage() {
 }
 ```
 
-## 4. hideChrome у __root.tsx
+### 4. hideChrome у __root.tsx
 
-В масиві або перевірці де додається hideChrome — додати:
+В масиві або перевірці, де додається hideChrome — додати:
 ```typescript
 pathname.startsWith("/agents/pipeline/")
 ```
 
-## 5. AgentStudioPage — Edit кнопки в AgentSidebar
+### 5. AgentStudioPage — Edit кнопки в AgentSidebar
 
 У списку пайплайнів (AgentSidebar), для кожного pipeline.id додати посилання:
 ```typescript
@@ -924,33 +924,32 @@ pathname.startsWith("/agents/pipeline/")
 > Використовувати тільки CSS var токени. Hex не хардкодити.
 > JetBrains Mono на всіх елементах тулбару.
 
-### make-interfaces checklist
+### Контрольний список make-interfaces
 - [ ] `antialiased` на кореневому `div`
 - [ ] `tabular-nums` на `v{config.version}`
 - [ ] `active:scale-[0.96] transition-transform duration-75` на всіх кнопках
 - [ ] ≥ 40px hit area (h-8 мінімум)
 - [ ] `transition-colors` (не `transition-all`)
 
-## ВАЖЛИВО: Sync після змін
+### ВАЖЛИВО: Синхронізація після змін
 Скопіюй `src/` до `.lovable/src/`. CF Pages будує з `.lovable/src/`.
-```
 
 ---
 
-## Task 7 — Зберегти промт + верифікація
+## Завдання 7 — Зберегти промт + верифікація
 
 ### 7.1 Зберегти lovable-prompts/40-pipeline-editor.md
 
 ```bash
-# Зберегти вміст секції "Lovable Prompt 40" в файл
-# git add + commit + push обидва remote
+# Зберегти вміст секції "Промпт Lovable 40" у файл
+# git add + commit + push на обидва репозиторії
 cd ~/workspace/ai-drakon-setup
 git add lovable-prompts/40-pipeline-editor.md docs/plans/2026-05-16-sprint5-pipeline-mgmt.md
 git commit -m "docs(sprint5): plan + lovable prompt 40"
 git push origin main && git push drakon-flow-new main
 ```
 
-### 7.2 Застосувати промт у Lovable → PinchTab verify
+### 7.2 Застосувати промт у Lovable → Верифікація через PinchTab
 
 Після того як Lovable виконає і CF Pages задеплоїть:
 
@@ -974,17 +973,27 @@ sshpass -p '805235io.' ssh vokov@192.168.3.184 \
    -o ~/workspace/ai-drakon-setup/import/sprint5_verify/pipeline_editor.jpg'
 ```
 
-**Assert checklist:**
-- [ ] `/agents` — Edit кнопки біля кожного pipeline
-- [ ] `/agents/pipeline/architect-a/edit` — DRAKON editor завантажується з architect-a схемою
-- [ ] Toolbar: Back · Pipeline A: Код → DRAKON IR · v1 · Validate
-- [ ] Save (кнопка в DrakonEditor toolbar) → toast "Пайплайн збережено" → версія у toolbar збільшується
+**Контрольний список перевірок (Assert):**
+- [ ] `/agents` — Edit кнопки біля кожного pipeline.
+- [ ] `/agents/pipeline/architect-a/edit` — DRAKON editor завантажується з architect-a схемою.
+- [ ] Toolbar: Back · Pipeline A: Код → DRAKON IR · v1 · Validate.
+- [ ] Save (кнопка в DrakonEditor toolbar) → toast "Пайплайн збережено" → версія у toolbar збільшується.
 
 ---
 
-## Після Sprint 5 — повернення до Sprint 4 (JS/TS Support)
+## Після Спринту 5 — повернення до Спринту 4 (Підтримка JS/TS)
 
 **План:** `docs/plans/2026-05-16-js-ts-support.md`  
-**Статус Tasks 1-6:** всі ⏳
+**Статус завдань 1-6:** всі ⏳
 
-**ВАЖЛИВО:** tree-sitter 0.25.2 + tree-sitter-javascript/typescript вже встановлені у `.venv` вручну. Task 1 — лише прописати у `pyproject.toml`.
+**ВАЖЛИВО:** tree-sitter 0.25.2 + tree-sitter-javascript/typescript вже встановлені у `.venv` вручну. Завдання 1 — лише прописати у `pyproject.toml`.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-15-langgraph-pipeline]] — план реалізації конвеєра LangGraph
+- [[ux-audit/stitch-prompt-agent-studio]] — аудит та промпт інтерфейсу студії агентів
+**Читати далі:** [[plans/2026-05-21-ir-scheme-bidirectional-import]]

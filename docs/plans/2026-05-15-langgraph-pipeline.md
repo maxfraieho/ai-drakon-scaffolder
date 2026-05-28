@@ -1,55 +1,58 @@
 ---
-title: "LangGraph Pipeline Implementation Plan"
-type: plan
-tags: [drakon, langgraph, pipeline, agent, validation]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-15
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "План реалізації конвеєра LangGraph"
+lang: uk
 ---
 
-# LangGraph Pipeline Implementation Plan
+# План реалізації конвеєра LangGraph
 
-> **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
+> **Для Claude:** НЕОБХІДНИЙ SUB-SKILL: Використовуйте superpowers:executing-plans для реалізації цього плану завдання за завданням.
 
-**Goal:** Add two LangGraph validation-loop pipelines to `architect-agent`: Pipeline A converts source code → DRAKON IR with Ralph Loop validation; Pipeline B generates code from a DRAKON IR model with syntax validation loop.
+**Мета:** Додати два конвеєри валідаційного циклу LangGraph до `architect-agent`: Конвеєр A (перетворює вихідний код → DRAKON IR з валідацією Ralph Loop) та Конвеєр B (генерує код з моделі DRAKON IR з циклом валідації синтаксису).
 
-**Architecture:** Both pipelines live in a new `services/architect-agent/pipeline/` module as LangGraph `StateGraph` objects. The existing `drakon-agent` `PythonAnalyzer` (AST→IR) and `ir_validator.validate_ir` are reused via the `sys.path` trick already in `architect_chat.py`. New FastAPI endpoints `POST /pipeline/analyze` and `POST /pipeline/generate` accept requests and return a `job_id`; `GET /pipeline/status/{job_id}` streams results via SSE or returns the final payload.
+**Архітектура:** Обидва конвеєри живуть у новому модулі `services/architect-agent/pipeline/` як об'єкти LangGraph `StateGraph`. Існуючий аналізатор `PythonAnalyzer` (AST→IR) з `drakon-agent` та функція `ir_validator.validate_ir` перевикористовуються за допомогою трюку з `sys.path`, який вже використовується в `architect_chat.py`. Нові кінцеві точки FastAPI `POST /pipeline/analyze` та `POST /pipeline/generate` приймають запити та повертають `job_id`; `GET /pipeline/status/{job_id}` транслює результати через SSE або повертає фінальні корисні дані (payload).
 
-**Tech Stack:** Python 3.12, FastAPI, LangGraph 0.2.x, radon (cyclomatic complexity), `ast` stdlib (syntax validation for Pipeline B), existing httpx proxy for LLM calls. System Python (no new venv needed).
+**Стек технологій:** Python 3.12, FastAPI, LangGraph 0.2.x, radon (цикломатична складність), стандартна бібліотека `ast` (валідація синтаксису для Конвеєра B), існуючий проксі httpx для викликів LLM. Системний Python (новий venv не потрібен).
 
 ---
 
-## Task 1: Install dependencies
+## Завдання 1: Встановлення залежностей
 
-**Files:**
-- Modify: `services/architect-agent/pyproject.toml`
+**Файли:**
+- Змінити: `services/architect-agent/pyproject.toml`
 
-**Step 1: Install packages into system Python on server**
+**Крок 1: Встановити пакети у системний Python на сервері**
 
 ```bash
 ssh vokov@192.168.3.184 "pip3 install langgraph radon networkx 2>&1 | tail -5"
 ```
 
-Expected: `Successfully installed langgraph-...` etc. All three in one command.
+Очікуваний результат: `Successfully installed langgraph-...` тощо. Усі три в одній команді.
 
-**Step 2: Verify**
+**Крок 2: Перевірка**
 
 ```bash
-ssh vokov@192.168.3.184 "python3 -c 'import langgraph; import radon; import networkx; print(\"OK\")"
+ssh vokov@192.168.3.184 "python3 -c 'import langgraph; import radon; import networkx; print(\"OK\")'"
 ```
 
-Expected: `OK`
+Очікуваний результат: `OK`
 
-**Step 3: Update pyproject.toml on server**
+**Крок 3: Оновити pyproject.toml на сервері**
 
-Add to `dependencies` in `services/architect-agent/pyproject.toml`:
+Додати до `dependencies` у `services/architect-agent/pyproject.toml`:
 ```toml
     "langgraph>=0.2.0",
     "radon>=6.0.1",
     "networkx>=3.0",
 ```
 
-**Step 4: Commit**
+**Крок 4: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/pyproject.toml && git commit -m 'chore: add langgraph, radon, networkx deps to architect-agent'"
@@ -57,20 +60,20 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 2: Create pipeline module skeleton
+## Завдання 2: Створення скелета модуля конвеєра
 
-**Files:**
-- Create: `services/architect-agent/pipeline/__init__.py`
-- Create: `services/architect-agent/pipeline/states.py`
-- Create: `services/architect-agent/pipeline/job_store.py`
+**Файли:**
+- Створити: `services/architect-agent/pipeline/__init__.py`
+- Створити: `services/architect-agent/pipeline/states.py`
+- Створити: `services/architect-agent/pipeline/job_store.py`
 
-**Step 1: Create `__init__.py` (empty)**
+**Крок 1: Створити `__init__.py` (порожній)**
 
 ```python
 # pipeline/__init__.py
 ```
 
-**Step 2: Create `states.py` with TypedDict schemas**
+**Крок 2: Створити `states.py` зі схемами TypedDict**
 
 ```python
 # pipeline/states.py
@@ -85,13 +88,13 @@ class AnalysisState(TypedDict):
     tree_level: str          # "primitive" | "silhouette" | "branch" | "deep"
     drakon_type: str         # "Primitive" | "Silhouette"
     behavioral_yaml: str
-    drakon_ir: list          # list of IR dicts from PythonAnalyzer or LLM
+    drakon_ir: list          # список словників IR з PythonAnalyzer або LLM
     validation_errors: list[str]
     iteration_count: int
 
 
 class VibeCodingState(TypedDict):
-    drakon_ir: dict          # single DRAKON IR diagram
+    drakon_ir: dict          # одна діаграма DRAKON IR
     description: str
     language: str            # "python" | "typescript" | "javascript"
     generated_code: str
@@ -99,7 +102,7 @@ class VibeCodingState(TypedDict):
     iteration_count: int
 ```
 
-**Step 3: Create `job_store.py`**
+**Крок 3: Створити `job_store.py`**
 
 ```python
 # pipeline/job_store.py
@@ -142,7 +145,7 @@ def update_job(job_id: str, status: JobStatus, result: dict = None, error: str =
             job.error = error
 ```
 
-**Step 4: Copy files to server**
+**Крок 4: Скопіювати файли на сервер**
 
 ```bash
 scp /home/vokov/workspace/ai-drakon-setup/services/architect-agent/pipeline/__init__.py vokov@192.168.3.184:/home/vokov/workspace/ai-drakon-setup/services/architect-agent/pipeline/
@@ -150,7 +153,7 @@ scp /home/vokov/workspace/ai-drakon-setup/services/architect-agent/pipeline/stat
 scp /home/vokov/workspace/ai-drakon-setup/services/architect-agent/pipeline/job_store.py vokov@192.168.3.184:/home/vokov/workspace/ai-drakon-setup/services/architect-agent/pipeline/
 ```
 
-**Step 5: Commit**
+**Крок 5: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/pipeline/ && git commit -m 'feat: pipeline module skeleton with TypedDict states and job store'"
@@ -158,12 +161,12 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 3: Write failing tests for Pipeline A nodes
+## Завдання 3: Написання тестів для вузлів Конвеєра A, які не проходять
 
-**Files:**
-- Create: `services/architect-agent/tests/test_pipeline_a.py`
+**Файли:**
+- Створити: `services/architect-agent/tests/test_pipeline_a.py`
 
-**Step 1: Write the test file**
+**Крок 1: Написати файл тестів**
 
 ```python
 # tests/test_pipeline_a.py
@@ -245,8 +248,7 @@ def test_ast_translate_produces_valid_ir():
 
 def test_validate_ir_node_passes_for_valid():
     from pipeline.nodes_analysis import validate_ir_node
-    from drakon-agent_path_hack import get_simple_ir  # helper below — see note
-    # Use a known-valid IR from PythonAnalyzer
+    # Використати відомо валідний IR з PythonAnalyzer
     from analyzer.ast_analyzer import PythonAnalyzer
     irs = PythonAnalyzer().analyze(SIMPLE_CODE, "test.py")
     state: AnalysisState = {
@@ -259,17 +261,17 @@ def test_validate_ir_node_passes_for_valid():
     assert result["validation_errors"] == []
 ```
 
-> **Note:** `test_validate_ir_node_passes_for_valid` imports from `analyzer.ast_analyzer` which is in drakon-agent via sys.path. This is intentional — same pattern as `architect_chat.py`.
+> **Примітка:** `test_validate_ir_node_passes_for_valid` імпортує з `analyzer.ast_analyzer`, який знаходиться в `drakon-agent` за допомогою `sys.path`. Це зроблено навмисно — той самий патерн, що й у `architect_chat.py`.
 
-**Step 2: Run tests — expect ImportError (nodes_analysis doesn't exist yet)**
+**Крок 2: Запустити тести — очікується ImportError (nodes_analysis ще не існує)**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -m pytest tests/test_pipeline_a.py -v 2>&1 | head -30"
 ```
 
-Expected: `ImportError: cannot import name 'nodes_analysis'` or `ModuleNotFoundError`
+Очікуваний результат: `ImportError: cannot import name 'nodes_analysis'` або `ModuleNotFoundError`
 
-**Step 3: Commit test file**
+**Крок 3: Закомітити файл тестів**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/tests/test_pipeline_a.py && git commit -m 'test: failing tests for Pipeline A nodes'"
@@ -277,12 +279,12 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 4: Implement Pipeline A nodes (pure-Python nodes)
+## Завдання 4: Реалізація вузлів Конвеєра A (чисті Python-вузли)
 
-**Files:**
-- Create: `services/architect-agent/pipeline/nodes_analysis.py`
+**Файли:**
+- Створити: `services/architect-agent/pipeline/nodes_analysis.py`
 
-**Step 1: Write `nodes_analysis.py`**
+**Крок 1: Написати `nodes_analysis.py`**
 
 ```python
 # pipeline/nodes_analysis.py
@@ -349,15 +351,15 @@ def validate_ir_node(state: AnalysisState) -> dict:
     return {"validation_errors": errors}
 ```
 
-**Step 2: Run tests — expect 4 pass, 1 fail (the LLM-dependent test)**
+**Крок 2: Запустити тести — очікується 5 пройдених тестів (PASSED)**
 
 ```bash
-ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -m pytest tests/test_pipeline_a.py::test_measure_cc_simple tests/test_pipeline_a.py::test_classify_primitive tests/test_pipeline_a.py::test_classify_silhouette tests/test_pipeline_a.py::test_ast_translate_produces_valid_ir tests/test_pipeline_a.py::test_validate_ir_node_passes_for_valid -v 2>&1"
+ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -m pytest tests/test_pipeline_a.py -v 2>&1"
 ```
 
-Expected: 5 PASSED
+Очікуваний результат: 5 PASSED
 
-**Step 3: Commit**
+**Крок 3: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/pipeline/nodes_analysis.py && git commit -m 'feat: Pipeline A pure-Python nodes (cc measure, classify, ast_translate, validate)'"
@@ -365,12 +367,12 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 5: Write failing tests for Pipeline B nodes
+## Завдання 5: Написання тестів для вузлів Конвеєра B, які не проходять
 
-**Files:**
-- Create: `services/architect-agent/tests/test_pipeline_b.py`
+**Файли:**
+- Створити: `services/architect-agent/tests/test_pipeline_b.py`
 
-**Step 1: Write test file**
+**Крок 1: Написати файл тестів**
 
 ```python
 # tests/test_pipeline_b.py
@@ -424,15 +426,15 @@ def test_syntax_check_typescript_passthrough():
     assert result["syntax_errors"] == []
 ```
 
-**Step 2: Run — expect ImportError**
+**Крок 2: Запустити — очікується ImportError**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -m pytest tests/test_pipeline_b.py -v 2>&1 | head -20"
 ```
 
-Expected: `ModuleNotFoundError: No module named 'pipeline.nodes_vibe'`
+Очікуваний результат: `ModuleNotFoundError: No module named 'pipeline.nodes_vibe'`
 
-**Step 3: Commit**
+**Крок 3: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/tests/test_pipeline_b.py && git commit -m 'test: failing tests for Pipeline B syntax check node'"
@@ -440,12 +442,12 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 6: Implement Pipeline B pure-Python node
+## Завдання 6: Реалізація чистого Python-вузла Конвеєра B
 
-**Files:**
-- Create: `services/architect-agent/pipeline/nodes_vibe.py`
+**Файли:**
+- Створити: `services/architect-agent/pipeline/nodes_vibe.py`
 
-**Step 1: Write `nodes_vibe.py`**
+**Крок 1: Написати `nodes_vibe.py`**
 
 ```python
 # pipeline/nodes_vibe.py
@@ -465,19 +467,19 @@ def check_syntax(state: VibeCodingState) -> dict:
             return {"syntax_errors": []}
         except SyntaxError as e:
             return {"syntax_errors": [f"SyntaxError line {e.lineno}: {e.msg}"]}
-    # TypeScript/JavaScript: stdlib can't check, pass through for now
+    # TypeScript/JavaScript: standard library cannot check, pass through for now
     return {"syntax_errors": []}
 ```
 
-**Step 2: Run tests**
+**Крок 2: Запустити тести**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -m pytest tests/test_pipeline_b.py -v 2>&1"
 ```
 
-Expected: 3 PASSED
+Очікуваний результат: 3 PASSED
 
-**Step 3: Commit**
+**Крок 3: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/pipeline/nodes_vibe.py && git commit -m 'feat: Pipeline B syntax-check node'"
@@ -485,16 +487,16 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 7: Implement LLM nodes for Pipeline A
+## Завдання 7: Реалізація LLM-вузлів для Конвеєра A
 
-**Files:**
-- Modify: `services/architect-agent/pipeline/nodes_analysis.py`
+**Файли:**
+- Змінити: `services/architect-agent/pipeline/nodes_analysis.py`
 
-The LLM nodes reuse the same proxy pattern from `architect_chat.py`.
+Вузли LLM використовують той самий шаблон проксі, що й в `architect_chat.py`.
 
-**Step 1: Add `yaml_gen_node` and `ir_gen_node` to `nodes_analysis.py`**
+**Крок 1: Додати `yaml_gen_node` та `ir_gen_node` до `nodes_analysis.py`**
 
-Append to the end of `pipeline/nodes_analysis.py`:
+Додати в кінець `pipeline/nodes_analysis.py`:
 
 ```python
 import json
@@ -597,17 +599,17 @@ def code_gen_node(state: VibeCodingState) -> dict:
     return {"generated_code": code, "iteration_count": state.get("iteration_count", 0) + 1}
 ```
 
-> **Note:** `code_gen_node` is placed in `nodes_analysis.py` temporarily. In a cleanup pass it should move to `nodes_vibe.py` — but avoid premature refactoring.
+> **Примітка:** `code_gen_node` тимчасово розміщено в `nodes_analysis.py`. У майбутньому його слід перемістити до `nodes_vibe.py`, але уникайте передчасного рефакторингу.
 
-**Step 2: Quick smoke test**
+**Крок 2: Швидкий димовий тест**
 
 ```bash
-ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -c 'from pipeline.nodes_analysis import yaml_gen_node, ir_gen_node, code_gen_node; print(\"OK\")'"
+ssh vokov@192.168.3.184 "python3 -c 'from pipeline.nodes_analysis import yaml_gen_node, ir_gen_node, code_gen_node; print(\"OK\")'"
 ```
 
-Expected: `OK`
+Очікуваний результат: `OK`
 
-**Step 3: Commit**
+**Крок 3: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/pipeline/nodes_analysis.py && git commit -m 'feat: LLM nodes for Pipeline A (yaml_gen, ir_gen) and Pipeline B (code_gen)'"
@@ -615,12 +617,12 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 8: Wire LangGraph StateGraphs
+## Завдання 8: Підключення LangGraph StateGraphs
 
-**Files:**
-- Create: `services/architect-agent/pipeline/graphs.py`
+**Файли:**
+- Створити: `services/architect-agent/pipeline/graphs.py`
 
-**Step 1: Write `graphs.py`**
+**Крок 1: Написати `graphs.py`**
 
 ```python
 # pipeline/graphs.py
@@ -708,15 +710,15 @@ analysis_graph = build_analysis_graph()
 vibe_graph = build_vibe_graph()
 ```
 
-**Step 2: Smoke test graph compilation**
+**Крок 2: Швидкий тест компіляції графа**
 
 ```bash
-ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -c 'from pipeline.graphs import analysis_graph, vibe_graph; print(\"Graphs OK\")'"
+ssh vokov@192.168.3.184 "python3 -c 'from pipeline.graphs import analysis_graph, vibe_graph; print(\"Graphs OK\")'"
 ```
 
-Expected: `Graphs OK`
+Очікуваний результат: `Graphs OK`
 
-**Step 3: Commit**
+**Крок 3: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/pipeline/graphs.py && git commit -m 'feat: LangGraph StateGraphs for Pipeline A (analysis) and B (vibe-coding)'"
@@ -724,14 +726,14 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 9: Write integration test for full Pipeline A (fast path)
+## Завдання 9: Написання інтеграційного тесту для повного Конвеєра A (швидкий шлях)
 
-**Files:**
-- Modify: `services/architect-agent/tests/test_pipeline_a.py`
+**Файли:**
+- Змінити: `services/architect-agent/tests/test_pipeline_a.py`
 
-**Step 1: Add graph integration test**
+**Крок 1: Додати інтеграційний тест графа**
 
-Append to `tests/test_pipeline_a.py`:
+Додати в кінець `tests/test_pipeline_a.py`:
 
 ```python
 def test_analysis_graph_primitive_end_to_end():
@@ -749,23 +751,23 @@ def test_analysis_graph_primitive_end_to_end():
     assert final["validation_errors"] == []
 ```
 
-**Step 2: Run**
+**Крок 2: Запустити**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -m pytest tests/test_pipeline_a.py::test_analysis_graph_primitive_end_to_end -v 2>&1"
 ```
 
-Expected: PASSED
+Очікуваний результат: PASSED
 
-**Step 3: Run all Pipeline A tests**
+**Крок 3: Запустити всі тести Конвеєра A**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/services/architect-agent && python3 -m pytest tests/test_pipeline_a.py -v 2>&1"
 ```
 
-Expected: All PASSED (5 unit + 1 integration = 6)
+Очікуваний результат: Усі PASSED (5 unit + 1 integration = 6)
 
-**Step 4: Commit**
+**Крок 4: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/tests/test_pipeline_a.py && git commit -m 'test: end-to-end Pipeline A integration test (primitive path, no LLM)'"
@@ -773,13 +775,13 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 10: Add FastAPI pipeline endpoints
+## Завдання 10: Додавання кінцевих точок API FastAPI для конвеєрів
 
-**Files:**
-- Create: `services/architect-agent/pipeline_route.py`
-- Modify: `services/architect-agent/main.py`
+**Файли:**
+- Створити: `services/architect-agent/pipeline_route.py`
+- Змінити: `services/architect-agent/main.py`
 
-**Step 1: Write `pipeline_route.py`**
+**Крок 1: Написати `pipeline_route.py`**
 
 ```python
 # pipeline_route.py
@@ -884,33 +886,33 @@ def status(job_id: str):
             "result": job.result, "error": job.error}
 ```
 
-**Step 2: Register router in `main.py`**
+**Крок 2: Зареєструвати роутер в `main.py`**
 
-Add after the existing `app.include_router(files_router)` line:
+Додати після існуючого рядка `app.include_router(files_router)`:
 
 ```python
 from pipeline_route import router as pipeline_router
 app.include_router(pipeline_router)
 ```
 
-**Step 3: Copy to server and restart**
+**Крок 3: Скопіювати на сервер та перезапустити**
 
 ```bash
 scp /home/vokov/workspace/ai-drakon-setup/services/architect-agent/pipeline_route.py vokov@192.168.3.184:/home/vokov/workspace/ai-drakon-setup/services/architect-agent/
 ssh vokov@192.168.3.184 "sudo systemctl restart architect-agent 2>/dev/null || true; sleep 2 && curl -s http://localhost:8766/health"
 ```
 
-Expected: `{"status":"ok","service":"architect-agent",...}`
+Очікуваний результат: `{"status":"ok","service":"architect-agent",...}`
 
-**Step 4: Smoke test new endpoint**
+**Крок 4: Димовий тест нової кінцевої точки**
 
 ```bash
 ssh vokov@192.168.3.184 "curl -s -X POST http://localhost:8766/pipeline/analyze -H 'Content-Type: application/json' -d '{\"source_code\": \"def add(a,b):\\n    return a+b\", \"file_path\": \"test.py\"}'"
 ```
 
-Expected: `{"job_id": "...uuid..."}`
+Очікуваний результат: `{"job_id": "...uuid..."}`
 
-**Step 5: Commit**
+**Крок 5: Коміт**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add services/architect-agent/pipeline_route.py services/architect-agent/main.py && git commit -m 'feat: /pipeline/analyze, /pipeline/generate, /pipeline/status endpoints'"
@@ -918,22 +920,22 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add ser
 
 ---
 
-## Task 11: Worker proxy routes for pipeline endpoints
+## Завдання 11: Маршрути проксі-воркера для кінцевих точок конвеєрів
 
-**Files:**
-- Modify: `cloudflare-worker/src/index.ts` (or wherever routes are defined)
+**Файли:**
+- Змінити: `cloudflare-worker/src/index.ts` (або там, де визначено маршрути)
 
-The Worker needs to proxy `/v1/pipeline/*` → `architect-agent:8766/pipeline/*` with JWT auth, same as existing agent routes.
+Воркер (Worker) має проксіювати `/v1/pipeline/*` → `architect-agent:8766/pipeline/*` з авторизацією JWT, так само як і для існуючих маршрутів агентів.
 
-**Step 1: Read current worker routing**
+**Крок 1: Прочитати поточну маршрутизацію воркера**
 
 ```bash
 grep -n 'architect\|8766\|pipeline' /home/vokov/workspace/ai-drakon-setup/cloudflare-worker/src/index.ts | head -20
 ```
 
-**Step 2: Add pipeline routes following the existing pattern**
+**Крок 2: Додати маршрути конвеєрів за існуючим шаблоном**
 
-Find the block that routes to architect-agent and add:
+Знайдіть блок, який маршрутизує на `architect-agent`, та додайте:
 
 ```typescript
 if (path.startsWith("/v1/pipeline/")) {
@@ -941,15 +943,15 @@ if (path.startsWith("/v1/pipeline/")) {
 }
 ```
 
-(Adapt to actual function names found in Step 1.)
+(Пристосуйте до реальних назв функцій, знайдених на Кроці 1.)
 
-**Step 3: Deploy worker**
+**Крок 3: Деплой воркера**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup/cloudflare-worker && npx wrangler deploy 2>&1 | tail -5"
 ```
 
-**Step 4: Commit worker changes**
+**Крок 4: Закомітити зміни воркера**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add cloudflare-worker/ && git commit -m 'feat: Worker proxy routes for /v1/pipeline/*'"
@@ -957,21 +959,21 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git add clo
 
 ---
 
-## Task 12: Push all commits to both remotes
+## Завдання 12: Пуш усіх комітів на обидва репозиторії
 
-**Step 1: Push to origin**
+**Крок 1: Пуш в origin**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git push origin main 2>&1"
 ```
 
-**Step 2: Push to drakon-flow**
+**Крок 2: Пуш у drakon-flow**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git push drakon-flow main 2>&1"
 ```
 
-**Step 3: Verify**
+**Крок 3: Перевірка**
 
 ```bash
 ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git log --oneline -6"
@@ -979,26 +981,36 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-setup && git log --o
 
 ---
 
-## Task 13: Write Lovable prompt for pipeline UI
+## Завдання 13: Написання промпту Lovable для UI конвеєрів
 
-**File:** `lovable-prompts/27-pipeline-ui.md`
+**Файл:** `lovable-prompts/27-pipeline-ui.md`
 
-See separate document — this prompt instructs Lovable to add:
-1. **Analysis trigger** in `DiagramsPage.tsx`: "Аналізувати" button → `POST /v1/pipeline/analyze` → polls `/v1/pipeline/status/{id}` → opens result in DRAKON viewer
-2. **Vibe-coding panel** in a new route/tab: DRAKON IR selector + description field + language picker → `POST /v1/pipeline/generate` → displays generated code with copy button
+Дивіться окремий документ — цей промпт вказує Lovable додати:
+1. **Тригер аналізу** у `DiagramsPage.tsx`: кнопка "Аналізувати" → `POST /v1/pipeline/analyze` → опитування `/v1/pipeline/status/{id}` → відкриває результат у візуалізаторі DRAKON.
+2. **Панель Vibe-coding** у новому маршруті/вкладці: вибір DRAKON IR + текстове поле опису + вибір мови → `POST /v1/pipeline/generate` → відображає згенерований код із кнопкою копіювання.
 
-This prompt is written AFTER Tasks 1-12 are complete and the backend endpoints are verified working.
+Цей промпт пишеться ПІСЛЯ завершення завдань 1-12 та верифікації працездатності кінцевих точок бекенду.
 
 ---
 
-## Verification Checklist
+## Контрольний список верифікації
 
-Before claiming plan complete, verify each item:
+Перед тим як оголосити план виконаним, перевірте кожен пункт:
 
 - [ ] `python3 -c 'import langgraph; import radon; import networkx'` → OK
 - [ ] `pytest tests/test_pipeline_a.py -v` → 6 PASSED
 - [ ] `pytest tests/test_pipeline_b.py -v` → 3 PASSED
-- [ ] `curl http://localhost:8766/pipeline/analyze ...` → returns `job_id`
-- [ ] `curl http://localhost:8766/pipeline/status/{id}` → eventually `"status":"done"`
-- [ ] `git log --oneline -8` → shows 6+ commits from this plan
-- [ ] `git push origin main && git push drakon-flow main` → both up to date
+- [ ] `curl http://localhost:8766/pipeline/analyze ...` → повертає `job_id`
+- [ ] `curl http://localhost:8766/pipeline/status/{id}` → згодом `"status":"done"`
+- [ ] `git log --oneline -8` → показує 6+ комітів із цього плану
+- [ ] `git push origin main && git push drakon-flow main` → обидва репозиторії оновлені
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-12-multi-agent-drakon-system]] — загальний архітектурний план системи
+- [[kb/02-agent-prompts]] — промпти та налаштування агентів
+**Читати далі:** [[plans/2026-05-16-sprint5-pipeline-mgmt]]

@@ -1,10 +1,13 @@
 ---
-title: "Pipeline UI Implementation Plan"
-type: plan
-tags: [drakon, pipeline, frontend, typescript, plan]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-16
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Інтерфейс пайплайну — План реалізації"
+lang: uk
 ---
 
 # Pipeline UI Implementation Plan
@@ -1069,3 +1072,13 @@ Wait for deploy (~2 min after git push), then screenshot:
 - Do NOT change Precision Dark CSS vars
 - `params` fields must remain STRING (never array)
 - Every change to `src/` must be mirrored to `.lovable/src/`
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-12-drakon-agent]] — Агент DRAKON — План реалізації
+- [[plans/2026-05-22-pipeline-scenarios]] — Сценарії роботи з пайплайнами — План реалізації
+**Читати далі:** [[plans/2026-05-21-drakon-langgraph-runtime]]

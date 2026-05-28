@@ -1,13 +1,16 @@
 ---
-title: "PinchTab Test Plan — AI-DRAKON Platform"
-type: plan
-tags: [testing, pinchtab, browser-automation, ui]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "План тестування PinchTab — Платформа AI-DRAKON"
+lang: uk
 ---
 
-# PinchTab Test Plan — AI-DRAKON Platform
+# План тестування PinchTab — Платформа AI-DRAKON
 
 > **Цільова адреса тестування:** [https://ai-drakon-scaffolder.pages.dev/](https://ai-drakon-scaffolder.pages.dev/)
 > **Інструмент автоматизації:** PinchTab (емуляція браузера Chrome через CDP-протокол на хості 192.168.3.184)
@@ -250,3 +253,13 @@ graph TD
    - Кнопка збереження: `button[data-testid="save-settings"]`
 4. **Сайдбар навігації:**
    - Посилання: `a[href="/diagrams"]`, `a[href="/agents"]`, `a[href="/settings"]`
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-22-platform-redesign]] — Редізайн платформи AI-DRAKON — План реалізації
+- [[plans/pinchtab-test-results-extended-2026-05-26]] — Розширені результати тестування PinchTab
+**Читати далі:** [[plans/pinchtab-test-results-extended-2026-05-26]]

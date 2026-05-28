@@ -1,10 +1,13 @@
 ---
-title: "DRAKON Agent — Implementation Plan"
-type: plan
-tags: [drakon, pipeline, agent, ir-format, cloudflare]
-status: active
+tags:
+  - domain:plan
+  - status:active
+  - format:plan
 created: 2026-05-12
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Агент DRAKON — План реалізації"
+lang: uk
 ---
 
 # DRAKON Agent — Implementation Plan
@@ -1064,3 +1067,12 @@ POST /feedback → knowledge/{project}/{id}-{ts}.md
 | 6 — Routes | критична | 25 хв |
 | 7 — Deploy | критична | 10 хв |
 | 8 — Worker proxy | бажана | 20 хв |
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[plans/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-12-multi-agent-drakon-system]] — Мультиагентна система DRAKON — План реалізації
+**Читати далі:** [[plans/2026-05-16-pipeline-ui]]
