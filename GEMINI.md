@@ -91,6 +91,57 @@ cd ~/workspace/ai-drakon-scaffolder && npm test
 python3 -m mempalace search "питання" --wing ai_drakon_scaffolder
 ```
 
+
+## AI-Memory — Синхронізація сесій (НОВИЙ шар, 2026-05-28)
+
+**Сервер:** `http://192.168.3.184:49374` (Docker, `--network host`)
+**Web UI:** `http://192.168.3.184:49374/web`
+**GitHub:** `https://github.com/maxfraieho/antigravity-claude-proxy` (AGY proxy з /v1/chat/completions)
+
+### Lifecycle hooks (AGY)
+```bash
+# На початку кожної сесії:
+~/bin/ai-memory-start.sh  # → POST /hook?event=SessionStart → queued 202
+
+# На кінці сесії:
+~/bin/ai-memory-end.sh    # → POST /hook?event=Stop
+```
+
+### MCP endpoint
+```
+POST http://192.168.3.184:49374/mcp
+POST http://192.168.3.184:49374/hook?event=<EventName>
+```
+
+## Протокол співпраці Claude ↔ AGY (оновлено 2026-05-28)
+
+### Три шари синхронізації пам'яті
+
+| Шар | Інструмент | Призначення | Хто пише |
+|-----|-----------|-------------|-----------|
+| **Оперативна** | MemPalace | semantic search, diary, KG між сесіями | AGY + Claude |
+| **Кросс-агентна** | ai-memory | автоматичний SessionStart/End capture, FTS wiki | автоматично (hooks) |
+| **Знання-база** | NotebookLM | довгострокові доки, Q&A, artifacts | Claude (вручну) |
+
+### Черга задач (TASKS.md)
+```
+Claude пише → development/TASKS.md → git push
+AGY читає → виконує → позначає [x] → diary → git push
+Claude перевіряє → git log або mempalace diary read (agent: agt-ogy)
+```
+
+### Сигнали для AGY
+- Claude пише задачі → `development/TASKS.md` (детальні інструкції)
+- AGY записує результати → `mempalace diary write --agent agt-ogy "SESSION:..."`
+- Новий інструмент: ai-memory hooks фіксують кожну сесію автоматично
+
+## AGY Proxy — налаштування
+- **URL:** `https://agy.exodus.pp.ua` (через cloudflared OrangePi)
+- **Локальний:** `http://192.168.3.195:8080`
+- **Endpoints:** `/v1/messages` (Anthropic) + `/v1/chat/completions` (OpenAI)
+- **Health:** `https://agy.exodus.pp.ua/health`
+- **Моделі:** gemini-2.5-pro, gemini-2.5-flash, claude-sonnet-4-6, claude-opus-4-6-thinking
+
 ## TASKS.md — координація з Claude
 Файл `development/TASKS.md` — черга задач від Claude (оркестратора).
 Формат: `[ ] TASK-N: опис` → після виконання → `[x] TASK-N: опис ✅`

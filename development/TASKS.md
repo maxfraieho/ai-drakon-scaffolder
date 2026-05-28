@@ -272,7 +272,7 @@
 
 ### TASK-9: Install ai-memory — cross-agent handoff Claude<->AGY
 ```
-[ ] TASK-9
+[x] TASK-9
   META: Install akitaonrails/ai-memory on 192.168.3.184 as shared memory layer
         between Claude Code (OrangePi) and AGY (Termux).
         ai-memory = automatic session capture + handoff between agents.
@@ -362,7 +362,7 @@ REMOTE
 
 ### TASK-10: Save AGY proxy to maxfraieho/antigravity-claude-proxy on GitHub
 ```
-[ ] TASK-10
+[x] TASK-10
   META: The AGY proxy (~/CLIProxyAPI/antigravity-claude-proxy) was enhanced with
         /v1/chat/completions OpenAI-compatible endpoint. Save this to GitHub under
         maxfraieho account. Add README describing integration potential with
@@ -505,4 +505,195 @@ REMOTE
   git add development/TASKS.md
   git commit -m "chore(tasks): TASK-10 agy-proxy GitHub repo result"
   git push origin main
+```
+
+
+### TASK-11: Create comprehensive Claude+AGY collaboration docs in ai-drakon
+```
+[ ] TASK-11
+  META: Write docs/COLLABORATION.md in ai-drakon-scaffolder that documents
+        the full Claude+AGY development system — settings, protocols, tools, roadmap.
+        This is the "how we build AI-DRAKON" reference doc for scaling the team.
+
+  TARGET FILE: ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md
+  Also update: ~/workspace/ai-drakon-scaffolder/development/HANDOFF.md (add collaboration section)
+
+  === CONTENT STRUCTURE FOR docs/COLLABORATION.md ===
+
+  ## 1. Overview — Claude+AGY Tandem
+  Description:
+    - Claude (Sonnet 4.6) = orchestrator: plans, reviews, orchestrates, writes specs
+    - AGY (Gemini 2.5 Pro on Termux) = executor: implements code, runs commands, pushes commits
+    - Q (human) = product owner: sets direction, confirms decisions, activates AGY
+    - Why this split: Claude tokens expensive → AGY free Gemini via Google Cloud Code
+    
+  ## 2. Infrastructure
+  
+  | Component | Address | Purpose |
+  |-----------|---------|---------|
+  | Claude Code | OrangePi 192.168.3.161 :3456 | Main orchestrator |
+  | AGY CLI | Termux 192.168.3.195 :8080 | Gemini executor |
+  | AGY Proxy | https://agy.exodus.pp.ua | Public API endpoint |
+  | Dev Server | 192.168.3.184 | Docker, agents, proxy |
+  | ai-memory | 192.168.3.184:49374 | Cross-agent session sync |
+  | MemPalace | 192.168.3.184 (Python) | Semantic memory, diary, KG |
+  | NotebookLM | 192.168.3.234:8002 | Long-term knowledge base |
+  | cloudflared | OrangePi native | Public tunnel for all services |
+
+  ## 3. Three-Layer Memory System
+  
+  Layer 1 — Operational (MemPalace):
+    - Semantic vector search via ChromaDB
+    - Diary per agent (agent: agt-ogy for AGY, agent: claude-code for Claude)
+    - Knowledge Graph (KG) for structured facts
+    - MemPalace mine: 1439+ files indexed
+    - Usage: between-session context, code search, task tracking
+    
+  Layer 2 — Cross-agent sync (ai-memory):
+    - Rust binary, SQLite FTS5, git-versioned markdown wiki
+    - Auto-capture via lifecycle hooks: SessionStart/Stop
+    - AGY hooks: ~/bin/ai-memory-start.sh, ~/bin/ai-memory-end.sh
+    - Server: http://192.168.3.184:49374
+    - Hook endpoint: POST /hook?event=SessionStart|Stop
+    - Web UI: http://192.168.3.184:49374/web
+    - Purpose: seamless handoff between Claude and AGY without manual notes
+    
+  Layer 3 — Knowledge base (NotebookLM):
+    - Long-term docs, architecture decisions, research
+    - Notebooks: drn-ai (6139067a), AI-Memory (9386840e), Codebase Analysis (2521c922)
+    - Usage: deep Q&A about project, artifact generation, human-curated knowledge
+
+  ## 4. Task Coordination Protocol (TASKS.md)
+  
+  File: development/TASKS.md
+  
+  Flow:
+    1. Claude writes task with EXACT steps, file paths, commands
+    2. git commit + push to origin/main
+    3. Q activates AGY in Termux: "виконай TASK-N"
+    4. AGY reads TASKS.md, executes step by step
+    5. AGY marks [x], writes diary, commits, pushes
+    6. Claude verifies: git log OR mempalace diary read --agent agt-ogy
+  
+  Task format:
+    [ ] TASK-N: title
+      META: what and why
+      STEP 1: exact command
+      STEP 2: exact command
+      VERIFY: what to check
+      DIARY: SESSION:date|TASK-N|DONE|details|***
+
+  ## 5. AGY Proxy — Endpoints and Models
+  
+  Public: https://agy.exodus.pp.ua
+  Local: http://192.168.3.195:8080
+  
+  Endpoints:
+    POST /v1/messages         — Anthropic-compatible
+    POST /v1/chat/completions — OpenAI-compatible (added in fork)
+    GET  /health              — status + rate limits per model
+    GET  /v1/models           — model list
+  
+  GitHub: https://github.com/maxfraieho/antigravity-claude-proxy
+  
+  Available models:
+    gemini-2.5-pro          — best reasoning (use for complex tasks)
+    gemini-2.5-flash        — fast (use for quick tasks, rate limited less)
+    gemini-3.5-flash-medium — medium speed
+    claude-sonnet-4-6       — via Claude MAX plan
+    claude-opus-4-6-thinking — extended thinking via Claude MAX
+
+  ## 6. Claude Code Skills System
+  
+  Skills location: ~/.claude/skills/
+  Active skills (Claude Code):
+    - notebooklm-mcp   — query/add to NotebookLM notebooks
+    - session-current  — show current session status
+    - agy-termux       — AGY workflow reference (SSH, proxy API, verification)
+  
+  Hook system (UserPromptSubmit):
+    - MANDATORY SKILL ACTIVATION SEQUENCE on each message
+    - Skill evaluation: list all skills, YES/NO with reason
+    - Activate YES skills via Skill() tool before implementing
+  
+  Key workflow skills:
+    executing-plans        — batch execute plan tasks with checkpoints
+    subagent-driven-dev    — fresh subagent per task + code review
+    verification-before-completion — NEVER claim done without verifying
+    writing-plans          — create bite-sized implementation plans
+
+  ## 7. Cloudflare Infrastructure
+  
+  Tunnel: 7c2d896d-2c77-4486-af56-ef30969ca942 (OrangePi native cloudflared)
+  Config: /etc/cloudflared/config.yml
+  
+  Public endpoints:
+    agy.exodus.pp.ua         → Termux AGY proxy :8080
+    claude.exodus.pp.ua      → RPi 3B Claude :3456
+    claude2.exodus.pp.ua     → OrangePi Claude :3456
+    drakon-agent.exodus.pp.ua → dev server :8765
+    architect-agent.exodus.pp.ua → dev server :8766
+    docs-agent.exodus.pp.ua  → dev server :8767
+    openai-proxy.exodus.pp.ua → dev server :18880
+    garden-mcp.exodus.pp.ua  → dev server :8081
+    notebooklm.exodus.pp.ua  → NLM server :8002
+    ssh.exodus.pp.ua         → SSH tunnel :22
+
+  ## 8. AI-DRAKON Agents Configuration
+  
+  Current agent LLM assignments (via web UI settings):
+    Architect  → AGY (gemini-2.5-pro)  [ACTIVE ✅]
+    DRAKON     → openai-proxy (NIM)    [needs update]
+    Docs       → openai-proxy (NIM)    [needs update]
+  
+  To update: Settings → LLM-провайдер → Protocol: AGY → URL: https://agy.exodus.pp.ua
+
+  ## 9. Roadmap — Scaling
+
+  Phase 1 (DONE ✅):
+    - AGY proxy with dual protocol support
+    - cloudflared tunnel for AGY
+    - ai-memory session sync
+    - TASKS.md coordination protocol
+    - AGY as LLM provider in ai-drakon UI
+
+  Phase 2 (NEXT):
+    - All 3 agents (Architect+DRAKON+Docs) → AGY as primary LLM
+    - ai-memory hooks for Claude Code (OrangePi)
+    - Claude Code MCP for ai-memory (memory_query, memory_write_page)
+    - free-claude-code-proxy: register agy-tunnel as provider with NIM fallback
+    - AGY quota management: multi-account rotation
+
+  Phase 3 (FUTURE):
+    - Automated TASKS.md: Claude writes, AGY auto-executes on push (webhook)
+    - ai-memory cross-session search in Claude Code context
+    - NotebookLM auto-sync: after each Claude session → add session summary as source
+    - AGY on multiple Android devices for parallel execution
+
+  === STEPS TO EXECUTE ===
+
+  STEP 1: Create the file
+    mkdir -p ~/workspace/ai-drakon-scaffolder/docs
+    cat > ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md << (content above)
+
+  STEP 2: Verify content (count sections)
+    grep "^## " ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md | wc -l
+    # Should be 9
+
+  STEP 3: Add to NotebookLM drn-ai notebook
+    Use notebooklm_add_source_text(
+      notebook_id="6139067a-5776-4b29-8869-7c9f9aed475c",
+      title="COLLABORATION.md 2026-05-28",
+      content=<file content>
+    )
+
+  STEP 4: Commit
+    git add docs/COLLABORATION.md GEMINI.md development/TASKS.md
+    git commit -m "docs(collaboration): add Claude+AGY collaboration guide with full system map"
+    git push origin main
+
+  STEP 5: Diary
+    python3 -m mempalace diary write --agent agt-ogy \
+      "SESSION:2026-05-28|TASK-11:collaboration-docs|
+      FILE:docs/COLLABORATION.md|SECTIONS:9|NLM:added|COMMIT:<hash>|***"
 ```
