@@ -904,13 +904,40 @@ REMOTE
 
 ### TASK-14: AGY2 (ноутбук) — авторизація та конфігурація
 ```
-[ ] TASK-14 — виконати коли квота відновиться (~103h)
-  Хост: 192.168.3.30, SSH: vokov/0523, Proxy: agy2.exodus.pp.ua LIVE
-  1. http://localhost:8080 -> Add Account -> Google OAuth
-  2. curl http://localhost:8080/health -> accounts > 0
-  3. Читати GEMINI.md -> налаштувати контекст
-  4. ai-memory: curl -X POST http://192.168.3.184:49374/hook?event=SessionStart
-  5. Diary: SESSION:2026-05-28|AGY2-setup|DONE
+[ ] TASK-14
+  Хост: 192.168.3.30 (Windows laptop)
+  SSH: vokov@192.168.3.30 пароль 0523 (port 22)
+  Proxy: agy2.exodus.pp.ua LIVE (cloudflared OrangePi)
+  Node.js proxy: C:/Users/vokov/Documents/GitHub/antigravity-claude-proxy/
+
+  КРОК 1: Перевір чи proxy вже запущений та авторизований
+    curl -s http://192.168.3.30:8080/health
+    якщо accounts > 0: ПЕРЕХОДЬ до КРОКУ 4
+    якщо 0 або connection refused: КРОК 2
+
+  КРОК 2: Запусти proxy через SSH до Windows
+    ssh vokov@192.168.3.30 'tasklist | findstr node'
+    якщо node.exe не запущений:
+      ssh vokov@192.168.3.30 'powershell -WindowStyle Hidden -Command "Start-Process node -ArgumentList C:/Users/vokov/Documents/GitHub/antigravity-claude-proxy/src/index.js -WindowStyle Hidden"'
+      sleep 4
+      curl -s http://192.168.3.30:8080/health
+
+  КРОК 3: Отримай OAuth URL
+    curl -sv http://192.168.3.30:8080/ 2>&1 | grep -i 'location\|oauth\|google' | head -5
+    REPORT_TO_Q: "Відкрий на ноутбуці: <URL>" і чекай підтвердження
+
+  КРОК 4: Перевір через зовнішній тунель
+    curl -s https://agy2.exodus.pp.ua/health
+    curl -s https://agy2.exodus.pp.ua/v1/models
+
+  КРОК 5: Зареєструй в ai-memory
+    curl -X POST "http://192.168.3.184:49374/hook?event=SessionStart" \
+      -H "Content-Type: application/json" \
+      -d '{"session_id":"agy2-setup-2026-05-28","cwd":"/agy2"}'
+
+  КРОК 6: Оновити TASKS.md і diary
+    sshpass -p '123456' ssh -o StrictHostKeyChecking=no -p 8022 u0_a284@192.168.3.195 'cd ~/workspace/ai-drakon-scaffolder && sed -i "s/^\[ \] TASK-14/[x] TASK-14/" development/TASKS.md && git add development/TASKS.md && git commit -m "chore(tasks): TASK-14 AGY2 laptop authorized" && git push origin main'
+    python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-28|TASK-14:agy2-setup|DONE|★★"
 ```
 
 
