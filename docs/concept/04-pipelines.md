@@ -1,10 +1,13 @@
 ---
-title: "04 — Пайплайни: Pipeline A та Pipeline B"
-type: concept
-tags: [drakon, langgraph, pipeline, agent, validation]
-status: active
+tags:
+  - domain:architecture
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "04 — Пайплайни: Pipeline A та Pipeline B"
+lang: uk
 ---
 
 # 04 — Пайплайни: Pipeline A та Pipeline B
@@ -259,4 +262,17 @@ services/architect-agent/
 │   └── graphs.py          ← LangGraph графи (analysis_graph, vibe_graph)
 ├── pipeline_route.py      ← FastAPI router /pipeline/*
 └── main.py                ← включає pipeline_router
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[architecture/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[03-architecture]] — загальна архітектура системи AI-DRAKON
+- [[05-human-agent-loop]] — людина-в-контурі
+- [[01-drakon-ir-spec]] — специфікація DRAKON IR
+- [[manual-pipeline-a]] — інструкція з аналізу коду (Pipeline A)
+- [[manual-pipeline-b]] — інструкція з генерації коду (Pipeline B)
+**Читати далі:** [[05-human-agent-loop]]
 ```

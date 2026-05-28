@@ -1,10 +1,13 @@
 ---
-title: "02 — Мова DRAKON: основи для розробника"
-type: concept
-tags: [drakon, concept]
-status: active
+tags:
+  - domain:concept
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "02 — Мова DRAKON: основи для розробника"
+lang: uk
 ---
 
 # 02 — Мова DRAKON: основи для розробника
@@ -138,3 +141,14 @@ CC > 50   → Silhouette (рівень "deep": обов'язкова ручна 
 ```
 
 Для `primitive` використовується **детермінований AST-транслятор** (`PythonAnalyzer`) — без LLM, без варіативності. Для складніших функцій — LLM із спрощеним YAML як посередником для зменшення галюцинацій.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[concept/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01-vision]] — загальна концепція AI-DRAKON
+- [[03-architecture]] — загальна архітектура системи AI-DRAKON
+- [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR
+**Читати далі:** [[03-architecture]]

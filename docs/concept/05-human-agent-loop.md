@@ -1,10 +1,13 @@
 ---
-title: "05 — Human-Agent Loop: модель взаємодії людини та агента"
-type: concept
-tags: [drakon, agent, frontend, python, concept]
-status: active
+tags:
+  - domain:concept
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "05 — Human-Agent Loop: модель взаємодії людини та агента"
+lang: uk
 ---
 
 # 05 — Human-Agent Loop: модель взаємодії людини та агента
@@ -143,3 +146,15 @@ drakon-agent (валідує, рендерить)
 ```
 
 Поточна реалізація: агенти незалежні, взаємодія через frontend. Пряма міжагентна комунікація — Phase 3.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[concept/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01-vision]] — концепція AI-DRAKON
+- [[03-architecture]] — архітектура системи AI-DRAKON
+- [[04-pipelines]] — пайплайни Pipeline A та B
+- [[06-knowledge-base]] — інтегрована база знань
+**Читати далі:** [[06-knowledge-base]]

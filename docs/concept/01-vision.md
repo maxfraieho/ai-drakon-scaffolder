@@ -1,10 +1,13 @@
 ---
-title: "01 — Концепція AI-DRAKON"
-type: concept
-tags: [drakon, concept]
-status: active
+tags:
+  - domain:concept
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "01 — Концепція AI-DRAKON"
+lang: uk
 ---
 
 # 01 — Концепція AI-DRAKON
@@ -83,3 +86,13 @@ DRAKON IR — це JSON-структура з вузлами та зв'язка�
 | Lovable frontend (редактор діаграм) | ✅ production |
 | Cloudflare Worker (проксі + auth) | ✅ production |
 | Pipeline UI (CodeAnalysisPanel, CodeGenerationPanel) | 🔄 в розробці |
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[concept/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[02-drakon-primer]] — вступ до мови ДРАКОН
+- [[03-architecture]] — загальна архітектура системи AI-DRAKON
+**Читати далі:** [[02-drakon-primer]]

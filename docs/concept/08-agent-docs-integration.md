@@ -1,10 +1,13 @@
 ---
-title: "08 — Агенти та markdown-база знань: повна інтеграція"
-type: concept
-tags: [drakon, agent, docs, dataview, dql, mcp, knowledge-base]
-status: active
+tags:
+  - domain:concept
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "08 — Агенти та markdown-база знань: повна інтеграція"
+lang: uk
 ---
 
 # 08 — Агенти та markdown-база знань: повна інтеграція
@@ -357,3 +360,15 @@ LIST FROM #pipeline LIMIT 5
 # Читання конкретного документу (після LIST-запиту):
 docs.wikilink("architecture/03_live_tracing_protocol")
 ```
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[concept/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01-vision]] — концепція AI-DRAKON
+- [[06-knowledge-base]] — інтегрована база знань предметної області
+- [[07-agent-dev-workflow]] — робочий процес розробки агентів
+- [[manual-mcp-access]] — інструкція з доступу до MCP
+**Читати далі:** [[architecture/_INDEX]]

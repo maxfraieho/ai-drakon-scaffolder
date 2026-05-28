@@ -1,10 +1,13 @@
 ---
-title: "AI-DRAKON: Документація системи"
-type: concept
-tags: [drakon, pipeline, agent, ir-format, frontend]
-status: active
+tags:
+  - domain:concept
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "AI-DRAKON: Документація системи"
+lang: uk
 ---
 
 # AI-DRAKON: Документація системи
@@ -51,3 +54,14 @@ DRAKON IR  ←→  Редактор (Lovable frontend)
 ```
 
 Повний опис → [04 — Пайплайни](./04-pipelines.md).
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[concept/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01-vision]] — концепція AI-DRAKON
+- [[03-architecture]] — архітектура системи AI-DRAKON
+- [[ui-pages-reference]] — референс сторінок UI
+**Читати далі:** [[01-vision]]

@@ -1,10 +1,13 @@
 ---
-title: "06 — База знань предметної області"
-type: concept
-tags: [drakon, agent, concept]
-status: active
+tags:
+  - domain:concept
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "06 — База знань предметної області"
+lang: uk
 ---
 
 # 06 — База знань предметної області
@@ -130,3 +133,14 @@ def validate_ir(ir: dict) -> ValidationResult:
 ```
 
 Цей валідатор використовується в Ralph Loop і доступний як MCP-інструмент `drakon.validateir` для зовнішніх клієнтів.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[concept/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01-vision]] — концепція AI-DRAKON
+- [[05-human-agent-loop]] — взаємодія людини та агента
+- [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR
+**Читати далі:** [[07-agent-dev-workflow]]

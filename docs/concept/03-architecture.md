@@ -1,10 +1,13 @@
 ---
-title: "03 — Архітектура системи"
-type: concept
-tags: [drakon, langgraph, pipeline, agent, security]
-status: active
+tags:
+  - domain:architecture
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 1
+title: "03 — Архітектура системи"
+lang: uk
 ---
 
 # 03 — Архітектура системи
@@ -135,3 +138,15 @@ sudo rc-service ai-docs-agent restart
 | `maxfraieho/drakon-flow` (drakon-flow) | Приватний: Lovable manages (React/TS frontend) |
 
 **Правило синхронізації:** після кожної зміни в Worker або сервісах — scp на сервер + `git push origin && git push drakon-flow`.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[architecture/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[01-vision]] — концепція AI-DRAKON
+- [[02-drakon-primer]] — вступ до мови ДРАКОН
+- [[04-pipelines]] — детальний опис пайплайнів
+- [[05-human-agent-loop]] — людина-в-контурі
+**Читати далі:** [[04-pipelines]]
