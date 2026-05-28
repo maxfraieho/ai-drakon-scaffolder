@@ -159,7 +159,7 @@
 
 ### TASK-6: Docs generation
 ```
-[ ] TASK-6
+[x] TASK-6
   Run 01-docs-agent skill sequence:
   1. Check docs-agent health: curl http://192.168.3.184:8767/health
   2. Trigger docs generation via SSH if endpoint exists:
@@ -194,7 +194,7 @@
 
 ### TASK-8: Вивчити NotebookLM "AI-Memory" для проекту
 ```
-[ ] TASK-8
+[x] TASK-8
   МЕТА: Дослідити чи можна використати "AI-Memory" notebook (або аналог)
         в проекті AI-DRAKON і для нашої з Claude співпраці.
         Порівняти з MemPalace: разом чи замість?
