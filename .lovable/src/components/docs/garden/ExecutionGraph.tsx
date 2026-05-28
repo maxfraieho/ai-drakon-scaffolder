@@ -63,9 +63,9 @@ return map;
 }
 
 const EDGE_TYPE_CONFIG: Record<string, { color: string; width: number; label: string }> = {
-structural: { color: 'hsl(var(--primary))', width: 2.0, label: 'Structural' },
-semantic: { color: 'hsl(var(--accent-foreground))', width: 1.2, label: 'Semantic' },
-navigational: { color: 'hsl(var(--muted-foreground))', width: 0.6, label: 'Navigational' },
+structural: { color: 'hsl(var(--primary))', width: 2.4, label: 'Structural' },
+semantic: { color: 'hsl(var(--accent-foreground))', width: 1.8, label: 'Semantic' },
+navigational: { color: 'hsl(var(--muted-foreground))', width: 1.4, label: 'Navigational' },
 };
 
 function initSimulation(nodes: GraphNode[], edges: GraphEdge[]): SimNode[] {
@@ -485,14 +485,14 @@ const directToFocus = hasFocus && (source === focusedNode || target === focusedN
 const hovered = !hasFocus && (hoveredNode === source || hoveredNode === target);
 const edgeType = getEdgeType(edge);
 const typeConfig = EDGE_TYPE_CONFIG[edgeType] || EDGE_TYPE_CONFIG.navigational;
-let strokeWidth = typeConfig.width * 0.5;
-let strokeOpacity = 0.25;
+  let strokeWidth = typeConfig.width;
+  let strokeOpacity = 0.55;
 let stroke = typeConfig.color;
 if (hasFocus) {
-if (directToFocus) { strokeWidth = typeConfig.width * 1.8; strokeOpacity = 0.95; }
-else if (highlighted) { strokeWidth = typeConfig.width * 1.2; strokeOpacity = 0.55; }
-else { strokeWidth = 0.3; strokeOpacity = 0.05; stroke = 'hsl(var(--muted-foreground))'; }
-} else if (hovered) { strokeWidth = typeConfig.width * 1.5; strokeOpacity = 0.8; }
+  if (directToFocus) { strokeWidth = typeConfig.width * 2; strokeOpacity = 0.98; }
+  else if (highlighted) { strokeWidth = typeConfig.width * 1.4; strokeOpacity = 0.75; }
+  else { strokeWidth = 0.8; strokeOpacity = 0.15; stroke = 'hsl(var(--muted-foreground))'; }
+  } else if (hovered) { strokeWidth = typeConfig.width * 1.6; strokeOpacity = 0.9; }
 return { strokeWidth, strokeOpacity, stroke };
 };
 
