@@ -190,6 +190,62 @@
 
 ---
 
+
+
+### TASK-8: Вивчити NotebookLM "AI-Memory" для проекту
+```
+[ ] TASK-8
+  МЕТА: Дослідити чи можна використати "AI-Memory" notebook (або аналог)
+        в проекті AI-DRAKON і для нашої з Claude співпраці.
+        Порівняти з MemPalace: разом чи замість?
+
+  КРОК 1: Знайти notebook
+    - notebooklm_list_notebooks → шукай "AI-Memory", "AIMemory", "Memory", "ai-memory"
+    - Якщо немає → перевір: "Memsearch" (94da733f) або "Context Mode" (df88b47d)
+    - Якщо зовсім нема → CREATE: notebooklm_create_notebook(title="AI-Memory")
+
+  КРОК 2: Наповнити знаннями (якщо порожній)
+    - Додай джерела:
+      a) notebooklm_add_source_text: "MemPalace capabilities"
+         content = опис MemPalace: semantic search, wings/rooms/drawers, diary, kg, tunnels
+      b) notebooklm_add_source_text: "AI-DRAKON project memory needs"
+         content = "AGY+Claude collaboration, session continuity, code context between sessions,
+                    task tracking, handoff notes, knowledge base for project"
+
+  КРОК 3: Дослідження через chat
+    Q1: notebooklm_chat_ask(notebook_id=<id>,
+          query="Як AI агенти можуть використовувати NotebookLM для міжсесійної пам'яті?
+                 Порівняй з ChromaDB/MemPalace підходом")
+    Q2: notebooklm_chat_ask(notebook_id=<id>,
+          query="Що краще для AI-DRAKON розробки: NotebookLM як знання-база
+                 поряд з MemPalace як оперативна пам'ять? Чи може NotebookLM замінити MemPalace?")
+    Q3: notebooklm_chat_ask(notebook_id=<id>,
+          query="Запропонуй конкретну схему: як AGY + Claude мають використовувати
+                 NotebookLM і MemPalace разом для ефективної розробки AI-DRAKON")
+
+  КРОК 4: Зберегти результати
+    - python3 -m mempalace add --wing ai_drakon_scaffolder --room docs
+      title="ai-memory-research-2026-05-28"
+      content="<відповіді з NLM>"
+    - Зберегти summary в ~/workspace/ai-drakon-scaffolder/development/AI_MEMORY_RESEARCH.md
+    - git add development/AI_MEMORY_RESEARCH.md
+    - git commit -m "docs(research): AI-Memory NotebookLM vs MemPalace analysis"
+    - git push origin main
+
+  КРОК 5: Diary
+    SESSION:2026-05-28|TASK-8:ai-memory-research|
+    NOTEBOOK_ID:<id>|
+    VERDICT:<поряд/замість/не підходить>|
+    REASON:<чому>|
+    COMMITS:<hash>|★★★
+
+  ПІДКАЗКА для оцінки:
+  - MemPalace КРАЩЕ для: оперативна пам'ять між сесіями, семантичний пошук коду,
+    автоматичне mine (codetomd), KG графи, diary
+  - NotebookLM КРАЩЕ для: довгострокові знання, Q&A з документами,
+    генерація artifacts (podcasts, mind maps), ручне куратурство знань
+  - ВИСНОВОК (попередній Claude): РАЗОМ — NLM=знання-база, MemPalace=робоча пам'ять
+```
 ## Завершені задачі
 
 ```
