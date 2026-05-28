@@ -24,6 +24,8 @@ fx: number | null;
 fy: number | null;
 connections: number;
 folder: string;
+targetX?: number;
+targetY?: number;
 }
 
 type EdgeFilter = 'all' | 'structural-semantic' | 'structural';
@@ -138,6 +140,159 @@ node.y += node.vy;
 }
 }
 
+function calculateTargets(
+  simNodes: SimNode[],
+  edges: GraphEdge[],
+  layout: 'radial' | 'hierarchical',
+  focusedNode: string | null
+): void {
+  const cx = CANVAS_W / 2;
+  const cy = CANVAS_H / 2;
+
+  if (layout === 'radial') {
+    if (focusedNode) {
+      const distanceMap = new Map<string, number>();
+      distanceMap.set(focusedNode, 0);
+      
+      const adj = new Map<string, Set<string>>();
+      for (const e of edges) {
+        if (!adj.has(e.source)) adj.set(e.source, new Set());
+        if (!adj.has(e.target)) adj.set(e.target, new Set());
+        adj.get(e.source)!.add(e.target);
+        adj.get(e.target)!.add(e.source);
+      }
+      
+      let queue = [focusedNode];
+      let visited = new Set<string>([focusedNode]);
+      let dist = 1;
+      while (queue.length > 0 && dist <= 3) {
+        const nextQueue: string[] = [];
+        for (const curr of queue) {
+          for (const neighbor of adj.get(curr) || []) {
+            if (!visited.has(neighbor)) {
+              visited.add(neighbor);
+              distanceMap.set(neighbor, dist);
+              nextQueue.push(neighbor);
+            }
+          }
+        }
+        queue = nextQueue;
+        dist++;
+      }
+      
+      const groups = new Map<number, SimNode[]>();
+      for (const node of simNodes) {
+        const d = distanceMap.has(node.slug) ? distanceMap.get(node.slug)! : 3;
+        if (!groups.has(d)) groups.set(d, []);
+        groups.get(d)!.push(node);
+      }
+      
+      const rings = [
+        { radius: 0 },
+        { radius: 140 },
+        { radius: 260 },
+        { radius: 380 }
+      ];
+      
+      for (const [d, nodesInGroup] of groups.entries()) {
+        const ring = rings[Math.min(d, rings.length - 1)];
+        const r = ring.radius;
+        nodesInGroup.forEach((node, idx) => {
+          if (d === 0) {
+            node.targetX = cx;
+            node.targetY = cy;
+          } else {
+            const angle = (2 * Math.PI * idx) / nodesInGroup.length;
+            node.targetX = cx + r * Math.cos(angle);
+            node.targetY = cy + r * Math.sin(angle);
+          }
+        });
+      }
+    } else {
+      const folderRings: Record<string, number> = {
+        '_root': 0,
+        'concept': 1,
+        'architecture': 1,
+        'kb': 2,
+        'plans': 2,
+        'agents/agy': 3,
+        'manuals': 3,
+        'reports': 4,
+        'templates': 4,
+        'ux-audit': 4
+      };
+      
+      const rings = [
+        { radius: 0 },
+        { radius: 140 },
+        { radius: 250 },
+        { radius: 350 },
+        { radius: 440 }
+      ];
+      
+      const groups = new Map<number, SimNode[]>();
+      for (const node of simNodes) {
+        const ringIdx = folderRings[node.folder] ?? 4;
+        if (!groups.has(ringIdx)) groups.set(ringIdx, []);
+        groups.get(ringIdx)!.push(node);
+      }
+      
+      for (const [ringIdx, nodesInGroup] of groups.entries()) {
+        const ring = rings[ringIdx];
+        const r = ring.radius;
+        nodesInGroup.forEach((node, idx) => {
+          if (r === 0) {
+            if (nodesInGroup.length > 1) {
+              const angle = (2 * Math.PI * idx) / nodesInGroup.length;
+              node.targetX = cx + 35 * Math.cos(angle);
+              node.targetY = cy + 35 * Math.sin(angle);
+            } else {
+              node.targetX = cx;
+              node.targetY = cy;
+            }
+          } else {
+            const angle = (2 * Math.PI * idx) / nodesInGroup.length;
+            node.targetX = cx + r * Math.cos(angle);
+            node.targetY = cy + r * Math.sin(angle);
+          }
+        });
+      }
+    }
+  } else if (layout === 'hierarchical') {
+    const folderLayers: Record<string, number> = {
+      '_root': 0,
+      'concept': 1,
+      'architecture': 1,
+      'kb': 2,
+      'plans': 2,
+      'agents/agy': 3,
+      'manuals': 4,
+      'reports': 4,
+      'templates': 5,
+      'ux-audit': 5
+    };
+    
+    const layers = [80, 190, 300, 410, 520, 630];
+    
+    const groups = new Map<number, SimNode[]>();
+    for (const node of simNodes) {
+      const layerIdx = folderLayers[node.folder] ?? 5;
+      if (!groups.has(layerIdx)) groups.set(layerIdx, []);
+      groups.get(layerIdx)!.push(node);
+    }
+    
+    for (const [layerIdx, nodesInGroup] of groups.entries()) {
+      const y = layers[layerIdx];
+      nodesInGroup.sort((a, b) => a.slug.localeCompare(b.slug));
+      nodesInGroup.forEach((node, idx) => {
+        const widthSegment = CANVAS_W / (nodesInGroup.length + 1);
+        node.targetX = widthSegment * (idx + 1);
+        node.targetY = y;
+      });
+    }
+  }
+}
+
 function truncateTitle(title: string, max = 18): string {
 return title.length <= max ? title : title.slice(0, max - 1) + '…';
 }
@@ -232,6 +387,17 @@ const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 const [edgeFilter, setEdgeFilter] = useState<EdgeFilter>('all');
 const [searchQuery, setSearchQuery] = useState('');
 const [searchOpen, setSearchOpen] = useState(false);
+const [layout, setLayout] = useState<'force' | 'radial' | 'hierarchical'>('force');
+
+const layoutRef = useRef(layout);
+useEffect(() => {
+  layoutRef.current = layout;
+}, [layout]);
+
+const focusedNodeRef = useRef(focusedNode);
+useEffect(() => {
+  focusedNodeRef.current = focusedNode;
+}, [focusedNode]);
 
 const { nodes: filteredNodes, edges: filteredEdges } = useMemo(
 () => filterByDepth(nodes, edges, depth),
@@ -313,7 +479,30 @@ let running = true;
 let tick = 0;
 const loop = () => {
 if (!running) return;
-stepSimulation(simRef.current, filteredEdges);
+
+const currentLayout = layoutRef.current;
+const currentFocusedNode = focusedNodeRef.current;
+const simNodes = simRef.current;
+
+if (currentLayout === 'force') {
+stepSimulation(simNodes, filteredEdges);
+} else {
+calculateTargets(simNodes, filteredEdges, currentLayout, currentFocusedNode);
+for (const node of simNodes) {
+if (node.fx !== null) {
+node.x = node.fx;
+node.y = node.fy!;
+node.vx = 0;
+node.vy = 0;
+} else if (node.targetX !== undefined && node.targetY !== undefined) {
+node.vx = (node.targetX - node.x) * 0.12;
+node.vy = (node.targetY - node.y) * 0.12;
+node.x += node.vx;
+node.y += node.vy;
+}
+}
+}
+
 tick++;
 if (tick % 2 === 0) forceRender(v => v + 1);
 rafRef.current = requestAnimationFrame(loop);
@@ -570,6 +759,16 @@ depth}</span>
 string][]).map(([val, label]) => (
 <Button key={val} variant={edgeFilter === val ? 'default' : 'ghost'} size="sm"
 className="h-6 px-2 text-[10px]" onClick={() => setEdgeFilter(val)}>
+{label}
+</Button>
+))}
+</div>
+
+<div className="flex items-center gap-1 border-l border-border pl-3">
+<span className="text-xs text-muted-foreground mr-1">Макет</span>
+{([['force', 'Сітка'], ['radial', 'Радіальний'], ['hierarchical', 'Дерево']] as const).map(([val, label]) => (
+<Button key={val} variant={layout === val ? 'default' : 'ghost'} size="sm"
+className="h-6 px-2 text-[10px]" onClick={() => setLayout(val)}>
 {label}
 </Button>
 ))}
