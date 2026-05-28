@@ -1115,3 +1115,75 @@ REMOTE
   Скрипти: ~/bin/ai-memory-start.sh, ~/bin/ai-memory-end.sh
   Автозапуск: додано до ~/.termux/boot/start-agy-proxy.sh
 ```
+
+---
+
+## SPRINT 2026-05-29
+
+### TASK-19: Обрізка wiki-лінків у всіх docs/ до max 4 (link budget)
+
+```
+[ ] TASK-19
+
+МЕТА: Привести всі існуючі docs/*.md у відповідність до нових правил щільності лінків
+(LINKS_RESEARCH.md + docs/META/STANDARD.md).
+
+ПРАВИЛО (жорстке):
+  Секція "## Семантичні зв'язки" в кожному документі — max 4 лінки:
+  1. [[ПАПКА/_INDEX]] — батьківський індекс (обов'язково, 1 шт)
+  2. [[суміжний-1]] — лише якщо критично необхідний (0-2 шт)
+  3. [[читати-далі]] — наступний логічний крок (0-1 шт)
+  Лінки в тілі документу — тільки для API/модулів, не для концептів.
+
+ФАЙЛИ для виправлення (>4 лінків зараз):
+  docs/META/STANDARD.md                               (10 лінків → 4)
+  docs/concept/08-agent-docs-integration.md           (8 → 4)
+  docs/kb/01-drakon-ir-spec.md                        (7 → 4)
+  docs/concept/04-pipelines.md                        (7 → 4)
+  docs/concept/06-knowledge-base.md                   (6 → 4)
+  docs/concept/05-human-agent-loop.md                 (6 → 4)
+  docs/concept/03-architecture.md                     (6 → 4)
+  docs/architecture/02_drakon_to_langgraph_mapping.md (6 → 4)
+  docs/agents/agy/README.md                           (6 → 4)
+  docs/agents/agy/04-pinchtab-tests/PINCHTAB-ACCESS.md (6 → 4)
+  docs/agents/agy/04-pinchtab-tests/PHASE2-EXTENDED.md (6 → 4)
+  docs/agents/agy/04-pinchtab-tests/PHASE2-EXECUTION.md (6 → 4)
+  docs/manuals/manual-pipeline-b.md                   (5 → 4)
+  docs/manuals/manual-pipeline-a.md                   (5 → 4)
+  docs/kb/02-agent-prompts.md                         (5 → 4)
+  docs/concept/README.md                              (5 → 4)
+  docs/concept/07-agent-dev-workflow.md               (5 → 4)
+  docs/concept/02-drakon-primer.md                    (5 → 4)
+  docs/architecture/05_security_and_deployment.md     (5 → 4)
+  docs/architecture/04_validation_and_errors.md       (5 → 4)
+  docs/architecture/03_live_tracing_protocol.md       (5 → 4)
+  docs/agents/agy/05-bugfix-agents-pipelines/SKILL.md (5 → 4)
+  docs/agents/agy/04-pinchtab-tests/SKILL.md          (5 → 4)
+  docs/agents/agy/03-dataview-dql/SKILL.md            (5 → 4)
+  docs/agents/agy/02-repo-analyzer/SKILL.md           (5 → 4)
+  docs/agents/agy/01-docs-agent/SKILL.md              (5 → 4)
+  docs/agents/agy/00-bootstrap/SKILL.md               (5 → 4)
+
+АЛГОРИТМ для кожного файлу:
+  1. Прочитай секцію "## Семантичні зв'язки" (завжди в кінці файлу)
+  2. Залиши батьківський [[ПАПКА/_INDEX]] — обов'язково
+  3. З решти лінків залиш max 2 найкритичніших (ті що описують пряму залежність)
+  4. Якщо є "Читати далі" — залиш якщо це логічний наступний крок, інакше видали
+  5. Зайві лінки — видали повністю
+  6. НЕ чіпай тіло документу (тільки секцію Семантичні зв'язки)
+
+ВЕРИФІКАЦІЯ:
+  cd ~/workspace/ai-drakon-scaffolder
+  find docs -name "*.md" ! -name "_INDEX.md" ! -name "INDEX.md" | \
+    xargs -I{} sh -c 'count=$(grep -o "\[\[" "{}" 2>/dev/null | wc -l); [ $count -gt 4 ] && echo "OVER: $count {}"'
+  (має бути пустий вивід — жодного файлу з >4 лінків)
+
+COMMIT:
+  git add docs/
+  git commit -m "docs(links): trim wiki-link budget to max 4 per document (TASK-19)"
+  git push origin main
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-19:link-budget-trim|27.files.fixed|max4.per.doc|★★★"
+```
