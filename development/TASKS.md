@@ -1415,3 +1415,101 @@ COMMIT:
 DIARY:
   "SESSION:2026-05-29|TASK-21:incoming-links-fixed|INDEX.root.removed|★★★"
 ```
+
+---
+
+### TASK-22: Відновити 3 лінки на doc (parent + 2 related)
+
+```
+[ ] TASK-22
+
+КОНТЕКСТ:
+  Після агресивного обрізання (TASK-21 cleanup) більшість docs мають лише 1 лінк.
+  Граф виглядає як "кульбаба" — листки висять на хабах без зв'язків між собою.
+  Треба відновити до 3 лінків: parent _INDEX (обов'язково) + 2 related (осмислені).
+
+ПРАВИЛА відновлення:
+  - parent _INDEX — завжди перший (вже є)
+  - related-1 — документ з того самого розділу що логічно пов'язаний по темі
+  - related-2 — документ з іншого розділу якщо є ПРЯМА залежність (не просто "схожа тема")
+  - НЕ додавати [[INDEX]] (root) і не дублювати вже наявні лінки
+
+АЛГОРИТМ для кожного файлу:
+  1. Прочитай файл — визначи його тему/домен
+  2. Подивись на сусідів у тому ж розділі — який найбільш пов'язаний?
+  3. Чи є critical cross-domain залежність? (наприклад concept/ → architecture/)
+  4. Додай 1-2 осмислених лінки в секцію ## Семантичні зв'язки
+
+ПРІОРИТЕТ розділів для related:
+  concept/ → пов'язані concept/ файли (01-vision↔02-drakon-primer↔03-architecture)
+  architecture/ → kb/01-drakon-ir-spec (специфікація), concept/03-architecture
+  kb/ → architecture/, concept/
+  plans/ → пов'язані plans/ (той самий тип/спринт)
+  agents/agy/ → наступний/попередній SKILL в серії
+  manuals/ → пов'язані manuals/ або plans/
+
+ВЕРИФІКАЦІЯ:
+  find docs -name "*.md" ! -name "_INDEX.md" ! -name "INDEX.md" | \
+    xargs -I{} python3 -c "
+  import re, sys
+  c = open('{}').read()
+  n = len(re.findall(r'\[\[', c))
+  if n < 2: print(f'UNDER: {n} [[  {}')
+  " 2>/dev/null
+  (має бути пусто — жоден файл не має < 2 лінків)
+
+  Загальна кількість ребер після:
+  python3 -c "import re,glob; print(sum(len(re.findall(r'\[\[',open(f).read())) for f in glob.glob('docs/**/*.md',recursive=True)))"
+  (ціль: 250-280 ребер)
+
+COMMIT:
+  git add docs/
+  git commit -m "docs(graph): restore 3 links per doc — parent + 2 meaningful related (TASK-22)"
+  git push origin main
+
+DIARY:
+  "SESSION:2026-05-29|TASK-22:3-links-restored|graph.balanced|★★★"
+```
+
+---
+
+### TASK-23: Знайти та змінити layout графу в folder.pages.dev
+
+```
+[ ] TASK-23
+
+КОНТЕКСТ:
+  folder.pages.dev — CF Pages проект що читає docs/ з maxfraieho/ai-drakon-scaffolder.
+  Показує граф wiki-посилань. Зараз використовує force-directed layout — все збивається
+  в центральний клубок через хаби (_INDEX файли з 10+ incoming).
+  Треба змінити на hierarchical або radial layout.
+
+КРОК 1: Знайти конфіг folder.pages.dev
+  a) Перевір GitHub акаунти: gh repo list maxfraieho --limit 20
+  b) Шукай репо з назвою "folder", "garden", "wiki", "graph", "obsidian"
+  c) Або: шукай в ai-drakon-scaffolder де є config для graph viewer:
+     find . -name "*.json" -o -name "*.yaml" -o -name "*.toml" | \
+       xargs grep -l "force\|d3\|cytoscape\|sigma\|graph" 2>/dev/null
+
+КРОК 2: Якщо знайдено graph config — змінити layout
+  Для D3 force-directed → radial/hierarchical:
+    Шукай: "simulation", "forceLink", "forceManyBody", "forceCenter"
+    Замінити на: d3.tree() або d3.cluster() або збільшити charge/repulsion
+
+  Для Cytoscape.js:
+    layout: { name: 'breadthfirst' } або { name: 'cose', nodeRepulsion: 8000 }
+
+  Для Obsidian-compatible viewer (наприклад Quartz, Foam, Digital Garden):
+    Шукай graph.config або graphConfig в quartz.config.ts / .env
+
+КРОК 3: Якщо репо не знайдено
+  Повідом в diary що folder.pages.dev source не знайдено:
+  "SESSION:2026-05-29|TASK-23:source-not-found|manual-search-needed|★★"
+
+COMMIT (якщо зміни є):
+  git add . && git commit -m "feat(graph): switch layout to hierarchical/radial (TASK-23)"
+  git push origin main
+
+DIARY:
+  "SESSION:2026-05-29|TASK-23:layout-changed-OR-not-found|★★★"
+```
