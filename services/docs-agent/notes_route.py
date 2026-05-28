@@ -151,6 +151,139 @@ def _git_commit_push(slug: str, action: str) -> tuple[bool, str]:
         return False, "git operation timed out"
 
 
+def restructure_wiki_graph(docs_root: Path):
+    import re
+    from collections import defaultdict
+    
+    files = list(docs_root.rglob("*.md"))
+    files = [f for f in files if f.is_file()]
+    
+    slug_to_file = {}
+    for f in files:
+        try:
+            rel = f.relative_to(docs_root)
+            slug = str(rel).replace(".md", "").replace("\\", "/")
+            slug_to_file[slug] = f
+        except Exception:
+            continue
+        
+    dir_to_files = {}
+    for f in files:
+        try:
+            rel = f.relative_to(docs_root)
+            parts = rel.parts
+            sub = parts[0] if len(parts) > 1 else "_root"
+            if sub not in dir_to_files:
+                dir_to_files[sub] = []
+            dir_to_files[sub].append(f)
+        except Exception:
+            continue
+        
+    for sub in dir_to_files:
+        def sort_key(fpath):
+            name = fpath.name
+            match = re.match(r"^(\d+)", name)
+            if match:
+                return (0, int(match.group(1)), name)
+            return (1, 0, name)
+        dir_to_files[sub].sort(key=sort_key)
+        
+    seq_map = {}
+    for sub, folder_files in dir_to_files.items():
+        for i in range(len(folder_files) - 1):
+            try:
+                curr_rel = folder_files[i].relative_to(docs_root)
+                next_rel = folder_files[i+1].relative_to(docs_root)
+                curr_slug = str(curr_rel).replace(".md", "").replace("\\", "/")
+                next_slug = str(next_rel).replace(".md", "").replace("\\", "/")
+                
+                curr_name = folder_files[i].name
+                next_name = folder_files[i+1].name
+                if re.match(r"^\d+", curr_name) and re.match(r"^\d+", next_name):
+                    seq_map[curr_slug] = next_slug
+            except Exception:
+                continue
+                
+    for fpath in files:
+        try:
+            rel = fpath.relative_to(docs_root)
+            slug = str(rel).replace(".md", "").replace("\\", "/")
+            filename = fpath.name
+            
+            if filename in ["INDEX.md", "_INDEX.md"]:
+                continue
+                
+            parts = rel.parts
+            if len(parts) == 1:
+                parent = None if parts[0] in ["INDEX.md", "INDEX"] else "INDEX"
+            else:
+                sub_dir = parts[0]
+                idx_path = docs_root / sub_dir / "_INDEX.md"
+                if idx_path.exists():
+                    parent = f"{sub_dir}/_INDEX"
+                else:
+                    readme_path = docs_root / sub_dir / "README.md"
+                    if readme_path.exists():
+                        parent = f"{sub_dir}/README"
+                    else:
+                        parent = "INDEX"
+                        
+            next_seq = seq_map.get(slug, None)
+            
+            content = fpath.read_text(encoding="utf-8")
+            
+            links_section = re.search(r"## Семантичні зв'язки.*", content, re.DOTALL)
+            existing_related = []
+            if links_section:
+                section_text = links_section.group(0)
+                found_links = re.findall(r"\[\[([^\]]+)\]\]", section_text)
+                for fl in found_links:
+                    fl_clean = fl.split("|")[0].strip()
+                    if fl_clean.startswith("docs/"):
+                        fl_clean = fl_clean[5:]
+                    if fl_clean != parent and "INDEX" not in fl_clean and fl_clean != next_seq and fl_clean != slug:
+                        existing_related.append(fl_clean)
+                        
+            seen = set()
+            deduped_related = []
+            for r in existing_related:
+                if r not in seen and r in slug_to_file:
+                    seen.add(r)
+                    deduped_related.append(r)
+                    
+            max_related = 2 if not next_seq else 1
+            selected_related = deduped_related[:max_related]
+            
+            new_section = "## Семантичні зв'язки\n"
+            if parent:
+                new_section += f"**Цей документ є частиною:** [[{parent}]]\n\n"
+                
+            new_section += "**Цей документ пов'язаний з:**\n"
+            has_links = False
+            
+            if next_seq:
+                next_name_clean = slug_to_file[next_seq].name.replace(".md", "").replace("_", " ").replace("-", " ")
+                new_section += f"- [[{next_seq}]] — наступний розділ ({next_name_clean})\n"
+                has_links = True
+                
+            for r in selected_related:
+                r_name_clean = slug_to_file[r].name.replace(".md", "").replace("_", " ").replace("-", " ")
+                new_section += f"- [[{r}]] — пов'язаний документ ({r_name_clean})\n"
+                has_links = True
+                
+            if not has_links:
+                new_section += f"- [[{parent}]] — переглянути всі документи розділу\n"
+                
+            if "## Семантичні зв'язки" in content:
+                content = re.sub(r"## Семантичні зв'язки.*", new_section.strip(), content, flags=re.DOTALL)
+            else:
+                content = content.rstrip() + "\n\n" + new_section.strip()
+                
+            fpath.write_text(content, encoding="utf-8")
+        except Exception:
+            continue
+
+
 # ── Request/Response models ──────────────────────────────────────────────────
 
 class WriteNoteRequest(BaseModel):
@@ -211,6 +344,12 @@ def write_note(req: WriteNoteRequest):
 
     path.write_text(full_content, encoding="utf-8")
 
+    # Run auto-restructuring to enforce clean tree structure
+    try:
+        restructure_wiki_graph(DOCS_ROOT)
+    except Exception as e:
+        print(f"[warn] wiki auto-restructuring failed: {e}")
+
     ok, err = _git_commit_push(req.slug, "update" if path.exists() else "create")
     if not ok:
         # File is written but push failed — still return success with warning
@@ -231,6 +370,34 @@ def delete_note(req: DeleteNoteRequest):
     path.unlink()
     ok, err = _git_commit_push(req.slug, "delete")
     return {"success": True, "slug": req.slug, "git_ok": ok}
+
+
+@router.post("/restructure")
+def restructure_notes():
+    """Manually trigger self-balancing Zettelkasten restructuring of all wiki links."""
+    _ensure_docs_root()
+    try:
+        restructure_wiki_graph(DOCS_ROOT)
+        # Commit the changes made by the restructure
+        subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "add", "docs/"],
+            check=True, capture_output=True, timeout=30
+        )
+        r = subprocess.run(
+            ["git", "-C", str(REPO_ROOT), "commit", "-m", "chore(graph): self-balancing Zettelkasten restructuring"],
+            capture_output=True, timeout=10
+        )
+        if r.returncode == 0:
+            subprocess.run(
+                ["git", "-C", str(REPO_ROOT), "push", "-q"],
+                check=True, capture_output=True, timeout=30
+            )
+            git_status = "pushed changes"
+        else:
+            git_status = "no structural changes needed"
+        return {"success": True, "git_status": git_status}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Restructuring failed: {e}")
 
 
 @router.get("/graph")
