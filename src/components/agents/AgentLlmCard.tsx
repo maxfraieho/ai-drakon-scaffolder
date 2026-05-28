@@ -43,6 +43,16 @@ authHeader: (key: string): Record<string, string> => ({
 "anthropic-version": "2023-06-01",
 }),
 },
+agy: {
+baseUrl: "https://agy.exodus.pp.ua",
+apiKey: "",
+hint: "AGY Proxy — Gemini 2.5 Pro + Claude на Android/Termux",
+modelsPath: "/v1/models",
+authHeader: (key: string): Record<string, string> => ({
+...(key ? { "x-api-key": key } : {}),
+"anthropic-version": "2023-06-01",
+}),
+},
 } as const;
 
 const RECOMMENDED: Record<string, string[]> = {
@@ -57,6 +67,13 @@ anthropic: [
 "claude-opus-4-20250514",
 "claude-sonnet-4-20250514",
 "claude-haiku-4-20250514",
+],
+agy: [
+"gemini-2.5-pro",
+"gemini-2.5-flash",
+"gemini-3.1-pro-high",
+"claude-sonnet-4-6",
+"claude-opus-4-6-thinking",
 ],
 };
 
@@ -87,7 +104,7 @@ chipText: "text-emerald-600 dark:text-emerald-400",
 function readFromStorage(agentId: string) {
 if (typeof window === "undefined") return null;
 const protocol =
-(localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | null) || "openai";
+(localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | "agy" | null) || "openai";
 return {
 protocol,
 baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || "",
@@ -105,8 +122,8 @@ agentDescription,
 agentIcon,
 }: AgentLlmCardProps) {
 const saved = readFromStorage(agentId);
-const initialProtocol = (saved?.protocol ?? "openai") as "openai" | "anthropic";
-const [protocol, setProtocol] = useState<"openai" | "anthropic">(initialProtocol);
+const initialProtocol = (saved?.protocol ?? "openai") as "openai" | "anthropic" | "agy";
+const [protocol, setProtocol] = useState<"openai" | "anthropic" | "agy">(initialProtocol);
 const [baseUrl, setBaseUrl] = useState(
 saved?.baseUrl || PROTOCOL_PRESETS[initialProtocol].baseUrl,
 );
@@ -131,7 +148,7 @@ cancelled = true;
 }, [agentId]);
 const styles = COLOR_STYLES[agentColor];
 
-const handleProtocolChange = (p: "openai" | "anthropic") => {
+const handleProtocolChange = (p: "openai" | "anthropic" | "agy") => {
 setProtocol(p);
 setBaseUrl(PROTOCOL_PRESETS[p].baseUrl);
 setApiKey(PROTOCOL_PRESETS[p].apiKey);
@@ -256,6 +273,7 @@ onValueChange={(v) => handleProtocolChange(v as "openai" | "anthropic")}
 <SelectContent>
 <SelectItem value="openai">OpenAI-сумісний</SelectItem>
 <SelectItem value="anthropic">Anthropic</SelectItem>
+              <SelectItem value="agy">AGY (Gemini+Claude)</SelectItem>
 </SelectContent>
 </Select>
 <p className="text-[10px] text-muted-foreground">

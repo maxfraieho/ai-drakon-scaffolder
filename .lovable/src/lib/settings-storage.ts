@@ -33,6 +33,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   cliAgents: [
     { id: "cli1", url: "https://claude.exodus.pp.ua", label: "RPi 3B", apiKey: "" },
     { id: "cli2", url: "https://claude2.exodus.pp.ua", label: "OrangePi", apiKey: "" },
+    { id: "cli3", url: "https://agy.exodus.pp.ua", label: "AGY (Gemini)", apiKey: "" },
   ],
 };
 
