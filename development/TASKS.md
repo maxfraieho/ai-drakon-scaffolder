@@ -904,7 +904,7 @@ REMOTE
 
 ### TASK-14: AGY2 (ноутбук) — авторизація та конфігурація
 ```
-[ ] TASK-14
+[x] TASK-14
   Хост: 192.168.3.30 (Windows laptop)
   SSH: vokov@192.168.3.30 пароль 0523 (port 22)
   Proxy: agy2.exodus.pp.ua LIVE (cloudflared OrangePi)
