@@ -881,7 +881,7 @@ style={{ transition: 'r 0.3s ease, fill-opacity 0.3s ease' }}
 style={{ pointerEvents: 'none', opacity: labelOpacity,
 fontWeight: isFocused ? 700 : 400,
 fontSize: isFocused ? '11px' : '9px',
-fill: 'hsl(var(--foreground))',
+fill: 'var(--foreground)',
 transition: 'opacity 0.3s ease' }}
 >
 {truncateTitle(node.title, isFocused ? 40 : isHovered ? 30 : 16)}
