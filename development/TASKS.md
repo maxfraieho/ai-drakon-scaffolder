@@ -697,3 +697,192 @@ REMOTE
       "SESSION:2026-05-28|TASK-11:collaboration-docs|
       FILE:docs/COLLABORATION.md|SECTIONS:9|NLM:added|COMMIT:<hash>|***"
 ```
+
+
+### TASK-12: Docs standardization — translate EN→UA + apply Garden formatting
+```
+[ ] TASK-12
+  META: 57 markdown files in docs/ need (1) translation EN→UA and (2) formatting
+        per Garden Bloom documentation standard (from garden-seedling-stage project).
+        Result: unified Ukrainian wiki with wikilinks, frontmatter, _INDEX.md per folder.
+
+  REFERENCE STANDARDS: Read these files FIRST to understand the format:
+    sshpass -p "805235io." ssh vokov@192.168.3.184
+    cat ~/workspace/garden-seedling-stage-d69fe8be/src/site/notes/ІНДЕКС.md
+    cat ~/workspace/garden-seedling-stage-d69fe8be/src/site/notes/manifesto/МАНІФЕСТ.md
+    cat ~/workspace/garden-seedling-stage-d69fe8be/src/site/notes/manifesto/_INDEX.md
+
+  WORKSPACE: ~/workspace/ai-drakon-scaffolder/ (Termux)
+  OR: sshpass -p "805235io." ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && ..."
+
+  ═══════════════════════════════════════════
+  PHASE 1: CREATE DOCS STANDARD (docs/META/STANDARD.md)
+  ═══════════════════════════════════════════
+
+  Create ~/workspace/ai-drakon-scaffolder/docs/META/STANDARD.md with:
+
+  ## Frontmatter template (ОБОВЯЗКОВИЙ для кожного файлу)
+  ---
+  tags:
+    - domain:<concept|architecture|kb|manual|plan|report|agent|ux|meta>
+    - status:<canonical|active|draft|archived>
+    - format:<spec|guide|reference|plan|report|skill|index>
+  created: YYYY-MM-DD
+  updated: YYYY-MM-DD
+  tier: <1|2|3>   # 1=canonical, 2=important, 3=reference
+  title: "НАЗВА ДОКУМЕНТУ"
+  lang: uk
+  ---
+
+  ## Tier definitions
+  - tier: 1 — canonical (архітектура, концепція, специфікації — не змінюються без CR)
+  - tier: 2 — active (мануали, KB, плани — живі документи)
+  - tier: 3 — reference (плани реалізації, звіти, UX-аудити)
+
+  ## Wiki links style
+  Use [[НАЗВА_ФАЙЛУ]] for cross-references (without extension, uppercase preferred)
+  Example: [[01-vision]], [[DRAKON-IR-SPEC]], [[manual-pipeline-a]]
+
+  ## Semantic links section (ОБОВЯЗКОВИЙ наприкінці кожного файлу)
+  ---
+  ## Семантичні зв'язки
+  **Цей документ є частиною:** [[ПАПКА/_INDEX]]
+  **Цей документ пов'язаний з:**
+  - [[назва-файлу]] — коротке пояснення
+  **Цей документ доповнює:** [[назва-файлу]]
+  **Читати далі:** [[назва-файлу]]
+
+  ## Domain taxonomy for ai-drakon
+  - domain:concept    — vision, philosophy, core ideas
+  - domain:architecture — system design, technical decisions
+  - domain:kb         — knowledge base, DRAKON IR spec, prompts
+  - domain:manual     — how-to guides, user manuals
+  - domain:plan       — implementation plans, sprints
+  - domain:report     — test results, audits, bug catalogs
+  - domain:agent      — agent skills, AGY workflows
+  - domain:ux         — UI/UX audits, design decisions
+  - domain:meta       — docs about docs, standards
+
+  ═══════════════════════════════════════════
+  PHASE 2: TRANSLATE 19 ENGLISH FILES TO UKRAINIAN
+  ═══════════════════════════════════════════
+
+  Files to translate (DO NOT change file names, only content):
+    docs/agents/agy/00-bootstrap/SKILL.md
+    docs/agents/agy/01-docs-agent/SKILL.md
+    docs/agents/agy/02-repo-analyzer/SKILL.md
+    docs/agents/agy/03-dataview-dql/SKILL.md
+    docs/agents/agy/README.md
+    docs/concept/07-agent-dev-workflow.md
+    docs/plans/2026-05-12-multi-agent-drakon-system.md
+    docs/plans/2026-05-12-platform-redesign-proposal.md
+    docs/plans/2026-05-15-langgraph-pipeline.md
+    docs/plans/2026-05-16-js-ts-support.md
+    docs/plans/2026-05-16-sprint5-pipeline-mgmt.md
+    docs/plans/2026-05-21-ir-scheme-bidirectional-import.md
+    docs/plans/Multi-Agent DRAKON System Plan.md
+    docs/templates/lovable-migration/lovable-prompts/00-safe-migration-init.md
+    docs/ux-audit/audit.md
+    docs/ux-audit/lovable-prompt-27.md
+    docs/ux-audit/risks.md
+    docs/ux-audit/stitch-prompt-agent-studio.md
+    docs/ux-audit/stitch-prompt.md
+
+  Translation rules:
+    - Translate all prose to Ukrainian
+    - Keep code blocks, commands, variable names in English
+    - Keep technical terms: DRAKON, LangGraph, pipeline, agent, markdown, etc.
+    - Keep file paths and URLs unchanged
+    - Add proper frontmatter after translation
+
+  ═══════════════════════════════════════════
+  PHASE 3: REFORMAT ALL FILES (add frontmatter + semantic links)
+  ═══════════════════════════════════════════
+
+  Process ALL 57 .md files:
+  1. Add/update YAML frontmatter (domain, status, format, tier, title, lang, created, updated)
+  2. Add "## Семантичні зв'язки" section at end with relevant [[wikilinks]]
+  3. Cross-link related files (e.g., concept/01-vision → [[02-drakon-primer]], [[03-architecture]])
+
+  Priority cross-links to add:
+    concept/ files → link to each other sequentially [[01-vision]]...[[08-agent-docs-integration]]
+    architecture/ → link to relevant concept/ and kb/ files
+    manuals/ → link to architecture/ and kb/ files
+    plans/ → link to relevant concept/ files
+    kb/ → link to architecture/ and concept/
+
+  ═══════════════════════════════════════════
+  PHASE 4: CREATE _INDEX.md FOR EACH FOLDER
+  ═══════════════════════════════════════════
+
+  Create _INDEX.md in each folder using Garden table format:
+
+  Template:
+  ---
+  tags: [domain:meta, status:canonical, format:index]
+  created: 2026-05-28
+  updated: 2026-05-28
+  tier: 1
+  title: "НАЗВА РОЗДІЛУ — Індекс"
+  lang: uk
+  ---
+  # НАЗВА РОЗДІЛУ
+
+  > Короткий опис розділу
+
+  | Файл | Опис | Статус | Tier |
+  |------|------|--------|------|
+  | [[назва-файлу]] | Що описує | canonical | 1 |
+
+  ## Семантичні зв'язки
+  **Батьківський індекс:** [[docs/INDEX]]
+
+  Folders to create _INDEX.md:
+    docs/concept/_INDEX.md
+    docs/architecture/_INDEX.md
+    docs/kb/_INDEX.md
+    docs/manuals/_INDEX.md
+    docs/plans/_INDEX.md
+    docs/reports/_INDEX.md
+    docs/agents/_INDEX.md
+    docs/agents/agy/_INDEX.md
+    docs/ux-audit/_INDEX.md
+    docs/META/_INDEX.md
+
+  ═══════════════════════════════════════════
+  PHASE 5: UPDATE MAIN docs/INDEX.md
+  ═══════════════════════════════════════════
+
+  Rewrite docs/INDEX.md as the canonical entry point:
+  - Wiki-link to all _INDEX.md files
+  - Table of sections with descriptions
+  - Status summary (how many files per domain/status)
+  - Reading paths for different roles (developer, architect, newcomer)
+
+  ═══════════════════════════════════════════
+  EXECUTION STRATEGY (важливо — файлів багато)
+  ═══════════════════════════════════════════
+
+  Process in batches to avoid quota issues:
+  BATCH 1: PHASE 1 (STANDARD.md) + concept/ folder (9 files)
+  BATCH 2: architecture/ + kb/ folders (7 files)
+  BATCH 3: manuals/ + agents/ folders (10 files)
+  BATCH 4: plans/ English files translation (6 files)
+  BATCH 5: ux-audit/ + reports/ folders (8 files)
+  BATCH 6: All _INDEX.md creation + main INDEX.md update
+
+  After each batch: git add docs/ && git commit -m "docs(standard): batch N — ..." && git push
+
+  ═══════════════════════════════════════════
+  FINAL STEPS
+  ═══════════════════════════════════════════
+
+  git add docs/
+  git commit -m "docs(standardization): translate EN→UA + Garden formatting standard + wiki structure"
+  git push origin main
+
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-28|TASK-12:docs-standardization|
+    TRANSLATED:<N>.files|REFORMATTED:<N>.files|INDEXES:<N>.created|
+    STANDARD:docs/META/STANDARD.md|COMMIT:<hash>|★★★"
+```
