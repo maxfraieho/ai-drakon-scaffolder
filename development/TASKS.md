@@ -912,3 +912,16 @@ REMOTE
   4. ai-memory: curl -X POST http://192.168.3.184:49374/hook?event=SessionStart
   5. Diary: SESSION:2026-05-28|AGY2-setup|DONE
 ```
+
+
+### TASK-15: AGY3 (планшет) — фінальне налаштування
+```
+[x] TASK-15 — ВИКОНАНО 2026-05-28
+  AGY3 планшет: 192.168.3.162, SSH u0_a410/TermuxSsh2026!
+  Proxy: https://agy3.exodus.pp.ua LIVE
+  Акаунт: arsen.k111999@gmail.com (100% quota)
+  MemPalace: 13017 drawers (перенесено з телефону)
+  Моделі: gemini-2.5-pro, gemini-2.5-flash, claude-sonnet-4-6, claude-opus-4-6-thinking
+  Автозапуск: termux-services (sv status agy-proxy: run)
+  Наступний крок: встановити AGY CLI на планшет
+```
