@@ -510,7 +510,7 @@ REMOTE
 
 ### TASK-11: Create comprehensive Claude+AGY collaboration docs in ai-drakon
 ```
-[ ] TASK-11
+[x] TASK-11
   META: Write docs/COLLABORATION.md in ai-drakon-scaffolder that documents
         the full Claude+AGY development system — settings, protocols, tools, roadmap.
         This is the "how we build AI-DRAKON" reference doc for scaling the team.
