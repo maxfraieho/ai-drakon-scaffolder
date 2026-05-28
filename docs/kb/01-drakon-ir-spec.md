@@ -297,6 +297,3 @@ def greet(name: str) -> str:
 - [[02-drakon-primer]] — вступ до мови ДРАКОН
 - [[04-pipelines]] — опис пайплайнів Pipeline A та B
 - [[02_drakon_to_langgraph_mapping]] — Фаза 2: маппінг DRAKON → LangGraph
-- [[04_validation_and_errors]] — Фаза 4: робота з помилками та геометрична валідація
-- [[02-agent-prompts]] — промпти для ШІ-агентів
-**Читати далі:** [[02-agent-prompts]]

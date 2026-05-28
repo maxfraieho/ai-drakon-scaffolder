@@ -272,7 +272,4 @@ services/architect-agent/
 - [[03-architecture]] — загальна архітектура системи AI-DRAKON
 - [[05-human-agent-loop]] — людина-в-контурі
 - [[01-drakon-ir-spec]] — специфікація DRAKON IR
-- [[manual-pipeline-a]] — інструкція з аналізу коду (Pipeline A)
-- [[manual-pipeline-b]] — інструкція з генерації коду (Pipeline B)
-**Читати далі:** [[05-human-agent-loop]]
 ```

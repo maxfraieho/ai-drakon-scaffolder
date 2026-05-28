@@ -120,4 +120,3 @@ def is_positive(num):
 - [[04-pipelines]] — опис пайплайнів Pipeline A та B
 - [[manual-pipeline-a]] — інструкція з аналізу коду (Pipeline A)
 - [[01-drakon-ir-spec]] — специфікація DRAKON IR
-**Читати далі:** [[agents/_INDEX]]

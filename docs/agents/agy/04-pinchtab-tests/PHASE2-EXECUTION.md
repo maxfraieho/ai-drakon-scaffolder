@@ -536,5 +536,3 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "
 - [[04-pinchtab-tests/SKILL]] — навичка запусків тестів PinchTab
 - [[04-pinchtab-tests/PHASE2-EXTENDED]] — розширені тести PinchTab Phase 2
 - [[04-pinchtab-tests/PINCHTAB-ACCESS]] — доступ до PinchTab
-- [[2026-05-26-pinchtab-test-plan]] — загальний план тестів PinchTab
-**Читати далі:** [[04-pinchtab-tests/PHASE2-EXTENDED]]

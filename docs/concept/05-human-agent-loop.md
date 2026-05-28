@@ -156,5 +156,3 @@ drakon-agent (валідує, рендерить)
 - [[01-vision]] — концепція AI-DRAKON
 - [[03-architecture]] — архітектура системи AI-DRAKON
 - [[04-pipelines]] — пайплайни Pipeline A та B
-- [[06-knowledge-base]] — інтегрована база знань
-**Читати далі:** [[06-knowledge-base]]

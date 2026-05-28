@@ -64,4 +64,3 @@ DRAKON IR  ←→  Редактор (Lovable frontend)
 - [[01-vision]] — концепція AI-DRAKON
 - [[03-architecture]] — архітектура системи AI-DRAKON
 - [[ui-pages-reference]] — референс сторінок UI
-**Читати далі:** [[01-vision]]

@@ -370,5 +370,3 @@ docs.wikilink("architecture/03_live_tracing_protocol")
 - [[01-vision]] — концепція AI-DRAKON
 - [[06-knowledge-base]] — інтегрована база знань предметної області
 - [[07-agent-dev-workflow]] — робочий процес розробки агентів
-- [[manual-mcp-access]] — інструкція з доступу до MCP
-**Читати далі:** [[architecture/_INDEX]]

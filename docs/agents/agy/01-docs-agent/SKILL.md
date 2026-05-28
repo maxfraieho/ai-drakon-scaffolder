@@ -181,4 +181,3 @@ DOCS COMPLETE:
 - [[00-bootstrap/SKILL]] — навичка початкового запуску та налаштування
 - [[02-repo-analyzer/SKILL]] — навичка аналізу репозиторію
 - [[03-dataview-dql/SKILL]] — навичка роботи з DQL-запитами
-**Читати далі:** [[02-repo-analyzer/SKILL]]

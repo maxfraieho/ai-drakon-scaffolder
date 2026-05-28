@@ -389,4 +389,3 @@ Content: POST /docs/dataview/query — DQL query over docs YAML frontmatter.
 - [[01-docs-agent/SKILL]] — навичка роботи з документацією
 - [[02-repo-analyzer/SKILL]] — навичка аналізу репозиторію
 - [[manual-mcp-access]] — посібник користувача з доступу до MCP
-**Читати далі:** [[docs/INDEX]]

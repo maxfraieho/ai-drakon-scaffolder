@@ -332,4 +332,3 @@ cd services/docs-agent && .venv/bin/python3 main.py &
 - [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR
 - [[07-agent-dev-workflow]] — робочий процес розробки агентів
 - [[manual-agent-studio]] — посібник користувача з Agent Studio
-**Читати далі:** [[manuals/_INDEX]]

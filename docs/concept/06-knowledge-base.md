@@ -143,4 +143,3 @@ def validate_ir(ir: dict) -> ValidationResult:
 - [[01-vision]] — концепція AI-DRAKON
 - [[05-human-agent-loop]] — взаємодія людини та агента
 - [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR
-**Читати далі:** [[07-agent-dev-workflow]]

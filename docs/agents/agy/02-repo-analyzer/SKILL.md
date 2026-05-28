@@ -136,4 +136,3 @@ INDEXING COMPLETE:
 - [[00-bootstrap/SKILL]] — навичка початкового запуску
 - [[01-docs-agent/SKILL]] — навичка документування
 - [[03-dataview-dql/SKILL]] — навичка роботи з DQL
-**Читати далі:** [[03-dataview-dql/SKILL]]

@@ -187,4 +187,3 @@ curl -X POST https://research.exodus.pp.ua/analyze-files \
 - [[01-vision]] — загальна концепція AI-DRAKON
 - [[05-human-agent-loop]] — взаємодія людини та агента
 - [[06-knowledge-base]] — інтегрована база знань
-**Читати далі:** [[08-agent-docs-integration]]

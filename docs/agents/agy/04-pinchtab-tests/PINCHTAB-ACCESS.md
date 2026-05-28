@@ -311,6 +311,4 @@ for n in json.load(sys.stdin).get('nodes',[]):
 - [[04-pinchtab-tests/SKILL]] — навичка запусків тестів PinchTab
 - [[04-pinchtab-tests/PHASE2-EXECUTION]] — виконання тестів PinchTab Phase 2
 - [[04-pinchtab-tests/PHASE2-EXTENDED]] — розширені тести PinchTab Phase 2
-- [[2026-05-26-pinchtab-test-plan]] — загальний план тестів PinchTab
-**Читати далі:** [[04-pinchtab-tests/SKILL]]
 ```

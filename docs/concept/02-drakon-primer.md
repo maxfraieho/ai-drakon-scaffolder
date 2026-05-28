@@ -151,4 +151,3 @@ CC > 50   → Silhouette (рівень "deep": обов'язкова ручна 
 - [[01-vision]] — загальна концепція AI-DRAKON
 - [[03-architecture]] — загальна архітектура системи AI-DRAKON
 - [[01-drakon-ir-spec]] — технічна специфікація DRAKON IR
-**Читати далі:** [[03-architecture]]

@@ -117,4 +117,3 @@ function matchesActiveNode(item: DrakonItem, activeNodeName: string | null): boo
 - [[02_drakon_to_langgraph_mapping]] — Фаза 2: маппінг DRAKON → LangGraph
 - [[04_validation_and_errors]] — Фаза 4: валідація та помилки
 - [[ui-pages-reference]] — референс сторінок UI (DiagramsPage)
-**Читати далі:** [[04_validation_and_errors]]

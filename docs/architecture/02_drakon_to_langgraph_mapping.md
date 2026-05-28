@@ -106,5 +106,3 @@ lang: uk
 - [[01_langgraph_for_beginners]] — Фаза 1: вступ у LangGraph
 - [[03_live_tracing_protocol]] — Фаза 3: протокол трасування в реальному часі
 - [[04-pipelines]] — опис пайплайнів Pipeline A та B
-- [[01-drakon-ir-spec]] — специфікація DRAKON IR
-**Читати далі:** [[03_live_tracing_protocol]]

@@ -148,5 +148,3 @@ sudo rc-service ai-docs-agent restart
 - [[01-vision]] — концепція AI-DRAKON
 - [[02-drakon-primer]] — вступ до мови ДРАКОН
 - [[04-pipelines]] — детальний опис пайплайнів
-- [[05-human-agent-loop]] — людина-в-контурі
-**Читати далі:** [[04-pipelines]]

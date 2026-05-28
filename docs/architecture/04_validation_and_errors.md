@@ -124,4 +124,3 @@ export function convertDiagramToIrWithValidation(diagram: DrakonDiagram): {
 - [[03_live_tracing_protocol]] — Фаза 3: протокол трасування
 - [[05_security_and_deployment]] — Фаза 5: безпека та деплой
 - [[01-drakon-ir-spec]] — специфікація DRAKON IR
-**Читати далі:** [[05_security_and_deployment]]
