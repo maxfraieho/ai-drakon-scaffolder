@@ -1,10 +1,13 @@
 ---
-title: "Lovable Init Prompt — AI-DRAKON"
-type: guide
-tags: [drakon, frontend, typescript]
-status: active
+tags:
+  - domain:kb
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Промпт ініціалізації проекту Lovable"
+lang: uk
 ---
 
 # Lovable Init Prompt — AI-DRAKON
@@ -115,3 +118,13 @@ updated: 2026-05-26
 2. `client-config.ts` резолвить `/web/api` та `/web/ws`
 3. Всі routes відповідають файлам у `src/routes/`
 4. Проект збирається без помилок TypeScript
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[templates/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[templates/lovable-migration/README]] — Інструкція з міграції Lovable
+- [[templates/lovable-migration/lovable-prompts/00-safe-migration-init]] — Промпт ініціалізації безпечної міграції Lovable
+**Читати далі:** [[templates/lovable-migration/lovable-prompts/00-handoff]]

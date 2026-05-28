@@ -1,10 +1,13 @@
 ---
-title: "Lovable Account Migration"
-type: guide
-tags: [drakon, security]
-status: active
+tags:
+  - domain:kb
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Міграція акаунту Lovable"
+lang: uk
 ---
 
 # Lovable Account Migration
@@ -84,3 +87,13 @@ gh run list --repo maxfraieho/<new-repo> --limit 3
 - CF Pages API не підтримує зміну repo source — тому mirror архітектура
 - MIRROR_TOKEN має мати `repo` scope для обох repos
 - `--force` при push обов'язковий — Lovable може додати початкові коміти
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[templates/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[templates/lovable-migration/lovable-prompts/00-safe-migration-init]] — Промпт ініціалізації безпечної міграції Lovable
+- [[templates/lovable-migration/lovable-prompts/00-project-init]] — Промпт ініціалізації проекту Lovable
+**Читати далі:** [[templates/lovable-migration/lovable-prompts/00-handoff]]

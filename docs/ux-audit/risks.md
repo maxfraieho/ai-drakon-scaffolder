@@ -1,68 +1,81 @@
 ---
-title: "Implementation Risks — Pipeline UI"
-type: reference
-tags: [drakon, pipeline, frontend, typescript]
-status: active
+tags:
+  - domain:ux
+  - status:active
+  - format:report
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Ризики та технічний борг UI/UX платформи AI-DRAKON"
+lang: uk
 ---
 
-# Implementation Risks — Pipeline UI
+# Ризики та технічний борг UI/UX платформи AI-DRAKON — Ризики впровадження Pipeline UI
 
-## Risk 1: DiagramsPage is large and complex
+## Ризик 1: Велика складність та обсяг DiagramsPage
 
-**Evidence:** DiagramsPage.tsx is 44KB+ with state for GitHub panel, folder management, diagram storage, analysis requests, git operations.
+**Докази:** Файл `DiagramsPage.tsx` має розмір понад 44 КБ і містить стани для панелі GitHub, керування папками, зберігання діаграм, запитів на аналіз, операцій з git тощо.
 
-**Risk:** Adding `analysisOpen`/`generationOpen` state and conditional flex wrappers to an already complex component may create layout regressions — especially if the existing layout uses absolute positioning or fixed heights anywhere.
+**Ризик:** Додавання станів `analysisOpen`/`generationOpen` та умовних flex-обгорток (conditional flex wrappers) у і без того складний компонент може призвести до регресій макету (layout regressions) — особливо якщо існуючий макет використовує абсолютне позиціонування або фіксовану висоту.
 
-**Mitigation:** Before wrapping with flex, check if DiagramsPage uses `position: absolute` for the editor canvas (DrakonWidget). If it does, a flex wrapper will break it. The CodeAnalysisPanel may need to be positioned as `position: fixed right-0 top-12 h-[calc(100vh-3rem)]` instead of a flex sibling. Read DiagramsPage layout before implementing.
-
----
-
-## Risk 2: `diagramIr` shape for Pipeline B
-
-**Evidence:** Diagrams in DiagramsPage are stored as `Diagram` type from `src/types/drakon.ts`. The DRAKON IR that Pipeline B expects is a single `{name, params, items}` dict. A `Diagram` may contain multiple functions or have different field names.
-
-**Risk:** `CodeGenerationPanel` may receive the wrong object shape.
-
-**Mitigation:** When reading `selectedDiagram` in DiagramsPage, pass `{ name: selectedDiagram.name, params: selectedDiagram.params ?? "", items: selectedDiagram.items }` explicitly — not the full Diagram object. Verify the types match `validator/ir_validator.py` expectations.
+**Заходи запобігання:** Перед тим як загортати у flex, перевірте, чи використовує `DiagramsPage` властивість `position: absolute` для полотна редактора (DrakonWidget). Якщо так, то flex-обгортка зламає його відображення. Панель `CodeAnalysisPanel` у такому разі має бути позиціонована як `position: fixed right-0 top-12 h-[calc(100vh-3rem)]` замість того, щоб бути flex-сусіднім елементом. Ознайомтеся з макетом `DiagramsPage` перед реалізацією.
 
 ---
 
-## Risk 3: `onImportIr` — what happens when IR is imported
+## Ризик 2: Формат об'єкта `diagramIr` для Pipeline B
 
-**Evidence:** `upsertDiagramInStorage` exists in DiagramsPage. The DRAKON widget renders from `items`. Pipeline A returns a list of IR dicts (one per function).
+**Докази:** Діаграми на сторінці `DiagramsPage` зберігаються як тип `Diagram` з файлу `src/types/drakon.ts`. Проміжне представлення (DRAKON IR), яке очікує Pipeline B, є єдиним словником виду `{name, params, items}`. Об'єкт `Diagram` може містити кілька функцій або мати інші назви полів.
 
-**Risk:** Multi-function analysis produces N diagrams. If `onImportIr` is called in a loop, the user gets N new diagrams added to storage at once with no context.
+**Ризик:** Компонент `CodeGenerationPanel` може отримати об'єкт неправильного формату.
 
-**Mitigation:** Show the function list in the panel and let the user choose which to import individually. The "↓ Імпортувати" button per function row handles this correctly. Don't add an "Import All" button.
-
----
-
-## Risk 4: in-memory job_store
-
-**Evidence:** `pipeline/job_store.py` uses a Python dict. Service restart = job IDs invalidated.
-
-**Risk:** If architect-agent restarts while a job is polling, the frontend gets 404 on status and enters error state.
-
-**Mitigation:** In `CodeAnalysisPanel` and `CodeGenerationPanel`, handle 404 on status poll explicitly: show "Сервіс недоступний — спробуйте знову" and clear the job_id. Don't retry 404 indefinitely.
+**Заходи запобігання:** Під час читання `selectedDiagram` у `DiagramsPage` передавайте `{ name: selectedDiagram.name, params: selectedDiagram.params ?? "", items: selectedDiagram.items }` явно, а не весь об'єкт `Diagram` повністю. Перевірте, чи відповідають типи очікуванням валідатора бекенду `validator/ir_validator.py`.
 
 ---
 
-## Risk 5: "Файли" tab removal and DocsFilesTab.tsx
+## Ризик 3: Логіка `onImportIr` — що відбувається під час імпорту IR
 
-**Evidence:** `DocsFilesTab` is imported in `docs.tsx` only. If the tab is removed, the component becomes dead code.
+**Докази:** Функція `upsertDiagramInStorage` існує в `DiagramsPage`. Відмальовка віджета DRAKON відбувається на основі `items`. Pipeline A повертає список IR-словників (по одному для кожної функції).
 
-**Risk:** Low — no other users. Safe to remove import.
+**Ризик:** Аналіз файлу з багатьма функціями генерує N діаграм. Якщо викликати `onImportIr` у циклі, користувач отримає N нових діаграм, збережених у сховищі одночасно і без контексту, що може заплутати.
 
-**Note:** The `DocsFilesTab` tree logic (search + note count) must be reproduced in `NotesTab` sidebar before removing the tab. Do not remove the tab until the sidebar search is confirmed working.
+**Заходи запобігання:** Показуйте список функцій на панелі та дозвольте користувачеві вибирати, які функції імпортувати індивідуально. Кнопка "↓ Імпортувати" для кожного рядка функції правильно вирішує це завдання. Не додавайте кнопку "Імпортувати все" (Import All).
 
 ---
 
-## Risk 6: `SidebarTreeNode` search in NotesTab
+## Ризик 4: Зберігання завдань лише в оперативній пам'яті (in-memory job_store)
 
-**Evidence:** `SidebarTreeNode` in `NotesTab.tsx` does not currently accept a `searchQuery` prop. `DocsFilesTab.tsx` has `nodeMatchesSearch()` and `TreeNodeItem` accepts `searchQuery`.
+**Докази:** Модуль `pipeline/job_store.py` використовує звичайний Python-словник. Перезапуск сервісу призводить до анулювання всіх ID завдань (job IDs).
 
-**Risk:** Implementing the same logic in NotesTab requires adding `searchQuery` prop to `SidebarTreeNode` and `nodeMatchesSearch()` function. These are copy-pasteable from DocsFilesTab but must be done correctly or the tree rendering breaks.
+**Ризик:** Якщо `architect-agent` перезапуститься під час опитування статусу завдання фронтендом, фронтенд отримає відповідь 404 для статусу і перейде в стан помилки.
 
-**Mitigation:** Extract `nodeMatchesSearch` to `src/lib/garden/notesApi.ts` or a new `src/lib/garden/treeUtils.ts` and import in both components. This avoids duplication.
+**Заходи запобігання:** У компонентах `CodeAnalysisPanel` та `CodeGenerationPanel` обробляйте відповідь 404 під час опитування статусу явно: показуйте повідомлення "Сервіс недоступний — спробуйте знову" та очищайте `job_id`. Не повторюйте запити за статусом 404 нескінченно.
+
+---
+
+## Ризик 5: Видалення вкладки "Файли" та компонент DocsFilesTab.tsx
+
+**Докази:** Компонент `DocsFilesTab` імпортується лише у `docs.tsx`. Якщо вкладку буде видалено, цей компонент перетвориться на мертвий код (dead code).
+
+**Ризик:** Низький — інші імпорти відсутні. Видалення імпорту є безпечним.
+
+**Примітка:** Логіку дерева `DocsFilesTab` (пошук + лічильник нотаток) необхідно реалізувати у сайдбарі `NotesTab` перед видаленням самої вкладки. Не видаляйте вкладку, поки не переконаєтеся, що пошук у сайдбарі працює коректно.
+
+---
+
+## Ризик 6: Пошук у SidebarTreeNode в NotesTab
+
+**Докази:** Компонент `SidebarTreeNode` у `NotesTab.tsx` наразі не приймає проп `searchQuery`. Компонент `DocsFilesTab.tsx` містить функцію `nodeMatchesSearch()`, а `TreeNodeItem` приймає `searchQuery`.
+
+**Ризик:** Реалізація аналогічної логіки в `NotesTab` вимагає додавання пропу `searchQuery` до `SidebarTreeNode` та створення функції `nodeMatchesSearch()`. Їх можна скопіювати з `DocsFilesTab.tsx`, але це потрібно зробити дуже акуратно, інакше рендеринг дерева зламається.
+
+**Заходи запобігання:** Винесіть функцію `nodeMatchesSearch` у загальний файл `src/lib/garden/notesApi.ts` або новий `src/lib/garden/treeUtils.ts` та імпортуйте її в обох компонентах. Це дозволить уникнути дублювання коду.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[ux-audit/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
+- [[ux-audit/lovable-prompt-27]] — Промпт 27: Інтерфейс пайплайну
+**Читати далі:** [[ux-audit/stitch-prompt]]

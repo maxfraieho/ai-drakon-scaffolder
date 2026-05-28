@@ -1,155 +1,168 @@
 ---
-title: "AI-DRAKON UX Audit — 2026-05-15"
-type: reference
-tags: [drakon, pipeline, agent, frontend, typescript]
-status: active
-created: 2026-05-26
-updated: 2026-05-26
+tags:
+  - domain:ux
+  - status:active
+  - format:report
+created: 2026-05-15
+updated: 2026-05-28
+tier: 3
+title: "UI/UX Аудит платформи AI-DRAKON"
+lang: uk
 ---
 
-# AI-DRAKON UX Audit — 2026-05-15
+# UI/UX Аудит платформи AI-DRAKON — 2026-05-15
 
-Evidence-based. All observations reference actual source files.
-
----
-
-## 1. Scope
-
-Two interconnected pipelines:
-- **Pipeline A** — Code → DRAKON IR (architect-agent `/pipeline/analyze`, POST)
-- **Pipeline B** — DRAKON IR → Code (architect-agent `/pipeline/generate`, POST)
-
-Both backend endpoints exist and are tested. Neither has a frontend surface yet.
-
-Current UI entrypoints analyzed:
-- `/diagrams` → `DiagramsPage.tsx` — DRAKON diagram editor
-- `/docs` → `docs.tsx` — Documentation hub (4 tabs)
-- `AppHeader.tsx` — Global navigation + Agents panel
+Об'єктивний аналіз на основі фактичних вихідних файлів коду.
 
 ---
 
-## 2. Findings
+## 1. Область аудиту
 
-### 2.1 Pipeline UI does not exist — HIGH PRIORITY
+Два взаємопов'язані пайплайни:
+- **Pipeline A** — Код → DRAKON IR (architect-agent `/pipeline/analyze`, POST)
+- **Pipeline B** — DRAKON IR → Код (architect-agent `/pipeline/generate`, POST)
 
-**Evidence:** `pipeline_route.py` deployed. No React component references `/pipeline/analyze` or `/pipeline/generate` anywhere in `src/`.
+Обидві кінцеві точки (endpoints) бекенду існують і протестовані. Проте жодна з них ще не має інтерфейсу користувача (UI).
 
-**Impact:** The two core new capabilities are inaccessible to users. Pipeline A (code → DRAKON IR) naturally belongs in `/diagrams` where DRAKON is created and edited. Pipeline B (DRAKON IR → code) also belongs there — it's the inverse of what `/diagrams` produces.
-
-**Complexity:** Medium. Pattern already exists: `docs.tsx` has exactly this async-job pattern (handleGenerate → poll status → show result). Reuse it.
-
----
-
-### 2.2 "Файли" tab is a pure navigation layer — MEDIUM
-
-**Evidence:** `DocsFilesTab.tsx` is read-only. `onNoteClick` calls `onNoteOpen(slug)` which does `setFocusedSlug(slug); setDocsTab("notes")` in `docs.tsx`. It fetches `fetchNotesTree()` independently of `NotesTab`.
-
-**Impact:** The tab switches the user to a different tab without any visual transition signal. A user clicks a file, the tab disappears and "Документи" appears — this is disorienting the first time. Additionally, `NotesTab` has the same file tree in its sidebar — the "Файли" tab duplicates the browsing capability but removes the editing capability.
-
-The tab is not harmful but adds cognitive overhead: "why do I need 'Files' if 'Documents' already shows the tree?"
-
-**What works:** Search + note count in DocsFilesTab is useful and not in the sidebar. That's the only unique value.
-
-**Options:**
-- A: Remove "Файли" tab and add search + note count to the NotesTab sidebar header
-- B: Keep "Файли" tab but make it open notes inline (split view or embedded editor) so it has distinct capability
-
-Option A is simpler and removes the confusing tab-switch teleportation.
+Проаналізовано поточні точки входу в інтерфейсі користувача:
+- `/diagrams` → `DiagramsPage.tsx` — Редактор діаграм DRAKON
+- `/docs` → `docs.tsx` — Центр документації (4 вкладки)
+- `AppHeader.tsx` — Глобальна навігація + панель Агентів
 
 ---
 
-### 2.3 Duplicate `fetchNotesTree()` calls — LOW / IMPLEMENTATION
+## 2. Результати аналізу (Findings)
 
-**Evidence:** `NotesTab.tsx:169` calls `fetchNotesTree()` on mount. `DocsFilesTab.tsx` calls it independently. Both call the same Worker endpoint. When user switches between tabs, the tree is refetched.
+### 2.1 Відсутній інтерфейс пайплайну (Pipeline UI) — ВИСОКИЙ ПРІОРИТЕТ
 
-**Impact:** Minor — two redundant network calls. Not user-visible on fast connections. Worth fixing at the component level with shared state or TanStack Query cache.
+**Докази:** Ендпоінт `pipeline_route.py` розгорнуто. Жоден React-компонент у `src/` не посилається на `/pipeline/analyze` або `/pipeline/generate`.
 
-**Complexity:** Low — TanStack Query is already in the project (QueryClientProvider in root). Add `useQuery({ queryKey: ['notesTree'], queryFn: fetchNotesTree })` in both, the cache deduplicates.
+**Вплив:** Дві ключові нові можливості системи недоступні користувачам. Pipeline A (код → DRAKON IR) логічно має бути інтегрований у сторінку `/diagrams`, де створюються та редагуються діаграми DRAKON. Pipeline B (DRAKON IR → код) також має бути там — це зворотний процес для результатів, які генеруються у `/diagrams`.
 
----
-
-### 2.4 Wiki-link autocomplete popup position is hardcoded — LOW
-
-**Evidence:** `NoteEditor.tsx` line ~170: `className="absolute left-3 top-3"`. The popup always renders at top-left of the editor area regardless of cursor position.
-
-**Impact:** When the user is typing near the top of the document, the popup overlaps their current line. When typing anywhere else, the popup is visible but disconnected from the cursor — the user has to look away from their typing position to see suggestions.
-
-**What works fine:** The keyboard navigation (ArrowUp/Down, Enter/Tab/Escape) and the suggestion content are correct.
-
-**Complexity:** Medium. Requires tracking cursor position with `getBoundingClientRect` on the textarea — doable but not trivial.
+**Складність:** Середня. Патерн уже існує: у `docs.tsx` є саме такий асинхронний патерн виконання завдань (handleGenerate → опитування статусу → показ результату). Перевикористайте його.
 
 ---
 
-### 2.5 No "saved" feedback after Ctrl+S — LOW
+### 2.2 Вкладка "Файли" є суто навігаційним рівнем — СЕРЕДНІЙ
 
-**Evidence:** `NoteEditor.tsx` save button is `disabled={isSaving || !isDirty}`. After save, `isDirty` resets to false and the button goes disabled. There's no timestamp, no "Збережено" flash, no visual confirmation beyond the button becoming disabled.
+**Докази:** Компонент `DocsFilesTab.tsx` доступний лише для читання. `onNoteClick` викликає `onNoteOpen(slug)`, який виконує `setFocusedSlug(slug); setDocsTab("notes")` у `docs.tsx`. Він робить запит `fetchNotesTree()` незалежно від вкладки `NotesTab`.
 
-**Impact:** Users who rely on Ctrl+S (power users — exactly the audience for keyboard shortcut hints) get no confirmation. After a 3-second GitHub save, they can't tell if it saved or if it's still in progress.
+**Вплив:** Перемикання вкладки відбувається без жодного візуального перехідного сигналу для користувача. Клікнувши по файлу, вкладка зникає, а замість неї з'являється вкладка "Документи", що дезорієнтує при першому знайомстві. Крім того, `NotesTab` має таке ж дерево файлів у своєму сайдбарі — вкладка "Файли" дублює можливість перегляду, але позбавлена можливості редагування.
 
-**What works:** The Sonner `toast.success` is called somewhere in `useNotesEditor` after a successful save. Checking the hook would confirm — if it already shows a toast, this is a non-issue.
+Ця вкладка не є шкідливою, але створює додаткове когнітивне навантаження: "навіщо мені 'Файли', якщо 'Документи' вже показують дерево файлів?"
 
-**Complexity:** Trivial if toast is missing; non-issue if it's already there.
+**Що працює корисно:** Пошук + лічильник нотаток у DocsFilesTab корисні, і їх немає в сайдбарі. Це єдина унікальна перевага.
 
----
+**Варіанти вирішення:**
+- Варіант A: Видалити вкладку "Файли" та перенести пошук + лічильник нотаток у заголовок сайдбару `NotesTab`
+- Варіант B: Залишити вкладку "Файли", але зробити відкриття нотаток інлайновим (через розділений екран або вбудований редактор), щоб забезпечити окремий унікальний функціонал
 
-### 2.6 job_store is in-memory only — ARCHITECTURAL NOTE
-
-**Evidence:** `pipeline/job_store.py` uses a Python dict `_store: dict[str, Job] = {}`. Process restart clears all jobs.
-
-**Impact:** If the user triggers Pipeline A, navigates away, and the service restarts, the job_id is lost. `/pipeline/status/{id}` returns 404. This is acceptable for an async MVP pattern but means the frontend must poll immediately and not persist job_ids across sessions.
-
-**Not a UX redesign problem** — this is a backend architectural note for when persistence is needed.
+Варіант A простіший і прибирає незрозуміле "телепортування" між вкладками.
 
 ---
 
-## 3. What works well — do not change
+### 2.3 Дублювання викликів `fetchNotesTree()` — НИЗЬКИЙ / РЕАЛІЗАЦІЯ
 
-| Area | Assessment |
+**Докази:** `NotesTab.tsx:169` викликає `fetchNotesTree()` при монтуванні. `DocsFilesTab.tsx` викликає його незалежно. Обидва викликають один і той самий ендпоінт Воркера. Коли користувач перемикається між вкладками, дерево завантажується повторно.
+
+**Вплив:** Незначний — два зайвих мережевих запити. Непомітно для користувача на швидкому з'єднанні. Варто виправити на рівні компонентів за допомогою спільного стану або кешу TanStack Query.
+
+**Складність:** Низька. TanStack Query вже підключено у проекті (QueryClientProvider у корені). Додавання `useQuery({ queryKey: ['notesTree'], queryFn: fetchNotesTree })` в обох компонентах дозволить автоматично дедуплікувати кеш.
+
+---
+
+### 2.4 Хардкод позиціонування спливаючого вікна автодоповнення вікі-посилань — НИЗЬКИЙ
+
+**Докази:** У `NoteEditor.tsx` на рядку ~170: `className="absolute left-3 top-3"`. Спливаюче вікно завжди рендериться у лівому верхньому кутку редактора, незалежно від позиції курсора.
+
+**Вплив:** Коли користувач пише біля початку документа, спливаюче вікно перекриває його поточний рядок. Під час написання в інших місцях вікно хоч і видно, але воно відірване від курсора — користувачеві доводиться відводити погляд від поточної позиції введення, щоб побачити підказки.
+
+**Що працює добре:** Клавіатурна навігація (ArrowUp/Down, Enter/Tab/Escape) та вміст самих підказок реалізовані коректно.
+
+**Складність:** Середня. Вимагає відстеження координат курсора через `getBoundingClientRect` на текстовій області (textarea) — це можливо, але не тривіально.
+
+---
+
+### 2.5 Відсутність зворотного зв'язку при збереженні через Ctrl+S — НИЗЬКИЙ
+
+**Докази:** Кнопка збереження у `NoteEditor.tsx` має стан `disabled={isSaving || !isDirty}`. Після збереження стан `isDirty` скидається в false, і кнопка стає неактивною. Немає жодного позначення часу, спалаху тексту "Збережено" чи іншого візуального підтвердження, крім вимкнення кнопки.
+
+**Вплив:** Користувачі, які використовують комбінацію клавіш Ctrl+S (досвідчені користувачі — саме та аудиторія, для якої створено підказки гарячих клавіш), не отримують жодного підтвердження збереження. Після 3-секундного процесу збереження в GitHub вони не можуть зрозуміти, чи операція успішно завершена, чи вона ще триває.
+
+**Що працює:** Функція `toast.success` від бібліотеки Sonner має викликатися десь у `useNotesEditor` після успішного збереження. Потрібно перевірити цей хук — якщо він уже показує toast, то проблема відсутня.
+
+**Складність:** Тривіальна, якщо toast відсутній; не є проблемою, якщо він уже є.
+
+---
+
+### 2.6 job_store зберігається лише в оперативній пам'яті — АРХІТЕКТУРНА ПРИМІТКА
+
+**Докази:** `pipeline/job_store.py` використовує Python-словник `_store: dict[str, Job] = {}`. Перезапуск процесу повністю очищає всі завдання.
+
+**Вплив:** Якщо користувач запускає Pipeline A, переходить на іншу сторінку, а в цей час сервіс перезапускається, то `job_id` буде втрачено. `/pipeline/status/{id}` поверне помилку 404. Це прийнятно для асинхронного MVP, але означає, що фронтенд повинен опитувати статус негайно і не зберігати `job_id` між різними сесіями користувача.
+
+Це не є проблемою редизайну інтерфейсу користувача — це архітектурна нотатка бекенду на випадок, коли буде потрібна персистентність.
+
+---
+
+## 3. Що працює чудово — НЕ змінювати
+
+| Область | Оцінка |
 |---|---|
-| Precision Dark design system | Coherent, consistent, professional. amber/mono combination is distinctive. |
-| JetBrains Mono font | Correct for a code/DRAKON tool. |
-| Global Agents panel (header sheet) | Correct placement — accessible from every route. |
-| `handleGraphNodeClick` → focusSlug → "Документи" | Cross-tab navigation pattern is solid. |
-| Draft restoration in NoteEditor | Correct UX — amber border, clear options. |
-| Keyboard shortcuts + hint bar | Full set (Ctrl+B/I/K/E/P/S) with visible hint bar. Well-executed. |
-| SidebarTreeNode hover actions | FilePlus / Trash2 appear on hover, invisible at rest — correct density trade-off. |
-| NotesTab sidebar collapse on mobile | `sidebarOpen` state with PanelLeft toggle — mobile-aware. |
-| Tag editor | Present and functional. |
+| Дизайн-система Precision Dark | Збалансована, послідовна, професійна. Поєднання кольору amber та монохромних елементів виглядає преміально та стильно. |
+| Шрифт JetBrains Mono | Ідеальний вибір для інструментів роботи з кодом та схемами DRAKON. |
+| Глобальна панель Агентів (header sheet) | Правильне розташування — швидкий доступ з будь-якого маршруту. |
+| Перехід `handleGraphNodeClick` → focusSlug → "Документи" | Працездатний і надійний патерн навігації між вкладками. |
+| Відновлення чернеток у NoteEditor | Коректний UI/UX — помаранчева (amber) рамка, чіткі опції дій. |
+| Гарячі клавіші + панель підказок | Повний набір (Ctrl+B/I/K/E/P/S) із видимим статус-баром підказок. Реалізовано на відмінно. |
+| Дії наведення у SidebarTreeNode | Кнопки FilePlus / Trash2 з'являються при наведенні курсору, не перевантажуючи інтерфейс у стані спокою. |
+| Згортання сайдбару NotesTab на мобільних пристроях | Стан `sidebarOpen` з перемикачем PanelLeft — адаптивно для мобільних екранів. |
+| Редактор тегів | Доступний та повністю функціональний. |
 
 ---
 
-## 4. Prioritized Redesign Plan
+## 4. Пріоритетний план редизайну
 
-| Priority | Issue | Action | Complexity |
+| Пріоритет | Проблема | Дія | Складність |
 |---|---|---|---|
-| 1 | Pipeline UI missing | Add "Аналіз" + "Генерація" to DiagramsPage | Medium |
-| 2 | "Файли" tab redundancy | Remove tab, move search to NotesTab sidebar | Low |
-| 3 | Duplicate tree fetches | Use TanStack Query cache for `notesTree` | Low |
-| 4 | Wiki-link popup position | Track cursor coords, position popup near cursor | Medium |
-| 5 | Save feedback | Verify if toast exists; add if missing | Trivial |
+| 1 | Відсутній Pipeline UI | Додати панелі "Аналіз" + "Генерація" на DiagramsPage | Середня |
+| 2 | Дублювання вкладки "Файли" | Видалити вкладку, перенести пошук у сайдбар NotesTab | Низька |
+| 3 | Повторне завантаження дерева | Використати кеш TanStack Query для `notesTree` | Низька |
+| 4 | Позиція підказок вікі-посилань | Відстежувати позицію курсора, відображати меню поруч | Середня |
+| 5 | Зворотний зв'язок збереження | Перевірити наявність toast; додати за потреби | Тривіальна |
 
 ---
 
-## 5. Pipeline UI — Design Decisions
+## 5. Пайплайн UI — Дизайнерські рішення
 
-### Where to place Pipeline A trigger (Code → DRAKON IR)
+### Де розмістити запуск Pipeline A (Код → DRAKON IR)
 
-`/diagrams` is the correct location. The user is working on DRAKON diagrams — Pipeline A analyzes source code and generates DRAKON IR for import.
+`/diagrams` — правильне місце. Користувач працює над діаграмами DRAKON; Pipeline A аналізує вихідний код і генерує DRAKON IR для імпорту в нову діаграму.
 
-**Proposed:** Add a "Аналізувати код" button/panel in DiagramsPage. Input: code paste or file path. Output: generated DRAKON IR that can be imported as a new diagram.
+**Пропозиція:** Додати кнопку/панель "Аналізувати код" на сторінці DiagramsPage. Вхідні дані: вставка коду або шлях до файлу. Вихідні дані: згенерований DRAKON IR, який можна імпортувати як нову діаграму.
 
-### Where to place Pipeline B trigger (DRAKON IR → Code)
+### Де розмістити запуск Pipeline B (DRAKON IR → Код)
 
-Also `/diagrams`. When a diagram is open, Pipeline B generates code from it.
+Також на сторінці `/diagrams`. Коли діаграма відкрита, Pipeline B генерує код на її основі.
 
-**Proposed:** Add a "Генерувати код" action in the diagram editor toolbar (per-diagram action, not global).
+**Пропозиція:** Додати дію "Генерувати код" на панель інструментів редактора діаграм (контекстна дія для відкритої діаграми, не глобальна).
 
-### Job status visibility
+### Відображення статусу завдань (Job status)
 
-Both pipelines return a `job_id` immediately and must be polled. The existing `docs.tsx` pattern (setInterval + log area) is correct and should be reused as a component.
+Обидва пайплайни відразу повертають `job_id` і вимагають опитування статусу. Існуючий патерн у `docs.tsx` (setInterval + область відображення логів) є правильним і має бути перевикористаний як окремий UI-компонент.
 
-### Stitch prompt targets
+### Цільові зміни для промпту склеювання (Stitch prompt)
 
-The Stitch prompt should produce a visual design for:
-1. "Аналіз коду" panel in DiagramsPage — code input + job status + IR result preview
-2. "Генерувати код" panel in diagram editor — language selector + generated code display with copy
+Промпт Stitch має створити візуальний дизайн для:
+1. Панелі "Аналіз коду" на DiagramsPage — поле введення коду + статус виконання завдання + попередній перегляд результату IR.
+2. Панелі "Генерувати код" у редакторі діаграм — вибір мови програмування + відображення згенерованого коду з кнопкою швидкого копіювання.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[ux-audit/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[ux-audit/risks]] — Ризики та технічний борг UI/UX платформи AI-DRAKON
+- [[ux-audit/stitch-prompt]] — Промпт для склеювання (Stitch) інтерфейсу
+**Читати далі:** [[ux-audit/lovable-prompt-27]]

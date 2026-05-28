@@ -1,10 +1,13 @@
 ---
-title: "UI Pages Reference — AI-DRAKON Platform"
-type: reference
-tags: [drakon, pipeline, agent, security, frontend]
-status: active
+tags:
+  - domain:ux
+  - status:active
+  - format:reference
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Довідник по сторінках інтерфейсу UI"
+lang: uk
 ---
 
 # UI Pages Reference — AI-DRAKON Platform
@@ -419,3 +422,12 @@ Worker → jwtVerify(token, JWT_SECRET)
     ├── drakonwidget.ts       ← DrakonDiagram (widget internal format)
     └── settings.ts           ← AppSettings type
 ```
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[docs/INDEX]]
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-22-platform-redesign]] — Редізайн платформи AI-DRAKON — План реалізації
+- [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON

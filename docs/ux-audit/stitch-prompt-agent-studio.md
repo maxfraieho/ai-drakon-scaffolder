@@ -1,45 +1,48 @@
 ---
-title: "Stitch Design Prompt — Agent Logic Studio"
-type: reference
-tags: [drakon, agent, frontend]
-status: active
+tags:
+  - domain:ux
+  - status:active
+  - format:report
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Промпт дизайну Stitch: Студія логіки агентів"
+lang: uk
 ---
 
-# Stitch Design Prompt — Agent Logic Studio
+# Промпт дизайну Stitch: Студія логіки агентів — Студія логіки агентів (Agent Logic Studio)
 
-Design the **Agent Logic Studio** page for AI-DRAKON — an IDE-like visual programming platform for software architects. This page visualizes and lets engineers edit the internal logic of three AI agents.
+Спроектуйте сторінку **Agent Logic Studio** для AI-DRAKON — візуальну платформу програмування типу IDE для архітекторів програмного забезпечення. Ця сторінка візуалізує та дозволяє інженерам редагувати внутрішню логіку трьох AI-агентів.
 
 ---
 
-## DESIGN LANGUAGE (inherit from existing app — do not deviate)
+## МОВА ДИЗАЙНУ (успадкуйте з існуючого додатка — НЕ відхилятися)
 
 ```
-Background base:     #0a0b0e
-Background surface:  #111318
-Background elevated: #191c23
-Border subtle:       rgba(255,255,255,0.06)
-Border default:      rgba(255,255,255,0.10)
-Text primary:        rgba(255,255,255,0.92)
-Text secondary:      rgba(255,255,255,0.55)
-Text muted:          rgba(255,255,255,0.28)
-Accent amber:        #f59e0b
-Accent amber dim:    rgba(245,158,11,0.15)
-Success green:       #22c55e
-Error red:           #ef4444
-Purple (decisions):  #a78bfa
-Font UI:             IBM Plex Sans, 12–13px
-Font mono:           JetBrains Mono, 11–12px
-Radius:              4px buttons/inputs, 0px panel edges
-NO gradients. NO shadows. NO glow. NO illustrations.
+Базовий фон (Background base):        #0a0b0e
+Фон поверхні (Background surface):    #111318
+Піднятий фон (Background elevated):   #191c23
+Тонка рамка (Border subtle):          rgba(255,255,255,0.06)
+Стандартна рамка (Border default):    rgba(255,255,255,0.10)
+Основний текст (Text primary):        rgba(255,255,255,0.92)
+Вторинний текст (Text secondary):    rgba(255,255,255,0.55)
+Приглушений текст (Text muted):       rgba(255,255,255,0.28)
+Акцентний янтарний (Accent amber):    #f59e0b
+Тьмяний янтарний (Accent amber dim):   rgba(245,158,11,0.15)
+Успішний зелений (Success green):     #22c55e
+Помилковий червоний (Error red):      #ef4444
+Фіолетовий (для рішень, Purple):      #a78bfa
+Шрифт інтерфейсу (Font UI):           IBM Plex Sans, 12–13px
+Моноширинний шрифт (Font mono):       JetBrains Mono, 11–12px
+Радіус (Radius):                      4px для кнопок/інпутів, 0px для країв панелей
+БЕЗ градієнтів. БЕЗ тіней. БЕЗ свічення. БЕЗ ілюстрацій.
 ```
 
 ---
 
-## PAGE: `/agents`
+## СТОРІНКА: `/agents`
 
-### Overall Layout (1440px viewport)
+### Загальний макет (Viewport 1440px)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
@@ -84,120 +87,130 @@ NO gradients. NO shadows. NO glow. NO illustrations.
 
 ---
 
-## LEFT SIDEBAR (200px, bg: surface)
+## ЛІВИЙ САЙДБАР (200px, bg: surface)
 
-**Header section:**
-- Title: `⚙ АГЕНТНА ЛОГІКА` — monospace uppercase, 10px, amber, tracking 0.2em
-- Three agent tabs across top: `[Architect]` `[DRAKON]` `[Docs]` — small pills, active = amber bg/black text
+**Розділ заголовка (Header section):**
+- Назва: `⚙ АГЕНТНА ЛОГІКА` — моноширинний, верхній регістр, 10px, колір amber, трекінг 0.2em
+- Три вкладки агентів у верхній частині: `[Architect]` `[DRAKON]` `[Docs]` — маленькі плашки (pills), активна = фон amber / чорний текст
 
-**Agent section:**
-- Each pipeline: name in monospace 11px, icon (→ for Pipeline A, ← for Pipeline B)
-- Active pipeline: amber left border 2px, slightly brighter text
-- Clickable rows, subtle hover bg
+**Розділ агентів (Agent section):**
+- Кожен пайплайн: назва моноширинним шрифтом 11px, іконка (→ для Pipeline A, ← для Pipeline B)
+- Активний пайплайн: ліва рамка amber 2px, трохи яскравіший текст
+- Рядки клікабельні, з легким фоном при наведенні (hover bg)
 
-**"ВУЗЛИ" section (context-sensitive):**
-- Shows nodes of selected pipeline
-- Node names in monospace 11px
-- LLM nodes (have prompts): white text + small purple `LLM` badge
-- Deterministic nodes: muted text
-- Selected: amber left border
-- Bullet ○ / ● indicators
+**Розділ "ВУЗЛИ" (ВУЗЛИ, залежить від контексту):**
+- Показує вузли вибраного пайплайну
+- Назви вузлів моноширинним шрифтом 11px
+- Вузли LLM (мають промпти): білий текст + маленький фіолетовий бейдж `LLM`
+- Детерміністичні вузли: приглушений текст
+- Вибраний вузол: ліва рамка amber 2px
+- Індикатори у вигляді точок ○ / ●
 
-**"БАЗА ЗНАНЬ" section:**
-- List of KB files for selected agent
-- Filename in monospace 10px, muted
-- Clickable → opens in bottom KB drawer
-- Hover: slight bg highlight
-
----
-
-## MAIN AREA (flex-1, bg: base)
-
-**Header bar (h-10, bg: surface, border-bottom):**
-- Pipeline name: `Pipeline A: Код → DRAKON IR` — white, 13px IBM Plex Sans
-- Description: `LangGraph StateGraph · 7 вузлів · Ralph Loop (max 3 iter)` — muted, 11px mono
-- Right: `live ●` green indicator
-
-**Mermaid graph panel (h-[280px], bg: elevated, border-radius 4px, margin):**
-- Dark-themed Mermaid diagram
-- Override node colors: action nodes = #191c23 with rgba(255,255,255,0.1) border
-- Decision edges (dashed): amber color  
-- Start/End: filled darker
-- Loop-back edge: amber dashed
-- Small, compact, read-only, centered
-- Label: `ГРАФ ПАЙПЛАЙНУ` — muted monospace uppercase, 10px, above chart
-
-**"ВУЗЛИ З ПРОМПТАМИ" section (below graph):**
-- Sub-label: `ВУЗЛИ З LLM-ПРОМПТАМИ` — muted mono 10px uppercase
-- Card per LLM node:
-  - Left: node name in amber mono + `LLM` purple badge
-  - Body: first 60 chars of prompt in muted italic mono 10px, truncated with `...`
-  - Right: `→` chevron, entire card clickable
-  - Hover: amber border left 2px
-  - Selected: amber bg dim, border amber
+**Розділ "БАЗА ЗНАНЬ":**
+- Список файлів бази знань (KB) для вибраного агента
+- Ім'я файлу моноширинним шрифтом 10px, приглушене
+- Клікабельні рядки → відкриваються в нижньому висувному ящику бази знань (KB drawer)
+- Наведення: легке виділення фону
 
 ---
 
-## RIGHT PANEL (340px, bg: surface, border-left, conditional — appears on node select)
+## ОСНОВНА ОБЛАСТЬ (flex-1, bg: base)
 
-**Header (h-10, border-bottom):**
-- `●` amber dot + node name in mono 12px white
-- Type badge: `action` in muted mono 9px pill
-- `×` close button right
+**Панель заголовка (h-10, bg: surface, border-bottom):**
+- Назва пайплайну: `Pipeline A: Код → DRAKON IR` — білий, 13px IBM Plex Sans
+- Опис: `LangGraph StateGraph · 7 вузлів · Ralph Loop (max 3 iter)` — приглушений, 11px моно
+- Праворуч: зелений індикатор роботи `live ●`
 
-**Prompt section:**
-- Label: `СИСТЕМНИЙ ПРОМПТ` — muted mono 10px uppercase, tracking
-- Dark code editor area (bg: elevated, border, border-radius 4px):
-  - Full-width textarea, monospace 11px, min-h-[200px]
-  - Amber text color for prompt text
+**Панель графу Mermaid (h-[280px], bg: elevated, border-radius 4px, margin):**
+- Темна тема діаграми Mermaid
+- Перевизначення кольорів вузлів: вузли дій (action nodes) = #191c23 із рамкою `rgba(255,255,255,0.1)`
+- Ребра рішень (decision edges, пунктирні): колір amber
+- Початок/Кінець (Start/End): залиті темнішим кольором
+- Ребро зворотного зв'язку (Loop-back): пунктирне amber
+- Маленький, компактний, лише для читання, центрований
+- Мітка: `ГРАФ ПАЙПЛАЙНУ` — приглушений моноширинний верхній регістр, 10px, над діаграмою
+
+**Розділ "ВУЗЛИ З ПРОМПТАМИ" (під графом):**
+- Підзаголовок: `ВУЗЛИ З LLM-ПРОМПТАМИ` — приглушений моно 10px верхній регістр
+- Картка для кожного LLM-вузла:
+  - Ліворуч: назва вузла кольором amber моно + фіолетовий бейдж `LLM`
+  - Тіло: перші 60 символів промпту приглушеним курсивним моноширинним шрифтом 10px, обрізані з `...`
+  - Праворуч: шеврон `→`, вся картка клікабельна
+  - Наведення: ліва рамка amber 2px
+  - Виділено: тьмяний фон amber dim, рамка amber
+
+---
+
+## ПРАВА ПАНЕЛЬ (340px, bg: surface, border-left, умовна — з'являється при виборі вузла)
+
+**Заголовок (h-10, border-bottom):**
+- `●` янтарна точка + назва вузла моноширинним 12px білим кольором
+- Бейдж типу: `action` у приглушеному моно 9px
+- Кнопка закриття `×` праворуч
+
+**Розділ промпту:**
+- Мітка: `СИСТЕМНИЙ ПРОМПТ` — приглушений моно 10px верхній регістр, трекінг
+- Темна область редактора коду (bg: elevated, border, border-radius 4px):
+  - Текстова область на всю ширину, моноширинний 11px, мін-висота `min-h-[200px]`
+  - Янтарний (amber) колір тексту для вмісту промпту
   - Placeholder: "Промпт відсутній (детерміністичний вузол)"
-  - Scrollable
-- Char count bottom-right: `1.2k chars` in muted 9px
+  - З прокруткою
+- Лічильник символів у правому нижньому кутку: `1.2k chars` приглушеним 9px
 
-**Params section (divider):**
-- Label: `ПАРАМЕТРИ ВУЗЛА` — muted mono 10px uppercase
-- `Опис:` — muted label + text below in 11px white
-- Read-only params if any (key: value pairs in mono)
+**Розділ параметрів (Params section, з роздільником):**
+- Мітка: `ПАРАМЕТРИ ВУЗЛА` — приглушений моно 10px верхній регістр
+- `Опис:` — приглушена мітка + текст нижче 11px білим кольором
+- Параметри лише для читання, якщо є (пари "ключ: значення" в моно)
 
-**Save button:**
-- Full-width, bg amber, text black, mono uppercase 11px
+**Кнопка збереження:**
+- На всю ширину, тлі amber, текст чорний, моно верхній регістр 11px
 - `ЗБЕРЕГТИ ПРОМПТ`
-- Below: `Збережено 2 хв тому` — success green, 10px mono, appears after save
+- Нижче: `Збережено 2 хв тому` — успішний зелений колір, 10px моно, з'являється після збереження
 
-**Status:**
-- `Статус агента:` — muted label + `● live` green or `○ offline` red
-- Agent URL in muted mono 9px
-
----
-
-## KB DRAWER (bottom, collapsible, h-[200px])
-
-**Trigger bar:**
-- `▼ БАЗА ЗНАНЬ` in muted mono 10px uppercase + filename when open
-- `[Редагувати]` button right
-- Collapses/expands on click
-
-**Content (when open):**
-- Left: file list as scrollable nav (80px), active = amber
-- Right: markdown content rendered in monospace, muted, scrollable
-- When editing: textarea replaces content, `[Зберегти]` amber btn appears
+**Статус:**
+- `Статус агента:` — приглушена мітка + `● live` зелений або `○ offline` червоний
+- URL-адреса агента приглушеним моно 9px
 
 ---
 
-## STATES TO DESIGN
+## НИЖНІЙ ЯЩИК БАЗИ ЗНАНЬ (collapsible, h-[200px])
 
-1. **Default** — no node selected, graph visible, node list below
-2. **Node selected** — right panel open, selected node highlighted in graph  
-3. **Editing prompt** — textarea active in right panel
-4. **Saved** — success flash, "Збережено" appears
-5. **KB drawer open** — bottom panel expands, main area shrinks
+**Смуга тригера (Trigger bar):**
+- `▼ БАЗА ЗНАНЬ` приглушеним моно 10px верхнім регістром + ім'я файлу у відкритому стані
+- Кнопка `[Редагувати]` праворуч
+- Згортається/розгортається при натисканні
+
+**Вміст (у відкритому стані):**
+- Ліворуч: список файлів у вигляді навігації з прокруткою (80px), активний = amber
+- Праворуч: вміст markdown відмальовується моноширинним шрифтом, приглушений, з прокруткою
+- Під час редагування: текстова область замінює вміст, з'являється янтарна кнопка `[Зберегти]`
 
 ---
 
-## KEY VISUAL DECISIONS
+## СТАНИ ДЛЯ ПРОЕКТУВАННЯ
 
-- The Mermaid graph uses **dark override CSS**: all node fills replaced with `#191c23`, text `rgba(255,255,255,0.8)`, edges `rgba(255,255,255,0.3)`, decision edges amber `#f59e0b`
-- The "ВУЗЛИ З ПРОМПТАМИ" cards are the **primary interaction surface** — more prominent than the graph
-- Right panel appears with **subtle slide-in** (translate-x animation, 150ms)
-- The graph is **informational only** — shows the flow, but clicking happens on the cards below
-- No modal dialogs. Everything inline in panels.
+1. **За замовчуванням (Default)** — жоден вузол не вибраний, граф відображається, список вузлів нижче
+2. **Вузол вибрано** — права панель відкрита, вибраний вузол підсвічений на графі
+3. **Редагування промпту** — текстова область активна в правій панелі
+4. **Збережено** — спалах успіху, з'являється напис "Збережено"
+5. **Ящик KB відкритий** — нижня панель розгортається, основна область стискається
+
+---
+
+## КЛЮЧОВІ ВІЗУАЛЬНІ РІШЕННЯ
+
+- Граф Mermaid використовує **темне перевизначення стилів CSS**: заливка всіх вузлів замінена на `#191c23`, текст `rgba(255,255,255,0.8)`, ребра `rgba(255,255,255,0.3)`, ребра рішень amber `#f59e0b`
+- Картки "ВУЗЛИ З ПРОМПТАМИ" є **основною областю взаємодії** — вони помітніші за сам граф
+- Права панель з'являється з **легкою анімацією зсуву** (анімація translate-x, 150ms)
+- Граф є **виключно інформаційним** — він показує зв'язки, але кліки відбуваються по картках нижче
+- Жодних модальних діалогів. Все вбудовано інлайново в панелі.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[ux-audit/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
+- [[ux-audit/stitch-prompt]] — Промпт для склеювання (Stitch) інтерфейсу
+**Читати далі:** [[ux-audit/lovable-prompt-27]]

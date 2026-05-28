@@ -1,42 +1,49 @@
 ---
-title: "Stitch Design Prompt — Diagrams Page"
-type: reference
-tags: [drakon, frontend]
-status: active
+tags:
+  - domain:ux
+  - status:active
+  - format:report
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Промпт дизайну Stitch: Робоча область та панелі Diagrams"
+lang: uk
 ---
 
-Design a complete workspace shell and two runtime panels for AI-DRAKON — a DRAKON visual algorithm engineering platform used by software architects. This is an IDE-like engineering workspace, not a SaaS dashboard.
+# Промпт дизайну Stitch: Робоча область та панелі Diagrams — Diagrams Page & Workspace Shell
 
----
-
-## DESIGN LANGUAGE (strict — do not deviate)
-
-Background base: #0a0b0e
-Background surface: #111318
-Background elevated (inputs, code areas): #191c23
-Border subtle: rgba(255,255,255,0.08)
-Border default: rgba(255,255,255,0.12)
-Text primary: rgba(255,255,255,0.92)
-Text secondary: rgba(255,255,255,0.55)
-Text muted: rgba(255,255,255,0.28)
-Accent amber: #f59e0b — ONLY for primary CTAs, active states, running indicators
-Error: #ef4444
-Success: #22c55e
-Code text: rgba(180,220,160,0.90)
-Font UI: IBM Plex Sans, 12–13px
-Font code/labels: JetBrains Mono, 11–12px
-Border radius: 4px on buttons/inputs, 0px on panels
-No gradients. No shadows. No glow. No illustrations. No rounded corners > 4px on containers.
+Спроектуйте повну оболонку робочої області (workspace shell) та дві панелі виконання для AI-DRAKON — інженерної платформи візуальних алгоритмів DRAKON для архітекторів програмного забезпечення. Це робоче середовище інженерного типу (типу IDE), а не звичайна SaaS-панель керування.
 
 ---
 
-## WORKSPACE SHELL
+## МОВА ДИЗАЙНУ (сувора — НЕ відхилятися)
 
-The workspace is a persistent IDE-like environment. The diagram canvas is always visible. Navigation never hides the canvas.
+```
+Базовий фон (Background base):        #0a0b0e
+Фон поверхні (Background surface):    #111318
+Піднятий фон (inputs, code areas):    #191c23
+Тонка рамка (Border subtle):          rgba(255,255,255,0.08)
+Стандартна рамка (Border default):    rgba(255,255,255,0.12)
+Основний текст (Text primary):        rgba(255,255,255,0.92)
+Вторинний текст (Text secondary):    rgba(255,255,255,0.55)
+Приглушений текст (Text muted):       rgba(255,255,255,0.28)
+Акцентний янтарний (Accent amber):    #f59e0b — ТІЛЬКИ для основних закликів до дії (CTA), активних станів, індикаторів виконання
+Помилка (Error):                      #ef4444
+Успіх (Success):                      #22c55e
+Текст коду (Code text):               rgba(180,220,160,0.90)
+Шрифт UI (Font UI):                   IBM Plex Sans, 12–13px
+Шрифт коду/міток (Font code/labels):  JetBrains Mono, 11–12px
+Радіус рамки (Border radius):         4px для кнопок/інпутів, 0px для панелей
+БЕЗ градієнтів. БЕЗ тіней. БЕЗ свічення. БЕЗ ілюстрацій. БЕЗ закруглених кутів > 4px на контейнерах.
+```
 
-### Layout structure (viewport 1440px+)
+---
+
+## ОБОЛОНКА РОБОЧОЇ ОБЛАСТІ (WORKSPACE SHELL)
+
+Робоча область є постійним середовищем типу IDE. Полотно діаграми завжди залишається видимим. Навігація ніколи не перекриває та не приховує полотно.
+
+### Структура макету (viewport 1440px+)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -58,146 +65,156 @@ The workspace is a persistent IDE-like environment. The diagram canvas is always
 
 ---
 
-### TOP BAR (height 32px)
+### ВЕРХНЯ ПАНЕЛЬ (TOP BAR, висота 32px)
 
-- Left: amber dot (6px) + "AI·DRAKON" monospaced uppercase 11px + separator + breadcrumb "process_data.py / calculate_path" muted
-- Right: global search icon (ghost, 20px) + settings icon + user avatar placeholder
-- Background: #111318, border-bottom 1px rgba(255,255,255,0.08)
-
----
-
-### ICON RAIL (width 40px)
-
-Vertical column, bg #111318, border-right 1px rgba(255,255,255,0.08).
-
-Icons (20px, ghost by default, amber when section active):
-- Top group: diagrams icon (grid), notes icon (text lines), graph icon (nodes)
-- Separator
-- Bottom group: agent icon (cpu/sparkle), settings icon (gear)
-
-Hover: icon bg rgba(255,255,255,0.05), tooltip label appears right
+- Ліворуч: янтарна точка (6px) + "AI·DRAKON" моноширинний верхній регістр 11px + роздільник + хлібні крихти "process_data.py / calculate_path" приглушеним кольором
+- Праворуч: глобальна іконка пошуку (ghost, 20px) + іконка налаштувань + плейсхолдер аватара користувача
+- Фон: #111318, нижня рамка 1px `rgba(255,255,255,0.08)`
 
 ---
 
-### LEFT PANEL (width 220px, collapsible to 0)
+### СМУГА ІКОНОК (ICON RAIL, ширина 40px)
 
-The panel shows content for the currently active icon rail section.
+Вертикальна колонка, bg #111318, права рамка 1px `rgba(255,255,255,0.08)`.
 
-**Section A — Diagrams**
-- Header row (28px): "DIAGRAMS" monospaced 10px uppercase muted left, "+" ghost icon right
-- Search input (24px): bg #191c23, placeholder "filter…", font-mono 11px
-- Diagram list (each row 28px, border-bottom rgba(255,255,255,0.05)):
-  · Active diagram: left border 2px amber, text primary, bg rgba(245,158,11,0.06)
-  · Inactive: text secondary, hover bg rgba(255,255,255,0.03)
-  · Each row: diagram name monospaced 11px + small CC badge "CC:4" muted right
+Іконки (20px, за замовчуванням ghost, amber при активному розділі):
+- Верхня група: іконка діаграм (сітка), іконка нотаток (текстові рядки), іконка графу (вузли)
+- Роздільник
+- Нижня група: іконка агента (процесор/іскра), іконка налаштувань (шестерня)
 
-**Section B — Notes**
-- Header row: "NOTES" + count badge + search input (same pattern)
-- File tree: expandable folders, monospaced 11px, indent 12px per level
-- Active note: amber left border
-- Node icons: folder (▶/▼), note (─)
-
-**Section C — Graph**
-- Mini knowledge graph preview (node dots + lines)
-- "Open full graph" text link at bottom
+Наведення: фон іконки `rgba(255,255,255,0.05)`, праворуч з'являється спливаюча мітка (tooltip)
 
 ---
 
-### DIAGRAM CANVAS (flex-1, full height between top bar and bottom)
+### ЛІВА ПАНЕЛЬ (LEFT PANEL, ширина 220px, з можливістю згортання до 0)
 
-- Background: #0a0b0e (base)
-- DrakonWidget renders here (do not overlay)
-- Canvas toolbar (top-right overlay, 32px height):
-  · Group of ghost buttons: zoom +/-, fit, reset
-  · Separator
-  · "Аналізувати код" button (ghost, ScanSearch icon + text)
-  · "Генерувати код" button (ghost, Code2 icon + text, disabled if no diagram selected)
-- Active diagram name shown in canvas toolbar left: monospaced 11px muted
+Панель відображає вміст для поточної активної іконки на смузі іконок.
 
----
+**Розділ A — Діаграми**
+- Рядок заголовка (28px): "DIAGRAMS" моноширинний 10px верхній регістр приглушений ліворуч, "+" ghost-іконка праворуч
+- Поле пошуку (24px): bg #191c23, placeholder "filter…", font-mono 11px
+- Список діаграм (кожен рядок 28px, нижня рамка `rgba(255,255,255,0.05)`):
+  · Активна діаграма: ліва рамка 2px amber, основний текст, bg `rgba(245,158,11,0.06)`
+  · Неактивна: вторинний текст, hover bg `rgba(255,255,255,0.03)`
+  · Кожен рядок: назва діаграми моно 11px + невеликий бейдж складності "CC:4" приглушений праворуч
 
-## PANEL 1: Code Analysis ("Аналіз коду")
+**Розділ B — Нотатки**
+- Рядок заголовка: "NOTES" + бейдж кількості + поле пошуку (такий самий патерн)
+- Дерево файлів: розгорнуті папки, моноширинний 11px, відступ 12px на кожен рівень
+- Активна нотатка: ліва рамка amber
+- Іконки вузлів: папка (▶/▼), нотатка (─)
 
-Right-side panel, 380px wide, full height (top bar to bottom).
-Triggered by "Аналізувати код" button.
-
-### Frame 1.1 — IDLE
-- Header (40px): "АНАЛІЗ КОДУ" monospaced uppercase 10px left + "Код → IR" muted 10px right + ✕ ghost button
-- Divider 1px subtle
-- Code textarea: bg #191c23, border rgba(255,255,255,0.08), JetBrains Mono 11px, min 8 lines, placeholder "# Вставте Python-код"
-- File path input (24px): bg #191c23, placeholder "module.py", monospace 11px
-- Language row: static label "python" uppercase muted 10px monospaced
-- CTA: "Аналізувати" full-width button, bg #f59e0b, text #000, height 36px, JetBrains Mono bold
-
-### Frame 1.2 — RUNNING
-- Textarea + inputs: opacity 0.4, non-interactive
-- Button replaced: amber spinner 14px + "Аналізується… 12s" monospaced muted
-- Status line (bg #191c23, border-left 2px amber, 28px height): "CC: 7 · рівень: primitive" monospaced 11px
-
-### Frame 1.3 — DONE
-- Input section collapses: shows 2 lines of code + "↕ розгорнути" text link
-- "РЕЗУЛЬТАТ" label: uppercase monospaced muted 10px
-- Function list (each row 32px, border-bottom subtle):
-  · Left: function name JetBrains Mono 12px
-  · Middle: "CC: 4" muted 10px
-  · Right: "✓ valid" #22c55e or "2 помилки" #ef4444 (chip, 10px)
-  · Far right: "↓ Імпортувати" ghost button (visible on hover only)
-- Errors inline: below affected row, red text 11px monospaced, indented
-- Footer: "Новий аналіз" ghost full-width, border-top subtle
-
-### Frame 1.4 — ERROR
-- Textarea stays
-- Error card: border-left 3px #ef4444, bg #191c23, message 12px red, "Повторити" ghost right
+**Розділ C — Граф**
+- Міні-попередній перегляд графу знань (точки вузлів + зв'язки)
+- Текстове посилання "Відкрити повний граф" у нижній частині
 
 ---
 
-## PANEL 2: Code Generation ("Генерувати код")
+### ПОЛОТНО ДІАГРАМИ (DIAGRAM CANVAS, flex-1, повна висота між верхньою та нижньою смугами)
 
-Bottom drawer, full width of diagram canvas area (not covering left panel), height 280px.
-Triggered by "Генерувати код" button.
-
-### Frame 2.1 — IDLE
-- Header (40px): "ГЕНЕРУВАТИ КОД" monospaced uppercase 10px left + language active badge + ✕ ghost right
-- Language selector: 3 segments ["Python" | "TypeScript" | "JavaScript"], active = bg #f59e0b text #000, inactive = ghost, height 28px, border 1px rgba(255,255,255,0.10)
-- Description input: 1 row bg #191c23, placeholder "Опис поведінки (необов'язково)"
-- Footer: muted hint "10–30 секунд" left, "Генерувати" amber button right (34px)
-
-### Frame 2.2 — RUNNING
-- Inputs opacity 0.4
-- Button area: spinner + "Генерується… 8s" + amber badge "ітерація 1/3" (bg rgba(245,158,11,0.12), border 1px amber, monospaced 10px)
-
-### Frame 2.3 — DONE
-- Code block: bg #0a0b0e, border 1px rgba(255,255,255,0.08), radius 4px, max-height 160px, scroll-y
-- Code text: JetBrains Mono 11px, rgba(180,220,160,0.90)
-- Top-right: "⎘ Копіювати" ghost button monospaced 11px
-- Footer: left = syntax chip ("syntax: ✓" green / "syntax: 2 помилок" red), right = "Перегенерувати" ghost + "Закрити" text link
+- Фон: #0a0b0e (base)
+- Тут рендериться DrakonWidget (не перекривати його)
+- Панель інструментів полотна (накладена у верхньому правому кутку, висота 32px):
+  · Група ghost-кнопок: масштаб +/-, вписати, скинути
+  · Роздільник
+  · Кнопка "Аналізувати код" (ghost, іконка ScanSearch + текст)
+  · Кнопка "Генерувати код" (ghost, іконка Code2 + текст, вимкнена якщо діаграму не вибрано)
+- Назва активної діаграми відображається ліворуч на панелі інструментів полотна: моноширинна 11px приглушена
 
 ---
 
-## KEY WORKSPACE STATES TO DESIGN
+## ПАНЕЛЬ 1: Аналіз коду ("Аналіз коду")
 
-**State 1: Workspace idle — diagrams section open**
-Left panel shows diagram list. Canvas shows open diagram. No right panel, no bottom drawer.
+Права бічна панель, ширина 380px, на всю висоту (від верхньої панелі до низу).
+Запускається кнопкою "Аналізувати код".
 
-**State 2: Analysis panel open (right)**
-Right panel at 380px. Canvas shrinks to accommodate (flex layout). Left panel may collapse to icon rail.
+### Стан 1.1 — ОЧІКУВАННЯ (IDLE)
+- Заголовок (40px): "АНАЛІЗ КОДУ" моноширинний верхній регістр 10px ліворуч + "Код → IR" приглушений 10px праворуч + ghost-кнопка ✕
+- Тонка лінія роздільника 1px
+- Текстова область коду: bg #191c23, border `rgba(255,255,255,0.08)`, JetBrains Mono 11px, мін. 8 рядків, placeholder "# Вставте Python-код"
+- Поле шляху до файлу (24px): bg #191c23, placeholder "module.py", monospace 11px
+- Рядок мови: статична мітка "python" верхній регістр приглушений 10px моноширинна
+- Кнопка дії (CTA): "Аналізувати" на всю ширину, bg #f59e0b, текст #000, висота 36px, JetBrains Mono жирний
 
-**State 3: Analysis done + diagram imported**
-Right panel shows results. Left panel diagram list updated with new entry (amber left border = active).
+### Стан 1.2 — ВИКОНАННЯ (RUNNING)
+- Текстова область + поля вводу: прозорість 0.4, неактивні
+- Кнопку замінено: янтарний spinner 14px + "Аналізується… 12s" моноширинний приглушений
+- Рядок статусу (bg #191c23, ліва рамка 2px amber, висота 28px): "CC: 7 · рівень: primitive" моноширинний 11px
 
-**State 4: Generation panel open (bottom)**
-Bottom drawer 280px. Canvas height reduces. Right panel may be closed.
+### Стан 1.3 — ЗАВЕРШЕНО (DONE)
+- Розділ введення згортається: показує 2 рядки коду + текстове посилання "↕ розгорнути"
+- Мітка "РЕЗУЛЬТАТ": верхній регістр моноширинний приглушений 10px
+- Список функцій (кожен рядок 32px, тонка нижня рамка):
+  · Ліворуч: назва функції JetBrains Mono 12px
+  · Посередині: "CC: 4" приглушений 10px
+  · Праворуч: "✓ valid" #22c55e або "2 помилки" #ef4444 (плашка, 10px)
+  · Крайній правий кут: ghost-кнопка "↓ Імпортувати" (видима лише при наведенні)
+- Помилки інлайново: під відповідним рядком, червоний текст 11px моноширинний, з відступом
+- Підвал: "Новий аналіз" ghost-кнопка на всю ширину, тонка верхня рамка
 
-**State 5: Notes accessible from left panel**
-Left panel shows notes tree. Canvas still visible with open diagram. No navigation away.
+### Стан 1.4 — ПОМИЛКА (ERROR)
+- Текстова область залишається
+- Картка помилки: ліва рамка 3px #ef4444, bg #191c23, повідомлення 12px червоним кольором, "Повторити" ghost-кнопка праворуч
 
 ---
 
-## CONSTRAINTS
+## ПАНЕЛЬ 2: Генерація коду ("Генерувати код")
 
-- No modals. No page navigation. Canvas always visible.
-- Notes and diagrams coexist in left panel (different sections, not pages).
-- Mobile: not in scope for this design.
-- Icon rail always visible, even when left panel collapsed.
-- Bottom drawer width = canvas width only (does not extend under left panel).
-- Right analysis panel width = 380px fixed; canvas flex-shrinks.
+Нижній висувний ящик, на всю ширину області полотна діаграми (не перекриваючи ліву панель), висота 280px.
+Запускається кнопкою "Генерувати код".
+
+### Стан 2.1 — ОЧІКУВАННЯ (IDLE)
+- Заголовок (40px): "ГЕНЕРУВАТИ КОД" моноширинний верхній регістр 10px ліворуч + бейдж активної мови + ghost-кнопка ✕ праворуч
+- Вибір мови: 3 сегменти ["Python" | "TypeScript" | "JavaScript"], активний = bg #f59e0b текст #000, неактивні = ghost, висота 28px, border 1px `rgba(255,255,255,0.10)`
+- Поле опису: 1 рядок bg #191c23, placeholder "Опис поведінки (необов'язково)"
+- Підвал: приглушена підказка "10–30 секунд" ліворуч, янтарна кнопка "Генерувати" праворуч (34px)
+
+### Стан 2.2 — ВИКОНАННЯ (RUNNING)
+- Поля введення мають прозорість 0.4
+- Область кнопок: spinner + "Генерується… 8s" + янтарний бейдж "ітерація 1/3" (bg `rgba(245,158,11,0.12)`, border 1px amber, моно 10px)
+
+### Стан 2.3 — ЗАВЕРШЕНО (DONE)
+- Блок коду: bg #0a0b0e, border 1px `rgba(255,255,255,0.08)`, радіус 4px, макс-висота 160px, з вертикальною прокруткою
+- Текст коду: JetBrains Mono 11px, `rgba(180,220,160,0.90)`
+- У правому верхньому кутку: ghost-кнопка "⎘ Копіювати" моноширинна 11px
+- Підвал: ліворуч = плашка синтаксису ("syntax: ✓" зелений / "syntax: 2 помилок" червоний), праворуч = ghost-кнопка "Перегенерувати" + текстове посилання "Закрити"
+
+---
+
+## КЛЮЧОВІ СТАНИ РОБОЧОЇ ОБЛАСТІ ДЛЯ ПРОЕКТУВАННЯ
+
+**Стан 1: Робоча область вільна — відкритий розділ діаграм**
+Ліва панель показує список діаграм. Полотно відображає відкриту діаграму. Права панель та нижній ящик закриті.
+
+**Стан 2: Панель аналізу відкрита (праворуч)**
+Права панель шириною 380px. Полотно діаграми стискається (flex-макет). Ліва панель може згортатися до смуги іконок.
+
+**Стан 3: Аналіз завершено + діаграму імпортовано**
+Права панель показує результати. Список діаграм на лівій панелі оновлюється новим записом (ліва рамка янтарного кольору = активна).
+
+**Стан 4: Панель генерації відкрита (знизу)**
+Нижній ящик висотою 280px. Висота полотна зменшується. Права панель може бути закрита.
+
+**Стан 5: Нотатки доступні з лівої панелі**
+Ліва панель показує дерево нотаток. Полотно все ще показує відкриту діаграму. Навігація в інше місце не відбувається.
+
+---
+
+## ОБМЕЖЕННЯ
+
+- Жодних модальних вікон. Жодної навігації на інші сторінки. Полотно діаграми завжди залишається видимим.
+- Нотатки та діаграми співіснують у лівій панелі (різні розділи, а не окремі сторінки).
+- Мобільна версія: не розглядається у цьому дизайні.
+- Смуга іконок завжди залишається виділеною та видимою, навіть коли ліва панель згорнута.
+- Ширина нижнього ящика = виключно ширина полотна діаграми (не поширюється під ліву панель).
+- Ширина правої панелі аналізу = фіксовано 380px; полотно стискається по ширині за допомогою flex.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[ux-audit/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
+- [[ux-audit/stitch-prompt-agent-studio]] — Промпт дизайну Stitch: Студія логіки агентів
+**Читати далі:** [[ux-audit/lovable-prompt-27]]

@@ -1,175 +1,169 @@
-# Claude+AGY Collaboration Guide
+---
+tags:
+  - domain:meta
+  - status:active
+  - format:guide
+created: 2026-05-28
+updated: 2026-05-28
+tier: 1
+title: "Керівництво по спільній роботі Claude та AGY"
+lang: uk
+---
 
-## 1. Overview — Claude+AGY Tandem
-The AI-DRAKON project utilizes a powerful hybrid multi-agent tandem to execute software engineering tasks efficiently, combining high-quality orchestration with cost-effective implementation.
+# Керівництво по спільній роботі Claude та AGY — Claude+AGY Collaboration Guide
 
-- **Claude (Sonnet 4.6)** acts as the **orchestrator**: responsible for high-level planning, architectural design, code review, and writing detailed specifications.
-- **AGY (Gemini 2.5 Pro running on Android/Termux)** acts as the **executor**: handles concrete code implementation, runs terminal commands, updates task queues, and pushes commits to Git.
-- **Q (Human)** acts as the **product owner**: sets product direction, reviews and confirms key decisions, and activates/triggers the AGY executor.
-- **Rationale**: This split optimizes costs and token usage. Running complex reasoning via Claude Code can be expensive, whereas Gemini 2.5 Pro via Google Cloud Code on Termux offers high intelligence with a much higher, free-tier execution quota.
+## 1. Огляд — Тандем Claude та AGY
+Проєкт AI-DRAKON використовує потужний гібридний мультиагентний тандем для ефективного виконання завдань з інженерії програмного забезпечення, поєднуючи високоякісну оркестрацію з економічно вигідною реалізацією.
+
+- **Claude (Sonnet 4.6)** виступає як **оркестратор (orchestrator)**: відповідає за високорівневе планування, проектування архітектури, перевірку коду (code review) та написання детальних специфікацій.
+- **AGY (Gemini 2.5 Pro, запущений в Android/Termux)** виступає як **виконавець (executor)**: вирішує конкретні завдання з реалізації коду, запускає команди в терміналі, оновлює черги завдань та робить push-коміти в Git.
+- **Q (Людина)** виступає як **власник продукту (product owner)**: визначає напрямок розвитку продукту, переглядає та підтверджує ключові рішення, а також активує та запускає виконавця AGY.
+- **Обґрунтування**: Такий поділ оптимізує витрати та використання токенів. Запуск складного логічного аналізу безпосередньо через Claude Code може бути дорогим, тоді як Gemini 2.5 Pro через Google Cloud Code на Termux надає високий рівень інтелекту з набагато більшою безкоштовною квотою на виконання.
 
 ---
 
-## 2. Infrastructure
-The collaboration is supported by a robust network of distributed servers, proxies, and services:
+## 2. Інфраструктура
+Спільна робота підтримується надійною мережею розподілених серверів, проксі-серверів та служб:
 
-| Component | Address | Purpose |
-|-----------|---------|---------|
-| **Claude Code** | OrangePi (`192.168.3.161:3456`) | Main orchestrator agent |
-| **AGY CLI** | Termux (`192.168.3.195:8080`) | Gemini execution environment |
-| **AGY Proxy** | `https://agy.exodus.pp.ua` | Public API endpoint for Gemini/Claude models |
-| **Dev Server** | `192.168.3.184` | Houses Docker containers, background agents, routing proxies |
-| **ai-memory** | `192.168.3.184:49374` | Cross-agent session synchronization layer |
-| **MemPalace** | `192.168.3.184` (Python-based) | Semantic memory, diary writing, and Knowledge Graph (KG) |
-| **NotebookLM** | `192.168.3.234:8002` | Long-term project knowledge base |
-| **cloudflared** | OrangePi native | Public secure tunnel exposing internal services |
-
----
-
-## 3. Three-Layer Memory System
-To ensure long-term consistency, operational continuity, and seamless context sharing, the architecture implements a three-layer memory system:
-
-### Layer 1 — Operational Memory (MemPalace)
-- **Technology**: Semantic vector search powered by a customized ChromaDB instance.
-- **Components**:
-  - **Diary**: Individual diaries tracked per agent (`agent: agt-ogy` for AGY, `agent: claude-code` for Claude).
-  - **Knowledge Graph (KG)**: A graph-based repository storing structured project facts and relationships.
-  - **MemPalace Mine**: Over 1,439 codebase files indexed across 19 drawers.
-- **Usage**: Querying context between active sessions, semantic code search, and low-level task tracking.
-
-### Layer 2 — Cross-Agent Sync (ai-memory)
-- **Technology**: Rust binary, SQLite FTS5 backend, git-versioned markdown wiki.
-- **Automation**: Captured automatically via lifecycle hooks (`SessionStart`/`SessionStop`).
-- **AGY Hooks**: Customized shell scripts in Termux (`~/bin/ai-memory-start.sh` and `~/bin/ai-memory-end.sh`) trigger session start/stop events.
-- **Endpoints**: `POST /api/sessions` on `http://192.168.3.184:8790` (internal mapping of port `49374`).
-- **Web UI**: Access at `http://192.168.3.184:8790/web` or `http://192.168.3.184:49374/web`.
-- **Purpose**: Provides zero-friction, automated handoffs between Claude and AGY without requiring manual documentation.
-
-### Layer 3 — Knowledge Base (NotebookLM)
-- **Technology**: Google's NotebookLM wrapped with a custom `notebooklm-py` service.
-- **Notebooks**:
-  - `drn-ai` (ID: `6139067a-5776-4b29-8869-7c9f9aed475c`) — Main codebase knowledge base.
-  - `AI-Memory` (ID: `9386840e-d2e2-4c16-996a-a13f87898667`) — Agent memory research and setup.
-  - `Codebase Analysis` (ID: `2521c922-xxxx-xxxx-xxxx-xxxxxxxxxxxx`) — Deep structural codebase insights.
-- **Usage**: Deep contextual Q&A regarding project structure, generating high-level summaries/podcasts, and indexing human-curated knowledge.
+| Компонент | Адреса | Призначення |
+|-----------|---------|-------------|
+| **Claude Code** | OrangePi (`192.168.3.161:3456`) | Головний агент-оркестратор |
+| **AGY CLI** | Termux (`192.168.3.195:8080`) | Середовище виконання Gemini |
+| **AGY Proxy** | `https://agy.exodus.pp.ua` | Публічний API-ендпоінт для моделей Gemini/Claude |
+| **Dev Server** | `192.168.3.184` | Хостинг Docker-контейнерів, фонових агентів, проксі-роутерів |
+| **ai-memory** | `192.168.3.184:8790` | Рівень синхронізації сесій між агентами |
+| **MemPalace** | `192.168.3.184` (Python) | Семантична пам'ять, ведення щоденників та граф знань (KG) |
+| **NotebookLM** | `192.168.3.234:8002` | Довгострокова база знань проекту |
+| **cloudflared** | OrangePi native | Публічний безпечний тунель, що відкриває доступ до внутрішніх служб |
 
 ---
 
-## 4. Task Coordination Protocol (TASKS.md)
-The formal coordination between the orchestrator (Claude) and the executor (AGY) is managed through a single source of truth file: `development/TASKS.md`.
+## 3. Трирівнева система пам'яті
+Для забезпечення довгострокової узгодженості, безперервності роботи та безперешкодного обміну контекстом архітектура реалізує трирівневу систему пам'яті:
 
-### The Coordination Workflow
-1. **Planning**: Claude writes down the exact tasks, specifying sequential steps, target files, exact commands, and verification criteria.
-2. **Commit**: Claude commits and pushes the updated `TASKS.md` to `origin/main`.
-3. **Execution**: The human product owner (Q) triggers AGY on Termux: `"виконай TASK-N"`.
-4. **Implementation**: AGY parses `TASKS.md`, marks the active task as `[~]`, executes it step by step, and verifies correctness.
-5. **Completion**: AGY marks the task as `[x]`, writes a transaction to the MemPalace diary, commits, and pushes changes to git.
-6. **Verification**: Claude pulls the repository and verifies completion using `git log` or by reading the `mempalace` diary of `agt-ogy`.
+### Рівень 1 — Оперативна пам'ять (MemPalace)
+- **Технологія**: Семантичний векторний пошук на базі кастомізованого екземпляра ChromaDB.
+- **Компоненти**:
+  - **Щоденник (Diary)**: Індивідуальні щоденники для кожного агента (`agent: agt-ogy` для AGY, `agent: claude-code` для Claude).
+  - **Граф знань (KG)**: Графове сховище, що зберігає структуровані факти та зв'язки проекту.
+  - **Шахта MemPalace (Mine)**: Понад 1439 файлів кодової бази, проіндексованих у 19 ящиках.
+- **Використання**: Запит контексту між активними сесіями, семантичний пошук коду та низькорівневе відстеження завдань.
 
-### Task Specification Format
-```markdown
-### TASK-N: [Title]
-```
-```
-[ ] TASK-N
-  META: Context, objectives, and rationale
-  STEP 1: Precise command or code edit description
-  STEP 2: Subsequent action steps
-  VERIFY: Test commands and expected output validation
-  DIARY: SESSION:date|TASK-N:short-title|DONE|details|***
-```
-```
+### Рівень 2 — Синхронізація сесій між агентами (ai-memory)
+- **Технологія**: Фонова служба FastAPI, що працює на порту `8790` сервера розробки.
+- **Механізм**:
+  - Повністю записує вхідні та вихідні дані сесій (prompt/response/thinking) у файли JSONL.
+  - Надає кінцеві точки для індексування та пошуку по минулих траєкторіях агентів.
+- **Інтеграція**: Автоматичні хук-скрипти `ai-memory-start.sh` та `ai-memory-end.sh` запускаються до та після кожної сесії Termux/AGY, забезпечуючи персистентність логів у `~/workspace/ai-memory-logs/`.
 
----
-
-## 5. AGY Proxy — Endpoints and Models
-AGY Proxy runs locally on Termux and is exposed via a secure Cloudflare tunnel to act as a dual-protocol gateway.
-
-- **Public Base URL**: `https://agy.exodus.pp.ua`
-- **Local Base URL**: `http://192.168.3.195:8080`
-- **GitHub Repository**: [maxfraieho/antigravity-claude-proxy](https://github.com/maxfraieho/antigravity-claude-proxy)
-
-### Available Endpoints
-- `POST /v1/messages` — Anthropic-compatible API.
-- `POST /v1/chat/completions` — OpenAI-compatible API (custom implementation in this fork).
-- `GET /health` — Health check, status of Google accounts, and live rate limit quotas.
-- `GET /v1/models` — List of active models.
-
-### Primary Supported Models
-- `gemini-2.5-pro` — Best reasoning capability (ideal for complex code writing and planning).
-- `gemini-2.5-flash` — Very fast (ideal for quick commands and light editing, higher rate limits).
-- `gemini-3.5-flash-medium` — Optimized medium speed reasoning model.
-- `claude-sonnet-4-6` — Exposes Claude Sonnet 4.6 via the premium MAX account rotation.
-- `claude-opus-4-6-thinking` — Extended thinking mode.
+### Рівень 3 — Довгострокова концептуальна пам'ять (NotebookLM)
+- **Технологія**: Сервер Model Context Protocol (MCP) з підтримкою потокового HTTP, що працює на Raspberry Pi 4B (порт `8002`).
+- **Контекст**:
+  - Зберігає канонічні документи (`docs/`), специфікації, посібники з інтеграції та зведені звіти з архітектури.
+  - Надає інтерфейс природної мови (RAG) для глибокого концептуального аналізу кодової бази.
+- **Використання**: Використовується оркестратором Claude для швидкого вивчення глобальних взаємозв'язків у проекті та пошуку архітектурних рішень.
 
 ---
 
-## 6. Claude Code Skills System
-Claude Code operates with a set of modular skills located in `~/.claude/skills/` that extend its environment capability.
+## 4. Специфікація протоколу обміну (Claude ↔ AGY)
+Координація та передача завдань між оркестратором та виконавцем відбувається через спеціальні файли черги завдань:
 
-### Core Active Skills
-- `notebooklm-mcp` — Directly query or add new text sources to NotebookLM notebooks.
-- `session-current` — Tracks and displays details of the current active session.
-- `agy-termux` — Quick workflow reference for AGY (SSH details, API endpoints, verify checklists).
-
-### Mandatory Skill Activation Sequence (MSAS)
-Before starting any significant work, the orchestrator evaluates all available skills. For every skill, it decides `YES` or `NO` with a short rationale and triggers all `YES` skills using the `Skill()` tool to set up the context.
+1. **Ініціалізація завдання**: Claude створює або оновлює `development/TASKS.md` зі списком підзавдань, детальним планом впровадження, вимогами до перевірки та очікуваними комітами.
+2. **Виконання завдання**:
+   - Людина-розробник (Q) копіює завдання з `TASKS.md` та запускає AGY.
+   - AGY зчитує ці вимоги, виконує роботу локально в Termux, запускає тести для верифікації та робить push у Git.
+3. **Запис у щоденник**: Після кожного завершеного BATCH-завдання AGY робить запис у MemPalace:
+   ```bash
+   python3 -m mempalace diary write --agent agt-ogy \
+     "SESSION:YYYY-MM-DD|TASK-X:task-name|DONE|commit:<hash>|status:<summary>"
+   ```
+4. **Handoff (Передача контексту)**: AGY оновлює `development/HANDOFF.md` з актуальними хешами комітів, статусом бекенд-сервісів та NotebookLM джерелами.
+5. **Синхронізація з Orchestrator**: Claude виявляє нові коміти через `git pull` та зчитує щоденник або файл handoff, щоб підтвердити виконання перед наступним кроком планування.
 
 ---
 
-## 7. Cloudflare Infrastructure
-All developer endpoints and microservices are exposed securely using a native Cloudflare tunnel.
+## 5. Доступ до інфраструктури
+Для адміністрування та взаємодії між вузлами використовуються такі облікові дані та порти:
 
-- **Tunnel ID**: `7c2d896d-2c77-4486-af56-ef30969ca942` (running natively on OrangePi)
-- **Configuration Path**: `/etc/cloudflared/config.yml`
+- **AGY Termux SSH**: `sshpass -p "123456" ssh -p 8022 u0_a284@192.168.3.195`
+- **Dev Server SSH**: `sshpass -p "805235io." ssh vokov@192.168.3.184`
+- **RPi 4B SSH (NotebookLM MCP)**: `sshpass -p "805235io." ssh vokov@192.168.3.234`
+- **Адреса AGY Proxy**: `https://agy.exodus.pp.ua`
 
-### Public Service Directory
-- `agy.exodus.pp.ua` ➔ Termux AGY proxy (`:8080`)
+---
+
+## 6. База знань NotebookLM (Notebook Sources)
+У системі `drn-ai` NotebookLM (ID: `6139067a-5776-4b29-8869-7c9f9aed475c`) зареєстровані та оновлюються такі ключові джерела:
+
+1. `GEMINI.md 2026-05-28` — Канонічний опис платформи та інструкції.
+2. `docs/COLLABORATION.md` — Цей посібник з архітектури та взаємодії.
+3. `development/TASKS.md` — Живий реєстр усіх завдань та спринтів.
+4. `MemPalace Diary` — Зведений семантичний лог роботи AGY.
+
+---
+
+## 7. Інфраструктура Cloudflare
+Усі розробницькі ендпоінти та мікросервіси безпечно опубліковані у веб за допомогою нативного тунелю Cloudflare.
+
+- **ID тунелю**: `7c2d896d-2c77-4486-af56-ef30969ca942` (працює нативно на OrangePi)
+- **Шлях конфігурації**: `/etc/cloudflared/config.yml`
+
+### Довідник публічних адрес
+- `agy.exodus.pp.ua` ➔ Termux AGY проксі (`:8080`)
 - `claude.exodus.pp.ua` ➔ Raspberry Pi 3B Claude Code (`:3456`)
 - `claude2.exodus.pp.ua` ➔ OrangePi Claude Code (`:3456`)
 - `drakon-agent.exodus.pp.ua` ➔ Dev Server Drakon Agent (`:8765`)
 - `architect-agent.exodus.pp.ua` ➔ Dev Server Architect Agent (`:8766`)
 - `docs-agent.exodus.pp.ua` ➔ Dev Server Docs Agent (`:8767`)
-- `openai-proxy.exodus.pp.ua` ➔ Free Nvidia NIM Proxy (`:18880`)
-- `garden-mcp.exodus.pp.ua` ➔ MCP server endpoint (`:8081`)
-- `notebooklm.exodus.pp.ua` ➔ NotebookLM MCP server (`:8002`)
-- `ssh.exodus.pp.ua` ➔ Secure SSH tunnel mapping (`:22`)
+- `openai-proxy.exodus.pp.ua` ➔ Безкоштовний проксі Nvidia NIM (`:18880`)
+- `garden-mcp.exodus.pp.ua` ➔ Ендпоінт MCP-сервера (`:8081`)
+- `notebooklm.exodus.pp.ua` ➔ Сервер MCP NotebookLM (`:8002`)
+- `ssh.exodus.pp.ua` ➔ Безпечний тунель SSH (`:22`)
 
 ---
 
-## 8. AI-DRAKON Agents Configuration
-The frontend application (`ai-drakon-scaffolder`) hosts three specialized background agents whose LLM configurations can be customized in the Settings panel:
+## 8. Конфігурація агентів AI-DRAKON
+Фронтенд-додаток (`ai-drakon-scaffolder`) містить трьох спеціалізованих фонових агентів, конфігурацію моделей яких можна налаштовувати у панелі Settings:
 
-- **Architect Agent** ➔ Configured to **AGY (`gemini-2.5-pro`)** [ACTIVE ✅]
-- **DRAKON Logic Agent** ➔ Configured to **openai-proxy (NIM)** [Needs update to AGY]
-- **Docs Agent** ➔ Configured to **openai-proxy (NIM)** [Needs update to AGY]
+- **Architect Agent** ➔ Налаштовано на **AGY (`gemini-2.5-pro`)** [АКТИВНИЙ ✅]
+- **DRAKON Logic Agent** ➔ Налаштовано на **openai-proxy (NIM)** [Потребує оновлення на AGY]
+- **Docs Agent** ➔ Налаштовано на **openai-proxy (NIM)** [Потребує оновлення на AGY]
 
-To update an agent to use the AGY tandem:
-1. Open the UI Settings panel.
-2. Select **LLM Provider** ➔ **Protocol**: `AGY`.
-3. Set **Base URL**: `https://agy.exodus.pp.ua`.
-4. Save and restart the agent workspace.
+Щоб перевести агента на використання тандему AGY:
+1. Відкрийте панель Settings у інтерфейсі.
+2. Оберіть **LLM Provider** ➔ **Protocol**: `AGY`.
+3. Вкажіть **Base URL**: `https://agy.exodus.pp.ua`.
+4. Збережіть та перезапустіть робочу область агента.
 
 ---
 
-## 9. Roadmap — Scaling
+## 9. Дорожня карта — Масштабування
 
-### Phase 1 (Complete ✅)
-- Dual-protocol AGY proxy supporting OpenAI and Anthropic formats.
-- Stable Cloudflare tunnel exposure for Termux.
-- Automated `ai-memory` session capture and synchronization.
-- Structured task queues (`TASKS.md`) for cross-agent coordination.
-- UI LLM-provider settings updated to support AGY proxy.
+### Фаза 1 (Завершено ✅)
+- Двопротокольний проксі AGY з підтримкою форматів OpenAI та Anthropic.
+- Стабільне публікування Termux через тунель Cloudflare.
+- Автоматичний запис та синхронізація сесій `ai-memory`.
+- Структурована черга завдань (`TASKS.md`) для крос-агентної координації.
+- Оновлено налаштування провайдерів моделей у фронтенді для підтримки проксі AGY.
 
-### Phase 2 (Next Steps 🚀)
-- Transition all three scaffolding agents (Architect, DRAKON, Docs) to use AGY as the primary reasoning LLM.
-- Install native `ai-memory` hooks on OrangePi to capture Claude Code sessions automatically.
-- Write an `ai-memory` MCP server (`memory_query`, `memory_write_page`) for Claude Code.
-- Update `free-claude-code-proxy` on `192.168.3.184` to list `agy-tunnel` with automatic fallback to Nvidia NIM models when rate-limited.
-- Implement advanced Google account rotation and quote management for AGY.
+### Фаза 2 (Наступні кроки 🚀)
+- Переведення всіх трьох агентів генерації каркасів (Architect, DRAKON, Docs) на використання AGY як основної моделі міркування.
+- Встановлення нативних хуків `ai-memory` на OrangePi для автоматичного запису сесій Claude Code.
+- Створення MCP-сервера `ai-memory` (`memory_query`, `memory_write_page`) для Claude Code.
+- Оновлення `free-claude-code-proxy` на `192.168.3.184` для виведення `agy-tunnel` з автоматичним перемиканням на моделі Nvidia NIM у разі лімітів.
+- Впровадження автоматичної ротації Google-акаунтів та керування квотами для AGY.
 
-### Phase 3 (Future Vision 🌌)
-- Fully automated task worker: Claude pushes a `TASKS.md` change, a webhook triggers AGY, AGY auto-executes, verifies, and commits/pushes results without human intervention.
-- Cross-session semantic search directly integrated into Claude's prompt context.
-- Auto-syncing NotebookLM: after every successful Claude session, the summary is compiled and uploaded as a source to the `drn-ai` notebook.
-- Distributing execution across a swarm of multiple parallel Android/Termux devices.
+### Фаза 3 (Майбутнє бачення 🌌)
+- Повністю автоматизований виконавець завдань: Claude робить push змін у `TASKS.md`, вебхук запускає Termux/AGY, AGY автоматично виконує завдання, перевіряє результати тестами і робить push у Git без участі людини.
+- Інтеграція семантичного пошуку по минулих сесіях безпосередньо у контекст системного промпту Claude.
+- Автоматична синхронізація з NotebookLM: після кожної успішної сесії Claude звіт автоматично компілюється та завантажується як нове джерело в блокнот `drn-ai`.
+- Розподіл виконання завдань на рой (swarm) паралельно підключених пристроїв Android/Termux.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[META/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[INDEX]] — Головний індекс документації
+- [[META/STANDARD]] — Стандарт форматування документації Garden Bloom

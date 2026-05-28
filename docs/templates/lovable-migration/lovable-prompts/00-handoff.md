@@ -1,10 +1,13 @@
 ---
-title: "Lovable Handoff Context — AI-DRAKON"
-type: guide
-tags: [drakon, langgraph, pipeline, frontend, python]
-status: active
+tags:
+  - domain:kb
+  - status:active
+  - format:guide
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 2
+title: "Контекст передачі проекту Lovable"
+lang: uk
 ---
 
 # Lovable Handoff Context — AI-DRAKON
@@ -72,3 +75,13 @@ updated: 2026-05-26
 CF Pages будує з repo `maxfraieho/ai-drakon-setup` (repo A).
 Lovable пише в `maxfraieho/drakon-diagram-flow` (repo B).
 GitHub Action автоматично дзеркалює B → A.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[templates/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[templates/lovable-migration/README]] — Інструкція з міграції Lovable
+- [[templates/lovable-migration/lovable-prompts/00-safe-migration-init]] — Промпт ініціалізації безпечної міграції Lovable
+**Читати далі:** [[templates/lovable-migration/lovable-prompts/00-project-init]]

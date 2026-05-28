@@ -1,163 +1,148 @@
 ---
-title: "Stitch Design Prompt — Pipeline Panels (CodeAnalysisPanel + CodeGenerationPanel)"
-type: reference
-tags: [drakon, pipeline]
-status: active
+tags:
+  - domain:ux
+  - status:active
+  - format:report
 created: 2026-05-26
-updated: 2026-05-26
+updated: 2026-05-28
+tier: 3
+title: "Промпт дизайну Stitch: Панелі Pipeline"
+lang: uk
 ---
 
-# Stitch Design Prompt — Pipeline Panels (CodeAnalysisPanel + CodeGenerationPanel)
+# Промпт дизайну Stitch: Панелі Pipeline — Панелі Pipeline (CodeAnalysisPanel + CodeGenerationPanel)
 
-Design the **Pipeline Panels** for AI-DRAKON — a right-side drawer that appears on the `/diagrams` page when the user clicks "Аналіз" or "Генерація". These panels let architects trigger AI pipeline jobs and see results inline without leaving the diagram list.
+Спроектуйте **панелі пайплайну (Pipeline Panels)** для AI-DRAKON — праву бічну панель (ящик), яка з'являється на сторінці `/diagrams`, коли користувач натискає "Аналіз" або "Генерація". Ці панелі дозволяють архітекторам запускати завдання AI-пайплайну та бачити результати прямо на сторінці, не виходячи зі списку діаграм.
 
-Screenshots of current state are in `import/stitch_pipeline_panels/`.
+Скріншоти поточного стану знаходяться в `import/stitch_pipeline_panels/`.
 
 ---
 
-## DESIGN LANGUAGE (inherit from existing app — do not deviate)
+## МОВА ДИЗАЙНУ (успадкуйте з існуючого додатка — НЕ відхилятися)
 
 ```
-Background base:     #0a0b0e
-Background surface:  #111318
-Background elevated: #191c23
-Border subtle:       rgba(255,255,255,0.06)
-Border default:      rgba(255,255,255,0.10)
-Text primary:        rgba(255,255,255,0.92)
-Text secondary:      rgba(255,255,255,0.55)
-Text muted:          rgba(255,255,255,0.28)
-Accent amber:        #f59e0b
-Accent amber dim:    rgba(245,158,11,0.15)
-Success green:       #22c55e
-Error red:           #ef4444
-Font UI:             IBM Plex Sans, 12–13px
-Font mono:           JetBrains Mono, 11–12px
-Radius:              4px buttons/inputs, 0px panel edges
-NO gradients. NO shadows. NO glow. NO illustrations.
+Базовий фон (Background base):        #0a0b0e
+Фон поверхні (Background surface):    #111318
+Піднятий фон (Background elevated):   #191c23
+Тонка рамка (Border subtle):          rgba(255,255,255,0.06)
+Стандартна рамка (Border default):    rgba(255,255,255,0.10)
+Основний текст (Text primary):        rgba(255,255,255,0.92)
+Вторинний текст (Text secondary):    rgba(255,255,255,0.55)
+Приглушений текст (Text muted):       rgba(255,255,255,0.28)
+Accent янтарний (Accent amber):       #f59e0b
+Тьмяний янтарний (Accent amber dim):   rgba(245,158,11,0.15)
+Успішний зелений (Success green):     #22c55e
+Помилковий червоний (Error red):      #ef4444
+Шрифт інтерфейсу (Font UI):           IBM Plex Sans, 12–13px
+Моноширинний шрифт (Font mono):       JetBrains Mono, 11–12px
+Радіус (Radius):                      4px для кнопок/інпутів, 0px для країв панелей
+БЕЗ градієнтів. БЕЗ тіней. БЕЗ свічення. БЕЗ ілюстрацій.
 ```
 
 ---
 
-## CONTEXT
+## КОНТЕКСТ
 
-The panels appear as a right-side drawer on `/diagrams`. The left part (diagram list + toolbar) stays visible. The panel overlays the right ~480px of the screen.
+Панелі відображаються як правий висувний ящик на сторінці `/diagrams`. Ліва частина (список діаграм + панель інструментів) залишається видимою. Панель накладається поверх правої частини екрана шириною приблизно 480px.
 
-Two separate panels, same structural layout:
-- **CodeAnalysisPanel** — triggered by button "Аналіз" in the header area
-- **CodeGenerationPanel** — triggered by button "Генерація" in the header area
+Дві окремі панелі, що мають однаковий структурний макет:
+- **CodeAnalysisPanel** — викликається кнопкою "Аналіз" в області заголовка.
+- **CodeGenerationPanel** — викликається кнопкою "Генерація" в області заголовка.
 
 ---
 
-## OVERALL LAYOUT (1440px viewport, panel open)
+## ЗАГАЛЬНИЙ МАКЕТ (Viewport 1440px, панель відкрита)
 
 ```
 ┌──────────────────────────────────────────┬───────────────────────────────────┐
 │                                          │  PANEL HEADER                     │
-│   DIAGRAMS LIST (unchanged)              ├───────────────────────────────────┤
+│   DIAGRAMS LIST (без змін)               ├───────────────────────────────────┤
 │                                          │  INPUT SECTION                    │
-│   • Diagram 1                            │  (textarea or static info)        │
+│   • Diagram 1                            │  (textarea або статична інфа)     │
 │   • Diagram 2                            ├───────────────────────────────────┤
 │   • ...                                  │  STATUS / RUNNING STATE           │
+│                                          │  (spinner + counter)              │
 │                                          ├───────────────────────────────────┤
-│                                          │  RESULT SECTION                   │
-│                                          │  (scrollable, mono font)          │
-│                                          ├───────────────────────────────────┤
-│                                          │  ACTION BUTTON                    │
+│                                          │  RESULT / OUTPUT SECTION          │
+│                                          │  (list of functions or code block)│
 └──────────────────────────────────────────┴───────────────────────────────────┘
-  ~960px                                     ~480px
 ```
 
 ---
 
-## PANEL: CodeAnalysisPanel (Аналіз)
+## ПАНЕЛЬ 1: CodeAnalysisPanel (Код → DRAKON IR)
 
-### Header
+Цей інтерфейс призначений для імпорту існуючого коду Python у візуальні діаграми DRAKON.
+
+### Стан очікування — Введення
 ```
 ┌─────────────────────────────────────────────────────┐
-│  ◈ АНАЛІЗ КОДУ                              [×]    │
-│  Pipeline A · Code → DRAKON IR                      │
-└─────────────────────────────────────────────────────┘
-```
-- Title: `АНАЛІЗ КОДУ` — IBM Plex Sans, 11px, letter-spacing 0.08em, text-muted uppercase
-- Subtitle: `Pipeline A · Code → DRAKON IR` — 12px, text-secondary
-- Close button `[×]` — top-right, 24×24px, text-muted, hover: text-primary
-- Bottom border: 1px solid border-subtle
-
-### Input Section
-```
-┌─────────────────────────────────────────────────────┐
-│  Код для аналізу                                    │
-│ ┌───────────────────────────────────────────────┐   │
-│ │  // paste your code here                      │   │
-│ │                                               │   │
-│ │                                               │   │
-│ └───────────────────────────────────────────────┘   │
-│  [Запустити аналіз                             →]   │
-└─────────────────────────────────────────────────────┘
-```
-- Label: 11px, text-muted, uppercase, letter-spacing
-- Textarea: `background: #0a0b0e`, border: border-default, font-mono 11px, min-height 120px, resize-y
-- Button: full width, `background: #f59e0b`, text `#0a0b0e`, bold 12px, uppercase, radius 4px, height 36px
-
-### Running State (SSE streaming)
-```
-┌─────────────────────────────────────────────────────┐
-│  ◉ ВИКОНУЄТЬСЯ   ━━━━━━━━━━━░░░░  12s              │
-│                                                     │
-│  Pipeline A запущено. Очікуємо результат...         │
-└─────────────────────────────────────────────────────┘
-```
-- `◉` — pulsing amber dot (CSS animation, 1s ease-in-out infinite)
-- Progress bar: thin 2px line, amber fill, animated indeterminate
-- Timer: `Ns` — mono font, text-secondary, right-aligned
-- Message: 12px, text-secondary, italic
-
-### Done State — Result
-```
-┌─────────────────────────────────────────────────────┐
-│  ✓ АНАЛІЗ ЗАВЕРШЕНО                        2m 14s  │
+│  ⚙ АНАЛІЗ КОДУ                            [✕] Close │
 ├─────────────────────────────────────────────────────┤
-│  DRAKON IR                                          │
+│  Шлях до файлу: [ calculate_tax.py             ]    │
+│                                                     │
+│  Вихідний код Python:                               │
 │ ┌───────────────────────────────────────────────┐   │
-│ │  {                                            │   │
-│ │    "nodes": [...],                            │   │
-│ │    "edges": [...]                             │   │
-│ │  }                                            │   │
+│ │  def calculate_tax(income: float) -> float:   │   │
+│ │      if income < 10000:                       │   │
+│ │          return income * 0.1                  │   │
+│ │      ...                                      │   │
 │ └───────────────────────────────────────────────┘   │
-│  [Копіювати IR]   [Відкрити в редакторі →]          │
+│  [Аналізувати код                              →]   │
 └─────────────────────────────────────────────────────┘
 ```
-- `✓` — success green #22c55e
-- IR block: `background: #0a0b0e`, border-default, font-mono 11px, max-height 300px, overflow-y auto
-- Buttons: secondary style (border: border-default, text-primary) + primary CTA (amber)
+- Inputs/Textarea: bg #191c23, border 1px #222, focus border amber 1px
+- Кнопка: янтарний (amber) фон, чорний текст, верхній регістр моно 11px
 
-### Error State
+### Стан виконання — Попередня обробка
 ```
-│  ✗ ПОМИЛКА                                          │
-│  Сервіс перезапустився. Спробуйте ще раз.           │
-│  [Повторити]                                        │
+┌─────────────────────────────────────────────────────┐
+│  ⚙ АНАЛІЗ КОДУ                            [✕] Close │
+├─────────────────────────────────────────────────────┤
+│  [●] АНАЛІЗУЄТЬСЯ...                          14.2s │
+│                                                     │
+│  Ініціалізація AST аналізатора...                   │
+│  Отримання контексту бази знань BM25...            │
+│  Очікування відповіді AI-refiner (proxy:18880)...  │
+└─────────────────────────────────────────────────────┘
 ```
-- `✗` — error red #ef4444
-- Message: 12px, text-secondary
+- Counter: оновлюється кожні 100 мс (патерн docs.tsx)
+- Хронологічний лог: приглушені моно рядки, що з'являються поступово
+
+### Стан завершення — Результат
+```
+┌─────────────────────────────────────────────────────┐
+│  ✓ АНАЛІЗ ЗАВЕРШЕНО                          1m 12s │
+├─────────────────────────────────────────────────────┤
+│  Критерії складності:                               │
+│  • Cyclomatic Complexity: 4 (середня)               │
+│  • Рівень дерева: primitive                          │
+│                                                     │
+│  Виявлені функції для імпорту:                      │
+│ ┌───────────────────────────────────────────────┐   │
+│ │  calculate_tax                     (CC: 4)    │   │
+│ │  [↓ Імпортувати в DRAKON]                     │   │
+│ ├───────────────────────────────────────────────┤   │
+│ │  format_currency                   (CC: 1)    │   │
+│ │  [↓ Імпортувати в DRAKON]                     │   │
+│ └───────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────┘
+```
+- Кнопка "Імпортувати": ghost, при наведенні стає amber, викликає імпорт у DiagramsPage та закриває панель.
 
 ---
 
-## PANEL: CodeGenerationPanel (Генерація)
+## ПАНЕЛЬ 2: CodeGenerationPanel (DRAKON IR → Код)
 
-Same structural layout as CodeAnalysisPanel but:
+Цей інтерфейс призначений для генерації вихідного коду на основі поточної відкритої діаграми DRAKON.
 
-### Header
-```
-│  ◈ ГЕНЕРАЦІЯ КОДУ                           [×]   │
-│  Pipeline B · DRAKON IR → Code                     │
-```
-
-### Input Section
-Two fields:
+### Стан очікування — Параметри
 ```
 ┌─────────────────────────────────────────────────────┐
-│  Цільова мова                                       │
-│  [Python ▼]  (select: Python / TypeScript / Go)     │
+│  ⚙ ГЕНЕРАЦІЯ КОДУ                         [✕] Close │
+├─────────────────────────────────────────────────────┤
+│  Цільова мова програмування:                        │
+│  [Python ▼]  (вибір: Python / TypeScript / Go)      │
 │                                                     │
 │  Опис задачі (необов'язково)                        │
 │ ┌───────────────────────────────────────────────┐   │
@@ -166,11 +151,12 @@ Two fields:
 │  [Згенерувати код                              →]   │
 └─────────────────────────────────────────────────────┘
 ```
-- Select: same dark style, amber focus ring 1px
-- Textarea: optional, min-height 80px
+- Select: такий самий темний стиль, янтарна рамка фокусу 1px
+- Textarea: необов'язкове поле, мінімальна висота 80px
 
-### Done State — Result
+### Стан завершення — Результат
 ```
+┌─────────────────────────────────────────────────────┐
 │  ✓ КОД ЗГЕНЕРОВАНО                         1m 43s  │
 ├─────────────────────────────────────────────────────┤
 │  Python                                             │
@@ -179,34 +165,45 @@ Two fields:
 │ │      ...                                      │   │
 │ └───────────────────────────────────────────────┘   │
 │  [Копіювати код]   [Відкрити в Monaco →]            │
+└─────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## INTERACTION DETAILS
+## ДЕТАЛІ ВЗАЄМОДІЇ
 
-- Panel slides in from right: `transform: translateX(100%) → translateX(0)`, duration 200ms, ease-out
-- Closing: reverse slide, 150ms
-- While running: trigger button is disabled, shows spinner inside button
-- Panel does NOT close automatically on done — user reads result, then manually closes
-- On mobile (<768px): panel takes full width, diagrams list hidden
-
----
-
-## WHAT NOT TO CHANGE
-
-- Left side (diagram list, toolbar, header) — untouched
-- Button positions "Аналіз" / "Генерація" in the header — untouched  
-- Routing, auth, API calls — untouched
-- The elapsed-time `setInterval` counter — untouched
+- Панель висувається праворуч: `transform: translateX(100%) → translateX(0)`, тривалість 200ms, ефект ease-out
+- Закриття: зворотний зсув, 150ms
+- Під час виконання: кнопка запуску вимкнена (disabled), всередині кнопки відображається spinner
+- Панель НЕ закривається автоматично після завершення — користувач вивчає результат, а потім вручну закриває панель
+- На мобільних пристроях (<768px): панель розгортається на всю ширину екрана, приховуючи список діаграм
 
 ---
 
-## SCREENSHOTS (current state, for reference)
+## ЩО НЕ ЗМІНЮВАТИ
+
+- Ліва сторона (список діаграм, панель інструментів, шапка) — без змін
+- Розташування кнопок "Аналіз" / "Генерація" в шапці — без змін
+- Роутинг, авторизація, виклики API — без змін
+- Лічильник часу `setInterval` — без змін
+
+---
+
+## СКРІНШОТИ (поточний стан, для довідки)
 
 ```
-import/stitch_pipeline_panels/01-diagrams-page.jpg       — /diagrams idle
-import/stitch_pipeline_panels/02-editor-page.jpg         — /diagram/editor
-import/stitch_pipeline_panels/03-code-analysis-panel.jpg — CodeAnalysisPanel open
-import/stitch_pipeline_panels/04-code-generation-panel.jpg — CodeGenerationPanel open
+import/stitch_pipeline_panels/01-diagrams-page.jpg       — стан очікування /diagrams
+import/stitch_pipeline_panels/02-editor-page.jpg         — сторінка /diagram/editor
+import/stitch_pipeline_panels/03-code-analysis-panel.jpg — відкритий CodeAnalysisPanel
+import/stitch_pipeline_panels/04-code-generation-panel.jpg — відкритий CodeGenerationPanel
 ```
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ є частиною:** [[ux-audit/_INDEX]]
+**Цей документ пов'язаний з:**
+- [[ux-audit/audit]] — UI/UX Аудит платформи AI-DRAKON
+- [[ux-audit/stitch-prompt]] — Промпт дизайну Stitch: Робоча область та панелі Diagrams
+**Читати далі:** [[lovable-prompt-27]]
