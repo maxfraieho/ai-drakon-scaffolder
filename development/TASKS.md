@@ -3109,3 +3109,300 @@ DIARY (!!run locally, NO SSH!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-37:per-project-pipeline-api|endpoints:/projects/{slug}/agents/{name}/pipeline|SSE:execute|DONE|commit:<hash>|***"
 ```
+
+---
+
+### TASK-38: Task 4 — KB per project (search_kb wired to project docs)
+
+```
+[ ] TASK-38
+
+META: Підключити built_in_tools.search_kb до реального kb_client per project.
+      Додати API endpoint для завантаження docs в KB проекту.
+      Довести що пошук по документах sharon-uav повертає правильні результати.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для читання/запису файлів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай поточний built_in_tools.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/shared/built_in_tools.py"
+
+STEP 3: Покращ search_kb в built_in_tools.py
+  Поточна реалізація правильна але треба перевірити що вона індексує docs при кожному виклику.
+  Краще: кешувати KBClient per project+agent між викликами.
+
+  Заміни функцію search_kb:
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/services/shared/built_in_tools.py"
+content = open(fpath).read()
+
+# Add cache dict after imports
+if "_kb_cache" not in content:
+    content = content.replace(
+        "from typing import Any",
+        "from typing import Any\nfrom pathlib import Path\n\n_kb_cache: dict = {}  # (slug, agent) -> KBClient"
+    )
+
+# Replace search_kb function
+old_fn = '''def search_kb(state: dict) -> dict:
+    """Search the project knowledge base. Uses state["query"] or state["input"]."""
+    from services.shared.kb_client import KBClient
+    slug = state.get("project_slug", "_default")
+    agent = state.get("agent_name", "default")
+    kb_dir = Path(f"/home/vokov/projects/{slug}/agents/{agent}/kb")
+    if not kb_dir.exists():
+        # fallback: search docs/kb/
+        kb_dir = Path("/home/vokov/workspace/ai-drakon-scaffolder/docs/kb")
+    kb = KBClient(":memory:")
+    if kb_dir.exists():
+        kb.index_documents(kb_dir)
+    query = state.get("query") or state.get("input", "")
+    results = kb.search(query, top_k=5) if query else []
+    context = "\\n\\n".join(results)
+    return {**state, "kb_results": results, "context": context}'''
+
+new_fn = '''def search_kb(state: dict) -> dict:
+    """Search the project knowledge base. Caches index per project/agent."""
+    from services.shared.kb_client import KBClient
+    slug = state.get("project_slug", "_default")
+    agent = state.get("agent_name", "default")
+    cache_key = (slug, agent)
+
+    # Find KB directory
+    kb_dir = Path(f"/home/vokov/projects/{slug}/agents/{agent}/kb")
+    if not kb_dir.exists() or not list(kb_dir.glob("*.md")):
+        # fallback to docs/kb/
+        kb_dir = Path("/home/vokov/workspace/ai-drakon-scaffolder/docs/kb")
+
+    # Re-index if not cached or docs changed
+    if cache_key not in _kb_cache:
+        kb = KBClient(":memory:")
+        if kb_dir.exists():
+            n = kb.index_documents(kb_dir)
+        _kb_cache[cache_key] = kb
+
+    query = state.get("query") or state.get("input", "")
+    results = _kb_cache[cache_key].search(query, top_k=5) if query else []
+    context = "\\n\\n".join(results)
+    return {**state, "kb_results": results, "context": context}'''
+
+if old_fn in content:
+    content = content.replace(old_fn, new_fn)
+    print("search_kb replaced")
+else:
+    print("WARNING: old_fn not found, manual check needed")
+    print("Current search_kb lines:")
+    for i, line in enumerate(content.split("\\n")):
+        if "search_kb" in line or "KBClient" in line:
+            print(f"  {i}: {line}")
+
+open(fpath, "w").write(content)
+PYEOF'
+
+STEP 4: Додай API для завантаження docs в KB проекту
+  В project_pipeline_route.py додай endpoint:
+
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/project_pipeline_route.py"
+content = open(fpath).read()
+
+kb_endpoint = '''
+
+@router.get("/{slug}/agents/{agent}/kb/search")
+def search_project_kb(slug: str, agent: str, q: str = ""):
+    """Search project KB directly."""
+    from services.shared.built_in_tools import search_kb, _kb_cache
+    # Invalidate cache to force re-index
+    _kb_cache.pop((slug, agent), None)
+    result = search_kb({"project_slug": slug, "agent_name": agent, "query": q, "input": q})
+    return {"results": result.get("kb_results", []), "count": len(result.get("kb_results", []))}
+
+
+@router.post("/{slug}/agents/{agent}/kb/upload")
+async def upload_kb_doc(slug: str, agent: str, filename: str, content: str = ""):
+    """Upload a markdown document to project KB."""
+    from services.shared.built_in_tools import _kb_cache
+    kb_dir = _kb_dir(slug, agent)
+    doc_path = kb_dir / filename
+    if not filename.endswith(".md"):
+        raise HTTPException(400, "Only .md files supported")
+    doc_path.write_text(content, encoding="utf-8")
+    # Invalidate cache
+    _kb_cache.pop((slug, agent), None)
+    return {"saved": str(doc_path), "size": len(content)}
+'''
+
+if "kb/search" not in content:
+    # Add before last line
+    content = content.rstrip() + kb_endpoint
+    open(fpath, "w").write(content)
+    print("KB endpoints added")
+else:
+    print("already has kb endpoints")
+PYEOF'
+
+STEP 5: Smoke test — завантаж тестовий doc і перевір пошук
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "mkdir -p /home/vokov/projects/sharon-uav/agents/threat-classifier/kb && \
+     echo '## UAV Threats\nKamikazes fly at 50-200m altitude. Identified by acoustic signature.\n\n## Safe Events\nBirds, wind noise, civilian aircraft.' > \
+     /home/vokov/projects/sharon-uav/agents/threat-classifier/kb/threats.md"
+
+  curl -s 'http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/kb/search?q=kamikaze' | head -20
+
+STEP 6: Restart сервіс якщо потрібно і верифікуй
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "sudo rc-service ai-architect-agent restart 2>/dev/null || \
+     sudo rc-service architect-agent restart 2>/dev/null && sleep 2 && \
+     curl -s http://192.168.3.184:8766/health"
+
+STEP 7: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add services/shared/built_in_tools.py \
+             services/architect-agent/project_pipeline_route.py && \
+     git commit -m 'feat(shared): per-project KB caching + upload/search endpoints (Task 4)' && \
+     git push origin main"
+
+STEP 8: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-38/[x] TASK-38/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-38 done — KB per project' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-38:kb-per-project|search_kb.cached|upload.endpoint|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-39: Task 5 — UI: bind /agents page to active project + demo pipeline
+
+```
+[ ] TASK-39
+
+META: Прив'язати /agents page до active project context.
+      Зробити sharon-uav demo pipeline та показати повний цикл:
+      проект вибраний → агент вибраний → DRAKON схема → виконання.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для запису файлів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай поточний graph-pipeline-api.ts
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/src/lib/graph-pipeline-api.ts | head -60"
+
+STEP 3: Оновити graph-pipeline-api.ts — додати project-scoped методи
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/src/lib/graph-pipeline-api.ts"
+content = open(fpath).read()
+
+project_api = """
+// ---- Per-project agent pipeline API ----
+
+export async function listProjectAgents(slug: string): Promise<{name: string, has_pipeline: boolean}[]> {
+  const base = resolveAgentBaseUrl();
+  const resp = await fetch(`${base}/projects/${slug}/agents`);
+  const data = await resp.json();
+  return data.agents || [];
+}
+
+export async function getProjectPipeline(slug: string, agent: string): Promise<object | null> {
+  const base = resolveAgentBaseUrl();
+  const resp = await fetch(`${base}/projects/${slug}/agents/${agent}/pipeline`);
+  if (!resp.ok) return null;
+  return resp.json();
+}
+
+export async function saveProjectPipeline(slug: string, agent: string, ir: object): Promise<boolean> {
+  const base = resolveAgentBaseUrl();
+  const resp = await fetch(`${base}/projects/${slug}/agents/${agent}/pipeline`, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ir}),
+  });
+  return resp.ok;
+}
+
+export function streamProjectExecution(slug: string, agent: string, input: string): EventSource {
+  const base = resolveAgentBaseUrl();
+  return new EventSource(`${base}/projects/${slug}/agents/${agent}/execute?input=${encodeURIComponent(input)}`);
+}
+"""
+
+if "listProjectAgents" not in content:
+    content = content.rstrip() + "\\n" + project_api
+    open(fpath, "w").write(content)
+    # Also sync to .lovable/src/
+    import shutil, os
+    lovable = fpath.replace("src/", ".lovable/src/")
+    if os.path.exists(os.path.dirname(lovable)):
+        shutil.copy(fpath, lovable)
+        print("synced to .lovable/src/")
+    print("graph-pipeline-api.ts updated")
+else:
+    print("already has project methods")
+PYEOF'
+
+STEP 4: Створи demo sharon-uav pipeline на сервері
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+import json
+from pathlib import Path
+
+pipeline_dir = Path("/home/vokov/projects/sharon-uav/agents/threat-classifier")
+pipeline_dir.mkdir(parents=True, exist_ok=True)
+
+pipeline = {
+  "name": "sharon-threat-classifier",
+  "items": {
+    "h":  {"type": "header", "content": "Threat Classifier", "one": "n1"},
+    "n1": {"type": "action", "content": "search_kb", "one": "n2"},
+    "n2": {"type": "action",
+           "content": "Проаналізуй повідомлення та знайдене в KB. Визнач: є загроза UAV? JSON відповідь: {threat: bool, level: 1-5, reason: str}",
+           "one": "end"},
+    "end": {"type": "end"}
+  },
+  "schema": {"state_class": "dict", "description": "Sharon UAV threat classifier"}
+}
+
+(pipeline_dir / "pipeline.drakon.json").write_text(
+    json.dumps(pipeline, indent=2, ensure_ascii=False)
+)
+print("sharon demo pipeline saved")
+print(pipeline_dir / "pipeline.drakon.json")
+PYEOF'
+
+STEP 5: Тест повного циклу
+  curl -s http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/status
+  curl -s -X POST http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/execute \
+    -H "Content-Type: application/json" \
+    -d '{"input": "шум двигуна на низькій висоті, характерний для камікадзе"}'
+
+STEP 6: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add src/lib/graph-pipeline-api.ts .lovable/src/lib/graph-pipeline-api.ts && \
+     git commit -m 'feat(ui): add project-scoped pipeline API methods + sharon demo pipeline (Task 5)' && \
+     git push origin main"
+
+STEP 7: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-39/[x] TASK-39/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-39 done — UI project API + sharon demo' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-39:ui-project-api+sharon-demo|pipeline:sharon-threat-classifier|DONE|commit:<hash>|***"
+```
