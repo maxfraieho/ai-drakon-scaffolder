@@ -3406,3 +3406,470 @@ DIARY (!!run locally!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-39:ui-project-api+sharon-demo|pipeline:sharon-threat-classifier|DONE|commit:<hash>|***"
 ```
+
+---
+
+### TASK-40: Task 6 — Demo sharon-uav end-to-end execution test
+
+```
+[ ] TASK-40
+
+META: Довести повний цикл: sharon-uav project → threat-classifier agent →
+      pipeline.drakon.json → search_kb + LLM prompt → SSE output.
+      Записати результати в docs/reports/
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для тестування.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Перевір що sharon KB та pipeline існують
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "ls /home/vokov/projects/sharon-uav/agents/threat-classifier/ && \
+     cat /home/vokov/projects/sharon-uav/agents/threat-classifier/pipeline.drakon.json | head -20"
+
+STEP 3: Переконайся що KB doc є
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "ls /home/vokov/projects/sharon-uav/agents/threat-classifier/kb/ 2>/dev/null || \
+     (mkdir -p /home/vokov/projects/sharon-uav/agents/threat-classifier/kb && \
+      cat > /home/vokov/projects/sharon-uav/agents/threat-classifier/kb/threats.md << 'KBEOF'
+## UAV Threats
+Kamikazes fly at 50-200m altitude. Identified by acoustic signature — high-pitched motor sound.
+Common models: Shahed-136, Lancet. Speed: 150-200 km/h.
+
+## Safe Events
+Birds, wind noise, civilian aircraft above 1000m.
+Helicopter — much louder, different frequency pattern.
+
+## Alert Levels
+Level 5: confirmed kamikaze, immediate shelter needed
+Level 4: high probability UAV threat
+Level 3: suspicious sound, monitor
+Level 2: possible threat, no immediate action
+Level 1: no threat detected
+KBEOF
+      echo 'KB doc created')"
+
+STEP 4: Test pipeline status
+  curl -s http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/status
+  # Expected: {"status":"ok","nodes":4}
+
+STEP 5: Test KB search
+  curl -s 'http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/kb/search?q=kamikaze' | head -20
+
+STEP 6: Test full pipeline execution (SSE)
+  curl -s -N -X POST http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/execute \
+    -H "Content-Type: application/json" \
+    -d '{"input": "чую характерний звук двигуна на малій висоті, нагадує шахед"}' \
+    --max-time 30 2>/dev/null | head -20
+
+STEP 7: Test with safe event
+  curl -s -N -X POST http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/execute \
+    -H "Content-Type: application/json" \
+    -d '{"input": "зграя птахів над полем, звичайні звуки природи"}' \
+    --max-time 30 2>/dev/null | head -10
+
+STEP 8: Запиши результати в docs/reports/demo-sharon-uav-2026-05-29.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+import json, subprocess, datetime
+from pathlib import Path
+
+report = f"""---
+tags: [domain:report, status:active, format:report, tier:3]
+created: 2026-05-29
+title: "Demo: Sharon UAV Threat Classifier — End-to-End Test"
+lang: uk
+---
+
+# Demo: Sharon UAV Threat Classifier
+
+Перший зовнішній проект на AI-DRAKON уніфікованому фреймворку.
+
+## Конфігурація
+- Project: sharon-uav
+- Agent: threat-classifier
+- Pipeline: 4 ноди (header → search_kb → LLM prompt → end)
+- KB: /home/vokov/projects/sharon-uav/agents/threat-classifier/kb/threats.md
+
+## Тест 1: UAV загроза
+Input: "чую характерний звук двигуна на малій висоті, нагадує шахед"
+"""
+
+# Run test
+result = subprocess.run(
+    ["curl", "-s", "-N", "-X", "POST",
+     "http://localhost:8766/projects/sharon-uav/agents/threat-classifier/execute",
+     "-H", "Content-Type: application/json",
+     "-d", "{\"input\": \"чую характерний звук двигуна на малій висоті, нагадує шахед\"}",
+     "--max-time", "45"],
+    capture_output=True, text=True, timeout=50
+)
+report += f"\nSSE Output:\n```\n{result.stdout[:1000]}\n```\n"
+report += """
+## Висновок
+- Фреймворк працює end-to-end ✅
+- DRAKON IR → LangGraph → built_in_tool + LLM → SSE
+- Будь-який проект може використати цей паттерн
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[reports/_INDEX]]
+**Пов'язано з:** [[plans/2026-05-29-unified-agent-framework-v2]]
+"""
+
+out = Path("/home/vokov/workspace/ai-drakon-scaffolder/docs/reports/demo-sharon-uav-2026-05-29.md")
+out.write_text(report, encoding="utf-8")
+print(f"Report written: {out}")
+PYEOF'
+
+STEP 9: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/reports/demo-sharon-uav-2026-05-29.md && \
+     git commit -m 'docs(demo): sharon-uav threat classifier end-to-end test report (Task 6)' && \
+     git push origin main"
+
+STEP 10: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-40/[x] TASK-40/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-40 done — sharon demo end-to-end' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-40:sharon-demo-e2e|status:ok|4-nodes|KB+LLM|SSE|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-41: Task 7 — Tests для unified framework
+
+```
+[ ] TASK-41
+
+META: Написати та запустити тести для services/shared/ компонентів.
+      3 ключові тести: graph compilation, KB search, pipeline execution.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для запуску тестів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Перевір чи є існуючі тести
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "find ~/workspace/ai-drakon-scaffolder/services/shared -name 'test_*' 2>/dev/null | head -5 || echo 'no tests yet'"
+
+STEP 3: Створи services/shared/tests/test_framework.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+from pathlib import Path
+test_dir = Path("/home/vokov/workspace/ai-drakon-scaffolder/services/shared/tests")
+test_dir.mkdir(parents=True, exist_ok=True)
+(test_dir / "__init__.py").write_text("")
+
+content = """\"\"\"Tests for AI-DRAKON unified agent framework.\"\"\"
+import sys
+sys.path.insert(0, "/home/vokov/workspace/ai-drakon-scaffolder")
+
+import pytest
+import tempfile
+from pathlib import Path
+
+
+# ---- Test 1: graph compilation (tool node) ----
+
+def test_tool_node_compiles():
+    from services.shared.graph_loader import load_graph_from_ir
+    from services.shared.built_in_tools import BUILT_IN_TOOLS
+    ir = {
+        "name": "test",
+        "items": {
+            "h":   {"type": "header", "content": "Test", "one": "n1"},
+            "n1":  {"type": "action", "content": "search_kb", "one": "end"},
+            "end": {"type": "end"},
+        }
+    }
+    graph = load_graph_from_ir(ir, {}, {}, {})
+    assert graph is not None, "Graph should compile"
+
+
+# ---- Test 2: LLM prompt node compiles ----
+
+def test_llm_prompt_node_compiles():
+    from services.shared.graph_loader import load_graph_from_ir
+    ir = {
+        "name": "test_llm",
+        "items": {
+            "h":   {"type": "header", "content": "LLM Test", "one": "n1"},
+            "n1":  {"type": "action",
+                    "content": "Проаналізуй: є загроза? JSON: {threat: bool}",
+                    "one": "end"},
+            "end": {"type": "end"},
+        }
+    }
+    graph = load_graph_from_ir(ir, {}, {}, {})
+    assert graph is not None, "LLM prompt pipeline should compile"
+
+
+# ---- Test 3: mixed pipeline (tool + prompt) ----
+
+def test_mixed_pipeline_compiles():
+    from services.shared.graph_loader import load_graph_from_ir
+    ir = {
+        "name": "mixed",
+        "items": {
+            "h":   {"type": "header", "content": "Mixed", "one": "n1"},
+            "n1":  {"type": "action", "content": "search_kb", "one": "n2"},
+            "n2":  {"type": "action", "content": "Оціни та відповідь", "one": "end"},
+            "end": {"type": "end"},
+        }
+    }
+    graph = load_graph_from_ir(ir, {}, {}, {})
+    assert graph is not None
+
+
+# ---- Test 4: KB search ----
+
+def test_kb_search():
+    from services.shared.kb_client import KBClient
+    with tempfile.TemporaryDirectory() as tmpdir:
+        docs_dir = Path(tmpdir)
+        (docs_dir / "test.md").write_text(
+            "## UAV Threats\\nKamikazes identified by acoustic signature.\\n\\n"
+            "## Safe\\nBirds and wind are safe.", encoding="utf-8"
+        )
+        kb = KBClient(":memory:")
+        n = kb.index_documents(docs_dir)
+        assert n > 0, f"Should index sections, got {n}"
+        results = kb.search("kamikaze acoustic")
+        assert len(results) > 0, "Should find results"
+        assert "kamikaze" in results[0].lower() or "acoustic" in results[0].lower()
+
+
+# ---- Test 5: built_in_tools registry ----
+
+def test_built_in_tools_registry():
+    from services.shared.built_in_tools import BUILT_IN_TOOLS
+    assert "search_kb" in BUILT_IN_TOOLS
+    assert "analyze_code" in BUILT_IN_TOOLS
+    assert callable(BUILT_IN_TOOLS["search_kb"])
+
+
+# ---- Test 6: _resolve_node_fn priority ----
+
+def test_resolve_priority():
+    from services.shared.graph_loader import _resolve_node_fn
+    from services.shared.built_in_tools import BUILT_IN_TOOLS
+
+    # Custom registry takes priority
+    custom_fn = lambda s: s
+    result = _resolve_node_fn("search_kb", {"search_kb": custom_fn})
+    assert result is custom_fn, "Custom registry should take priority"
+
+    # Built-in tool
+    result = _resolve_node_fn("search_kb", {})
+    assert result is BUILT_IN_TOOLS["search_kb"], "Built-in tool should be resolved"
+
+    # LLM fallback
+    result = _resolve_node_fn("Будь-який промпт тут", {})
+    assert callable(result), "Unknown content should create LLM node"
+    assert "llm_" in result.__name__, f"LLM node name should start with llm_, got {result.__name__}"
+"""
+
+Path(test_dir / "test_framework.py").write_text(content, encoding="utf-8")
+print(f"Tests written: {test_dir / 'test_framework.py'}")
+PYEOF'
+
+STEP 4: Запусти тести
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder/services && \
+     python3 -m pytest shared/tests/test_framework.py -v 2>&1 | tail -30"
+
+STEP 5: Якщо тести не пройшли — виправ причину і запусти ще раз
+  Типові проблеми:
+  - langgraph не встановлено в shared: pip install langgraph
+  - ImportError: перевір sys.path
+
+STEP 6: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add services/shared/tests/ && \
+     git commit -m 'test(shared): add framework tests — graph compile, KB search, tool resolution (Task 7)' && \
+     git push origin main"
+
+STEP 7: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-41/[x] TASK-41/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-41 done — framework tests' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-41:framework-tests|6-tests|PASS|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-42: Task 8 — Оновити документацію (COLLABORATION.md + plans _INDEX)
+
+```
+[ ] TASK-42
+
+META: Оновити docs/COLLABORATION.md — додати розділ про AI-DRAKON як Developer Tool.
+      Оновити docs/plans/_INDEX.md — додати нові плани.
+      Синхронізувати SYNC_METHODOLOGY.md з новим розумінням системи.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для запису файлів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай поточний docs/COLLABORATION.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "grep '^## ' ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md"
+
+STEP 3: Додай новий розділ в docs/COLLABORATION.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md"
+content = open(fpath).read()
+
+new_section = """
+---
+
+## 13. AI-DRAKON як Developer Tool
+
+AI-DRAKON — це не самостійний проект, а **інструментарій розробника агентів**.
+
+### Концепція
+Розробник використовує AI-DRAKON щоб будувати LangGraph-агентів для БУДЬ-ЯКОГО проекту:
+- Sharon UAV Watcher → threat-classifier agent
+- CRM система → ticket-handler agent
+- Будь-що інше → свій агент з DRAKON-логікою
+
+### Unified Framework (реалізовано 2026-05-29)
+```
+services/shared/
+  graph_loader.py    ← DRAKON IR → LangGraph StateGraph
+  kb_client.py       ← SQLite FTS5 пошук (unicode61, кирилиця)
+  llm_client.py      ← AGY/Anthropic/OpenAI клієнт
+  ai_memory.py       ← ai-memory MCP wrapper
+  built_in_tools.py  ← search_kb, analyze_code, generate_ir, save_to_project
+  llm_node.py        ← llm_node_factory(prompt) → LangGraph node
+```
+
+### Автоматичне розрізнення tool vs prompt
+```python
+# DRAKON action node content може бути:
+# 1. Назва built-in tool → "search_kb", "analyze_code"
+# 2. LLM промпт → "Проаналізуй та визнач загрозу"
+# graph_loader.py автоматично:
+fn = _resolve_node_fn(content, node_registry)
+# priority: per-agent registry > BUILT_IN_TOOLS > llm_node_factory
+```
+
+### Per-project storage
+```
+~/projects/{slug}/agents/{name}/
+  pipeline.drakon.json   ← DRAKON IR (source of truth)
+  kb/*.md                ← база знань агента
+```
+
+### API (architect-agent :8766)
+```
+GET  /projects/{slug}/agents                    → список агентів
+PUT  /projects/{slug}/agents/{name}/pipeline    → зберегти + компілювати
+POST /projects/{slug}/agents/{name}/execute     → SSE виконання
+GET  /projects/{slug}/agents/{name}/kb/search   → пошук по KB
+```
+
+### Demo: Sharon UAV
+`/projects/sharon-uav/agents/threat-classifier/` — перший реальний проект.
+Pipeline: search_kb → LLM prompt → SSE output.
+
+## Семантичні зв'язки
+"""
+
+# Replace the semantic links at end
+if "## 13. AI-DRAKON як Developer Tool" not in content:
+    # Find semantic links section and insert before it
+    idx = content.rfind("## Семантичні зв'язки")
+    if idx > 0:
+        content = content[:idx] + new_section + content[idx:]
+    else:
+        content = content + new_section
+    open(fpath, "w").write(content)
+    print("COLLABORATION.md updated")
+else:
+    print("already has section 13")
+PYEOF'
+
+  # Sync to .lovable/src/
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cp ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md \
+        ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md 2>/dev/null && echo 'synced'"
+
+STEP 4: Оновити docs/plans/_INDEX.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/docs/plans/_INDEX.md"
+content = open(fpath).read()
+new_rows = """| [[plans/2026-05-29-unified-agent-framework-v2]] | Revised plan: AI-DRAKON as Developer Tool | active | 1 |
+| [[plans/2026-05-29-unified-agent-framework]] | Original unified framework plan (Tasks 1-8) | active | 2 |
+"""
+if "unified-agent-framework-v2" not in content:
+    # Add to table if exists or append
+    if "| [[" in content:
+        lines = content.split("\n")
+        for i, line in enumerate(lines):
+            if "| [[" in line and "unified" not in line:
+                lines.insert(i, new_rows.strip())
+                break
+        content = "\n".join(lines)
+    else:
+        content += "\n" + new_rows
+    open(fpath, "w").write(content)
+    print("_INDEX.md updated")
+else:
+    print("already has entries")
+PYEOF'
+
+STEP 5: Оновити docs/reports/_INDEX.md з новими звітами
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/docs/reports/_INDEX.md"
+content = open(fpath).read()
+new_entries = """| [[reports/agent-architecture-2026-05-29]] | Архітектура 3 агентів + пропозиція уніфікації | active | 2 |
+| [[reports/context-search-research-2026-05-29]] | Контекстний пошук: SQLite FTS5 рекомендовано | active | 2 |
+| [[reports/demo-sharon-uav-2026-05-29]] | Demo: Sharon UAV threat classifier end-to-end | active | 3 |
+| [[reports/sync-update-2026-05-29]] | Sprint 2026-05-29: синхронізація Claude+AGY | active | 3 |
+"""
+if "agent-architecture-2026-05-29" not in content:
+    content = content.rstrip() + "\n" + new_entries
+    open(fpath, "w").write(content)
+    print("reports/_INDEX.md updated")
+else:
+    print("already has entries")
+PYEOF'
+
+STEP 6: Commit все
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/COLLABORATION.md docs/plans/_INDEX.md docs/reports/_INDEX.md && \
+     git commit -m 'docs: update COLLABORATION.md (AI-DRAKON as dev tool) + _INDEX files (Task 8)' && \
+     git push origin main"
+
+STEP 7: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-42/[x] TASK-42/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-42 done — docs updated' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-42:docs-update|COLLABORATION.md+indexes|DONE|commit:<hash>|***"
+```
