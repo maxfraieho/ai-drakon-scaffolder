@@ -4647,9 +4647,9 @@ python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-49:ai
 
 ---
 
-## TASK-51: fix(code-tab) — прибрати token guard, показувати github статус проекту
+## TASK-51: fix(code-tab) — прибрати token guard
 
-**Status:** [ ] pending
+**Status:** [x] done
 **Agent:** agt-ogy3 (AGY3 tablet)
 **Context:** !!IMPORTANT!! Run locally on Termux. Do NOT SSH. No build needed - Cloudflare Pages builds automatically.
 **Repo:** ~/workspace/ai-drakon-scaffolder
