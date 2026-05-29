@@ -11,12 +11,26 @@ _LLM_NODE_FACTORY = None
 from langgraph.graph import StateGraph, END
 
 
+def _sanitize_node_name(content: str) -> str:
+    import re
+    if not content:
+        return "empty"
+    # Replace any non-alphanumeric, non-underscore, non-hyphen character with underscore
+    sanitized = re.sub(r'[^a-zA-Z0-9_\-]', '_', content)
+    # limit length to avoid overly long node names
+    if len(sanitized) > 64:
+        import hashlib
+        h = hashlib.md5(content.encode('utf-8')).hexdigest()[:8]
+        sanitized = f"{sanitized[:50]}_{h}"
+    return sanitized
+
+
 def _resolve_target(item_id: str, items: dict) -> str:
     if item_id not in items:
         return END
     item = items[item_id]
     if item["type"] == "action":
-        return item["content"]
+        return _sanitize_node_name(item["content"])
     if item["type"] == "end":
         return END
     if item["type"] in ("header",):
@@ -56,7 +70,7 @@ def load_graph_from_ir(
     for item in items.values():
         if item["type"] == "action":
             fn = _resolve_node_fn(item["content"], node_registry)
-            g.add_node(item["content"], fn)
+            g.add_node(_sanitize_node_name(item["content"]), fn)
 
     for item in items.values():
         if item["type"] == "header":
@@ -68,7 +82,7 @@ def load_graph_from_ir(
     for item in items.values():
         if item["type"] != "action":
             continue
-        node_name = item["content"]
+        node_name = _sanitize_node_name(item["content"])
         next_id = item.get("one", "")
         if not next_id:
             continue
@@ -87,6 +101,7 @@ def load_graph_from_ir(
             g.add_edge(node_name, END if target == END else target)
 
     return g.compile()
+
 
 
 def load_graph_from_file(

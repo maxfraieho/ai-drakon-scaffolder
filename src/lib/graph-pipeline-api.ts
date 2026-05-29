@@ -127,26 +127,22 @@ export async function resumeExecution(
 
 // ---- Per-project agent pipeline API ----
 
-function resolveAgentBaseUrl(): string {
-  return getArchitectBase();
-}
-
-export async function listProjectAgents(slug: string): Promise<{name: string, has_pipeline: boolean}[]> {
-  const base = resolveAgentBaseUrl();
+export async function listProjectAgents(slug: string): Promise<{name: string, has_pipeline: boolean, kb_docs: number}[]> {
+  const base = getArchitectBase();
   const resp = await fetch(`${base}/projects/${slug}/agents`);
   const data = await resp.json();
   return data.agents || [];
 }
 
 export async function getProjectPipeline(slug: string, agent: string): Promise<object | null> {
-  const base = resolveAgentBaseUrl();
+  const base = getArchitectBase();
   const resp = await fetch(`${base}/projects/${slug}/agents/${agent}/pipeline`);
   if (!resp.ok) return null;
   return resp.json();
 }
 
 export async function saveProjectPipeline(slug: string, agent: string, ir: object): Promise<boolean> {
-  const base = resolveAgentBaseUrl();
+  const base = getArchitectBase();
   const resp = await fetch(`${base}/projects/${slug}/agents/${agent}/pipeline`, {
     method: "PUT",
     headers: {"Content-Type": "application/json"},
@@ -156,7 +152,30 @@ export async function saveProjectPipeline(slug: string, agent: string, ir: objec
 }
 
 export function streamProjectExecution(slug: string, agent: string, input: string): EventSource {
-  const base = resolveAgentBaseUrl();
+  const base = getArchitectBase();
   return new EventSource(`${base}/projects/${slug}/agents/${agent}/execute?input=${encodeURIComponent(input)}`);
+}
+
+export interface ProjectInfo {
+  slug: string;
+  name: string;
+  description: string;
+  repo_url: string;
+  has_repo: boolean;
+  agents: string[];
+}
+
+export async function listProjectsArch(): Promise<ProjectInfo[]> {
+  const r = await fetch(`${getArchitectBase()}/projects`);
+  if (!r.ok) throw new Error(`listProjectsArch: ${r.status}`);
+  return ((await r.json()).projects ?? []);
+}
+
+export async function createProjectArch(slug: string, name: string, description = '', repoUrl = '') {
+  const r = await fetch(`${getArchitectBase()}/projects/${encodeURIComponent(slug)}`,
+    { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, description, repo_url: repoUrl }) });
+  if (!r.ok) throw new Error(`createProjectArch: ${r.status}`);
+  return (await r.json()).project;
 }
 

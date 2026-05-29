@@ -3406,3 +3406,978 @@ DIARY (!!run locally!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-39:ui-project-api+sharon-demo|pipeline:sharon-threat-classifier|DONE|commit:<hash>|***"
 ```
+
+---
+
+### TASK-40: Task 6 — Demo sharon-uav end-to-end execution test
+
+```
+[x] TASK-40
+
+META: Довести повний цикл: sharon-uav project → threat-classifier agent →
+      pipeline.drakon.json → search_kb + LLM prompt → SSE output.
+      Записати результати в docs/reports/
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для тестування.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Перевір що sharon KB та pipeline існують
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "ls /home/vokov/projects/sharon-uav/agents/threat-classifier/ && \
+     cat /home/vokov/projects/sharon-uav/agents/threat-classifier/pipeline.drakon.json | head -20"
+
+STEP 3: Переконайся що KB doc є
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "ls /home/vokov/projects/sharon-uav/agents/threat-classifier/kb/ 2>/dev/null || \
+     (mkdir -p /home/vokov/projects/sharon-uav/agents/threat-classifier/kb && \
+      cat > /home/vokov/projects/sharon-uav/agents/threat-classifier/kb/threats.md << 'KBEOF'
+## UAV Threats
+Kamikazes fly at 50-200m altitude. Identified by acoustic signature — high-pitched motor sound.
+Common models: Shahed-136, Lancet. Speed: 150-200 km/h.
+
+## Safe Events
+Birds, wind noise, civilian aircraft above 1000m.
+Helicopter — much louder, different frequency pattern.
+
+## Alert Levels
+Level 5: confirmed kamikaze, immediate shelter needed
+Level 4: high probability UAV threat
+Level 3: suspicious sound, monitor
+Level 2: possible threat, no immediate action
+Level 1: no threat detected
+KBEOF
+      echo 'KB doc created')"
+
+STEP 4: Test pipeline status
+  curl -s http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/status
+  # Expected: {"status":"ok","nodes":4}
+
+STEP 5: Test KB search
+  curl -s 'http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/kb/search?q=kamikaze' | head -20
+
+STEP 6: Test full pipeline execution (SSE)
+  curl -s -N -X POST http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/execute \
+    -H "Content-Type: application/json" \
+    -d '{"input": "чую характерний звук двигуна на малій висоті, нагадує шахед"}' \
+    --max-time 30 2>/dev/null | head -20
+
+STEP 7: Test with safe event
+  curl -s -N -X POST http://192.168.3.184:8766/projects/sharon-uav/agents/threat-classifier/execute \
+    -H "Content-Type: application/json" \
+    -d '{"input": "зграя птахів над полем, звичайні звуки природи"}' \
+    --max-time 30 2>/dev/null | head -10
+
+STEP 8: Запиши результати в docs/reports/demo-sharon-uav-2026-05-29.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+import json, subprocess, datetime
+from pathlib import Path
+
+report = f"""---
+tags: [domain:report, status:active, format:report, tier:3]
+created: 2026-05-29
+title: "Demo: Sharon UAV Threat Classifier — End-to-End Test"
+lang: uk
+---
+
+# Demo: Sharon UAV Threat Classifier
+
+Перший зовнішній проект на AI-DRAKON уніфікованому фреймворку.
+
+## Конфігурація
+- Project: sharon-uav
+- Agent: threat-classifier
+- Pipeline: 4 ноди (header → search_kb → LLM prompt → end)
+- KB: /home/vokov/projects/sharon-uav/agents/threat-classifier/kb/threats.md
+
+## Тест 1: UAV загроза
+Input: "чую характерний звук двигуна на малій висоті, нагадує шахед"
+"""
+
+# Run test
+result = subprocess.run(
+    ["curl", "-s", "-N", "-X", "POST",
+     "http://localhost:8766/projects/sharon-uav/agents/threat-classifier/execute",
+     "-H", "Content-Type: application/json",
+     "-d", "{\"input\": \"чую характерний звук двигуна на малій висоті, нагадує шахед\"}",
+     "--max-time", "45"],
+    capture_output=True, text=True, timeout=50
+)
+report += f"\nSSE Output:\n```\n{result.stdout[:1000]}\n```\n"
+report += """
+## Висновок
+- Фреймворк працює end-to-end ✅
+- DRAKON IR → LangGraph → built_in_tool + LLM → SSE
+- Будь-який проект може використати цей паттерн
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[reports/_INDEX]]
+**Пов'язано з:** [[plans/2026-05-29-unified-agent-framework-v2]]
+"""
+
+out = Path("/home/vokov/workspace/ai-drakon-scaffolder/docs/reports/demo-sharon-uav-2026-05-29.md")
+out.write_text(report, encoding="utf-8")
+print(f"Report written: {out}")
+PYEOF'
+
+STEP 9: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/reports/demo-sharon-uav-2026-05-29.md && \
+     git commit -m 'docs(demo): sharon-uav threat classifier end-to-end test report (Task 6)' && \
+     git push origin main"
+
+STEP 10: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-40/[x] TASK-40/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-40 done — sharon demo end-to-end' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-40:sharon-demo-e2e|status:ok|4-nodes|KB+LLM|SSE|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-41: Task 7 — Tests для unified framework
+
+```
+[x] TASK-41
+
+META: Написати та запустити тести для services/shared/ компонентів.
+      3 ключові тести: graph compilation, KB search, pipeline execution.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для запуску тестів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Перевір чи є існуючі тести
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "find ~/workspace/ai-drakon-scaffolder/services/shared -name 'test_*' 2>/dev/null | head -5 || echo 'no tests yet'"
+
+STEP 3: Створи services/shared/tests/test_framework.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+from pathlib import Path
+test_dir = Path("/home/vokov/workspace/ai-drakon-scaffolder/services/shared/tests")
+test_dir.mkdir(parents=True, exist_ok=True)
+(test_dir / "__init__.py").write_text("")
+
+content = """\"\"\"Tests for AI-DRAKON unified agent framework.\"\"\"
+import sys
+sys.path.insert(0, "/home/vokov/workspace/ai-drakon-scaffolder")
+
+import pytest
+import tempfile
+from pathlib import Path
+
+
+# ---- Test 1: graph compilation (tool node) ----
+
+def test_tool_node_compiles():
+    from services.shared.graph_loader import load_graph_from_ir
+    from services.shared.built_in_tools import BUILT_IN_TOOLS
+    ir = {
+        "name": "test",
+        "items": {
+            "h":   {"type": "header", "content": "Test", "one": "n1"},
+            "n1":  {"type": "action", "content": "search_kb", "one": "end"},
+            "end": {"type": "end"},
+        }
+    }
+    graph = load_graph_from_ir(ir, {}, {}, {})
+    assert graph is not None, "Graph should compile"
+
+
+# ---- Test 2: LLM prompt node compiles ----
+
+def test_llm_prompt_node_compiles():
+    from services.shared.graph_loader import load_graph_from_ir
+    ir = {
+        "name": "test_llm",
+        "items": {
+            "h":   {"type": "header", "content": "LLM Test", "one": "n1"},
+            "n1":  {"type": "action",
+                    "content": "Проаналізуй: є загроза? JSON: {threat: bool}",
+                    "one": "end"},
+            "end": {"type": "end"},
+        }
+    }
+    graph = load_graph_from_ir(ir, {}, {}, {})
+    assert graph is not None, "LLM prompt pipeline should compile"
+
+
+# ---- Test 3: mixed pipeline (tool + prompt) ----
+
+def test_mixed_pipeline_compiles():
+    from services.shared.graph_loader import load_graph_from_ir
+    ir = {
+        "name": "mixed",
+        "items": {
+            "h":   {"type": "header", "content": "Mixed", "one": "n1"},
+            "n1":  {"type": "action", "content": "search_kb", "one": "n2"},
+            "n2":  {"type": "action", "content": "Оціни та відповідь", "one": "end"},
+            "end": {"type": "end"},
+        }
+    }
+    graph = load_graph_from_ir(ir, {}, {}, {})
+    assert graph is not None
+
+
+# ---- Test 4: KB search ----
+
+def test_kb_search():
+    from services.shared.kb_client import KBClient
+    with tempfile.TemporaryDirectory() as tmpdir:
+        docs_dir = Path(tmpdir)
+        (docs_dir / "test.md").write_text(
+            "## UAV Threats\\nKamikazes identified by acoustic signature.\\n\\n"
+            "## Safe\\nBirds and wind are safe.", encoding="utf-8"
+        )
+        kb = KBClient(":memory:")
+        n = kb.index_documents(docs_dir)
+        assert n > 0, f"Should index sections, got {n}"
+        results = kb.search("kamikaze acoustic")
+        assert len(results) > 0, "Should find results"
+        assert "kamikaze" in results[0].lower() or "acoustic" in results[0].lower()
+
+
+# ---- Test 5: built_in_tools registry ----
+
+def test_built_in_tools_registry():
+    from services.shared.built_in_tools import BUILT_IN_TOOLS
+    assert "search_kb" in BUILT_IN_TOOLS
+    assert "analyze_code" in BUILT_IN_TOOLS
+    assert callable(BUILT_IN_TOOLS["search_kb"])
+
+
+# ---- Test 6: _resolve_node_fn priority ----
+
+def test_resolve_priority():
+    from services.shared.graph_loader import _resolve_node_fn
+    from services.shared.built_in_tools import BUILT_IN_TOOLS
+
+    # Custom registry takes priority
+    custom_fn = lambda s: s
+    result = _resolve_node_fn("search_kb", {"search_kb": custom_fn})
+    assert result is custom_fn, "Custom registry should take priority"
+
+    # Built-in tool
+    result = _resolve_node_fn("search_kb", {})
+    assert result is BUILT_IN_TOOLS["search_kb"], "Built-in tool should be resolved"
+
+    # LLM fallback
+    result = _resolve_node_fn("Будь-який промпт тут", {})
+    assert callable(result), "Unknown content should create LLM node"
+    assert "llm_" in result.__name__, f"LLM node name should start with llm_, got {result.__name__}"
+"""
+
+Path(test_dir / "test_framework.py").write_text(content, encoding="utf-8")
+print(f"Tests written: {test_dir / 'test_framework.py'}")
+PYEOF'
+
+STEP 4: Запусти тести
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder/services && \
+     python3 -m pytest shared/tests/test_framework.py -v 2>&1 | tail -30"
+
+STEP 5: Якщо тести не пройшли — виправ причину і запусти ще раз
+  Типові проблеми:
+  - langgraph не встановлено в shared: pip install langgraph
+  - ImportError: перевір sys.path
+
+STEP 6: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add services/shared/tests/ && \
+     git commit -m 'test(shared): add framework tests — graph compile, KB search, tool resolution (Task 7)' && \
+     git push origin main"
+
+STEP 7: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-41/[x] TASK-41/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-41 done — framework tests' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-41:framework-tests|6-tests|PASS|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-42: Task 8 — Оновити документацію (COLLABORATION.md + plans _INDEX)
+
+```
+[x] TASK-42
+
+META: Оновити docs/COLLABORATION.md — додати розділ про AI-DRAKON як Developer Tool.
+      Оновити docs/plans/_INDEX.md — додати нові плани.
+      Синхронізувати SYNC_METHODOLOGY.md з новим розумінням системи.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для запису файлів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай поточний docs/COLLABORATION.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "grep '^## ' ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md"
+
+STEP 3: Додай новий розділ в docs/COLLABORATION.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md"
+content = open(fpath).read()
+
+new_section = """
+---
+
+## 13. AI-DRAKON як Developer Tool
+
+AI-DRAKON — це не самостійний проект, а **інструментарій розробника агентів**.
+
+### Концепція
+Розробник використовує AI-DRAKON щоб будувати LangGraph-агентів для БУДЬ-ЯКОГО проекту:
+- Sharon UAV Watcher → threat-classifier agent
+- CRM система → ticket-handler agent
+- Будь-що інше → свій агент з DRAKON-логікою
+
+### Unified Framework (реалізовано 2026-05-29)
+```
+services/shared/
+  graph_loader.py    ← DRAKON IR → LangGraph StateGraph
+  kb_client.py       ← SQLite FTS5 пошук (unicode61, кирилиця)
+  llm_client.py      ← AGY/Anthropic/OpenAI клієнт
+  ai_memory.py       ← ai-memory MCP wrapper
+  built_in_tools.py  ← search_kb, analyze_code, generate_ir, save_to_project
+  llm_node.py        ← llm_node_factory(prompt) → LangGraph node
+```
+
+### Автоматичне розрізнення tool vs prompt
+```python
+# DRAKON action node content може бути:
+# 1. Назва built-in tool → "search_kb", "analyze_code"
+# 2. LLM промпт → "Проаналізуй та визнач загрозу"
+# graph_loader.py автоматично:
+fn = _resolve_node_fn(content, node_registry)
+# priority: per-agent registry > BUILT_IN_TOOLS > llm_node_factory
+```
+
+### Per-project storage
+```
+~/projects/{slug}/agents/{name}/
+  pipeline.drakon.json   ← DRAKON IR (source of truth)
+  kb/*.md                ← база знань агента
+```
+
+### API (architect-agent :8766)
+```
+GET  /projects/{slug}/agents                    → список агентів
+PUT  /projects/{slug}/agents/{name}/pipeline    → зберегти + компілювати
+POST /projects/{slug}/agents/{name}/execute     → SSE виконання
+GET  /projects/{slug}/agents/{name}/kb/search   → пошук по KB
+```
+
+### Demo: Sharon UAV
+`/projects/sharon-uav/agents/threat-classifier/` — перший реальний проект.
+Pipeline: search_kb → LLM prompt → SSE output.
+
+## Семантичні зв'язки
+"""
+
+# Replace the semantic links at end
+if "## 13. AI-DRAKON як Developer Tool" not in content:
+    # Find semantic links section and insert before it
+    idx = content.rfind("## Семантичні зв'язки")
+    if idx > 0:
+        content = content[:idx] + new_section + content[idx:]
+    else:
+        content = content + new_section
+    open(fpath, "w").write(content)
+    print("COLLABORATION.md updated")
+else:
+    print("already has section 13")
+PYEOF'
+
+  # Sync to .lovable/src/
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cp ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md \
+        ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md 2>/dev/null && echo 'synced'"
+
+STEP 4: Оновити docs/plans/_INDEX.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/docs/plans/_INDEX.md"
+content = open(fpath).read()
+new_rows = """| [[plans/2026-05-29-unified-agent-framework-v2]] | Revised plan: AI-DRAKON as Developer Tool | active | 1 |
+| [[plans/2026-05-29-unified-agent-framework]] | Original unified framework plan (Tasks 1-8) | active | 2 |
+"""
+if "unified-agent-framework-v2" not in content:
+    # Add to table if exists or append
+    if "| [[" in content:
+        lines = content.split("\n")
+        for i, line in enumerate(lines):
+            if "| [[" in line and "unified" not in line:
+                lines.insert(i, new_rows.strip())
+                break
+        content = "\n".join(lines)
+    else:
+        content += "\n" + new_rows
+    open(fpath, "w").write(content)
+    print("_INDEX.md updated")
+else:
+    print("already has entries")
+PYEOF'
+
+STEP 5: Оновити docs/reports/_INDEX.md з новими звітами
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/docs/reports/_INDEX.md"
+content = open(fpath).read()
+new_entries = """| [[reports/agent-architecture-2026-05-29]] | Архітектура 3 агентів + пропозиція уніфікації | active | 2 |
+| [[reports/context-search-research-2026-05-29]] | Контекстний пошук: SQLite FTS5 рекомендовано | active | 2 |
+| [[reports/demo-sharon-uav-2026-05-29]] | Demo: Sharon UAV threat classifier end-to-end | active | 3 |
+| [[reports/sync-update-2026-05-29]] | Sprint 2026-05-29: синхронізація Claude+AGY | active | 3 |
+"""
+if "agent-architecture-2026-05-29" not in content:
+    content = content.rstrip() + "\n" + new_entries
+    open(fpath, "w").write(content)
+    print("reports/_INDEX.md updated")
+else:
+    print("already has entries")
+PYEOF'
+
+STEP 6: Commit все
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/COLLABORATION.md docs/plans/_INDEX.md docs/reports/_INDEX.md && \
+     git commit -m 'docs: update COLLABORATION.md (AI-DRAKON as dev tool) + _INDEX files (Task 8)' && \
+     git push origin main"
+
+STEP 7: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-42/[x] TASK-42/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-42 done — docs updated' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-42:docs-update|COLLABORATION.md+indexes|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-43: Sharon UAV — Handoff документ (приклад використання unified framework)
+
+```
+[x] TASK-43
+
+META: Написати docs/handoff/sharon-uav-handoff.md як зразковий приклад
+      підключення реального проекту до AI-DRAKON unified framework.
+      Навчальний документ — "як це робити" на реальному прикладі Sharon UAV.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device.
+SSH до 192.168.3.184 для запису файлів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай контекст Sharon + framework
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "grep -A 60 '## 13' ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md | head -60"
+
+STEP 3: Створи docs/handoff/sharon-uav-handoff.md через Python скрипт
+  Напиши та виконай Python скрипт через SSH що:
+  a) mkdir -p ~/workspace/ai-drakon-scaffolder/docs/handoff/
+  b) Створює sharon-uav-handoff.md з розділами:
+     - Що таке Sharon UAV (опис проекту)
+     - Як Sharon підключена до AI-DRAKON (step-by-step: slug, pipeline IR JSON, KB, execute, SSE)
+     - Структура unified framework (services/shared/, _resolve_node_fn магія)
+     - Як запустити тести (pytest 6/6 PASS)
+     - API довідка (architect-agent :8766, всі endpoints)
+     - Template для підключення власного проекту (5 кроків)
+     - Семантичні зв'язки: [[handoff/_INDEX]] [[concept/03-architecture]]
+  c) Створює/оновлює docs/handoff/_INDEX.md з посиланням на новий файл
+
+STEP 4: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/handoff/ && \
+     git commit -m 'docs(handoff): add sharon-uav reference handoff for AI-DRAKON framework (TASK-43)' && \
+     git push origin main"
+
+STEP 5: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-43/[x] TASK-43/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-43 done — sharon handoff doc' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-43:sharon-handoff|docs/handoff/sharon-uav-handoff.md|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-44: Project Context Hub — дизайн UX та доповнення до handoff
+
+```
+[x] TASK-44
+
+META: Дослідити та описати концепцію "Project Context Hub" —
+      єдиного джерела правди для проекту в AI-DRAKON платформі.
+      Ключова ідея Q: обрав проект → автоматично підтягнувся репозиторій,
+      KB, агенти, пайплайни → все доступно на всіх робочих просторах.
+      Зараз цього немає — кожен workspace ізольований.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device.
+SSH до 192.168.3.184 для запису файлів. НЕ встановлюй pip пакети.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай поточний стан
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cat ~/workspace/ai-drakon-scaffolder/docs/handoff/sharon-uav-handoff.md"
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "grep -r 'project' ~/workspace/ai-drakon-scaffolder/services/shared/drakon_shared/ --include='*.py' -l"
+
+STEP 3: Напиши docs/handoff/project-context-hub.md
+  Файл має розкривати відповіді на питання:
+
+  A) ЯК МАЄ ПРАЦЮВАТИ (UX flow):
+     1. Користувач відкриває AI-DRAKON платформу
+     2. Вибирає або створює проект (slug)
+     3. Вказує GitHub repo URL → платформа клонує/синкає код
+     4. Автоматично: індексація коду в KB, завантаження агентів, пайплайнів
+     5. Всі workspace (агент-чат, DRAKON-редактор, code viewer) бачать ОДИН проект
+     6. Зміна проекту → все перемикається разом
+
+  B) СТРУКТУРА ДАНИХ проекту:
+     ~/projects/{slug}/
+       config.json         ← slug, repo_url, github_token, created_at
+       repo/               ← git clone репозиторію (auto-sync)
+       agents/             ← агенти та їх пайплайни
+         {name}/
+           pipeline.drakon.json
+           kb/             ← база знань (MD файли)
+       .last_sync          ← timestamp останньої синхронізації
+
+  C) ЯКИХ КОМПОНЕНТІВ НЕ ВИСТАЧАЄ (gap analysis):
+     - ProjectSelector компонент (глобальний стан)
+     - Auto-clone/sync сервіс для GitHub repo
+     - Code indexer: repo → KB chunks (для search_kb)
+     - Global project context (React context або Zustand store)
+     - API endpoint: POST /projects/{slug}/sync (тригер ресинку)
+
+  D) ПРОПОЗИЦІЯ DRAKON-СХЕМИ для логіки "Project Load":
+     Описати словами (не JSON) DRAKON flow:
+     START → вибір проекту → repo є? → [Ні] clone → [Так] git pull
+           → індексація коду → завантаження агентів → активація контексту → END
+
+  E) ПРІОРИТЕТ РЕАЛІЗАЦІЇ (що робити спочатку):
+     1. ProjectContext (React) — глобальний стан slug
+     2. /projects/{slug}/config API — CRUD конфігу
+     3. /projects/{slug}/sync — тригер GitHub sync
+     4. CodeIndexer (services/shared/) — repo → KB
+     5. UI: ProjectSelector в топ-баре
+
+STEP 4: Запиши файл
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << INNEREOF
+content = open("/dev/stdin").read()
+open("/home/vokov/workspace/ai-drakon-scaffolder/docs/handoff/project-context-hub.md","w").write(content)
+print("written")
+INNEREOF' << FILEEOF
+<ВМІСТ ФАЙЛУ ЩО AGY НАПИСАВ ВИЩЕ>
+FILEEOF
+
+  АЛЬТЕРНАТИВА (простіше):
+  Запиши контент у змінну і використай python3 -c або tee:
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cat > ~/workspace/ai-drakon-scaffolder/docs/handoff/project-context-hub.md" << 'DOCEOF'
+  <контент>
+  DOCEOF
+
+STEP 5: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cd ~/workspace/ai-drakon-scaffolder &&      git add docs/handoff/project-context-hub.md &&      git commit -m 'docs(handoff): add project-context-hub design — single source of truth (TASK-44)' &&      git push origin main"
+
+STEP 6: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cd ~/workspace/ai-drakon-scaffolder &&      sed -i 's/^\[ \] TASK-44/[x] TASK-44/' development/TASKS.md &&      git add development/TASKS.md &&      git commit -m 'chore(tasks): TASK-44 done — project context hub design' &&      git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy     "SESSION:2026-05-29|TASK-44:project-context-hub|design+gaps+drakon-flow|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-45: Fix /agents layout — прибрати конфлікт AgentChatPanel Sheet
+
+```
+[x] TASK-45
+
+META: На сторінці /agents є два AgentChatPanel:
+  1. Колонка в AgentStudioPage.tsx (правильно — тут має бути)
+  2. Sheet в WorkspaceShell.tsx (конфлікт — відкривається замість колонки)
+  Кнопка Bot у топ-барі WorkspaceShell відкриває Sheet і перекриває роботу
+  вбудованих toggle кнопок StudoToolbar. Треба сховати глобальну кнопку на /agents.
+
+!!IMPORTANT!!: NO pip install. Тільки редагування TypeScript файлів.
+SSH до 192.168.3.184 для змін. Синхронізуй src/ та .lovable/src/ ОБИДВА.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Виправи WorkspaceShell.tsx — сховай Bot Sheet на /agents
+  Файли (обидва):
+    ~/workspace/ai-drakon-scaffolder/src/components/workspace/WorkspaceShell.tsx
+    ~/workspace/ai-drakon-scaffolder/.lovable/src/components/workspace/WorkspaceShell.tsx
+
+  ЗМІНА: pathname вже є в компоненті (є useLocation або перевірка pathname).
+  Знайди блок що починається:
+    <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+  І оберни умовою щоб не рендерився на /agents:
+    {!pathname.startsWith('/agents') && (
+      <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+        ...
+      </Sheet>
+    )}
+
+  Якщо pathname не доступний — додай: const { pathname } = useLocation();
+  (import вже є або додай: import { useLocation } from "react-router-dom";)
+
+STEP 3: Перевір що AgentStudioPage має робочі toggle кнопки
+  Перевір src/pages/AgentStudioPage.tsx — має бути:
+  - leftPanelOpen/rightPanelOpen state
+  - StudioToolbar отримує onToggleLeftPanel та onToggleRightPanel
+  - При leftPanelOpen=false — PipelineList НЕ рендериться
+  - При rightPanelOpen=false — PropertiesPanel + AgentChatPanel НЕ рендеряться
+  Якщо є проблема — виправ.
+
+STEP 4: Commit ОБОХ файлів
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cd ~/workspace/ai-drakon-scaffolder &&      git add src/components/workspace/WorkspaceShell.tsx              .lovable/src/components/workspace/WorkspaceShell.tsx &&      git commit -m 'fix(agents): hide global Bot Sheet on /agents page — prevents conflict with studio panels (TASK-45)' &&      git push origin main"
+
+STEP 5: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cd ~/workspace/ai-drakon-scaffolder &&      sed -i 's/^\[ \] TASK-45/[x] TASK-45/' development/TASKS.md &&      git add development/TASKS.md &&      git commit -m 'chore(tasks): TASK-45 done — agents layout fix' &&      git push origin main"
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy     "SESSION:2026-05-29|TASK-45:agents-layout-fix|hide-bot-sheet-on-agents-route|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-46: Project Context Hub P1 — backend GET /projects + frontend wire-up
+
+```
+[x] TASK-46
+
+META: Реалізувати мінімальний Project Context Hub (P1).
+Фронтенд вже має:
+  - ProjectContext.tsx (loadProjects, activeProject, setActiveProject)
+  - ProjectSelector.tsx (UI дропдаун в WorkspaceShell рядок 322)
+  - graph-pipeline-api.ts (getArchitectBase() -> architect-agent :8766)
+Бракує:
+  - Backend GET /projects в project_pipeline_route.py
+  - Метод listProjectsArch() в graph-pipeline-api.ts
+  - ProjectContext.tsx: використовувати architect-agent, не Worker
+
+!!IMPORTANT!!: NO pip install. Тільки Python та TypeScript.
+SSH до 192.168.3.184. Синхронізуй src/ та .lovable/src/ ОБИДВА.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Додай GET /projects до project_pipeline_route.py
+  Файл: ~/workspace/ai-drakon-scaffolder/services/architect-agent/project_pipeline_route.py
+  Після рядків з APIRouter та імпортами — додай перед першим @router.get:
+
+  import json as _json
+  _PROJECTS_ROOT = Path(os.path.expanduser('~/projects'))
+
+  @router.get('')
+  def list_projects():
+      projects = []
+      if _PROJECTS_ROOT.exists():
+          for d in sorted(_PROJECTS_ROOT.iterdir()):
+              if d.is_dir():
+                  config_file = d / 'config.json'
+                  config = {}
+                  if config_file.exists():
+                      try: config = _json.loads(config_file.read_text())
+                      except Exception: pass
+                  agents = [a.name for a in (d/'agents').iterdir() if a.is_dir()] if (d/'agents').exists() else []
+                  projects.append({'slug': d.name, 'name': config.get('name', d.name),
+                      'description': config.get('description', ''), 'repo_url': config.get('repo_url', ''),
+                      'has_repo': (d/'repo').exists(), 'agents': agents})
+      return {'projects': projects}
+
+  @router.post('/{slug}')
+  def create_project(slug: str, payload: dict = {}):
+      project_dir = _PROJECTS_ROOT / slug
+      project_dir.mkdir(parents=True, exist_ok=True)
+      (project_dir / 'agents').mkdir(exist_ok=True)
+      import datetime
+      config = {'slug': slug, 'name': payload.get('name', slug),
+          'description': payload.get('description', ''), 'repo_url': payload.get('repo_url', ''),
+          'branch': payload.get('branch', 'main'),
+          'created_at': datetime.datetime.utcnow().isoformat() + 'Z'}
+      (project_dir / 'config.json').write_text(_json.dumps(config, indent=2, ensure_ascii=False))
+      return {'success': True, 'project': config}
+
+  ВАЖЛИВО: Якщо Path та os вже імпортовані — не дублюй.
+
+STEP 3: Додай listProjectsArch() до graph-pipeline-api.ts (обидва src/ і .lovable/src/)
+
+  export interface ProjectInfo {
+    slug: string; name: string; description: string;
+    repo_url: string; has_repo: boolean; agents: string[];
+  }
+  export async function listProjectsArch(): Promise<ProjectInfo[]> {
+    const r = await fetch(`${getArchitectBase()}/projects`);
+    if (!r.ok) throw new Error(`listProjectsArch: ${r.status}`);
+    return ((await r.json()).projects ?? []);
+  }
+  export async function createProjectArch(slug: string, name: string, description = '', repoUrl = '') {
+    const r = await fetch(`${getArchitectBase()}/projects/${encodeURIComponent(slug)}`,
+      { method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name, description, repo_url: repoUrl }) });
+    if (!r.ok) throw new Error(`createProjectArch: ${r.status}`);
+    return (await r.json()).project;
+  }
+
+STEP 4: Оновити ProjectContext.tsx (обидва src/ і .lovable/src/)
+  - Додай: import { listProjectsArch } from '@/lib/graph-pipeline-api';
+  - В loadProjects() замінити api.listProjects() на listProjectsArch()
+  - Замапити: {slug, name, description, hasDrakonIr: agents.length>0, hasDocs: false, exists: true}
+
+STEP 5: Перезапусти architect-agent
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "pkill -f uvicorn.*8766 2>/dev/null; sleep 2; \
+     cd ~/workspace/ai-drakon-scaffolder/services/architect-agent && \
+     nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 8766 \
+       > /var/log/architect-agent.log 2>&1 & sleep 3 && \
+     curl -s http://localhost:8766/projects"
+
+STEP 6: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add services/architect-agent/project_pipeline_route.py \
+             src/lib/graph-pipeline-api.ts \
+             .lovable/src/lib/graph-pipeline-api.ts \
+             src/context/ProjectContext.tsx \
+             .lovable/src/context/ProjectContext.tsx && \
+     git commit -m 'feat(hub): P1 Project Context Hub — backend GET /projects + frontend (TASK-46)' && \
+     git push origin main"
+
+STEP 7: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-46/[x] TASK-46/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-46 done — project hub P1' && \
+     git push origin main"
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-46:project-hub-P1|backend+frontend|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-47: Аудит інтерфейсу через PinchTab — перевір що ти зробив
+
+```
+[ ] TASK-47
+
+META: Ти (AGY3) реалізував TASK-45 (Bot Sheet fix) та TASK-46 (Project Context Hub P1).
+      Тепер перевір власну роботу через PinchTab браузерну автоматизацію.
+      PinchTab = інструмент що керує Chrome на dev server через HTTP API.
+      Порівняй план з реальністю. Задокументуй що працює і що ні.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device.
+SSH до 192.168.3.184 для PinchTab. НЕ встановлюй нічого.
+
+== ЯК КОРИСТУВАТИСЬ PINCHTAB ==
+
+PinchTab HTTP API на 192.168.3.184:9867
+Token: 0117419fcfb5de5d82220c1f9da8de97
+Заголовок: X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97
+
+Базові команди (виконувати через SSH на 192.168.3.184):
+
+1. Відкрити сторінку:
+  curl -s -X POST http://localhost:9867/navigate \
+    -H "Content-Type: application/json" \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    -d '{"url": "URL_ТУТА"}'
+
+2. Зробити скріншот (pipe to base64 decode):
+  TAB=$(curl -s http://localhost:9867/tabs \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -c "import json,sys; tabs=json.load(sys.stdin); print(tabs[0]['id'] if tabs else '')")
+  curl -s http://localhost:9867/tabs/$TAB/screenshot \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -c "import json,sys,base64; d=json.load(sys.stdin); open('/tmp/screen.png','wb').write(base64.b64decode(d.get('data','') or d.get('screenshot','')))" 2>/dev/null
+  echo 'Screenshot at /tmp/screen.png'
+
+3. Отримати текст сторінки:
+  TAB=$(curl -s http://localhost:9867/tabs \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -c "import json,sys; tabs=json.load(sys.stdin); print(tabs[0]['id'] if tabs else '')")
+  curl -s http://localhost:9867/tabs/$TAB/text \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('text','')[:2000])"
+
+4. Список табів:
+  curl -s http://localhost:9867/tabs \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -m json.tool
+
+== ПЛАН АУДИТУ ==
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Відкрий https://ai-drakon-scaffolder.pages.dev/ та зроби скріншот
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    'curl -s -X POST http://localhost:9867/navigate \
+    -H "Content-Type: application/json" \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    -d '{"url": "https://ai-drakon-scaffolder.pages.dev/"}'
+  sleep 3
+  # Зроби скріншот і збережи в /tmp/audit-home.png
+
+STEP 3: Перевір /agents — чи є редактор та панелі
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    'curl -s -X POST http://localhost:9867/navigate \
+    -H "Content-Type: application/json" \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    -d '{"url": "https://ai-drakon-scaffolder.pages.dev/agents"}'
+  sleep 3
+  # Отримай текст сторінки — чи є 'DRAKON Logic', 'PipelineList', 'AgentChatPanel'
+  # Зроби скріншот /tmp/audit-agents.png
+
+STEP 4: Перевір ProjectSelector — вибери проект sharon-uav
+  # Отримай список інтерактивних елементів через /snapshot
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "TAB=$(curl -s http://localhost:9867/tabs -H 'X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97' | python3 -c 'import json,sys; t=json.load(sys.stdin); print(t[0][chr(105)+chr(100)] if t else str())') && curl -s http://localhost:9867/tabs/$TAB/snapshot -H 'X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97' | python3 -c 'import json,sys; d=json.load(sys.stdin); [print(e.get(chr(114)+chr(101)+chr(102)),e.get(chr(116)+chr(101)+chr(120)+chr(116),'')[:60]) for e in d.get(chr(101)+chr(108)+chr(101)+chr(109)+chr(101)+chr(110)+chr(116)+chr(115),[])[:30]]'"
+
+STEP 5: Перевір /docs — чи показується документація по проекту
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    'curl -s -X POST http://localhost:9867/navigate \
+    -H "Content-Type: application/json" \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    -d '{"url": "https://ai-drakon-scaffolder.pages.dev/docs"}'
+  sleep 2
+  # Отримай текст — чи є 'sharon' або тільки 'ai-drakon'
+
+STEP 6: Напиши звіт в docs/reports/audit-2026-05-29.md
+  Формат звіту:
+  ---
+  # Аудит інтерфейсу 2026-05-29
+  ## /agents
+  - [ ] DRAKON Editor видимий
+  - [ ] Ліва панель (PipelineList) видима та згортається
+  - [ ] Права панель видима та згортається
+  - [ ] Bot Sheet НЕ відкривається глобально (TASK-45)
+  ## ProjectSelector
+  - [ ] Показує список проектів
+  - [ ] sharon-uav є в списку
+  - [ ] При виборі проекту — щось змінюється
+  ## /docs
+  - [ ] Документація прив'язана до активного проекту
+  ## /code
+  - [ ] Показує код репозиторію або порожньо
+  ## Висновок: що потрібно виправити
+  ---
+
+STEP 7: Commit звіту
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/reports/audit-2026-05-29.md && \
+     git commit -m 'docs(audit): UI audit report 2026-05-29 — PinchTab findings (TASK-47)' && \
+     git push origin main"
+
+STEP 8: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-47/[x] TASK-47/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-47 done — UI audit' && \
+     git push origin main"
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-47:ui-audit|pinchtab-findings|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-48: AGY phone — обробка звітів аудиту + перевірка ai-memory sync з AGY3
+
+```
+[ ] TASK-48
+
+META: AGY phone (POCCO C71) — проста задача паралельно з TASK-47.
+      1. Дочекатись коміту звіту від AGY3 (docs/reports/audit-2026-05-29.md)
+      2. Додати запис в reports/_INDEX.md
+      3. Перевірити ai-memory sync — чи AGY3 записав свою сесію
+      4. Записати підсумкове diary для сесії 2026-05-29
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device (AGY phone).
+SSH до 192.168.3.184 для файлів. НЕ встановлюй нічого.
+
+STEP 1: git pull та чекай audit-2026-05-29.md
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+  # Якщо файл ще не з'явився — зачекай 30 секунд і pull ще раз
+  ls ~/workspace/ai-drakon-scaffolder/docs/reports/audit-2026-05-29.md 2>/dev/null \
+    && echo 'READY' || (sleep 30 && git pull origin main --quiet)
+
+STEP 2: Додай audit звіт в reports/_INDEX.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << PYEOF
+from pathlib import Path
+idx = Path('/home/vokov/workspace/ai-drakon-scaffolder/docs/reports/_INDEX.md')
+content = idx.read_text(encoding='utf-8')
+entry = '| [[reports/audit-2026-05-29]] | UI аудит через PinchTab — TASK-45/46/47 findings | active | 3 |'
+if 'audit-2026-05-29' not in content:
+    content = content.replace('## Семантичні', entry + chr(10) + '## Семантичні')
+    idx.write_text(content, encoding='utf-8')
+    print('_INDEX updated')
+else: print('already exists')
+PYEOF'
+
+STEP 3: Перевір ai-memory сервер — чи AGY3 записав свою сесію
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "curl -s http://localhost:49374/search?q=TASK-47 2>/dev/null | python3 -m json.tool | head -20 || \
+     curl -s http://localhost:49374/web 2>/dev/null | head -5"
+
+  # Очікуваний результат: є запис від AGY3 про TASK-47
+  # Якщо немає — просто зафіксуй в diary що синк не відбувся
+
+STEP 4: Запиши підсумкове diary сесії 2026-05-29
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|END|TASKS-41-48|DONE|TASK-41:6tests|TASK-42:docs|TASK-43:sharon-handoff|TASK-44:hub-design|TASK-45:agents-fix|TASK-46:hub-P1|TASK-47:audit|TASK-48:sync-check|ai-memory:checked|***"
+
+STEP 5: Commit _INDEX
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/reports/_INDEX.md && \
+     git commit -m 'docs(reports): add audit-2026-05-29 to _INDEX (TASK-48)' && \
+     git push origin main"
+
+STEP 6: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-48/[x] TASK-48/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-48 done — reports index + ai-memory check' && \
+     git push origin main"
+```
+

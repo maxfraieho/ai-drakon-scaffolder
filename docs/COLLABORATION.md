@@ -208,6 +208,58 @@ lang: uk
 
 ---
 
+## 13. AI-DRAKON як Developer Tool
+
+AI-DRAKON — це не самостійний проект, а **інструментарій розробника агентів**.
+
+### Концепція
+Розробник використовує AI-DRAKON щоб будувати LangGraph-агентів для БУДЬ-ЯКОГО проекту:
+- Sharon UAV Watcher → threat-classifier agent
+- CRM система → ticket-handler agent
+- Будь-що інше → свій агент з DRAKON-логікою
+
+### Unified Framework (реалізовано 2026-05-29)
+```
+services/shared/
+  graph_loader.py    ← DRAKON IR → LangGraph StateGraph
+  kb_client.py       ← SQLite FTS5 пошук (unicode61, кирилиця)
+  llm_client.py      ← AGY/Anthropic/OpenAI клієнт
+  ai_memory.py       ← ai-memory MCP wrapper
+  built_in_tools.py  ← search_kb, analyze_code, generate_ir, save_to_project
+  llm_node.py        ← llm_node_factory(prompt) → LangGraph node
+```
+
+### Автоматичне розрізнення tool vs prompt
+```python
+# DRAKON action node content може бути:
+# 1. Назва built-in tool → "search_kb", "analyze_code"
+# 2. LLM промпт → "Проаналізуй та визнач загрозу"
+# graph_loader.py автоматично:
+fn = _resolve_node_fn(content, node_registry)
+# priority: per-agent registry > BUILT_IN_TOOLS > llm_node_factory
+```
+
+### Per-project storage
+```
+~/projects/{slug}/agents/{name}/
+  pipeline.drakon.json   ← DRAKON IR (source of truth)
+  kb/*.md                ← база знань агента
+```
+
+### API (architect-agent :8766)
+```
+GET  /projects/{slug}/agents                    → список агентів
+PUT  /projects/{slug}/agents/{name}/pipeline    → зберегти + компілювати
+POST /projects/{slug}/agents/{name}/execute     → SSE виконання
+GET  /projects/{slug}/agents/{name}/kb/search   → пошук по KB
+```
+
+### Demo: Sharon UAV
+`/projects/sharon-uav/agents/threat-classifier/` — перший реальний проект.
+Pipeline: search_kb → LLM prompt → SSE output.
+
+---
+
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[docs/_INDEX]]
 

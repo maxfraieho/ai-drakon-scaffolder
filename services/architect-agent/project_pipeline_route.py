@@ -34,6 +34,40 @@ def _kb_dir(slug: str, agent: str) -> Path:
     return p
 
 
+_PROJECTS_ROOT = PROJECTS_BASE
+_json = json
+
+@router.get('')
+def list_projects():
+    projects = []
+    if _PROJECTS_ROOT.exists():
+        for d in sorted(_PROJECTS_ROOT.iterdir()):
+            if d.is_dir() and not d.name.startswith('.'):
+                config_file = d / 'config.json'
+                config = {}
+                if config_file.exists():
+                    try: config = _json.loads(config_file.read_text())
+                    except Exception: pass
+                agents = [a.name for a in (d/'agents').iterdir() if a.is_dir()] if (d/'agents').exists() else []
+                projects.append({'slug': d.name, 'name': config.get('name', d.name),
+                    'description': config.get('description', ''), 'repo_url': config.get('repo_url', ''),
+                    'has_repo': (d/'repo').exists(), 'agents': agents})
+    return {'projects': projects}
+
+@router.post('/{slug}')
+def create_project(slug: str, payload: dict = {}):
+    project_dir = _PROJECTS_ROOT / slug
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / 'agents').mkdir(exist_ok=True)
+    import datetime
+    config = {'slug': slug, 'name': payload.get('name', slug),
+        'description': payload.get('description', ''), 'repo_url': payload.get('repo_url', ''),
+        'branch': payload.get('branch', 'main'),
+        'created_at': datetime.datetime.utcnow().isoformat() + 'Z'}
+    (project_dir / 'config.json').write_text(_json.dumps(config, indent=2, ensure_ascii=False))
+    return {'success': True, 'project': config}
+
+
 @router.get("/{slug}/agents")
 def list_agents(slug: str):
     """List all agents for a project."""
@@ -42,7 +76,7 @@ def list_agents(slug: str):
         return {"slug": slug, "agents": []}
     agents = []
     for d in sorted(project_dir.iterdir()):
-        if d.is_dir():
+        if d.is_dir() and not d.name.startswith('.'):
             pipeline_file = d / "pipeline.drakon.json"
             agents.append({
                 "name": d.name,
@@ -88,17 +122,15 @@ def pipeline_status(slug: str, agent: str):
         return {"status": "error", "error": str(e)}
 
 
-@router.post("/{slug}/agents/{agent}/execute")
-async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
-    """Execute pipeline with SSE streaming output."""
+async def _execute_pipeline_impl(slug: str, agent: str, inp: str, q: str):
     path = _pipeline_path(slug, agent)
     if not path.exists():
         raise HTTPException(404, f"No pipeline for {slug}/{agent}")
 
     ir = json.loads(path.read_text())
     state = {
-        "input": input_data.get("input", ""),
-        "query": input_data.get("query", ""),
+        "input": inp,
+        "query": q,
         "project_slug": slug,
         "agent_name": agent,
         "context": "",
@@ -118,6 +150,21 @@ async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
             yield f"data: {{\"status\": \"error\", \"error\": \"{str(e)[:200]}\"}}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@router.post("/{slug}/agents/{agent}/execute")
+async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
+    """Execute pipeline with SSE streaming output via POST."""
+    inp = input_data.get("input", "")
+    q = input_data.get("query", "")
+    return await _execute_pipeline_impl(slug, agent, inp, q)
+
+
+@router.get("/{slug}/agents/{agent}/execute")
+async def execute_pipeline_get(slug: str, agent: str, input: str = "", query: str = ""):
+    """Execute pipeline with SSE streaming output via GET (EventSource)."""
+    return await _execute_pipeline_impl(slug, agent, input, query)
+
 
 
 @router.get("/{slug}/agents/{agent}/kb/search")

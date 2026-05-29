@@ -16,6 +16,8 @@ lang: uk
 
 | Файл | Опис | Статус | Tier |
 |------|------|--------|------|
+| [[plans/2026-05-29-unified-agent-framework-v2]] | Revised plan: AI-DRAKON as Developer Tool | active | 1 |
+| [[plans/2026-05-29-unified-agent-framework]] | Original unified framework plan (Tasks 1-8) | active | 2 |
 | [[plans/2026-05-12-drakon-agent]] | Агент DRAKON — План реалізації | active | 3 |
 | [[plans/2026-05-12-multi-agent-drakon-system]] | Мультиагентна система DRAKON — План реалізації | active | 3 |
 | [[plans/2026-05-12-platform-redesign-proposal]] | Пропозиція редизайну платформи — План реалізації | active | 3 |
@@ -30,7 +32,5 @@ lang: uk
 | [[plans/2026-05-26-pinchtab-test-plan]] | План тестування PinchTab — Платформа AI-DRAKON | active | 3 |
 | [[plans/Multi-Agent DRAKON System Plan]] | Звіт про реалізацію та архітектуру: Мультиагентна система DRAKON | active | 3 |
 | [[plans/pinchtab-test-results-extended-2026-05-26]] | Розширені результати тестування PinchTab | active | 3 |
-| [[plans/2026-05-29-unified-agent-framework]] | Unified LangGraph-DRAKON Agent Framework — План реалізації | active | 2 |
-
 ## Семантичні зв'язки
 **Батьківський індекс:** [[plans/_INDEX]]
