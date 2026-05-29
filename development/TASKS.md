@@ -4386,7 +4386,7 @@ STEP 6: Mark done
 ### TASK-47b: AGY3 — PinchTab аудит /agents (виправлена версія)
 
 ```
-[ ] TASK-47b
+[x] TASK-47b
 
 META: TASK-47 провалилась — намагався запустити dev server.
       PinchTab вже ЗАПУЩЕНИЙ на 192.168.3.184:9867. Просто використай HTTP API.
