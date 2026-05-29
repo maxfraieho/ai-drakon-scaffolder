@@ -52,7 +52,7 @@ function FileTree({
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (path: string) => {
-    if (!owner || !repo || !token) return;
+    if (!owner || !repo) return;
     setLoading(true);
     setError(null);
     try {
@@ -90,12 +90,12 @@ function FileTree({
 
   const refresh = () => load(currentPath);
 
-  if (!owner || !repo || !token) {
+  if (!owner || !repo) {
     return (
       <div className="flex flex-col items-center justify-center h-full gap-2 px-3">
         <AlertCircle className="h-4 w-4 text-[var(--text-muted)]" />
         <span className="font-mono text-[9px] text-[var(--text-muted)] text-center">
-          Налаштуйте GitHub у проекті або в Settings
+          Проект не має GitHub конфігу. Додайте repo у налаштуваннях проекту.
         </span>
       </div>
     );
@@ -193,7 +193,7 @@ export default function CodePage() {
 
   // Load file from GitHub
   const openFile = useCallback(async (path: string) => {
-    if (!owner || !repo || !token) return;
+    if (!owner || !repo) return;
     setLoadingFile(true);
     try {
       const res = await api.githubGetFile(owner, repo, path, branch, token);
@@ -214,8 +214,8 @@ export default function CodePage() {
 
   // Save to git
   const saveToGit = useCallback(async () => {
-    if (!owner || !repo || !token) {
-      toast.error("Налаштуйте GitHub у Settings");
+    if (!owner || !repo) {
+      toast.error("Проект не має GitHub конфігу");
       return;
     }
     if (!code.trim()) { toast.error("Файл порожній"); return; }
@@ -334,10 +334,10 @@ export default function CodePage() {
           </Button>
           <Button
             variant="ghost" size="sm"
-            disabled={saving || !token}
+            disabled={saving}
             onClick={saveToGit}
             className="h-6 gap-1 font-mono text-[10px] text-[var(--text-muted)] hover:text-green-400 px-2 shrink-0"
-            title={token ? "Зберегти в git" : "Потрібен GitHub токен в Settings"}
+            title="Зберегти в git"
           >
             {saving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
           </Button>
