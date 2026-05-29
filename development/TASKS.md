@@ -3873,3 +3873,58 @@ DIARY (!!run locally!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-42:docs-update|COLLABORATION.md+indexes|DONE|commit:<hash>|***"
 ```
+
+---
+
+### TASK-43: Sharon UAV — Handoff документ (приклад використання unified framework)
+
+```
+[ ] TASK-43
+
+META: Написати docs/handoff/sharon-uav-handoff.md як зразковий приклад
+      підключення реального проекту до AI-DRAKON unified framework.
+      Навчальний документ — "як це робити" на реальному прикладі Sharon UAV.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device.
+SSH до 192.168.3.184 для запису файлів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай контекст Sharon + framework
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "grep -A 60 '## 13' ~/workspace/ai-drakon-scaffolder/docs/COLLABORATION.md | head -60"
+
+STEP 3: Створи docs/handoff/sharon-uav-handoff.md через Python скрипт
+  Напиши та виконай Python скрипт через SSH що:
+  a) mkdir -p ~/workspace/ai-drakon-scaffolder/docs/handoff/
+  b) Створює sharon-uav-handoff.md з розділами:
+     - Що таке Sharon UAV (опис проекту)
+     - Як Sharon підключена до AI-DRAKON (step-by-step: slug, pipeline IR JSON, KB, execute, SSE)
+     - Структура unified framework (services/shared/, _resolve_node_fn магія)
+     - Як запустити тести (pytest 6/6 PASS)
+     - API довідка (architect-agent :8766, всі endpoints)
+     - Template для підключення власного проекту (5 кроків)
+     - Семантичні зв'язки: [[handoff/_INDEX]] [[concept/03-architecture]]
+  c) Створює/оновлює docs/handoff/_INDEX.md з посиланням на новий файл
+
+STEP 4: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/handoff/ && \
+     git commit -m 'docs(handoff): add sharon-uav reference handoff for AI-DRAKON framework (TASK-43)' && \
+     git push origin main"
+
+STEP 5: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-43/[x] TASK-43/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-43 done — sharon handoff doc' && \
+     git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-43:sharon-handoff|docs/handoff/sharon-uav-handoff.md|DONE|commit:<hash>|***"
+```
+
