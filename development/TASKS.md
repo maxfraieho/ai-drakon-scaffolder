@@ -4886,3 +4886,39 @@ print('done')
 ### DIARY
 
   python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-53:4fixes|stale+memleak+deleted|DONE"
+
+---
+
+## TASK-54: fix — sync TASK-53 fixes to .lovable/src/ (Cloudflare Pages builds from there)
+
+**Status:** [ ] pending
+**Agent:** agt-ogy3 (AGY3 tablet)
+**CRITICAL:** Cloudflare Pages builds from .lovable/ NOT from src/
+**Context:** IMPORTANT!! Run locally on Termux. NO build needed.
+**Repo:** ~/workspace/ai-drakon-scaffolder
+
+### Проблема
+
+TASK-53 оновив src/pages/CodePage.tsx та src/context/ProjectContext.tsx,
+але НЕ оновив .lovable/src/pages/CodePage.tsx та .lovable/src/context/ProjectContext.tsx.
+Cloudflare Pages будує з .lovable/ ().
+Тому деплой не містить фіксів TASK-53.
+
+### src/ має 451 рядок, .lovable/ має 433 рядки — 18 рядків різниці
+
+### Рішення: скопіювати src/ файли в .lovable/src/
+
+ПРОСТИЙ СПОСІБ — просто скопіювати:
+
+
+Після копіювання перевір що файли однакові:
+DIFF EXISTS
+DIFF EXISTS
+
+### Commit + push
+
+
+
+### Mark done + diary
+
+
