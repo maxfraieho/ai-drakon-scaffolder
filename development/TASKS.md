@@ -3285,7 +3285,7 @@ DIARY (!!run locally!!):
 ### TASK-39: Task 5 — UI: bind /agents page to active project + demo pipeline
 
 ```
-[ ] TASK-39
+[x] TASK-39
 
 META: Прив'язати /agents page до active project context.
       Зробити sharon-uav demo pipeline та показати повний цикл:
