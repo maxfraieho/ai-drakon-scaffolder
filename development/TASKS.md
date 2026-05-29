@@ -3412,7 +3412,7 @@ DIARY (!!run locally!!):
 ### TASK-40: Task 6 — Demo sharon-uav end-to-end execution test
 
 ```
-[ ] TASK-40
+[x] TASK-40
 
 META: Довести повний цикл: sharon-uav project → threat-classifier agent →
       pipeline.drakon.json → search_kb + LLM prompt → SSE output.
