@@ -1761,3 +1761,83 @@ STEP 4: Test
 
 DIARY: python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-29:agy3-setup|DONE|***"
 ```
+
+
+---
+
+### TASK-30: Update collaboration docs — full methodology with wiki links
+
+```
+[ ] TASK-30
+
+META: Update docs/COLLABORATION.md and docs/kb/sync-hooks-methodology.md
+      with complete, detailed description of the Claude+AGY multi-agent workflow,
+      including all sprint 2026-05-29 discoveries (session-start hooks, diary format,
+      delegate-agy.sh pattern, mempalace local vs remote, !!IMPORTANT!! task instructions).
+      Apply Garden Bloom standard with proper wiki links.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device. NO SSH needed except
+for git push. mempalace is LOCAL on this device.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Read current docs to understand what exists
+  cat docs/COLLABORATION.md | head -60
+  cat docs/kb/sync-hooks-methodology.md | head -40
+
+STEP 3: Update docs/COLLABORATION.md
+  Add/update these sections following Garden Bloom standard (Ukrainian, frontmatter, wikilinks):
+
+  ## 5. AGY Task Execution Protocol (деталі)
+
+  ### Правильний спосіб делегування через OrangePi
+  - Завжди використовуй ~/bin/delegate-agy.sh "TASK-N"
+  - run_in_background: true в Bash, БЕЗ & в команді
+  - Результат: ~/agy-task.log на AGY + diary agt-ogy
+
+  ### Критичне правило для TASKS.md
+  Кожна задача ОБОВ'ЯЗКОВО містить:
+  "!!IMPORTANT!!: Run locally on THIS Termux device. NO SSH to 192.168.3.184 for diary/mempalace."
+  Без цього AGY може піти на dev server шукати mempalace (якого там немає).
+
+  ### mempalace розташування
+  - OrangePi: локальний процес (MCP server, ~21000 drawers)
+  - AGY phone/AGY3 tablet: локальний Termux process (окрема БД, але читається через diary)
+  - Dev server 192.168.3.184: mempalace НЕ встановлено — AGY не повинен туди лізти
+
+  ## 6. Паралельне виконання (AGY + AGY3)
+
+  | Інстанс | Хост | SSH | Quota |
+  |---------|------|-----|-------|
+  | AGY phone | 192.168.3.25 (динамічний) | u0_a284:123456 port 8022 | змінна |
+  | AGY3 tablet | 192.168.3.162 (статичний) | u0_a410:TermuxSsh2026! port 8022 | 100% |
+
+  Обидва мають: agy CLI, agy-task.sh, репо ai-drakon-scaffolder, git credentials.
+  Делегувати незалежні задачі на різні пристрої одночасно.
+
+  ## 7. Верифікація після AGY задачі
+  1. git log --oneline -3 (нові коміти?)
+  2. grep "\[x\] TASK-N" development/TASKS.md
+  3. mempalace_diary_read(agent_name="agt-ogy", last_n=3) через MCP
+  4. Перевірити реальні зміни в коді (НЕ довіряти AGY звіту без перевірки коду)
+
+STEP 4: Update docs/kb/sync-hooks-methodology.md
+  Add section about AGY3 parallel execution and mempalace locality.
+
+STEP 5: Update wiki links — add [[kb/sync-hooks-methodology]] references where relevant
+  In docs/COLLABORATION.md add at bottom:
+  ## Семантичні зв'язки
+  **Цей документ є частиною:** [[docs/_INDEX]]
+  **Пов'язано з:** [[kb/sync-hooks-methodology]] — деталі hooks та mempalace
+
+STEP 6: Sync both src copies if any tsx files changed (not needed for docs)
+
+STEP 7: Commit
+  git add docs/COLLABORATION.md docs/kb/sync-hooks-methodology.md
+  git commit -m "docs(collab): update methodology — AGY3 parallel, mempalace locality, task rules"
+  git push origin main
+
+DIARY (!!run locally, NO SSH!!):
+  python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-30:docs-methodology-update|DONE|commit:<hash>|***"
+```
