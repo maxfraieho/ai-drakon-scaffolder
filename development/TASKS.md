@@ -2880,3 +2880,232 @@ DIARY (!!run locally on THIS device, NO SSH!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-36:built-in-tools+llm-node-factory|BUILT_IN_TOOLS:search_kb+analyze_code+generate_ir+save_to_project|DONE|commit:<hash>|***"
 ```
+
+---
+
+### TASK-37: Task 3 — Per-project pipeline storage API (architect-agent)
+
+```
+[ ] TASK-37
+
+META: Додати до architect-agent REST API для зберігання/виконання pipeline per project+agent.
+      Це дозволить UI зберігати DRAKON IR для будь-якого проекту і виконувати його.
+      План: docs/plans/2026-05-29-unified-agent-framework-v2.md Task 3
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для читання/запису файлів та перезапуску сервісу.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай існуючий graph_pipeline_route.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/architect-agent/graph_pipeline_route.py | head -80"
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/architect-agent/main.py | head -60"
+
+STEP 3: Створи services/architect-agent/project_pipeline_route.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+content = """\"\"\"Per-project agent pipeline API for AI-DRAKON developer tool.
+Manages pipeline storage and execution scoped to project+agent.
+\"\"\"
+import json
+import os
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
+from services.shared.graph_loader import load_graph_from_ir
+
+PROJECTS_BASE = Path(os.getenv("DRAKON_PROJECTS_DIR", Path.home() / "projects"))
+
+router = APIRouter(prefix="/projects", tags=["project-pipelines"])
+
+
+class PipelinePayload(BaseModel):
+    ir: dict
+    description: str = ""
+
+
+def _pipeline_path(slug: str, agent: str) -> Path:
+    p = PROJECTS_BASE / slug / "agents" / agent
+    p.mkdir(parents=True, exist_ok=True)
+    return p / "pipeline.drakon.json"
+
+
+def _kb_dir(slug: str, agent: str) -> Path:
+    p = PROJECTS_BASE / slug / "agents" / agent / "kb"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+@router.get("/{slug}/agents")
+def list_agents(slug: str):
+    \"\"\"List all agents for a project.\"\"\"
+    project_dir = PROJECTS_BASE / slug / "agents"
+    if not project_dir.exists():
+        return {"slug": slug, "agents": []}
+    agents = []
+    for d in sorted(project_dir.iterdir()):
+        if d.is_dir():
+            pipeline_file = d / "pipeline.drakon.json"
+            agents.append({
+                "name": d.name,
+                "has_pipeline": pipeline_file.exists(),
+                "kb_docs": len(list((d / "kb").glob("*.md"))) if (d / "kb").exists() else 0,
+            })
+    return {"slug": slug, "agents": agents}
+
+
+@router.get("/{slug}/agents/{agent}/pipeline")
+def get_pipeline(slug: str, agent: str):
+    \"\"\"Get pipeline IR for a project agent.\"\"\"
+    path = _pipeline_path(slug, agent)
+    if not path.exists():
+        raise HTTPException(404, f"No pipeline for {slug}/{agent}")
+    return json.loads(path.read_text())
+
+
+@router.put("/{slug}/agents/{agent}/pipeline")
+def save_pipeline(slug: str, agent: str, payload: PipelinePayload):
+    \"\"\"Save pipeline IR and hot-compile to verify it's valid.\"\"\"
+    path = _pipeline_path(slug, agent)
+    # Validate by compiling
+    try:
+        load_graph_from_ir(payload.ir, {}, {}, {})
+    except Exception as e:
+        raise HTTPException(400, f"Pipeline compilation error: {e}")
+    path.write_text(json.dumps(payload.ir, indent=2, ensure_ascii=False))
+    return {"saved": str(path), "valid": True}
+
+
+@router.get("/{slug}/agents/{agent}/status")
+def pipeline_status(slug: str, agent: str):
+    \"\"\"Check if pipeline exists and is compilable.\"\"\"
+    path = _pipeline_path(slug, agent)
+    if not path.exists():
+        return {"status": "no_pipeline"}
+    try:
+        ir = json.loads(path.read_text())
+        load_graph_from_ir(ir, {}, {}, {})
+        return {"status": "ok", "nodes": len(ir.get("items", {}))}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@router.post("/{slug}/agents/{agent}/execute")
+async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
+    \"\"\"Execute pipeline with SSE streaming output.\"\"\"
+    path = _pipeline_path(slug, agent)
+    if not path.exists():
+        raise HTTPException(404, f"No pipeline for {slug}/{agent}")
+
+    ir = json.loads(path.read_text())
+    state = {
+        "input": input_data.get("input", ""),
+        "query": input_data.get("query", ""),
+        "project_slug": slug,
+        "agent_name": agent,
+        "context": "",
+    }
+
+    async def stream():
+        import asyncio
+        try:
+            graph = load_graph_from_ir(ir, {}, {}, {})
+            yield f"data: {{\"status\": \"started\", \"agent\": \"{agent}\"}}\\n\\n"
+            for step in graph.stream(state):
+                node_name = list(step.keys())[0] if step else "unknown"
+                yield f"data: {{\"node\": \"{node_name}\", \"status\": \"done\"}}\\n\\n"
+                await asyncio.sleep(0)
+            yield f"data: {{\"status\": \"finished\"}}\\n\\n"
+        except Exception as e:
+            yield f"data: {{\"status\": \"error\", \"error\": \"{str(e)[:200]}\"}}\\n\\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
+"""
+with open("/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/project_pipeline_route.py", "w") as f:
+    f.write(content)
+print("project_pipeline_route.py written")
+PYEOF'
+
+STEP 4: Підключи router до main.py architect-agent
+  Прочитай main.py та знайди де підключаються інші router-и:
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "grep -n 'include_router\|from.*route\|import.*route' \
+    ~/workspace/ai-drakon-scaffolder/services/architect-agent/main.py"
+
+  Додай підключення нового router в main.py після існуючих include_router:
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+import re
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/main.py"
+content = open(fpath).read()
+
+if "project_pipeline_route" not in content:
+    # Add import
+    content = content.replace(
+        "from fastapi import FastAPI",
+        "from fastapi import FastAPI\nfrom project_pipeline_route import router as project_router"
+    )
+    # Add include_router — find last app.include_router line
+    lines = content.split("\n")
+    last_include = max((i for i, l in enumerate(lines) if "include_router" in l), default=-1)
+    if last_include >= 0:
+        lines.insert(last_include + 1, "app.include_router(project_router)")
+        content = "\n".join(lines)
+    open(fpath, "w").write(content)
+    print("main.py updated")
+else:
+    print("already included")
+PYEOF'
+
+STEP 5: Верифікація синтаксису
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+import ast, sys
+files = [
+    "/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/project_pipeline_route.py",
+    "/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/main.py",
+]
+for f in files:
+    try:
+        ast.parse(open(f).read())
+        print(f"OK: {f.split('/')[-1]}")
+    except SyntaxError as e:
+        print(f"ERROR in {f.split('/')[-1]}: {e}")
+        sys.exit(1)
+print("Syntax OK")
+PYEOF'
+
+STEP 6: Smoke test — перевір endpoints через curl (без перезапуску сервісу)
+  Перевір що сервіс живий:
+  curl -s http://192.168.3.184:8766/health | head -20
+
+  Якщо потрібно перезапустити після зміни main.py:
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "sudo rc-service ai-architect-agent restart 2>/dev/null || \
+     sudo rc-service architect-agent restart 2>/dev/null || \
+     echo 'check service name: ls /etc/init.d/ | grep arch'"
+
+STEP 7: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add services/architect-agent/project_pipeline_route.py \
+             services/architect-agent/main.py && \
+     git commit -m 'feat(architect): per-project agent pipeline API — CRUD + SSE execute (Task 3)' && \
+     git push origin main"
+
+STEP 8: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-37/[x] TASK-37/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-37 done — per-project pipeline API' && \
+     git push origin main"
+
+DIARY (!!run locally, NO SSH!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-37:per-project-pipeline-api|endpoints:/projects/{slug}/agents/{name}/pipeline|SSE:execute|DONE|commit:<hash>|***"
+```
