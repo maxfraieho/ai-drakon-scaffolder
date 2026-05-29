@@ -224,7 +224,6 @@ slug: finalSlug,
 title: editor.title.trim(),
 content: editor.content,
 tags: editor.tags,
-project: activeProject?.slug,
 });
 toast.success("Документ створено");
 await loadTree();
