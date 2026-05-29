@@ -3115,7 +3115,7 @@ DIARY (!!run locally, NO SSH!!):
 ### TASK-38: Task 4 — KB per project (search_kb wired to project docs)
 
 ```
-[ ] TASK-38
+[x] TASK-38
 
 META: Підключити built_in_tools.search_kb до реального kb_client per project.
       Додати API endpoint для завантаження docs в KB проекту.
