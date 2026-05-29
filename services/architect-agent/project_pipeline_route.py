@@ -88,17 +88,15 @@ def pipeline_status(slug: str, agent: str):
         return {"status": "error", "error": str(e)}
 
 
-@router.post("/{slug}/agents/{agent}/execute")
-async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
-    """Execute pipeline with SSE streaming output."""
+async def _execute_pipeline_impl(slug: str, agent: str, inp: str, q: str):
     path = _pipeline_path(slug, agent)
     if not path.exists():
         raise HTTPException(404, f"No pipeline for {slug}/{agent}")
 
     ir = json.loads(path.read_text())
     state = {
-        "input": input_data.get("input", ""),
-        "query": input_data.get("query", ""),
+        "input": inp,
+        "query": q,
         "project_slug": slug,
         "agent_name": agent,
         "context": "",
@@ -118,6 +116,21 @@ async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
             yield f"data: {{\"status\": \"error\", \"error\": \"{str(e)[:200]}\"}}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@router.post("/{slug}/agents/{agent}/execute")
+async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
+    """Execute pipeline with SSE streaming output via POST."""
+    inp = input_data.get("input", "")
+    q = input_data.get("query", "")
+    return await _execute_pipeline_impl(slug, agent, inp, q)
+
+
+@router.get("/{slug}/agents/{agent}/execute")
+async def execute_pipeline_get(slug: str, agent: str, input: str = "", query: str = ""):
+    """Execute pipeline with SSE streaming output via GET (EventSource)."""
+    return await _execute_pipeline_impl(slug, agent, input, query)
+
 
 
 @router.get("/{slug}/agents/{agent}/kb/search")

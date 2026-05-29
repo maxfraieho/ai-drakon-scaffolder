@@ -8,7 +8,7 @@ from pathlib import Path
 
 class KBClient:
     def __init__(self, db_path: str = ":memory:"):
-        self.conn = sqlite3.connect(db_path)
+        self.conn = sqlite3.connect(db_path, check_same_thread=False)
         self.conn.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS kb
             USING fts5(source, heading, content,

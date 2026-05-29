@@ -124,3 +124,35 @@ export async function resumeExecution(
   );
   if (!r.ok) throw new Error(`resumeExecution: ${r.status}`);
 }
+
+// ---- Per-project agent pipeline API ----
+
+export async function listProjectAgents(slug: string): Promise<{name: string, has_pipeline: boolean, kb_docs: number}[]> {
+  const base = getArchitectBase();
+  const resp = await fetch(`${base}/projects/${slug}/agents`);
+  const data = await resp.json();
+  return data.agents || [];
+}
+
+export async function getProjectPipeline(slug: string, agent: string): Promise<object | null> {
+  const base = getArchitectBase();
+  const resp = await fetch(`${base}/projects/${slug}/agents/${agent}/pipeline`);
+  if (!resp.ok) return null;
+  return resp.json();
+}
+
+export async function saveProjectPipeline(slug: string, agent: string, ir: object): Promise<boolean> {
+  const base = getArchitectBase();
+  const resp = await fetch(`${base}/projects/${slug}/agents/${agent}/pipeline`, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ir}),
+  });
+  return resp.ok;
+}
+
+export function streamProjectExecution(slug: string, agent: string, input: string): EventSource {
+  const base = getArchitectBase();
+  return new EventSource(`${base}/projects/${slug}/agents/${agent}/execute?input=${encodeURIComponent(input)}`);
+}
+
