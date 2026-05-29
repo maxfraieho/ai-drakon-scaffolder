@@ -2886,7 +2886,7 @@ DIARY (!!run locally on THIS device, NO SSH!!):
 ### TASK-37: Task 3 — Per-project pipeline storage API (architect-agent)
 
 ```
-[ ] TASK-37
+[x] TASK-37
 
 META: Додати до architect-agent REST API для зберігання/виконання pipeline per project+agent.
       Це дозволить UI зберігати DRAKON IR для будь-якого проекту і виконувати його.
