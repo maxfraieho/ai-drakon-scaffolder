@@ -1513,3 +1513,122 @@ COMMIT (якщо зміни є):
 DIARY:
   "SESSION:2026-05-29|TASK-23:layout-changed-OR-not-found|★★★"
 ```
+
+---
+
+## SPRINT 2026-05-29 — Методологія синхронізації
+
+### TASK-24: Збагатити AGY Stop hook — descriptive diary summary
+
+```
+[ ] TASK-24
+
+МЕТА: Поточний ai-memory-end.sh відправляє порожній stop event.
+      Треба щоб при кожному завершенні AGY автоматично записував
+      короткий summary в MemPalace diary.
+
+ФАЙЛ для зміни: ~/bin/ai-memory-end.sh
+
+ПОТОЧНИЙ ВМІСТ (приблизно):
+  curl -sf -X POST http://192.168.3.184:49374/hook?event=Stop ...
+  echo "ai-memory: session stopped"
+
+НОВИЙ ВМІСТ — замінити на:
+```bash
+#!/data/data/com.termux/files/usr/bin/bash
+SESSION_ID="${1:-agt-ogy-$(date +%Y%m%d)}"
+SUMMARY="${2:-session ended}"
+
+# ai-memory stop event
+curl -sf -X POST "http://192.168.3.184:49374/hook?event=Stop" \
+  -H "Content-Type: application/json" \
+  -d "{\"session_id\":\"\",\"summary\":\"\",\"agent\":\"agt-ogy\"}" \
+  --max-time 3 > /dev/null 2>&1
+
+echo "ai-memory: session stopped [$SESSION_ID]"
+```
+
+ВЕРИФІКАЦІЯ:
+  ~/bin/ai-memory-end.sh "test-session" "test summary"
+  → має вивести: ai-memory: session stopped [test-session]
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-24:ai-memory-end-enriched|DONE|★★"
+```
+
+---
+
+### TASK-25: MemPalace post-commit hook на dev server (192.168.3.184)
+
+```
+[ ] TASK-25
+
+МЕТА: AGY має post-commit hook в Termux що автоматично mine MemPalace
+      після кожного коміту. Але Claude на OrangePi читає MemPalace
+      сервер на 192.168.3.184 — де auto-mine НЕ налаштовано.
+      Результат: Claude бачить застарілий індекс після комітів AGY.
+
+РІШЕННЯ: Додати post-commit hook в .git/hooks/ на dev server репо.
+
+КРОКИ:
+
+КРОК 1: Перевір чи hook вже є
+  ls ~/workspace/ai-drakon-scaffolder/.git/hooks/post-commit 2>/dev/null \
+    && echo "вже є" || echo "немає"
+
+КРОК 2: Якщо немає — знайди шлях до mempalace
+  which mempalace || python3 -m mempalace --help | head -2
+
+КРОК 3: Створи hook
+  cat > ~/workspace/ai-drakon-scaffolder/.git/hooks/post-commit << 'HOOKEOF'
+#!/bin/sh
+# Auto-mine MemPalace після кожного commit
+REPO_PATH="/home/vokov/workspace/ai-drakon-scaffolder"
+MP_CMD="python3 -m mempalace"
+nohup $MP_CMD mine "$REPO_PATH" --wing ai_drakon_scaffolder > /dev/null 2>&1 &
+HOOKEOF
+  chmod +x ~/workspace/ai-drakon-scaffolder/.git/hooks/post-commit
+
+КРОК 4: Тест
+  cd ~/workspace/ai-drakon-scaffolder
+  git commit --allow-empty -m "test(hooks): verify post-commit mempalace mine"
+  sleep 5
+  python3 -m mempalace stats --wing ai_drakon_scaffolder | head -5
+  → перевір що timestamp оновився
+
+КРОК 5: git push якщо test-commit потрібен (або git reset HEAD~1 для відміни)
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-25:post-commit-hook-184|DONE|★★★"
+```
+
+---
+
+### TASK-26: Документувати SYNC_METHODOLOGY.md → drn-ai notebook
+
+```
+[ ] TASK-26
+
+МЕТА: Синхронізувати новий документ development/SYNC_METHODOLOGY.md
+      в NotebookLM notebook drn-ai щоб він був доступний для RAG.
+
+КРОКИ:
+
+КРОК 1: git pull + прочитай файл
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+  cat development/SYNC_METHODOLOGY.md
+
+КРОК 2: Додай в NotebookLM
+  notebooklm_add_source_text(
+    notebook_id="6139067a-5776-4b29-8869-7c9f9aed475c",
+    title="SYNC_METHODOLOGY 2026-05-29",
+    content=<вміст файлу>
+  )
+
+КРОК 3: Diary
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-26:sync-methodology-nlm|DONE|★★"
+```
+
