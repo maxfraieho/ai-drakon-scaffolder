@@ -4016,3 +4016,58 @@ DIARY (!!run locally!!):
   python3 -m mempalace diary write --agent agt-ogy     "SESSION:2026-05-29|TASK-44:project-context-hub|design+gaps+drakon-flow|DONE|commit:<hash>|***"
 ```
 
+---
+
+### TASK-45: Fix /agents layout — прибрати конфлікт AgentChatPanel Sheet
+
+```
+[ ] TASK-45
+
+META: На сторінці /agents є два AgentChatPanel:
+  1. Колонка в AgentStudioPage.tsx (правильно — тут має бути)
+  2. Sheet в WorkspaceShell.tsx (конфлікт — відкривається замість колонки)
+  Кнопка Bot у топ-барі WorkspaceShell відкриває Sheet і перекриває роботу
+  вбудованих toggle кнопок StudoToolbar. Треба сховати глобальну кнопку на /agents.
+
+!!IMPORTANT!!: NO pip install. Тільки редагування TypeScript файлів.
+SSH до 192.168.3.184 для змін. Синхронізуй src/ та .lovable/src/ ОБИДВА.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Виправи WorkspaceShell.tsx — сховай Bot Sheet на /agents
+  Файли (обидва):
+    ~/workspace/ai-drakon-scaffolder/src/components/workspace/WorkspaceShell.tsx
+    ~/workspace/ai-drakon-scaffolder/.lovable/src/components/workspace/WorkspaceShell.tsx
+
+  ЗМІНА: pathname вже є в компоненті (є useLocation або перевірка pathname).
+  Знайди блок що починається:
+    <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+  І оберни умовою щоб не рендерився на /agents:
+    {!pathname.startsWith('/agents') && (
+      <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+        ...
+      </Sheet>
+    )}
+
+  Якщо pathname не доступний — додай: const { pathname } = useLocation();
+  (import вже є або додай: import { useLocation } from "react-router-dom";)
+
+STEP 3: Перевір що AgentStudioPage має робочі toggle кнопки
+  Перевір src/pages/AgentStudioPage.tsx — має бути:
+  - leftPanelOpen/rightPanelOpen state
+  - StudioToolbar отримує onToggleLeftPanel та onToggleRightPanel
+  - При leftPanelOpen=false — PipelineList НЕ рендериться
+  - При rightPanelOpen=false — PropertiesPanel + AgentChatPanel НЕ рендеряться
+  Якщо є проблема — виправ.
+
+STEP 4: Commit ОБОХ файлів
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cd ~/workspace/ai-drakon-scaffolder &&      git add src/components/workspace/WorkspaceShell.tsx              .lovable/src/components/workspace/WorkspaceShell.tsx &&      git commit -m 'fix(agents): hide global Bot Sheet on /agents page — prevents conflict with studio panels (TASK-45)' &&      git push origin main"
+
+STEP 5: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cd ~/workspace/ai-drakon-scaffolder &&      sed -i 's/^\[ \] TASK-45/[x] TASK-45/' development/TASKS.md &&      git add development/TASKS.md &&      git commit -m 'chore(tasks): TASK-45 done — agents layout fix' &&      git push origin main"
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy     "SESSION:2026-05-29|TASK-45:agents-layout-fix|hide-bot-sheet-on-agents-route|DONE|commit:<hash>|***"
+```
+
