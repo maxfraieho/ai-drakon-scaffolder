@@ -5,7 +5,7 @@ ChevronDown, ChevronRight, FileText, Folder, FolderOpen, Loader2, RefreshCw,
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { getGithubConfig } from "@/lib/settings-storage";
+import { useProject } from "@/context/ProjectContext";
 import { cn } from "@/lib/utils";
 import { fetchNotesTree, type TreeNode } from "@/lib/garden/notesApi";
 function nodeMatchesSearch(node: TreeNode, q: string): boolean {
@@ -91,7 +91,8 @@ onNoteOpen: (slug: string) => void;
 }
 
 export function DocsFilesTab({ onNoteOpen }: DocsFilesTabProps) {
-const ghRepo = getGithubConfig().repo || "";
+const { activeProject } = useProject();
+const ghRepo = activeProject?.slug || "";
 const [tree, setTree] = useState<TreeNode[]>([]);
 const [loading, setLoading] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");

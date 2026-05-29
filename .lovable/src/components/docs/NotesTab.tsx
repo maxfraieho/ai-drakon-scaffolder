@@ -12,7 +12,7 @@ import { useNotesEditor } from "@/hooks/useNotesEditor";
 import { fetchNotesTree, deleteNote, commitNote, type TreeNode } from
 "@/lib/garden/notesApi";
 import { toast } from "sonner";
-import { getGithubConfig } from "@/lib/settings-storage";
+import { useProject } from "@/context/ProjectContext";
 
 const NEW_SLUG = "__new__";
 const LOCAL_FOLDERS_KEY = "docs.localFolders";
@@ -144,7 +144,8 @@ onDeleteFolder={onDeleteFolder}
 }
 
 export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
-  const ghRepo = getGithubConfig().repo || "";
+  const { activeProject } = useProject();
+  const ghRepo = activeProject?.slug || "";
   const [rawTree, setRawTree] = useState<TreeNode[]>([]);
   const [localFolders, setLocalFolders] = useState<string[]>(() => readLocalFolders());
   const [loading, setLoading] = useState(false);

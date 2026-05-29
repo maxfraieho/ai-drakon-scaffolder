@@ -12,6 +12,7 @@ import { getGithubConfig } from "@/lib/settings-storage";
 import { startAnalysis, pollJob, type AnalyzeResult } from "@/lib/pipeline-api";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { useProject } from "@/context/ProjectContext";
 
 
 
@@ -172,10 +173,12 @@ function FileTree({
 
 export default function CodePage() {
   const navigate = useNavigate();
+  const { activeProject } = useProject();
   const ghCfg = getGithubConfig();
-  const owner = ghCfg.owner || "";
-  const repo = ghCfg.repo || "";
-  const branch = ghCfg.branch || "main";
+  const projectGh = activeProject?.github;
+  const owner = projectGh?.owner || ghCfg.owner || "";
+  const repo = projectGh?.repo || ghCfg.repo || "";
+  const branch = projectGh?.branch || ghCfg.branch || "main";
   const token = ghCfg.token;
 
   const [code, setCode] = useState("");
