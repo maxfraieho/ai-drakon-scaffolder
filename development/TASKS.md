@@ -3717,7 +3717,7 @@ DIARY (!!run locally!!):
 ### TASK-42: Task 8 — Оновити документацію (COLLABORATION.md + plans _INDEX)
 
 ```
-[ ] TASK-42
+[x] TASK-42
 
 META: Оновити docs/COLLABORATION.md — додати розділ про AI-DRAKON як Developer Tool.
       Оновити docs/plans/_INDEX.md — додати нові плани.
