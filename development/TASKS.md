@@ -2252,7 +2252,7 @@ DIARY (!!run locally!!):
 ### TASK-35: Task 1 — Створити services/shared/ (graph_loader + kb_client + llm_client + ai_memory)
 
 ```
-[ ] TASK-35
+[x] TASK-35
 
 META: Реалізувати shared/ пакет з 5 файлів.
       Основа уніфікованого LangGraph-DRAKON фреймворку.
