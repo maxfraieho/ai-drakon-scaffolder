@@ -1683,7 +1683,7 @@ DIARY: python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK
 ### TASK-28: Fix activeProject reactivity (GitHub/Docs/Vector panels)
 
 ```
-[ ] TASK-28
+[x] TASK-28
 
 META: GitHubPanel, DocsPanel, VectorPanel do not reload data when activeProject changes.
       Switching projects has no effect on these panels.

@@ -12,6 +12,7 @@ SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { useGithubRepos, mergeWithKnown } from "@/hooks/useGithubRepos";
+import { useProject } from "@/context/ProjectContext";
 
 type GitHubPanelProps = {
 onSelectPath: (path: string, type: "file" | "dir") => void;
@@ -49,9 +50,24 @@ return { owner: "maxfraieho", repo: "drakon-setup-hub", branch: "main" };
 }
 
 export function GitHubPanel({ onSelectPath, onAnalyzeFolder }: GitHubPanelProps) {
-const [owner, setOwner] = useState(() => readSavedRepo().owner);
-const [repo, setRepo] = useState(() => readSavedRepo().repo);
-const [branch, setBranch] = useState(() => readSavedRepo().branch);
+  const { activeProject } = useProject();
+  const [owner, setOwner] = useState(() => activeProject?.github?.owner ?? readSavedRepo().owner);
+  const [repo, setRepo] = useState(() => activeProject?.github?.repo ?? readSavedRepo().repo);
+  const [branch, setBranch] = useState(() => activeProject?.github?.branch ?? readSavedRepo().branch);
+
+  useEffect(() => {
+    if (activeProject?.github) {
+      setOwner(activeProject.github.owner);
+      setRepo(activeProject.github.repo);
+      setBranch(activeProject.github.branch);
+    } else {
+      const saved = readSavedRepo();
+      setOwner(saved.owner);
+      setRepo(saved.repo);
+      setBranch(saved.branch);
+    }
+  }, [activeProject?.slug]);
+
 const [branches, setBranches] = useState<string[]>(["main"]);
 const [repoOpen, setRepoOpen] = useState(false);
 

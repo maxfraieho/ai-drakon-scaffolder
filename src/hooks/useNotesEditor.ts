@@ -5,6 +5,7 @@ import { commitNote, fetchNote } from "@/lib/garden/notesApi";
 interface UseNotesEditorOptions {
 slug?: string;
 folder?: string;
+project?: string;
 }
 
 const DRAFT_PREFIX = "garden_draft_";
@@ -18,7 +19,7 @@ return s
 .replace(/-+/g, "-")
 .slice(0, 80);
 }
-export function useNotesEditor({ slug, folder }: UseNotesEditorOptions) {
+export function useNotesEditor({ slug, folder, project }: UseNotesEditorOptions) {
 const [title, setTitle] = useState("");
 const [content, setContent] = useState("");
 const [tags, setTags] = useState<string[]>([]);
@@ -28,13 +29,15 @@ const [hasDraft, setHasDraft] = useState(false);
 const [sha, setSha] = useState<string | undefined>(undefined);
 const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 const loadedSlugRef = useRef<string | undefined>(undefined);
+const loadedProjectRef = useRef<string | undefined>(undefined);
 
-const draftKey = `slug ? ${DRAFT_PREFIX}${slug} : ${DRAFT_PREFIX}__new__`;
+const draftKey = slug ? `${DRAFT_PREFIX}${slug}` : `${DRAFT_PREFIX}__new__`;
 
 // Load note on slug change
 useEffect(() => {
-if (loadedSlugRef.current === slug) return;
+if (loadedSlugRef.current === slug && loadedProjectRef.current === project) return;
 loadedSlugRef.current = slug;
+loadedProjectRef.current = project;
 if (!slug) {
 setTitle("");
 setContent("");
@@ -47,7 +50,7 @@ return;
 }
 void (async () => {
 try {
-const note = await fetchNote(slug);
+const note = await fetchNote(slug, project);
 if (note) {
 setTitle(note.title);
 setContent(note.content);
@@ -67,7 +70,7 @@ console.error("load note", e);
 toast.error(e instanceof Error ? e.message : "Не вдалося завантажити нотатку");
 }
 })();
-}, [slug, draftKey]);
+}, [slug, project, draftKey]);
 
 // Autosave draft
 useEffect(() => {

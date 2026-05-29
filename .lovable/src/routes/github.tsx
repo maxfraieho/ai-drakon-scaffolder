@@ -117,6 +117,11 @@ const ghSource = activeProject?.github ?? null;
 const owner = ghSource?.owner ?? githubDefaults.owner;
 const repo = ghSource?.repo ?? githubDefaults.repo;
 const [branch, setBranch] = useState(ghSource?.branch ?? githubDefaults.branch ?? "main");
+
+useEffect(() => {
+  setBranch(ghSource?.branch ?? githubDefaults.branch ?? "main");
+}, [activeProject?.slug]);
+
 const token = githubDefaults.token || "";
 
 const [branches, setBranches] = useState<string[]>([githubDefaults.branch || "main"]);

@@ -12,6 +12,7 @@ import { useNotesEditor } from "@/hooks/useNotesEditor";
 import { fetchNotesTree, deleteNote, commitNote, type TreeNode } from
 "@/lib/garden/notesApi";
 import { toast } from "sonner";
+import { useProject } from "@/context/ProjectContext";
 
 const NEW_SLUG = "__new__";
 const LOCAL_FOLDERS_KEY = "docs.localFolders";
@@ -143,19 +144,20 @@ onDeleteFolder={onDeleteFolder}
 }
 
 export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
-const [rawTree, setRawTree] = useState<TreeNode[]>([]);
-const [localFolders, setLocalFolders] = useState<string[]>(() => readLocalFolders());
-const [loading, setLoading] = useState(false);
-const [activeSlug, setActiveSlug] = useState<string | null>(null);
-const [pendingFolder, setPendingFolder] = useState<string | null>(null);
-// Mobile document list panel
-const [sidebarOpen, setSidebarOpen] = useState(true);
-const [sidebarSearch, setSidebarSearch] = useState("");
+  const { activeProject } = useProject();
+  const [rawTree, setRawTree] = useState<TreeNode[]>([]);
+  const [localFolders, setLocalFolders] = useState<string[]>(() => readLocalFolders());
+  const [loading, setLoading] = useState(false);
+  const [activeSlug, setActiveSlug] = useState<string | null>(null);
+  const [pendingFolder, setPendingFolder] = useState<string | null>(null);
+  // Mobile document list panel
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarSearch, setSidebarSearch] = useState("");
 
-const tree = useMemo(() => mergeLocalFolders(rawTree, localFolders), [rawTree, localFolders]);
+  const tree = useMemo(() => mergeLocalFolders(rawTree, localFolders), [rawTree, localFolders]);
 
-const editorSlug = activeSlug === NEW_SLUG ? undefined : activeSlug ?? undefined;
-const editor = useNotesEditor({ slug: editorSlug });
+  const editorSlug = activeSlug === NEW_SLUG ? undefined : activeSlug ?? undefined;
+  const editor = useNotesEditor({ slug: editorSlug, project: activeProject?.slug });
 
 useEffect(() => {
 if (focusSlug) {
@@ -166,26 +168,26 @@ onFocusClear?.();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [focusSlug]);
 
-const loadTree = async () => {
-setLoading(true);
-try {
-const t = await fetchNotesTree();
-setRawTree(t);
-// Cleanup local folders that now exist on server
-const serverFolders = new Set(t.filter((n) => n.type === "folder").map((n) => n.name));
-setLocalFolders((prev) => {
-const next = prev.filter((n) => !serverFolders.has(n));
-if (next.length !== prev.length) writeLocalFolders(next);
-return next;
-});
-} catch (e) {
-console.error("notes tree error", e);
-} finally {
-setLoading(false);
-}
-};
+  const loadTree = async () => {
+    setLoading(true);
+    try {
+      const t = await fetchNotesTree(activeProject?.slug);
+      setRawTree(t);
+      // Cleanup local folders that now exist on server
+      const serverFolders = new Set(t.filter((n) => n.type === "folder").map((n) => n.name));
+      setLocalFolders((prev) => {
+        const next = prev.filter((n) => !serverFolders.has(n));
+        if (next.length !== prev.length) writeLocalFolders(next);
+        return next;
+      });
+    } catch (e) {
+      console.error("notes tree error", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-useEffect(() => { void loadTree(); }, []);
+  useEffect(() => { void loadTree(); }, [activeProject?.slug]);
 
 const handleSave = async () => {
 const savedSlug = await editor.save();
@@ -222,6 +224,7 @@ slug: finalSlug,
 title: editor.title.trim(),
 content: editor.content,
 tags: editor.tags,
+project: activeProject?.slug,
 });
 toast.success("Документ створено");
 await loadTree();
@@ -235,14 +238,14 @@ return;
 await handleSave();
 };
 
-const handleDeleteNote = async (slug: string) => {
-const title = flattenTree(tree).find((n) => n.slug === slug)?.title ?? slug;
-if (!window.confirm(`Видалити документ «${title}»? Це незворотня дія.`)) return;
-try {
-await deleteNote(slug);
-if (activeSlug === slug) setActiveSlug(null);
-await loadTree();
-toast.success("Документ видалено");
+  const handleDeleteNote = async (slug: string) => {
+    const title = flattenTree(tree).find((n) => n.slug === slug)?.title ?? slug;
+    if (!window.confirm(`Видалити документ «${title}»? Це незворотня дія.`)) return;
+    try {
+      await deleteNote(slug, activeProject?.slug);
+      if (activeSlug === slug) setActiveSlug(null);
+      await loadTree();
+      toast.success("Документ видалено");
 } catch (e) {
 console.error(e);
 toast.error(e instanceof Error ? e.message : "Помилка видалення");
@@ -265,15 +268,15 @@ writeLocalFolders(next);
 toast.success(`Папку «${slug}» створено. Додайте до неї документ, щоб зберегти.`);
 };
 
-const handleDeleteFolder = async (folderPath: string, hasChildren: boolean) => {
-if (hasChildren) {
-if (!window.confirm(`Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із усіма документами?`)) return;
-const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
-try {
-for (const n of notes) {
-if (n.slug) await deleteNote(n.slug);
-}
-toast.success("Папку видалено");
+  const handleDeleteFolder = async (folderPath: string, hasChildren: boolean) => {
+    if (hasChildren) {
+      if (!window.confirm(`Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із усіма документами?`)) return;
+      const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
+      try {
+        for (const n of notes) {
+          if (n.slug) await deleteNote(n.slug, activeProject?.slug);
+        }
+        toast.success("Папку видалено");
 await loadTree();
 } catch (e) {
 toast.error(e instanceof Error ? e.message : "Помилка видалення");
