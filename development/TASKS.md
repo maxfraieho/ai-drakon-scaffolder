@@ -66,7 +66,7 @@ python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-56:wo
 
 ## TASK-58: docs — генерація документації Sharon consultant + auth + web_config (AGY phone)
 
-**Status:** [ ] pending
+**Status:** [x] done
 **Виконавець:** AGY phone (192.168.3.25)
 **!!IMPORTANT!!** Run locally on Termux — НЕ SSH до 192.168.3.184
 
