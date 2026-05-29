@@ -4577,3 +4577,70 @@ DIARY:
 ```
 python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-49:ai-memory-sync-docs|commit:$(git rev-parse --short HEAD)|DONE|***"
 ```
+
+---
+
+## TASK-50: fix(code-tab) — активний проект у Code page + перейменування в CommandPalette
+
+**Status:** [ ] pending
+**Agent:** agt-ogy3 (AGY3 tablet)
+**Context:** !!IMPORTANT!! Run locally on Termux. Do NOT SSH anywhere.
+**Repo:** ~/workspace/ai-drakon-scaffolder
+
+### Проблеми
+
+1. Вкладка Код (/code) показує Не вдалося завантажити — CodePage читає owner/repo/branch з глобального Settings (getGithubConfig()), а не з активного проекту
+2. У CommandPalette (Cmd+K) залишилась стара кнопка GitHub -> треба Код
+
+### ЗМІНА 1: src/components/workspace/CommandPalette.tsx
+
+Знайти у масиві NAV_ITEMS рядок:
+  { label: "GitHub", to: "/github", icon: GitBranch, shortcut: "G H" },
+
+Замінити на:
+  { label: "Код", to: "/code", icon: FileCode, shortcut: "G C" },
+
+В імпорті lucide-react: замінити GitBranch на FileCode (якщо GitBranch більше не потрібен).
+
+### ЗМІНА 2: src/pages/CodePage.tsx
+
+Знайти функцію CodePage(). На початку є блок:
+
+  const ghCfg = getGithubConfig();
+  const owner = ghCfg.owner || ghCfg.repo.split("/")[0] || "";
+  const repo = ghCfg.repo.includes("/") ? ghCfg.repo.split("/")[1] : ghCfg.repo;
+  const branch = ghCfg.branch || "main";
+  const token = ghCfg.token;
+
+Замінити на:
+
+  const { activeProject } = useProject();
+  const ghCfg = getGithubConfig();
+  const token = ghCfg.token;
+  const projectGh = activeProject?.github;
+  const owner = projectGh?.owner || ghCfg.owner || ghCfg.repo.split("/")[0] || "";
+  const repoRaw = ghCfg.repo.includes("/") ? ghCfg.repo.split("/")[1] : ghCfg.repo;
+  const repo = projectGh?.repo || repoRaw;
+  const branch = projectGh?.branch || ghCfg.branch || "main";
+
+Додати імпорт useProject якщо нема:
+  import { useProject } from "@/context/ProjectContext";
+
+Текст у FileTree "Налаштуйте GitHub у Settings" -> "Налаштуйте GitHub у проекті або в Settings"
+
+### Верифікація
+
+  cd ~/workspace/ai-drakon-scaffolder && npm run build 2>&1 | tail -20
+
+### Commit + push
+
+  git add src/components/workspace/CommandPalette.tsx src/pages/CodePage.tsx
+  git commit -m "fix(ui): use active project github in CodePage + rename GitHub to Kod in CommandPalette (TASK-50)"
+  git push origin main
+
+### Mark done + diary
+
+  git add development/TASKS.md
+  git commit -m "chore(tasks): mark TASK-50 done"
+  git push origin main
+  python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-50:code-tab-fix|DONE|***"
