@@ -12,7 +12,7 @@ import { useNotesEditor } from "@/hooks/useNotesEditor";
 import { fetchNotesTree, deleteNote, commitNote, type TreeNode } from
 "@/lib/garden/notesApi";
 import { toast } from "sonner";
-import { useProject } from "@/context/ProjectContext";
+import { getGithubConfig } from "@/lib/settings-storage";
 
 const NEW_SLUG = "__new__";
 const LOCAL_FOLDERS_KEY = "docs.localFolders";
@@ -144,7 +144,7 @@ onDeleteFolder={onDeleteFolder}
 }
 
 export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
-  const { activeProject } = useProject();
+  const ghRepo = getGithubConfig().repo || "";
   const [rawTree, setRawTree] = useState<TreeNode[]>([]);
   const [localFolders, setLocalFolders] = useState<string[]>(() => readLocalFolders());
   const [loading, setLoading] = useState(false);
@@ -157,7 +157,7 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   const tree = useMemo(() => mergeLocalFolders(rawTree, localFolders), [rawTree, localFolders]);
 
   const editorSlug = activeSlug === NEW_SLUG ? undefined : activeSlug ?? undefined;
-  const editor = useNotesEditor({ slug: editorSlug, project: activeProject?.slug });
+  const editor = useNotesEditor({ slug: editorSlug, project: ghRepo || undefined });
 
 useEffect(() => {
 if (focusSlug) {
@@ -171,7 +171,7 @@ onFocusClear?.();
   const loadTree = async () => {
     setLoading(true);
     try {
-      const t = await fetchNotesTree(activeProject?.slug);
+      const t = await fetchNotesTree(ghRepo || undefined);
       setRawTree(t);
       // Cleanup local folders that now exist on server
       const serverFolders = new Set(t.filter((n) => n.type === "folder").map((n) => n.name));
@@ -187,7 +187,7 @@ onFocusClear?.();
     }
   };
 
-  useEffect(() => { void loadTree(); }, [activeProject?.slug]);
+  useEffect(() => { void loadTree(); }, [ghRepo]);
 
 const handleSave = async () => {
 const savedSlug = await editor.save();
@@ -241,7 +241,7 @@ await handleSave();
     const title = flattenTree(tree).find((n) => n.slug === slug)?.title ?? slug;
     if (!window.confirm(`Видалити документ «${title}»? Це незворотня дія.`)) return;
     try {
-      await deleteNote(slug, activeProject?.slug);
+      await deleteNote(slug, ghRepo || undefined);
       if (activeSlug === slug) setActiveSlug(null);
       await loadTree();
       toast.success("Документ видалено");
@@ -273,7 +273,7 @@ toast.success(`Папку «${slug}» створено. Додайте до не
       const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
       try {
         for (const n of notes) {
-          if (n.slug) await deleteNote(n.slug, activeProject?.slug);
+          if (n.slug) await deleteNote(n.slug, ghRepo || undefined);
         }
         toast.success("Папку видалено");
 await loadTree();
