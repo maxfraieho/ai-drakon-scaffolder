@@ -4644,3 +4644,110 @@ python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-49:ai
   git commit -m "chore(tasks): mark TASK-50 done"
   git push origin main
   python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-50:code-tab-fix|DONE|***"
+
+---
+
+## TASK-51: fix(code-tab) — прибрати token guard, показувати github статус проекту
+
+**Status:** [ ] pending
+**Agent:** agt-ogy3 (AGY3 tablet)
+**Context:** !!IMPORTANT!! Run locally on Termux. Do NOT SSH. No build needed - Cloudflare Pages builds automatically.
+**Repo:** ~/workspace/ai-drakon-scaffolder
+
+### Проблема
+
+Worker (drakon-mcp-worker) має власні GitHub credentials — token з клієнта не потрібен.
+Але FileTree має guard `!token` що блокує завантаження коли токен не заданий у Settings.
+Треба прибрати залежність від клієнтського token у FileTree.
+
+Плюс: коли activeProject не має github конфігу — треба показувати зрозуміле повідомлення.
+
+### Зміни у src/pages/CodePage.tsx
+
+#### 1. У функції FileTree — функція load() (рядок ~55):
+
+Знайти:
+  if (!owner || !repo || !token) return;
+
+Замінити (обидва місця де така умова в load() та openFile()):
+  if (!owner || !repo) return;
+
+#### 2. У функції FileTree — guard перед рендером (рядок ~93):
+
+Знайти:
+  if (!owner || !repo || !token) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-2 px-3">
+        <AlertCircle className="h-4 w-4 text-[var(--text-muted)]" />
+        <span className="font-mono text-[9px] text-[var(--text-muted)] text-center">
+          Налаштуйте GitHub у проекті або в Settings
+        </span>
+      </div>
+    );
+  }
+
+Замінити на:
+  if (!owner || !repo) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full gap-2 px-3">
+        <AlertCircle className="h-4 w-4 text-[var(--text-muted)]" />
+        <span className="font-mono text-[9px] text-[var(--text-muted)] text-center">
+          Проект не має GitHub конфігу. Додайте repo у налаштуваннях проекту.
+        </span>
+      </div>
+    );
+  }
+
+#### 3. У функції openFile() (рядок ~196):
+
+Знайти:
+  if (!owner || !repo || !token) return;
+
+Замінити:
+  if (!owner || !repo) return;
+
+#### 4. У функції saveToGit() (рядок ~217):
+
+Знайти:
+  if (!owner || !repo || !token) {
+    toast.error("Налаштуйте GitHub у Settings");
+    return;
+  }
+
+Замінити:
+  if (!owner || !repo) {
+    toast.error("Проект не має GitHub конфігу");
+    return;
+  }
+
+### ТАКОЖ (важливо): src/pages/CodePage.tsx рядок з token у FileTree props
+
+Знайти де FileTree викликається (JSX):
+  <FileTree
+    owner={owner} repo={repo} branch={branch} token={token}
+
+ПЕРЕВІР: якщо token передається як prop до FileTree і FileTree використовує його у githubListTree — то і цей prop треба залишити (не прибирати), просто умови перевірки !token вище вже прибрали.
+
+### Commit + push (БЕЗ build — Cloudflare збудує сам)
+
+  cd ~/workspace/ai-drakon-scaffolder
+  git add src/pages/CodePage.tsx
+  git commit -m "fix(code-tab): remove client token guard from FileTree, Worker handles auth (TASK-51)"
+  git push origin main
+
+### Mark done
+
+  python3 -c "
+import re
+with open("development/TASKS.md") as f: t = f.read()
+t = t.replace("## TASK-51: fix(code-tab) — прибрати token guard, показувати github статус проекту\n\n**Status:** [ ] pending", "## TASK-51: fix(code-tab) — прибрати token guard\n\n**Status:** [x] done")
+with open("development/TASKS.md", "w") as f: f.write(t)
+print("done")
+"
+  git add development/TASKS.md
+  git commit -m "chore(tasks): mark TASK-51 done"
+  git push origin main
+
+### DIARY
+
+  python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-51:code-tab-token-fix|DONE|***"
