@@ -149,7 +149,7 @@ git push origin main
 
 ## TASK-57: Variant A — Code+Notes відв'язати від activeProject (AGY3)
 
-**Status:** [ ] pending
+**Status:** [x] done
 **Виконавець:** AGY3 (192.168.3.162)
 **!!IMPORTANT!!** Run locally on AGY3 Termux — НЕ SSH до 192.168.3.184
 **Plan:** `docs/plans/2026-05-29-variant-a-single-github-config.md` — читай повністю перед стартом
