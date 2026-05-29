@@ -4812,3 +4812,77 @@ print("done")
 ### Mark done + diary
 
   python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-52:code-analysis|DONE|commit:$(git rev-parse --short HEAD)|***"
+
+---
+
+## TASK-53: fix code-tab — 4 fixes: stale state + memory leak + deleted project
+
+**Status:** [ ] pending
+**Agent:** agt-ogy3 (AGY3 tablet)
+**Context:** IMPORTANT!! Run locally on Termux. NO build needed.
+**Repo:** ~/workspace/ai-drakon-scaffolder
+**Reference:** docs/reports/code-analysis-2026-05-29.md
+
+### FIX 1: src/context/ProjectContext.tsx — deleted project stays active
+
+Find inside loadProjects / setActiveProjectState:
+  const updated = parsed.find((p) => p.slug === prev.slug);
+  return updated ?? prev;
+
+Replace with:
+  const updated = parsed.find((p) => p.slug === prev.slug);
+  return updated ?? parsed[0] ?? null;
+
+### FIX 2: src/pages/CodePage.tsx — reset editor state on project switch
+
+In CodePage() component, after useState declarations, add:
+
+  useEffect(() => {
+    setCode("");
+    setFilePath("untitled.py");
+    setFileSha(null);
+    setResult(null);
+  }, [activeProject?.slug]);
+
+### FIX 3: src/pages/CodePage.tsx — reset FileTree path on repo change
+
+Inside FileTree component, if load useCallback already has [owner, repo] deps, just add:
+
+  useEffect(() => {
+    setCurrentPath("");
+    setPathStack([]);
+  }, [owner, repo]);
+
+### FIX 4: src/pages/CodePage.tsx — memory leak pollRef cleanup
+
+In CodePage() component, add:
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
+
+### Commit + push
+
+  git add src/context/ProjectContext.tsx src/pages/CodePage.tsx
+  git commit -m "fix: reset editor on project switch, fix deleted project bug, fix memory leak (TASK-53)"
+  git push origin main
+
+### Mark done
+
+  python3 -c "
+with open('development/TASKS.md') as f: t = f.read()
+idx = t.find('TASK-53')
+section = t[idx:idx+100]
+t = t.replace('[ ] pending', '[x] done', 1)
+with open('development/TASKS.md', 'w') as f: f.write(t)
+print('done')
+"
+  git add development/TASKS.md
+  git commit -m "chore: mark TASK-53 done"
+  git push origin main
+
+### DIARY
+
+  python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-53:4fixes|stale+memleak+deleted|DONE"
