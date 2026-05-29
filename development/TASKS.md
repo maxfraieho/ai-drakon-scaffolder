@@ -1641,7 +1641,7 @@ DIARY:
 ### TASK-27: Agents default LLM -> AGY (drakon/docs/architect)
 
 ```
-[ ] TASK-27
+[x] TASK-27
 
 META: drakon-agent, docs-agent, architect-agent currently default to NIM (openai-proxy).
       Switch default LLM to AGY (https://agy.exodus.pp.ua) for these agents.
