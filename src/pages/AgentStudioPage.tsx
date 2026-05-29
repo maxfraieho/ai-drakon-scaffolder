@@ -230,11 +230,13 @@ export default function AgentStudioPage() {
     >
       {/* 3-Column Studio Layout */}
       <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Column 1: Pipeline Sidebar List */}
-        <PipelineList
-          selectedPipelineName={selectedPipelineName}
-          onSelectPipeline={handleSelectPipeline}
-        />
+        {/* Column 1: Pipeline Sidebar List (desktop) */}
+        {!isMobile && leftPanelOpen && (
+          <PipelineList
+            selectedPipelineName={selectedPipelineName}
+            onSelectPipeline={handleSelectPipeline}
+          />
+        )}
 
         {/* Column 2: Center Editor Arena */}
         <div className="flex flex-col flex-1 min-w-0">
@@ -368,10 +370,6 @@ export default function AgentStudioPage() {
           </>
         )}
       </div>
-
-      {!isMobile && leftPanelOpen === false && (
-        <div className="sr-only">left panel collapsed</div>
-      )}
 
       {/* Mobile side panels */}
       <Sheet open={leftPanelMobileOpen} onOpenChange={setLeftPanelMobileOpen}>
