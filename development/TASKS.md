@@ -4454,9 +4454,8 @@ DIARY:
 
 ---
 
-## TASK-49: docs — ai-memory cross-agent sync methodology
-
-**Status:** [ ] pending
+## TASK-49: docs — ai-memory sync
+**Status:** [x] done
 **Agent:** agt-ogy3 (AGY3 tablet)
 **Context:** !!IMPORTANT!! Run locally on Termux. Do NOT SSH anywhere.
 
