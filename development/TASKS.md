@@ -4751,3 +4751,64 @@ print("done")
 ### DIARY
 
   python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-51:code-tab-token-fix|DONE|***"
+
+---
+
+## TASK-52: analysis — глибокий аналіз CodePage + Worker github routes
+
+**Status:** [ ] pending
+**Agent:** agt-ogy3 (AGY3 tablet)
+**Context:** !!IMPORTANT!! Run locally on Termux. Analysis only — NO code changes, NO commits.
+**Repo:** ~/workspace/ai-drakon-scaffolder
+
+### Ціль
+
+Зробити глибокий аналіз вкладки Код (CodePage) та Worker github routes.
+Виявити всі потенційні баги, edge cases, UX проблеми.
+
+### Файли для аналізу
+
+1. src/pages/CodePage.tsx
+2. src/context/ProjectContext.tsx
+3. src/lib/api.ts (функції github*)
+4. cloudflare-worker/worker-mcp-drakon.js (секції github + projects)
+
+### Питання для аналізу
+
+#### CodePage.tsx
+- Чи правильно CodePage оновлює файлове дерево при зміні activeProject?
+  (useEffect або useCallback з залежністю від owner/repo?)
+- Чи є ризик stale closure — функція load() в FileTree capture старий owner/repo?
+- При зміні проекту — чи скидається selectedPath та код в едіторі?
+- Що відбувається якщо activeProject змінився під час завантаження?
+- Чи є memory leak (незакритий setInterval pollRef)?
+- File save: чи правильно передається fileSha при оновленні файлу?
+
+#### ProjectContext.tsx
+- Як часто завантажується список проектів?
+- Чи є відповідний useEffect що оновлює activeProject при зміні projects list?
+- Якщо localStorage має застарілий activeProject — чи є recovery?
+
+#### API + Worker
+- В public github routes: чи передається owner/repo валідація (пустий рядок)?
+- Чи є rate limiting для public routes (без auth)?
+- Що повертає Worker якщо GitHub API повертає 404 (repo не існує)?
+
+### Формат звіту
+
+Створи файл docs/reports/code-analysis-2026-05-29.md з секціями:
+
+1. **Критичні баги** (ламають функціонал)
+2. **Потенційні проблеми** (edge cases)
+3. **UX проблеми** (незрозуміло для користувача)
+4. **Рекомендовані фікси** (пріоритет: критичні спочатку)
+
+### Commit
+
+  git add docs/reports/code-analysis-2026-05-29.md
+  git commit -m "docs(analysis): deep code analysis of CodePage + Worker github routes (TASK-52)"
+  git push origin main
+
+### Mark done + diary
+
+  python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-52:code-analysis|DONE|commit:$(git rev-parse --short HEAD)|***"
