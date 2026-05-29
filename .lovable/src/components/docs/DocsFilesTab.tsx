@@ -5,7 +5,7 @@ ChevronDown, ChevronRight, FileText, Folder, FolderOpen, Loader2, RefreshCw,
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useProject } from "@/context/ProjectContext";
+import { getGithubConfig } from "@/lib/settings-storage";
 import { cn } from "@/lib/utils";
 import { fetchNotesTree, type TreeNode } from "@/lib/garden/notesApi";
 function nodeMatchesSearch(node: TreeNode, q: string): boolean {
@@ -91,7 +91,7 @@ onNoteOpen: (slug: string) => void;
 }
 
 export function DocsFilesTab({ onNoteOpen }: DocsFilesTabProps) {
-const { activeProject } = useProject();
+const ghRepo = getGithubConfig().repo || "";
 const [tree, setTree] = useState<TreeNode[]>([]);
 const [loading, setLoading] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
@@ -99,7 +99,7 @@ const [searchQuery, setSearchQuery] = useState("");
 const load = async () => {
 setLoading(true);
 try {
-setTree(await fetchNotesTree(activeProject?.slug));
+setTree(await fetchNotesTree(ghRepo || undefined));
 } catch (e) {
 console.error("tree load error", e);
 } finally {
@@ -109,7 +109,7 @@ setLoading(false);
 
 useEffect(() => {
 void load();
-}, [activeProject?.slug]);
+}, [ghRepo]);
 
 return (
 <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border">
