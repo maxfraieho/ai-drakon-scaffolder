@@ -2244,3 +2244,338 @@ DIARY (!!run locally!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-34:unified-framework-plan|DONE|commit:<hash>|KB:SQLite-FTS5|framework:LangGraph|***"
 ```
+
+---
+
+## SPRINT 2026-05-29F — Unified Framework Implementation
+
+### TASK-35: Task 1 — Створити services/shared/ (graph_loader + kb_client + llm_client + ai_memory)
+
+```
+[ ] TASK-35
+
+META: Реалізувати shared/ пакет з 5 файлів.
+      Основа уніфікованого LangGraph-DRAKON фреймворку.
+      План: docs/plans/2026-05-29-unified-agent-framework.md Task 1
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для читання існуючих файлів та запису нових.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай існуючий graph_loader.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/architect-agent/pipeline/graph_loader.py"
+
+STEP 3: Створи services/shared/__init__.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "mkdir -p ~/workspace/ai-drakon-scaffolder/services/shared && \
+     echo '\"\"\"Shared utilities for all AI-DRAKON agents.\"\"\"' > \
+     ~/workspace/ai-drakon-scaffolder/services/shared/__init__.py"
+
+STEP 4: Створи services/shared/graph_loader.py
+  Це МОДИФІКОВАНА копія services/architect-agent/pipeline/graph_loader.py.
+  Ключова зміна: NODE_REGISTRY, ROUTER_REGISTRY, STATE_REGISTRY передаються як параметри.
+  НЕ видаляти оригінал в architect-agent — він буде оновлений в Task 2.
+
+  Вміст файлу services/shared/graph_loader.py:
+  """Compile DRAKON IR JSON -> LangGraph StateGraph.
+  Universal version: accepts registries as parameters instead of hardcoded globals.
+  """
+  import json
+  from pathlib import Path
+  from typing import Any
+  from langgraph.graph import StateGraph, END
+
+
+  def _resolve_target(item_id: str, items: dict) -> str:
+      if item_id not in items:
+          return END
+      item = items[item_id]
+      if item["type"] == "action":
+          return item["content"]
+      if item["type"] == "end":
+          return END
+      if item["type"] in ("header",):
+          return _resolve_target(item.get("one", ""), items)
+      return END
+
+
+  def load_graph_from_ir(
+      ir: dict,
+      node_registry: dict[str, Any],
+      router_registry: dict[str, Any],
+      state_registry: dict[str, Any],
+  ) -> Any:
+      """Build and compile LangGraph graph from DRAKON IR + per-agent registries."""
+      items = ir["items"]
+      schema = ir.get("schema", {})
+      default_state = next(iter(state_registry.values())) if state_registry else dict
+      state_class = state_registry.get(schema.get("state_class", ""), default_state)
+
+      g = StateGraph(state_class)
+
+      for item in items.values():
+          if item["type"] == "action":
+              fn = node_registry.get(item["content"])
+              if fn:
+                  g.add_node(item["content"], fn)
+
+      for item in items.values():
+          if item["type"] == "header":
+              entry = _resolve_target(item.get("one", ""), items)
+              if entry != END:
+                  g.set_entry_point(entry)
+              break
+
+      for item in items.values():
+          if item["type"] != "action":
+              continue
+          node_name = item["content"]
+          next_id = item.get("one", "")
+          if not next_id:
+              continue
+          next_item = items.get(next_id, {})
+          if next_item.get("type") == "question":
+              router_fn = router_registry.get(next_item["content"])
+              if router_fn:
+                  yes_target = _resolve_target(next_item.get("one", ""), items)
+                  no_target = _resolve_target(next_item.get("two", ""), items)
+                  routing_map = {}
+                  routing_map[yes_target if yes_target != END else END] = yes_target if yes_target != END else END
+                  routing_map[no_target if no_target != END else END] = no_target if no_target != END else END
+                  g.add_conditional_edges(node_name, router_fn, routing_map)
+          else:
+              target = _resolve_target(next_id, items)
+              g.add_edge(node_name, END if target == END else target)
+
+      return g.compile()
+
+
+  def load_graph_from_file(
+      path: str,
+      node_registry: dict[str, Any],
+      router_registry: dict[str, Any],
+      state_registry: dict[str, Any],
+  ) -> Any:
+      with open(path) as f:
+          ir = json.load(f)
+      return load_graph_from_ir(ir, node_registry, router_registry, state_registry)
+
+STEP 5: Створи services/shared/kb_client.py (SQLite FTS5, unicode61)
+  Вміст (з прототипу TASK-33 звіту):
+  """Unified Knowledge Base client using SQLite FTS5 (built-in, zero deps).
+  Supports Ukrainian/Cyrillic via unicode61 tokenizer.
+  """
+  import sqlite3
+  import re
+  from pathlib import Path
+
+
+  class KBClient:
+      def __init__(self, db_path: str = ":memory:"):
+          self.conn = sqlite3.connect(db_path)
+          self.conn.execute("""
+              CREATE VIRTUAL TABLE IF NOT EXISTS kb
+              USING fts5(source, heading, content,
+                         tokenize="unicode61 tokenchars '/_-'")
+          """)
+
+      def index_documents(self, docs_dir: Path) -> int:
+          """Index all .md files from docs_dir. Returns count of indexed sections."""
+          with self.conn:
+              self.conn.execute("DELETE FROM kb")
+              count = 0
+              for md in sorted(docs_dir.glob("*.md")):
+                  text = md.read_text(encoding="utf-8", errors="ignore")
+                  sections, heading, lines = [], "intro", []
+                  for line in text.splitlines():
+                      if line.startswith("## "):
+                          if lines:
+                              sections.append((heading, "\n".join(lines).strip()))
+                          heading, lines = line[3:].strip(), []
+                      else:
+                          lines.append(line)
+                  if lines:
+                      sections.append((heading, "\n".join(lines).strip()))
+                  for h, c in sections:
+                      if c.strip():
+                          self.conn.execute(
+                              "INSERT INTO kb(source, heading, content) VALUES(?,?,?)",
+                              (md.name, h, c)
+                          )
+                          count += 1
+          return count
+
+      def search(self, query: str, top_k: int = 5) -> list[str]:
+          """Search KB. Returns list of relevant text chunks."""
+          clean = re.sub(r'[^\w\s]', ' ', query).strip()
+          if not clean:
+              return []
+          try:
+              rows = self.conn.execute(
+                  "SELECT source, heading, content FROM kb WHERE kb MATCH ? "
+                  "ORDER BY rank LIMIT ?",
+                  (clean, top_k)
+              ).fetchall()
+              return [f"[{r[0]} / {r[1]}]\n{r[2]}" for r in rows]
+          except sqlite3.OperationalError:
+              return []
+
+STEP 6: Створи services/shared/llm_client.py
+  Вміст:
+  """Unified LLM HTTP client for all agents.
+  Supports: AGY proxy (Anthropic-compatible), OpenAI-compatible endpoints.
+  """
+  import json
+  import os
+  import urllib.request
+  import urllib.error
+  from typing import Any
+
+
+  DEFAULT_BASE_URL = os.getenv("LLM_BASE_URL", "https://agy.exodus.pp.ua")
+  DEFAULT_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
+  DEFAULT_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "60"))
+
+
+  def chat(
+      messages: list[dict],
+      model: str = DEFAULT_MODEL,
+      base_url: str = DEFAULT_BASE_URL,
+      api_key: str = "",
+      max_tokens: int = 4096,
+      system: str = "",
+  ) -> str:
+      """Send chat request. Returns text response. Raises on error."""
+      headers = {"Content-Type": "application/json"}
+      if api_key:
+          headers["x-api-key"] = api_key
+          headers["anthropic-version"] = "2023-06-01"
+
+      payload: dict[str, Any] = {
+          "model": model,
+          "max_tokens": max_tokens,
+          "messages": messages,
+      }
+      if system:
+          payload["system"] = system
+
+      url = base_url.rstrip("/") + "/v1/messages"
+      data = json.dumps(payload).encode()
+
+      for attempt in range(3):
+          try:
+              req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+              with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT) as resp:
+                  result = json.loads(resp.read())
+              for block in result.get("content", []):
+                  if block.get("type") == "text":
+                      return block["text"]
+              return ""
+          except urllib.error.HTTPError as e:
+              if e.code == 429 and attempt < 2:
+                  import time; time.sleep(2 ** attempt)
+                  continue
+              raise
+      return ""
+
+STEP 7: Створи services/shared/ai_memory.py
+  Вміст:
+  """ai-memory MCP wrapper for agents.
+  Uses JSON-RPC over HTTP at http://192.168.3.184:49374/mcp
+  """
+  import json
+  import os
+  import urllib.request
+  import urllib.error
+
+  AI_MEMORY_URL = os.getenv("AI_MEMORY_URL", "http://192.168.3.184:49374/mcp")
+  _rpc_id = 0
+
+
+  def _rpc(method: str, params: dict) -> dict:
+      global _rpc_id
+      _rpc_id += 1
+      payload = json.dumps({
+          "jsonrpc": "2.0",
+          "id": _rpc_id,
+          "method": method,
+          "params": params,
+      }).encode()
+      req = urllib.request.Request(
+          AI_MEMORY_URL,
+          data=payload,
+          headers={"Content-Type": "application/json"},
+          method="POST",
+      )
+      try:
+          with urllib.request.urlopen(req, timeout=5) as resp:
+              return json.loads(resp.read())
+      except (urllib.error.URLError, OSError):
+          return {}
+
+
+  def query_memory(query: str, top_k: int = 5) -> list[str]:
+      """Query ai-memory wiki via MCP memory_query tool."""
+      result = _rpc("tools/call", {
+          "name": "memory_query",
+          "arguments": {"query": query, "limit": top_k},
+      })
+      items = result.get("result", {}).get("content", [])
+      return [i.get("text", "") for i in items if i.get("type") == "text"]
+
+
+  def save_context(agent: str, content: str) -> bool:
+      """Save agent context to ai-memory wiki."""
+      result = _rpc("tools/call", {
+          "name": "memory_add",
+          "arguments": {"agent": agent, "content": content},
+      })
+      return bool(result.get("result"))
+
+STEP 8: Верифікація — перевір що файли створено та синтаксично коректні
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     python3 -c 'from services.shared import graph_loader, kb_client, llm_client, ai_memory; print(\"imports OK\")' \
+     2>/dev/null || python3 services/shared/kb_client.py 2>/dev/null || \
+     python3 -c 'import ast; [ast.parse(open(f).read()) for f in [
+       \"services/shared/graph_loader.py\",
+       \"services/shared/kb_client.py\",
+       \"services/shared/llm_client.py\",
+       \"services/shared/ai_memory.py\"
+     ]]; print(\"syntax OK\")'"
+
+STEP 9: Quick smoke test для kb_client
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+import sys
+sys.path.insert(0, "/home/vokov/workspace/ai-drakon-scaffolder")
+from services.shared.kb_client import KBClient
+from pathlib import Path
+kb = KBClient(":memory:")
+n = kb.index_documents(Path("/home/vokov/workspace/ai-drakon-scaffolder/docs/kb"))
+print(f"indexed {n} sections")
+results = kb.search("агент LangGraph", top_k=2)
+print(f"search results: {len(results)}")
+for r in results:
+    print("  -", r[:80])
+PYEOF'
+
+STEP 10: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add services/shared/ && \
+     git commit -m 'feat(shared): add unified agent shared layer — graph_loader, kb_client, llm_client, ai_memory (Task 1)' && \
+     git push origin main"
+
+STEP 11: TASKS.md update
+  sed -i 's/^\[ \] TASK-35/[x] TASK-35/' development/TASKS.md
+  git add development/TASKS.md
+  git commit -m "chore(tasks): TASK-35 done — shared/ layer created"
+  git push origin main
+
+DIARY (!!run locally on THIS Termux device!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-35:shared-layer|files:graph_loader+kb_client+llm_client+ai_memory|DONE|commit:<hash>|***"
+```
