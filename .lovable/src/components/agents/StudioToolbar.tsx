@@ -1,16 +1,22 @@
 import { Button } from "@/components/ui/button";
-import { Play, Square, Save, Download, RefreshCw } from "lucide-react";
+import { Play, Square, Save, Download, RefreshCw, PanelLeft, PanelRight } from "lucide-react";
 
 interface StudioToolbarProps {
   isRunning: boolean;
   isSaving: boolean;
   isDirty: boolean;
   hasBreakpoint: boolean;
+  leftPanelOpen: boolean;
+  rightPanelOpen: boolean;
   onRun: () => void;
   onStop: () => void;
   onSave: () => void;
   onExport: () => void;
   onResume: () => void;
+  onToggleLeftPanel: () => void;
+  onToggleRightPanel: () => void;
+  onOpenLeftMobile: () => void;
+  onOpenRightMobile: () => void;
 }
 
 export function StudioToolbar({
@@ -18,11 +24,17 @@ export function StudioToolbar({
   isSaving,
   isDirty,
   hasBreakpoint,
+  leftPanelOpen,
+  rightPanelOpen,
   onRun,
   onStop,
   onSave,
   onExport,
   onResume,
+  onToggleLeftPanel,
+  onToggleRightPanel,
+  onOpenLeftMobile,
+  onOpenRightMobile,
 }: StudioToolbarProps) {
   return (
     <div
@@ -78,6 +90,28 @@ export function StudioToolbar({
       </div>
 
       <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-1">
+          <Button size="sm" variant="outline" onClick={onToggleLeftPanel} className="h-7 px-2" title="Панель пайплайнів">
+            <PanelLeft className="h-3.5 w-3.5" />
+            <span>{leftPanelOpen ? "Сховати" : "Показати"}</span>
+          </Button>
+          <Button size="sm" variant="outline" onClick={onToggleRightPanel} className="h-7 px-2" title="Панелі праворуч">
+            <PanelRight className="h-3.5 w-3.5" />
+            <span>Агенти</span>
+          </Button>
+        </div>
+
+        <div className="flex md:hidden items-center gap-1">
+          <Button size="sm" variant="outline" onClick={onOpenLeftMobile} className="h-7 px-2">
+            <PanelLeft className="h-3.5 w-3.5" />
+            <span>Пайплайни</span>
+          </Button>
+          <Button size="sm" variant="outline" onClick={onOpenRightMobile} className="h-7 px-2">
+            <PanelRight className="h-3.5 w-3.5" />
+            <span>Агенти</span>
+          </Button>
+        </div>
+
         <Button
           size="sm"
           variant="outline"
