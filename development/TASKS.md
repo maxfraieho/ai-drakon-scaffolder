@@ -2,7 +2,69 @@
 
 > Власник: Claude (оркестратор)
 > Виконавець: AGY (executor)
-> Оновлено: 2026-05-28 01:20 — OVERNIGHT SPRINT
+> Оновлено: 2026-05-29 22:00
+
+---
+
+## TASK-56: deploy — Worker notes project filter fix (AGY3)
+
+**Status:** [ ] pending
+**Виконавець:** AGY3 (192.168.3.162)
+**!!IMPORTANT!!** Run locally on AGY3 Termux — НЕ SSH до 192.168.3.184
+
+### Контекст
+Claude виправив Worker (cloudflare-worker/worker-mcp-drakon.js):
+- handleNotesList/Get/Graph тепер передають ?project= параметр в docs-agent
+- Дозволяє Notes tab показувати документи конкретного проекту (uav-watcher, etc.)
+
+Зміна вже в GitHub (commit 1c946e0). Треба задеплоїти Worker на Cloudflare.
+
+### Завдання
+
+```bash
+# 1. Перейти в директорію Worker
+cd ~/workspace/ai-drakon-scaffolder/cloudflare-worker
+
+# 2. Pull останні зміни
+git pull origin main
+
+# 3. Перевірити що є wrangler auth (CLOUDFLARE_API_TOKEN або wrangler login)
+npx wrangler whoami
+
+# Якщо не авторизовано:
+# npx wrangler login
+# (відкриє браузер — авторизуватись через Cloudflare account)
+
+# 4. Deploy
+npx wrangler deploy --config worker-wrangler.toml
+
+# 5. Перевірити що deploy успішний:
+curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/notes/list?flat=false&project=uav-watcher" \
+  -H "Authorization: Bearer drakon-mcp-2026" | python3 -c "
+import json,sys; d=json.load(sys.stdin)
+tree = d.get('tree', [])
+print('tree count:', len(tree), 'PASS' if len(tree)>0 else 'FAIL — still no project filter')
+"
+# Expected: tree count: 4 PASS
+```
+
+### Commit статусу:
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+sed -i 's/\[ \] TASK-56/[x] TASK-56/' development/TASKS.md 2>/dev/null || \
+  python3 -c "
+t=open('development/TASKS.md').read()
+t=t.replace('[ ] pending\n**Виконавець:** AGY3', '[x] done\n**Виконавець:** AGY3')
+open('development/TASKS.md','w').write(t)"
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-56 done — Worker notes project filter deployed"
+git push origin main
+python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-56:worker-notes-deploy|DONE|commit:<hash>|***"
+```
+
+---
+
+## OVERNIGHT SPRINT (2026-05-28)
 
 ## Статуси
 - `[ ]` — чекає виконання
