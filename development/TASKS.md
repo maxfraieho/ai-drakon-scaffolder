@@ -1999,3 +1999,114 @@ DIARY (!!run locally!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-32:drakon-editor-restored|ROOT_CAUSE:<що знайшов>|DONE|commit:<hash>|***"
 ```
+
+---
+
+## SPRINT 2026-05-29D — Context Search Research
+
+### TASK-33: Дослідження контекстного пошуку для агентів (in-project, lightweight)
+
+```
+[ ] TASK-33
+
+META: Агентам потрібен контекстний пошук по документації проекту (74 .md файлів).
+      MemPalace занадто важкий (зовнішній ChromaDB сервіс).
+      Дослідити легші варіанти, що вже є в проекті або легко додати.
+      Результат: звіт + рекомендація + приклад реалізації shared/kb_client.py
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 тільки для читання файлів.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай поточні KB реалізації в проекті
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/crisis-bot/knowledge_base/ingest.py"
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/crisis-bot/knowledge_base/retrieval.py"
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/drakon-agent/knowledge_base/ingest.py"
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/drakon-agent/knowledge_base/retrieval.py"
+
+  Визнач: який алгоритм? BM25 / TF-IDF / vector / SQLite FTS5?
+  Визнач: чи можна перенести в services/shared/?
+
+STEP 3: Дослідити ai-memory як context store
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "ls ~/ai-memory-data/ && ls ~/ai-memory-data/wiki/"
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "sqlite3 ~/ai-memory-data/db/*.sqlite '.tables' 2>/dev/null | head -5 || \
+     find ~/ai-memory-data/db -name '*.sqlite' | head -3"
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "sqlite3 \$(find ~/ai-memory-data/db -name '*.sqlite' | head -1) \
+     '.tables' 2>/dev/null || echo 'no sqlite found'"
+
+  Питання: чи є FTS (Full Text Search) в ai-memory SQLite?
+  Перевір: чи можна query по wiki .md файлах через SQLite FTS5?
+
+STEP 4: Оцінити 4 варіанти (для 74 .md docs, ~500KB тексту)
+
+  ВАРІАНТ A: rank-bm25 (вже встановлено, вже є в crisis-bot)
+    Плюси: встановлено, легкий, Python-pure, no server
+    Мінуси: тільки keyword, no semantic
+    RAM: ~5MB для 74 docs
+    Пошук: 50ms
+
+  ВАРІАНТ B: SQLite FTS5 (вбудований в Python)
+    Плюси: zero deps, вбудований в Python stdlib, FTS з ranking
+    Мінуси: тільки full-text, no semantic
+    RAM: ~2MB
+    Пошук: 10ms
+    Перевір: python3 -c "import sqlite3; db=sqlite3.connect(':memory:'); db.execute('CREATE VIRTUAL TABLE t USING fts5(content)'); print('FTS5 OK')"
+
+  ВАРІАНТ C: ai-memory wiki + FTS
+    Плюси: вже є сервер, .md формат, HTTP API
+    Мінуси: тільки /hook API публічно, wiki FTS невідомо
+    Потрібно дослідити чи є /wiki/search endpoint
+
+  ВАРІАНТ D: ChromaDB local (для semantic)
+    Плюси: справжній semantic пошук, embeddings
+    Мінуси: важкий (~200MB), потребує embed model або API
+    RAM: ~300MB з моделлю
+    Доцільно тільки якщо semantic важливіший за keyword
+
+STEP 5: Перевір ai-memory API детально
+  curl -s http://192.168.3.184:49374/wiki/search?q=agent 2>/dev/null | head -20
+  curl -s http://192.168.3.184:49374/wiki/pages 2>/dev/null | head -20
+  curl -s -X POST http://192.168.3.184:49374/wiki/search \
+    -H "Content-Type: application/json" \
+    -d '{"q":"agent architecture"}' 2>/dev/null | head -20
+
+STEP 6: Напиши звіт docs/reports/context-search-research-2026-05-29.md
+
+  Структура (Garden Bloom стандарт):
+  ---
+  tags: [domain:architecture, status:active, format:report, tier:2]
+  created: 2026-05-29
+  title: "Контекстний пошук для агентів: дослідження варіантів"
+  lang: uk
+  ---
+
+  ## 1. Поточний стан (що вже є в проекті)
+  ## 2. Оцінка варіантів (таблиця: варіант | RAM | пошук | складність | semantic?)
+  ## 3. Рекомендація + обґрунтування
+  ## 4. Прототип shared/kb_client.py (20-30 рядків коду)
+     Показати як виглядав би мінімальний kb_client для рекомендованого варіанту:
+     - def index_documents(docs_dir: Path) -> None
+     - def search(query: str, top_k: int = 5) -> list[str]
+  ## 5. ai-memory: чи підходить як context store? Висновок
+  ## Семантичні зв'язки
+  Цей документ є частиною: [[reports/_INDEX]]
+  Пов'язано з: [[reports/agent-architecture-2026-05-29]]
+
+STEP 7: Commit
+  git add docs/reports/context-search-research-2026-05-29.md
+  git commit -m "docs(research): context search options for agents — KB lightweight analysis (TASK-33)"
+  git push origin main
+
+DIARY (!!run locally on THIS device!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-33:context-search-research|RECOMMENDATION:<варіант>|DONE|commit:<hash>|***"
+```
