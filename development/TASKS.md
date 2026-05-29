@@ -4076,7 +4076,7 @@ DIARY:
 ### TASK-46: Project Context Hub P1 — backend GET /projects + frontend wire-up
 
 ```
-[ ] TASK-46
+[x] TASK-46
 
 META: Реалізувати мінімальний Project Context Hub (P1).
 Фронтенд вже має:
