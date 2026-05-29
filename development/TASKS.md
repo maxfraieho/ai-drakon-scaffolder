@@ -1521,7 +1521,7 @@ DIARY:
 ### TASK-24: Збагатити AGY Stop hook — descriptive diary summary
 
 ```
-[ ] TASK-24
+[x] TASK-24
 
 МЕТА: Поточний ai-memory-end.sh відправляє порожній stop event.
       Треба щоб при кожному завершенні AGY автоматично записував
