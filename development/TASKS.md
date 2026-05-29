@@ -3547,7 +3547,7 @@ DIARY (!!run locally!!):
 ### TASK-41: Task 7 — Tests для unified framework
 
 ```
-[ ] TASK-41
+[x] TASK-41
 
 META: Написати та запустити тести для services/shared/ компонентів.
       3 ключові тести: graph compilation, KB search, pipeline execution.
