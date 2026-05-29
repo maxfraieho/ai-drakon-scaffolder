@@ -4071,3 +4071,121 @@ DIARY:
   python3 -m mempalace diary write --agent agt-ogy     "SESSION:2026-05-29|TASK-45:agents-layout-fix|hide-bot-sheet-on-agents-route|DONE|commit:<hash>|***"
 ```
 
+---
+
+### TASK-46: Project Context Hub P1 — backend GET /projects + frontend wire-up
+
+```
+[ ] TASK-46
+
+META: Реалізувати мінімальний Project Context Hub (P1).
+Фронтенд вже має:
+  - ProjectContext.tsx (loadProjects, activeProject, setActiveProject)
+  - ProjectSelector.tsx (UI дропдаун в WorkspaceShell рядок 322)
+  - graph-pipeline-api.ts (getArchitectBase() -> architect-agent :8766)
+Бракує:
+  - Backend GET /projects в project_pipeline_route.py
+  - Метод listProjectsArch() в graph-pipeline-api.ts
+  - ProjectContext.tsx: використовувати architect-agent, не Worker
+
+!!IMPORTANT!!: NO pip install. Тільки Python та TypeScript.
+SSH до 192.168.3.184. Синхронізуй src/ та .lovable/src/ ОБИДВА.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Додай GET /projects до project_pipeline_route.py
+  Файл: ~/workspace/ai-drakon-scaffolder/services/architect-agent/project_pipeline_route.py
+  Після рядків з APIRouter та імпортами — додай перед першим @router.get:
+
+  import json as _json
+  _PROJECTS_ROOT = Path(os.path.expanduser('~/projects'))
+
+  @router.get('')
+  def list_projects():
+      projects = []
+      if _PROJECTS_ROOT.exists():
+          for d in sorted(_PROJECTS_ROOT.iterdir()):
+              if d.is_dir():
+                  config_file = d / 'config.json'
+                  config = {}
+                  if config_file.exists():
+                      try: config = _json.loads(config_file.read_text())
+                      except Exception: pass
+                  agents = [a.name for a in (d/'agents').iterdir() if a.is_dir()] if (d/'agents').exists() else []
+                  projects.append({'slug': d.name, 'name': config.get('name', d.name),
+                      'description': config.get('description', ''), 'repo_url': config.get('repo_url', ''),
+                      'has_repo': (d/'repo').exists(), 'agents': agents})
+      return {'projects': projects}
+
+  @router.post('/{slug}')
+  def create_project(slug: str, payload: dict = {}):
+      project_dir = _PROJECTS_ROOT / slug
+      project_dir.mkdir(parents=True, exist_ok=True)
+      (project_dir / 'agents').mkdir(exist_ok=True)
+      import datetime
+      config = {'slug': slug, 'name': payload.get('name', slug),
+          'description': payload.get('description', ''), 'repo_url': payload.get('repo_url', ''),
+          'branch': payload.get('branch', 'main'),
+          'created_at': datetime.datetime.utcnow().isoformat() + 'Z'}
+      (project_dir / 'config.json').write_text(_json.dumps(config, indent=2, ensure_ascii=False))
+      return {'success': True, 'project': config}
+
+  ВАЖЛИВО: Якщо Path та os вже імпортовані — не дублюй.
+
+STEP 3: Додай listProjectsArch() до graph-pipeline-api.ts (обидва src/ і .lovable/src/)
+
+  export interface ProjectInfo {
+    slug: string; name: string; description: string;
+    repo_url: string; has_repo: boolean; agents: string[];
+  }
+  export async function listProjectsArch(): Promise<ProjectInfo[]> {
+    const r = await fetch(`${getArchitectBase()}/projects`);
+    if (!r.ok) throw new Error(`listProjectsArch: ${r.status}`);
+    return ((await r.json()).projects ?? []);
+  }
+  export async function createProjectArch(slug: string, name: string, description = '', repoUrl = '') {
+    const r = await fetch(`${getArchitectBase()}/projects/${encodeURIComponent(slug)}`,
+      { method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ name, description, repo_url: repoUrl }) });
+    if (!r.ok) throw new Error(`createProjectArch: ${r.status}`);
+    return (await r.json()).project;
+  }
+
+STEP 4: Оновити ProjectContext.tsx (обидва src/ і .lovable/src/)
+  - Додай: import { listProjectsArch } from '@/lib/graph-pipeline-api';
+  - В loadProjects() замінити api.listProjects() на listProjectsArch()
+  - Замапити: {slug, name, description, hasDrakonIr: agents.length>0, hasDocs: false, exists: true}
+
+STEP 5: Перезапусти architect-agent
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "pkill -f uvicorn.*8766 2>/dev/null; sleep 2; \
+     cd ~/workspace/ai-drakon-scaffolder/services/architect-agent && \
+     nohup python3 -m uvicorn main:app --host 0.0.0.0 --port 8766 \
+       > /var/log/architect-agent.log 2>&1 & sleep 3 && \
+     curl -s http://localhost:8766/projects"
+
+STEP 6: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add services/architect-agent/project_pipeline_route.py \
+             src/lib/graph-pipeline-api.ts \
+             .lovable/src/lib/graph-pipeline-api.ts \
+             src/context/ProjectContext.tsx \
+             .lovable/src/context/ProjectContext.tsx && \
+     git commit -m 'feat(hub): P1 Project Context Hub — backend GET /projects + frontend (TASK-46)' && \
+     git push origin main"
+
+STEP 7: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-46/[x] TASK-46/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-46 done — project hub P1' && \
+     git push origin main"
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-46:project-hub-P1|backend+frontend|DONE|commit:<hash>|***"
+```
+
