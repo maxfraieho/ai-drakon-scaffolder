@@ -22,5 +22,6 @@ lang: uk
 | [[reports/demo-sharon-uav-2026-05-29]] | Demo: Sharon UAV threat classifier end-to-end | active | 3 |
 | [[reports/sync-update-2026-05-29]] | Sprint 2026-05-29: синхронізація Claude+AGY | active | 3 |
 
+| [[reports/audit-2026-05-29]] | UI аудит через PinchTab — TASK-45/46/47 findings | active | 3 |
 ## Семантичні зв'язки
 **Батьківський індекс:** [[reports/_INDEX]]
