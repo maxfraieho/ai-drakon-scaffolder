@@ -4189,3 +4189,132 @@ DIARY:
     "SESSION:2026-05-29|TASK-46:project-hub-P1|backend+frontend|DONE|commit:<hash>|***"
 ```
 
+---
+
+### TASK-47: Аудит інтерфейсу через PinchTab — перевір що ти зробив
+
+```
+[ ] TASK-47
+
+META: Ти (AGY3) реалізував TASK-45 (Bot Sheet fix) та TASK-46 (Project Context Hub P1).
+      Тепер перевір власну роботу через PinchTab браузерну автоматизацію.
+      PinchTab = інструмент що керує Chrome на dev server через HTTP API.
+      Порівняй план з реальністю. Задокументуй що працює і що ні.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device.
+SSH до 192.168.3.184 для PinchTab. НЕ встановлюй нічого.
+
+== ЯК КОРИСТУВАТИСЬ PINCHTAB ==
+
+PinchTab HTTP API на 192.168.3.184:9867
+Token: 0117419fcfb5de5d82220c1f9da8de97
+Заголовок: X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97
+
+Базові команди (виконувати через SSH на 192.168.3.184):
+
+1. Відкрити сторінку:
+  curl -s -X POST http://localhost:9867/navigate \
+    -H "Content-Type: application/json" \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    -d '{"url": "URL_ТУТА"}'
+
+2. Зробити скріншот (pipe to base64 decode):
+  TAB=$(curl -s http://localhost:9867/tabs \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -c "import json,sys; tabs=json.load(sys.stdin); print(tabs[0]['id'] if tabs else '')")
+  curl -s http://localhost:9867/tabs/$TAB/screenshot \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -c "import json,sys,base64; d=json.load(sys.stdin); open('/tmp/screen.png','wb').write(base64.b64decode(d.get('data','') or d.get('screenshot','')))" 2>/dev/null
+  echo 'Screenshot at /tmp/screen.png'
+
+3. Отримати текст сторінки:
+  TAB=$(curl -s http://localhost:9867/tabs \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -c "import json,sys; tabs=json.load(sys.stdin); print(tabs[0]['id'] if tabs else '')")
+  curl -s http://localhost:9867/tabs/$TAB/text \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get('text','')[:2000])"
+
+4. Список табів:
+  curl -s http://localhost:9867/tabs \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    | python3 -m json.tool
+
+== ПЛАН АУДИТУ ==
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Відкрий https://ai-drakon-scaffolder.pages.dev/ та зроби скріншот
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    'curl -s -X POST http://localhost:9867/navigate \
+    -H "Content-Type: application/json" \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    -d '{"url": "https://ai-drakon-scaffolder.pages.dev/"}'
+  sleep 3
+  # Зроби скріншот і збережи в /tmp/audit-home.png
+
+STEP 3: Перевір /agents — чи є редактор та панелі
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    'curl -s -X POST http://localhost:9867/navigate \
+    -H "Content-Type: application/json" \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    -d '{"url": "https://ai-drakon-scaffolder.pages.dev/agents"}'
+  sleep 3
+  # Отримай текст сторінки — чи є 'DRAKON Logic', 'PipelineList', 'AgentChatPanel'
+  # Зроби скріншот /tmp/audit-agents.png
+
+STEP 4: Перевір ProjectSelector — вибери проект sharon-uav
+  # Отримай список інтерактивних елементів через /snapshot
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "TAB=$(curl -s http://localhost:9867/tabs -H 'X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97' | python3 -c 'import json,sys; t=json.load(sys.stdin); print(t[0][chr(105)+chr(100)] if t else str())') && curl -s http://localhost:9867/tabs/$TAB/snapshot -H 'X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97' | python3 -c 'import json,sys; d=json.load(sys.stdin); [print(e.get(chr(114)+chr(101)+chr(102)),e.get(chr(116)+chr(101)+chr(120)+chr(116),'')[:60]) for e in d.get(chr(101)+chr(108)+chr(101)+chr(109)+chr(101)+chr(110)+chr(116)+chr(115),[])[:30]]'"
+
+STEP 5: Перевір /docs — чи показується документація по проекту
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    'curl -s -X POST http://localhost:9867/navigate \
+    -H "Content-Type: application/json" \
+    -H "X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97" \
+    -d '{"url": "https://ai-drakon-scaffolder.pages.dev/docs"}'
+  sleep 2
+  # Отримай текст — чи є 'sharon' або тільки 'ai-drakon'
+
+STEP 6: Напиши звіт в docs/reports/audit-2026-05-29.md
+  Формат звіту:
+  ---
+  # Аудит інтерфейсу 2026-05-29
+  ## /agents
+  - [ ] DRAKON Editor видимий
+  - [ ] Ліва панель (PipelineList) видима та згортається
+  - [ ] Права панель видима та згортається
+  - [ ] Bot Sheet НЕ відкривається глобально (TASK-45)
+  ## ProjectSelector
+  - [ ] Показує список проектів
+  - [ ] sharon-uav є в списку
+  - [ ] При виборі проекту — щось змінюється
+  ## /docs
+  - [ ] Документація прив'язана до активного проекту
+  ## /code
+  - [ ] Показує код репозиторію або порожньо
+  ## Висновок: що потрібно виправити
+  ---
+
+STEP 7: Commit звіту
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/reports/audit-2026-05-29.md && \
+     git commit -m 'docs(audit): UI audit report 2026-05-29 — PinchTab findings (TASK-47)' && \
+     git push origin main"
+
+STEP 8: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-47/[x] TASK-47/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-47 done — UI audit' && \
+     git push origin main"
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-47:ui-audit|pinchtab-findings|DONE|commit:<hash>|***"
+```
+
