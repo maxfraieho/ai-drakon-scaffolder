@@ -1,115 +1,205 @@
 ---
-title: "Project Context Hub — дизайн єдиного джерела правди"
+title: "Project Context Hub — єдине джерело правди проекту"
 created: 2026-05-29
 tier: 2
 lang: uk
 ---
 
-# Project Context Hub — дизайн єдиного джерела правди (Single Source of Truth)
+# Project Context Hub
 
-> **Статус:** Концепт / Архітектурний дизайн (TASK-44)  
-> **Контекст:** Вирішення проблеми ізольованості робочих просторів (workspaces) в AI-DRAKON платформі.  
-> **Мета:** Об'єднати код, базу знань, агентів та пайплайни навколо поняття "Проект" (Project Context), синхронізованого на всіх рівнях та клієнтах.
+> **Проблема:** зараз в AI-DRAKON немає єдиного джерела правди для проекту.
+> Кожен workspace ізольований — агент-чат не знає що відкрито в редакторі,
+> KB не синхронізована з репозиторієм, пайплайни живуть окремо від коду.
+>
+> **Рішення:** обрав проект → автоматично підтягнувся репозиторій, KB,
+> агенти, пайплайни → все доступно скрізь.
 
 ## Семантичні зв'язки
-[[handoff/_INDEX]] [[concept/03-architecture]]
+[[handoff/_INDEX]] [[handoff/sharon-uav-handoff]] [[concept/03-architecture]]
 
 ---
 
-## 1. Як це має працювати (UX Flow)
+## 1. UX Flow — як має працювати
 
-Наразі інтерфейси (агент-чат, DRAKON-редактор, code viewer) працюють ізольовано. Концепція **Project Context Hub** пропонує наскрізне перемикання проектів:
+```
+[Платформа відкрита]
+        ↓
+[ProjectSelector у топ-барі]
+  ↓ обрав existing     ↓ створив новий
+  └─ load config       └─ ввів slug + GitHub URL
+          ↓                    ↓
+   /projects/{slug}/sync    POST /projects/{slug}/init
+          ↓                    ↓
+   git pull ────────────── git clone
+          ↓
+   [CodeIndexer: repo → KB chunks]
+          ↓
+   [Завантаження агентів та пайплайнів]
+          ↓
+   [GlobalProjectContext.set(slug)]
+          ↓
+   ┌──────────────────────────────┐
+   │  Всі workspace оновились:   │
+   │  • AgentChat → бачить KB    │
+   │  • DrakonEditor → пайплайни │
+   │  • CodeViewer → repo/       │
+   │  • Settings → config.json   │
+   └──────────────────────────────┘
+```
 
-1. **Вхід в систему та вибір:** Користувач відкриває AI-DRAKON веб-інтерфейс. В header/top-bar відображається глобальний компонент `ProjectSelector`.
-2. **Створення/Вибір проекту:** Користувач вибирає існуючий проект або створює новий, вказуючи унікальний текстовий ідентифікатор (`slug`, наприклад `sharon-uav`).
-3. **Підключення джерела коду:** Користувач вказує URL до GitHub-репозиторію проекту та за необхідності `github_token`.
-4. **Автоматична ініціалізація (під капотом):**
-   - Платформа робить `git clone` репозиторію у спеціальну папку проекту.
-   - Запускається сервіс `CodeIndexer`, який парсить кодову базу та розбиває її на чанки для бази знань (KB).
-   - Зчитуються конфігурації агентів та їх пайплайнів (файли `*.drakon.json`).
-5. **Єдиний робочий простір:** Після активації проекту всі вкладки (чат з архітектором, DRAKON-редактор схем, інтерфейс бази знань) автоматично перемикаються на контекст вибраного `slug`.
-6. **Наскрізна зміна:** Якщо користувач змінює проект у `ProjectSelector`, вся платформа миттєво оновлює контекст (перевантажує активних агентів, оновлює файлове дерево та KB).
+**Ключовий принцип:** зміна `currentProject` в одному місці → всі компоненти
+реагують через React Context / Zustand store.
 
 ---
 
 ## 2. Структура даних проекту на сервері
 
-Вся інформація про проект зберігається у файловій структурі на dev-сервері (`~/projects/{slug}/`):
-
 ```
 ~/projects/{slug}/
-  config.json             # Метадані: slug, repo_url, github_token, created_at, etc.
-  .last_sync              # Timestamp останньої успішної синхронізації з GitHub
-  repo/                   # Клонована кодова база проекту (auto-sync з origin/main)
-  agents/                 # Налаштування агентів проекту
-    {agent_name}/
-      pipeline.drakon.json  # DRAKON IR схема логіки агента
-      kb/                 # Специфічні markdown-документи бази знань агента
+  config.json              ← єдине джерело конфігу проекту
+  repo/                    ← git clone репозиторію (auto-sync)
+  agents/
+    {agent-name}/
+      pipeline.drakon.json ← DRAKON IR (source of truth)
+      kb/                  ← база знань агента (MD файли)
+  .last_sync               ← ISO timestamp останнього git pull
+  .index_hash              ← hash KB для інкрементної індексації
+```
+
+**config.json:**
+```json
+{
+  "slug": "sharon-uav",
+  "name": "Sharon UAV Watcher",
+  "repo_url": "https://github.com/maxfraieho/uav-watcher",
+  "branch": "master",
+  "auto_sync": true,
+  "sync_interval_min": 30,
+  "created_at": "2026-05-29T12:00:00Z"
+}
 ```
 
 ---
 
-## 3. Аналіз розбіжностей (Gap Analysis)
+## 3. Gap Analysis — чого зараз не вистачає
 
-Щоб перетворити поточну реалізацію на повноцінний Project Context Hub, необхідно розробити такі компоненти:
+| Компонент | Стан | Пріоритет |
+|-----------|------|-----------|
+| `ProjectContext` (React global state) | ❌ немає | P1 |
+| `ProjectSelector` UI компонент | ❌ немає | P1 |
+| `POST /projects/{slug}/init` — clone repo | ❌ немає | P1 |
+| `POST /projects/{slug}/sync` — pull + reindex | ❌ немає | P2 |
+| `CodeIndexer` — repo → KB chunks | ❌ немає | P2 |
+| `GET /projects` — список проектів | ❌ немає | P1 |
+| Per-project агенти | ✅ є | — |
+| Per-project KB | ✅ є | — |
+| Pipeline CRUD API | ✅ є | — |
 
-| Компонент | Чого не вистачає зараз | Вплив на систему |
-|-----------|------------------------|------------------|
-| **Global Project Context** | Глобальний React context або Zustand store на фронтенді, який зберігає поточний `activeProjectSlug` та оновлює залежні компоненти. | Високий |
-| **ProjectSelector UI** | Випадаючий список у верхній панелі (top-bar) для швидкого перемикання проектів + кнопка "Додати проект". | Середній |
-| **Project CRUD API** | Ендпоінти `/projects` (list, create, update, delete) для керування `config.json`. | Високий |
-| **Auto-Sync Service** | Сервіс на бекенді для клонування та періодичного `git pull` репозиторіїв у `projects/{slug}/repo`. | Високий |
-| **Code Indexer** | Інструмент для автоматичного парсингу та імпорту файлів коду з `repo/` в `kb/` чанки (для використання через вбудований інструмент `search_kb`). | Середній |
+**Найкритичніший gap:** глобальний `ProjectContext` у фронтенді.
 
 ---
 
-## 4. DRAKON-схема для логіки "Project Load"
+## 4. DRAKON-схема: логіка "Project Load"
 
-Нижче наведено текстовий опис логіки завантаження та ініціалізації проекту (Project Load Flow):
-
-```mermaid
-graph TD
-    Start([START]) --> SelectProject[Користувач вибирає проект / активує slug]
-    SelectProject --> ReadConfig[Зчитати config.json проекту]
-    ReadConfig --> CheckRepo{Репозиторій вже клоновано?}
-    
-    CheckRepo -- Ні --> CloneRepo[git clone repo_url в projects/slug/repo]
-    CheckRepo -- Так --> PullRepo[git pull origin main у projects/slug/repo]
-    
-    CloneRepo --> IndexCode[Запуск CodeIndexer: імпорт коду в базу знань]
-    PullRepo --> IndexCode
-    
-    IndexCode --> LoadAgents[Завантажити конфігурації агентів та pipeline.drakon.json]
-    LoadAgents --> ActivateContext[Активувати глобальний контекст проекту на клієнті та серверах]
-    ActivateContext --> End([END])
+```
+СТАРТ
+  │
+  ▼
+[Отримати slug від UI]
+  │
+  ▼
+[config.json існує?] ── Ні ──→ [Помилка: проект не існує] → СТОП
+  │ Так
+  ▼
+[repo/ існує?]
+  │ Ні ──────────────────────────────────────────────┐
+  │ Так                                              ▼
+  ▼                                           [git clone]
+[git pull]                                          │
+  │ ◄──────────────────────────────────────────────┘
+  ▼
+[KB застаріла? (перевірити .index_hash)]
+  │ Ні ──────────────────────────────────────────────┐
+  │ Так                                              │
+  ▼                                                 │
+[CodeIndexer: repo → chunks → kb/]                 │
+[Оновити .index_hash]                              │
+  │ ◄──────────────────────────────────────────────┘
+  ▼
+[Завантажити агентів з agents/]
+  │
+  ▼
+[GlobalProjectContext(slug, config, agents)]
+  │
+  ▼
+[Broadcast до всіх workspace]
+  │
+  ▼
+КІНЕЦЬ
 ```
 
-### Деталізований крок-за-кроком DRAKON Flow:
-1. **Початок (START)**
-2. **Вибір проекту:** Отримання `slug` через UI або API.
-3. **Перевірка директорії:** Якщо папка `projects/{slug}/repo` порожня або відсутня:
-   - *Гілка ТАК (потрібен клон):* Запустити процес `git clone` з використанням збережених `repo_url` та `github_token`.
-   - *Гілка НІ (потрібне оновлення):* Виконати `git pull` для отримання свіжих комітів.
-4. **Індексація коду:** `CodeIndexer` сканує файли коду (наприклад, `.py`, `.ts`, `.tsx`), створює семантичні текстові чанки та завантажує їх у SQLite FTS5 сховище для відповідних агентів.
-5. **Завантаження агентів:** Зчитування JSON-файлів пайплайнів з папки `projects/{slug}/agents/`. hot-compile перевірка валідності графів.
-6. **Активація контексту:** Оновлення стану в React додатку та оновлення системного контексту для backend-сервісів (архітектор, документатор, DRAKON API).
-7. **Кінець (END)**
+---
+
+## 5. Пріоритет реалізації
+
+### P1 — Мінімальний робочий контекст
+
+**Крок 1: ProjectContext (React)**
+```typescript
+// src/contexts/ProjectContext.tsx
+interface ProjectContextType {
+  currentSlug: string | null;
+  setProject: (slug: string) => void;
+  config: ProjectConfig | null;
+  agents: string[];
+  isLoading: boolean;
+}
+```
+
+**Крок 2: GET /projects API (architect-agent :8766)**
+```
+GET  /projects           → [{slug, name, last_sync}]
+GET  /projects/{slug}    → ProjectConfig
+POST /projects           → init + clone
+DELETE /projects/{slug}  → видалити
+```
+
+**Крок 3: ProjectSelector у топ-барі**
+- Дропдаун поруч з лого
+- Quick-switch між проектами
+- "+" → створити новий
+
+### P2 — Синхронізація з repo
+
+**Крок 4: POST /projects/{slug}/sync**
+```json
+{"status": "synced", "commits_ahead": 3, "kb_updated": true}
+```
+
+**Крок 5: CodeIndexer (services/shared/code_indexer.py)**
+```python
+class CodeIndexer:
+    def index_repo(self, repo_dir: Path, kb_dir: Path) -> int:
+        # Scan repo, extract docstrings/types → MD chunks → KB
+```
 
 ---
 
-## 5. Пріоритет реалізації (Roadmap)
+## 6. Цінність для розробника
 
-Впровадження системи має відбуватися ітеративно:
+**Зараз:** кожен workspace ізольований, треба вручну копіювати контекст.
 
-1. **Етап 1: React Project Context & CRUD API**
-   - Створення Zustand стору або React Context для глобального збереження вибраного `activeProject`.
-   - Реалізація API `/projects/{slug}/config` (GET/PUT) для роботи з конфігураційними файлами проектів.
-2. **Етап 2: Авто-синхронізація (GitHub Sync)**
-   - Реалізація фонового сервісу для клонування та оновлення коду.
-   - Ендпоінт `POST /projects/{slug}/sync` для ручного тригеру оновлення кодовой бази.
-3. **Етап 3: Інтеграція Code Indexer**
-   - Розробка скрипта `services/shared/code_indexer.py`, який конвертує файли коду в маркдаун чанки.
-   - Автоматичний запуск після синхронізації репозиторію.
-4. **Етап 4: Клієнтська інтеграція (UI)**
-   - Додавання компонента `ProjectSelector` у верхню панель.
-   - Прив'язка файлового провідника та чату до активного `project_slug`.
+**Після:** обрав проект → платформа сама зробила git pull, проіндексувала
+код, завантажила агентів. Чат, редактор, перегляд коду — всі бачать один проект.
+
+---
+
+## 7. Наступні кроки для Q
+
+1. Намалювати DRAKON-схему "Project Load" (розділ 4 → візуальна схема)
+2. Намалювати DRAKON-схему "CodeIndexer" pipeline
+3. Claude розпланує реалізацію по спринтах на основі схем
+4. Делегувати P1 спринт AGY3 або Codex
+
+## Семантичні зв'язки
+[[handoff/_INDEX]] [[handoff/sharon-uav-handoff]] [[concept/03-architecture]]
