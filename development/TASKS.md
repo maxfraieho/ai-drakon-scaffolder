@@ -4021,7 +4021,7 @@ DIARY (!!run locally!!):
 ### TASK-45: Fix /agents layout — прибрати конфлікт AgentChatPanel Sheet
 
 ```
-[ ] TASK-45
+[x] TASK-45
 
 META: На сторінці /agents є два AgentChatPanel:
   1. Колонка в AgentStudioPage.tsx (правильно — тут має бути)
