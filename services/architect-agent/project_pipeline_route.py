@@ -42,7 +42,7 @@ def list_projects():
     projects = []
     if _PROJECTS_ROOT.exists():
         for d in sorted(_PROJECTS_ROOT.iterdir()):
-            if d.is_dir():
+            if d.is_dir() and not d.name.startswith('.'):
                 config_file = d / 'config.json'
                 config = {}
                 if config_file.exists():
@@ -76,7 +76,7 @@ def list_agents(slug: str):
         return {"slug": slug, "agents": []}
     agents = []
     for d in sorted(project_dir.iterdir()):
-        if d.is_dir():
+        if d.is_dir() and not d.name.startswith('.'):
             pipeline_file = d / "pipeline.drakon.json"
             agents.append({
                 "name": d.name,
