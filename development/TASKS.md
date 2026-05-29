@@ -1609,7 +1609,7 @@ DIARY:
 ### TASK-26: Sync SYNC_METHODOLOGY.md → NotebookLM drn-ai
 
 ```
-[ ] TASK-26
+[x] TASK-26
 
 META: Add development/SYNC_METHODOLOGY.md to NotebookLM notebook drn-ai.
 
