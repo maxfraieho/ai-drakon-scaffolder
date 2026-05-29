@@ -10,6 +10,7 @@ lang: uk
 | Файл | Опис | Статус | Tier |
 |------|------|--------|------|
 | [[handoff/sharon-uav-handoff]] | Sharon UAV — reference implementation для AI-DRAKON framework | active | 2 |
+| [[handoff/project-context-hub]] | Project Context Hub — архітектурна концепція єдиного джерела правди | active | 2 |
 
 ## Семантичні зв'язки
 [[handoff/_INDEX]] [[INDEX]]
