@@ -4323,7 +4323,7 @@ DIARY:
 ### TASK-48: AGY phone — обробка звітів аудиту + перевірка ai-memory sync з AGY3
 
 ```
-[ ] TASK-48
+[x] TASK-48
 
 META: AGY phone (POCCO C71) — проста задача паралельно з TASK-47.
       1. Дочекатись коміту звіту від AGY3 (docs/reports/audit-2026-05-29.md)
