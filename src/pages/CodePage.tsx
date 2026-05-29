@@ -75,6 +75,11 @@ function FileTree({
 
   useEffect(() => { load(""); }, [load]);
 
+  useEffect(() => {
+    setCurrentPath("");
+    setPathStack([]);
+  }, [owner, repo]);
+
   const enterDir = (entry: TreeEntry) => {
     setPathStack((s) => [...s, currentPath]);
     setCurrentPath(entry.path);
@@ -189,6 +194,19 @@ export default function CodePage() {
 
   const [treeCollapsed, setTreeCollapsed] = useState(false);
   const { theme } = useTheme();
+
+  useEffect(() => {
+    setCode("");
+    setFilePath("untitled.py");
+    setFileSha(null);
+    setResult(null);
+  }, [activeProject?.slug]);
+
+  useEffect(() => {
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, []);
   const monacoTheme = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "vs-dark" : "vs-light";
 
   // Load file from GitHub

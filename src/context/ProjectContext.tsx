@@ -89,7 +89,7 @@ const saved = savedSlug ? parsed.find((p) => p.slug === savedSlug) : null;
 setActiveProjectState((prev) => {
 if (prev) {
 const updated = parsed.find((p) => p.slug === prev.slug);
-return updated ?? prev;
+return updated ?? parsed[0] ?? null;
 }
 return saved ?? parsed[0] ?? null;
 });
