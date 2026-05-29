@@ -1562,7 +1562,7 @@ DIARY:
 ### TASK-25: MemPalace post-commit hook на dev server (192.168.3.184)
 
 ```
-[ ] TASK-25
+[x] TASK-25 — ВИРІШЕНО ІНАКШЕ (2026-05-29)
 
 МЕТА: AGY має post-commit hook в Termux що автоматично mine MemPalace
       після кожного коміту. Але Claude на OrangePi читає MemPalace
