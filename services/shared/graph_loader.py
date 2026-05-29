@@ -4,6 +4,10 @@ Universal version: accepts registries as parameters instead of hardcoded globals
 import json
 from pathlib import Path
 from typing import Any
+
+# Built-in tools and LLM node factory (lazy import to avoid circular deps)
+_BUILT_IN_TOOLS = None
+_LLM_NODE_FACTORY = None
 from langgraph.graph import StateGraph, END
 
 
@@ -18,6 +22,21 @@ def _resolve_target(item_id: str, items: dict) -> str:
     if item["type"] in ("header",):
         return _resolve_target(item.get("one", ""), items)
     return END
+
+
+def _resolve_node_fn(content: str, node_registry: dict):
+    """Tool name -> tool fn; natural language -> LLM prompt node."""
+    global _BUILT_IN_TOOLS, _LLM_NODE_FACTORY
+    if _BUILT_IN_TOOLS is None:
+        from services.shared.built_in_tools import BUILT_IN_TOOLS as _T
+        from services.shared.llm_node import llm_node_factory as _F
+        _BUILT_IN_TOOLS = _T
+        _LLM_NODE_FACTORY = _F
+    if content in node_registry:
+        return node_registry[content]
+    if content in _BUILT_IN_TOOLS:
+        return _BUILT_IN_TOOLS[content]
+    return _LLM_NODE_FACTORY(content)
 
 
 def load_graph_from_ir(
@@ -36,9 +55,8 @@ def load_graph_from_ir(
 
     for item in items.values():
         if item["type"] == "action":
-            fn = node_registry.get(item["content"])
-            if fn:
-                g.add_node(item["content"], fn)
+            fn = _resolve_node_fn(item["content"], node_registry)
+            g.add_node(item["content"], fn)
 
     for item in items.values():
         if item["type"] == "header":
