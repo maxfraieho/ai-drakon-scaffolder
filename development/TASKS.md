@@ -4922,3 +4922,42 @@ DIFF EXISTS
 ### Mark done + diary
 
 
+
+
+---
+
+## TASK-55: fix CodePage no owner fallback
+
+**Status:** [ ] pending
+**Agent:** agt-ogy3 (AGY3 tablet)
+**Context:** IMPORTANT!! Termux local. Edit BOTH src/ AND .lovable/src/
+**Repo:** ~/workspace/ai-drakon-scaffolder
+
+### Root cause
+Project without github config (goclaw) falls back to global Settings owner/repo (uav-watcher).
+Shows wrong tree + error.
+
+### Fix in BOTH files:
+  src/pages/CodePage.tsx
+  .lovable/src/pages/CodePage.tsx
+
+Find:
+  const owner = projectGh?.owner || ghCfg.owner || ghCfg.repo.split("/")[0] || "";
+  const repoRaw = ghCfg.repo.includes("/") ? ghCfg.repo.split("/")[1] : ghCfg.repo;
+  const repo = projectGh?.repo || repoRaw;
+
+Replace with:
+  const owner = projectGh?.owner || "";
+  const repo = projectGh?.repo || "";
+
+(Keep token and branch as is. Remove repoRaw variable entirely.)
+
+### Verify files are identical:
+  diff src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx && echo "OK"
+
+### Commit:
+  git add src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
+  git commit -m "fix: remove global settings fallback for owner/repo in CodePage (TASK-55)"
+  git push origin main
+  git add development/TASKS.md && git commit -m "chore: mark TASK-55 done" && git push origin main
+  python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-55:no-owner-fallback|DONE|***"
