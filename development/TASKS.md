@@ -4381,3 +4381,73 @@ STEP 6: Mark done
      git push origin main"
 ```
 
+---
+
+### TASK-47b: AGY3 — PinchTab аудит /agents (виправлена версія)
+
+```
+[ ] TASK-47b
+
+META: TASK-47 провалилась — намагався запустити dev server.
+      PinchTab вже ЗАПУЩЕНИЙ на 192.168.3.184:9867. Просто використай HTTP API.
+
+== PINCHTAB: ЩО ЦЕ І ЯК КОРИСТУВАТИСЬ ==
+
+PinchTab = Chrome браузер що керується через HTTP API.
+Сервер: http://localhost:9867 (вже запущений на 192.168.3.184)
+Token: 0117419fcfb5de5d82220c1f9da8de97
+Заголовок: X-Pinchtab-Token: <token>
+
+НЕ запускай dev server. НЕ встановлюй пакети. Просто curl через SSH.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Перевір що PinchTab живий
+  sshpass -p "805235io." ssh vokov@192.168.3.184 "curl -s http://localhost:9867/health -H 'X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97'"
+
+STEP 3: Відкрий /agents і прочитай текст
+  a) Навігація:
+  sshpass -p "805235io." ssh vokov@192.168.3.184 "curl -s -X POST http://localhost:9867/navigate -H 'Content-Type: application/json' -H 'X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97' -d '{\"url\": \"https://ai-drakon-scaffolder.pages.dev/agents\"}'"
+
+  b) Зачекай 5 секунд (sleep 5)
+
+  c) Отримай ID табу:
+  sshpass -p "805235io." ssh vokov@192.168.3.184 "curl -s http://localhost:9867/tabs -H 'X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97'"
+  (збережи id першого табу у змінну TAB)
+
+  d) Отримай текст сторінки:
+  sshpass -p "805235io." ssh vokov@192.168.3.184 "curl -s http://localhost:9867/tabs/$TAB/text -H 'X-Pinchtab-Token: 0117419fcfb5de5d82220c1f9da8de97' | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get(chr(116)+chr(101)+chr(120)+chr(116),"")[:2000])'"
+
+  e) Запиши: є слова DRAKON, Pipeline, агент, редактор?
+
+STEP 4: Перевір /docs (той самий спосіб, змінити URL)
+  Запиши: є sharon-uav чи тільки ai-drakon?
+
+STEP 5: Перевір /code
+  Запиши: порожньо чи є код?
+
+STEP 6: Напиши звіт
+  Файл: ~/workspace/ai-drakon-scaffolder/docs/reports/audit-2026-05-29.md
+  Формат:
+    # UI Аудит 2026-05-29
+    ## /agents
+    - [x/o] DRAKON Editor видимий: <так/ні>
+    - [x/o] Панелі розкриваються: <так/ні>
+    ## /docs: <що показує>
+    ## /code: <що показує>
+    ## Висновок: <що треба виправити>
+
+STEP 7: Commit + push
+  git add docs/reports/audit-2026-05-29.md
+  git commit -m "docs(audit): UI audit 2026-05-29 via PinchTab (TASK-47b)"
+  git push origin main
+
+STEP 8: Mark done
+  sed -i s 47b 47b (оновити TASKS.md)
+
+DIARY:
+  python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-47b:audit|pinchtab|DONE|***"
+```
+
+
