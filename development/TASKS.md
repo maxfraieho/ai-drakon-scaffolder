@@ -4817,7 +4817,7 @@ print("done")
 
 ## TASK-53: fix code-tab — 4 fixes: stale state + memory leak + deleted project
 
-**Status:** [ ] pending
+**Status:** [x] done
 **Agent:** agt-ogy3 (AGY3 tablet)
 **Context:** IMPORTANT!! Run locally on Termux. NO build needed.
 **Repo:** ~/workspace/ai-drakon-scaffolder
