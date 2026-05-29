@@ -64,6 +64,89 @@ python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-56:wo
 
 ---
 
+## TASK-58: docs — генерація документації Sharon consultant + auth + web_config (AGY phone)
+
+**Status:** [ ] pending
+**Виконавець:** AGY phone (192.168.3.25)
+**!!IMPORTANT!!** Run locally on Termux — НЕ SSH до 192.168.3.184
+
+### Контекст
+Документознавець (docs-agent на 192.168.3.184:8767) генерує docs для uav-watcher.
+Вже задокументовано: uav_watcher, geo_monitor, shelter_search, _INDEX.
+Треба: sharon consultant, auth, web_config.
+
+**Спочатку: обов'язково прочитай скіли з ~/.claude/skills/**
+Для цієї задачі перевір: `systematic-debugging`, `verification-before-completion`.
+Прочитай: `cat ~/.claude/skills/verification-before-completion/SKILL.md`
+
+### Кроки
+
+**1. Отримай код модулів через GitHub Worker:**
+```bash
+# sharon consultant (main файл)
+curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=consultant/consultant.py&branch=master" > /tmp/consultant_resp.json
+python3 -c "import json; d=json.load(open('/tmp/consultant_resp.json')); open('/tmp/consultant.txt','w').write(d['content']); print('LEN:', len(d['content']))"
+
+curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=auth.py&branch=master" > /tmp/auth_resp.json
+python3 -c "import json; d=json.load(open('/tmp/auth_resp.json')); open('/tmp/auth.txt','w').write(d['content']); print('LEN:', len(d['content']))"
+```
+
+**2. Виклич docs-agent /document для кожного:**
+```python
+import httpx
+
+modules = [
+    ('consultant', '/tmp/consultant.txt', ['uav-watcher', 'sharon', 'ai-consultant', 'fastapi']),
+    ('auth', '/tmp/auth.txt', ['uav-watcher', 'auth', 'security']),
+]
+
+for name, path, tags in modules:
+    code = open(path).read()[:6000]
+    r = httpx.post('http://192.168.3.184:8767/document', json={
+        'module_name': name,
+        'code': code,
+        'slug': f'uav-watcher/{name}',
+        'project': 'uav-watcher',
+        'tags': tags
+    }, timeout=120.0)
+    d = r.json()
+    print(f'{name}: status={r.status_code}, git={d.get("git_ok")}, slug={d.get("slug")}')
+```
+
+**3. Верифікація:**
+```bash
+curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/notes/list?flat=true&project=uav-watcher" \
+  -H "Authorization: Bearer drakon-mcp-2026" | python3 -c "
+import json,sys; d=json.load(sys.stdin)
+notes = d.get('notes', [])
+print('Total docs:', len(notes))
+[print(' -', n['slug']) for n in notes]
+"
+# Очікується: 6+ docs (додались consultant, auth)
+```
+
+**4. Commit diary (НЕ потрібен git commit — docs-agent сам комітить):**
+```bash
+python3 -m mempalace diary write --agent agt-ogy \
+  "SESSION:2026-05-30|TASK-58:uav-watcher-docs-sharon+auth|DONE|skills:verification-before-completion|★★★"
+```
+
+**5. Mark done в TASKS.md:**
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git pull origin main
+python3 -c "
+t=open('development/TASKS.md').read()
+t=t.replace('**Status:** [ ] pending\n**Виконавець:** AGY phone (192.168.3.25)', '**Status:** [x] done\n**Виконавець:** AGY phone (192.168.3.25)')
+open('development/TASKS.md','w').write(t)
+" 
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-58 done — uav-watcher sharon+auth docs"
+git push origin main
+```
+
+---
+
 ## TASK-57: Variant A — Code+Notes відв'язати від activeProject (AGY3)
 
 **Status:** [ ] pending
