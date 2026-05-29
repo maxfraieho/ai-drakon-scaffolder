@@ -2107,6 +2107,31 @@ export default {
       }
       // ──────────────────────────────────────────────────────────────────────
 
+      // ─── GitHub read-only routes (no auth needed — Worker uses server-side token) ─────
+      if (method === 'GET' && path === '/v1/github/tree') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const treePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env, requestToken));
+      }
+      if (method === 'GET' && path === '/v1/github/file') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const filePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env, requestToken));
+      }
+      if (method === 'GET' && path === '/v1/github/branches') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListBranches({ owner, repo }, env, requestToken));
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       // ─── Pipeline SSE (auth via ?token= query param — EventSource не підтримує headers) ─
       const pipelineStreamMatch = path.match(/^\/v1\/pipeline\/stream\/([^\/]+)$/);
       if (method === 'GET' && pipelineStreamMatch) {
