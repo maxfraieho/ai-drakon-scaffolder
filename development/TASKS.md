@@ -1841,3 +1841,161 @@ STEP 7: Commit
 DIARY (!!run locally, NO SSH!!):
   python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-30:docs-methodology-update|DONE|commit:<hash>|***"
 ```
+
+---
+
+## SPRINT 2026-05-29C — Architecture Research + DRAKON Editor Fix
+
+### TASK-31: Дослідження архітектури 3 агентів — звіт + пропозиція уніфікації
+
+```
+[ ] TASK-31
+
+META: Дослідити поточну архітектуру 3 агентів (architect :8766, docs :8767, drakon :8765).
+      Скласти звіт: що спільне, що різне, як уніфікувати під один framework.
+      Дослідити чи варто додати ai-memory (192.168.3.184:49374) як спільну пам'ять.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device.
+mempalace is LOCAL on this device. NO SSH needed except for reading files on 192.168.3.184.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай всі три main.py та ключові модулі
+  SSH до 192.168.3.184 тільки для читання файлів:
+  sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/architect-agent/main.py"
+  sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/docs-agent/main.py"
+  sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/drakon-agent/main.py"
+
+  Також прочитай:
+  services/architect-agent/ai_chat/architect_chat.py
+  services/docs-agent/ai_chat/docs_chat.py
+  services/docs-agent/prompts.py
+  services/architect-agent/prompts.py (якщо є)
+  services/drakon-agent/ai_refiner/ (всі файли)
+
+STEP 3: Для кожного агента запиши:
+  a) LLM-клієнт: який, як ініціалізується, модель
+  b) Knowledge Base: є? формат? BM25 / vector / MD?
+  c) Memory: чи використовує між запитами?
+  d) API endpoints: GET/POST маршрути
+  e) Специфічна логіка: що унікальне
+
+STEP 4: Дослідження ai-memory як спільної пам'яті агентів
+  Переваги: агенти зберігають контекст сесій у wiki.md форматі
+  Перевір API: curl -s http://192.168.3.184:49374/wiki/
+  Перевір чи є POST /wiki/pages endpoint для запису
+  curl -s -X POST http://192.168.3.184:49374/wiki/pages \
+    -H "Content-Type: application/json" \
+    -d '{"title":"test-agent-memory","content":"# Test\nAgent memory test"}'
+
+STEP 5: Напиши звіт docs/reports/agent-architecture-2026-05-29.md
+  Структура звіту (Garden Bloom стандарт):
+  ---
+  tags: [domain:architecture, status:active, format:report, tier:2]
+  created: 2026-05-29
+  title: "Архітектура агентів: поточний стан та пропозиція уніфікації"
+  lang: uk
+  ---
+
+  ## 1. Поточна архітектура (таблиця: агент | framework | LLM | KB | memory)
+  ## 2. Спільні компоненти (що дублюється між агентами)
+  ## 3. Унікальна логіка кожного агента
+  ## 4. Пропозиція уніфікації
+     - Спільний LLM-клієнт (shared/llm_client.py?)
+     - Спільна KB структура (shared knowledge base format)
+     - Чи варто ai-memory для агентів? Висновок + аргументи
+  ## 5. Наступні кроки (конкретні задачі для реалізації)
+
+  ## Семантичні зв'язки
+  Цей документ є частиною: [[reports/_INDEX]]
+  Пов'язано з: [[architecture/02_drakon_to_langgraph_mapping]]
+
+STEP 6: Commit
+  git add docs/reports/agent-architecture-2026-05-29.md
+  git commit -m "docs(research): agent architecture analysis + unification proposal (TASK-31)"
+  git push origin main
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-31:agent-arch-research|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-32: Відновити DRAKON Logic редактор у меню /agents
+
+```
+[ ] TASK-32
+
+META: В меню /agents є вкладка "DRAKON Logic" з DrakonEditor (додано в eac7908).
+      Код є в src/ та .lovable/src/ на рядку 274+285 AgentStudioPage.tsx.
+      Проблема: редактор не відображається або відображається порожнім.
+      Знайти root cause та виправити.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH to 192.168.3.184 for reading/editing files.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай AgentStudioPage.tsx повністю
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/src/pages/AgentStudioPage.tsx"
+
+  Шукай:
+  a) Чи є DRAKON Logic у TabsList? (рядки ~270-290)
+  b) Чи defaultValue Tabs включає DRAKON або перший таб?
+  c) Умова рендерингу: чи є if/&&/hidden на DrakonEditor?
+  d) activeDiagram — звідки береться? Чи може бути null?
+
+STEP 3: Перевір чи DrakonEditor рендериться без activeDiagram
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/src/components/drakon/DrakonEditor.tsx | head -60"
+
+  Якщо DrakonEditor вимагає non-null diagram — додай fallback:
+  {activeDiagram ? <DrakonEditor ... /> : <EmptyState text="Обери агента зі списку" />}
+
+STEP 4: Перевір чи вкладка видима в TabsList
+  Знайди де TabsList в AgentStudioPage.tsx та переконайся що:
+  - TabsTrigger value="drakon-logic" (або схоже) є в списку
+  - Не обгорнуто в умовний рендеринг що ховає при певних умовах
+
+STEP 5: Перевір sync .lovable/src/ з src/
+  diff src/pages/AgentStudioPage.tsx .lovable/src/pages/AgentStudioPage.tsx
+  Якщо різниця — синхронізуй:
+  cp src/pages/AgentStudioPage.tsx .lovable/src/pages/AgentStudioPage.tsx
+
+  Те саме для DrakonEditor:
+  diff src/components/drakon/DrakonEditor.tsx .lovable/src/components/drakon/DrakonEditor.tsx
+  cp src/components/drakon/DrakonEditor.tsx .lovable/src/components/drakon/DrakonEditor.tsx
+
+STEP 6: Виправи знайдену проблему (залежно від результатів STEP 2-5)
+  Типові виправлення:
+  A) activeDiagram null → додай fallback повідомлення
+  B) Вкладка прихована умовою → прибери умову або виправ логіку
+  C) .lovable/src/ не синхронізовано → cp (вже в STEP 5)
+
+STEP 7: Trigger CF Pages rebuild (важливо!)
+  CF Pages будує з .lovable/src/ тому push до main автоматично тригерить deploy.
+  Після push перевір: https://ai-drakon-scaffolder.pages.dev/agents
+  (чекай 2-3 хвилини на деплой)
+
+STEP 8: Commit
+  git add src/pages/AgentStudioPage.tsx .lovable/src/pages/AgentStudioPage.tsx
+  git add src/components/drakon/ .lovable/src/components/drakon/
+  git commit -m "fix(agents): restore DRAKON Logic editor tab visibility (TASK-32)"
+  git push origin main
+
+VERIFICATION:
+  Перевір що на https://ai-drakon-scaffolder.pages.dev/agents є вкладка "DRAKON Logic"
+  та DrakonEditor рендериться (не порожній і не hidden).
+  Якщо потрібно — зроби скріншот через curl або опиши стан в diary.
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-32:drakon-editor-restored|ROOT_CAUSE:<що знайшов>|DONE|commit:<hash>|***"
+```
