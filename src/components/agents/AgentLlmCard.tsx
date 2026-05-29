@@ -112,11 +112,14 @@ chipText: "text-emerald-600 dark:text-emerald-400",
 
 function readFromStorage(agentId: string) {
   if (typeof window === "undefined") return null;
+  const isAgyAgent = agentId && (
+    agentId.includes("drakon") || agentId.includes("docs") || agentId.includes("architect")
+  );
   const protocol =
-    (localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | "agy" | null) || "agy";
+    (localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | "agy" | null) || (isAgyAgent ? "agy" : "openai");
   return {
     protocol,
-    baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || "",
+    baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || (isAgyAgent ? "https://agy.exodus.pp.ua" : ""),
     apiKey: localStorage.getItem(`${agentId}_llm_api_key`) || "freecc",
     model: localStorage.getItem(`${agentId}_llm_model`) || "",
     maxTokens: localStorage.getItem(`${agentId}_llm_max_tokens`) || "",

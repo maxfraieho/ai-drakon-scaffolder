@@ -71,7 +71,16 @@ anthropic: [
 agy: [
 "gemini-2.5-pro",
 "gemini-2.5-flash",
+"gemini-3.5-flash-medium",
+"gemini-3.5-flash-low",
+"gemini-2.5-flash-thinking",
+"gemini-2.5-flash-lite",
 "gemini-3.1-pro-high",
+"gemini-3.1-pro-low",
+"gemini-3-flash",
+"gemini-3.1-flash-lite",
+"gemini-1.5-pro",
+"gemini-1.5-flash",
 "claude-sonnet-4-6",
 "claude-opus-4-6-thinking",
 ],
@@ -103,11 +112,14 @@ chipText: "text-emerald-600 dark:text-emerald-400",
 
 function readFromStorage(agentId: string) {
   if (typeof window === "undefined") return null;
+  const isAgyAgent = agentId && (
+    agentId.includes("drakon") || agentId.includes("docs") || agentId.includes("architect")
+  );
   const protocol =
-    (localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | "agy" | null) || "agy";
+    (localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | "agy" | null) || (isAgyAgent ? "agy" : "openai");
   return {
     protocol,
-    baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || "",
+    baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || (isAgyAgent ? "https://agy.exodus.pp.ua" : ""),
     apiKey: localStorage.getItem(`${agentId}_llm_api_key`) || "freecc",
     model: localStorage.getItem(`${agentId}_llm_model`) || "",
     maxTokens: localStorage.getItem(`${agentId}_llm_max_tokens`) || "",
