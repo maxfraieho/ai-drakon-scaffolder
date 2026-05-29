@@ -64,6 +64,60 @@ python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-56:wo
 
 ---
 
+## TASK-57: Variant A — Code+Notes відв'язати від activeProject (AGY3)
+
+**Status:** [ ] pending
+**Виконавець:** AGY3 (192.168.3.162)
+**!!IMPORTANT!!** Run locally on AGY3 Termux — НЕ SSH до 192.168.3.184
+**Plan:** `docs/plans/2026-05-29-variant-a-single-github-config.md` — читай повністю перед стартом
+
+### Контекст
+Variant A: Code tab і Notes/Docs tab використовують тільки `getGithubConfig()` з Settings.
+НЕ `activeProject`. ProjectSelector залишається для Agents/Pipeline/Diagrams.
+
+Проект: `~/workspace/ai-drakon-scaffolder`
+Після кожного `src/` файлу — одразу `cp src/X .lovable/src/X` і `diff` щоб перевірити.
+
+### 4 файли для зміни:
+
+**1. src/pages/CodePage.tsx** (+ .lovable/src/pages/CodePage.tsx)
+- Видалити `import { useProject }` і `const { activeProject } = useProject()`
+- Видалити `const projectGh = activeProject?.github`
+- `owner = ghCfg.owner || ""`, `repo = ghCfg.repo || ""`, `branch = ghCfg.branch || "main"`
+- Текст порожнього стану: "Налаштуйте GitHub у вкладці Налаштування"
+
+**2. src/components/docs/NotesTab.tsx** (+ .lovable копія)
+- `import { useProject }` → `import { getGithubConfig } from "@/lib/settings-storage"`
+- `const { activeProject } = useProject()` → `const ghRepo = getGithubConfig().repo || ""`
+- Всі `activeProject?.slug` → `ghRepo || undefined`
+
+**3. src/components/docs/NotesGraphTab.tsx** (+ .lovable копія)
+- Аналогічно: useProject → getGithubConfig, activeProject?.slug → ghRepo
+
+**4. src/components/docs/DocsFilesTab.tsx** (+ .lovable копія)
+- Аналогічно
+
+### Верифікація:
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+grep "useProject" src/pages/CodePage.tsx src/components/docs/NotesTab.tsx src/components/docs/NotesGraphTab.tsx src/components/docs/DocsFilesTab.tsx && echo "BUG: useProject still present" || echo "OK: all removed"
+diff src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx && echo "CodePage SYNC OK"
+diff src/components/docs/NotesTab.tsx .lovable/src/components/docs/NotesTab.tsx && echo "NotesTab SYNC OK"
+```
+
+### Commits (4 окремих + tasks):
+```bash
+git commit -m "fix(code-tab): use global github settings only, remove activeProject (Variant A)"
+git commit -m "fix(notes-tab): use global github repo for project scope (Variant A)"  
+git commit -m "fix(notes-graph): use global github repo for graph scope (Variant A)"
+git commit -m "fix(docs-files-tab): use global github repo for docs scope (Variant A)"
+git commit -m "chore(tasks): mark TASK-57 done — Variant A"
+git push origin main
+python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-57:variant-a|DONE|4-files-8-edits|★★★"
+```
+
+---
+
 ## OVERNIGHT SPRINT (2026-05-28)
 
 ## Статуси
