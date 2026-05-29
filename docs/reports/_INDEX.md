@@ -4,7 +4,7 @@ tags:
   - status:canonical
   - format:index
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-05-29
 tier: 1
 title: "Звіти та аудити — Індекс"
 lang: uk
@@ -17,7 +17,8 @@ lang: uk
 | Файл | Опис | Статус | Tier |
 |------|------|--------|------|
 | [[reports/bug_catalog]] | Каталог багів та невідповідностей | active | 3 |
-| [[reports/sync-update-2026-05-29]] | Спринт 2026-05-29: синхронізація Claude↔AGY | active | 3 | | Каталог виявлених багів та невідповідностей інтерфейсу | active | 3 |
+| [[reports/sync-update-2026-05-29]] | Спринт 2026-05-29: синхронізація Claude↔AGY | active | 3 |
+| [[reports/context-search-research-2026-05-29]] | Дослідження варіантів контекстного пошуку для агентів | active | 2 |
 
 ## Семантичні зв'язки
 **Батьківський індекс:** [[reports/_INDEX]]
