@@ -3928,3 +3928,91 @@ DIARY (!!run locally!!):
     "SESSION:2026-05-29|TASK-43:sharon-handoff|docs/handoff/sharon-uav-handoff.md|DONE|commit:<hash>|***"
 ```
 
+---
+
+### TASK-44: Project Context Hub — дизайн UX та доповнення до handoff
+
+```
+[ ] TASK-44
+
+META: Дослідити та описати концепцію "Project Context Hub" —
+      єдиного джерела правди для проекту в AI-DRAKON платформі.
+      Ключова ідея Q: обрав проект → автоматично підтягнувся репозиторій,
+      KB, агенти, пайплайни → все доступно на всіх робочих просторах.
+      Зараз цього немає — кожен workspace ізольований.
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device.
+SSH до 192.168.3.184 для запису файлів. НЕ встановлюй pip пакети.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай поточний стан
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cat ~/workspace/ai-drakon-scaffolder/docs/handoff/sharon-uav-handoff.md"
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "grep -r 'project' ~/workspace/ai-drakon-scaffolder/services/shared/drakon_shared/ --include='*.py' -l"
+
+STEP 3: Напиши docs/handoff/project-context-hub.md
+  Файл має розкривати відповіді на питання:
+
+  A) ЯК МАЄ ПРАЦЮВАТИ (UX flow):
+     1. Користувач відкриває AI-DRAKON платформу
+     2. Вибирає або створює проект (slug)
+     3. Вказує GitHub repo URL → платформа клонує/синкає код
+     4. Автоматично: індексація коду в KB, завантаження агентів, пайплайнів
+     5. Всі workspace (агент-чат, DRAKON-редактор, code viewer) бачать ОДИН проект
+     6. Зміна проекту → все перемикається разом
+
+  B) СТРУКТУРА ДАНИХ проекту:
+     ~/projects/{slug}/
+       config.json         ← slug, repo_url, github_token, created_at
+       repo/               ← git clone репозиторію (auto-sync)
+       agents/             ← агенти та їх пайплайни
+         {name}/
+           pipeline.drakon.json
+           kb/             ← база знань (MD файли)
+       .last_sync          ← timestamp останньої синхронізації
+
+  C) ЯКИХ КОМПОНЕНТІВ НЕ ВИСТАЧАЄ (gap analysis):
+     - ProjectSelector компонент (глобальний стан)
+     - Auto-clone/sync сервіс для GitHub repo
+     - Code indexer: repo → KB chunks (для search_kb)
+     - Global project context (React context або Zustand store)
+     - API endpoint: POST /projects/{slug}/sync (тригер ресинку)
+
+  D) ПРОПОЗИЦІЯ DRAKON-СХЕМИ для логіки "Project Load":
+     Описати словами (не JSON) DRAKON flow:
+     START → вибір проекту → repo є? → [Ні] clone → [Так] git pull
+           → індексація коду → завантаження агентів → активація контексту → END
+
+  E) ПРІОРИТЕТ РЕАЛІЗАЦІЇ (що робити спочатку):
+     1. ProjectContext (React) — глобальний стан slug
+     2. /projects/{slug}/config API — CRUD конфігу
+     3. /projects/{slug}/sync — тригер GitHub sync
+     4. CodeIndexer (services/shared/) — repo → KB
+     5. UI: ProjectSelector в топ-баре
+
+STEP 4: Запиши файл
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << INNEREOF
+content = open("/dev/stdin").read()
+open("/home/vokov/workspace/ai-drakon-scaffolder/docs/handoff/project-context-hub.md","w").write(content)
+print("written")
+INNEREOF' << FILEEOF
+<ВМІСТ ФАЙЛУ ЩО AGY НАПИСАВ ВИЩЕ>
+FILEEOF
+
+  АЛЬТЕРНАТИВА (простіше):
+  Запиши контент у змінну і використай python3 -c або tee:
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cat > ~/workspace/ai-drakon-scaffolder/docs/handoff/project-context-hub.md" << 'DOCEOF'
+  <контент>
+  DOCEOF
+
+STEP 5: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cd ~/workspace/ai-drakon-scaffolder &&      git add docs/handoff/project-context-hub.md &&      git commit -m 'docs(handoff): add project-context-hub design — single source of truth (TASK-44)' &&      git push origin main"
+
+STEP 6: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184     "cd ~/workspace/ai-drakon-scaffolder &&      sed -i 's/^\[ \] TASK-44/[x] TASK-44/' development/TASKS.md &&      git add development/TASKS.md &&      git commit -m 'chore(tasks): TASK-44 done — project context hub design' &&      git push origin main"
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy     "SESSION:2026-05-29|TASK-44:project-context-hub|design+gaps+drakon-flow|DONE|commit:<hash>|***"
+```
+
