@@ -1768,7 +1768,7 @@ DIARY: python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK
 ### TASK-30: Update collaboration docs — full methodology with wiki links
 
 ```
-[ ] TASK-30
+[x] TASK-30
 
 META: Update docs/COLLABORATION.md and docs/kb/sync-hooks-methodology.md
       with complete, detailed description of the Claude+AGY multi-agent workflow,
