@@ -4891,7 +4891,7 @@ print('done')
 
 ## TASK-54: fix — sync TASK-53 fixes to .lovable/src/ (Cloudflare Pages builds from there)
 
-**Status:** [ ] pending
+**Status:** [x] done
 **Agent:** agt-ogy3 (AGY3 tablet)
 **CRITICAL:** Cloudflare Pages builds from .lovable/ NOT from src/
 **Context:** IMPORTANT!! Run locally on Termux. NO build needed.
