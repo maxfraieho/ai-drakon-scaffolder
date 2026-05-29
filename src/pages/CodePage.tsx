@@ -176,9 +176,8 @@ export default function CodePage() {
   const ghCfg = getGithubConfig();
   const token = ghCfg.token;
   const projectGh = activeProject?.github;
-  const owner = projectGh?.owner || ghCfg.owner || ghCfg.repo.split("/")[0] || "";
-  const repoRaw = ghCfg.repo.includes("/") ? ghCfg.repo.split("/")[1] : ghCfg.repo;
-  const repo = projectGh?.repo || repoRaw;
+  const owner = projectGh?.owner || "";
+  const repo = projectGh?.repo || "";
   const branch = projectGh?.branch || ghCfg.branch || "main";
 
   const [code, setCode] = useState("");
