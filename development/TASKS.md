@@ -3933,7 +3933,7 @@ DIARY (!!run locally!!):
 ### TASK-44: Project Context Hub — дизайн UX та доповнення до handoff
 
 ```
-[ ] TASK-44
+[x] TASK-44
 
 META: Дослідити та описати концепцію "Project Context Hub" —
       єдиного джерела правди для проекту в AI-DRAKON платформі.
