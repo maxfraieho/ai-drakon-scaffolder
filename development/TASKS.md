@@ -1606,30 +1606,36 @@ DIARY:
 
 ---
 
-### TASK-26: Документувати SYNC_METHODOLOGY.md → drn-ai notebook
+### TASK-26: Sync SYNC_METHODOLOGY.md → NotebookLM drn-ai
 
 ```
 [ ] TASK-26
 
-МЕТА: Синхронізувати новий документ development/SYNC_METHODOLOGY.md
-      в NotebookLM notebook drn-ai щоб він був доступний для RAG.
+META: Add development/SYNC_METHODOLOGY.md to NotebookLM notebook drn-ai.
 
-КРОКИ:
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device.
+Do NOT SSH to 192.168.3.184. Do NOT test MCP connections. Do NOT run test scripts.
+mempalace is installed locally here — use it directly.
 
-КРОК 1: git pull + прочитай файл
+STEP 1: git pull (local)
   cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Read file
   cat development/SYNC_METHODOLOGY.md
 
-КРОК 2: Додай в NotebookLM
-  notebooklm_add_source_text(
-    notebook_id="6139067a-5776-4b29-8869-7c9f9aed475c",
-    title="SYNC_METHODOLOGY 2026-05-29",
-    content=<вміст файлу>
-  )
+STEP 3: Add to NotebookLM via MCP tool (agy has notebooklm MCP configured)
+  notebook_id = "6139067a-5776-4b29-8869-7c9f9aed475c"
+  title = "SYNC_METHODOLOGY 2026-05-29"
+  content = (full content of development/SYNC_METHODOLOGY.md)
 
-КРОК 3: Diary
-  python3 -m mempalace diary write --agent agt-ogy \
-    "SESSION:2026-05-29|TASK-26:sync-methodology-nlm|DONE|★★"
+STEP 4: Write diary — run directly in Termux, NO SSH:
+  python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-26:sync-methodology-nlm|DONE|***"
+
+STEP 5: Mark done and push
+  sed -i 's/^\[ \] TASK-26/[x] TASK-26/' development/TASKS.md
+  git add development/TASKS.md
+  git commit -m "chore(tasks): TASK-26 done — SYNC_METHODOLOGY added to drn-ai NLM"
+  git push origin main
 ```
 
 
