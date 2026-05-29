@@ -2110,3 +2110,137 @@ DIARY (!!run locally on THIS device!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-33:context-search-research|RECOMMENDATION:<варіант>|DONE|commit:<hash>|***"
 ```
+
+---
+
+## SPRINT 2026-05-29E — Unified Agent Framework
+
+### TASK-34: Написати план уніфікованого LangGraph-DRAKON фреймворку
+
+```
+[ ] TASK-34
+
+META: На основі досліджень TASK-31 та TASK-33 написати детальний план реалізації
+      уніфікованого фреймворку для 3 агентів (architect, docs, drakon).
+      Результат: docs/plans/2026-05-29-unified-agent-framework.md
+
+КОНТЕКСТ (прочитай перед написанням плану):
+  - TASK-31 звіт: docs/reports/agent-architecture-2026-05-29.md
+  - TASK-33 звіт: docs/reports/context-search-research-2026-05-29.md
+  - Існуючий план: docs/plans/2026-05-21-drakon-langgraph-runtime.md
+  - graph_loader.py: services/architect-agent/pipeline/graph_loader.py
+  - crisis-bot KB: services/crisis-bot/knowledge_base/ (BM25 → для референсу)
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 тільки для читання файлів.
+
+STEP 1: git pull + прочитай контекст
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/docs/reports/agent-architecture-2026-05-29.md"
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/docs/reports/context-search-research-2026-05-29.md | head -60"
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/architect-agent/pipeline/graph_loader.py"
+
+STEP 2: Напиши план docs/plans/2026-05-29-unified-agent-framework.md
+
+  ОБОВ'ЯЗКОВИЙ ЗАГОЛОВОК (word for word):
+  ---
+  tags: [domain:plan, status:active, format:plan, tier:2]
+  created: 2026-05-29
+  updated: 2026-05-29
+  title: "Unified LangGraph-DRAKON Agent Framework — Implementation Plan"
+  lang: uk
+  ---
+
+  # Unified LangGraph-DRAKON Agent Framework
+
+  > **Для Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans
+
+  **Goal:** Три агенти (architect :8766, docs :8767, drakon :8765) переходять на
+  єдиний LangGraph-DRAKON фреймворк. Редагування логіки агента в DRAKON-редакторі
+  /agents UI → автоматично змінює реальне виконання агента через LangGraph.
+
+  **Architecture:**
+  - services/shared/ — спільний шар (graph_loader, kb_client, llm_client, ai_memory)
+  - Per-agent registries.py — NODE_REGISTRY зі специфічними функціями агента
+  - pipelines/*.drakon.json — логіка агента як DRAKON IR (єдине джерело правди)
+  - graph_loader(ir, node_registry) → LangGraph StateGraph → виконання
+
+  **Tech Stack:** Python 3.11, LangGraph, FastAPI, SQLite FTS5, rank-bm25,
+  ai-memory MCP (POST /mcp memory_query), drakonwidget.js frontend
+
+  ---
+
+  ПЛАН МАЄ МІСТИТИ ЦІ ЗАДАЧІ (у такому порядку):
+
+  ### Task 1: Створити services/shared/ структуру
+  Files to create:
+    services/shared/__init__.py
+    services/shared/graph_loader.py  (перенести з architect-agent, додати node_registry param)
+    services/shared/kb_client.py     (SQLite FTS5, з звіту TASK-33 — прототип є!)
+    services/shared/llm_client.py    (єдиний клієнт: AGY / OpenAI / Anthropic)
+    services/shared/ai_memory.py     (wrapper для ai-memory MCP: POST /mcp memory_query)
+
+  Для graph_loader.py — єдина зміна:
+    def load_graph_from_ir(ir: dict, node_registry: dict, router_registry: dict, ...) -> Any:
+    (замість глобальних NODE_REGISTRY / ROUTER_REGISTRY)
+
+  Для kb_client.py — взяти прототип з TASK-33 звіту (SQLite FTS5, unicode61).
+
+  Для ai_memory.py — wrapper для MCP endpoint:
+    def query_memory(query: str, top_k: int = 5) -> list[str]:
+      # POST http://192.168.3.184:49374/mcp
+      # {"jsonrpc":"2.0","method":"tools/call","params":{"name":"memory_query","arguments":{"query":query}}}
+
+  ### Task 2: architect-agent registries.py
+  File: services/architect-agent/registries.py
+  Зміст: NODE_REGISTRY, ROUTER_REGISTRY, STATE_REGISTRY
+  (перенести з graph_loader.py, не видаляти звідти — просто імпортувати)
+
+  ### Task 3: docs-agent registries.py + перший pipeline
+  Files:
+    services/docs-agent/registries.py   ← нові node functions
+    services/docs-agent/pipelines/docs_pipeline.drakon.json
+  Мінімальний pipeline для docs-agent:
+    header → action:load_docs_kb → action:search_docs → action:generate_response → end
+
+  ### Task 4: drakon-agent registries.py + перший pipeline
+  Files:
+    services/drakon-agent/registries.py
+    services/drakon-agent/pipelines/analysis_pipeline.drakon.json
+  Мінімальний pipeline:
+    header → action:analyze_code → action:generate_ir → action:validate_ir → end
+
+  ### Task 5: Оновити всі три main.py
+  Кожен main.py при старті:
+    1. Сканує pipelines/*.drakon.json
+    2. Компілює через shared.graph_loader.load_graph_from_ir(ir, agent.registries.NODE_REGISTRY)
+    3. При PUT /graph-pipelines/{name} — перекомпільовує граф
+  
+  ### Task 6: Оновити architect-agent для hot-reload
+  При збереженні DRAKON IR через PUT /graph-pipelines/{name}:
+    → зберегти pipelines/{name}.drakon.json
+    → перекомпілювати граф
+    → підтвердити через GET /graph-pipelines/{name}/status
+
+  ### Task 7: Тести
+  Для кожного агента:
+    - test_graph_loads: graph_loader compiles без помилок
+    - test_kb_search: kb_client.search("query") повертає results
+    - test_pipeline_execute: POST /execute повертає SSE stream
+
+  ### Task 8: Документація + commit
+  Оновити docs/COLLABORATION.md — додати секцію про LangGraph-DRAKON runtime.
+  Commit: feat(agents): unified LangGraph-DRAKON framework (TASK-34)
+
+STEP 3: Commit plan file
+  git add docs/plans/2026-05-29-unified-agent-framework.md
+  git commit -m "docs(plan): unified LangGraph-DRAKON agent framework implementation plan"
+  git push origin main
+
+DIARY (!!run locally!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-34:unified-framework-plan|DONE|commit:<hash>|KB:SQLite-FTS5|framework:LangGraph|***"
+```
