@@ -224,35 +224,37 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
         </button>
 
         <div className="ml-auto flex items-center gap-0.5">
-          <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <SheetTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Чат з агентом"
-                    className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
-                  >
-                    <Bot className="h-4 w-4" />
-                  </button>
-                </SheetTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="font-mono text-[11px]">Чат з агентом</TooltipContent>
-            </Tooltip>
-            <SheetContent
-              side="right"
-              className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)]"
-            >
-              <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
-                <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                  AI-агенти
-                </SheetTitle>
-              </SheetHeader>
-              <div className="h-[calc(100%-3.25rem)]">
-                <AgentChatPanel className="h-full" />
-              </div>
-            </SheetContent>
-          </Sheet>
+          {!location.pathname.startsWith("/agents") && (
+            <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+              <Tooltip delayDuration={300}>
+                <TooltipTrigger asChild>
+                  <SheetTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Чат з агентом"
+                      className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+                    >
+                      <Bot className="h-4 w-4" />
+                    </button>
+                  </SheetTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="font-mono text-[11px]">Чат з агентом</TooltipContent>
+              </Tooltip>
+              <SheetContent
+                side="right"
+                className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)]"
+              >
+                <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
+                  <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                    AI-агенти
+                  </SheetTitle>
+                </SheetHeader>
+                <div className="h-[calc(100%-3.25rem)]">
+                  <AgentChatPanel className="h-full" />
+                </div>
+              </SheetContent>
+            </Sheet>
+          )}
 
           <Tooltip delayDuration={300}>
             <TooltipTrigger asChild>
