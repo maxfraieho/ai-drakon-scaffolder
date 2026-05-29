@@ -1929,7 +1929,7 @@ DIARY (!!run locally!!):
 ### TASK-32: Відновити DRAKON Logic редактор у меню /agents
 
 ```
-[ ] TASK-32
+[x] TASK-32
 
 META: В меню /agents є вкладка "DRAKON Logic" з DrakonEditor (додано в eac7908).
       Код є в src/ та .lovable/src/ на рядку 274+285 AgentStudioPage.tsx.

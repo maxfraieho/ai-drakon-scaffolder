@@ -260,7 +260,7 @@ export default function AgentStudioPage() {
                 opacity: centerTab === "graph" ? 1 : 0.6,
               }}
             >
-              Граф
+              DRAKON Logic
             </button>
             <button
               onClick={() => setCenterTab("logic")}
@@ -271,7 +271,7 @@ export default function AgentStudioPage() {
                 opacity: centerTab === "logic" ? 1 : 0.6,
               }}
             >
-              DRAKON Logic
+              JSON
             </button>
           </div>
 
