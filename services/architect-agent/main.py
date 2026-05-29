@@ -1,5 +1,10 @@
 import os
 import sys
+# Add repo root to sys.path so we can import services.shared
+_REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
+
 from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
@@ -38,10 +43,12 @@ from pipeline_route import router as pipeline_router
 from kb_route import router as kb_router
 from drakon_shared.pipeline_route import router as pipeline_config_router
 from graph_pipeline_route import router as graph_pipeline_router
+from project_pipeline_route import router as project_router
 app.include_router(pipeline_router)
 app.include_router(kb_router)
 app.include_router(pipeline_config_router)
 app.include_router(graph_pipeline_router)
+app.include_router(project_router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 

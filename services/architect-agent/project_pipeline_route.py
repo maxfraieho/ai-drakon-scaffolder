@@ -1,0 +1,120 @@
+"""Per-project agent pipeline API for AI-DRAKON developer tool.
+Manages pipeline storage and execution scoped to project+agent.
+"""
+import json
+import os
+from pathlib import Path
+from typing import Any
+
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+
+from services.shared.graph_loader import load_graph_from_ir
+
+PROJECTS_BASE = Path(os.getenv("DRAKON_PROJECTS_DIR", Path.home() / "projects"))
+
+router = APIRouter(prefix="/projects", tags=["project-pipelines"])
+
+
+class PipelinePayload(BaseModel):
+    ir: dict
+    description: str = ""
+
+
+def _pipeline_path(slug: str, agent: str) -> Path:
+    p = PROJECTS_BASE / slug / "agents" / agent
+    p.mkdir(parents=True, exist_ok=True)
+    return p / "pipeline.drakon.json"
+
+
+def _kb_dir(slug: str, agent: str) -> Path:
+    p = PROJECTS_BASE / slug / "agents" / agent / "kb"
+    p.mkdir(parents=True, exist_ok=True)
+    return p
+
+
+@router.get("/{slug}/agents")
+def list_agents(slug: str):
+    """List all agents for a project."""
+    project_dir = PROJECTS_BASE / slug / "agents"
+    if not project_dir.exists():
+        return {"slug": slug, "agents": []}
+    agents = []
+    for d in sorted(project_dir.iterdir()):
+        if d.is_dir():
+            pipeline_file = d / "pipeline.drakon.json"
+            agents.append({
+                "name": d.name,
+                "has_pipeline": pipeline_file.exists(),
+                "kb_docs": len(list((d / "kb").glob("*.md"))) if (d / "kb").exists() else 0,
+            })
+    return {"slug": slug, "agents": agents}
+
+
+@router.get("/{slug}/agents/{agent}/pipeline")
+def get_pipeline(slug: str, agent: str):
+    """Get pipeline IR for a project agent."""
+    path = _pipeline_path(slug, agent)
+    if not path.exists():
+        raise HTTPException(404, f"No pipeline for {slug}/{agent}")
+    return json.loads(path.read_text())
+
+
+@router.put("/{slug}/agents/{agent}/pipeline")
+def save_pipeline(slug: str, agent: str, payload: PipelinePayload):
+    """Save pipeline IR and hot-compile to verify it's valid."""
+    path = _pipeline_path(slug, agent)
+    # Validate by compiling
+    try:
+        load_graph_from_ir(payload.ir, {}, {}, {})
+    except Exception as e:
+        raise HTTPException(400, f"Pipeline compilation error: {e}")
+    path.write_text(json.dumps(payload.ir, indent=2, ensure_ascii=False))
+    return {"saved": str(path), "valid": True}
+
+
+@router.get("/{slug}/agents/{agent}/status")
+def pipeline_status(slug: str, agent: str):
+    """Check if pipeline exists and is compilable."""
+    path = _pipeline_path(slug, agent)
+    if not path.exists():
+        return {"status": "no_pipeline"}
+    try:
+        ir = json.loads(path.read_text())
+        load_graph_from_ir(ir, {}, {}, {})
+        return {"status": "ok", "nodes": len(ir.get("items", {}))}
+    except Exception as e:
+        return {"status": "error", "error": str(e)}
+
+
+@router.post("/{slug}/agents/{agent}/execute")
+async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
+    """Execute pipeline with SSE streaming output."""
+    path = _pipeline_path(slug, agent)
+    if not path.exists():
+        raise HTTPException(404, f"No pipeline for {slug}/{agent}")
+
+    ir = json.loads(path.read_text())
+    state = {
+        "input": input_data.get("input", ""),
+        "query": input_data.get("query", ""),
+        "project_slug": slug,
+        "agent_name": agent,
+        "context": "",
+    }
+
+    async def stream():
+        import asyncio
+        try:
+            graph = load_graph_from_ir(ir, {}, {}, {})
+            yield f"data: {{\"status\": \"started\", \"agent\": \"{agent}\"}}\n\n"
+            for step in graph.stream(state):
+                node_name = list(step.keys())[0] if step else "unknown"
+                yield f"data: {{\"node\": \"{node_name}\", \"status\": \"done\"}}\n\n"
+                await asyncio.sleep(0)
+            yield f"data: {{\"status\": \"finished\"}}\n\n"
+        except Exception as e:
+            yield f"data: {{\"status\": \"error\", \"error\": \"{str(e)[:200]}\"}}\n\n"
+
+    return StreamingResponse(stream(), media_type="text/event-stream")
