@@ -4318,3 +4318,66 @@ DIARY:
     "SESSION:2026-05-29|TASK-47:ui-audit|pinchtab-findings|DONE|commit:<hash>|***"
 ```
 
+---
+
+### TASK-48: AGY phone — обробка звітів аудиту + перевірка ai-memory sync з AGY3
+
+```
+[ ] TASK-48
+
+META: AGY phone (POCCO C71) — проста задача паралельно з TASK-47.
+      1. Дочекатись коміту звіту від AGY3 (docs/reports/audit-2026-05-29.md)
+      2. Додати запис в reports/_INDEX.md
+      3. Перевірити ai-memory sync — чи AGY3 записав свою сесію
+      4. Записати підсумкове diary для сесії 2026-05-29
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device (AGY phone).
+SSH до 192.168.3.184 для файлів. НЕ встановлюй нічого.
+
+STEP 1: git pull та чекай audit-2026-05-29.md
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+  # Якщо файл ще не з'явився — зачекай 30 секунд і pull ще раз
+  ls ~/workspace/ai-drakon-scaffolder/docs/reports/audit-2026-05-29.md 2>/dev/null \
+    && echo 'READY' || (sleep 30 && git pull origin main --quiet)
+
+STEP 2: Додай audit звіт в reports/_INDEX.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << PYEOF
+from pathlib import Path
+idx = Path('/home/vokov/workspace/ai-drakon-scaffolder/docs/reports/_INDEX.md')
+content = idx.read_text(encoding='utf-8')
+entry = '| [[reports/audit-2026-05-29]] | UI аудит через PinchTab — TASK-45/46/47 findings | active | 3 |'
+if 'audit-2026-05-29' not in content:
+    content = content.replace('## Семантичні', entry + chr(10) + '## Семантичні')
+    idx.write_text(content, encoding='utf-8')
+    print('_INDEX updated')
+else: print('already exists')
+PYEOF'
+
+STEP 3: Перевір ai-memory сервер — чи AGY3 записав свою сесію
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "curl -s http://localhost:49374/search?q=TASK-47 2>/dev/null | python3 -m json.tool | head -20 || \
+     curl -s http://localhost:49374/web 2>/dev/null | head -5"
+
+  # Очікуваний результат: є запис від AGY3 про TASK-47
+  # Якщо немає — просто зафіксуй в diary що синк не відбувся
+
+STEP 4: Запиши підсумкове diary сесії 2026-05-29
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|END|TASKS-41-48|DONE|TASK-41:6tests|TASK-42:docs|TASK-43:sharon-handoff|TASK-44:hub-design|TASK-45:agents-fix|TASK-46:hub-P1|TASK-47:audit|TASK-48:sync-check|ai-memory:checked|***"
+
+STEP 5: Commit _INDEX
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add docs/reports/_INDEX.md && \
+     git commit -m 'docs(reports): add audit-2026-05-29 to _INDEX (TASK-48)' && \
+     git push origin main"
+
+STEP 6: Mark done
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-48/[x] TASK-48/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-48 done — reports index + ai-memory check' && \
+     git push origin main"
+```
+
