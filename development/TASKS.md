@@ -2579,3 +2579,304 @@ DIARY (!!run locally on THIS Termux device!!):
   python3 -m mempalace diary write --agent agt-ogy \
     "SESSION:2026-05-29|TASK-35:shared-layer|files:graph_loader+kb_client+llm_client+ai_memory|DONE|commit:<hash>|***"
 ```
+
+---
+
+### TASK-36: Task 2 — BUILT_IN_TOOLS registry + llm_node_factory + graph_loader update
+
+```
+[ ] TASK-36
+
+META: Створити серце системи: глобальний реєстр вбудованих tools + фабрика LLM-нод.
+      Оновити graph_loader.py для авто-розрізнення tool vs LLM-промпт.
+      План: docs/plans/2026-05-29-unified-agent-framework-v2.md Task 2
+
+!!IMPORTANT!!: Run ALL commands locally on THIS Termux device for diary.
+SSH до 192.168.3.184 для запису файлів на dev server.
+
+STEP 1: git pull
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+STEP 2: Прочитай поточний graph_loader
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cat ~/workspace/ai-drakon-scaffolder/services/shared/graph_loader.py"
+
+STEP 3: Створи services/shared/built_in_tools.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+content = """\"\"\"Built-in tools available to all AI-DRAKON agents across all projects.
+Add new tools here to make them available in the DRAKON editor node registry.
+\"\"\"
+from typing import Any
+from pathlib import Path
+
+
+def search_kb(state: dict) -> dict:
+    \"\"\"Search the project knowledge base. Uses state["query"] or state["input"].\"\"\"
+    from services.shared.kb_client import KBClient
+    slug = state.get("project_slug", "_default")
+    agent = state.get("agent_name", "default")
+    kb_dir = Path(f"/home/vokov/projects/{slug}/agents/{agent}/kb")
+    if not kb_dir.exists():
+        # fallback: search docs/kb/
+        kb_dir = Path("/home/vokov/workspace/ai-drakon-scaffolder/docs/kb")
+    kb = KBClient(":memory:")
+    if kb_dir.exists():
+        kb.index_documents(kb_dir)
+    query = state.get("query") or state.get("input", "")
+    results = kb.search(query, top_k=5) if query else []
+    context = "\\n\\n".join(results)
+    return {**state, "kb_results": results, "context": context}
+
+
+def analyze_code(state: dict) -> dict:
+    \"\"\"Analyze code using AST. Uses state["input"] as source code.\"\"\"
+    import ast
+    source = state.get("input", "")
+    try:
+        tree = ast.parse(source)
+        nodes = [type(n).__name__ for n in ast.walk(tree)]
+        summary = f"AST nodes: {len(nodes)}. Types: {set(list(nodes)[:10])}"
+    except SyntaxError as e:
+        summary = f"Syntax error: {e}"
+    return {**state, "code_analysis": summary, "output": summary}
+
+
+def generate_ir(state: dict) -> dict:
+    \"\"\"Generate minimal DRAKON IR from analysis result.\"\"\"
+    analysis = state.get("code_analysis", state.get("input", ""))
+    ir = {
+        "name": state.get("agent_name", "generated"),
+        "items": {
+            "h": {"type": "header", "content": "Generated", "one": "n1"},
+            "n1": {"type": "action", "content": analysis[:50], "one": "end"},
+            "end": {"type": "end"}
+        }
+    }
+    import json
+    return {**state, "generated_ir": ir, "output": json.dumps(ir, ensure_ascii=False)}
+
+
+def save_to_project(state: dict) -> dict:
+    \"\"\"Save output to project storage.\"\"\"
+    slug = state.get("project_slug", "_default")
+    agent = state.get("agent_name", "default")
+    output = state.get("output", str(state))
+    import json, datetime
+    out_dir = Path(f"/home/vokov/projects/{slug}/agents/{agent}/results")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_file = out_dir / f"result_{ts}.json"
+    out_file.write_text(json.dumps({"output": output, "state": str(state)[:500]}, ensure_ascii=False))
+    return {**state, "saved_to": str(out_file)}
+
+
+BUILT_IN_TOOLS: dict[str, Any] = {
+    "search_kb":      search_kb,
+    "analyze_code":   analyze_code,
+    "generate_ir":    generate_ir,
+    "save_to_project": save_to_project,
+}
+"""
+with open("/home/vokov/workspace/ai-drakon-scaffolder/services/shared/built_in_tools.py", "w") as f:
+    f.write(content)
+print("built_in_tools.py written")
+PYEOF'
+
+STEP 4: Створи services/shared/llm_node.py
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+content = """\"\"\"LLM node factory for AI-DRAKON agent pipelines.
+When DRAKON action content is not a tool name, it is treated as an LLM prompt.
+\"\"\"
+from typing import Any
+
+
+def llm_node_factory(prompt_template: str):
+    \"\"\"Returns a LangGraph-compatible node function that calls LLM with prompt_template.\"\"\"
+    from services.shared.llm_client import chat
+
+    def node(state: dict) -> dict:
+        context = state.get("context", "")
+        input_data = state.get("input") or state.get("query") or state.get("last_llm_result", "")
+        messages = [{
+            "role": "user",
+            "content": (
+                f"{prompt_template}\\n\\n"
+                f"Input: {str(input_data)[:2000]}\\n"
+                f"Context: {str(context)[:1000]}"
+            )
+        }]
+        result = chat(messages, max_tokens=2048)
+        return {**state, "output": result, "last_llm_result": result}
+
+    node.__name__ = f"llm_{abs(hash(prompt_template)):08x}"
+    node.__doc__ = prompt_template[:80]
+    return node
+"""
+with open("/home/vokov/workspace/ai-drakon-scaffolder/services/shared/llm_node.py", "w") as f:
+    f.write(content)
+print("llm_node.py written")
+PYEOF'
+
+STEP 5: Оновити graph_loader.py — додати авто-розрізнення
+  Прочитай поточний graph_loader.py (STEP 2), потім додай _resolve_node_fn:
+
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/services/shared/graph_loader.py"
+content = open(fpath).read()
+
+# Додати імпорти на початок (після існуючих imports)
+import_addition = """from services.shared.built_in_tools import BUILT_IN_TOOLS
+from services.shared.llm_node import llm_node_factory
+"""
+
+# Додати функцію _resolve_node_fn перед load_graph_from_ir
+resolve_fn = '''
+
+def _resolve_node_fn(content: str, node_registry: dict) -> object:
+    """Resolve DRAKON action content to a callable node function.
+    Priority: node_registry > BUILT_IN_TOOLS > llm_node_factory(prompt)
+    """
+    if content in node_registry:
+        return node_registry[content]
+    if content in BUILT_IN_TOOLS:
+        return BUILT_IN_TOOLS[content]
+    return llm_node_factory(content)
+
+'''
+
+# Замінити реєстрацію action-нод в load_graph_from_ir
+old_registration = "            if fn:\n                  g.add_node(item[\"content\"], fn)"
+
+# Перевіримо що є в файлі
+print("Current content preview:")
+print(content[:200])
+print("...")
+# Знайдемо де реєструються ноди
+import re
+lines = content.split("\\n")
+for i, line in enumerate(lines):
+    if "add_node" in line:
+        print(f"Line {i}: {line}")
+PYEOF'
+
+STEP 6: Якщо STEP 5 показав де add_node — оновити graph_loader.py
+  Прочитай та оновіть файл services/shared/graph_loader.py:
+  1. Додати на початок (після from typing import Any):
+     from services.shared.built_in_tools import BUILT_IN_TOOLS
+     from services.shared.llm_node import llm_node_factory
+
+  2. Додати функцію _resolve_node_fn перед load_graph_from_ir
+
+  3. В Pass 1 (реєстрація action-нод) замінити:
+     Було:   fn = node_registry.get(item["content"])
+             if fn:
+                 g.add_node(item["content"], fn)
+     Стало:  fn = _resolve_node_fn(item["content"], node_registry)
+             g.add_node(item["content"], fn)
+
+  Використай python3 для patch:
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/services/shared/graph_loader.py"
+content = open(fpath).read()
+
+# Add imports
+if "BUILT_IN_TOOLS" not in content:
+    content = content.replace(
+        "from typing import Any",
+        "from typing import Any\n"
+        "# Built-in tools and LLM node factory (lazy import to avoid circular deps)\n"
+        "_BUILT_IN_TOOLS = None\n"
+        "_LLM_NODE_FACTORY = None\n"
+    )
+
+# Add _resolve_node_fn function
+resolve_fn = '''
+
+def _resolve_node_fn(content: str, node_registry: dict):
+    """Tool name -> tool fn; natural language -> LLM prompt node."""
+    global _BUILT_IN_TOOLS, _LLM_NODE_FACTORY
+    if _BUILT_IN_TOOLS is None:
+        from services.shared.built_in_tools import BUILT_IN_TOOLS as _T
+        from services.shared.llm_node import llm_node_factory as _F
+        _BUILT_IN_TOOLS = _T
+        _LLM_NODE_FACTORY = _F
+    if content in node_registry:
+        return node_registry[content]
+    if content in _BUILT_IN_TOOLS:
+        return _BUILT_IN_TOOLS[content]
+    return _LLM_NODE_FACTORY(content)
+
+'''
+
+if "_resolve_node_fn" not in content:
+    content = content.replace(
+        "def load_graph_from_ir(",
+        resolve_fn + "def load_graph_from_ir("
+    )
+
+# Update node registration to use _resolve_node_fn
+content = content.replace(
+    "            fn = node_registry.get(item[\"content\"])\n            if fn:\n                g.add_node(item[\"content\"], fn)",
+    "            fn = _resolve_node_fn(item[\"content\"], node_registry)\n            g.add_node(item[\"content\"], fn)"
+)
+
+open(fpath, "w").write(content)
+print("graph_loader.py patched")
+print("_resolve_node_fn in file:", "_resolve_node_fn" in open(fpath).read())
+PYEOF'
+
+STEP 7: Верифікація
+  sshpass -p "805235io." ssh vokov@192.168.3.184 'python3 - << '"'"'PYEOF'"'"'
+import sys
+sys.path.insert(0, "/home/vokov/workspace/ai-drakon-scaffolder")
+import ast
+
+# Syntax check all new files
+for f in [
+    "services/shared/built_in_tools.py",
+    "services/shared/llm_node.py",
+    "services/shared/graph_loader.py",
+]:
+    try:
+        ast.parse(open("/home/vokov/workspace/ai-drakon-scaffolder/" + f).read())
+        print(f"OK: {f}")
+    except SyntaxError as e:
+        print(f"SYNTAX ERROR in {f}: {e}")
+
+# Check built_in_tools content
+from services.shared.built_in_tools import BUILT_IN_TOOLS
+print("BUILT_IN_TOOLS:", list(BUILT_IN_TOOLS.keys()))
+
+# Check llm_node_factory
+from services.shared.llm_node import llm_node_factory
+fn = llm_node_factory("Test prompt")
+print("llm_node callable:", callable(fn), "name:", fn.__name__)
+
+# Check _resolve_node_fn in graph_loader
+from services.shared.graph_loader import _resolve_node_fn
+fn_tool = _resolve_node_fn("search_kb", {})
+fn_llm = _resolve_node_fn("Проаналізуй та відповідь", {})
+print("tool resolved:", fn_tool.__name__)
+print("llm resolved:", fn_llm.__name__)
+print("ALL OK")
+PYEOF'
+
+STEP 8: Commit
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     git add services/shared/built_in_tools.py services/shared/llm_node.py services/shared/graph_loader.py && \
+     git commit -m 'feat(shared): built_in_tools registry + llm_node_factory + graph_loader auto-resolve (Task 2)' && \
+     git push origin main && echo COMMITTED"
+
+STEP 9: Mark done + push TASKS.md
+  sshpass -p "805235io." ssh vokov@192.168.3.184 \
+    "cd ~/workspace/ai-drakon-scaffolder && \
+     sed -i 's/^\[ \] TASK-36/[x] TASK-36/' development/TASKS.md && \
+     git add development/TASKS.md && \
+     git commit -m 'chore(tasks): TASK-36 done — built_in_tools + llm_node_factory' && \
+     git push origin main"
+
+DIARY (!!run locally on THIS device, NO SSH!!):
+  python3 -m mempalace diary write --agent agt-ogy \
+    "SESSION:2026-05-29|TASK-36:built-in-tools+llm-node-factory|BUILT_IN_TOOLS:search_kb+analyze_code+generate_ir+save_to_project|DONE|commit:<hash>|***"
+```
