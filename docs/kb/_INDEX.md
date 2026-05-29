@@ -21,3 +21,4 @@ lang: uk
 
 ## Семантичні зв'язки
 **Батьківський індекс:** [[kb/_INDEX]]
+Оновлено 2026-05-29: додано [[kb/sync-hooks-methodology]] — hooks синхронізація Claude↔AGY.
