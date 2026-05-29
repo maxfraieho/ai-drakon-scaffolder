@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from
 "react";
 import { api } from "@/lib/api";
+import { listProjectsArch } from '@/lib/graph-pipeline-api';
 
 export interface ProjectGithub {
 owner: string;
@@ -73,8 +74,15 @@ localStorage.removeItem(STORAGE_KEY);
 const loadProjects = useCallback(async () => {
 setLoading(true);
 try {
-const result = await api.listProjects();
-const parsed = ((result.projects ?? []) as unknown[]).map(toProject).filter(Boolean) as Project[];
+const result = await listProjectsArch();
+const parsed = result.map((p) => ({
+  slug: p.slug,
+  name: p.name,
+  description: p.description,
+  hasDrakonIr: p.agents.length > 0,
+  hasDocs: false,
+  exists: true,
+})) as Project[];
 setProjects(parsed);
 const savedSlug = localStorage.getItem(STORAGE_KEY);
 const saved = savedSlug ? parsed.find((p) => p.slug === savedSlug) : null;

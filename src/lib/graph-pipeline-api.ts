@@ -156,3 +156,26 @@ export function streamProjectExecution(slug: string, agent: string, input: strin
   return new EventSource(`${base}/projects/${slug}/agents/${agent}/execute?input=${encodeURIComponent(input)}`);
 }
 
+export interface ProjectInfo {
+  slug: string;
+  name: string;
+  description: string;
+  repo_url: string;
+  has_repo: boolean;
+  agents: string[];
+}
+
+export async function listProjectsArch(): Promise<ProjectInfo[]> {
+  const r = await fetch(`${getArchitectBase()}/projects`);
+  if (!r.ok) throw new Error(`listProjectsArch: ${r.status}`);
+  return ((await r.json()).projects ?? []);
+}
+
+export async function createProjectArch(slug: string, name: string, description = '', repoUrl = '') {
+  const r = await fetch(`${getArchitectBase()}/projects/${encodeURIComponent(slug)}`,
+    { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, description, repo_url: repoUrl }) });
+  if (!r.ok) throw new Error(`createProjectArch: ${r.status}`);
+  return (await r.json()).project;
+}
+

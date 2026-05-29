@@ -34,6 +34,40 @@ def _kb_dir(slug: str, agent: str) -> Path:
     return p
 
 
+_PROJECTS_ROOT = PROJECTS_BASE
+_json = json
+
+@router.get('')
+def list_projects():
+    projects = []
+    if _PROJECTS_ROOT.exists():
+        for d in sorted(_PROJECTS_ROOT.iterdir()):
+            if d.is_dir():
+                config_file = d / 'config.json'
+                config = {}
+                if config_file.exists():
+                    try: config = _json.loads(config_file.read_text())
+                    except Exception: pass
+                agents = [a.name for a in (d/'agents').iterdir() if a.is_dir()] if (d/'agents').exists() else []
+                projects.append({'slug': d.name, 'name': config.get('name', d.name),
+                    'description': config.get('description', ''), 'repo_url': config.get('repo_url', ''),
+                    'has_repo': (d/'repo').exists(), 'agents': agents})
+    return {'projects': projects}
+
+@router.post('/{slug}')
+def create_project(slug: str, payload: dict = {}):
+    project_dir = _PROJECTS_ROOT / slug
+    project_dir.mkdir(parents=True, exist_ok=True)
+    (project_dir / 'agents').mkdir(exist_ok=True)
+    import datetime
+    config = {'slug': slug, 'name': payload.get('name', slug),
+        'description': payload.get('description', ''), 'repo_url': payload.get('repo_url', ''),
+        'branch': payload.get('branch', 'main'),
+        'created_at': datetime.datetime.utcnow().isoformat() + 'Z'}
+    (project_dir / 'config.json').write_text(_json.dumps(config, indent=2, ensure_ascii=False))
+    return {'success': True, 'project': config}
+
+
 @router.get("/{slug}/agents")
 def list_agents(slug: str):
     """List all agents for a project."""
