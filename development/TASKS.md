@@ -1632,3 +1632,125 @@ DIARY:
     "SESSION:2026-05-29|TASK-26:sync-methodology-nlm|DONE|★★"
 ```
 
+
+
+---
+
+## SPRINT 2026-05-29B
+
+### TASK-27: Agents default LLM -> AGY (drakon/docs/architect)
+
+```
+[ ] TASK-27
+
+META: drakon-agent, docs-agent, architect-agent currently default to NIM (openai-proxy).
+      Switch default LLM to AGY (https://agy.exodus.pp.ua) for these agents.
+
+FILES (sync BOTH copies):
+  src/components/agents/AgentLlmCard.tsx
+  .lovable/src/components/agents/AgentLlmCard.tsx
+
+STEP 1: git pull origin main
+
+STEP 2: Find readFromStorage(agentId) in AgentLlmCard.tsx
+  Look for: localStorage.getItem(...) || "openai"  or  || ""
+  Add AGY default logic:
+    const isAgyAgent = agentId && (
+      agentId.includes("drakon") || agentId.includes("docs") || agentId.includes("architect")
+    );
+    protocol: localStorage.getItem(key_protocol) as any || (isAgyAgent ? "agy" : "openai"),
+    baseUrl: localStorage.getItem(key_url) || (isAgyAgent ? "https://agy.exodus.pp.ua" : ""),
+
+STEP 3: Sync both copies:
+  cp src/components/agents/AgentLlmCard.tsx .lovable/src/components/agents/AgentLlmCard.tsx
+
+STEP 4:
+  git add src/components/agents/AgentLlmCard.tsx .lovable/src/components/agents/AgentLlmCard.tsx
+  git commit -m "feat(agents): default drakon/docs/architect to AGY LLM provider (TASK-27)"
+  git push origin main
+
+DIARY: python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-27:agents-agy-default|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-28: Fix activeProject reactivity (GitHub/Docs/Vector panels)
+
+```
+[ ] TASK-28
+
+META: GitHubPanel, DocsPanel, VectorPanel do not reload data when activeProject changes.
+      Switching projects has no effect on these panels.
+
+STEP 1: git pull origin main
+
+STEP 2: Find components that should react to activeProject:
+  grep -rn "activeProject\|useProject" src/components/ --include="*.tsx" | grep -v "test" | head -30
+
+STEP 3: For each panel component (GitHubPanel, DocsPanel, NotesPanel, VectorPanel):
+  Check if useEffect has [activeProject] in dependency array.
+  If useEffect(() => { fetchData() }, []) -- missing activeProject in deps.
+  Fix: useEffect(() => { if (activeProject) fetchData(activeProject) }, [activeProject])
+
+STEP 4: Find WorkspaceShell.tsx sidebar:
+  grep -n "GitHubPanel\|sidebar" src/components/workspace/WorkspaceShell.tsx | head -10
+  Ensure activeProject prop is passed down OR component uses useProject() hook directly.
+
+STEP 5: Sync both copies:
+  rsync -a --include="*.tsx" src/components/ .lovable/src/components/ 2>/dev/null || \
+  find src/components -name "*.tsx" | while read f; do
+    target=".lovable/$f"
+    if [ -f "$target" ]; then cp "$f" "$target"; fi
+  done
+
+STEP 6:
+  git add src/components/ .lovable/src/components/
+  git commit -m "fix(workspace): fix activeProject reactivity in panels (TASK-28)"
+  git push origin main
+
+DIARY: python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-28:activeProject-reactivity|DONE|commit:<hash>|***"
+```
+
+---
+
+### TASK-29: AGY3 tablet setup (repo + agy-task.sh)
+
+```
+[ ] TASK-29
+
+META: AGY3 tablet (192.168.3.162, arsen.k111999@gmail.com, 100% quota)
+      has agy CLI but no repo or agy-task.sh for task delegation.
+
+STEP 1: Check repo
+  ls ~/workspace/ai-drakon-scaffolder 2>/dev/null && echo "exists" || echo "missing"
+
+STEP 2: Clone if missing
+  mkdir -p ~/workspace
+  git clone https://github.com/maxfraieho/ai-drakon-scaffolder ~/workspace/ai-drakon-scaffolder
+
+STEP 3: Create ~/bin/agy-task.sh
+  mkdir -p ~/bin
+  Write the script (same as on phone):
+  #!/data/data/com.termux/files/usr/bin/bash
+  REPO=~/workspace/ai-drakon-scaffolder
+  TASK_ID="${1:-}"
+  LOG=~/agy-task.log
+  cd "$REPO"
+  git pull origin main --quiet
+  if [ -n "$TASK_ID" ]; then
+    PROMPT="Execute $TASK_ID from development/TASKS.md in ~/workspace/ai-drakon-scaffolder. Read the task, execute all steps, git commit + push, write diary agt-ogy."
+  else
+    PENDING=$(grep -n "^\[ \]" development/TASKS.md | head -3 | awk -F: '{print $2}' | tr "\n" ", ")
+    PROMPT="Execute first pending task from development/TASKS.md (lines: $PENDING). Read, execute, git commit + push, write diary agt-ogy."
+  fi
+  echo "$(date): Starting AGY task: ${TASK_ID:-auto}" >> "$LOG"
+  agy --print "$PROMPT" --dangerously-skip-permissions 2>&1 | tee -a "$LOG" | tail -20
+  echo "$(date): Done" >> "$LOG"
+
+  chmod +x ~/bin/agy-task.sh
+
+STEP 4: Test
+  cd ~/workspace/ai-drakon-scaffolder && echo "repo ok" && agy --version
+
+DIARY: python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-29:agy3-setup|DONE|***"
+```
