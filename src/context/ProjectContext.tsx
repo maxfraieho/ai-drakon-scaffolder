@@ -75,14 +75,27 @@ const loadProjects = useCallback(async () => {
 setLoading(true);
 try {
 const result = await listProjectsArch();
-const parsed = result.map((p) => ({
-  slug: p.slug,
-  name: p.name,
-  description: p.description,
-  hasDrakonIr: p.agents.length > 0,
-  hasDocs: false,
-  exists: true,
-})) as Project[];
+const parsed = result.map((p) => {
+  let github: Project["github"];
+  if (p.repo_url) {
+    try {
+      const u = new URL(p.repo_url);
+      const parts = u.pathname.replace(/^\//, "").split("/");
+      if (parts.length >= 2) {
+        github = { owner: parts[0], repo: parts[1], branch: p.branch || "main" };
+      }
+    } catch {}
+  }
+  return {
+    slug: p.slug,
+    name: p.name,
+    description: p.description,
+    hasDrakonIr: p.agents.length > 0,
+    hasDocs: false,
+    exists: true,
+    github,
+  };
+});
 setProjects(parsed);
 const savedSlug = localStorage.getItem(STORAGE_KEY);
 const saved = savedSlug ? parsed.find((p) => p.slug === savedSlug) : null;

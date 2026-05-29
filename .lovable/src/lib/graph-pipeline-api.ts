@@ -161,6 +161,7 @@ export interface ProjectInfo {
   name: string;
   description: string;
   repo_url: string;
+  branch: string;
   has_repo: boolean;
   agents: string[];
 }

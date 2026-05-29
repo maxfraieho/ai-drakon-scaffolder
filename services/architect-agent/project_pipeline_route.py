@@ -51,6 +51,7 @@ def list_projects():
                 agents = [a.name for a in (d/'agents').iterdir() if a.is_dir()] if (d/'agents').exists() else []
                 projects.append({'slug': d.name, 'name': config.get('name', d.name),
                     'description': config.get('description', ''), 'repo_url': config.get('repo_url', ''),
+                    'branch': config.get('branch', 'main'),
                     'has_repo': (d/'repo').exists(), 'agents': agents})
     return {'projects': projects}
 
