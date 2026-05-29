@@ -300,13 +300,17 @@ class DeleteNoteRequest(BaseModel):
 # ── Endpoints ────────────────────────────────────────────────────────────────
 
 @router.get("/list")
-def list_notes(flat: bool = Query(default=True, description="Flat list (true) or tree (false)")):
+def list_notes(flat: bool = Query(default=True, description="Flat list (true) or tree (false)"),
+               project: Optional[str] = Query(default=None, description="Project slug for scoped docs")):
     """List all notes. flat=true returns [{slug,title,path,folder}], flat=false returns folder tree."""
     _ensure_docs_root()
+    root = (DOCS_ROOT / project) if project else DOCS_ROOT
+    if not root.exists():
+        return {"success": True, "notes": [], "tree": []}
     if flat:
-        return {"success": True, "notes": _flat_notes(DOCS_ROOT)}
+        return {"success": True, "notes": _flat_notes(root)}
     else:
-        return {"success": True, "tree": _build_folder_tree(DOCS_ROOT)}
+        return {"success": True, "tree": _build_folder_tree(root)}
 
 
 @router.get("/read")
@@ -401,10 +405,11 @@ def restructure_notes():
 
 
 @router.get("/graph")
-def notes_graph():
+def notes_graph(project: Optional[str] = Query(default=None, description="Project slug for scoped docs")):
     """Build graph data: nodes (all notes) + edges (wikilinks between notes)."""
     _ensure_docs_root()
-    notes = _flat_notes(DOCS_ROOT)
+    root = (DOCS_ROOT / project) if project else DOCS_ROOT
+    notes = _flat_notes(root) if root.exists() else []
     slug_set = {n["slug"] for n in notes}
 
     nodes = [

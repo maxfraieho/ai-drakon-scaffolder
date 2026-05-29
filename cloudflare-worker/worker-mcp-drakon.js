@@ -2097,7 +2097,7 @@ export default {
         return await handleNotesGet(request);
       }
       if (method === 'GET' && path === '/v1/notes/graph') {
-        return await handleNotesGraph();
+        return await handleNotesGraph(request);
       }
       if (method === 'POST' && path === '/v1/notes/commit') {
         return await handleNotesCommit(request, env);
@@ -2387,7 +2387,9 @@ async function handleDrakonIrGet(name) {
 async function handleNotesList(request) {
   const url = new URL(request.url);
   const flat = url.searchParams.get('flat') ?? 'true';
-  const res = await fetch(`${DOCS_AGENT_URL}/notes/list?flat=${flat}`, {
+  const project = url.searchParams.get('project') || '';
+  const projectQs = project ? `&project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/list?flat=${flat}${projectQs}`, {
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return errorResponse(`docs-agent /notes/list ${res.status}`, 502);
@@ -2395,9 +2397,12 @@ async function handleNotesList(request) {
 }
 
 async function handleNotesGet(request) {
-  const slug = new URL(request.url).searchParams.get('slug') || '';
+  const url = new URL(request.url);
+  const slug = url.searchParams.get('slug') || '';
+  const project = url.searchParams.get('project') || '';
   if (!slug) return errorResponse('slug required', 400);
-  const res = await fetch(`${DOCS_AGENT_URL}/notes/read?slug=${encodeURIComponent(slug)}`, {
+  const projectQs = project ? `&project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/read?slug=${encodeURIComponent(slug)}${projectQs}`, {
     signal: AbortSignal.timeout(10_000),
   });
   if (res.status === 404) return errorResponse(`Note not found: ${slug}`, 404);
@@ -2405,8 +2410,10 @@ async function handleNotesGet(request) {
   return jsonResponse(await res.json());
 }
 
-async function handleNotesGraph() {
-  const res = await fetch(`${DOCS_AGENT_URL}/notes/graph`, {
+async function handleNotesGraph(request) {
+  const project = new URL(request.url).searchParams.get('project') || '';
+  const projectQs = project ? `?project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/graph${projectQs}`, {
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) return errorResponse(`docs-agent /notes/graph ${res.status}`, 502);
