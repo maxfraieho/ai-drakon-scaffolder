@@ -12,6 +12,7 @@ import { getGithubConfig } from "@/lib/settings-storage";
 import { startAnalysis, pollJob, type AnalyzeResult } from "@/lib/pipeline-api";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
+import { useProject } from "@/context/ProjectContext";
 
 
 const EXT_TO_LANG: Record<string, string> = {
@@ -94,7 +95,7 @@ function FileTree({
       <div className="flex flex-col items-center justify-center h-full gap-2 px-3">
         <AlertCircle className="h-4 w-4 text-[var(--text-muted)]" />
         <span className="font-mono text-[9px] text-[var(--text-muted)] text-center">
-          Налаштуйте GitHub у Settings
+          Налаштуйте GitHub у проекті або в Settings
         </span>
       </div>
     );
@@ -166,11 +167,14 @@ function FileTree({
 
 export default function CodePage() {
   const navigate = useNavigate();
+  const { activeProject } = useProject();
   const ghCfg = getGithubConfig();
-  const owner = ghCfg.owner || ghCfg.repo.split("/")[0] || "";
-  const repo = ghCfg.repo.includes("/") ? ghCfg.repo.split("/")[1] : ghCfg.repo;
-  const branch = ghCfg.branch || "main";
   const token = ghCfg.token;
+  const projectGh = activeProject?.github;
+  const owner = projectGh?.owner || ghCfg.owner || ghCfg.repo.split("/")[0] || "";
+  const repoRaw = ghCfg.repo.includes("/") ? ghCfg.repo.split("/")[1] : ghCfg.repo;
+  const repo = projectGh?.repo || repoRaw;
+  const branch = projectGh?.branch || ghCfg.branch || "main";
 
   const [code, setCode] = useState("");
   const [filePath, setFilePath] = useState("untitled.py");

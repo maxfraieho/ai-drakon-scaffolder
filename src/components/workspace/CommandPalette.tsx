@@ -1,32 +1,32 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
-LayoutDashboard, FileText, GitBranch, Cog, Cpu, Moon, Sun, LogOut,
+  LayoutDashboard, FileText, FileCode, Cog, Cpu, Moon, Sun, LogOut,
 } from "lucide-react";
 import {
-CommandDialog,
-CommandInput,
-CommandList,
-CommandEmpty,
-CommandGroup,
-CommandItem,
-CommandSeparator,
-CommandShortcut,
+  CommandDialog,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandSeparator,
+  CommandShortcut,
 } from "@/components/ui/command";
 
 interface CommandPaletteProps {
-open: boolean;
-onOpenChange: (open: boolean) => void;
-theme: "light" | "dark";
-onToggleTheme: () => void;
-onLogout: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  theme: "light" | "dark";
+  onToggleTheme: () => void;
+  onLogout: () => void;
 }
 
 const NAV_ITEMS = [
-{ label: "Схеми", to: "/diagrams", icon: LayoutDashboard, shortcut: "G D" },
-{ label: "Нотатки", to: "/docs", icon: FileText, shortcut: "G N" },
-{ label: "GitHub", to: "/github", icon: GitBranch, shortcut: "G H" },
-{ label: "Агенти", to: "/agents", icon: Cpu, shortcut: "G A" },
-{ label: "Налаштування", to: "/settings", icon: Cog, shortcut: "G ," },
+  { label: "Схеми", to: "/diagrams", icon: LayoutDashboard, shortcut: "G D" },
+  { label: "Нотатки", to: "/docs", icon: FileText, shortcut: "G N" },
+  { label: "Код", to: "/code", icon: FileCode, shortcut: "G C" },
+  { label: "Агенти", to: "/agents", icon: Cpu, shortcut: "G A" },
+  { label: "Налаштування", to: "/settings", icon: Cog, shortcut: "G ," },
 ] as const;
 
 export function CommandPalette({
