@@ -5,6 +5,8 @@ import { PropertiesPanel } from "@/components/agents/PropertiesPanel";
 import { ExecutionPanel } from "@/components/agents/ExecutionPanel";
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { getPipeline, savePipeline } from "@/lib/graph-pipeline-api";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
 import { convertDiagramToIr } from "@/lib/htse/diagram-to-ir";
@@ -27,6 +29,11 @@ export default function AgentStudioPage() {
 
   const [centerTab, setCenterTab] = useState<"graph" | "logic">("graph");
   const [logicJson, setLogicJson] = useState("");
+  const [leftPanelOpen, setLeftPanelOpen] = useState(true);
+  const [rightPanelOpen, setRightPanelOpen] = useState(true);
+  const [leftPanelMobileOpen, setLeftPanelMobileOpen] = useState(false);
+  const [rightPanelMobileOpen, setRightPanelMobileOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // SSE Pipeline Execution Hook
   const {
@@ -236,11 +243,17 @@ export default function AgentStudioPage() {
             isSaving={isSaving}
             isDirty={isDirty}
             hasBreakpoint={!!breakpointNode}
+            leftPanelOpen={leftPanelOpen}
+            rightPanelOpen={rightPanelOpen}
             onRun={handleRun}
             onStop={stopPipeline}
             onSave={handleManualSave}
             onExport={handleExport}
             onResume={handleResume}
+            onToggleLeftPanel={() => setLeftPanelOpen((v) => !v)}
+            onToggleRightPanel={() => setRightPanelOpen((v) => !v)}
+            onOpenLeftMobile={() => setLeftPanelMobileOpen(true)}
+            onOpenRightMobile={() => setRightPanelMobileOpen(true)}
           />
 
           {/* Tab Bar */}
@@ -336,23 +349,66 @@ export default function AgentStudioPage() {
           )}
         </div>
 
-        {/* Column 3: Properties Sidebar Inspector */}
-        <PropertiesPanel
-          diagramName={activeDiagram?.name || ""}
-          onChangeDiagramName={handleChangeDiagramName}
-          stateClass={stateClass}
-          onChangeStateClass={setStateClass}
-          selectedNodeId={selectedNodeId}
-          selectedNode={selectedNode}
-          onUpdateNode={handleUpdateNode}
-          allNodes={getActionNodes()}
-          breakpoints={breakpoints}
-          onToggleBreakpoint={handleToggleBreakpoint}
-        />
-
-        {/* Column 4: Agent Chat Panel */}
-        <AgentChatPanel className="w-[280px] shrink-0 border-l" />
+        {/* Column 3+4: Right inspector stack (desktop) */}
+        {!isMobile && rightPanelOpen && (
+          <>
+            <PropertiesPanel
+              diagramName={activeDiagram?.name || ""}
+              onChangeDiagramName={handleChangeDiagramName}
+              stateClass={stateClass}
+              onChangeStateClass={setStateClass}
+              selectedNodeId={selectedNodeId}
+              selectedNode={selectedNode}
+              onUpdateNode={handleUpdateNode}
+              allNodes={getActionNodes()}
+              breakpoints={breakpoints}
+              onToggleBreakpoint={handleToggleBreakpoint}
+            />
+            <AgentChatPanel className="w-[280px] shrink-0 border-l" />
+          </>
+        )}
       </div>
+
+      {!isMobile && leftPanelOpen === false && (
+        <div className="sr-only">left panel collapsed</div>
+      )}
+
+      {/* Mobile side panels */}
+      <Sheet open={leftPanelMobileOpen} onOpenChange={setLeftPanelMobileOpen}>
+        <SheetContent side="left" className="w-[88vw] max-w-[340px] p-0 border-r border-[var(--border-subtle)] bg-[var(--bg-base)]">
+          <PipelineList
+            selectedPipelineName={selectedPipelineName}
+            onSelectPipeline={(name) => {
+              handleSelectPipeline(name);
+              setLeftPanelMobileOpen(false);
+            }}
+          />
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={rightPanelMobileOpen} onOpenChange={setRightPanelMobileOpen}>
+        <SheetContent side="right" className="w-[92vw] max-w-[420px] p-0 border-l border-[var(--border-subtle)] bg-[var(--bg-base)]">
+          <div className="flex h-full min-h-0 flex-col">
+            <div className="min-h-0 flex-1">
+              <PropertiesPanel
+                diagramName={activeDiagram?.name || ""}
+                onChangeDiagramName={handleChangeDiagramName}
+                stateClass={stateClass}
+                onChangeStateClass={setStateClass}
+                selectedNodeId={selectedNodeId}
+                selectedNode={selectedNode}
+                onUpdateNode={handleUpdateNode}
+                allNodes={getActionNodes()}
+                breakpoints={breakpoints}
+                onToggleBreakpoint={handleToggleBreakpoint}
+              />
+            </div>
+            <div className="h-[45%] min-h-[260px] border-t border-[var(--border-subtle)]">
+              <AgentChatPanel className="h-full" />
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Docked Execution Log Console */}
       <ExecutionPanel
