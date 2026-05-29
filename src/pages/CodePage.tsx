@@ -197,7 +197,7 @@ export default function CodePage() {
     setFilePath("untitled.py");
     setFileSha(null);
     setResult(null);
-  }, [activeProject?.slug]);
+  }, [owner, repo, branch]);
 
   useEffect(() => {
     return () => {
