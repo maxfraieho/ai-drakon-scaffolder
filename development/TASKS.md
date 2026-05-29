@@ -1714,7 +1714,8 @@ STEP 6:
   git commit -m "fix(workspace): fix activeProject reactivity in panels (TASK-28)"
   git push origin main
 
-DIARY: python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-28:activeProject-reactivity|DONE|commit:<hash>|***"
+DIARY (!!run locally on THIS Termux device, NO SSH to 192.168.3.184!!):
+  python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-05-29|TASK-28:activeProject-reactivity|DONE|commit:<hash>|***"
 ```
 
 ---
