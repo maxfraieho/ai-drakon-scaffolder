@@ -4,21 +4,31 @@ Add new tools here to make them available in the DRAKON editor node registry.
 from typing import Any
 from pathlib import Path
 
+_kb_cache: dict = {}  # (slug, agent) -> KBClient
+
 
 def search_kb(state: dict) -> dict:
-    """Search the project knowledge base. Uses state["query"] or state["input"]."""
+    """Search the project knowledge base. Caches index per project/agent."""
     from services.shared.kb_client import KBClient
     slug = state.get("project_slug", "_default")
     agent = state.get("agent_name", "default")
+    cache_key = (slug, agent)
+
+    # Find KB directory
     kb_dir = Path(f"/home/vokov/projects/{slug}/agents/{agent}/kb")
-    if not kb_dir.exists():
-        # fallback: search docs/kb/
+    if not kb_dir.exists() or not list(kb_dir.glob("*.md")):
+        # fallback to docs/kb/
         kb_dir = Path("/home/vokov/workspace/ai-drakon-scaffolder/docs/kb")
-    kb = KBClient(":memory:")
-    if kb_dir.exists():
-        kb.index_documents(kb_dir)
+
+    # Re-index if not cached or docs changed
+    if cache_key not in _kb_cache:
+        kb = KBClient(":memory:")
+        if kb_dir.exists():
+            n = kb.index_documents(kb_dir)
+        _kb_cache[cache_key] = kb
+
     query = state.get("query") or state.get("input", "")
-    results = kb.search(query, top_k=5) if query else []
+    results = _kb_cache[cache_key].search(query, top_k=5) if query else []
     context = "\n\n".join(results)
     return {**state, "kb_results": results, "context": context}
 

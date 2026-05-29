@@ -118,3 +118,28 @@ async def execute_pipeline(slug: str, agent: str, input_data: dict = {}):
             yield f"data: {{\"status\": \"error\", \"error\": \"{str(e)[:200]}\"}}\n\n"
 
     return StreamingResponse(stream(), media_type="text/event-stream")
+
+
+@router.get("/{slug}/agents/{agent}/kb/search")
+def search_project_kb(slug: str, agent: str, q: str = ""):
+    """Search project KB directly."""
+    from services.shared.built_in_tools import search_kb, _kb_cache
+    # Invalidate cache to force re-index
+    _kb_cache.pop((slug, agent), None)
+    result = search_kb({"project_slug": slug, "agent_name": agent, "query": q, "input": q})
+    return {"results": result.get("kb_results", []), "count": len(result.get("kb_results", []))}
+
+
+@router.post("/{slug}/agents/{agent}/kb/upload")
+async def upload_kb_doc(slug: str, agent: str, filename: str, content: str = ""):
+    """Upload a markdown document to project KB."""
+    from services.shared.built_in_tools import _kb_cache
+    kb_dir = _kb_dir(slug, agent)
+    doc_path = kb_dir / filename
+    if not filename.endswith(".md"):
+        raise HTTPException(400, "Only .md files supported")
+    doc_path.write_text(content, encoding="utf-8")
+    # Invalidate cache
+    _kb_cache.pop((slug, agent), None)
+    return {"saved": str(doc_path), "size": len(content)}
+
