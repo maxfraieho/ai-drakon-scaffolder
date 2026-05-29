@@ -30,6 +30,7 @@ lang: uk
 | [[plans/2026-05-26-pinchtab-test-plan]] | План тестування PinchTab — Платформа AI-DRAKON | active | 3 |
 | [[plans/Multi-Agent DRAKON System Plan]] | Звіт про реалізацію та архітектуру: Мультиагентна система DRAKON | active | 3 |
 | [[plans/pinchtab-test-results-extended-2026-05-26]] | Розширені результати тестування PinchTab | active | 3 |
+| [[plans/2026-05-29-unified-agent-framework]] | Unified LangGraph-DRAKON Agent Framework — План реалізації | active | 2 |
 
 ## Семантичні зв'язки
 **Батьківський індекс:** [[plans/_INDEX]]
