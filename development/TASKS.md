@@ -1723,7 +1723,7 @@ DIARY (!!run locally on THIS Termux device, NO SSH to 192.168.3.184!!):
 ### TASK-29: AGY3 tablet setup (repo + agy-task.sh)
 
 ```
-[ ] TASK-29
+[x] TASK-29
 
 META: AGY3 tablet (192.168.3.162, arsen.k111999@gmail.com, 100% quota)
       has agy CLI but no repo or agy-task.sh for task delegation.
