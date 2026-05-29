@@ -2585,7 +2585,7 @@ DIARY (!!run locally on THIS Termux device!!):
 ### TASK-36: Task 2 — BUILT_IN_TOOLS registry + llm_node_factory + graph_loader update
 
 ```
-[ ] TASK-36
+[x] TASK-36
 
 META: Створити серце системи: глобальний реєстр вбудованих tools + фабрика LLM-нод.
       Оновити graph_loader.py для авто-розрізнення tool vs LLM-промпт.
