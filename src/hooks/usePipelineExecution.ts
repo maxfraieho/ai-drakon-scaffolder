@@ -131,6 +131,10 @@ export function usePipelineExecution() {
     [jobId, breakpointNode, addLog]
   );
 
+  const clearLogs = useCallback(() => {
+    setLogs([]);
+  }, []);
+
   return {
     isRunning,
     activeNode,
@@ -142,5 +146,6 @@ export function usePipelineExecution() {
     runPipeline,
     stopPipeline,
     resumePipeline: resume,
+    clearLogs,
   };
 }

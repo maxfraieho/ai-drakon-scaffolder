@@ -45,6 +45,7 @@ export default function AgentStudioPage() {
     runPipeline,
     stopPipeline,
     resumePipeline,
+    clearLogs,
   } = usePipelineExecution();
 
   // Load pipeline diagram
@@ -411,7 +412,7 @@ export default function AgentStudioPage() {
       {/* Docked Execution Log Console */}
       <ExecutionPanel
         logs={logs}
-        onClear={() => {}}
+        onClear={clearLogs}
         isOpen={consoleOpen}
         onToggle={() => setConsoleOpen((v) => !v)}
       />
