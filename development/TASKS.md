@@ -6726,7 +6726,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-81:timeout-fix-commit|nodes.py-25→45s|★★"
 
 ==================================================================
-[ ] TASK-82
+[x] TASK-82
 Title: Fix Sharon bot timeout — put LocalProxy first, increase bot timeout
 Agent: AGY phone
 Run: SSH до dev server 192.168.3.184
