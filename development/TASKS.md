@@ -5163,7 +5163,7 @@ Replace with:
 
 ---
 
-[ ] TASK-59
+[x] TASK-59
 Title: Fix ProjectSelector — прибрати dropdown з усіма проектами
 Agent: AGY3 (планшет)
 Run: locally on AGY3 Termux, NO SSH
