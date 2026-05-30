@@ -5377,7 +5377,7 @@ Diary: "SESSION:2026-05-30|TASK-64:mempalace-ai-drakon-registered|indexed|★★
 
 ---
 
-[ ] TASK-65
+[x] TASK-65
 Title: .mempalace.json for uav-watcher + initial index
 Agent: AGY3
 Run: SSH to vokov@192.168.3.184 (after TASK-63 is done)
