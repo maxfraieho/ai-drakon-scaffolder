@@ -6016,7 +6016,7 @@ Diary: "SESSION:2026-05-30|TASK-72:uav-watcher-llm-refactoring|regex→LLM|city-
 (agent: agt-ogy3)
 
 ==================================================================
-[ ] TASK-73
+[x] TASK-73
 Title: UAV-Watcher multi-proxy LLM + web UI для управління проксі
 Agent: AGY phone
 Run: SSH до dev server 192.168.3.184 для змін коду. Локально для git.
