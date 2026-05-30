@@ -6,6 +6,16 @@ import { ExecutionPanel } from "@/components/agents/ExecutionPanel";
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getPipeline, savePipeline } from "@/lib/graph-pipeline-api";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
@@ -27,6 +37,8 @@ export default function AgentStudioPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [consoleOpen, setConsoleOpen] = useState(true);
+  const [pendingPipelineName, setPendingPipelineName] = useState<string | null>(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
   const [centerTab, setCenterTab] = useState<"graph" | "logic">("graph");
   const [logicJson, setLogicJson] = useState("");
@@ -98,11 +110,11 @@ export default function AgentStudioPage() {
   // Handle Pipeline list selection
   const handleSelectPipeline = useCallback((name: string) => {
     if (isDirty) {
-      if (!confirm("У вас є незбережені зміни. Бажаєте продовжити без збереження?")) {
-        return;
-      }
+      setPendingPipelineName(name);
+      setShowUnsavedDialog(true);
+    } else {
+      setSelectedPipelineName(name);
     }
-    setSelectedPipelineName(name);
   }, [isDirty]);
 
   // Handle diagram name edit
@@ -419,6 +431,43 @@ export default function AgentStudioPage() {
       />
 
       <UnsavedChangesGuard isDirty={isDirty} />
+
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent className="border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)]">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-mono text-sm uppercase tracking-wider text-[var(--accent-amber)]">
+              Незбережені зміни
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-xs text-[var(--text-secondary)]">
+              У вашому пайплайні є незбережені зміни. Ви впевнені, що хочете перемкнутися на інший пайплайн без збереження?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4">
+            <AlertDialogCancel
+              onClick={() => {
+                setShowUnsavedDialog(false);
+                setPendingPipelineName(null);
+              }}
+              className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[var(--text-primary)] text-xs h-8"
+            >
+              Скасувати
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingPipelineName) {
+                  setSelectedPipelineName(pendingPipelineName);
+                  setIsDirty(false);
+                }
+                setShowUnsavedDialog(false);
+                setPendingPipelineName(null);
+              }}
+              className="bg-[#ef4444] text-white hover:bg-[#ef4444]/90 text-xs h-8"
+            >
+              Продовжити
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
