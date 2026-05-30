@@ -387,3 +387,7 @@ background: var(--color-surface-container-high) !important;
 background-color: var(--color-surface-container-low) !important;
 }
 
+/* Mobile safe area */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+
