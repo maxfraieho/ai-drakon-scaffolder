@@ -6954,7 +6954,7 @@ SESSION:2026-05-31|TASK-89:opendesign-guide|notebooklm-query+mobile-integration-
 
 ---
 
-## [ ] TASK-88
+## [x] TASK-88
 
 ### Мета
 Виправити 2 баги в `agy` wrapper + оновити Docker контейнер OpenDesign.
