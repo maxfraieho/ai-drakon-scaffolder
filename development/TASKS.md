@@ -5666,7 +5666,7 @@ Verification:
 Diary: "SESSION:2026-05-30|TASK-70:uav-watcher-ai-analysis|docs-agent+architect-agent|DRAKON-diagrams|issues-logged|★★★"
 
 ==================================================================
-[ ] TASK-71
+[x] TASK-71
 Title: Fix AI-DRAKON pipeline issues found during TASK-70
 Agent: AGY phone
 Run: locally on Termux, NO SSH needed. All changes in ~/workspace/ai-drakon-scaffolder/
