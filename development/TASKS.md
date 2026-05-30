@@ -6610,3 +6610,97 @@ git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-79 done �
 git -C ~/workspace/ai-drakon-scaffolder push origin main
 
 Diary: "SESSION:2026-05-30|TASK-79:proxy-sort-ui|up-down-buttons|web-config-updated|commit:<hash>|★★★"
+
+==================================================================
+[ ] TASK-80
+Title: Enforce mandatory printed skill evaluation in agy-task.sh (ALL AGY)
+Agent: AGY phone (і AGY3 після TASK-78)
+Run: локально на Termux. Змінюємо ~/bin/agy-task.sh
+==================================================================
+
+ПРОБЛЕМА:
+agy-task.sh має "MANDATORY SKILL EVALUATION" в промпті але AGY не виводить
+результат оцінки — пропускає крок або оцінює внутрішньо без виводу.
+Це порушує методику: без видимої оцінки неможливо перевірити що скіли застосовані.
+
+FIX — оновити блок MANDATORY SKILL EVALUATION в ~/bin/agy-task.sh:
+
+Знайди поточний блок (десь в PROMPT= рядку):
+grep -n "MANDATORY SKILL\|SKILL EVALUATION\|available.*skills" ~/bin/agy-task.sh | head -5
+
+Заміни весь блок "## MANDATORY SKILL EVALUATION" на:
+
+## MANDATORY SKILL EVALUATION — PRINT FIRST
+
+BEFORE any tool use, file read, or action — print this table:
+
+SKILLS EVALUATION:
+- skill-name: YES — reason why it applies
+- skill-name: NO — reason why not
+(one line per skill from the list below)
+
+Available skills in ~/.claude/skills/:
+$SKILLS_LIST
+
+RULES (CRITICAL — no exceptions):
+1. Print "SKILLS EVALUATION:" table as your VERY FIRST output
+2. For every YES skill: read the skill file content BEFORE implementing  
+3. If no skills apply: write "No skills needed — [reason]"
+4. NEVER skip or merge this step into your implementation
+5. Skills tell you HOW to do the task — read them before coding
+
+Запиши patch як Python файл /tmp/task80_patch.py і scp на сервер:
+
+PATH = "/data/data/com.termux/files/home/bin/agy-task.sh"
+with open(PATH) as f:
+    code = f.read()
+
+old = "## MANDATORY SKILL EVALUATION (do this FIRST, before any action)"
+new = """## MANDATORY SKILL EVALUATION — PRINT FIRST
+
+BEFORE any tool use, file read, or action — print this table:
+
+SKILLS EVALUATION:
+- skill-name: YES — reason why it applies  
+- skill-name: NO — reason why not
+(one line per skill from the list below)"""
+
+if old not in code:
+    # Try alternative formulation
+    old = "## MANDATORY SKILL EVALUATION (do this FIRST)"
+    
+if old in code:
+    code = code.replace(old, new)
+    with open(PATH, "w") as f:
+        f.write(code)
+    print("PATCHED OK")
+else:
+    # Print context to find the right string
+    for i, line in enumerate(code.splitlines()):
+        if "MANDATORY" in line or "SKILL EVAL" in line:
+            print(f"Line {i+1}: {line!r}")
+    print("ERROR: pattern not found — check output above")
+
+Також перевір що є правило після списку скілів:
+grep -A3 "Rules\|RULES" ~/bin/agy-task.sh | head -15
+
+Якщо немає рядків про "Print FIRST" — додай після $SKILLS_LIST:
+
+RULES (CRITICAL):
+1. Print \"SKILLS EVALUATION:\" as VERY FIRST output before any action
+2. For YES skills: read skill file BEFORE coding
+3. If no skills: write \"No skills needed — [reason]\"
+4. NEVER skip this step
+
+Верифікація:
+bash -n ~/bin/agy-task.sh && echo "SYNTAX OK"
+grep -A8 "MANDATORY SKILL" ~/bin/agy-task.sh | head -12
+
+COMMIT (тільки TASKS.md — agy-task.sh локальний на пристрої):
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-80/[x] TASK-80/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-80 done — enforce skill evaluation print in agy-task.sh"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-80:enforce-skill-eval-print|agy-task.sh-updated|mandatory-output|★★★"
