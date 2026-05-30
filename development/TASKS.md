@@ -6804,6 +6804,107 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
 
 
+## [ ] TASK-91
+
+### Мета
+Створити OpenDesign Plugin для проекту ai-drakon — pre-configured skill що обходить discovery form.
+Файли: `open-design-plugin/SKILL.md` + `open-design-plugin/open-design.json`
+
+### !!IMPORTANT!! AUTO-EXECUTE, не чекай approve. Run locally on Termux (AGY phone).
+
+### Кроки
+
+**1. Створити `open-design-plugin/SKILL.md`**
+
+```markdown
+# AI-Drakon Mobile UI Designer
+
+You are a specialized design agent for the **ai-drakon** TypeScript/React project.
+
+## Project context
+- Framework: React 18 + TypeScript + Tailwind CSS + Vite
+- Icons: Lucide React
+- Router: react-router-dom v6
+- Design: Dark theme, Modern minimal (inspired by Vercel/Linear)
+- Mobile-first: all components must have md:hidden or responsive classes
+
+## Your task
+When asked to generate a UI component:
+1. Output a complete React TypeScript component in a single code block
+2. Use only: Tailwind CSS, Lucide icons, react-router-dom hooks
+3. Include proper TypeScript interfaces
+4. Add `md:hidden` for mobile-only components
+5. Follow glassmorphism pattern for mobile overlays: `bg-black/60 backdrop-blur-lg`
+6. NO discovery forms — generate directly
+
+## Output format
+Always output:
+1. Brief description (1-2 sentences)
+2. Full component code in ```tsx block
+3. Usage example
+```
+
+**2. Створити `open-design-plugin/open-design.json`**
+
+```json
+{
+  "$schema": "https://open-design.ai/schemas/plugin.v1.json",
+  "specVersion": "1.0.0",
+  "name": "ai-drakon-mobile",
+  "title": "AI-Drakon Mobile Designer",
+  "version": "0.1.0",
+  "description": "Pre-configured mobile UI generator for ai-drakon React/TypeScript project. Skips discovery form, outputs Tailwind+Lucide components directly.",
+  "capabilitiesRequired": ["prompt:inject"],
+  "od": {
+    "agent": "antigravity",
+    "designSystem": "agentic",
+    "pipeline": {
+      "stages": ["generate"]
+    },
+    "defaults": {
+      "taskType": "Live artifact",
+      "audience": "developers",
+      "brand": "pick_direction",
+      "constraints": "Tailwind CSS, Lucide icons, react-router-dom, TypeScript, dark theme"
+    }
+  }
+}
+```
+
+**3. Встановити плагін в OpenDesign**
+
+```bash
+# Скопіювати plugin файли в data volume контейнера
+sshpass -p '805235io.' ssh vokov@192.168.3.184 '
+mkdir -p /var/lib/docker/volumes/open_design_data/_data/plugins/ai-drakon-mobile
+cp -r /tmp/ai-drakon-plugin/* /var/lib/docker/volumes/open_design_data/_data/plugins/ai-drakon-mobile/
+'
+```
+
+**4. Закомітити в репо**
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+mkdir -p open-design-plugin
+# (записати файли)
+git add open-design-plugin/
+git commit -m "feat(opendesign): add ai-drakon mobile UI plugin (TASK-91)"
+git push origin main
+```
+
+### Верифікація
+```bash
+ls ~/workspace/ai-drakon-scaffolder/open-design-plugin/
+cat ~/workspace/ai-drakon-scaffolder/open-design-plugin/open-design.json
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-91:opendesign-plugin|ai-drakon-mobile-plugin|SKILL.md+open-design.json|commit:<hash>|★★★
+```
+
+---
+
 ## [ ] TASK-90
 
 ### Мета
