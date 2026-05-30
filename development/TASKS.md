@@ -6268,7 +6268,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-74:filter-info-events|1-line-fix|commit:<hash>|★★★"
 
 ==================================================================
-[ ] TASK-75
+[x] TASK-75
 Title: Автоматизація MemPalace mining після кожного commit AGY агентів
 Agent: AGY phone
 Run: локально на AGY phone Termux. SSH до 192.168.3.184 для перевірки.
