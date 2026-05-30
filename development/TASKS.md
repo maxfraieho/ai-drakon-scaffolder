@@ -5466,3 +5466,101 @@ git push origin main
 
 Diary: "SESSION:2026-05-30|TASK-61..67:mempalace-first-COMPLETE|distributed-mempalace|all-agents|★★★"
 (agent: agt-ogy3)
+
+---
+
+[ ] TASK-68
+Title: Fix Code tab — "Не вдалося завантажити" при відкритті файлу
+Agent: AGY3
+Run: locally on AGY3 Termux
+
+Context:
+CodePage.tsx в UI відображає дерево файлів (githubListTree OK), але при кліку на файл
+показує "Не вдалося завантажити". Активний проект: uav-watcher.
+
+ROOT CAUSE HYPOTHESIS:
+1. token = ghCfg.token (глобальні налаштування, рядок 182 CodePage.tsx) — може не мати доступу до maxfraieho/uav-watcher
+2. АБО: branch = "master" але помилка в GitHub API call
+3. АБО: Monaco editor помилка ініціалізації
+
+Files:
+- src/pages/CodePage.tsx (рядки 177-255)
+- src/lib/agent-api.ts (githubGetFile функція)
+
+Investigation steps:
+1. Знайди в CodePage.tsx catch block де показується "Не вдалося завантажити" — яка точна помилка?
+2. Протестуй GitHub API напряму:
+   curl "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" -H "Authorization: Bearer <JWT_TOKEN>"
+3. Якщо помилка 404/403: проблема з token або repo visibility
+4. Якщо 200: проблема в frontend обробці відповіді
+
+Fix: залежить від root cause — або додати fallback для token, або виправити API call, або виправити error handling
+
+Verification:
+Відкрити Code tab з проектом uav-watcher → клікнути uav_watcher.py → файл відкривається в Monaco
+
+Commit: "fix(code-tab): fix file loading for non-default projects (TASK-68)"
+ВАЖЛИВО: cp src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
+
+Diary: "SESSION:2026-05-30|TASK-68:code-tab-file-load-fix|DONE|commit:<hash>|★★★"
+(agent: agt-ogy3)
+
+---
+
+[ ] TASK-69
+Title: Fix agents — використовувати activeProject context у відповідях
+Agent: AGY3
+Run: locally on AGY3 Termux + SSH to vokov@192.168.3.184
+
+Context:
+AgentChatPanel.tsx відправляє context={project_slug, project_name, project_path} в кожному
+повідомленні. Worker передає це до Python агентів. АЛЕ агенти ігнорують context і
+відповідають про загальний проект (ai-drakon IDE), не про активний (uav-watcher).
+
+ROOT CAUSE: Python агенти /chat endpoint не використовують context.project_slug для:
+- Системного промпту (не знають який проект активний)
+- Фільтрації документів з docs-agent
+- Підбору відповідних знань
+
+Files to check (на 192.168.3.184):
+- services/architect-agent/main.py або routes — /chat endpoint
+- services/drakon-agent/main.py — /chat endpoint
+- services/docs-agent/main.py — /chat endpoint
+
+Investigation (SSH to 192.168.3.184):
+sshpass -p '805235io.' ssh vokov@192.168.3.184
+grep -rn "context\|project_slug\|/chat" services/architect-agent/ | grep -v ".pyc" | head -20
+grep -rn "context\|project_slug\|/chat" services/docs-agent/ | grep -v ".pyc" | head -20
+
+Fix needed:
+In each agent's /chat handler:
+1. Extract context.project_slug from request body
+2. If project_slug is set: add to system prompt "Active project: {project_slug} at {project_path}"
+3. For docs-agent: filter docs lookup by project_slug
+
+Example fix pattern:
+```python
+@app.post("/chat")
+async def chat(request: ChatRequest):
+    project_info = ""
+    if request.context and request.context.get("project_slug"):
+        slug = request.context["project_slug"]
+        path = request.context.get("project_path", "")
+        project_info = f"\n\nActive project: {slug} (path: {path}). Focus responses on this project."
+    
+    system_prompt = BASE_SYSTEM_PROMPT + project_info
+    # ... rest of chat logic
+```
+
+After fixing: restart services
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sudo rc-service ai-architect-agent restart && sudo rc-service ai-drakon-agent restart && sudo rc-service ai-docs-agent restart'
+
+Verification:
+Chat with agent when uav-watcher is active → agent mentions uav-watcher, Sharon, Telegram monitoring
+NOT about DRAKON diagrams or IDE
+
+Commit (from AGY3 local): "fix(agents): use project context in agent chat responses (TASK-69)"
+git push origin main
+
+Diary: "SESSION:2026-05-30|TASK-69:agents-project-context|DONE|commit:<hash>|★★★"
+(agent: agt-ogy3)
