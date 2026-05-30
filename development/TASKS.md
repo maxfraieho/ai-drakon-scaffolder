@@ -5664,4 +5664,353 @@ Verification:
 - docs/plans/2026-05-30-ai-drakon-issues-from-uav-analysis.md існує
 
 Diary: "SESSION:2026-05-30|TASK-70:uav-watcher-ai-analysis|docs-agent+architect-agent|DRAKON-diagrams|issues-logged|★★★"
+
+==================================================================
+[ ] TASK-71
+Title: Fix AI-DRAKON pipeline issues found during TASK-70
+Agent: AGY phone
+Run: locally on Termux, NO SSH needed. All changes in ~/workspace/ai-drakon-scaffolder/
+==================================================================
+
+During TASK-70, AGY3 found 4 concrete bugs in the AI-DRAKON pipeline.
+See full report: docs/plans/2026-05-30-ai-drakon-issues-from-uav-analysis.md
+
+Fix all 4 issues:
+
+==================================================================
+FIX 1: API response key mismatch ("response" vs "reply")
+==================================================================
+
+Problem: Agent API returns {"reply": "..."} but scripts use d.get('response') → always None.
+
+Find ALL places in the codebase that parse agent API responses:
+grep -r "get('response'" ~/workspace/ai-drakon-scaffolder/src/ --include="*.py" -l
+grep -r "get('response'" ~/workspace/ai-drakon-scaffolder/src/ --include="*.ts" -l
+grep -r '"response"' ~/workspace/ai-drakon-scaffolder/src/ -l
+
+For each found file: replace d.get('response', ...) with:
+  d.get('reply') or d.get('response') or d.get('text', '')
+  (handle all three variants for backward compatibility)
+
+Also update docs/uav-watcher/threat-detection-analysis.md:
+Add note: "Agent API returns key 'reply', not 'response'. Use d.get('reply') or d.get('response', '')."
+
+==================================================================
+FIX 2: Worker login credentials (document Bearer token as primary)
+==================================================================
+
+Problem: POST /auth/login with {"username":"owner","password":"805235io."} returns 401.
+Workaround: Bearer drakon-mcp-2026 works perfectly.
+
+Find all references to the login endpoint or credentials:
+grep -r "auth/login\|username.*owner\|password.*805235" ~/workspace/ai-drakon-scaffolder/ -r -l 2>/dev/null
+
+Update any scripts/docs that use username/password login:
+- Comment out the login block
+- Add: # Use Bearer token directly: Authorization: Bearer drakon-mcp-2026
+- Update WORKER_TOKEN env var default to "drakon-mcp-2026" if found
+
+Update docs/plans/2026-05-30-ai-drakon-issues-from-uav-analysis.md with fix status.
+
+==================================================================
+FIX 3: Cloudflare WAF blocks Python urllib (User-Agent fix)
+==================================================================
+
+Problem: Python urllib default User-Agent gets 403 from Cloudflare WAF.
+Fix: Add User-Agent header to ALL Python requests to Worker/Cloudflare URLs.
+
+Find all Python files that call the Worker or external URLs:
+grep -r "urllib.request\|requests.get\|requests.post" ~/workspace/ai-drakon-scaffolder/src/ -l 2>/dev/null
+grep -r "workers.dev\|cloudflare\|drakon-mcp-worker" ~/workspace/ai-drakon-scaffolder/ -r --include="*.py" -l 2>/dev/null
+
+For each found file, ensure requests include:
+  headers = {"User-Agent": "curl/7.68.0", "Content-Type": "application/json", ...}
+
+If using urllib.request.Request: add headers via req.add_header("User-Agent", "curl/7.68.0")
+If using requests library: add headers={"User-Agent": "curl/7.68.0"} to every call
+
+==================================================================
+FIX 4: Diagram commit endpoint key names
+==================================================================
+
+Problem: Endpoint expects "folderSlug" + "diagramId" but scripts/docs use "folder" + "name" → 400 Bad Request.
+
+Find all places that call diagram commit/save endpoint:
+grep -r "folderSlug\|\"folder\"\|diagramId\|\"name\"" ~/workspace/ai-drakon-scaffolder/src/ -r --include="*.py" -l 2>/dev/null
+grep -r "folderSlug\|diagramId" ~/workspace/ai-drakon-scaffolder/src/ -r --include="*.ts" -l 2>/dev/null
+
+Update all diagram commit payloads to use:
+  {"folderSlug": "...", "diagramId": "...", "ir": {...}}
+  instead of:
+  {"folder": "...", "name": "...", "ir": {...}}
+
+Also check docs/ for examples and update them too:
+grep -r '"folder".*"name".*"ir"' ~/workspace/ai-drakon-scaffolder/docs/ -r -l 2>/dev/null
+
+==================================================================
+COMMITS та VERIFICATION
+==================================================================
+
+git -C ~/workspace/ai-drakon-scaffolder pull
+git -C ~/workspace/ai-drakon-scaffolder add -p  # review each change
+git -C ~/workspace/ai-drakon-scaffolder commit -m "fix(pipeline): fix 4 AI-DRAKON issues from TASK-70 audit (TASK-71)"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Verification:
+- grep -r "get('response'" src/ | wc -l  → повинен зменшитись або = 0
+- grep -r '"folder".*"ir"' docs/ | wc -l → повинен = 0
+- docs updated with fix notes
+
+Diary: "SESSION:2026-05-30|TASK-71:ai-drakon-fixes|4-bugs-fixed|response-key+login+useragent+diagram-endpoint|commit:<hash>|★★★"
+
+==================================================================
+[ ] TASK-72
+Title: UAV-Watcher LLM Refactoring — Replace REGEX with AI classifier
+Agent: AGY3
+Run: locally on AGY3 Termux for git ops. SSH to dev server 192.168.3.184 for uav-watcher code.
+Context: uav-watcher is at /home/vokov/projects/uav-watcher/ on 192.168.3.184
+SSH: sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+LLM proxy: http://agy3.exodus.pp.ua/v1 (OpenAI-compatible, use "gemini-2.5-flash" model)
+==================================================================
+
+Based on TASK-70 analysis + architect-agent plan in docs/plans/2026-05-30-uav-watcher-ai-refactoring.md
+
+4 files to change in /home/vokov/projects/uav-watcher/ on 192.168.3.184:
+
+==================================================================
+STEP 1: Read current code structure
+==================================================================
+
+SSH to dev server and read the relevant files:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'ls /home/vokov/projects/uav-watcher/'
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'grep -n "classify_threat\|_THREAT_PATTERNS\|_AIRAID\|score_proximity\|THREAT_LEVEL\|def.*threat" /home/vokov/projects/uav-watcher/uav_watcher.py | head -40'
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'head -80 /home/vokov/projects/uav-watcher/uav_watcher.py'
+
+Also read config and understand the OpenAI client if already used:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'grep -n "openai\|httpx\|aiohttp\|LLM\|API_KEY\|BASE_URL" /home/vokov/projects/uav-watcher/uav_watcher.py | head -20'
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cat /home/vokov/projects/uav-watcher/config.json 2>/dev/null | python3 -m json.tool | head -30'
+
+==================================================================
+STEP 2: Add LLM config to config.json
+==================================================================
+
+Add these fields to /home/vokov/projects/uav-watcher/config.json (via SSH):
+  "llm_api_url": "http://agy3.exodus.pp.ua/v1",
+  "llm_model": "gemini-2.5-flash",
+  "llm_api_key": "not-needed",
+  "llm_classify_enabled": true
+
+IMPORTANT: config.json is NOT in git — edit it directly, DO NOT commit it.
+Use Python to merge safely:
+
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -c "
+import json
+with open(\"/home/vokov/projects/uav-watcher/config.json\") as f:
+    cfg = json.load(f)
+cfg[\"llm_api_url\"] = \"http://agy3.exodus.pp.ua/v1\"
+cfg[\"llm_model\"] = \"gemini-2.5-flash\"
+cfg[\"llm_api_key\"] = \"not-needed\"
+cfg[\"llm_classify_enabled\"] = True
+with open(\"/home/vokov/projects/uav-watcher/config.json\", \"w\") as f:
+    json.dump(cfg, f, ensure_ascii=False, indent=2)
+print(\"config.json updated\")
+"'
+
+==================================================================
+STEP 3: Implement LLM classifier in uav_watcher.py
+==================================================================
+
+Write file /tmp/llm_classifier_patch.py locally, then scp to server.
+
+The patch adds these functions to uav_watcher.py (after existing imports):
+
+```python
+import asyncio
+import json as _json
+from functools import lru_cache
+from openai import AsyncOpenAI
+
+# LLM client — initialized once
+_llm_client: AsyncOpenAI | None = None
+
+def get_llm_client() -> AsyncOpenAI:
+    global _llm_client
+    if _llm_client is None:
+        _llm_client = AsyncOpenAI(
+            base_url=config.get("llm_api_url", "http://agy3.exodus.pp.ua/v1"),
+            api_key=config.get("llm_api_key", "not-needed"),
+        )
+    return _llm_client
+
+@lru_cache(maxsize=128)
+def _cached_synonyms(city: str) -> tuple:
+    """Sync wrapper — called from async context via asyncio.to_thread."""
+    return tuple()  # placeholder, filled by async version
+
+async def get_city_synonyms(city: str) -> list[str]:
+    """Get LLM-generated synonyms for the target city."""
+    client = get_llm_client()
+    model = config.get("llm_model", "gemini-2.5-flash")
+    try:
+        resp = await client.chat.completions.create(
+            model=model,
+            max_tokens=200,
+            messages=[{
+                "role": "user",
+                "content": (
+                    f"Дай список всіх можливих варіантів написання назви міста '{city}' "
+                    f"у Telegram-повідомленнях про повітряні тривоги: скорочення, "
+                    f"жаргон, помилки, транслітерація, розмовні назви. "
+                    f"Відповідь: JSON масив рядків. Тільки масив, без пояснень."
+                )
+            }]
+        )
+        text = resp.choices[0].message.content.strip()
+        if text.startswith("["):
+            return _json.loads(text)
+    except Exception:
+        pass
+    return [city]
+
+async def llm_classify_threat(text: str, city: str, synonyms: list[str]) -> dict:
+    """
+    Classify message using LLM.
+    Returns: {"threat_level": 0-3, "is_relevant": bool, "reason": str, "direct_link": ""}
+    """
+    client = get_llm_client()
+    model = config.get("llm_model", "gemini-2.5-flash")
+    synonyms_str = ", ".join(synonyms[:10])
+    
+    system_prompt = (
+        "Ти — система аналізу повітряних загроз для міст України. "
+        "Аналізуй Telegram-повідомлення та визначай загрози БПЛА/ракет. "
+        "Ігноруй рекламу, флуд, новини без загроз, репости старих подій. "
+        f"Цільове місто: {city}. Синоніми: {synonyms_str}."
+    )
+    
+    user_prompt = (
+        f"Повідомлення:\n{text}\n\n"
+        "Відповідь JSON (тільки JSON, без пояснень):\n"
+        '{"threat_level": 0-3, "is_relevant": true/false, "reason": "коротко чому"}\n'
+        "threat_level: 0=не загроза, 1=потенційна, 2=підтверджена, 3=безпосередня небезпека"
+    )
+    
+    try:
+        resp = await client.chat.completions.create(
+            model=model,
+            max_tokens=150,
+            temperature=0.1,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ]
+        )
+        text_resp = resp.choices[0].message.content.strip()
+        # Extract JSON from response
+        import re as _re
+        m = _re.search(r'\{.*\}', text_resp, _re.DOTALL)
+        if m:
+            result = _json.loads(m.group())
+            result.setdefault("is_relevant", result.get("threat_level", 0) > 0)
+            result.setdefault("reason", "")
+            return result
+    except Exception as e:
+        pass
+    return {"threat_level": 0, "is_relevant": False, "reason": "llm_error"}
+```
+
+Write this to a temp file locally and scp to server:
+Write /tmp/llm_classifier.py with the functions above.
+scp via: sshpass -p '805235io.' scp -o StrictHostKeyChecking=no /tmp/llm_classifier.py vokov@192.168.3.184:/tmp/llm_classifier.py
+
+==================================================================
+STEP 4: Patch the main process_message function
+==================================================================
+
+Read uav_watcher.py to find exactly where classify_threat_level() is called:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'grep -n "classify_threat_level\|score_proximity\|threat_level\|is_relevant\|send_notification\|process_message\|handle_message" /home/vokov/projects/uav-watcher/uav_watcher.py | head -30'
+
+Then understand the flow and modify the message processing function to:
+1. Replace classify_threat_level(text) → await llm_classify_threat(text, city, synonyms)
+2. Replace score_proximity(text, city_keywords) → check analysis["is_relevant"]
+3. Keep throttle logic intact
+4. Save message_id + channel_username in the alert/notification object
+
+The notification message should include:
+  - Direct link: f"https://t.me/{channel_username}/{message_id}" if both available
+  - Reason from LLM: analysis["reason"]
+
+Check if openai package is installed:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -c "import openai; print(openai.__version__)"'
+If not: sshpass -p '805235io.' ssh vokov@192.168.3.184 'pip3 install openai --quiet'
+
+==================================================================
+STEP 5: Add message_id + channel_username to DB/notifications
+==================================================================
+
+Read how alerts/notifications are currently stored:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'grep -n "INSERT\|alert\|notification\|message_id\|channel" /home/vokov/projects/uav-watcher/uav_watcher.py | head -30'
+
+If SQLite DB used:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sqlite3 /home/vokov/projects/uav-watcher/*.db ".schema" 2>/dev/null | head -20'
+
+Add column migration if needed (safe — ADD COLUMN):
+ALTER TABLE alerts ADD COLUMN IF NOT EXISTS channel_username TEXT;
+ALTER TABLE alerts ADD COLUMN IF NOT EXISTS message_id INTEGER;
+
+==================================================================
+STEP 6: Test + Restart service
+==================================================================
+
+Syntax check:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -m py_compile /home/vokov/projects/uav-watcher/uav_watcher.py && echo "SYNTAX OK"'
+
+Test LLM connectivity:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -c "
+import asyncio
+from openai import AsyncOpenAI
+client = AsyncOpenAI(base_url=\"http://agy3.exodus.pp.ua/v1\", api_key=\"not-needed\")
+async def test():
+    r = await client.chat.completions.create(
+        model=\"gemini-2.5-flash\",
+        max_tokens=50,
+        messages=[{\"role\":\"user\",\"content\":\"test: відповідь одним словом: OK\"}]
+    )
+    print(r.choices[0].message.content)
+asyncio.run(test())
+"'
+
+Restart watcher:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sudo rc-service uav-watcher restart && sleep 3 && tail -10 /var/log/uav-watcher.log'
+
+==================================================================
+STEP 7: Commit changes (only python files, NOT config.json)
+==================================================================
+
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git status --short'
+
+Check what git repo is there:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git remote -v 2>/dev/null | head -3'
+
+If git repo exists:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git add uav_watcher.py && git commit -m "feat(classifier): replace regex with LLM threat classifier + direct links (TASK-72)"'
+
+Also mark TASK-72 done in ai-drakon-scaffolder:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/\[ \] TASK-72/[x] TASK-72/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-72 uav-watcher LLM refactoring complete"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+==================================================================
+VERIFICATION
+==================================================================
+
+- python3 -m py_compile uav_watcher.py → no errors
+- LLM test returns "OK"
+- Service restarts without crash
+- tail /var/log/uav-watcher.log shows no import errors
+- grep "llm_classify_threat\|get_city_synonyms" uav_watcher.py | wc -l > 0
+
+Diary: "SESSION:2026-05-30|TASK-72:uav-watcher-llm-refactoring|regex→LLM|city-synonyms|direct-links-t.me|service-restarted|commit:<hash>|★★★"
 (agent: agt-ogy3)
