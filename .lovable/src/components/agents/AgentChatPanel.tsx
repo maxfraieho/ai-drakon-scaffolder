@@ -23,6 +23,7 @@ import { DEFAULT_FOLDER } from "@/lib/folder-storage";
 import { api } from "@/lib/api";
 import { useAgentChatStore } from "@/store/useAgentChatStore";
 import { useAgentHealth } from "@/hooks/useAgentHealth";
+import { useProject } from "@/context/ProjectContext";
 import type { AgentId, AgentMessage } from "@/types/agent-chat";
 import type { DrakonDiagram } from "@/types/drakon";
 
@@ -91,6 +92,7 @@ export function AgentChatPanel({ className }: Props) {
   const loading = useAgentChatStore((s) => s.loading);
   const error = useAgentChatStore((s) => s.error);
   const health = useAgentHealth();
+  const { activeProject } = useProject();
 
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -137,7 +139,11 @@ export function AgentChatPanel({ className }: Props) {
     const text = input.trim();
     if (!text || isLoading) return;
     setInput("");
-    void sendMessage(activeAgent, text);
+    void sendMessage(activeAgent, text, {
+      project_slug: activeProject?.slug ?? null,
+      project_name: activeProject?.name ?? null,
+      project_path: activeProject?.path ?? null,
+    });
   };
 
   const handleRetry = () => {
