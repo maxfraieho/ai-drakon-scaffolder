@@ -43,6 +43,8 @@ def architect_chat(
     current_diagram: Optional[dict] = None,
     memory_context: str = "",
     kb_context: str = "",
+    project_slug: Optional[str] = None,
+    project_path: Optional[str] = None,
 ) -> dict:
     parts = []
     if memory_context:
@@ -58,8 +60,13 @@ def architect_chat(
         parts.append(f"## Current Diagram\n{json.dumps(current_diagram, indent=2)[:2000]}")
     parts.append(f"## User Message\n{message}")
 
+    system_prompt = ARCHITECT_SYSTEM_PROMPT
+    if project_slug:
+        loc = f" at {project_path}" if project_path else ""
+        system_prompt += f"\n\n**Active project: {project_slug}{loc}. Focus your responses on this project, not on the default AI-DRAKON IDE context.**"
+
     messages = [
-        {"role": "system", "content": ARCHITECT_SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": "\n\n".join(parts)},
     ]
 
