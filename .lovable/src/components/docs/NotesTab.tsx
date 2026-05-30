@@ -14,6 +14,25 @@ import { fetchNotesTree, deleteNote, commitNote, type TreeNode } from
 import { toast } from "sonner";
 import { useProject } from "@/context/ProjectContext";
 import { UnsavedChangesGuard } from "@/components/workspace/UnsavedChangesGuard";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const NEW_SLUG = "__new__";
 const LOCAL_FOLDERS_KEY = "docs.localFolders";
@@ -156,6 +175,11 @@ export function NotesTab({ focusSlug, onFocusClear }: NotesTabProps = {}) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarSearch, setSidebarSearch] = useState("");
 
+  const [noteToDelete, setNoteToDelete] = useState<string | null>(null);
+  const [folderToDelete, setFolderToDelete] = useState<{ path: string; hasChildren: boolean } | null>(null);
+  const [showAddFolder, setShowAddFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState("");
+
   const tree = useMemo(() => mergeLocalFolders(rawTree, localFolders), [rawTree, localFolders]);
 
   const editorSlug = activeSlug === NEW_SLUG ? undefined : activeSlug ?? undefined;
@@ -239,57 +263,74 @@ return;
 await handleSave();
 };
 
-  const handleDeleteNote = async (slug: string) => {
-    const title = flattenTree(tree).find((n) => n.slug === slug)?.title ?? slug;
-    if (!window.confirm(`Видалити документ «${title}»? Це незворотня дія.`)) return;
+  const handleDeleteNote = (slug: string) => {
+    setNoteToDelete(slug);
+  };
+
+  const confirmDeleteNote = async () => {
+    if (!noteToDelete) return;
     try {
-      await deleteNote(slug, ghRepo || undefined);
-      if (activeSlug === slug) setActiveSlug(null);
+      await deleteNote(noteToDelete, ghRepo || undefined);
+      if (activeSlug === noteToDelete) setActiveSlug(null);
       await loadTree();
       toast.success("Документ видалено");
-} catch (e) {
-console.error(e);
-toast.error(e instanceof Error ? e.message : "Помилка видалення");
-}
-};
+    } catch (e) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : "Помилка видалення");
+    } finally {
+      setNoteToDelete(null);
+    }
+  };
 
-const handleAddFolder = () => {
-const name = window.prompt("Назва нової папки:");
-if (!name) return;
-const slug = slugifySegment(name);
-if (!slug) { toast.error("Некоректна назва"); return; }
-if (localFolders.includes(slug) || rawTree.some((n) => n.type === "folder" && n.name ===
-slug)) {
-toast.error("Така папка вже існує");
-return;
-}
-const next = [...localFolders, slug];
-setLocalFolders(next);
-writeLocalFolders(next);
-toast.success(`Папку «${slug}» створено. Додайте до неї документ, щоб зберегти.`);
-};
+  const handleAddFolder = () => {
+    setNewFolderName("");
+    setShowAddFolder(true);
+  };
 
-  const handleDeleteFolder = async (folderPath: string, hasChildren: boolean) => {
+  const confirmAddFolder = () => {
+    const name = newFolderName.trim();
+    if (!name) return;
+    const slug = slugifySegment(name);
+    if (!slug) { toast.error("Некоректна назва"); return; }
+    if (localFolders.includes(slug) || rawTree.some((n) => n.type === "folder" && n.name === slug)) {
+      toast.error("Така папка вже існує");
+      return;
+    }
+    const next = [...localFolders, slug];
+    setLocalFolders(next);
+    writeLocalFolders(next);
+    toast.success(`Папку «${slug}» створено. Додайте до неї документ, щоб зберегти.`);
+    setShowAddFolder(false);
+  };
+
+  const handleDeleteFolder = (folderPath: string, hasChildren: boolean) => {
     if (hasChildren) {
-      if (!window.confirm(`Папка «${folderPath}» містить документи. Видалити папку РАЗОМ із усіма документами?`)) return;
-      const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
-      try {
-        for (const n of notes) {
-          if (n.slug) await deleteNote(n.slug, ghRepo || undefined);
-        }
-        toast.success("Папку видалено");
-await loadTree();
-} catch (e) {
-toast.error(e instanceof Error ? e.message : "Помилка видалення");
-}
-} else {
-// local-only empty folder
-const next = localFolders.filter((n) => n !== folderPath);
-setLocalFolders(next);
-writeLocalFolders(next);
-toast.success("Папку видалено");
-}
-};
+      setFolderToDelete({ path: folderPath, hasChildren });
+    } else {
+      // local-only empty folder
+      const next = localFolders.filter((n) => n !== folderPath);
+      setLocalFolders(next);
+      writeLocalFolders(next);
+      toast.success("Папку видалено");
+    }
+  };
+
+  const confirmDeleteFolder = async () => {
+    if (!folderToDelete) return;
+    const { path: folderPath } = folderToDelete;
+    const notes = flattenTree(tree.filter((n) => n.type === "folder" && n.name === folderPath));
+    try {
+      for (const n of notes) {
+        if (n.slug) await deleteNote(n.slug, ghRepo || undefined);
+      }
+      toast.success("Папку видалено");
+      await loadTree();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Помилка видалення");
+    } finally {
+      setFolderToDelete(null);
+    }
+  };
 
 const wikilinkSuggestions = flattenTree(tree).map((n) => ({
 title: (n.slug?.split("/").pop() ?? n.slug ?? "").replace(/\.md$/, ""),
@@ -423,6 +464,105 @@ title="Список документів"
     )}
     <UnsavedChangesGuard isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)} />
   </div>
+
+  {/* Dialog: Delete Note */}
+  <AlertDialog open={!!noteToDelete} onOpenChange={(open) => !open && setNoteToDelete(null)}>
+    <AlertDialogContent className="border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)]">
+      <AlertDialogHeader>
+        <AlertDialogTitle className="font-mono text-sm uppercase tracking-wider text-destructive">
+          Видалити документ
+        </AlertDialogTitle>
+        <AlertDialogDescription className="text-xs text-[var(--text-secondary)]">
+          Ви впевнені, що хочете видалити цей документ? Це незворотна дія.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter className="mt-4">
+        <AlertDialogCancel
+          onClick={() => setNoteToDelete(null)}
+          className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[var(--text-primary)] text-xs h-8"
+        >
+          Скасувати
+        </AlertDialogCancel>
+        <AlertDialogAction
+          onClick={confirmDeleteNote}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs h-8"
+        >
+          Видалити
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
+  {/* Dialog: Delete Folder */}
+  <AlertDialog open={!!folderToDelete} onOpenChange={(open) => !open && setFolderToDelete(null)}>
+    <AlertDialogContent className="border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)]">
+      <AlertDialogHeader>
+        <AlertDialogTitle className="font-mono text-sm uppercase tracking-wider text-destructive">
+          Видалити папку
+        </AlertDialogTitle>
+        <AlertDialogDescription className="text-xs text-[var(--text-secondary)]">
+          Папка «{folderToDelete?.path}» містить документи. Ви впевнені, що хочете видалити папку РАЗОМ із усіма документами? Це незворотна дія.
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter className="mt-4">
+        <AlertDialogCancel
+          onClick={() => setFolderToDelete(null)}
+          className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[var(--text-primary)] text-xs h-8"
+        >
+          Скасувати
+        </AlertDialogCancel>
+        <AlertDialogAction
+          onClick={confirmDeleteFolder}
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs h-8"
+        >
+          Видалити все
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
+
+  {/* Dialog: Add Folder */}
+  <Dialog open={showAddFolder} onOpenChange={setShowAddFolder}>
+    <DialogContent className="border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)]">
+      <DialogHeader>
+        <DialogTitle className="font-mono text-sm uppercase tracking-wider text-primary">
+          Нова папка
+        </DialogTitle>
+      </DialogHeader>
+      <div className="py-4">
+        <Label htmlFor="folder-name" className="text-xs text-[var(--text-secondary)]">
+          Назва нової папки
+        </Label>
+        <Input
+          id="folder-name"
+          value={newFolderName}
+          onChange={(e) => setNewFolderName(e.target.value)}
+          placeholder="Наприклад: arch"
+          className="mt-2 border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)] text-xs"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              confirmAddFolder();
+            }
+          }}
+        />
+      </div>
+      <DialogFooter>
+        <Button
+          variant="ghost"
+          onClick={() => setShowAddFolder(false)}
+          className="border-[var(--border-default)] bg-transparent text-[var(--text-secondary)] hover:bg-[rgba(255,255,255,0.05)] hover:text-[var(--text-primary)] text-xs h-8"
+        >
+          Скасувати
+        </Button>
+        <Button
+          onClick={confirmAddFolder}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs h-8"
+        >
+          Створити
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
 </div>
 );
 }

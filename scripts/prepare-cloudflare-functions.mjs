@@ -17,30 +17,40 @@ fs.cpSync(path.join(serverDir, "assets"), path.join(distDir, "assets"), {
   recursive: true,
 });
 
-// Знаходимо worker-entry файл
-// Спочатку — через regex у server/index.js
+// Знаходимо worker-entry або server-entry файл
+// Спочатку — через regex у server/index.js або server/server.js
 let workerFileName = null;
-const entryPath = path.join(serverDir, "index.js");
-if (fs.existsSync(entryPath)) {
-  const entryCode = fs.readFileSync(entryPath, "utf8");
-  const match = entryCode.match(/"\.\/assets\/(worker-entry-[^"]+)"/);
-  if (match) workerFileName = match[1];
+const entryFiles = ["index.js", "server.js"];
+for (const f of entryFiles) {
+  const entryPath = path.join(serverDir, f);
+  if (fs.existsSync(entryPath)) {
+    const entryCode = fs.readFileSync(entryPath, "utf8");
+    const match = entryCode.match(/"\.\/assets\/((?:worker-entry|server)-[^"]+)"/);
+    if (match) {
+      workerFileName = match[1];
+      break;
+    }
+  }
 }
 
-// Fallback — шукаємо worker-entry-* безпосередньо в dist/assets
+// Fallback — шукаємо worker-entry-* або server-* безпосередньо в dist/assets
 if (!workerFileName) {
   const assetsDir = path.join(distDir, "assets");
   if (fs.existsSync(assetsDir)) {
     const candidates = fs.readdirSync(assetsDir).filter((f) =>
-      f.startsWith("worker-entry-")
+      f.startsWith("worker-entry-") || f.startsWith("server-")
     );
-    if (candidates.length > 0) workerFileName = candidates[0];
+    if (candidates.length > 0) {
+      // Find the first JS file
+      const jsCandidate = candidates.find(c => c.endsWith(".js"));
+      if (jsCandidate) workerFileName = jsCandidate;
+    }
   }
 }
 
 if (!workerFileName) {
   throw new Error(
-    `Cannot detect worker entry: no worker-entry-* found in server/index.js or dist/assets/`
+    `Cannot detect worker entry: no worker-entry-* or server-* found in server files or dist/assets/`
   );
 }
 
