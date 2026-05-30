@@ -6804,7 +6804,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
 
 
-## [ ] TASK-89
+## [x] TASK-89
 
 ### Мета
 Запитати записник **OpenDesign** у NotebookLM через MCP (192.168.3.234:8002) та створити інструкцію інтеграції проекту **ai-drakon** з OpenDesign для покращення мобільного UI.
