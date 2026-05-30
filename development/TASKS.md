@@ -6901,7 +6901,7 @@ SESSION:2026-05-31|TASK-88:agy-dedup-fix|v1.2.0|fix:candidate-endpoints-dedup+de
 
 ---
 
-## [ ] TASK-87
+## [x] TASK-87
 
 ### Мета
 Встановити `agy` wrapper в OpenDesign Docker контейнер на dev сервері (192.168.3.184).
