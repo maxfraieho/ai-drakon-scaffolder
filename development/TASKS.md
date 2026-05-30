@@ -6804,6 +6804,156 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
 
 
+## [ ] TASK-89
+
+### Мета
+Запитати записник **OpenDesign** у NotebookLM через MCP (192.168.3.234:8002) та створити інструкцію інтеграції проекту **ai-drakon** з OpenDesign для покращення мобільного UI.
+
+### !!IMPORTANT!! Де запускати
+**ЛОКАЛЬНО на AGY phone (Termux)** — НЕ SSH на dev server.
+
+### Контекст
+- NotebookLM MCP: `http://192.168.3.234:8002`
+- OpenDesign notebook ID: `9975e787-887f-4e62-9d54-ba059efb9485`
+- ai-drakon repo: `~/workspace/ai-drakon-scaffolder`
+- OpenDesign UI: `http://192.168.3.184:7459` (token: `2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a`)
+- OpenDesign — local-first open-source design tool, підтримує: Web/mobile/desktop прототипи, 259+ skills, 142+ design systems, HTML/PDF/PPTX/MP4 export, GitHub sync
+
+### Кроки
+
+**1. Запитати NotebookLM MCP щодо OpenDesign + ai-drakon інтеграції**
+
+```python
+# Зберегти як ~/od-query.py та запустити: python3 ~/od-query.py
+import urllib.request, json
+
+NB_ID = "9975e787-887f-4e62-9d54-ba059efb9485"
+MCP = "http://192.168.3.234:8002"
+
+# Get session
+req = urllib.request.Request(MCP + "/mcp", method="GET")
+req.add_header("Accept", "application/json, text/event-stream")
+try:
+    urllib.request.urlopen(req, timeout=5)
+except Exception as e:
+    sid = getattr(e, "headers", {}).get("mcp-session-id", "")
+
+headers = {"Content-Type": "application/json", "mcp-session-id": sid}
+
+def mcp_call(method, params):
+    payload = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
+    req = urllib.request.Request(MCP + "/mcp", data=payload, headers=headers, method="POST")
+    req.add_header("Accept", "text/event-stream")
+    result = ""
+    with urllib.request.urlopen(req, timeout=30) as r:
+        for line in r:
+            line = line.decode().strip()
+            if line.startswith("data:"):
+                try:
+                    d = json.loads(line[5:])
+                    content = d.get("result", {}).get("content", [])
+                    if content:
+                        result = json.loads(content[0]["text"])
+                except: pass
+    return result
+
+# Initialize
+mcp_call("initialize", {"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"agy","version":"1.0"}})
+
+# Ask 3 questions
+questions = [
+    "Як підключити зовнішній GitHub репозиторій до OpenDesign? Покрокова інструкція для проекту на TypeScript/React.",
+    "Як налаштувати OpenDesign для покращення мобільного інтерфейсу React-проекту? Які design systems та skills найкраще підходять для mobile-first підходу?",
+    "Як використовувати OpenDesign для генерації мобільних UI компонентів та експорту в HTML/React код?"
+]
+
+answers = []
+for q in questions:
+    r = mcp_call("tools/call", {"name": "chat_ask", "arguments": {"notebook_id": NB_ID, "question": q}})
+    answers.append({"q": q, "a": r.get("answer", str(r))})
+    print(f"Q: {q[:60]}...")
+    print(f"A: {str(r)[:200]}")
+    print()
+
+# Save to file
+import os
+out = os.path.expanduser("~/od-answers.json")
+with open(out, "w") as f:
+    json.dump(answers, f, ensure_ascii=False, indent=2)
+print(f"Saved to {out}")
+```
+
+**2. Якщо MCP недоступний — використати LLM проксі**
+
+```python
+# Fallback: запитати Gemini через локальний проксі
+import urllib.request, json
+
+PROXY = "http://localhost:8080/v1/messages"
+prompt = """На основі документації OpenDesign (open-source, local-first design tool):
+- Підтримує: React/TypeScript проекти, 259+ skills, mobile/web прототипи
+- Агент: Antigravity (agy wrapper)
+- UI: http://192.168.3.184:7459
+
+Створи детальну інструкцію українською мовою:
+1. Як підключити ai-drakon TypeScript/React проект до OpenDesign
+2. Які skills/design systems вибрати для mobile-first UI
+3. Як генерувати та експортувати мобільні UI компоненти
+4. Конкретні кроки для покращення мобільного інтерфейсу Drakon-editor
+Формат: Markdown з розділами та кодовими прикладами."""
+
+payload = json.dumps({
+    "model": "gemini-2.5-flash",
+    "max_tokens": 4000,
+    "messages": [{"role": "user", "content": prompt}]
+}).encode()
+req = urllib.request.Request(PROXY, data=payload, headers={"Content-Type": "application/json"}, method="POST")
+with urllib.request.urlopen(req, timeout=60) as r:
+    resp = json.loads(r.read())
+text = ""
+for b in resp.get("content", []):
+    if b.get("type") == "text":
+        text += b["text"]
+print(text[:500])
+with open(os.path.expanduser("~/od-answers.txt"), "w") as f:
+    f.write(text)
+```
+
+**3. Зберегти результат у репо та закомітити**
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git pull origin main
+
+# Записати інструкцію
+mkdir -p docs
+# Скопіювати/написати результат у docs/opendesign-mobile-integration.md
+# Формат: Markdown, українська мова, розділи:
+# ## Підключення проекту до OpenDesign
+# ## Налаштування для Mobile-First
+# ## Генерація UI компонентів  
+# ## Експорт та інтеграція в React
+# ## Покращення мобільного інтерфейсу Drakon-editor
+
+git add docs/opendesign-mobile-integration.md
+git commit -m "docs: OpenDesign mobile integration guide for ai-drakon (TASK-89)"
+git push origin main
+```
+
+### Верифікація
+```bash
+# Файл створено?
+ls -la ~/workspace/ai-drakon-scaffolder/docs/opendesign-mobile-integration.md
+head -20 ~/workspace/ai-drakon-scaffolder/docs/opendesign-mobile-integration.md
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-89:opendesign-guide|notebooklm-query+mobile-integration-guide|file:docs/opendesign-mobile-integration.md|commit:<hash>|★★★
+```
+
+---
+
 ## [ ] TASK-88
 
 ### Мета
