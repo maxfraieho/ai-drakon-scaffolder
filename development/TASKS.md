@@ -6411,3 +6411,83 @@ git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-76 done �
 git -C ~/workspace/ai-drakon-scaffolder push origin main
 
 Diary: "SESSION:2026-05-30|TASK-76:agt-ogy3-mempalace-setup|scripts+clone+mining|drawers-indexed|★★★"
+
+==================================================================
+[ ] TASK-77
+Title: Інтеграція ai-memory-start/end в agy-task.sh (AGY phone + AGY3)
+Agent: AGY phone (і AGY3 паралельно)
+Run: локально на Termux. Змінюємо ~/bin/agy-task.sh
+==================================================================
+
+МЕТА: ai-memory-start.sh і ai-memory-end.sh мають викликатись АВТОМАТИЧНО
+при кожному запуску agy-task.sh — на початку і в кінці.
+
+STEP 1: Подивись поточний agy-task.sh
+head -20 ~/bin/agy-task.sh
+tail -20 ~/bin/agy-task.sh
+
+STEP 2: Додай виклик ai-memory-start.sh на початок (після shebang і змінних)
+Знайди перший рядок після змінних (десь рядок 10-15) і додай:
+
+# Notify ai-memory session start
+[ -x "$HOME/bin/ai-memory-start.sh" ] && "$HOME/bin/ai-memory-start.sh" 2>/dev/null &
+
+STEP 3: Додай виклик ai-memory-end.sh в кінець скрипту
+Перед останнім рядком (або в кінці основної логіки) додай:
+
+# Notify ai-memory session end
+[ -x "$HOME/bin/ai-memory-end.sh" ] && "$HOME/bin/ai-memory-end.sh" "agy-task completed: $TASK_ID" 2>/dev/null
+
+STEP 4: Запиши зміни через Python patch
+Збережи /tmp/task77_patch.py локально:
+
+PATH_TASK = "/data/data/com.termux/files/home/bin/agy-task.sh"
+with open(PATH_TASK) as f:
+    lines = f.readlines()
+
+# Find insertion point for start (after shebang + first variable block, ~line 5-8)
+insert_start_after = 0
+for i, line in enumerate(lines):
+    if line.strip().startswith("SKILLS_LIST=") or line.strip().startswith("TASK_ID="):
+        insert_start_after = i
+        break
+
+start_hook = '# Notify ai-memory\n[ -x "$HOME/bin/ai-memory-start.sh" ] && "$HOME/bin/ai-memory-start.sh" 2>/dev/null &\n\n'
+
+# Find insertion point for end (before last fi or at end)
+insert_end_before = len(lines)
+for i in range(len(lines)-1, 0, -1):
+    if lines[i].strip() and not lines[i].strip().startswith('#'):
+        insert_end_before = i + 1
+        break
+
+end_hook = '\n# Notify ai-memory end\n[ -x "$HOME/bin/ai-memory-end.sh" ] && "$HOME/bin/ai-memory-end.sh" "task: $TASK_ID" 2>/dev/null\n'
+
+# Check if already patched
+content = "".join(lines)
+if "ai-memory-start" in content:
+    print("ALREADY PATCHED — skip")
+else:
+    lines.insert(insert_start_after + 1, start_hook)
+    lines.insert(insert_end_before + 1, end_hook)
+    with open(PATH_TASK, "w") as f:
+        f.writelines(lines)
+    print(f"PATCHED: start after line {insert_start_after+1}, end before line {insert_end_before+1}")
+
+Запусти: python3 /tmp/task77_patch.py
+
+STEP 5: Верифікація
+grep -n "ai-memory" ~/bin/agy-task.sh | head -5
+# Має показати рядки з ai-memory-start і ai-memory-end
+
+STEP 6: Тест — запусти dummy task
+echo "ai-memory hooks test: $(~/bin/ai-memory-start.sh 2>&1 | head -1)"
+
+COMMIT (тільки TASKS.md):
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-77/[x] TASK-77/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-77 done — ai-memory hooks in agy-task.sh"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-77:ai-memory-hooks|agy-task.sh-start+end|auto-session-tracking|★★★"
