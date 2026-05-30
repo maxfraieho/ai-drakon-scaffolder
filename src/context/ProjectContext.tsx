@@ -63,54 +63,87 @@ const [activeProject, setActiveProjectState] = useState<Project | null>(null);
 const [loading, setLoading] = useState(false);
 
 const setActiveProject = useCallback((p: Project | null) => {
-setActiveProjectState(p);
-if (p) {
-localStorage.setItem(STORAGE_KEY, p.slug);
-} else {
-localStorage.removeItem(STORAGE_KEY);
-}
+  setActiveProjectState(p);
+  if (p) {
+    localStorage.setItem(STORAGE_KEY, p.slug);
+    try {
+      localStorage.setItem(STORAGE_KEY + "_data", JSON.stringify(p));
+    } catch {}
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+    try {
+      localStorage.removeItem(STORAGE_KEY + "_data");
+    } catch {}
+  }
 }, []);
 
 const loadProjects = useCallback(async () => {
-setLoading(true);
-try {
-const result = await listProjectsArch();
-const parsed = result.map((p) => {
-  let github: Project["github"];
-  if (p.repo_url) {
+  setLoading(true);
+  try {
+    const result = await listProjectsArch();
+    const parsed = result.map((p) => {
+      let github: Project["github"];
+      if (p.repo_url) {
+        try {
+          const u = new URL(p.repo_url);
+          const parts = u.pathname.replace(/^\//, "").split("/");
+          if (parts.length >= 2) {
+            github = { owner: parts[0], repo: parts[1], branch: p.branch || "main" };
+          }
+        } catch {}
+      }
+      return {
+        slug: p.slug,
+        name: p.name,
+        description: p.description,
+        hasDrakonIr: p.agents.length > 0,
+        hasDocs: false,
+        exists: true,
+        github,
+      };
+    });
+    setProjects(parsed);
+    const savedSlug = localStorage.getItem(STORAGE_KEY);
+    const saved = savedSlug ? parsed.find((p) => p.slug === savedSlug) : null;
+    
+    // Attempt fallback from serialized localStorage data if not found in parsed array
+    let fallbackActive: Project | null = null;
+    if (savedSlug && !saved) {
+      try {
+        const cachedData = localStorage.getItem(STORAGE_KEY + "_data");
+        if (cachedData) {
+          const parsedCached = JSON.parse(cachedData) as Project;
+          if (parsedCached && parsedCached.slug === savedSlug) {
+            fallbackActive = parsedCached;
+          }
+        }
+      } catch {}
+    }
+
+    setActiveProjectState((prev) => {
+      if (prev) {
+        const updated = parsed.find((p) => p.slug === prev.slug);
+        return updated ?? fallbackActive ?? parsed[0] ?? null;
+      }
+      return saved ?? fallbackActive ?? parsed[0] ?? null;
+    });
+  } catch (err) {
+    console.error("Failed to load projects:", err);
+    setProjects([]);
+    // Load cached active project as a fallback on failure
     try {
-      const u = new URL(p.repo_url);
-      const parts = u.pathname.replace(/^\//, "").split("/");
-      if (parts.length >= 2) {
-        github = { owner: parts[0], repo: parts[1], branch: p.branch || "main" };
+      const cachedData = localStorage.getItem(STORAGE_KEY + "_data");
+      if (cachedData) {
+        const parsedCached = JSON.parse(cachedData) as Project;
+        if (parsedCached) {
+          setActiveProjectState(parsedCached);
+          setProjects([parsedCached]);
+        }
       }
     } catch {}
+  } finally {
+    setLoading(false);
   }
-  return {
-    slug: p.slug,
-    name: p.name,
-    description: p.description,
-    hasDrakonIr: p.agents.length > 0,
-    hasDocs: false,
-    exists: true,
-    github,
-  };
-});
-setProjects(parsed);
-const savedSlug = localStorage.getItem(STORAGE_KEY);
-const saved = savedSlug ? parsed.find((p) => p.slug === savedSlug) : null;
-setActiveProjectState((prev) => {
-if (prev) {
-const updated = parsed.find((p) => p.slug === prev.slug);
-return updated ?? parsed[0] ?? null;
-}
-return saved ?? parsed[0] ?? null;
-});
-} catch {
-setProjects([]);
-} finally {
-setLoading(false);
-}
 }, []);
 
 useEffect(() => {
