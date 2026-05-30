@@ -6724,3 +6724,81 @@ git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-81 done �
 git -C ~/workspace/ai-drakon-scaffolder push origin main
 
 Diary: "SESSION:2026-05-30|TASK-81:timeout-fix-commit|nodes.py-25→45s|★★"
+
+==================================================================
+[ ] TASK-82
+Title: Fix Sharon bot timeout — put LocalProxy first, increase bot timeout
+Agent: AGY phone
+Run: SSH до dev server 192.168.3.184
+==================================================================
+
+ROOT CAUSE (підтверджено вимірюванням):
+- Consultant pipeline робить 2 LLM виклики
+- Кожен виклик пробує: AGY3(502, ~2s) → AGY(502, ~2s) → LocalProxy(200, ~13s) = ~17s
+- 2 виклики × 17s = 34s > 30s (bot timeout в uav_watcher.py) → chat_err
+
+FIX 1: Переставити LocalProxy ПЕРШИМ в config.json
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -c "
+import json
+with open(\"/home/vokov/projects/uav-watcher/config.json\") as f:
+    cfg = json.load(f)
+proxies = cfg.get(\"llm_proxies\", [])
+# Find LocalProxy and move it first
+local = [p for p in proxies if \"localhost\" in p.get(\"url\",\"\")]
+others = [p for p in proxies if \"localhost\" not in p.get(\"url\",\"\")]
+cfg[\"llm_proxies\"] = local + others
+cfg[\"llm_proxy_url\"] = local[0][\"url\"] if local else cfg.get(\"llm_proxy_url\")
+cfg[\"llm_proxy_token\"] = local[0].get(\"token\",\"freecc\") if local else cfg.get(\"llm_proxy_token\")
+cfg[\"llm_proxy_model\"] = local[0].get(\"model\",\"fast-proxy\") if local else cfg.get(\"llm_proxy_model\")
+with open(\"/home/vokov/projects/uav-watcher/config.json\", \"w\") as f:
+    json.dump(cfg, f, ensure_ascii=False, indent=2)
+print(\"Proxy order:\", [p[\"name\"] for p in cfg[\"llm_proxies\"]])
+"'
+
+FIX 2: Збільш bot timeout з 30 → 60s в uav_watcher.py
+Знайди рядок (line ~996):
+  async with httpx.AsyncClient(timeout=30.0) as hc:
+      resp = await hc.post("http://localhost:8770/chat",
+
+Збережи /tmp/task82_patch.py:
+
+PATH = "/home/vokov/projects/uav-watcher/uav_watcher.py"
+with open(PATH) as f: code = f.read()
+# There are multiple timeout=30.0 calls for chat
+old = 'async with httpx.AsyncClient(timeout=30.0) as hc:\n                resp = await hc.post(\n                    "http://localhost:8770/chat",'
+new = 'async with httpx.AsyncClient(timeout=60.0) as hc:\n                resp = await hc.post(\n                    "http://localhost:8770/chat",'
+count = code.count(old)
+if count > 0:
+    code = code.replace(old, new)
+    with open(PATH, "w") as f: f.write(code)
+    print(f"Patched {count} occurrence(s): 30 → 60s")
+else:
+    # Find by simpler pattern
+    import re
+    matches = [(i, l) for i,l in enumerate(code.splitlines()) if "timeout=30.0" in l and "8770" in code.splitlines()[min(i+3, len(code.splitlines())-1)][:50]]
+    for i,l in matches: print(f"L{i+1}: {l}")
+    print("ERROR: pattern not found")
+
+scp /tmp/task82_patch.py → server, run it
+
+Verify fix:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -m py_compile /home/vokov/projects/uav-watcher/uav_watcher.py && echo "OK"'
+
+FIX 3: Перезапусти сервіси та виміряй час
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sudo rc-service uav-consultant restart && sleep 5 && time curl -s --max-time 25 -X POST http://localhost:8770/chat -H "Content-Type: application/json" -d "{\"message\":\"тест\",\"session_id\":\"test\"}" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get(\"reply\",\"NO REPLY\")[:100])"'
+
+Очікуваний результат: відповідь за < 15 секунд (LocalProxy перший)
+
+COMMIT:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git add uav_watcher.py && git commit -m "fix(sharon-bot): increase chat timeout 30→60s + LocalProxy first (TASK-82)" && git push origin master'
+
+~/bin/ai-memory-commit.sh uav-watcher "uav_watcher.py"
+
+Mark done:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-82/[x] TASK-82/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-82 done — Sharon bot timeout fix"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
