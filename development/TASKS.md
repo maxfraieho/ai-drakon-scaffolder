@@ -5160,3 +5160,93 @@ Replace with:
   git push origin main
   git add development/TASKS.md && git commit -m "chore: mark TASK-55 done" && git push origin main
   python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-55:no-owner-fallback|DONE|***"
+
+---
+
+[ ] TASK-59
+Title: Fix ProjectSelector — прибрати dropdown з усіма проектами
+Agent: AGY3 (планшет)
+Run: locally on AGY3 Termux, NO SSH
+
+Context:
+ProjectSelector.tsx рендерить <Select> з усіма проектами з listProjectsArch() (бекенд
+повертає всі 12+ проектів). Ми вирішили працювати з одним проектом — його обирають в Settings.
+Dropdown непотрібний.
+
+Files:
+- /home/vokov/workspace/ai-drakon-scaffolder/src/components/workspace/ProjectSelector.tsx
+
+Fix:
+Замінити блок із <Select> (рядки де `{loading && projects.length === 0 ? ... : <Select ...>}`)
+на просте відображення назви активного проекту.
+
+Якщо `activeProject` є — показати:
+```tsx
+<div className="flex h-8 items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2">
+  <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)]" />
+  <span className="flex-1 truncate font-mono text-[11px] text-[var(--accent-amber)]">
+    {activeProject.name}
+  </span>
+</div>
+```
+
+Якщо `loading && !activeProject` — показати "Loading..." з Loader2.
+Якщо `!activeProject && !loading` — показати "No project".
+
+ПРИБРАТИ імпорти: Select, SelectContent, SelectItem, SelectTrigger, SelectValue (якщо не використовуються більше).
+
+Verification:
+cd /home/vokov/workspace/ai-drakon-scaffolder && npx tsc --noEmit 2>&1 | head -20
+
+Commit:
+git add src/components/workspace/ProjectSelector.tsx .lovable/src/components/workspace/ProjectSelector.tsx
+git commit -m "fix(ui): replace project dropdown with static active-project display (TASK-59)"
+git push origin main
+
+ВАЖЛИВО: після змін також скопіювати:
+cp src/components/workspace/ProjectSelector.tsx .lovable/src/components/workspace/ProjectSelector.tsx
+
+Diary: "SESSION:2026-05-30|TASK-59:remove-project-dropdown|DONE|commit:<hash>|★★★"
+(agent: agt-ogy3)
+
+---
+
+[ ] TASK-60
+Title: Fix AgentChatPanel — передати activeProject context агентам
+Agent: AGY phone (телефон)
+Run: locally on AGY phone Termux, NO SSH
+
+Context:
+AgentChatPanel.tsx викликає sendMessage(activeAgent, text) БЕЗ context.
+Тому агент не знає який проект активний і відповідає про свій дефолтний (ai-drakon IDE).
+Треба передати activeProject slug/path/name як context.
+
+Files:
+- /home/vokov/workspace/ai-drakon-scaffolder/src/components/agents/AgentChatPanel.tsx
+
+Fix:
+1. Додати імпорт: import { useProject } from "@/context/ProjectContext";
+2. В компоненті AgentChatPanel додати: const { activeProject } = useProject();
+3. Знайти рядок `void sendMessage(activeAgent, text)` в handleSend
+4. Замінити на:
+   ```ts
+   void sendMessage(activeAgent, text, {
+     project_slug: activeProject?.slug ?? null,
+     project_name: activeProject?.name ?? null,
+     project_path: activeProject?.path ?? null,
+   });
+   ```
+
+Verification:
+cd /home/vokov/workspace/ai-drakon-scaffolder && npx tsc --noEmit 2>&1 | head -20
+
+Commit:
+git add src/components/agents/AgentChatPanel.tsx .lovable/src/components/agents/AgentChatPanel.tsx
+git commit -m "fix(agents): pass activeProject context to agent sendMessage (TASK-60)"
+git push origin main
+
+ВАЖЛИВО: після змін також скопіювати:
+cp src/components/agents/AgentChatPanel.tsx .lovable/src/components/agents/AgentChatPanel.tsx
+
+Diary: "SESSION:2026-05-30|TASK-60:agent-project-context|DONE|commit:<hash>|★★★"
+(agent: agt-ogy)
