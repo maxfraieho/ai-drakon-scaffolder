@@ -6319,3 +6319,95 @@ git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-75 done �
 git -C ~/workspace/ai-drakon-scaffolder push origin main
 
 Diary: "SESSION:2026-05-30|TASK-75:mempalace-auto-mining|ai-memory-commit+mp-index|uav-watcher-cloned-on-agy|★★★"
+
+==================================================================
+[ ] TASK-76
+Title: Налаштування MemPalace auto-mining на AGY3 (аналог AGY phone + OrangePi)
+Agent: AGY3
+Run: локально на AGY3 Termux. НЕ через SSH до інших серверів.
+==================================================================
+
+МЕТА: AGY3 має автоматично оновлювати MemPalace після кожного commit+push,
+аналогічно до AGY phone (TASK-75) та OrangePi.
+
+STEP 1: Перевір поточний стан скриптів
+ls ~/bin/ai-memory-commit.sh ~/bin/mp-index.sh 2>/dev/null && echo "EXIST" || echo "MISSING"
+cat ~/bin/ai-memory-commit.sh 2>/dev/null | head -5
+
+Якщо скриптів немає — завантаж з OrangePi через proxy або GitHub.
+Спробуй спочатку скопіювати з AGY phone:
+sshpass -p '123456' scp -P 8022 u0_a284@192.168.3.25:~/bin/ai-memory-commit.sh ~/bin/ai-memory-commit.sh 2>/dev/null
+sshpass -p '123456' scp -P 8022 u0_a284@192.168.3.25:~/bin/mp-index.sh ~/bin/mp-index.sh 2>/dev/null
+chmod +x ~/bin/ai-memory-commit.sh ~/bin/mp-index.sh 2>/dev/null
+
+STEP 2: Виправ shebang для Termux (критично!)
+Перший рядок ai-memory-commit.sh і mp-index.sh має бути:
+  #!/data/data/com.termux/files/usr/bin/bash
+
+Перевір і виправ якщо потрібно:
+head -1 ~/bin/ai-memory-commit.sh
+# Якщо там #!/bin/bash — заміни:
+sed -i '1s|.*|#!/data/data/com.termux/files/usr/bin/bash|' ~/bin/ai-memory-commit.sh
+sed -i '1s|.*|#!/data/data/com.termux/files/usr/bin/bash|' ~/bin/mp-index.sh 2>/dev/null
+
+STEP 3: Перевір шляхи проектів в ai-memory-commit.sh
+cat ~/bin/ai-memory-commit.sh | grep PROJECT_PATHS
+
+Має бути:
+  PROJECT_PATHS["uav-watcher"]="$HOME/projects/uav-watcher"
+  PROJECT_PATHS["ai-drakon"]="$HOME/workspace/ai-drakon-scaffolder"
+
+Якщо відрізняється — виправ через sed або редактор.
+
+STEP 4: Клонуй проекти якщо не існують
+mkdir -p ~/projects ~/workspace
+
+ls ~/projects/uav-watcher 2>/dev/null || \
+  git clone https://github.com/maxfraieho/uav-watcher.git ~/projects/uav-watcher
+
+ls ~/workspace/ai-drakon-scaffolder 2>/dev/null || \
+  git clone https://github.com/maxfraieho/ai-drakon-scaffolder.git ~/workspace/ai-drakon-scaffolder
+
+STEP 5: Перевір mempalace на AGY3
+python3 -m mempalace --help 2>/dev/null | head -3 || echo "MISSING"
+# Якщо немає:
+pip3 install mempalace --quiet 2>/dev/null || pipx install mempalace
+
+# Перевір версію:
+python3 -c "import mempalace; print(mempalace.__version__)" 2>/dev/null
+
+STEP 6: Підтягни останній код і запусти mining
+cd ~/projects/uav-watcher && git pull origin master
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+# Mining uav-watcher:
+~/bin/ai-memory-commit.sh uav-watcher "consultant/pipeline/nodes.py,uav_watcher.py,web_config.py,sharon/pipelines/threat_classifier.py"
+
+# Mining ai-drakon:
+~/bin/ai-memory-commit.sh ai-drakon "src/lib/agent-api.ts,src/pages/LoginPage.tsx,cloudflare-worker/worker-mcp-drakon.js"
+
+STEP 7: Верифікація — пошук в MemPalace
+python3 -m mempalace search "multi proxy fallback" --wing uav-watcher 2>/dev/null | head -5
+python3 -m mempalace search "agent api reply response" --wing ai-drakon 2>/dev/null | head -5
+
+Якщо знайдено результати — все працює.
+
+STEP 8: Налаштуй mempalace server connection (якщо потрібно)
+Перевір чи mempalace підключається до сервера:
+python3 -c "from mempalace.config import MempalaceConfig; c = MempalaceConfig(); print(c.palace_path, c.server_url if hasattr(c,'server_url') else 'local')" 2>/dev/null
+
+Якщо є server_url — має вказувати на 192.168.3.234 або agy3.exodus.pp.ua
+
+ВАЖЛИВО для майбутніх TASK: Після кожного git push на AGY3 обов'язково:
+  ~/bin/ai-memory-commit.sh uav-watcher "змінені_файли"
+  або
+  ~/bin/ai-memory-commit.sh ai-drakon "змінені_файли"
+
+COMMIT:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-76/[x] TASK-76/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-76 done — AGY3 MemPalace mining setup"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-76:agt-ogy3-mempalace-setup|scripts+clone+mining|drawers-indexed|★★★"
