@@ -6704,3 +6704,23 @@ git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-80 done �
 git -C ~/workspace/ai-drakon-scaffolder push origin main
 
 Diary: "SESSION:2026-05-30|TASK-80:enforce-skill-eval-print|agy-task.sh-updated|mandatory-output|★★★"
+
+==================================================================
+[ ] TASK-81
+Title: Commit nodes.py timeout fix (25→45s) on dev server
+Agent: AGY phone
+Run: SSH до dev server 192.168.3.184. Простий 1-рядковий коміт.
+==================================================================
+
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git diff consultant/pipeline/nodes.py | head -5 && git add consultant/pipeline/nodes.py && git commit -m "fix(consultant): increase LLM call timeout 25→45s for stability (TASK-78 side-effect)" && git push origin master && echo DONE'
+
+~/bin/ai-memory-commit.sh uav-watcher "consultant/pipeline/nodes.py"
+
+Mark done:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-81/[x] TASK-81/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-81 done — commit timeout fix"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-81:timeout-fix-commit|nodes.py-25→45s|★★"
