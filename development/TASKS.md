@@ -5764,7 +5764,7 @@ Verification:
 Diary: "SESSION:2026-05-30|TASK-71:ai-drakon-fixes|4-bugs-fixed|response-key+login+useragent+diagram-endpoint|commit:<hash>|★★★"
 
 ==================================================================
-[ ] TASK-72
+[x] TASK-72
 Title: UAV-Watcher LLM Refactoring — Replace REGEX with AI classifier
 Agent: AGY3
 Run: locally on AGY3 Termux for git ops. SSH to dev server 192.168.3.184 for uav-watcher code.
