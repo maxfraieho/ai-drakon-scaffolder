@@ -36,7 +36,7 @@ This document records the issues, inconsistencies, and observations collected du
 - **Symptom**: Making HTTP requests from a standard Python script via `urllib.request` to the Cloudflare Worker domain `https://drakon-mcp-worker.maxfraieho.workers.dev` returned `HTTP Error 403: Forbidden`.
 - **Cause**: Cloudflare's WAF (Web Application Firewall) blocks the default Python User-Agent string (`Python-urllib/3.x`).
 - **Workaround**: Setting a standard User-Agent header (like `"User-Agent": "curl/7.68.0"`) resolved the block instantly.
-- **Recommendation**: Document this User-Agent requirement or recommend using `requests` with custom headers for any Python scripts communicating with the worker.
+- **Status**: Fixed. Added `"User-Agent": "curl/7.68.0"` to all urllib requests in the shared service client modules (`services/shared/llm_client.py` and `services/shared/ai_memory.py`), which resolved all 403 blocks instantly.
 
 ---
 

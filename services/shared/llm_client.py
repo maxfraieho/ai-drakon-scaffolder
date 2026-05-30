@@ -22,7 +22,7 @@ def chat(
     system: str = "",
 ) -> str:
     """Send chat request. Returns text response. Raises on error."""
-    headers = {"Content-Type": "application/json"}
+    headers = {"Content-Type": "application/json", "User-Agent": "curl/7.68.0"}
     if api_key:
         headers["x-api-key"] = api_key
         headers["anthropic-version"] = "2023-06-01"

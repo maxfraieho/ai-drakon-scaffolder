@@ -22,7 +22,7 @@ def _rpc(method: str, params: dict) -> dict:
     req = urllib.request.Request(
         AI_MEMORY_URL,
         data=payload,
-        headers={"Content-Type": "application/json"},
+        headers={"Content-Type": "application/json", "User-Agent": "curl/7.68.0"},
         method="POST",
     )
     try:
