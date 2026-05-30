@@ -5211,7 +5211,7 @@ Diary: "SESSION:2026-05-30|TASK-59:remove-project-dropdown|DONE|commit:<hash>|�
 
 ---
 
-[ ] TASK-60
+[x] TASK-60
 Title: Fix AgentChatPanel — передати activeProject context агентам
 Agent: AGY phone (телефон)
 Run: locally on AGY phone Termux, NO SSH
