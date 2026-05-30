@@ -5250,3 +5250,219 @@ cp src/components/agents/AgentChatPanel.tsx .lovable/src/components/agents/Agent
 
 Diary: "SESSION:2026-05-30|TASK-60:agent-project-context|DONE|commit:<hash>|★★★"
 (agent: agt-ogy)
+
+---
+
+[ ] TASK-61
+Title: Create ai-memory-commit.sh on all devices
+Agent: AGY3
+Run: locally on AGY3 Termux, then SSH to OrangePi + AGY phone
+
+Context:
+MemPalace-First methodology needs a script that notifies ai-memory after each git push.
+Full plan: docs/plans/2026-05-30-mempalace-first-methodology.md
+
+Files:
+- Create ~/bin/ai-memory-commit.sh on AGY3 locally
+- SSH copy to vokov@192.168.3.184:~/bin/ai-memory-commit.sh
+- SSH copy to u0_a284@192.168.3.25:~/bin/ai-memory-commit.sh (port 8022, pass 123456)
+
+Script content:
+#!/bin/bash
+PROJECT=${1:-unknown}
+FILES=${2:-}
+curl -s "http://192.168.3.184:49374/hook?event=Commit&project=${PROJECT}&files=${FILES}" > /dev/null
+
+chmod +x ~/bin/ai-memory-commit.sh
+
+Verification: ~/bin/ai-memory-commit.sh ai-drakon "test.ts" && echo OK
+
+Commit: NO git commit needed (local scripts only)
+Diary: "SESSION:2026-05-30|TASK-61:ai-memory-commit.sh|created-3-devices|★★★"
+(agent: agt-ogy3)
+
+---
+
+[ ] TASK-62
+Title: ai-memory server — add Commit event handler
+Agent: AGY3
+Run: SSH to vokov@192.168.3.184
+
+Context:
+ai-memory server on 192.168.3.184 does not handle event=Commit yet.
+Find server code and add handler.
+Full plan: docs/plans/2026-05-30-mempalace-first-methodology.md
+
+Step 1 - Find server code:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 "find /home/vokov -name '*.py' | xargs grep -l 'SessionStart' 2>/dev/null | head -5"
+
+Step 2 - Add Commit handler:
+- Parse query params: project, files
+- PROJECT_PATHS = {"ai-drakon": "/home/vokov/workspace/ai-drakon-scaffolder", "uav-watcher": "/home/vokov/projects/uav-watcher"}
+- On Commit event: git -C <path> pull, then ~/bin/mp-index.sh <project> <path> <files>
+
+Step 3 - Restart service if needed (sudo rc-service <service> restart)
+
+Verification: curl "http://192.168.3.184:49374/hook?event=Commit&project=ai-drakon&files=test.ts" && echo OK
+
+Diary: "SESSION:2026-05-30|TASK-62:ai-memory-commit-handler|★★★"
+(agent: agt-ogy3)
+
+---
+
+[ ] TASK-63
+Title: Create mp-index.sh on all devices
+Agent: AGY3
+Run: locally on AGY3, then SSH deploy to OrangePi + AGY phone
+
+Context:
+Script for indexing project into local MemPalace.
+Reads .mempalace.json config, indexes specific files or full project.
+Full plan: docs/plans/2026-05-30-mempalace-first-methodology.md
+
+Script content (~/bin/mp-index.sh):
+#!/bin/bash
+WING=$1
+PROJECT_PATH=$2
+FILES=$3
+cd "$PROJECT_PATH" || exit 1
+if [ -z "$FILES" ]; then
+    python3 -m mempalace index . --wing "$WING" --config .mempalace.json
+else
+    IFS="," read -ra FILE_LIST <<< "$FILES"
+    for f in "${FILE_LIST[@]}"; do
+        [ -f "$f" ] && python3 -m mempalace index "$f" --wing "$WING"
+    done
+fi
+
+chmod +x ~/bin/mp-index.sh
+Deploy same way as TASK-61 (SSH copy to all devices).
+
+Verification:
+~/bin/mp-index.sh ai-drakon ~/workspace/ai-drakon-scaffolder
+python3 -m mempalace search "AgentChatPanel" --wing ai-drakon | head -5
+
+Diary: "SESSION:2026-05-30|TASK-63:mp-index.sh|created-3-devices|★★★"
+(agent: agt-ogy3)
+
+---
+
+[ ] TASK-64
+Title: .mempalace.json for ai-drakon + initial index
+Agent: AGY3
+Run: locally on AGY3 (after TASK-63 is done)
+
+Context:
+Register ai-drakon project in MemPalace system.
+
+File: /home/vokov/workspace/ai-drakon-scaffolder/.mempalace.json
+Content:
+{
+  "wing": "ai-drakon",
+  "index": ["src/**/*.{ts,tsx}", "services/**/*.py", "docs/**/*.md", "development/TASKS.md", "development/SYNC_METHODOLOGY.md", "HANDOFF.md", "package.json"],
+  "exclude": [".env*", "node_modules/", "*.lock", "dist/", ".lovable/"],
+  "chunk_by": "function"
+}
+
+After creating file:
+git add .mempalace.json
+git commit -m "chore: register ai-drakon in MemPalace index (TASK-64)"
+git push origin main
+~/bin/mp-index.sh ai-drakon ~/workspace/ai-drakon-scaffolder
+
+Verification: python3 -m mempalace search "ProjectSelector" --wing ai-drakon | head -5
+
+Diary: "SESSION:2026-05-30|TASK-64:mempalace-ai-drakon-registered|indexed|★★★"
+(agent: agt-ogy3)
+
+---
+
+[ ] TASK-65
+Title: .mempalace.json for uav-watcher + initial index
+Agent: AGY3
+Run: SSH to vokov@192.168.3.184 (after TASK-63 is done)
+
+Context:
+Register uav-watcher project in MemPalace system.
+uav-watcher repo is at /home/vokov/projects/uav-watcher on 192.168.3.184
+
+File to create: /home/vokov/projects/uav-watcher/.mempalace.json
+Content:
+{
+  "wing": "uav-watcher",
+  "index": ["*.py", "docs/**/*.md", "HANDOFF.md"],
+  "exclude": [".env*", "__pycache__/", "*.pyc", "config.json"],
+  "chunk_by": "function"
+}
+
+SSH to server: sshpass -p '805235io.' ssh vokov@192.168.3.184
+Then:
+cd /home/vokov/projects/uav-watcher
+git add .mempalace.json
+git commit -m "chore: register uav-watcher in MemPalace index (TASK-65)"
+git push origin master
+~/bin/mp-index.sh uav-watcher /home/vokov/projects/uav-watcher
+
+Verification: python3 -m mempalace search "geo_monitor" --wing uav-watcher | head -5
+
+Diary: "SESSION:2026-05-30|TASK-65:mempalace-uav-watcher-registered|indexed|★★★"
+(agent: agt-ogy3)
+
+---
+
+[ ] TASK-66
+Title: agy-task.sh — add MemPalace-first rule to prompts
+Agent: AGY3
+Run: locally on AGY3, then SSH copy to AGY phone
+
+Context:
+AGY agents must know the MemPalace-first rule.
+Add the rule to the task prompt in ~/bin/agy-task.sh.
+File: ~/bin/agy-task.sh on AGY3 and AGY phone.
+
+Add this block to the task prompt (before task execution instructions):
+=== MEMPALACE-FIRST RULE (MANDATORY) ===
+Before reading ANY project file with cat/head/Read:
+  1. python3 -m mempalace search "<description>" --wing <project-slug>
+  2. If found: read ONLY that specific section (targeted offset+limit, not full file)
+  3. If not found: read full file (exception only), then notify:
+     ~/bin/ai-memory-commit.sh <project-slug> "<file-path>"
+After every git push: ALWAYS run:
+  ~/bin/ai-memory-commit.sh <project-slug> "<comma-separated-changed-files>"
+Project slugs: ai-drakon, uav-watcher
+=========================================
+
+After editing ~/bin/agy-task.sh on AGY3:
+Copy to AGY phone:
+sshpass -p '123456' ssh -p 8022 u0_a284@192.168.3.25 "cat > ~/bin/agy-task.sh" < ~/bin/agy-task.sh
+
+Verification: grep "MEMPALACE" ~/bin/agy-task.sh && echo OK
+
+Diary: "SESSION:2026-05-30|TASK-66:agy-task-mempalace-rule|AGY3+phone|★★★"
+(agent: agt-ogy3)
+
+---
+
+[ ] TASK-67
+Title: SYNC_METHODOLOGY.md — add MemPalace-First section
+Agent: AGY3
+Run: locally on AGY3
+
+Context:
+Update sync methodology document with MemPalace-First section.
+File: /home/vokov/workspace/ai-drakon-scaffolder/development/SYNC_METHODOLOGY.md
+
+Add section "## MemPalace-First Lookup" with:
+1. Core rule: search before read, 5-10x token savings
+2. Registered projects table: wing name | path | agents
+3. Commit flow: git push -> ai-memory-commit.sh -> all agents re-index
+4. Architecture: each agent has own local MemPalace (distributed, coordinated via ai-memory)
+5. Exception: fallback to full read + self-heal (rare, not the norm)
+
+Commit:
+git add development/SYNC_METHODOLOGY.md
+git commit -m "docs: add MemPalace-first methodology section (TASK-67)"
+git push origin main
+
+Diary: "SESSION:2026-05-30|TASK-61..67:mempalace-first-COMPLETE|distributed-mempalace|all-agents|★★★"
+(agent: agt-ogy3)
