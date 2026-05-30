@@ -6321,7 +6321,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-75:mempalace-auto-mining|ai-memory-commit+mp-index|uav-watcher-cloned-on-agy|★★★"
 
 ==================================================================
-[ ] TASK-76
+[x] TASK-76
 Title: Налаштування MemPalace auto-mining на AGY3 (аналог AGY phone + OrangePi)
 Agent: AGY3
 Run: локально на AGY3 Termux. НЕ через SSH до інших серверів.
