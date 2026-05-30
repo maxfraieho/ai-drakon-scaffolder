@@ -6493,7 +6493,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-77:ai-memory-hooks|agy-task.sh-start+end|auto-session-tracking|★★★"
 
 ==================================================================
-[ ] TASK-78
+[x] TASK-78
 Title: Fix consultant LLM timeout + verify proxy fallback chain
 Agent: AGY3
 Run: SSH до dev server 192.168.3.184
