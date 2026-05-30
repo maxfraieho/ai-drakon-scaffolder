@@ -5564,3 +5564,189 @@ git push origin main
 
 Diary: "SESSION:2026-05-30|TASK-69:agents-project-context|DONE|commit:<hash>|★★★"
 (agent: agt-ogy3)
+
+---
+
+[ ] TASK-70
+Title: UAV-Watcher Deep Analysis + AI Refactoring Plan via AI-DRAKON Pipeline
+Agent: AGY3
+Run: locally on AGY3 Termux + MCP connector + PinchTab web interface
+
+Context:
+uav-watcher (Sharon) — система моніторингу повітряних загроз для міст України.
+ПРОБЛЕМИ (підтверджені аналізом коду):
+1. Класифікація загроз через REGEX (_THREAT_PATTERNS, _AIRARAID_PATTERNS) — не розуміє сленг/скорочення/синоніми
+2. score_proximity() використовує city_keywords список — пропускає синоніми назв міста
+3. Сповіщення не містять прямих посилань на конкретні повідомлення каналів
+4. Інколи відсилає нерелевантні статті замість сповіщень про загрози
+5. Channel throttle/cooldown може придушувати легітимні сповіщення
+
+МЕТА: Провести повний аналіз через AI-DRAKON pipeline та підготувати план рефакторингу
+на AI-based класифікацію (як architect-agent використовує LangGraph).
+
+!! ВАЖЛИВО: Виконуй все через AI-DRAKON інструменти за офіційним pipeline !!
+Pipeline: Документація → Архітектурний аналіз → DRAKON схеми → План рефакторингу
+
+==================================================================
+PHASE 1: ДОКУМЕНТАЦІЯ через docs-agent
+==================================================================
+
+Крок 1.1 — Запустити PinchTab і відкрити AI-DRAKON UI:
+Використай pinchtab skill для відкриття https://ai-drakon-scaffolder.pages.dev/
+Увійди в систему (owner/805235io.)
+Обери проект uav-watcher в Settings
+
+Крок 1.2 — Документування через docs-agent:
+В UI перейди на вкладку Agents → docs agent
+Відправ запит:
+"Проаналізуй та задокументуй поточну архітектуру uav-watcher.
+Особливу увагу приділ:
+1. Механізму класифікації загроз (uav_watcher.py: _THREAT_PATTERNS, score_proximity, classify_threat_level)
+2. geo_monitor.py: build_pattern_from_locations — як будується regex з координат
+3. Потік обробки повідомлення: отримання → класифікація → фільтрація → сповіщення
+4. Поточні обмеження: що може пропускати чи неправильно класифікувати
+Шлях: /home/vokov/projects/uav-watcher (або /home/vokov/.mempalace/projects/uav-watcher)"
+
+АБО через MCP:
+curl -s -X POST "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/agents/docs/chat" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $(curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/auth/login -H 'Content-Type: application/json' -d '{"username":"owner","password":"805235io."}' | python3 -c 'import sys,json;print(json.load(sys.stdin).get("token",""))')" \
+  -d '{
+    "message": "Задокументуй архітектуру uav-watcher. Фокус: механізм класифікації загроз через regex vs AI, потік обробки повідомлень, обмеження поточного підходу.",
+    "context": {"project_slug": "uav-watcher", "project_path": "/home/vokov/projects/uav-watcher"}
+  }'
+
+Збережи результат в ~/workspace/ai-drakon-scaffolder/docs/uav-watcher/threat-detection-analysis.md
+
+==================================================================
+PHASE 2: АРХІТЕКТУРНИЙ АНАЛІЗ через architect-agent + DRAKON
+==================================================================
+
+Крок 2.1 — Аналіз через architect-agent:
+В UI Agents → architect agent, або через MCP /v1/agents/architect/chat:
+"Проаналізуй uav-watcher threat detection pipeline.
+Поточна архітектура: regex (_THREAT_PATTERNS) → score_proximity(city_keywords) → classify_threat_level → notify
+Проблеми: не розуміє сленг/скорочення каналів, пропускає синоніми міст, немає посилань на джерела.
+Запропонуй нову архітектуру на базі AI (як у architect-agent використовується LangGraph):
+- Замінити regex на LLM-класифікацію (gemini-2.5-flash через agy3.exodus.pp.ua/v1)
+- Додати context: повідомлення + метадані каналу + поточне місто
+- Зберігати message_id/channel_link для посилань у сповіщеннях
+- Використати shared/llm_client.py якщо він підходить"
+
+Крок 2.2 — Генерувати DRAKON схеми:
+Використай AI-DRAKON MCP drakon.generateDrakon або UI Schemes tab:
+
+Схема 1: "flow.threat-detection-current" — поточний потік (для порівняння)
+Схема 2: "flow.threat-detection-ai" — новий AI-based потік:
+  message_received → [LLM classify: threat/irrelevant/unclear] → 
+  if threat: [score_proximity_ai(city, message_context)] → 
+  if relevant: [build_notification(text, source_url, channel_name)] → notify
+  
+Схема 3: "flow.city-recognition" — розпізнавання міста через AI:
+  city_config → [LLM expand synonyms: офіційна + неофіційна + сленг назви] →
+  [build semantic context for LLM classifier]
+
+Крок 2.3 — Збережи схеми через MCP:
+curl -s -X POST "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/drakon/commit" \
+  -H "Authorization: Bearer $JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"folder": "uav-watcher", "name": "flow.threat-detection-ai", "ir": <DRAKON_IR>}'
+
+==================================================================
+PHASE 3: ДЕТАЛЬНИЙ ПЛАН РЕФАКТОРИНГУ
+==================================================================
+
+На основі аналізу (Phase 1+2) та DRAKON схем — написати файл:
+~/workspace/ai-drakon-scaffolder/docs/plans/2026-05-30-uav-watcher-ai-refactoring.md
+
+План має містити:
+
+## 1. Замінити regex класифікацію на LLM
+Файл: /home/vokov/projects/uav-watcher/uav_watcher.py
+Змінити: функції classify_threat_level() і score_proximity()
+Підхід: 
+- Один LLM запит на повідомлення (не окремо keyword search)
+- Промпт: місто + повідомлення → {threat_level: 0-3, is_relevant: bool, reason: str}
+- Використати shared/llm_client.py або aiohttp до agy3.exodus.pp.ua/v1
+
+## 2. Додати message metadata збереження
+Зберігати для кожного повідомлення:
+- channel_username, message_id → для побудови https://t.me/channel/msg_id
+- Додати в сповіщення пряме посилання
+
+## 3. Розширити розпізнавання міста
+Замінити geo_monitor.py Overpass regex → LLM synonyms expansion:
+- Один раз на старті розширити назву міста (офіційна + неофіційна + сленгові)
+- Передавати як context у LLM класифікатор
+
+## 4. Оновлена архітектура файлів
+Які файли змінити, які додати, порядок впровадження.
+
+==================================================================
+PHASE 4: (ОПЦІЙНО) Початкова реалізація
+==================================================================
+
+Якщо Phase 1-3 завершені успішно і залишається час/quota:
+Реалізуй найкритичнішу зміну: LLM-based classify_threat_level()
+
+Файл: /home/vokov/projects/uav-watcher/uav_watcher.py
+(або /home/vokov/.mempalace/projects/uav-watcher/uav_watcher.py)
+
+Після змін — commit в uav-watcher repo:
+cd /home/vokov/projects/uav-watcher
+git add -p && git commit -m "feat: replace regex threat classifier with LLM (AI-DRAKON pipeline)"
+git push origin master
+
+==================================================================
+VERIFICATION
+==================================================================
+
+1. docs/uav-watcher/threat-detection-analysis.md існує і містить аналіз
+2. DRAKON схеми flow.threat-detection-ai збережені (перевір в UI Schemes)
+3. docs/plans/2026-05-30-uav-watcher-ai-refactoring.md існує з детальним планом
+4. Якщо Phase 4 виконано: тести на кількох прикладах повідомлень
+
+Commits:
+- ai-drakon-scaffolder: docs + plans
+- uav-watcher (якщо Phase 4): код
+
+Diary: "SESSION:2026-05-30|TASK-70:uav-watcher-ai-analysis|Phase1-docs|Phase2-drakon-diagrams|Phase3-refactoring-plan|Phase4(optional):llm-classifier|★★★"
+(agent: agt-ogy3)
+
+ВАЖЛИВО: Це великий аналіз. Краще зробити Phase 1-3 добре, ніж квапитись на Phase 4.
+Використовуй AI-DRAKON web UI через PinchTab де можливо — це офіційний інструмент проекту.
+
+==================================================================
+PHASE 5: ЗБІР ПРОБЛЕМ AI-DRAKON під час аналізу
+==================================================================
+
+Під час роботи з AI-DRAKON інструментами (MCP, agents, UI) — фіксуй ВСІ знайдені проблеми:
+
+Категорії для спостереження:
+1. Проблеми MCP connector: помилки, таймаути, невірні відповіді
+2. Проблеми docs-agent: неточна документація, неправильні шляхи, пропущені деталі
+3. Проблеми architect-agent: неправильний контекст, невідповідні рекомендації
+4. Проблеми DRAKON UI: PinchTab баги, схеми не зберігаються, помилки генерації
+5. Проблеми з проектним контекстом: agent відповідає про невірний проект
+6. Будь-які інші несподівані поведінки
+
+Збережи всі знайдені проблеми в файлі:
+~/workspace/ai-drakon-scaffolder/docs/plans/2026-05-30-ai-drakon-issues-from-uav-analysis.md
+
+Формат кожної проблеми:
+## [ISSUE-N] Назва проблеми
+- **Компонент:** (MCP/docs-agent/architect-agent/DRAKON/UI)
+- **Кроки для відтворення:** ...
+- **Очікувано:** ...
+- **Фактично:** ...
+- **Критичність:** HIGH/MEDIUM/LOW
+- **Пропоноване рішення:** ...
+
+Після збору — створи загальний план усунення:
+~/workspace/ai-drakon-scaffolder/docs/plans/2026-05-30-ai-drakon-improvement-plan.md
+
+Цей план має містити:
+1. Пріоритизований список проблем (HIGH → LOW)
+2. Конкретні кроки виправлення для кожної
+3. Оцінку складності (TASK для AGY3/AGY/Claude)
+4. Наскільки проблеми пов'язані між собою
