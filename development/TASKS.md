@@ -6217,3 +6217,52 @@ VERIFICATION
 - curl -s -X POST http://192.168.3.184:8770/chat -H "Content-Type: application/json" -d '{"message":"тест"}' | python3 -m json.tool | head -5
 
 Diary: "SESSION:2026-05-30|TASK-73:multi-proxy-llm+web-ui|nodes+uav+classifier+webconfig|fallback-logic|commit:<hash>|★★★"
+
+==================================================================
+[ ] TASK-74
+Title: Sharon consultant — фільтрація INFO-подій зі списку загроз
+Agent: AGY phone
+Run: SSH до dev server 192.168.3.184
+SSH: sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+==================================================================
+
+ПРОБЛЕМА:
+Консультант показує нерелевантні події (новини, забіги) при запиті про загрози.
+Root cause: _read_recent_events() у nodes.py повертає всі типи подій включно з "info".
+
+FIX — одна строка в nodes.py:
+Знайди функцію _read_recent_events і рядок:
+  evs = get_recent_threats(hours=hours)
+
+Одразу після нього додай:
+  evs = [e for e in evs if e.get("threat_type") != "info"]
+
+Запиши /tmp/task74.py локально і scp на сервер:
+Content of /tmp/task74.py:
+  PATH = "/home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py"
+  with open(PATH) as f: code = f.read()
+  old = '        evs = get_recent_threats(hours=hours)\n        if not evs:'
+  new = '        evs = get_recent_threats(hours=hours)\n        evs = [e for e in evs if e.get("threat_type") != "info"]\n        if not evs:'
+  if old in code:
+      code = code.replace(old, new)
+      with open(PATH, "w") as f: f.write(code)
+      print("PATCHED OK")
+  else:
+      print("ERROR: not found"); [print(f"{i+1}: {l}") for i,l in enumerate(code.splitlines()) if "get_recent_threats" in l]
+
+Run patch:
+sshpass -p '805235io.' scp -o StrictHostKeyChecking=no /tmp/task74.py vokov@192.168.3.184:/tmp/task74.py
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 /tmp/task74.py && python3 -m py_compile /home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py && echo "SYNTAX OK"'
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sudo rc-service uav-consultant restart && sleep 3 && tail -5 /var/log/uav-consultant.log'
+
+COMMIT (uav-watcher repo, branch master):
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git add consultant/pipeline/nodes.py && git commit -m "fix(consultant): exclude INFO events from threat history (TASK-74)" && git push origin master'
+
+Mark done:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-74/[x] TASK-74/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-74 done — filter INFO events"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-74:filter-info-events|1-line-fix|commit:<hash>|★★★"
