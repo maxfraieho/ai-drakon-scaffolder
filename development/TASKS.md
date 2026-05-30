@@ -6549,7 +6549,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-78:consultant-timeout-fix|proxy-chain-verified|commit:<hash>|★★★"
 
 ==================================================================
-[ ] TASK-79
+[x] TASK-79
 Title: Web UI — сортування проксі (up/down кнопки + drag-and-drop)
 Agent: AGY3
 Run: SSH до dev server 192.168.3.184
