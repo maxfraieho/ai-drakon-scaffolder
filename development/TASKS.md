@@ -6804,7 +6804,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
 
 
-## [ ] TASK-88
+## [x] TASK-88
 
 ### Мета
 Виправити 2 баги в `agy` wrapper + оновити Docker контейнер OpenDesign.
