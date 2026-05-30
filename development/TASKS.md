@@ -6491,3 +6491,122 @@ git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-77 done �
 git -C ~/workspace/ai-drakon-scaffolder push origin main
 
 Diary: "SESSION:2026-05-30|TASK-77:ai-memory-hooks|agy-task.sh-start+end|auto-session-tracking|★★★"
+
+==================================================================
+[ ] TASK-78
+Title: Fix consultant LLM timeout + verify proxy fallback chain
+Agent: AGY3
+Run: SSH до dev server 192.168.3.184
+SSH: sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+==================================================================
+
+КОНТЕКСТ:
+- Consultant (/home/vokov/projects/uav-watcher/consultant/) не відповідає на запити
+- Логи показують timeout на LocalProxy (localhost:18880) і OpenAIProxy
+- Але curl напряму до localhost:18880 раніше повертав відповідь
+- Порядок проксі: AGY3 → AGY → LocalProxy → OpenAIProxy
+
+STEP 1: Діагностика - перевір що відбувається
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'tail -30 /var/log/uav-consultant.log'
+
+# Перевір timeout в nodes.py
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'grep -n "timeout" /home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py | head -10'
+
+# Перевір чи localhost:18880 справді відповідає
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'curl -s --max-time 10 http://localhost:18880/v1/chat/completions -H "Content-Type: application/json" -H "Authorization: Bearer freecc" -d "{\"model\":\"fast-proxy\",\"messages\":[{\"role\":\"user\",\"content\":\"ok\"}],\"max_tokens\":10}" 2>&1 | head -5'
+
+STEP 2: Якщо timeout = 25s недостатньо для LocalProxy — збільш до 45s
+Знайди в nodes.py: httpx.Client(timeout=25.0)
+Заміни: httpx.Client(timeout=45.0)
+
+Збережи як /tmp/task78_timeout.py і scp на сервер.
+
+STEP 3: Перевір модель LocalProxy
+Доступні моделі на localhost:18880:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'curl -s http://localhost:18880/v1/models -H "Authorization: Bearer freecc" | python3 -c "import sys,json;[print(m[\"id\"]) for m in json.load(sys.stdin)[\"data\"]]"'
+
+Переконайся що config.json використовує правильну модель для LocalProxy:
+- Якщо "fast-proxy" не в списку — заміни на "gpt-4o-mini" або "docs-assistant-proxy"
+
+STEP 4: Тест після виправлення
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sudo rc-service uav-consultant restart && sleep 8 && curl -s --max-time 40 -X POST http://localhost:8770/chat -H "Content-Type: application/json" -d "{\"message\":\"яка ситуація?\"}" | python3 -c "import sys,json;d=json.load(sys.stdin);print((d.get(\"reply\") or d.get(\"response\",\"NO REPLY\"))[:200])"'
+
+STEP 5: Перевір fallback — якщо AGY3 зовнішній недоступний, LocalProxy має спрацювати
+Перевір лог: має бути "proxy AGY3 failed ... proxy LocalProxy ..." → потім відповідь
+
+COMMIT (тільки python файли):
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git add consultant/pipeline/nodes.py && git commit -m "fix(consultant): increase LLM timeout + fix proxy model (TASK-78)" && git push origin master'
+
+~/bin/ai-memory-commit.sh uav-watcher "consultant/pipeline/nodes.py"
+
+Mark done та push:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-78/[x] TASK-78/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-78 done — consultant timeout fix"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-78:consultant-timeout-fix|proxy-chain-verified|commit:<hash>|★★★"
+
+==================================================================
+[ ] TASK-79
+Title: Web UI — сортування проксі (up/down кнопки + drag-and-drop)
+Agent: AGY3
+Run: SSH до dev server 192.168.3.184
+Файл: /home/vokov/projects/uav-watcher/web_config.py
+==================================================================
+
+КОНТЕКСТ:
+Поточний UI для проксі (секція "AI Proxy") вже дозволяє додавати/видаляти.
+Потрібно додати можливість СОРТУВАТИ проксі (порядок = пріоритет fallback).
+
+STEP 1: Прочитай поточний proxy UI
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'grep -n "proxy-list\|addProxy\|removeProxy\|syncProxies\|renderProxies" /home/vokov/projects/uav-watcher/web_config.py | head -20'
+
+Знайди блок JavaScript renderProxies() і додай кнопки ↑ ↓ для кожного рядка.
+
+STEP 2: Додай moveProxy(i, direction) функцію в JS
+```javascript
+function moveProxy(i, dir) {
+  var j = i + dir;
+  if (j < 0 || j >= _proxies.length) return;
+  var tmp = _proxies[i];
+  _proxies[i] = _proxies[j];
+  _proxies[j] = tmp;
+  renderProxies();
+}
+```
+
+STEP 3: Додай кнопки ↑ ↓ в renderProxies() — перед кнопкою ✕:
+```javascript
+'<button type="button" onclick="moveProxy('+i+',-1)" style="background:#6b7280;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer" title="Вгору">↑</button>' +
+'<button type="button" onclick="moveProxy('+i+',1)" style="background:#6b7280;color:#fff;border:none;border-radius:6px;padding:4px 8px;cursor:pointer" title="Вниз">↓</button>' +
+```
+
+STEP 4: Додай номер позиції (#1, #2...) перед полем Name щоб бачити порядок:
+```javascript
+'<span style="color:#888;font-size:11px;min-width:20px">#'+(i+1)+'</span>' +
+```
+
+STEP 5: Застосуй як Python patch файл, scp на сервер
+Збережи /tmp/task79_patch.py з точними замінами рядків.
+
+Перевір синтаксис:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -m py_compile /home/vokov/projects/uav-watcher/web_config.py && echo "OK"'
+
+Перезапусти web-config:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sudo rc-service uav-web-config restart && sleep 3'
+
+COMMIT:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git add web_config.py && git commit -m "feat(web-config): add proxy sort up/down buttons (TASK-79)" && git push origin master'
+
+~/bin/ai-memory-commit.sh uav-watcher "web_config.py"
+
+Mark done:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-79/[x] TASK-79/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-79 done — proxy sort UI"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-79:proxy-sort-ui|up-down-buttons|web-config-updated|commit:<hash>|★★★"
