@@ -4,6 +4,7 @@ import { ChevronDown, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
+import { UnsavedChangesGuard } from "@/components/workspace/UnsavedChangesGuard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -223,7 +224,7 @@ await api.saveDiagram(diagram.folderId, diagram.id, diagram.diagram);
 }
 
 toast.success(
-  `Створено ${generated.length} діаграм у папці "${selectedAnalysisFolder.name}"`,
+`Створено ${generated.length} діаграм у папці "${selectedAnalysisFolder.name}"`,
 );
 } catch (error) {
 toast.error(error instanceof Error ? error.message : "Не вдалося виконати аналіз");
@@ -454,7 +455,7 @@ setNameDirty(false);
 }}
 />
 </main>
+<UnsavedChangesGuard isDirty={hasChanges} />
 </div>
 );
 }
-
