@@ -20,6 +20,14 @@ export function LoginPage() {
     setIsSubmitting(true);
     setErrorMsg(null);
 
+    // Direct Bearer token login bypass
+    if (password === "drakon-mcp-2026" || username === "token") {
+      setAccessToken(password || username);
+      navigate({ to: "/diagrams", replace: true });
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       const workerUrl = readSettings().app.workerUrl.replace(/\/+$/, "");
       const resp = await fetch(`${workerUrl}/auth/login`, {
@@ -47,7 +55,9 @@ export function LoginPage() {
       <Card className="w-full max-w-sm border-border bg-card">
         <CardHeader>
           <CardTitle>AI-DRAKON</CardTitle>
-          <CardDescription>Введіть логін та пароль для входу.</CardDescription>
+          <CardDescription>
+            Введіть логін та пароль. Або використовуйте Bearer Token: `drakon-mcp-2026` у полі Пароль.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-4" onSubmit={handleLogin}>
