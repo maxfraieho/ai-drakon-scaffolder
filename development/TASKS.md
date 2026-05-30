@@ -6413,7 +6413,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-76:agt-ogy3-mempalace-setup|scripts+clone+mining|drawers-indexed|★★★"
 
 ==================================================================
-[ ] TASK-77
+[x] TASK-77
 Title: Інтеграція ai-memory-start/end в agy-task.sh (AGY phone + AGY3)
 Agent: AGY phone (і AGY3 паралельно)
 Run: локально на Termux. Змінюємо ~/bin/agy-task.sh
