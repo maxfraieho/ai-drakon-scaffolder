@@ -6266,3 +6266,56 @@ git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-74 done �
 git -C ~/workspace/ai-drakon-scaffolder push origin main
 
 Diary: "SESSION:2026-05-30|TASK-74:filter-info-events|1-line-fix|commit:<hash>|★★★"
+
+==================================================================
+[ ] TASK-75
+Title: Автоматизація MemPalace mining після кожного commit AGY агентів
+Agent: AGY phone
+Run: локально на AGY phone Termux. SSH до 192.168.3.184 для перевірки.
+==================================================================
+
+МЕТА: AGY агенти мають автоматично оновлювати MemPalace після кожного git push
+без участі Claude і без витрат його токенів.
+
+STEP 1: Перевір ai-memory-commit.sh на AGY phone
+cat ~/bin/ai-memory-commit.sh 2>/dev/null || echo "MISSING"
+
+Якщо скрипт є — перевір шляхи:
+- uav-watcher path: має бути ~/projects/uav-watcher або ~/.mempalace/projects/uav-watcher
+- Якщо немає — скопіювати з OrangePi:
+  sshpass -p '805235io.' scp vokov@192.168.3.184:~/bin/ai-memory-commit.sh ~/bin/ai-memory-commit.sh
+  sshpass -p '805235io.' scp vokov@192.168.3.184:~/bin/mp-index.sh ~/bin/mp-index.sh
+  chmod +x ~/bin/ai-memory-commit.sh ~/bin/mp-index.sh
+
+STEP 2: Перевір чи є локальний клон uav-watcher на AGY phone
+ls ~/projects/uav-watcher 2>/dev/null || echo "NO LOCAL CLONE"
+
+Якщо немає — клонувати:
+mkdir -p ~/projects
+git clone https://github.com/maxfraieho/uav-watcher.git ~/projects/uav-watcher
+
+STEP 3: Перевір чи є mempalace на AGY phone
+python3 -m mempalace --help 2>/dev/null | head -3 || pip3 install mempalace --quiet
+
+STEP 4: Налаштуй правильні шляхи в ai-memory-commit.sh на AGY phone
+Відкрий ~/bin/ai-memory-commit.sh і переконайся що:
+  PROJECT_PATHS["uav-watcher"]="$HOME/projects/uav-watcher"
+  PROJECT_PATHS["ai-drakon"]="$HOME/workspace/ai-drakon-scaffolder"
+
+STEP 5: Тест — запусти mining вручну
+cd ~/projects/uav-watcher && git pull origin master
+~/bin/ai-memory-commit.sh uav-watcher "consultant/pipeline/nodes.py,uav_watcher.py"
+python3 -m mempalace search "multi proxy fallback" --wing uav-watcher | head -5
+
+STEP 6: Підтвердь що workflow працює для майбутніх задач
+Кожна AGY задача по uav-watcher тепер МАЄ містити після git push:
+  ~/bin/ai-memory-commit.sh uav-watcher "змінені_файли"
+
+COMMIT:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-75/[x] TASK-75/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-75 done — AGY auto MemPalace mining setup"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+Diary: "SESSION:2026-05-30|TASK-75:mempalace-auto-mining|ai-memory-commit+mp-index|uav-watcher-cloned-on-agy|★★★"
