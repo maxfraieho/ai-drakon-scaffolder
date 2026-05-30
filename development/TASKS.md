@@ -5469,7 +5469,7 @@ Diary: "SESSION:2026-05-30|TASK-61..67:mempalace-first-COMPLETE|distributed-memp
 
 ---
 
-[ ] TASK-68
+[x] TASK-68
 Title: Fix Code tab — "Не вдалося завантажити" при відкритті файлу
 Agent: AGY3
 Run: locally on AGY3 Termux
@@ -5502,7 +5502,7 @@ Verification:
 Commit: "fix(code-tab): fix file loading for non-default projects (TASK-68)"
 ВАЖЛИВО: cp src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
 
-Diary: "SESSION:2026-05-30|TASK-68:code-tab-file-load-fix|DONE|commit:<hash>|★★★"
+Diary: "SESSION:2026-05-30|TASK-68:code-tab-file-load-fix|DONE|commit:6be348273d0fcc9673f6d47aac496c03c23b867c|★★★"
 (agent: agt-ogy3)
 
 ---
