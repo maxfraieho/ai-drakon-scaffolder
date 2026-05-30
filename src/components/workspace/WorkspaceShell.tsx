@@ -168,7 +168,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           <SheetTrigger asChild>
             <button
               type="button"
-              className="md:hidden inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+              className="lg:hidden inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
               aria-label="Меню"
             >
               <Menu className="h-4 w-4" />
@@ -180,12 +180,21 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                 Навігація
               </SheetTitle>
             </SheetHeader>
-            <nav className="p-2">
-              <NavDivider label="Робочий простір" />
-              <NavSection items={NAV_WORKSPACE} isActive={isActive} onClick={() => setMobileNavOpen(false)} />
-              <NavDivider label="Система" />
-              <NavSection items={NAV_SYSTEM} isActive={isActive} onClick={() => setMobileNavOpen(false)} />
-            </nav>
+            <div className="flex h-[calc(100%-2.5rem)] flex-col overflow-hidden">
+              <div className="border-b border-[var(--border-subtle)] shrink-0">
+                <ProjectSelector />
+              </div>
+              <nav aria-label="Мобільна навігація" className="flex-1 overflow-y-auto p-2">
+                <NavDivider label="Робочий простір" />
+                <NavSection items={NAV_WORKSPACE} isActive={isActive} onClick={() => setMobileNavOpen(false)} />
+                <NavDivider label="Система" />
+                <NavSection items={NAV_SYSTEM} isActive={isActive} onClick={() => setMobileNavOpen(false)} />
+              </nav>
+              <div className="shrink-0 border-t border-[var(--border-subtle)]">
+                <DevCyclePanel />
+                <AgentStatusBar />
+              </div>
+            </div>
           </SheetContent>
         </Sheet>
 
@@ -197,9 +206,9 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           AI-DRAKON
         </Link>
 
-        <span aria-hidden="true" className="hidden md:block h-3 w-px bg-[var(--border-subtle)] mx-1" />
+        <span aria-hidden="true" className="hidden lg:block h-3 w-px bg-[var(--border-subtle)] mx-1" />
 
-        <div className="hidden md:flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-muted)] min-w-0">
+        <div className="hidden lg:flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-muted)] min-w-0">
           <Link
             to={crumb.sectionPath}
             className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-150"
@@ -217,7 +226,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
         <button
           type="button"
           onClick={() => setCmdOpen(true)}
-          className="hidden md:inline-flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors ml-2"
+          className="hidden lg:inline-flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors ml-2"
           aria-label="Відкрити command palette"
         >
           <span>⌘K</span>
@@ -315,7 +324,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
       {/* WORKSPACE BODY */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <aside className={cn(
-          "hidden md:flex h-full shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
+          "hidden lg:flex h-full shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
           navCollapsed ? "w-0 border-r-0" : "w-60",
         )}>
           <div className="border-b border-[var(--border-subtle)]">
@@ -342,7 +351,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
             setTimeout(() => window.dispatchEvent(new Event("resize")), 210);
           }}
           title={navCollapsed ? "Показати навігацію" : "Сховати навігацію"}
-          className="hidden md:flex h-full w-2 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
+          className="hidden lg:flex h-full w-2 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
         >
           {navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>

@@ -68,6 +68,7 @@ export function CanvasToolbar({
           type="button"
           onClick={onToggleAnalysis}
           aria-pressed={analysisActive}
+          title="Аналізувати код"
           className={cn(
             "inline-flex h-6 items-center gap-1 rounded-sm border px-2 font-mono text-[11px] transition-colors",
             analysisActive
@@ -78,12 +79,13 @@ export function CanvasToolbar({
           )}
         >
           <ScanSearch className="h-3.5 w-3.5" />
-          Аналізувати код
+          <span className="hidden md:inline">Аналізувати код</span>
         </button>
         <button
           type="button"
           onClick={onToggleGeneration}
           aria-pressed={generationActive}
+          title="Генерувати код"
           className={cn(
             "inline-flex h-6 items-center gap-1 rounded-sm border px-2 font-mono text-[11px] transition-colors",
             generationActive
@@ -95,7 +97,7 @@ export function CanvasToolbar({
           disabled={!diagramName}
         >
           <Code2 className="h-3.5 w-3.5" />
-          Генерувати код
+          <span className="hidden md:inline">Генерувати код</span>
         </button>
 
         <span aria-hidden="true" className="mx-1 h-4 w-px bg-[var(--border-subtle)]" />
@@ -108,7 +110,7 @@ export function CanvasToolbar({
             title="DRAKON IR"
           >
             <FileCode2 className="h-3 w-3" />
-            IR
+            <span className="hidden md:inline">IR</span>
           </button>
         )}
         {onSaveAsPipeline && (
@@ -119,7 +121,7 @@ export function CanvasToolbar({
             title="Зберегти схему як DRAKON-пайплайн"
           >
             <Download className="h-2.5 w-2.5" />
-            Пайплайн
+            <span className="hidden md:inline">Пайплайн</span>
           </button>
         )}
         {onZoomOut && (

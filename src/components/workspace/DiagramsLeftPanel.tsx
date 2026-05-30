@@ -49,7 +49,7 @@ search.trim() ? d.name.toLowerCase().includes(search.toLowerCase()) : true,
 };
 
 return (
-<aside className="hidden md:flex h-full w-[220px] shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] overflow-hidden">
+<aside className="flex h-full w-full flex-col overflow-hidden bg-[var(--bg-surface)]">
 {/* Header */}
 <div className="flex h-7 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] px-2.5">
 <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
