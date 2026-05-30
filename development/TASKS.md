@@ -6014,3 +6014,206 @@ VERIFICATION
 
 Diary: "SESSION:2026-05-30|TASK-72:uav-watcher-llm-refactoring|regex→LLM|city-synonyms|direct-links-t.me|service-restarted|commit:<hash>|★★★"
 (agent: agt-ogy3)
+
+==================================================================
+[ ] TASK-73
+Title: UAV-Watcher multi-proxy LLM + web UI для управління проксі
+Agent: AGY phone
+Run: SSH до dev server 192.168.3.184 для змін коду. Локально для git.
+SSH: sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+==================================================================
+
+Контекст: Claude вже зробив ЧАСТИНУ роботи:
+- nodes.py ✅ вже пропатчений (_get_proxies() + fallback _llm_call())
+- uav_watcher.py ✅ вже пропатчений (multi-proxy в ai_classify())
+- threat_classifier.py ❌ НЕ пропатчений — треба виправити
+- web_config.py ❌ НЕ пропатчений — треба UI для керування проксі
+- config.json ✅ вже має "llm_proxies" масив, але модель потребує оновлення
+
+==================================================================
+STEP 1: Перевір поточний стан
+==================================================================
+
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -m py_compile /home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py && echo "nodes OK"'
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -m py_compile /home/vokov/projects/uav-watcher/uav_watcher.py && echo "uav OK"'
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'grep -n "_get_proxies\|_llm_call\|proxy_list" /home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py | head -10'
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -c "import json; c=json.load(open(\"/home/vokov/projects/uav-watcher/config.json\")); print(json.dumps(c.get(\"llm_proxies\",[]), indent=2))"'
+
+==================================================================
+STEP 2: Виправ threat_classifier.py — додай multi-proxy fallback
+==================================================================
+
+Читаємо поточний стан:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'grep -n "llm_url\|llm_key\|llm_model\|httpx\|chat/completions\|proxy_list\|_proxies" /home/vokov/projects/uav-watcher/sharon/pipelines/threat_classifier.py | head -30'
+
+Знайди точний блок де викликається httpx.AsyncClient для LLM в extract_entities.
+Логіка яку треба додати:
+
+Перед httpx викликом — побудуй список проксі з config:
+```python
+_proxy_list = cfg.get("llm_proxies")
+if _proxy_list and isinstance(_proxy_list, list):
+    _proxies = [{"url": p["url"].rstrip("/")+"/chat/completions",
+                 "token": p.get("token","not-needed"),
+                 "model": p.get("model", _llm_model or "gemini-2.5-flash"),
+                 "name": p.get("name", p["url"])} for p in _proxy_list if p.get("url")]
+elif _llm_url:
+    _url = _llm_url.rstrip("/")
+    if not _url.endswith("/chat/completions"): _url += "/chat/completions"
+    _proxies = [{"url": _url, "token": _llm_key,
+                 "model": _llm_model or "gemini-2.5-flash", "name": "single"}]
+else:
+    _proxies = []
+```
+
+Замість одного httpx виклику — цикл по _proxies:
+```python
+for _p in _proxies:
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.post(_p["url"],
+                headers={"Authorization": f"Bearer {_p['token']}"},
+                json={"model": _p["model"], "messages": [...], "max_tokens": 200, "temperature": 0.1})
+            resp.raise_for_status()
+            # parse response and break
+            break
+    except Exception as e:
+        log.warning(f"[threat_classifier] proxy {_p['name']} failed: {e}")
+```
+
+Запиши patch як Python файл в /tmp/, scp на сервер, запусти.
+ЗАБОРОНА: heredoc з кирилицею через SSH. Тільки scp файлів.
+
+==================================================================
+STEP 3: Оновити web_config.py — UI для керування списком проксі
+==================================================================
+
+Читаємо поточну секцію AI/LLM:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sed -n "1770,1800p" /home/vokov/projects/uav-watcher/web_config.py'
+
+Знайди HTML блок з id="sec-ai" і card "AI Proxy — LLM налаштування".
+Замінити його на:
+
+```html
+<div id="sec-ai" class="sec-divider" style="--sc:#f59e0b"><span>&#129302; AI / LLM Proxy</span></div>
+<div class="card">
+  <div class="card-header"><span class="card-title">&#129302; AI Proxy — список проксі (fallback за чергою)</span></div>
+  <div class="card-body">
+    <div id="proxy-list"></div>
+    <button type="button" onclick="addProxy()" class="btn" style="margin-top:8px">+ Додати проксі</button>
+    <input type="hidden" name="llm_proxies_json" id="llm_proxies_json">
+    <p style="color:#888;font-size:12px;margin-top:8px">Перший у списку — основний. При недоступності — автоматичний перехід на наступний.</p>
+  </div>
+</div>
+```
+
+JS для управління списком (додати перед </script> або в окремий блок):
+```javascript
+var _proxies = {llm_proxies_js};
+
+function renderProxies() {{
+  var el = document.getElementById('proxy-list');
+  el.innerHTML = '';
+  _proxies.forEach(function(p, i) {{
+    el.innerHTML += '<div style="display:flex;gap:8px;margin-bottom:8px;align-items:center">' +
+      '<input class="input" placeholder="Назва" value="'+escHtml(p.name||'')+'" oninput="_proxies['+i+'].name=this.value;syncProxies()" style="width:100px">' +
+      '<input class="input" placeholder="URL (https://...)" value="'+escHtml(p.url||'')+'" oninput="_proxies['+i+'].url=this.value;syncProxies()" style="flex:1">' +
+      '<input class="input" placeholder="Token" value="'+escHtml(p.token||'')+'" oninput="_proxies['+i+'].token=this.value;syncProxies()" style="width:120px">' +
+      '<input class="input" placeholder="Модель" value="'+escHtml(p.model||'')+'" oninput="_proxies['+i+'].model=this.value;syncProxies()" style="width:150px">' +
+      '<button type="button" onclick="removeProxy('+i+')" style="background:#ef4444;color:#fff;border:none;border-radius:6px;padding:4px 10px;cursor:pointer">✕</button>' +
+    '</div>';
+  }});
+  syncProxies();
+}}
+function addProxy() {{
+  _proxies.push({{name:'',url:'',token:'not-needed',model:'gemini-2.5-flash-8b-exp'}});
+  renderProxies();
+}}
+function removeProxy(i) {{
+  _proxies.splice(i,1);
+  renderProxies();
+}}
+function syncProxies() {{
+  document.getElementById('llm_proxies_json').value = JSON.stringify(_proxies);
+}}
+function escHtml(s) {{ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }}
+renderProxies();
+```
+
+де {llm_proxies_js} — це поточне значення з Python template: json.dumps(cfg.get("llm_proxies", []))
+
+В Python handler збереження (де обробляється POST /save):
+Знайди блок де зберігається cfg["llm_proxy_url"] і додай ПІСЛЯ:
+```python
+llm_proxies_raw = get("llm_proxies_json", "").strip()
+if llm_proxies_raw:
+    try:
+        import json as _j
+        proxies = _j.loads(llm_proxies_raw)
+        cfg["llm_proxies"] = [p for p in proxies if p.get("url","").strip()]
+    except Exception:
+        pass
+```
+
+Запиши всі зміни як Python patch файл, scp на сервер, запусти.
+
+==================================================================
+STEP 4: Оновити config.json — прибрати localhost, оновити модель
+==================================================================
+
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'python3 -c "
+import json
+with open(\"/home/vokov/projects/uav-watcher/config.json\") as f:
+    cfg = json.load(f)
+# Тільки зовнішні проксі, модель gemini-2.5-flash-8b-exp (швидша і розумніша)
+cfg[\"llm_proxies\"] = [
+    {\"name\": \"AGY3\", \"url\": \"https://agy3.exodus.pp.ua/v1\",
+     \"token\": \"not-needed\", \"model\": \"gemini-2.5-flash-8b-exp\"},
+    {\"name\": \"AGY2\", \"url\": \"https://agy2.exodus.pp.ua/v1\",
+     \"token\": \"not-needed\", \"model\": \"gemini-2.5-flash-8b-exp\"}
+]
+# Зберегти старий llm_proxy_url як перший проксі для сумісності
+cfg[\"llm_proxy_url\"] = \"https://agy3.exodus.pp.ua/v1\"
+cfg[\"llm_proxy_model\"] = \"gemini-2.5-flash-8b-exp\"
+with open(\"/home/vokov/projects/uav-watcher/config.json\", \"w\") as f:
+    json.dump(cfg, f, ensure_ascii=False, indent=2)
+print(\"config.json updated\")
+print(\"proxies:\", [p[\"name\"] for p in cfg[\"llm_proxies\"]])
+"'
+
+==================================================================
+STEP 5: Syntax check + restart
+==================================================================
+
+sshpass -p '805235io.' ssh vokov@192.168.3.184 '
+python3 -m py_compile /home/vokov/projects/uav-watcher/uav_watcher.py && echo "uav OK" &&
+python3 -m py_compile /home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py && echo "nodes OK" &&
+python3 -m py_compile /home/vokov/projects/uav-watcher/sharon/pipelines/threat_classifier.py && echo "classifier OK" &&
+python3 -m py_compile /home/vokov/projects/uav-watcher/web_config.py && echo "web_config OK"
+'
+
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'sudo rc-service uav-watcher restart && sudo rc-service uav-consultant restart && sudo rc-service uav-web-config restart && sleep 5 && tail -8 /var/log/uav-watcher.log && tail -5 /var/log/uav-consultant.log'
+
+==================================================================
+STEP 6: Commit (тільки .py файли, НЕ config.json)
+==================================================================
+
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd /home/vokov/projects/uav-watcher && git add consultant/pipeline/nodes.py sharon/pipelines/threat_classifier.py web_config.py uav_watcher.py && git commit -m "feat(proxy): multi-proxy LLM fallback + web UI for proxy management (TASK-73)"'
+
+Після commit — mark TASK-73 done в TASKS.md:
+git -C ~/workspace/ai-drakon-scaffolder pull
+sed -i "s/^\[ \] TASK-73/[x] TASK-73/" ~/workspace/ai-drakon-scaffolder/development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder add development/TASKS.md
+git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-73 done — multi-proxy LLM + web UI"
+git -C ~/workspace/ai-drakon-scaffolder push origin main
+
+==================================================================
+VERIFICATION
+==================================================================
+
+- python3 -m py_compile *.py — no errors
+- tail /var/log/uav-consultant.log — no "All LLM proxies failed"
+- curl http://192.168.3.184:8422 — відкривається, є секція "Список проксі"
+- curl -s -X POST http://192.168.3.184:8770/chat -H "Content-Type: application/json" -d '{"message":"тест"}' | python3 -m json.tool | head -5
+
+Diary: "SESSION:2026-05-30|TASK-73:multi-proxy-llm+web-ui|nodes+uav+classifier+webconfig|fallback-logic|commit:<hash>|★★★"
