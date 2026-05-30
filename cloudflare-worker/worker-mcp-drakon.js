@@ -923,8 +923,8 @@ async function handleDrakonCommit(request, env) {
     return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
   }
 
-  const folderSlug = String(body?.folderSlug || '').trim();
-  const diagramId = String(body?.diagramId || '').trim();
+  const folderSlug = String(body?.folderSlug || body?.folder || '').trim();
+  const diagramId = String(body?.diagramId || body?.name || '').trim();
   if (!folderSlug || !diagramId) {
     return errorResponse('folderSlug and diagramId are required', 400, undefined, 'BAD_REQUEST');
   }

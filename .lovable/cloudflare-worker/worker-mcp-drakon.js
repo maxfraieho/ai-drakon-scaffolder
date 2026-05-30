@@ -1,4 +1,6 @@
 import { validateIrDeterministic } from '../src/lib/htse/ir-validator-core';
+import { convertDiagramToIr } from '../src/lib/htse/diagram-to-ir';
+import { convertIrToDiagram } from '../src/lib/htse/ir-to-diagram';
 import { PRE_ANALYZED_ANALYSIS } from './generated-analysis-cache';
 
 // ============================================
@@ -14,7 +16,7 @@ function jsonResponse(data, status = 200, extraHeaders = {}) {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Github-Token',
       ...extraHeaders,
     },
   });
@@ -26,7 +28,7 @@ function corsResponse() {
     headers: {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Github-Token',
       'Access-Control-Max-Age': '86400',
     },
   });
@@ -40,6 +42,55 @@ function errorResponse(message, status = 400, details = undefined, code = undefi
 }
 
 const analysisJobs = new Map();
+
+// Structured logger — output visible via `wrangler tail`
+function log(level, msg, data = {}) {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level, msg, ...data }));
+}
+
+// Save a single log entry to MinIO at logs/{date}/{ts}-{tool}.json
+// Never throws — logging failures are silent (to avoid infinite loops)
+async function saveLogToMinio(env, entry) {
+  if (!env.MINIO_SECRET_KEY || !env.MINIO_ENDPOINT) return;
+  try {
+    const date = (entry.ts || new Date().toISOString()).slice(0, 10);
+    const safeTs = (entry.ts || new Date().toISOString()).replace(/[:.]/g, '-');
+    const safeTool = (entry.tool || entry.msg || 'req').replace(/[^a-z0-9._-]/gi, '-').slice(0, 30);
+    const key = `logs/${date}/${safeTs}-${safeTool}.json`;
+    await uploadToMinIO(env, key, JSON.stringify(entry));
+  } catch (_) {
+    // silent — don't recurse
+  }
+}
+
+function githubHeaders(env, requestToken = '') {
+  const token = String(requestToken || env.GITHUB_TOKEN || '').trim();
+  if (!token) {
+    throw new Error('GITHUB_TOKEN is not configured');
+  }
+
+  return {
+    Authorization: `Bearer ${token}`,
+    Accept: 'application/vnd.github+json',
+    'X-GitHub-Api-Version': '2022-11-28',
+    'User-Agent': 'drakon-mcp-worker',
+  };
+}
+
+async function githubFetch(env, path, options = {}, requestToken = '') {
+  const base = 'https://api.github.com';
+  const resp = await fetch(`${base}${path}`, {
+    ...options,
+    headers: { ...githubHeaders(env, requestToken), ...(options.headers || {}) },
+  });
+
+  if (!resp.ok) {
+    const err = await resp.text();
+    throw new Error(`GitHub API ${resp.status}: ${err.slice(0, 200)}`);
+  }
+
+  return resp.json();
+}
 
 function b64urlEncodeJson(obj) {
   return btoa(JSON.stringify(obj)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -75,7 +126,7 @@ async function hashPassword(password, secret) {
   return [...new Uint8Array(hashBuffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function generateJWT(payload, secret, ttlMs = 24 * 60 * 60 * 1000) {
+async function generateJWT(payload, secret, ttlMs = 7 * 24 * 60 * 60 * 1000) {
   const now = Date.now();
   const fullPayload = { ...payload, iat: now, exp: now + ttlMs };
   const header = b64urlEncodeJson({ alg: 'HS256', typ: 'JWT' });
@@ -122,6 +173,13 @@ async function verifyOwnerAuth(request, env) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
 
   const token = authHeader.slice(7);
+
+  // Статичний MCP API key (для Claude.ai Dashboard та інших MCP клієнтів)
+  if (env.MCP_API_KEY && token === env.MCP_API_KEY) {
+    return { role: 'owner', sub: 'mcp-agent' };
+  }
+
+  // JWT (для фронтенду)
   const payload = await verifyJWT(token, env.JWT_SECRET);
   if (!payload || payload.role !== 'owner') return null;
 
@@ -166,7 +224,7 @@ async function signS3Request(env, method, canonicalUri, queryString, payloadHash
     .join('\n') + '\n';
 
   const signedHeaders = canonicalHeaderKeys.join(';');
-  const canonicalRequest = [method, canonicalUri, queryString, canonicalHeaders, '', signedHeaders, payloadHash].join('\n');
+  const canonicalRequest = [method, canonicalUri, queryString, canonicalHeaders, signedHeaders, payloadHash].join('\n');
 
   const algorithm = 'AWS4-HMAC-SHA256';
   const region = 'us-east-1';
@@ -275,12 +333,13 @@ async function listMinioKeys(env, prefix) {
 
   const endpoint = String(env.MINIO_ENDPOINT).replace(/\/+$/, '');
   const bucket = env.MINIO_BUCKET;
-  const queryString = `delimiter=%2F&list-type=2&prefix=${encodeURIComponent(prefix)}`;
+  const encodedPrefix = encodeURIComponent(prefix);
+  const queryString = `delimiter=%2F&list-type=2&prefix=${encodedPrefix}`;
   const canonicalUri = `/${bucket}`;
   const payloadHash = await sha256Hex('');
   const headers = await signS3Request(env, 'GET', canonicalUri, queryString, payloadHash);
 
-  const response = await fetch(`${endpoint}/${bucket}?list-type=2&prefix=${encodeURIComponent(prefix)}&delimiter=/`, {
+  const response = await fetch(`${endpoint}/${bucket}?delimiter=%2F&list-type=2&prefix=${encodedPrefix}`, {
     method: 'GET',
     headers,
   });
@@ -319,6 +378,28 @@ function safeArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
+function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+const IR_ITEM_TYPES = new Set([
+  'action',
+  'question',
+  'select',
+  'case',
+  'header',
+  'end',
+  'address',
+  'branch',
+  'insertion',
+  'input',
+  'output',
+  'shelf',
+  'process',
+  'timer',
+  'duration',
+]);
+
 function buildAnalysisSummary(requestBody) {
   const preAnalyzed = PRE_ANALYZED_ANALYSIS?.summary || {};
   const requestedModules = [
@@ -353,130 +434,296 @@ function formatCacheAge(generatedAtIso) {
   return `${days}d ago`;
 }
 
-function handleMcpAnalyzeCodebase(args) {
+function convertDiagramToIrForWorker(diagramPayload) {
+  return convertDiagramToIr(isObject(diagramPayload) ? diagramPayload : { name: 'Untitled', access: 'read', params: '', items: {} });
+}
+
+function convertIrToDiagramForWorker(irPayload) {
+  return convertIrToDiagram(isObject(irPayload) ? irPayload : { name: 'Untitled', access: 'public', params: [], items: {} });
+}
+
+
+async function analyzeGithubRepo(owner, repo, branch, env) {
+  const ghToken = String(env.GITHUB_TOKEN || '').trim();
+  const branchRef = branch || 'main';
+  const ghHdrs = { 'User-Agent': 'drakon-mcp-worker', 'Accept': 'application/vnd.github+json' };
+  if (ghToken) ghHdrs['Authorization'] = 'Bearer ' + ghToken;
+
+  // 1. Resolve branch → tree SHA
+  const branchR = await fetch(`https://api.github.com/repos/${owner}/${repo}/branches/${branchRef}`, { headers: ghHdrs });
+  if (!branchR.ok) return { error: 'branch API: ' + branchR.status };
+  const branchD = await branchR.json();
+  const sha = branchD?.commit?.commit?.tree?.sha;
+  if (!sha) return { error: 'no tree sha in branch response' };
+
+  // 2. Recursive tree — all files at once
+  const treeR = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees/${sha}?recursive=1`, { headers: ghHdrs });
+  if (!treeR.ok) return { error: 'tree API: ' + treeR.status };
+  const treeD = await treeR.json();
+
+  const pyFiles = [], tsFiles = [];
+  for (const item of (treeD.tree || [])) {
+    if (item.type !== 'blob') continue;
+    if (/\.py$/i.test(item.path)) {
+      pyFiles.push(item.path);
+      if (pyFiles.length >= 30) break;
+    } else if (/\.(ts|tsx|js|jsx)$/i.test(item.path)) {
+      tsFiles.push(item.path);
+    }
+  }
+
+  const summary = {
+    totalFiles: pyFiles.length + tsFiles.length,
+    totalFunctions: 0,
+    totalComponents: 0,
+    pythonFiles: pyFiles.length,
+    tsFiles: tsFiles.length,
+    modules: [],
+    detectedFlows: [],
+    functions: [],
+    components: [],
+    diagrams: [],
+    _debug: { hasToken: !!ghToken, treeSize: (treeD.tree || []).length, sha, truncated: !!treeD.truncated },
+  };
+
+  // 3. Fetch Python files and call AST analyzer microservice
+  if (pyFiles.length > 0) {
+    const filesToAnalyze = [];
+    for (const path of pyFiles.slice(0, 15)) {
+      const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branchRef}/${path}`;
+      const rawR = await fetch(rawUrl, { headers: { 'User-Agent': 'drakon-mcp-worker' } });
+      if (!rawR.ok) continue;
+      const source = await rawR.text();
+      filesToAnalyze.push({ path, source });
+    }
+
+    if (filesToAnalyze.length > 0) {
+      try {
+        const astR = await fetch('https://research.exodus.pp.ua/analyze-files', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: filesToAnalyze }),
+        });
+        if (astR.ok) {
+          const astData = await astR.json();
+          for (const fileResult of (astData.files || [])) {
+            for (const diagram of (fileResult.diagrams || [])) {
+              if (!diagram.error) {
+                summary.diagrams.push({
+                  name: diagram.name,
+                  filePath: fileResult.path,
+                  nodes: Object.keys(diagram.items || {}).length,
+                  complexity: diagram.complexity || 1,
+                  ir: diagram,
+                });
+                summary.totalFunctions += 1;
+              }
+            }
+          }
+        } else {
+          const errText = await astR.text().catch(() => '');
+          summary._astError = `AST analyzer HTTP ${astR.status}: ${errText.slice(0, 150)}`;
+        }
+      } catch (e) {
+        summary._astError = e.message;
+      }
+    }
+  }
+
+  // 4. Quick TS/JS regex scan (existing approach)
+  for (const path of tsFiles.slice(0, 10)) {
+    const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branchRef}/${path}`;
+    const rawR = await fetch(rawUrl, { headers: { 'User-Agent': 'drakon-mcp-worker' } });
+    if (!rawR.ok) continue;
+    const c = await rawR.text();
+    const funcMatches = c.match(/(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s*)?\()/g) || [];
+    summary.totalFunctions += funcMatches.length;
+    const compMatches = c.match(/(?:export\s+(?:default\s+)?function\s+[A-Z]\w+|const\s+[A-Z]\w+\s*=)/g) || [];
+    summary.totalComponents += compMatches.length;
+    compMatches.forEach(m => {
+      const name = (m.match(/[A-Z]\w+/) || [])[0];
+      if (name) summary.components.push({ name, filePath: path });
+    });
+    if (c.includes('useEffect') || c.includes('useState')) {
+      const routeName = path.split('/').pop().replace(/\.[^.]+$/, '');
+      if (routeName) summary.detectedFlows.push(routeName + '-flow');
+    }
+  }
+
+  summary.modules = [...new Set([...pyFiles, ...tsFiles].map(f => f.split('/')[0]))];
+
+  const plannedDiagrams = summary.diagrams.slice(0, 8).map(d => ({
+    name: d.name,
+    description: `DRAKON diagram for ${d.name} (${d.nodes} nodes, complexity ${d.complexity})`,
+    scope: 'function',
+    estimatedComplexity: d.complexity > 5 ? 'high' : d.complexity > 2 ? 'medium' : 'low',
+    ir: d.ir,
+  }));
+
+  return {
+    generatedAt: new Date().toISOString(),
+    summary,
+    plannedDiagrams,
+    sourceRepo: owner + '/' + repo,
+  };
+}
+
+async function handleMcpAnalyzeCodebase(args, env) {
+  const repositoryPath = String(args?.repositoryPath || '').trim();
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  // Real GitHub analysis mode
+  if (owner && repo) {
+    const ghResult = await analyzeGithubRepo(owner, repo, branch, env);
+    if (ghResult.error) {
+      return { error: ghResult.error };
+    }
+    const jobId = 'analysis-' + Date.now();
+    const job = {
+      jobId,
+      status: 'completed',
+      projectName: owner + '/' + repo,
+      createdAt: new Date().toISOString(),
+      summary: ghResult.summary,
+      plannedDiagrams: ghResult.plannedDiagrams,
+      sourceRepo: ghResult.sourceRepo,
+    };
+    analysisJobs.set(jobId, job);
+    return { jobId, status: 'completed', summary: ghResult.summary, plannedDiagrams: ghResult.plannedDiagrams };
+  }
+
+  if (!repositoryPath) {
+    return { error: 'repositoryPath or (owner + repo) is required' };
+  }
+
+  const language = ['typescript', 'javascript', 'auto'].includes(String(args?.language || ''))
+    ? String(args.language)
+    : 'auto';
+
   const scope = ['overview', 'modules', 'flows', 'procedures'].includes(String(args?.scope || ''))
     ? String(args.scope)
     : 'overview';
-  const filterRaw = String(args?.filter || '').trim();
-  const filter = toLowerSafe(filterRaw);
 
-  const payload = PRE_ANALYZED_ANALYSIS || {};
-  const summary = payload.summary || {};
-  const modules = safeArray(summary.modules).map((m) => String(m));
-  const detectedFlows = safeArray(summary.detectedFlows).map((f) => String(f));
-  const plannedDiagrams = safeArray(payload.plannedDiagrams);
+  const requestBody = {
+    entryPaths: safeArray(args?.entryPaths).length > 0 ? safeArray(args.entryPaths) : ['src/'],
+    includeGlobs: safeArray(args?.includeGlobs),
+    excludeGlobs: safeArray(args?.excludeGlobs),
+  };
 
-  const filteredModules = filter
-    ? modules.filter((m) => toLowerSafe(m).includes(filter))
-    : modules;
-
-  const filteredFlows = filter
-    ? detectedFlows.filter((f) => toLowerSafe(f).includes(filter))
-    : detectedFlows;
-
-  const filteredPlannedDiagrams = plannedDiagrams.filter((diagram) => {
-    if (!filter) return true;
-    const hay = [diagram?.name, diagram?.description, diagram?.scope].map(toLowerSafe).join(' ');
-    return hay.includes(filter);
-  });
-
-  const includeModules = scope === 'overview' || scope === 'modules' || scope === 'procedures';
-  const includeFlows = scope === 'overview' || scope === 'flows' || scope === 'procedures';
+  const summary = buildAnalysisSummary(requestBody);
+  const jobId = `analysis-${Date.now()}`;
+  const job = {
+    jobId,
+    status: 'completed',
+    projectName: repositoryPath,
+    createdAt: new Date().toISOString(),
+    summary,
+    plannedDiagrams: PRE_ANALYZED_ANALYSIS?.plannedDiagrams || [],
+    request: {
+      repositoryPath,
+      language,
+      scope,
+      entryPaths: requestBody.entryPaths,
+      includeGlobs: requestBody.includeGlobs,
+      excludeGlobs: requestBody.excludeGlobs,
+    },
+  };
+  analysisJobs.set(jobId, job);
 
   return {
-    generatedAt: payload.generatedAt || null,
-    totalFiles: Number(summary.totalFiles || 0),
-    totalFunctions: Number(summary.totalFunctions || 0),
-    totalComponents: Number(summary.totalComponents || 0),
-    modules: includeModules ? filteredModules : [],
-    detectedFlows: includeFlows ? filteredFlows : [],
-    plannedDiagrams: filteredPlannedDiagrams,
-    cacheAge: formatCacheAge(payload.generatedAt),
+    jobId,
+    status: 'completed',
+    summary,
   };
 }
 
 function handleMcpGetAnalysisSummary(args) {
-  const type = String(args?.type || '');
-  const allowed = new Set(['functions', 'components', 'hooks', 'stores', 'apiClients', 'importGraph']);
-  if (!allowed.has(type)) {
-    return {
-      success: false,
-      error: `Unsupported summary type: ${type}`,
-      allowedTypes: Array.from(allowed),
-    };
+  const jobId = String(args?.jobId || '').trim();
+  if (!jobId) {
+    return { error: 'jobId is required' };
   }
 
-  const filter = toLowerSafe(String(args?.filter || '').trim());
-  const summary = PRE_ANALYZED_ANALYSIS?.summary || {};
-  const source = summary[type];
-
-  if (!filter) {
-    return { success: true, type, data: source ?? (type === 'importGraph' ? {} : []) };
+  const job = analysisJobs.get(jobId);
+  if (!job) {
+    return { error: 'not_found' };
   }
 
-  if (type === 'importGraph') {
-    const importGraph = source && typeof source === 'object' ? source : {};
-    const filteredEntries = Object.entries(importGraph).filter(([from, targets]) => {
-      const fromMatch = toLowerSafe(from).includes(filter);
-      const targetMatch = safeArray(targets).some((target) => toLowerSafe(target).includes(filter));
-      return fromMatch || targetMatch;
-    });
-    return { success: true, type, data: Object.fromEntries(filteredEntries) };
-  }
-
-  const arr = safeArray(source);
-  const filtered = arr.filter((item) => toLowerSafe(JSON.stringify(item)).includes(filter));
-  return { success: true, type, data: filtered };
+  return { job };
 }
 
 function cloneObject(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
-function applyDiagramMutation(items, mutation) {
-  const op = String(mutation?.op || '');
-  const nodeId = String(mutation?.nodeId || '').trim();
+function sanitizeIrItem(input) {
+  const item = isObject(input) ? input : {};
+  const rawType = String(item.type || '').trim();
 
-  if (!nodeId) {
-    return { ok: false, reason: 'nodeId is required' };
-  }
+  return {
+    type: IR_ITEM_TYPES.has(rawType) ? rawType : 'action',
+    content: String(item.content || ''),
+    secondary: item.secondary === undefined ? undefined : String(item.secondary),
+    one: item.one === undefined || item.one === null ? undefined : String(item.one),
+    two: item.two === undefined || item.two === null ? undefined : String(item.two),
+    side: item.side === undefined ? undefined : String(item.side),
+    flag1: item.flag1 === undefined ? undefined : Boolean(item.flag1),
+    branchId: item.branchId === undefined ? undefined : String(item.branchId),
+    style: isObject(item.style) ? item.style : undefined,
+  };
+}
 
-  if (op === 'insertNode') {
-    if (items[nodeId]) return { ok: false, reason: `Node already exists: ${nodeId}` };
-    if (!mutation.node || typeof mutation.node !== 'object' || Array.isArray(mutation.node)) {
-      return { ok: false, reason: 'node must be an object for insertNode' };
-    }
-    items[nodeId] = cloneObject(mutation.node);
+function applyMutationOnIr(workingIr, mutation) {
+  const op = String(mutation?.op || '').trim();
+  const items = workingIr.items;
+
+  if (op === 'renameDiagram') {
+    const newName = String(mutation?.newName || '').trim();
+    if (!newName) return { ok: false, reason: 'newName is required for renameDiagram' };
+    workingIr.name = newName;
     return { ok: true };
   }
 
-  if (!items[nodeId]) {
-    return { ok: false, reason: `Node not found: ${nodeId}` };
+  const nodeId = String(mutation?.nodeId || '').trim();
+  if (!nodeId) return { ok: false, reason: 'nodeId is required' };
+
+  if (op === 'insertNode') {
+    if (items[nodeId]) return { ok: false, reason: `Node already exists: ${nodeId}` };
+    if (!isObject(mutation?.node)) return { ok: false, reason: 'node must be an object for insertNode' };
+    items[nodeId] = sanitizeIrItem(mutation.node);
+    return { ok: true };
   }
 
+  if (!items[nodeId]) return { ok: false, reason: `Node not found: ${nodeId}` };
+
   if (op === 'updateNode') {
-    if (!mutation.fields || typeof mutation.fields !== 'object' || Array.isArray(mutation.fields)) {
-      return { ok: false, reason: 'fields must be an object for updateNode' };
-    }
-    items[nodeId] = { ...items[nodeId], ...cloneObject(mutation.fields) };
+    if (!isObject(mutation?.fields)) return { ok: false, reason: 'fields must be an object for updateNode' };
+    items[nodeId] = sanitizeIrItem({ ...items[nodeId], ...mutation.fields });
     return { ok: true };
   }
 
   if (op === 'deleteNode') {
     delete items[nodeId];
     for (const current of Object.values(items)) {
-      if (!current || typeof current !== 'object') continue;
-      if (current.one === nodeId) current.one = null;
-      if (current.two === nodeId) current.two = null;
+      if (!isObject(current)) continue;
+      if (current.one === nodeId) delete current.one;
+      if (current.two === nodeId) delete current.two;
     }
     return { ok: true };
   }
 
   if (op === 'setOne' || op === 'setTwo') {
     const key = op === 'setOne' ? 'one' : 'two';
-    const target = mutation?.targetId === null ? null : String(mutation?.targetId || '').trim();
-    if (target && !items[target]) return { ok: false, reason: `Target node not found: ${target}` };
-    items[nodeId][key] = target || null;
+    const targetId = mutation?.targetId === null ? null : String(mutation?.targetId || '').trim();
+    if (targetId && !items[targetId]) {
+      return { ok: false, reason: `Target node not found: ${targetId}` };
+    }
+    if (targetId === null || targetId === '') {
+      delete items[nodeId][key];
+    } else {
+      items[nodeId][key] = targetId;
+    }
     return { ok: true };
   }
 
@@ -497,7 +744,7 @@ async function handleMcpMutateDiagram(args, env) {
     };
   }
 
-  const key = `drakon/${folderId}/${diagramId}.json`;
+  const key = `${folderId}/${diagramId}.json`;
   const content = await getFromMinIO(env, key);
   if (!content) {
     return {
@@ -510,55 +757,60 @@ async function handleMcpMutateDiagram(args, env) {
 
   const stored = JSON.parse(content);
   const working = cloneObject(stored);
-  working.diagram = working.diagram && typeof working.diagram === 'object' ? working.diagram : {};
-  working.diagram.items = working.diagram.items && typeof working.diagram.items === 'object' ? working.diagram.items : {};
+  working.diagram = isObject(working.diagram) ? working.diagram : {};
+  working.diagram.items = isObject(working.diagram.items) ? working.diagram.items : {};
+
+  const ir = convertDiagramToIrForWorker(working.diagram);
 
   const appliedMutations = [];
   const rejectedMutations = [];
 
   for (const mutation of mutations) {
-    const result = applyDiagramMutation(working.diagram.items, mutation || {});
+    const snapshot = cloneObject(ir);
+    const result = applyMutationOnIr(ir, mutation || {});
     if (!result.ok) {
-      rejectedMutations.push({ mutation, reason: result.reason || 'Unknown mutation error' });
+      rejectedMutations.push({ op: mutation, reason: result.reason || 'Unknown mutation error' });
       continue;
     }
+
+    const validationAfterMutation = validateIrDeterministic(ir);
+    if (!validationAfterMutation.valid) {
+      ir.name = snapshot.name;
+      ir.access = snapshot.access;
+      ir.params = snapshot.params;
+      ir.items = snapshot.items;
+      const firstIssue = safeArray(validationAfterMutation.issues)[0];
+      rejectedMutations.push({
+        op: mutation,
+        reason: `Mutation rejected because diagram became invalid: ${firstIssue?.message || 'validation failed'}`,
+      });
+      continue;
+    }
+
     appliedMutations.push(mutation);
   }
 
-  const validationResult = validateIrDeterministic(working.diagram);
-  if (!validationResult.valid) {
-    return {
-      success: false,
-      appliedMutations: [],
-      rejectedMutations: [
-        ...rejectedMutations,
-        ...mutations.map((mutation) => ({ mutation, reason: 'Rejected because resulting diagram failed validation' })),
-      ],
-      validationResult: {
-        valid: validationResult.valid,
-        issues: validationResult.issues || [],
-      },
-      newVersion: Number(stored?.version || stored?.diagram?.version || 0),
-    };
-  }
+  const validationResult = validateIrDeterministic(ir);
 
   const previousVersion = Number(stored?.version || stored?.diagram?.version || 0);
-  const newVersion = previousVersion + 1;
-  working.version = newVersion;
+  const updatedVersion = appliedMutations.length > 0 ? previousVersion + 1 : previousVersion;
+  working.version = updatedVersion;
   working.updatedAt = new Date().toISOString();
-  working.diagram.version = newVersion;
+  working.diagram = convertIrToDiagramForWorker(ir);
+  working.diagram.version = updatedVersion;
 
-  await uploadToMinIO(env, key, JSON.stringify(working, null, 2));
+  if (appliedMutations.length > 0) {
+    await uploadToMinIO(env, key, JSON.stringify(working, null, 2));
+  }
 
   return {
-    success: true,
+    updatedVersion,
     appliedMutations,
     rejectedMutations,
     validationResult: {
       valid: validationResult.valid,
       issues: validationResult.issues || [],
     },
-    newVersion,
   };
 }
 
@@ -659,8 +911,8 @@ async function handleAuthLogin(request, env) {
     return errorResponse('Invalid credentials', 401, undefined, 'INVALID_CREDENTIALS');
   }
 
-  const token = await generateJWT({ role: 'owner', sub: ownerUsername }, env.JWT_SECRET, 24 * 60 * 60 * 1000);
-  return jsonResponse({ success: true, token, jwt: token, expiresInMs: 24 * 60 * 60 * 1000 });
+  const token = await generateJWT({ role: 'owner', sub: ownerUsername }, env.JWT_SECRET, 7 * 24 * 60 * 60 * 1000);
+  return jsonResponse({ success: true, token, jwt: token, expiresInMs: 7 * 24 * 60 * 60 * 1000 });
 }
 
 async function handleDrakonCommit(request, env) {
@@ -671,21 +923,21 @@ async function handleDrakonCommit(request, env) {
     return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
   }
 
-  const folderSlug = String(body?.folderSlug || '').trim();
-  const diagramId = String(body?.diagramId || '').trim();
+  const folderSlug = String(body?.folderSlug || body?.folder || '').trim();
+  const diagramId = String(body?.diagramId || body?.name || '').trim();
   if (!folderSlug || !diagramId) {
     return errorResponse('folderSlug and diagramId are required', 400, undefined, 'BAD_REQUEST');
   }
 
-  const normalized = normalizeDiagramPayload(body.diagram || body, folderSlug, diagramId);
-  const key = `drakon/${folderSlug}/${diagramId}.json`;
+  const normalized = normalizeDiagramPayload(body, folderSlug, diagramId);
+  const key = `${folderSlug}/${diagramId}.json`;
   await uploadToMinIO(env, key, JSON.stringify(normalized, null, 2));
 
   return jsonResponse({ success: true, folderSlug, diagramId, diagram: normalized });
 }
 
 async function handleDrakonGet(folderSlug, diagramId, env) {
-  const key = `drakon/${folderSlug}/${diagramId}.json`;
+  const key = `${folderSlug}/${diagramId}.json`;
   const content = await getFromMinIO(env, key);
   if (!content) return errorResponse('Diagram not found', 404, { folderSlug, diagramId }, 'NOT_FOUND');
 
@@ -693,13 +945,13 @@ async function handleDrakonGet(folderSlug, diagramId, env) {
 }
 
 async function handleDrakonDelete(folderSlug, diagramId, env) {
-  const key = `drakon/${folderSlug}/${diagramId}.json`;
+  const key = `${folderSlug}/${diagramId}.json`;
   await deleteFromMinIO(env, key);
   return jsonResponse({ success: true, folderSlug, diagramId });
 }
 
 async function handleDrakonList(folderSlug, env) {
-  const prefix = `drakon/${folderSlug}/`;
+  const prefix = folderSlug ? `${folderSlug}/` : '';
   const keys = await listMinioKeys(env, prefix);
   const diagrams = keys
     .filter((k) => k.endsWith('.json') && !k.endsWith('meta.json'))
@@ -708,11 +960,339 @@ async function handleDrakonList(folderSlug, env) {
   return jsonResponse({ success: true, folderSlug, diagrams });
 }
 
+// ─── Git drn/ folder helpers ─────────────────────────────────────────────────
+
+async function gitGetFileSha(env, owner, repo, path, branch, requestToken) {
+  try {
+    const data = await githubFetch(env, `/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`, {}, requestToken);
+    return data.sha || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+async function handleSaveDiagramToGit(args, env, requestToken) {
+  const owner = String(args.owner || '').trim();
+  const repo = String(args.repo || '').trim();
+  const branch = String(args.branch || 'main').trim();
+  const diagramId = String(args.diagramId || '').trim().replace(/[^a-zA-Z0-9_\-]/g, '_').substring(0, 80);
+  const diagram = args.diagram || {};
+
+  if (!owner || !repo || !diagramId) {
+    return { success: false, error: 'owner, repo, diagramId are required' };
+  }
+
+  const path = `drn/${diagramId}.json`;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(diagram, null, 2))));
+  const sha = await gitGetFileSha(env, owner, repo, path, branch, requestToken);
+
+  const body = {
+    message: `drakon: save diagram ${diagramId}`,
+    content,
+    branch,
+  };
+  if (sha) body.sha = sha;
+
+  await githubFetch(env, `/repos/${owner}/${repo}/contents/${path}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }, requestToken);
+
+  return { success: true, owner, repo, branch, path, diagramId };
+}
+
+async function handleListGitDiagrams(args, env, requestToken) {
+  const owner = String(args.owner || '').trim();
+  const repo = String(args.repo || '').trim();
+  const branch = String(args.branch || 'main').trim();
+
+  if (!owner || !repo) return { success: false, error: 'owner, repo required' };
+
+  let items = [];
+  try {
+    const data = await githubFetch(env, `/repos/${owner}/${repo}/contents/drn?ref=${encodeURIComponent(branch)}`, {}, requestToken);
+    items = Array.isArray(data) ? data : [data];
+  } catch (_) {
+    return { success: true, owner, repo, branch, diagrams: [] };
+  }
+
+  const diagrams = items
+    .filter((f) => f.type === 'file' && f.name.endsWith('.json'))
+    .map((f) => f.name.replace('.json', ''));
+
+  return { success: true, owner, repo, branch, diagrams };
+}
+
+async function handleGetGitDiagram(args, env, requestToken) {
+  const owner = String(args.owner || '').trim();
+  const repo = String(args.repo || '').trim();
+  const branch = String(args.branch || 'main').trim();
+  const diagramId = String(args.diagramId || '').trim();
+
+  if (!owner || !repo || !diagramId) return { success: false, error: 'owner, repo, diagramId required' };
+
+  const path = `drn/${diagramId}.json`;
+  const data = await githubFetch(env, `/repos/${owner}/${repo}/contents/${path}?ref=${encodeURIComponent(branch)}`, {}, requestToken);
+  const content = JSON.parse(decodeURIComponent(escape(atob(data.content.replace(/\n/g, '')))));
+  return { success: true, owner, repo, branch, diagramId, diagram: content };
+}
+
+async function handleGithubListTree(args, env, requestToken = '') {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const path = String(args?.path || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo) {
+    return { success: false, error: 'owner and repo required' };
+  }
+
+  const data = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+    {},
+    requestToken,
+  );
+  const entries = Array.isArray(data) ? data : [data];
+
+  return {
+    success: true,
+    owner,
+    repo,
+    path,
+    branch,
+    entries: entries.map((entry) => ({
+      name: entry.name,
+      path: entry.path,
+      type: entry.type === 'dir' ? 'dir' : 'file',
+      size: entry.size || 0,
+      downloadUrl: entry.download_url || null,
+    })),
+  };
+}
+
+async function handleGithubGetFile(args, env, requestToken = '') {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const path = String(args?.path || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo || !path) {
+    return { success: false, error: 'owner, repo, path required' };
+  }
+
+  const data = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+    {},
+    requestToken,
+  );
+  const content = data.encoding === 'base64' ? atob((data.content || '').replace(/\n/g, '')) : String(data.content || '');
+
+  return {
+    success: true,
+    path: data.path,
+    name: data.name,
+    size: data.size,
+    sha: data.sha,
+    content,
+    encoding: 'utf-8',
+  };
+}
+
+async function handleGithubCommitFile(args, env, requestToken = '') {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const path = String(args?.path || '').trim();
+  const content = String(args?.content || '');
+  const message = String(args?.message || 'Update via DRAKON MCP').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo || !path) {
+    return { success: false, error: 'owner, repo, path required' };
+  }
+
+  let sha;
+  try {
+    const existing = await githubFetch(
+      env,
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+      {},
+      requestToken,
+    );
+    sha = existing.sha;
+  } catch {
+    sha = undefined;
+  }
+
+  const body = {
+    message,
+    content: btoa(unescape(encodeURIComponent(content))),
+    branch,
+    ...(sha ? { sha } : {}),
+  };
+
+  const result = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
+    { method: 'PUT', body: JSON.stringify(body) },
+    requestToken,
+  );
+
+  return {
+    success: true,
+    path: result.content?.path,
+    sha: result.content?.sha,
+    commitSha: result.commit?.sha,
+    commitUrl: result.commit?.html_url,
+  };
+}
+
+async function handleGithubListBranches(args, env, requestToken = '') {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+
+  if (!owner || !repo) {
+    return { success: false, error: 'owner and repo required' };
+  }
+
+  const data = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches`,
+    {},
+    requestToken,
+  );
+
+  return {
+    success: true,
+    branches: Array.isArray(data) ? data.map((branch) => branch.name) : [],
+  };
+}
+
+// ─── Agent MCP helpers ────────────────────────────────────────────────────────
+async function mcpCallAgent(agentId, message, context, env, ctx) {
+  const defaultUrls = {
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+  };
+  const targetUrl = defaultUrls[agentId];
+  const usesAnalyze = agentId === 'drakon' && isPythonCode(message);
+  const endpoint = usesAnalyze ? '/analyze' : '/chat';
+  const agentBody = usesAnalyze
+    ? JSON.stringify({ code: message, refine: true })
+    : JSON.stringify({ message, context: context || null });
+  try {
+    const agentResp = await fetch(targetUrl + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: agentBody,
+      signal: AbortSignal.timeout(90_000),
+    });
+    const rawText = await agentResp.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch {
+      return { error: 'Agent non-JSON (HTTP ' + agentResp.status + '): ' + rawText.slice(0, 200) };
+    }
+    if (!agentResp.ok) {
+      return { error: data.detail || data.error || ('Agent HTTP ' + agentResp.status), ...data };
+    }
+    return data;
+  } catch (e) {
+    return { error: 'Agent unreachable: ' + e.message };
+  }
+}
+
+async function mcpCallPipeline(endpoint, body, env) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  try {
+    const resp = await fetch(architectUrl + '/pipeline/' + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(120_000),
+    });
+    const rawText = await resp.text();
+    try { return JSON.parse(rawText); } catch {
+      return { error: 'Pipeline non-JSON: ' + rawText.slice(0, 200) };
+    }
+  } catch (e) {
+    return { error: 'Pipeline unreachable: ' + e.message };
+  }
+}
+
+async function mcpGetPipelineStatus(jobId, env) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  try {
+    const resp = await fetch(architectUrl + '/pipeline/status/' + encodeURIComponent(jobId), {
+      signal: AbortSignal.timeout(15_000),
+    });
+    const rawText = await resp.text();
+    try { return JSON.parse(rawText); } catch {
+      return { error: 'Status non-JSON: ' + rawText.slice(0, 100) };
+    }
+  } catch (e) {
+    return { error: 'Pipeline unreachable: ' + e.message };
+  }
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// Dataview / docs knowledge base tools
+
+const DOCS_AGENT_BASE = 'https://docs-agent.exodus.pp.ua';
+
+async function handleDocsDataviewQuery(query, env) {
+  try {
+    const resp = await fetch(`${DOCS_AGENT_BASE}/docs/dataview/query`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    const rawText = await resp.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch { return { error: `docs-agent parse error: ${rawText.slice(0, 200)}` }; }
+    if (!resp.ok) return { error: `docs-agent HTTP ${resp.status}`, detail: data };
+    return data;
+  } catch (e) {
+    return { error: 'docs-agent unreachable: ' + e.message };
+  }
+}
+
+async function handleDocsWikilink(link, env) {
+  try {
+    const url = `${DOCS_AGENT_BASE}/docs/wikilink?link=${encodeURIComponent(link)}`;
+    const resp = await fetch(url);
+    const rawText = await resp.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch { return { error: `docs-agent parse error: ${rawText.slice(0, 200)}` }; }
+    if (!resp.ok) return { error: `docs-agent HTTP ${resp.status}`, detail: data };
+    return data;
+  } catch (e) {
+    return { error: 'docs-agent unreachable: ' + e.message };
+  }
+}
+
+async function handleDocsBacklinks(link, env) {
+  try {
+    const url = `${DOCS_AGENT_BASE}/docs/backlinks?link=${encodeURIComponent(link)}`;
+    const resp = await fetch(url);
+    const rawText = await resp.text();
+    let data;
+    try { data = JSON.parse(rawText); } catch { return { error: `docs-agent parse error: ${rawText.slice(0, 200)}` }; }
+    if (!resp.ok) return { error: `docs-agent HTTP ${resp.status}`, detail: data };
+    return data;
+  } catch (e) {
+    return { error: 'docs-agent unreachable: ' + e.message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 function getMcpTools() {
   return [
     {
-      name: 'drakon.list_diagrams',
-      description: 'List diagram IDs in a DRAKON folder.',
+      name: 'drakon.listdiagrams',
+      description: 'List all available DRAKON diagram identifiers inside a specific folder namespace in storage so agents can discover existing assets before reading, mutating, validating, diffing, or saving any diagram content.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -722,8 +1302,8 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.get_diagram',
-      description: 'Read one DRAKON diagram JSON by folder and id.',
+      name: 'drakon.getdiagram',
+      description: 'Load one stored DRAKON diagram JSON document by folder and diagram id, returning the canonical persisted structure needed for editor hydration, validation checks, mutation planning, and downstream analysis workflows.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -734,8 +1314,8 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.save_diagram',
-      description: 'Create or update one DRAKON diagram JSON.',
+      name: 'drakon.savediagram',
+      description: 'Create or update a full DRAKON diagram JSON payload in storage when a client wants authoritative persistence after edits, preserving compatibility with current diagram CRUD flows and existing integrations.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -747,8 +1327,8 @@ function getMcpTools() {
       },
     },
     {
-      name: 'drakon.delete_diagram',
-      description: 'Delete one DRAKON diagram JSON.',
+      name: 'drakon.deletediagram',
+      description: 'Delete one DRAKON diagram JSON object from storage by folder and diagram id, allowing cleanup of obsolete assets while keeping the existing diagram lifecycle API unchanged for current clients.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -760,7 +1340,7 @@ function getMcpTools() {
     },
     {
       name: 'drakon.validateir',
-      description: 'Run deterministic validation for Canonical IR before rendering.',
+      description: 'Run deterministic canonical IR validation before rendering or persistence to detect structural issues like dangling pointers, invalid node types, orphan nodes, and malformed transition vectors in AI-generated graphs.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -771,37 +1351,55 @@ function getMcpTools() {
     },
     {
       name: 'drakon.analyzecodebase',
-      description: 'Read the pre-analyzed TypeScript project snapshot generated by the local analyzer script. Returns structural summary including files, functions, components, hooks, stores, API clients and planned DRAKON diagrams.',
+      description: 'Analyze a TypeScript or JavaScript project request context and return a structural summary plus planned DRAKON diagrams, including job tracking metadata that can drive AI planning, orchestration, and staged generation flows.',
       inputSchema: {
         type: 'object',
         properties: {
+          repositoryPath: { type: 'string' },
+          language: {
+            type: 'string',
+            enum: ['typescript', 'javascript', 'auto'],
+            default: 'auto',
+          },
           scope: {
             type: 'string',
             enum: ['overview', 'modules', 'flows', 'procedures'],
             default: 'overview',
           },
-          filter: { type: 'string' },
+          entryPaths: {
+            type: 'array',
+            items: { type: 'string' },
+            default: ['src/'],
+          },
+          includeGlobs: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          excludeGlobs: {
+            type: 'array',
+            items: { type: 'string' },
+          },
+          owner: { type: 'string', description: 'GitHub owner for live repo analysis' },
+          repo: { type: 'string', description: 'GitHub repo name for live analysis' },
+          branch: { type: 'string', default: 'main' },
         },
+        required: [],
       },
     },
     {
       name: 'drakon.getanalysissummary',
-      description: 'Get detailed analysis data for a specific scope or module from the cached project analysis. Use after drakon.analyzecodebase to drill into specific components, functions or flows.',
+      description: 'Get the result payload of a previously started analysis job by job identifier, returning full job metadata and summary content or an explicit not_found error for missing analysis records.',
       inputSchema: {
         type: 'object',
         properties: {
-          type: {
-            type: 'string',
-            enum: ['functions', 'components', 'hooks', 'stores', 'apiClients', 'importGraph'],
-          },
-          filter: { type: 'string' },
+          jobId: { type: 'string' },
         },
-        required: ['type'],
+        required: ['jobId'],
       },
     },
     {
       name: 'drakon.mutatediagram',
-      description: 'Apply one or more granular patch mutations to an existing diagram without full JSON rewrite. Supports insert, update, delete nodes and pointer changes. Each mutation is validated before saving.',
+      description: 'Apply FIFO granular patch mutations to an existing diagram using IR conversion and deterministic validation after each step, persisting only accepted operations while returning detailed applied and rejected mutation diagnostics.',
       inputSchema: {
         type: 'object',
         properties: {
@@ -816,7 +1414,21 @@ function getMcpTools() {
                   properties: {
                     op: { type: 'string', enum: ['insertNode'] },
                     nodeId: { type: 'string' },
-                    node: { type: 'object' },
+                    node: {
+                      type: 'object',
+                      properties: {
+                        type: { type: 'string', enum: Array.from(IR_ITEM_TYPES) },
+                        content: { type: 'string' },
+                        secondary: { type: 'string' },
+                        one: { type: 'string' },
+                        two: { type: 'string' },
+                        side: { type: 'string' },
+                        flag1: { type: 'boolean' },
+                        branchId: { type: 'string' },
+                        style: { type: 'object' },
+                      },
+                      required: ['type', 'content'],
+                    },
                   },
                   required: ['op', 'nodeId', 'node'],
                 },
@@ -825,7 +1437,20 @@ function getMcpTools() {
                   properties: {
                     op: { type: 'string', enum: ['updateNode'] },
                     nodeId: { type: 'string' },
-                    fields: { type: 'object' },
+                    fields: {
+                      type: 'object',
+                      properties: {
+                        type: { type: 'string', enum: Array.from(IR_ITEM_TYPES) },
+                        content: { type: 'string' },
+                        secondary: { type: 'string' },
+                        one: { type: 'string' },
+                        two: { type: 'string' },
+                        side: { type: 'string' },
+                        flag1: { type: 'boolean' },
+                        branchId: { type: 'string' },
+                        style: { type: 'object' },
+                      },
+                    },
                   },
                   required: ['op', 'nodeId', 'fields'],
                 },
@@ -846,6 +1471,14 @@ function getMcpTools() {
                   },
                   required: ['op', 'nodeId', 'targetId'],
                 },
+                {
+                  type: 'object',
+                  properties: {
+                    op: { type: 'string', enum: ['renameDiagram'] },
+                    newName: { type: 'string' },
+                  },
+                  required: ['op', 'newName'],
+                },
               ],
             },
           },
@@ -855,15 +1488,207 @@ function getMcpTools() {
     },
     {
       name: 'drakon.diffcodevsdiagram',
-      description: 'Compare cached code analysis against stored diagrams to find coverage gaps. Returns matched symbols, missing diagrams and orphaned diagrams.',
+      description: 'Compare a completed code analysis job summary with selected existing diagrams to identify coverage gaps and mismatches; currently returns a not_implemented stub reserved for the planned step-9 implementation.',
       inputSchema: {
         type: 'object',
         properties: {
+          analysisJobId: { type: 'string' },
           diagramIds: {
             type: 'array',
             items: { type: 'string' },
           },
         },
+        required: ['analysisJobId', 'diagramIds'],
+      },
+    },
+    {
+      name: 'drakon.savetogit',
+      description: 'Save a DRAKON diagram JSON to the drn/ folder in a GitHub repository (creates or updates drn/{diagramId}.json). Requires a GitHub token with write access passed via X-Github-Token header or env.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+          diagramId: { type: 'string' },
+          diagram: { type: 'object' },
+        },
+        required: ['owner', 'repo', 'diagramId', 'diagram'],
+      },
+    },
+    {
+      name: 'drakon.listgitdiagrams',
+      description: 'List DRAKON diagrams saved in the drn/ folder of a GitHub repository.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+    {
+      name: 'drakon.getgitdiagram',
+      description: 'Fetch a single DRAKON diagram from drn/{diagramId}.json in a GitHub repository.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+          diagramId: { type: 'string' },
+        },
+        required: ['owner', 'repo', 'diagramId'],
+      },
+    },
+    {
+      name: 'github.listtree',
+      description: 'List files and directories for a GitHub repository path so an agent can explore project structure before analysis, select target modules safely, and receive normalized entries with path, type, size, and optional download URL.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string', default: '' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+    {
+      name: 'github.getfile',
+      description: 'Read one specific file from a GitHub repository and return decoded UTF-8 text content with metadata, which should be used when the model needs to inspect implementation details before generating diagrams or analysis artifacts.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo', 'path'],
+      },
+    },
+    {
+      name: 'github.commitfile',
+      description: 'Create or update a repository file in GitHub by committing plain-text content to a branch, useful for writing generated DRAKON outputs or analysis reports back into version control with commit metadata returned.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+          path: { type: 'string' },
+          content: { type: 'string' },
+          message: { type: 'string' },
+          branch: { type: 'string', default: 'main' },
+        },
+        required: ['owner', 'repo', 'path', 'content', 'message'],
+      },
+    },
+    {
+      name: 'github.listbranches',
+      description: 'List all branch names in a GitHub repository so a user or agent can choose the correct branch context for browsing files, reading code, committing outputs, and running branch-specific analysis workflows.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          owner: { type: 'string' },
+          repo: { type: 'string' },
+        },
+        required: ['owner', 'repo'],
+      },
+    },
+    {
+      name: 'docs.chat',
+      description: 'Send a message to the documentation agent (Документознавець) to get structured Markdown documentation for code modules, functions, or architecture. Responds in Ukrainian. Use before creating DRAKON diagrams to build project context.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          message: { type: 'string', description: 'Question or code to document' },
+          context: { type: 'object', description: 'Optional: { currentDoc, fileTree }' },
+        },
+        required: ['message'],
+      },
+    },
+    {
+      name: 'architect.chat',
+      description: 'Send a message to the architect agent to get structural analysis, module relationship mapping, or architecture planning. Returns analysis with file-tree context and diagram recommendations.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          message: { type: 'string' },
+          context: { type: 'object', description: 'Optional: { fileTree, currentDiagram }' },
+        },
+        required: ['message'],
+      },
+    },
+    {
+      name: 'architect.analyze',
+      description: 'Submit Python source code to the architect LangGraph pipeline for deep structural analysis. Async — returns job_id immediately. Pipeline: cyclomatic complexity → call graph → behavioral YAML → DRAKON IR. Poll with architect.jobstatus.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          source_code: { type: 'string', description: 'Python source code to analyze' },
+          file_path: { type: 'string', description: 'File path hint (e.g. "bot/handlers.py")', default: 'module.py' },
+        },
+        required: ['source_code'],
+      },
+    },
+    {
+      name: 'architect.jobstatus',
+      description: 'Poll the status of an architect.analyze job. Returns status (running|done|error) and when done: drakon_ir array ready to pass to drakon.savediagram.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          job_id: { type: 'string' },
+        },
+        required: ['job_id'],
+      },
+    },
+    {
+      name: 'drakon.agentchat',
+      description: 'Send a message or Python code to the drakon-agent. Python code is auto-detected and sent to /analyze which returns DRAKON IR diagrams. Other messages go to /chat for diagram questions and feedback.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          message: { type: 'string', description: 'Message text or Python source code' },
+          context: { type: 'object' },
+        },
+        required: ['message'],
+      },
+    },
+    {
+      name: 'docs.query',
+      description: 'Execute a DQL (Dataview Query Language) query against the project knowledge base. Supports LIST/TABLE with FROM (tag/folder/field), WHERE, SORT, LIMIT. Examples: "LIST FROM #architecture", "TABLE title, status FROM type = \\"plan\\" WHERE status = \\"active\\"", "LIST WHERE contains(tags, \\"pipeline\\") SORT file.mtime DESC LIMIT 5"',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'DQL query string' },
+        },
+        required: ['query'],
+      },
+    },
+    {
+      name: 'docs.wikilink',
+      description: 'Read the full content of a project document by wiki-link. Returns frontmatter metadata + document body. Use after docs.query to read specific documents.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          link: { type: 'string', description: 'Wiki link target, e.g. "concept/03-architecture" or "plans/2026-05-15-pipeline"' },
+        },
+        required: ['link'],
+      },
+    },
+    {
+      name: 'docs.backlinks',
+      description: 'Find all project documents that link to the specified document via [[wiki-links]]. Useful for understanding dependencies and document relationships.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          link: { type: 'string', description: 'Wiki link target to find backlinks for' },
+        },
+        required: ['link'],
       },
     },
   ];
@@ -875,7 +1700,7 @@ function toolResultJson(data) {
   };
 }
 
-async function handleMcp(request, env) {
+async function handleMcp(request, env, ctx) {
   let body;
   try {
     body = await request.json();
@@ -911,18 +1736,22 @@ async function handleMcp(request, env) {
   if (method === 'tools/call') {
     const name = params?.name;
     const args = params?.arguments || {};
+    const requestToken = request.headers.get('X-Github-Token') || '';
+    const t0 = Date.now();
+    log('info', 'tool.call', { tool: name, hasGhToken: !!requestToken, folderSlug: args.folderSlug, diagramId: args.diagramId, owner: args.owner, repo: args.repo });
+    try {
 
-    if (name === 'drakon.list_diagrams') {
+    if (name === 'drakon.listdiagrams') {
       const result = await handleDrakonList(String(args.folderSlug || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
 
-    if (name === 'drakon.get_diagram') {
+    if (name === 'drakon.getdiagram') {
       const result = await handleDrakonGet(String(args.folderSlug || ''), String(args.diagramId || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
 
-    if (name === 'drakon.save_diagram') {
+    if (name === 'drakon.savediagram') {
       const fakeRequest = new Request('https://internal.local/commit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -932,11 +1761,23 @@ async function handleMcp(request, env) {
           diagram: args.diagram || {},
         }),
       });
-      const result = await handleDrakonCommit(fakeRequest, env);
-      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
+      const minioResult = await handleDrakonCommit(fakeRequest, env);
+      const minioData = await minioResult.json();
+      // Also save to git drn/ if owner+repo provided
+      let gitResult = null;
+      if (args.owner && args.repo) {
+        gitResult = await handleSaveDiagramToGit({
+          owner: args.owner,
+          repo: args.repo,
+          branch: args.branch || 'main',
+          diagramId: String(args.diagramId || ''),
+          diagram: args.diagram || {},
+        }, env, requestToken);
+      }
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson({ ...minioData, git: gitResult }) });
     }
 
-    if (name === 'drakon.delete_diagram') {
+    if (name === 'drakon.deletediagram') {
       const result = await handleDrakonDelete(String(args.folderSlug || ''), String(args.diagramId || ''), env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(await result.json()) });
     }
@@ -947,7 +1788,7 @@ async function handleMcp(request, env) {
     }
 
     if (name === 'drakon.analyzecodebase') {
-      const result = handleMcpAnalyzeCodebase(args);
+      const result = await handleMcpAnalyzeCodebase(args, env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
@@ -966,24 +1807,227 @@ async function handleMcp(request, env) {
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
+    if (name === 'drakon.savetogit') {
+      const result = await handleSaveDiagramToGit(args, env, requestToken);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'drakon.listgitdiagrams') {
+      const result = await handleListGitDiagrams(args, env, requestToken);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'drakon.getgitdiagram') {
+      const result = await handleGetGitDiagram(args, env, requestToken);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.listtree') {
+      const result = await handleGithubListTree(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.getfile') {
+      const result = await handleGithubGetFile(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.commitfile') {
+      const result = await handleGithubCommitFile(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.listbranches') {
+      const result = await handleGithubListBranches(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'docs.chat') {
+      const result = await mcpCallAgent('docs', String(args.message || ''), args.context || null, env, ctx);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'architect.chat') {
+      const result = await mcpCallAgent('architect', String(args.message || ''), args.context || null, env, ctx);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'architect.analyze') {
+      const result = await mcpCallPipeline('analyze', {
+        source_code: String(args.source_code || ''),
+        file_path: String(args.file_path || 'module.py'),
+      }, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'architect.jobstatus') {
+      const result = await mcpGetPipelineStatus(String(args.job_id || ''), env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'drakon.agentchat') {
+      const result = await mcpCallAgent('drakon', String(args.message || ''), args.context || null, env, ctx);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'docs.query') {
+      const result = await handleDocsDataviewQuery(String(args.query || ''), env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'docs.wikilink') {
+      const result = await handleDocsWikilink(String(args.link || ''), env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'docs.backlinks') {
+      const result = await handleDocsBacklinks(String(args.link || ''), env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    log('warn', 'tool.unknown', { tool: name, ms: Date.now() - t0 });
     return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown tool: ${name}` } }, 404);
+
+    } catch (err) {
+      const entry = { ts: new Date().toISOString(), level: 'error', tool: name, ms: Date.now() - t0, error: err.message, stack: (err.stack || '').slice(0, 400) };
+      log('error', 'tool.error', entry);
+      if (ctx) ctx.waitUntil(saveLogToMinio(env, entry));
+      return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32603, message: err.message } }, 500);
+    }
   }
 
   return jsonResponse({ jsonrpc: '2.0', id, error: { code: -32601, message: `Unknown method: ${method}` } }, 404);
 }
 
-async function handleHealth() {
+async function handleHealth(env) {
   return jsonResponse({
     success: true,
     status: 'ok',
     service: 'drakon-mcp-worker',
     timestamp: new Date().toISOString(),
     features: ['auth', 'minio-s3', 'drakon-rest', 'mcp-jsonrpc'],
+    storage: {
+      endpoint: env && env.MINIO_ENDPOINT ? env.MINIO_ENDPOINT : 'not configured',
+      bucket: env && env.MINIO_BUCKET ? env.MINIO_BUCKET : 'not configured',
+      ssl: env && env.MINIO_USE_SSL ? env.MINIO_USE_SSL : 'true',
+    },
   });
 }
 
+// ============================================
+// AGENT PROXY — /v1/agents/:agentId/chat
+// Proxies chat requests to the configured agent URL.
+// Logs each request to MinIO (agent, ms, status).
+// ============================================
+
+const VALID_AGENT_IDS = ['drakon', 'architect', 'docs'];
+const DOCS_AGENT_URL = 'https://docs-agent.exodus.pp.ua';
+
+function isPythonCode(msg) {
+  return /\bdef\s+\w+\s*\(|class\s+\w+[\s:(]|^import\s+\w+|^from\s+\w+\s+import|async\s+def\s+\w+/m.test(msg);
+}
+
+async function handleAgentChat(agentId, request, env, ctx) {
+  if (!VALID_AGENT_IDS.includes(agentId)) {
+    return errorResponse('Unknown agent: ' + agentId, 404, undefined, 'NOT_FOUND');
+  }
+
+  let body;
+  try { body = await request.json(); } catch {
+    return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
+  }
+
+  const { message, context, agentUrl } = body;
+  if (!message || typeof message !== 'string') {
+    return errorResponse('message is required', 400, undefined, 'MISSING_FIELD');
+  }
+
+  // agentUrl from client (from Settings), fallback to env vars
+  const defaultUrls = {
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+  };
+  const targetUrl = (typeof agentUrl === 'string' && agentUrl.startsWith('https://'))
+    ? agentUrl
+    : defaultUrls[agentId];
+
+  // Route: DRAKON + Python code → /analyze, otherwise → /chat
+  const usesAnalyze = agentId === 'drakon' && isPythonCode(message);
+  const endpoint = usesAnalyze ? '/analyze' : '/chat';
+  const agentBody = usesAnalyze
+    ? JSON.stringify({ code: message, refine: true })
+    : JSON.stringify({ message, context: context || null });
+
+  const t0 = Date.now();
+  let agentResp;
+  try {
+    agentResp = await fetch(targetUrl + endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: agentBody,
+      signal: AbortSignal.timeout(90_000),
+    });
+  } catch (e) {
+    ctx.waitUntil(saveLogToMinio(env, {
+      ts: new Date().toISOString(), level: 'error',
+      tool: 'agent.' + agentId + '.chat',
+      agentUrl: targetUrl, endpoint, error: String(e.message),
+    }));
+    return errorResponse('Agent unreachable: ' + e.message, 502, undefined, 'AGENT_UNREACHABLE');
+  }
+
+  const ms = Date.now() - t0;
+  let data;
+  let rawText = '';
+  try {
+    rawText = await agentResp.text();
+    data = JSON.parse(rawText);
+  } catch {
+    return errorResponse(
+      'Agent error (HTTP ' + agentResp.status + '): ' + rawText.slice(0, 200),
+      502,
+      undefined,
+      'AGENT_BAD_RESPONSE'
+    );
+  }
+
+  ctx.waitUntil(saveLogToMinio(env, {
+    ts: new Date().toISOString(),
+    level: agentResp.ok ? 'info' : 'warn',
+    tool: 'agent.' + agentId + '.chat',
+    agentUrl: targetUrl, endpoint,
+    httpStatus: agentResp.status, ms,
+    replyLen: typeof data.reply === 'string' ? data.reply.length : 0,
+    hasDiagrams: Array.isArray(data.diagrams) && data.diagrams.length > 0,
+  }));
+
+  return jsonResponse(data, agentResp.status);
+}
+
+async function handleAgentHealth(agentId, env) {
+  if (!VALID_AGENT_IDS.includes(agentId)) {
+    return errorResponse('Unknown agent: ' + agentId, 404, undefined, 'NOT_FOUND');
+  }
+  const defaultUrls = {
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+  };
+  try {
+    const resp = await fetch(defaultUrls[agentId] + '/health', {
+      signal: AbortSignal.timeout(5_000),
+    });
+    const data = await resp.json().catch(() => ({}));
+    return jsonResponse({ ok: resp.ok, status: resp.status, agent: agentId, ...data });
+  } catch (e) {
+    return jsonResponse({ ok: false, agent: agentId, error: e.message }, 503);
+  }
+}
+
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
     const method = request.method;
@@ -998,18 +2042,106 @@ export default {
       }
 
       if (method === 'GET' && path === '/health') {
-        return await handleHealth();
+        return await handleHealth(env);
       }
 
       if (method === 'POST' && path === '/auth/login') {
         return await handleAuthLogin(request, env);
       }
 
+      if (method === 'GET' && path === '/mcp') {
+        // MCP Streamable HTTP: GET returns 405 to signal POST-only mode
+        return new Response(null, { status: 405, headers: {
+          'Allow': 'POST',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        } });
+      }
+
       if (method === 'POST' && path === '/mcp') {
         const owner = await verifyOwnerAuth(request, env);
         if (!owner) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
-        return await handleMcp(request, env);
+        // Clone to read tool name without consuming the body
+        let toolName = 'unknown';
+        try {
+          const cloned = await request.clone().json();
+          if (cloned?.method === 'tools/call') toolName = cloned?.params?.name || 'unknown';
+          else toolName = cloned?.method || 'unknown';
+        } catch (_) {}
+        const t0mcp = Date.now();
+        const resp = await handleMcp(request, env, ctx);
+        ctx.waitUntil(saveLogToMinio(env, {
+          ts: new Date().toISOString(),
+          level: resp.status < 400 ? 'info' : 'error',
+          tool: toolName,
+          httpStatus: resp.status,
+          ms: Date.now() - t0mcp,
+        }));
+        return resp;
       }
+
+      // ─── DRAKON IR routes (read-only, no auth needed) ─────────────────────
+      if (method === 'GET' && path === '/v1/drakon-ir/list') {
+        return await handleDrakonIrList();
+      }
+      const drakonIrGetMatch = path.match(/^\/v1\/drakon-ir\/([^/]+)$/);
+      if (method === 'GET' && drakonIrGetMatch) {
+        return await handleDrakonIrGet(decodeURIComponent(drakonIrGetMatch[1]));
+      }
+      // ─── Public Notes routes (no auth needed for reads) ─────────────────
+      if (method === 'GET' && path === '/v1/notes/list') {
+        return await handleNotesList(request);
+      }
+      if (method === 'GET' && (path === '/v1/notes/get' || path === '/v1/notes/read')) {
+        return await handleNotesGet(request);
+      }
+      if (method === 'GET' && path === '/v1/notes/graph') {
+        return await handleNotesGraph(request);
+      }
+      if (method === 'POST' && path === '/v1/notes/commit') {
+        return await handleNotesCommit(request, env);
+      }
+      if (method === 'DELETE' && path === '/v1/notes/delete') {
+        return await handleNotesDelete(request, env);
+      }
+      // ──────────────────────────────────────────────────────────────────────
+
+      // ─── GitHub read-only routes (no auth needed — Worker uses server-side token) ─────
+      if (method === 'GET' && path === '/v1/github/tree') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const treePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env, requestToken));
+      }
+      if (method === 'GET' && path === '/v1/github/file') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const filePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env, requestToken));
+      }
+      if (method === 'GET' && path === '/v1/github/branches') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListBranches({ owner, repo }, env, requestToken));
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
+      // ─── Pipeline SSE (auth via ?token= query param — EventSource не підтримує headers) ─
+      const pipelineStreamMatch = path.match(/^\/v1\/pipeline\/stream\/([^\/]+)$/);
+      if (method === 'GET' && pipelineStreamMatch) {
+        const streamJobId = decodeURIComponent(pipelineStreamMatch[1]);
+        const qToken = new URL(request.url).searchParams.get('token') || '';
+        const streamPayload = await verifyJWT(qToken, env.JWT_SECRET).catch(() => null);
+        if (!streamPayload) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+        return await handlePipelineStream(streamJobId, env, ctx);
+      }
+      // ─────────────────────────────────────────────────────────────────────
 
       const ownerPayload = await verifyOwnerAuth(request, env);
       if (!ownerPayload) {
@@ -1037,6 +2169,42 @@ export default {
         return await handleAnalysisListJobs();
       }
 
+      if (method === 'GET' && path === '/v1/github/tree') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const treePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env, requestToken));
+      }
+
+      if (method === 'GET' && path === '/v1/github/file') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const filePath = url.searchParams.get('path') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env, requestToken));
+      }
+
+      if (method === 'POST' && path === '/v1/github/commit') {
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
+        }
+        return jsonResponse(await handleGithubCommitFile(body, env, requestToken));
+      }
+
+      if (method === 'GET' && path === '/v1/github/branches') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListBranches({ owner, repo }, env, requestToken));
+      }
+
       const drakonGetMatch = path.match(/^\/v1\/drakon\/([^\/]+)\/([^\/]+)$/);
       if (method === 'GET' && drakonGetMatch) {
         return await handleDrakonGet(
@@ -1062,6 +2230,328 @@ export default {
           env
         );
       }
+
+
+
+
+// ── Pipeline SSE stream (architect-agent polling → browser EventSource) ──────
+async function handlePipelineStream(jobId, env, ctx) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
+
+  ctx.waitUntil((async () => {
+    try {
+      await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'pending', job_id: jobId })}
+
+`));
+      const deadline = Date.now() + 85_000;
+      while (Date.now() < deadline) {
+        let resp;
+        try {
+          resp = await fetch(`${architectUrl}/pipeline/status/${jobId}`, {
+            signal: AbortSignal.timeout(8_000),
+          });
+        } catch (fetchErr) {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: String(fetchErr.message) })}
+
+`));
+          break;
+        }
+        if (resp.status === 404) {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: 'Сервіс перезапустився. Спробуйте ще раз.' })}
+
+`));
+          break;
+        }
+        if (!resp.ok) {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: `Agent HTTP ${resp.status}` })}
+
+`));
+          break;
+        }
+        let data;
+        try { data = await resp.json(); } catch {
+          await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: 'Bad JSON from agent' })}
+
+`));
+          break;
+        }
+        await writer.write(encoder.encode(`data: ${JSON.stringify(data)}
+
+`));
+        if (data.status === 'done' || data.status === 'error') break;
+        await new Promise(r => setTimeout(r, 1500));
+      }
+    } catch (e) {
+      try { await writer.write(encoder.encode(`data: ${JSON.stringify({ status: 'error', error: String(e.message) })}
+
+`)); } catch { /* closed */ }
+    } finally {
+      try { await writer.close(); } catch { /* ignore */ }
+    }
+  })());
+
+  return new Response(readable, {
+    headers: {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*',
+      'X-Accel-Buffering': 'no',
+    },
+  });
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Pipeline proxy (architect-agent LangGraph endpoints) ─────────────────────
+async function handleKb(kbPath, request, env) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const targetUrl = architectUrl + '/kb/' + kbPath;
+  const url = new URL(request.url);
+  const fullTarget = targetUrl + url.search;
+
+  const init = {
+    method: request.method,
+    headers: { 'Content-Type': 'application/json' },
+  };
+  if (request.method !== 'GET' && request.method !== 'DELETE') {
+    init.body = await request.text();
+  }
+
+  const resp = await fetch(fullTarget, init);
+  const data = await resp.json().catch(() => ({}));
+  return new Response(JSON.stringify(data), {
+    status: resp.status,
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+  });
+}
+
+async function handlePipeline(pipelinePath, request, env, ctx) {
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const targetUrl = architectUrl + '/pipeline/' + pipelinePath;
+
+  const init = {
+    method: request.method,
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(120_000),
+  };
+  if (request.method === 'POST') {
+    let body;
+    try { body = await request.text(); } catch { body = '{}'; }
+    init.body = body;
+  }
+
+  let agentResp;
+  try {
+    agentResp = await fetch(targetUrl, init);
+  } catch (e) {
+    ctx.waitUntil(saveLogToMinio(env, {
+      ts: new Date().toISOString(), level: 'error',
+      tool: 'pipeline.' + pipelinePath,
+      agentUrl: targetUrl, error: String(e.message),
+    }));
+    return errorResponse('Pipeline agent unreachable: ' + e.message, 502, undefined, 'AGENT_UNREACHABLE');
+  }
+
+  const ms = Date.now();
+  let data;
+  try { data = await agentResp.json(); } catch {
+    return errorResponse('Pipeline agent returned non-JSON', 502, undefined, 'AGENT_BAD_RESPONSE');
+  }
+
+  ctx.waitUntil(saveLogToMinio(env, {
+    ts: new Date().toISOString(),
+    level: agentResp.ok ? 'info' : 'warn',
+    tool: 'pipeline.' + pipelinePath,
+    agentUrl: targetUrl, httpStatus: agentResp.status,
+  }));
+
+  return jsonResponse(data, agentResp.status);
+}
+// ─────────────────────────────────────────────────────────────────────────────
+// ── Notes API (docs-agent proxy) ─────────────────────────────────────────────
+
+async function handleDrakonIrList() {
+  const res = await fetch(DOCS_AGENT_URL + '/drakon-ir/list', { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) return errorResponse('docs-agent /drakon-ir/list ' + res.status, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleDrakonIrGet(name) {
+  const res = await fetch(DOCS_AGENT_URL + '/drakon-ir/get?name=' + encodeURIComponent(name), { signal: AbortSignal.timeout(15_000) });
+  if (!res.ok) return errorResponse('docs-agent /drakon-ir/get ' + res.status, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesList(request) {
+  const url = new URL(request.url);
+  const flat = url.searchParams.get('flat') ?? 'true';
+  const project = url.searchParams.get('project') || '';
+  const projectQs = project ? `&project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/list?flat=${flat}${projectQs}`, {
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) return errorResponse(`docs-agent /notes/list ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesGet(request) {
+  const url = new URL(request.url);
+  const slug = url.searchParams.get('slug') || '';
+  const project = url.searchParams.get('project') || '';
+  if (!slug) return errorResponse('slug required', 400);
+  const projectQs = project ? `&project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/read?slug=${encodeURIComponent(slug)}${projectQs}`, {
+    signal: AbortSignal.timeout(10_000),
+  });
+  if (res.status === 404) return errorResponse(`Note not found: ${slug}`, 404);
+  if (!res.ok) return errorResponse(`docs-agent /notes/read ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesGraph(request) {
+  const project = new URL(request.url).searchParams.get('project') || '';
+  const projectQs = project ? `?project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/graph${projectQs}`, {
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) return errorResponse(`docs-agent /notes/graph ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesCommit(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  if (!token) return errorResponse('Authorization required', 401);
+  try {
+    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
+  } catch {
+    return errorResponse('Invalid or expired token', 401);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
+
+  // Lovable sends: { slug, path, content (full markdown with FM), sha, message }
+  // Our format: { slug, title, content (body only), tags }
+  // Handle both formats
+  let slug = body.slug || '';
+  let title = body.title;
+  let bodyContent = body.content || '';
+  let tags = body.tags || [];
+
+  if (!title && bodyContent.startsWith('---')) {
+    // Parse frontmatter from content
+    const end = bodyContent.indexOf('\n---', 3);
+    if (end !== -1) {
+      const fm = bodyContent.slice(3, end).trim();
+      bodyContent = bodyContent.slice(end + 4).replace(/^\n/, '');
+      for (const line of fm.split('\n')) {
+        const tm = line.match(/^title:\s*(.*)$/);
+        if (tm) title = tm[1].replace(/^["']|["']$/g, '').trim();
+        const tagsMatch = line.match(/^tags:\s*\[(.*)\]/);
+        if (tagsMatch) {
+          tags = tagsMatch[1].split(',').map(s => s.trim().replace(/^["']|["']$/g, '')).filter(Boolean);
+        }
+      }
+    }
+  }
+
+  if (!slug) return errorResponse('slug required', 400);
+  if (!title) title = slug.split('/').pop() || slug;
+
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/write`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug, title, content: bodyContent, tags }),
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return errorResponse(`docs-agent /notes/write ${res.status}: ${errText}`, 502);
+  }
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesDelete(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  if (!token) return errorResponse('Authorization required', 401);
+  try {
+    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
+  } catch {
+    return errorResponse('Invalid or expired token', 401);
+  }
+
+  let body;
+  try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
+  const slug = body.slug || '';
+  if (!slug) return errorResponse('slug required', 400);
+
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/delete`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ slug }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  if (!res.ok) return errorResponse(`docs-agent /notes/delete ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+      // ─── Pipeline config registry (/v1/agents/pipeline* → architect-agent) ───
+      if (path.startsWith('/v1/agents/pipeline')) {
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+        const targetUrl = architectUrl + path + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        return fetch(proxied);
+      }
+
+      // ─── Pipeline proxy (/v1/pipeline/* → architect-agent) ─────────────
+      if (method === 'POST' && path === '/v1/pipeline/analyze') {
+        return await handlePipeline('analyze', request, env, ctx);
+      }
+      if (method === 'POST' && path === '/v1/pipeline/generate') {
+        return await handlePipeline('generate', request, env, ctx);
+      }
+      const pipelineStatusMatch = path.match(/^\/v1\/pipeline\/status\/([^\/]+)$/);
+      if (method === 'GET' && pipelineStatusMatch) {
+        return await handlePipeline('status/' + decodeURIComponent(pipelineStatusMatch[1]), request, env, ctx);
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
+
+      // ─── KB proxy ─────────────────────────────────────────────────────────
+      if (method === 'POST' && path === '/v1/kb/contribute') {
+        return await handleKb('contribute', request, env);
+      }
+      if (method === 'GET' && path === '/v1/kb/list') {
+        return await handleKb('list', request, env);
+      }
+      const kbGetMatch = path.match(/^\/v1\/kb\/get\/([^\/]+)$/);
+      if (method === 'GET' && kbGetMatch) {
+        return await handleKb('get/' + decodeURIComponent(kbGetMatch[1]), request, env);
+      }
+      const kbDeleteMatch = path.match(/^\/v1\/kb\/delete\/([^\/]+)$/);
+      if (method === 'DELETE' && kbDeleteMatch) {
+        return await handleKb('delete/' + decodeURIComponent(kbDeleteMatch[1]), request, env);
+      }
+      // ─── Agent proxy ──────────────────────────────────────────────────
+      const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);
+      if (method === 'POST' && agentChatMatch) {
+        return await handleAgentChat(agentChatMatch[1], request, env, ctx);
+      }
+
+      const agentHealthMatch = path.match(/^\/v1\/agents\/([^\/]+)\/health$/);
+      if (method === 'GET' && agentHealthMatch) {
+        return await handleAgentHealth(agentHealthMatch[1], env);
+      }
+      // ──────────────────────────────────────────────────────────────────
 
       return errorResponse('Not found', 404, { method, path }, 'NOT_FOUND');
     } catch (e) {

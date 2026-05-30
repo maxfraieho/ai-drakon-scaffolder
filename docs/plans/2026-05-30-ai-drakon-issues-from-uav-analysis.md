@@ -50,8 +50,7 @@ This document records the issues, inconsistencies, and observations collected du
   ```json
   {"success": false, "error": "folderSlug and diagramId are required", "errorCode": "BAD_REQUEST"}
   ```
-- **Workaround**: Providing `"folderSlug"` and `"diagramId"` in the JSON payload alongside `"folder"` and `"name"` resolved the error and allowed the commits to succeed.
-- **Recommendation**: Align the API parameter names in the documentation to reflect `"folderSlug"` and `"diagramId"`.
+- **Status**: Fixed. Updated `cloudflare-worker/worker-mcp-drakon.js` to support fallback to `"folder"` and `"name"` keys alongside `"folderSlug"` and `"diagramId"` in `handleDrakonCommit`, ensuring full backward compatibility with any older scripts/payloads.
 
 ---
 
