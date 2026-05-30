@@ -70,7 +70,7 @@ export function extractAgentText(payload: unknown): string {
   }
 
   const data = payload as Record<string, unknown>;
-  const commonFields = ["message", "response", "answer", "content", "text", "result"];
+  const commonFields = ["message", "reply", "response", "answer", "content", "text", "result"];
 
   for (const field of commonFields) {
     const value = data[field];

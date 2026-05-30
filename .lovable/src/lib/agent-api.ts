@@ -122,7 +122,7 @@ throw new Error(`${AGENT_LABELS[agentId]} agent error: ${resp.status}`);
 }
 const data = await resp.json();
 return {
-reply: data.reply ?? data.message ?? JSON.stringify(data),
+reply: data.reply ?? data.response ?? data.message ?? JSON.stringify(data),
 diagrams: data.diagrams,
 };
 }
