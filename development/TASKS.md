@@ -6804,6 +6804,103 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
 
 
+## [ ] TASK-88
+
+### Мета
+Виправити 2 баги в `agy` wrapper + оновити Docker контейнер OpenDesign.
+
+### !!IMPORTANT!! Де запускати
+SSH на `192.168.3.184` (`sshpass -p '805235io.' ssh vokov@192.168.3.184`)
+
+### Баги
+
+**Bug 1:** `candidate_endpoints` видає той самий endpoint двічі.
+Поточний код (рядки ~55-65 у `/usr/local/bin/agy` всередині контейнера):
+```python
+def candidate_endpoints(model_id: str):
+    for ep in ENDPOINTS:
+        if model_id in ep["models"] and is_reachable(ep["base"]):
+            yield model_id, ep
+    for ep in ENDPOINTS:
+        if is_reachable(ep["base"]):
+            yield ep["models"][0], ep
+```
+Виправлення — дедупліковати через `seen`:
+```python
+def candidate_endpoints(model_id: str):
+    seen = set()
+    for ep in ENDPOINTS:
+        if model_id in ep["models"] and is_reachable(ep["base"]):
+            seen.add(ep["name"])
+            yield model_id, ep
+    for ep in ENDPOINTS:
+        if ep["name"] not in seen and is_reachable(ep["base"]):
+            yield ep["models"][0], ep
+```
+
+**Bug 2:** Default model для fallback — `ep["models"][0]` для local = `standard-proxy` що дає 503. Замінити default на `gemini-2.5-flash` (AGY3).
+
+### Кроки
+
+**1. Виправити файл на dev сервері**
+```bash
+# Файл виправити: /home/vokov/agy-wrapper/agy та /home/vokov/open-design-custom/agy
+# Зміни:
+# - candidate_endpoints: додати seen = set(), seen.add, if ep["name"] not in seen
+# - В ENDPOINTS: змінити порядок — local останній або default model = "gemini-2.5-flash"
+# Перевір синтаксис: python3 /home/vokov/agy-wrapper/agy --version
+```
+
+**2. Rebuild контейнер**
+```bash
+cd /home/vokov/open-design-custom
+cp /home/vokov/agy-wrapper/agy /home/vokov/open-design-custom/agy
+docker stop open-design && docker rm open-design
+docker build --no-cache -t open-design-custom:latest . 2>&1 | tail -5
+```
+
+**3. Запустити контейнер**
+```bash
+TOKEN="2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a"
+docker run -d \
+  --name open-design --restart always --read-only --tmpfs /tmp \
+  --security-opt no-new-privileges:true \
+  --memory 512m --pids-limit 256 \
+  -p 0.0.0.0:7459:7456 \
+  -e NODE_ENV=production \
+  -e OD_BIND_HOST=0.0.0.0 -e OD_PORT=7456 \
+  -e OD_API_TOKEN=$TOKEN \
+  -e OD_ALLOWED_ORIGINS=http://192.168.3.184:7459 \
+  -e LOCAL_PROXY_TOKEN=freecc -e AGY_API_KEY=proxy-key \
+  -v open_design_data:/app/.od \
+  open-design-custom:latest
+```
+
+**4. Push до GitHub**
+```bash
+cd /home/vokov/agy-wrapper
+git add agy
+git commit -m "fix: deduplicate endpoints in candidate_endpoints — v1.2.0"
+git push origin main
+```
+
+### Верифікація
+```bash
+# agy версія та fallback (має показати AGY3 без дублювання):
+echo "say hi briefly" | docker exec -i open-design agy --model gemini-2.5-flash 2>&1 | head -5
+# Очікується: [agy] -> agy3 | model=gemini-2.5-flash + відповідь без дублів
+
+docker exec open-design agy --version
+curl -s http://127.0.0.1:7459/api/health -H "Authorization: Bearer $TOKEN"
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-88:agy-dedup-fix|v1.2.0|fix:candidate-endpoints-dedup+default-model|commit:<hash>|★★★
+```
+
+---
+
 ## [ ] TASK-87
 
 ### Мета
