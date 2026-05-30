@@ -95,14 +95,17 @@ Authorization: `Bearer ${getAccessToken() ?? ""}`,
 "Content-Type": "application/json",
 });
 
-const githubHeaders = (token?: string): HeadersInit => {
-const cfgToken = token ?? getGithubConfig().token;
-return cfgToken.trim().length > 0 ? { "X-Github-Token": cfgToken.trim() } : {};
+const githubHeaders = (owner?: string, token?: string): HeadersInit => {
+  const ghCfg = getGithubConfig();
+  const cfgToken = token !== undefined
+    ? token
+    : (owner && owner.trim().toLowerCase() === ghCfg.owner.trim().toLowerCase() ? ghCfg.token : "");
+  return cfgToken.trim().length > 0 ? { "X-Github-Token": cfgToken.trim() } : {};
 };
 
-const githubRequestHeaders = (token?: string): HeadersInit => ({
-...(headers() as Record<string, string>),
-...(githubHeaders(token) as Record<string, string>),
+const githubRequestHeaders = (owner?: string, token?: string): HeadersInit => ({
+  ...(headers() as Record<string, string>),
+  ...(githubHeaders(owner, token) as Record<string, string>),
 });
 
 async function parseResponse<T>(response: Response): Promise<T> {
@@ -278,7 +281,7 @@ token?: string,
 ): Promise<GithubTreeResponse> =>
 fetch(
 `${resolveApiBase()}/v1/github/tree?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
-{ headers: githubRequestHeaders(token) },
+{ headers: githubRequestHeaders(owner, token) },
 ).then((r) => r.json()),
 
 githubGetFile: (
@@ -290,7 +293,7 @@ token?: string,
 ): Promise<GithubFileResponse> =>
 fetch(
 `${resolveApiBase()}/v1/github/file?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
-{ headers: githubRequestHeaders(token) },
+{ headers: githubRequestHeaders(owner, token) },
 ).then((r) => r.json()),
 
 githubCommitFile: async (
@@ -304,7 +307,7 @@ token?: string,
 ): Promise<GithubCommitResponse> => {
 const response = await fetch(`${resolveApiBase()}/v1/github/commit`, {
 method: "POST",
-headers: githubRequestHeaders(token),
+headers: githubRequestHeaders(owner, token),
 body: JSON.stringify({ owner, repo, path, content, message, branch }),
 });
 
@@ -315,6 +318,6 @@ githubListBranches: (owner: string, repo: string, token?: string):
 Promise<GithubBranchesResponse> =>
 fetch(
 `${resolveApiBase()}/v1/github/branches?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
-{ headers: githubRequestHeaders(token) },
+{ headers: githubRequestHeaders(owner, token) },
 ).then((r) => r.json()),
 };

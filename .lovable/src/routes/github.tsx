@@ -122,7 +122,7 @@ useEffect(() => {
   setBranch(ghSource?.branch ?? githubDefaults.branch ?? "main");
 }, [activeProject?.slug]);
 
-const token = githubDefaults.token || "";
+const token = owner.toLowerCase() === githubDefaults.owner.toLowerCase() ? (githubDefaults.token || "") : "";
 
 const [branches, setBranches] = useState<string[]>([githubDefaults.branch || "main"]);
 const [isLoadingBranches, setIsLoadingBranches] = useState(false);

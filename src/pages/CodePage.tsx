@@ -179,7 +179,7 @@ export default function CodePage() {
   const owner = projectGh?.owner || ghCfg.owner || "";
   const repo = projectGh?.repo || ghCfg.repo || "";
   const branch = projectGh?.branch || ghCfg.branch || "main";
-  const token = ghCfg.token;
+  const token = owner.toLowerCase() === ghCfg.owner.toLowerCase() ? ghCfg.token : "";
 
   const [code, setCode] = useState("");
   const [filePath, setFilePath] = useState("untitled.py");
