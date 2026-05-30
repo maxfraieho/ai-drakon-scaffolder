@@ -13,6 +13,7 @@ import { fetchNotesTree, deleteNote, commitNote, type TreeNode } from
 "@/lib/garden/notesApi";
 import { toast } from "sonner";
 import { useProject } from "@/context/ProjectContext";
+import { UnsavedChangesGuard } from "@/components/workspace/UnsavedChangesGuard";
 
 const NEW_SLUG = "__new__";
 const LOCAL_FOLDERS_KEY = "docs.localFolders";
@@ -388,39 +389,40 @@ title="Список документів"
 </span>
 </div>
 
-{activeSlug === null ? (
-<div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground">
-<FileText className="h-10 w-10 opacity-20" />
-<p className="text-sm">
-Оберіть документ або{" "}
-<button
-className="underline transition-colors hover:text-foreground"
-onClick={() => handleNewNote(null)}
->
-створіть новий
-</button>
-</p>
-</div>
-):(
-<NoteEditor
-title={editor.title}
-content={editor.content}
-tags={editor.tags}
-isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)}
-isSaving={editor.isSaving}
-hasDraft={editor.hasDraft}
-currentSlug={activeSlug === NEW_SLUG ? (pendingFolder ? `${pendingFolder}/…` : undefined) : activeSlug}
-onTitleChange={editor.setTitle}
-onContentChange={editor.setContent}
-onTagsChange={editor.setTags}
-onSave={wrappedSave}
-onRestoreDraft={editor.restoreDraft}
-onDiscardDraft={editor.discardDraft}
-wikilinkSuggestions={wikilinkSuggestions}
-insertAtCursor={editor.insertAtCursor}
-/>
-)}
-</div>
+    {activeSlug === null ? (
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-4 text-center text-muted-foreground">
+        <FileText className="h-10 w-10 opacity-20" />
+        <p className="text-sm">
+          Оберіть документ або{" "}
+          <button
+            className="underline transition-colors hover:text-foreground"
+            onClick={() => handleNewNote(null)}
+          >
+            створіть новий
+          </button>
+        </p>
+      </div>
+    ) : (
+      <NoteEditor
+        title={editor.title}
+        content={editor.content}
+        tags={editor.tags}
+        isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)}
+        isSaving={editor.isSaving}
+        hasDraft={editor.hasDraft}
+        currentSlug={activeSlug === NEW_SLUG ? (pendingFolder ? `${pendingFolder}/…` : undefined) : activeSlug}
+        onTitleChange={editor.setTitle}
+        onContentChange={editor.setContent}
+        onTagsChange={editor.setTags}
+        onSave={wrappedSave}
+        onRestoreDraft={editor.restoreDraft}
+        onDiscardDraft={editor.discardDraft}
+        wikilinkSuggestions={wikilinkSuggestions}
+        insertAtCursor={editor.insertAtCursor}
+      />
+    )}
+    <UnsavedChangesGuard isDirty={editor.isDirty || (activeSlug === NEW_SLUG && !!editor.title)} />
+  </div>
 </div>
 );
 }
