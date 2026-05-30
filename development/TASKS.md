@@ -6612,7 +6612,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-79:proxy-sort-ui|up-down-buttons|web-config-updated|commit:<hash>|★★★"
 
 ==================================================================
-[ ] TASK-80
+[x] TASK-80
 Title: Enforce mandatory printed skill evaluation in agy-task.sh (ALL AGY)
 Agent: AGY phone (і AGY3 після TASK-78)
 Run: локально на Termux. Змінюємо ~/bin/agy-task.sh
