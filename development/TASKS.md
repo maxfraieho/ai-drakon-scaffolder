@@ -6804,6 +6804,176 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
 
 
+## [ ] TASK-87
+
+### Мета
+Встановити `agy` wrapper в OpenDesign Docker контейнер на dev сервері (192.168.3.184).
+`agy` — Python скрипт що агрегує 3 LLM-проксі: local (18880), AGY3 (162:8080), AGY phone (25:8080).
+
+### !!IMPORTANT!! Де запускати
+SSH на 192.168.3.184 (`sshpass -p '805235io.' ssh vokov@192.168.3.184`)
+
+### Кроки
+
+**1. Записати agy скрипт на dev сервері**
+```bash
+cat > /home/vokov/open-design-custom/agy << 'AGYSCRIPT'
+#!/usr/bin/env python3
+"""AGY — unified LLM wrapper for OpenDesign (streamFormat: plain).
+
+Sources (priority order):
+  1. local free-claude-code-proxy  http://172.17.0.1:18880  (slots)
+  2. AGY3 tablet                   http://192.168.3.162:8080
+  3. AGY phone                     http://192.168.3.25:8080
+"""
+import json, os, socket, sys, urllib.error, urllib.request
+
+VERSION = "1.0.0"
+LOCAL_TOKEN = os.environ.get("LOCAL_PROXY_TOKEN", "freecc")
+AGY_TOKEN   = os.environ.get("AGY_API_KEY", "proxy-key")
+
+LOCAL_SLOTS = [
+    "standard-proxy","coding-proxy","agent-proxy","reasoning-proxy",
+    "analytics-proxy","multimedia-proxy","fast-proxy","cheap-proxy","docs-assistant-proxy",
+]
+AGY_MODELS = [
+    "gemini-2.5-pro","gemini-2.5-flash","gemini-2.5-flash-thinking","gemini-2.5-flash-lite",
+    "gemini-3-flash","gemini-3-flash-agent","gemini-3.1-flash-lite","gemini-3.1-flash-image",
+    "gemini-3.1-pro-high","gemini-3.1-pro-low","gemini-3.5-flash-low","gemini-3.5-flash-medium",
+    "gemini-3.5-flash-extra-low","gemini-pro-agent","claude-sonnet-4-6","claude-opus-4-6-thinking",
+]
+ENDPOINTS = [
+    {"name":"local",     "base":"http://172.17.0.1:18880",  "token":LOCAL_TOKEN,"models":LOCAL_SLOTS},
+    {"name":"agy3",      "base":"http://192.168.3.162:8080","token":AGY_TOKEN,  "models":AGY_MODELS},
+    {"name":"agy-phone", "base":"http://192.168.3.25:8080", "token":AGY_TOKEN,  "models":AGY_MODELS},
+]
+DISPLAY_TO_ID = {
+    "default":"standard-proxy",
+    "Gemini 3.1 Pro (High)":"gemini-3.1-pro-high",
+    "Gemini 3.1 Pro (Low)":"gemini-3.1-pro-low",
+    "Gemini 3.5 Flash (High)":"gemini-pro-agent",
+    "Gemini 3.5 Flash (Medium)":"gemini-3.5-flash-medium",
+    "Gemini 3.5 Flash (Low)":"gemini-3.5-flash-low",
+    "Claude Sonnet 4.6 (Thinking)":"claude-sonnet-4-6",
+    "Claude Opus 4.6 (Thinking)":"claude-opus-4-6-thinking",
+    "GPT-OSS 120B (Medium)":"standard-proxy",
+}
+
+def is_reachable(base, timeout=2.0):
+    try:
+        from urllib.parse import urlparse
+        p = urlparse(base)
+        with socket.create_connection((p.hostname, p.port or 80), timeout=timeout): return True
+    except OSError: return False
+
+def resolve_model(raw):
+    model_id = DISPLAY_TO_ID.get(raw, raw)
+    for ep in ENDPOINTS:
+        if model_id in ep["models"] and is_reachable(ep["base"]): return model_id, ep
+    for ep in ENDPOINTS:
+        if is_reachable(ep["base"]): return ep["models"][0], ep
+    return model_id, ENDPOINTS[0]
+
+def stream_chat(ep, model, prompt):
+    payload = json.dumps({"model":model,"stream":True,"messages":[{"role":"user","content":prompt}]}).encode()
+    req = urllib.request.Request(f"{ep['base']}/v1/chat/completions", data=payload,
+        headers={"Content-Type":"application/json","Authorization":f"Bearer {ep['token']}","x-api-key":ep["token"]},
+        method="POST")
+    try:
+        with urllib.request.urlopen(req, timeout=120) as resp:
+            for raw in resp:
+                line = raw.decode("utf-8",errors="replace").rstrip()
+                if not line.startswith("data: "): continue
+                chunk = line[6:]
+                if chunk == "[DONE]": break
+                try:
+                    text = (json.loads(chunk).get("choices") or [{}])[0].get("delta",{}).get("content","")
+                    if text: sys.stdout.write(text); sys.stdout.flush()
+                except: pass
+    except urllib.error.HTTPError as e:
+        sys.stderr.write(f"agy: HTTP {e.code}: {e.read().decode()[:200]}\n"); sys.exit(1)
+    except urllib.error.URLError as e:
+        sys.stderr.write(f"agy: {ep['name']} error: {e}\n"); sys.exit(1)
+
+def main():
+    args = sys.argv[1:]
+    if "--version" in args or "-v" in args:
+        print(f"agy {VERSION} (local-proxy+AGY3+AGY-phone)"); return
+    model_raw, i = "default", 0
+    while i < len(args):
+        if args[i] in ("--model","-m") and i+1 < len(args): model_raw=args[i+1]; i+=2
+        else: i+=1
+    prompt = sys.stdin.read().strip()
+    if not prompt: sys.exit(0)
+    model_id, ep = resolve_model(model_raw)
+    sys.stderr.write(f"[agy] → {ep['name']} | model={model_id}\n")
+    stream_chat(ep, model_id, prompt)
+
+if __name__=="__main__": main()
+AGYSCRIPT
+chmod +x /home/vokov/open-design-custom/agy
+```
+
+**2. Перевірити Dockerfile**
+```bash
+cat /home/vokov/open-design-custom/Dockerfile
+# Має бути:
+# FROM vanjayak/open-design:latest
+# USER root
+# COPY agy /usr/local/bin/agy
+# RUN chmod +x /usr/local/bin/agy
+# USER open-design
+```
+
+**3. Зупинити старий контейнер та збудувати новий образ**
+```bash
+docker stop open-design && docker rm open-design
+cd /home/vokov/open-design-custom
+docker build -t open-design-custom:latest . 2>&1 | tail -10
+```
+
+**4. Запустити новий контейнер**
+```bash
+docker run -d \
+  --name open-design \
+  --restart always \
+  --read-only \
+  --tmpfs /tmp \
+  --security-opt no-new-privileges:true \
+  --memory 512m \
+  --pids-limit 256 \
+  -p 0.0.0.0:7459:7456 \
+  -e NODE_ENV=production \
+  -e OD_BIND_HOST=0.0.0.0 \
+  -e OD_PORT=7456 \
+  -e OD_API_TOKEN=2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a \
+  -e OD_ALLOWED_ORIGINS=http://192.168.3.184:7459 \
+  -e LOCAL_PROXY_TOKEN=freecc \
+  -e AGY_API_KEY=proxy-key \
+  -v open_design_data:/app/.od \
+  open-design-custom:latest
+```
+
+### Верифікація
+```bash
+# Контейнер запущений?
+docker ps --filter name=open-design
+
+# agy доступний?
+docker exec open-design agy --version
+
+# Web UI відповідає?
+curl -s http://127.0.0.1:7459/api/health -H "Authorization: Bearer 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a"
+# Очікується: {"ok":true,"version":"0.8.1"}
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-87:opendesign-agy-install|agy-wrapper+docker-build+container-restart|sources:local-18880+agy3-162+agy-25|★★★
+```
+
+---
+
 ## [x] TASK-83
 
 **UX Audit + P0/P1 fixes for AI-DRAKON agent-driven development UI**
