@@ -6706,7 +6706,7 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-80:enforce-skill-eval-print|agy-task.sh-updated|mandatory-output|★★★"
 
 ==================================================================
-[ ] TASK-81
+[x] TASK-81
 Title: Commit nodes.py timeout fix (25→45s) on dev server
 Agent: AGY phone
 Run: SSH до dev server 192.168.3.184. Простий 1-рядковий коміт.
