@@ -5410,7 +5410,7 @@ Diary: "SESSION:2026-05-30|TASK-65:mempalace-uav-watcher-registered|indexed|★�
 
 ---
 
-[ ] TASK-66
+[x] TASK-66
 Title: agy-task.sh — add MemPalace-first rule to prompts
 Agent: AGY3
 Run: locally on AGY3, then SSH copy to AGY phone
