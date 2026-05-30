@@ -6219,7 +6219,7 @@ VERIFICATION
 Diary: "SESSION:2026-05-30|TASK-73:multi-proxy-llm+web-ui|nodes+uav+classifier+webconfig|fallback-logic|commit:<hash>|★★★"
 
 ==================================================================
-[ ] TASK-74
+[x] TASK-74
 Title: Sharon consultant — фільтрація INFO-подій зі списку загроз
 Agent: AGY phone
 Run: SSH до dev server 192.168.3.184
