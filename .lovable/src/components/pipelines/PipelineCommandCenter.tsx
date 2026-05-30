@@ -2,10 +2,11 @@ import { useState, useRef, useCallback, useEffect, type ElementType } from "reac
 import {
   Check, ChevronRight, Copy, Loader2, Play,
   RefreshCw, RotateCcw, Lightbulb, Code2,
-  TestTube2, Wrench, BookOpen, FileText, BarChart2,
+  TestTube2, Wrench, BookOpen, FileText, BarChart2, Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import {
   startAnalysis, startGeneration, pollJob,
   type AnalyzeResult, type GenerateResult, type AnalyzedFunction,
@@ -655,6 +656,7 @@ export function PipelineCommandCenter() {
   const meta = SCENARIO_META[scenario];
   const [currentStep, setCurrentStep] = useState<StepId>("code");
   const [doneSteps, setDoneSteps] = useState<Set<StepId>>(new Set());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // ── Shared code/analyze state (A, C, D, E, G share code input + analysis) ──
   const [code, setCode] = useState("");
@@ -944,68 +946,103 @@ export function PipelineCommandCenter() {
   const selectedFnList = analyzeResult
     ? analyzeResult.drakon_ir.filter((f) => selectedFns.has(f.name)) : [];
 
+  const renderSidebar = (isMobile = false) => (
+    <div className="flex h-full flex-col bg-[var(--bg-surface)]">
+      {/* Scenario list */}
+      <div className="px-2 pt-2.5 pb-1 border-b border-[var(--border-subtle)] shrink-0">
+        <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1.5 px-1">
+          Сценарій
+        </div>
+      </div>
+      <div className="overflow-y-auto flex-shrink-0 border-b border-[var(--border-subtle)]">
+        {(Object.keys(SCENARIO_META) as Scenario[]).map((s) => {
+          const m = SCENARIO_META[s];
+          const Icon = m.icon;
+          const active = s === scenario;
+          return (
+            <button key={s} type="button" onClick={() => {
+              switchScenario(s);
+              if (isMobile) setSidebarOpen(false);
+            }}
+              className={cn(
+                "w-full flex items-center gap-2 px-2.5 py-2 text-left transition-colors border-b border-[var(--border-subtle)]/30",
+                active
+                  ? "bg-[var(--accent-dim)] border-l-2 border-l-[var(--accent-amber)]"
+                  : "hover:bg-white/5",
+              )}>
+              <div className={cn(
+                "h-5 w-5 rounded flex items-center justify-center shrink-0 font-mono text-[9px] font-bold",
+                active ? "bg-[var(--accent-amber)] text-[#1a0a00]" : "bg-[var(--border-subtle)] text-[var(--text-muted)]"
+              )}>
+                {s}
+              </div>
+              <div className="min-w-0">
+                <div className={cn("font-mono text-[10px] leading-tight font-medium",
+                  active ? "text-[var(--accent-amber)]" : "text-[var(--text-secondary)]")}>
+                  {m.label}
+                </div>
+                <div className="font-mono text-[8px] text-[var(--text-muted)] truncate">{m.desc}</div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Steps */}
+      <nav className="flex-1 overflow-y-auto py-3 px-1">
+        {meta.steps.map((step, i) => (
+          <StepIndicator key={step.id} step={step} index={i} steps={meta.steps}
+            currentStep={currentStep} doneSteps={doneSteps} />
+        ))}
+      </nav>
+
+      <div className="px-2 py-2 border-t border-[var(--border-subtle)]">
+        <button type="button" onClick={() => {
+          handleReset();
+          if (isMobile) setSidebarOpen(false);
+        }}
+          className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-mono text-[9px] uppercase tracking-widest transition-colors px-1">
+          <RefreshCw className="h-2.5 w-2.5" />Скинути
+        </button>
+      </div>
+    </div>
+  );
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <div className="flex h-full overflow-hidden bg-[var(--bg-base)]">
-      {/* Left sidebar */}
-      <aside className="w-48 shrink-0 flex flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
-        {/* Scenario list */}
-        <div className="px-2 pt-2.5 pb-1 border-b border-[var(--border-subtle)] shrink-0">
-          <div className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)] mb-1.5 px-1">
-            Сценарій
-          </div>
-        </div>
-        <div className="overflow-y-auto flex-shrink-0 border-b border-[var(--border-subtle)]">
-          {(Object.keys(SCENARIO_META) as Scenario[]).map((s) => {
-            const m = SCENARIO_META[s];
-            const Icon = m.icon;
-            const active = s === scenario;
-            return (
-              <button key={s} type="button" onClick={() => switchScenario(s)}
-                className={cn(
-                  "w-full flex items-center gap-2 px-2.5 py-2 text-left transition-colors border-b border-[var(--border-subtle)]/30",
-                  active
-                    ? "bg-[var(--accent-dim)] border-l-2 border-l-[var(--accent-amber)]"
-                    : "hover:bg-white/5",
-                )}>
-                <div className={cn(
-                  "h-5 w-5 rounded flex items-center justify-center shrink-0 font-mono text-[9px] font-bold",
-                  active ? "bg-[var(--accent-amber)] text-[#1a0a00]" : "bg-[var(--border-subtle)] text-[var(--text-muted)]"
-                )}>
-                  {s}
-                </div>
-                <div className="min-w-0">
-                  <div className={cn("font-mono text-[10px] leading-tight font-medium",
-                    active ? "text-[var(--accent-amber)]" : "text-[var(--text-secondary)]")}>
-                    {m.label}
-                  </div>
-                  <div className="font-mono text-[8px] text-[var(--text-muted)] truncate">{m.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Steps */}
-        <nav className="flex-1 overflow-y-auto py-3 px-1">
-          {meta.steps.map((step, i) => (
-            <StepIndicator key={step.id} step={step} index={i} steps={meta.steps}
-              currentStep={currentStep} doneSteps={doneSteps} />
-          ))}
-        </nav>
-
-        <div className="px-2 py-2 border-t border-[var(--border-subtle)]">
-          <button type="button" onClick={handleReset}
-            className="flex items-center gap-1.5 text-[var(--text-muted)] hover:text-[var(--text-secondary)] font-mono text-[9px] uppercase tracking-widest transition-colors px-1">
-            <RefreshCw className="h-2.5 w-2.5" />Скинути
-          </button>
-        </div>
+      {/* Left sidebar — desktop only */}
+      <aside className="hidden md:flex w-48 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+        {renderSidebar(false)}
       </aside>
 
       {/* Main content */}
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <div className="flex items-center gap-2 px-4 h-8 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
+        <div className="flex items-center gap-2 px-3 md:px-4 h-8 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
+          {/* Mobile sidebar trigger */}
+          <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="md:hidden inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] mr-1"
+                aria-label="Сценарій і Кроки"
+              >
+                <Menu className="h-4 w-4" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0">
+              <SheetHeader className="border-b border-[var(--border-subtle)] px-3 py-2">
+                <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                  Сценарій та кроки
+                </SheetTitle>
+              </SheetHeader>
+              <div className="h-[calc(100%-2.5rem)]">
+                {renderSidebar(true)}
+              </div>
+            </SheetContent>
+          </Sheet>
+
           <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
             Сценарій {scenario}
           </span>
@@ -1018,6 +1055,58 @@ export function PipelineCommandCenter() {
               job: {jobId.slice(0, 8)}…
             </span>
           )}
+        </div>
+
+        {/* ── MOBILE: compact scenario + step progress bar ── */}
+        <div className="md:hidden shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-base)]">
+          {/* Scenario pills */}
+          <div className="flex overflow-x-auto gap-1 px-2 pt-2 pb-1 scrollbar-none">
+            {(Object.keys(SCENARIO_META) as Scenario[]).map((s) => {
+              const active = s === scenario;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => switchScenario(s)}
+                  className={cn(
+                    "shrink-0 flex items-center gap-1 px-2 py-1 rounded font-mono text-[9px] font-bold transition-colors border",
+                    active
+                      ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[#1a0a00]"
+                      : "bg-transparent border-[var(--border-subtle)] text-[var(--text-muted)]",
+                  )}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+          {/* Step progress */}
+          <div className="flex items-center overflow-x-auto px-2 pb-1.5 gap-0 scrollbar-none">
+            {meta.steps.map((step, i) => {
+              const isDone = doneSteps.has(step.id);
+              const isActive = step.id === currentStep;
+              const isLast = i === meta.steps.length - 1;
+              return (
+                <div key={step.id} className="flex items-center shrink-0">
+                  <div className={cn(
+                    "flex items-center gap-0.5 font-mono text-[8px]",
+                    isActive ? "text-[var(--accent-amber)]" : isDone ? "text-green-400" : "text-[var(--text-muted)]",
+                  )}>
+                    <div className={cn(
+                      "h-3.5 w-3.5 rounded-full flex items-center justify-center text-[7px] border shrink-0",
+                      isDone ? "bg-green-500/15 border-green-500/60 text-green-400"
+                        : isActive ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[#1a0a00]"
+                        : "border-[var(--border-subtle)] text-[var(--text-muted)]",
+                    )}>
+                      {isDone ? <Check className="h-1.5 w-1.5" /> : i + 1}
+                    </div>
+                    {isActive && <span className="ml-0.5 whitespace-nowrap text-[var(--accent-amber)]">{step.label}</span>}
+                  </div>
+                  {!isLast && <div className={cn("w-2 h-px mx-0.5 shrink-0", isDone ? "bg-green-500/40" : "bg-[var(--border-subtle)]")} />}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">

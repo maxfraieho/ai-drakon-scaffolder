@@ -1012,7 +1012,7 @@ export function PipelineCommandCenter() {
 
   return (
     <div className="flex h-full overflow-hidden bg-[var(--bg-base)]">
-      {/* Left sidebar */}
+      {/* Left sidebar — desktop only */}
       <aside className="hidden md:flex w-48 shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]">
         {renderSidebar(false)}
       </aside>
@@ -1055,6 +1055,58 @@ export function PipelineCommandCenter() {
               job: {jobId.slice(0, 8)}…
             </span>
           )}
+        </div>
+
+        {/* ── MOBILE: compact scenario + step progress bar ── */}
+        <div className="md:hidden shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-base)]">
+          {/* Scenario pills */}
+          <div className="flex overflow-x-auto gap-1 px-2 pt-2 pb-1 scrollbar-none">
+            {(Object.keys(SCENARIO_META) as Scenario[]).map((s) => {
+              const active = s === scenario;
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => switchScenario(s)}
+                  className={cn(
+                    "shrink-0 flex items-center gap-1 px-2 py-1 rounded font-mono text-[9px] font-bold transition-colors border",
+                    active
+                      ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[#1a0a00]"
+                      : "bg-transparent border-[var(--border-subtle)] text-[var(--text-muted)]",
+                  )}
+                >
+                  {s}
+                </button>
+              );
+            })}
+          </div>
+          {/* Step progress */}
+          <div className="flex items-center overflow-x-auto px-2 pb-1.5 gap-0 scrollbar-none">
+            {meta.steps.map((step, i) => {
+              const isDone = doneSteps.has(step.id);
+              const isActive = step.id === currentStep;
+              const isLast = i === meta.steps.length - 1;
+              return (
+                <div key={step.id} className="flex items-center shrink-0">
+                  <div className={cn(
+                    "flex items-center gap-0.5 font-mono text-[8px]",
+                    isActive ? "text-[var(--accent-amber)]" : isDone ? "text-green-400" : "text-[var(--text-muted)]",
+                  )}>
+                    <div className={cn(
+                      "h-3.5 w-3.5 rounded-full flex items-center justify-center text-[7px] border shrink-0",
+                      isDone ? "bg-green-500/15 border-green-500/60 text-green-400"
+                        : isActive ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[#1a0a00]"
+                        : "border-[var(--border-subtle)] text-[var(--text-muted)]",
+                    )}>
+                      {isDone ? <Check className="h-1.5 w-1.5" /> : i + 1}
+                    </div>
+                    {isActive && <span className="ml-0.5 whitespace-nowrap text-[var(--accent-amber)]">{step.label}</span>}
+                  </div>
+                  {!isLast && <div className={cn("w-2 h-px mx-0.5 shrink-0", isDone ? "bg-green-500/40" : "bg-[var(--border-subtle)]")} />}
+                </div>
+              );
+            })}
+          </div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-hidden">
