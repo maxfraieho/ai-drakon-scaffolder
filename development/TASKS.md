@@ -6802,3 +6802,99 @@ git -C ~/workspace/ai-drakon-scaffolder commit -m "chore(tasks): TASK-82 done �
 git -C ~/workspace/ai-drakon-scaffolder push origin main
 
 Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
+
+
+## [ ] TASK-83
+
+**UX Audit + P0/P1 fixes for AI-DRAKON agent-driven development UI**
+
+### Role
+Ти — Staff Product Engineer + UX Architect для AI-DRAKON (IDE-подібний інструмент для agent-driven development).
+
+### Мета
+Провести практичний UX-аудит і реалізувати пріоритетні покращення так, щоб користувач максимально швидко і стабільно проходив пайплайни AI-розробки (аналіз коду → DRAKON → генерація коду → виконання/логування).
+
+### Важливі принципи
+1) Canvas-first: полотно/робоча зона завжди головні.
+2) Мінімум кліків до core action.
+3) Жодних "тихих" фейлів.
+4) Помилки мають вести користувача до наступної дії.
+5) Не робити косметичний редизайн — тільки UX/flow/стабільність/зручність.
+
+### Обов'язково вивчити перед змінами
+- docs/ux-audit/audit.md
+- docs/ux-audit/risks.md
+- docs/ux-audit/stitch-prompt.md
+- docs/ux-audit/stitch-prompt-pipeline-panels.md
+- docs/ui-pages-reference.md
+- src/components/workspace/WorkspaceShell.tsx
+- src/pages/AgentStudioPage.tsx
+- src/components/pipelines/PipelineCommandCenter.tsx
+- src/components/pipelines/PipelinesPage.tsx
+- src/components/agents/PipelineList.tsx
+- src/components/agents/ExecutionPanel.tsx
+- src/components/workspace/DevCyclePanel.tsx
+- src/components/workspace/AgentStatusBar.tsx
+- src/components/workspace/CommandPalette.tsx
+
+### Критичні проблеми (перевірити і закрити)
+
+**P0 (must-have):**
+1. Mixed Content: HTTPS-інтерфейс → HTTP endpoint (http://192.168.x.x:8766/projects) → контент не вантажиться. Виправити через конфіг endpoints + безпечний fallback.
+2. Кнопка "Очистити лог" в ExecutionPanel — перевірити чи функціонує.
+3. Втрата незбережених змін при навігації (нема global unsaved guard).
+4. window.prompt/window.confirm/window.alert у critical flow → замінити на shadcn dialogs.
+5. Псевдо-fallback пайплайнів, що маскує backend помилку.
+6. Порожні/чорні стани без CTA і пояснення.
+
+**P1:**
+- Уніфікувати entry points для пайплайнів (чіткі дії "Аналізувати"/"Генерувати").
+- DevCycle: послідовність кроків очевидна (disable/guard для передчасних кроків).
+- Command Palette: додати дії агентного workflow.
+
+**P2:**
+- Accessibility: tab semantics, aria-label, фокус-стани.
+- Порожні стани з CTA.
+- Локалізація system/network помилок (UA-first).
+
+### Формат виконання
+1. Спочатку короткий аудит — таблиця: severity | file:line | impact | fix.
+2. Реалізація тільки P0→P1.
+3. Валідація: desktop + mobile, /agents + /pipelines + /diagrams, без регресій.
+4. Звіт: що виправлено, які баги підтверджено, що залишилось і чому.
+
+### Definition of Done
+- Немає blank/чорного main state без пояснення.
+- Нема Mixed Content запитів у production/preview.
+- Unsaved changes не губляться тихо.
+- Clear logs реально очищує консоль.
+- Користувач проходить основний AI flow без блокерів.
+
+### Верифікація
+```bash
+# Локально на AGY3:
+cd ~/workspace/ai-drakon-scaffolder
+npm run build 2>&1 | tail -20
+# Має завершитись без TypeScript errors
+# Перевірити що .lovable/ синхронізована зі src/:
+diff -r src/components/workspace/ .lovable/src/components/workspace/ 2>/dev/null | head -20
+```
+
+### Коміт
+```
+fix(ux): P0+P1 UX audit fixes — error handling, unsaved guard, clear logs, mixed content (TASK-83)
+```
+
+### Diary
+```
+SESSION:2026-05-30|TASK-83:ux-audit-p0-p1|commit:<hash>|fix:mixed-content+unsaved-guard+clear-logs+error-states+no-browser-dialogs|★★★
+```
+
+### !!IMPORTANT!! Де запускати
+1. ЛОКАЛЬНО на AGY3 Termux: `cd ~/workspace/ai-drakon-scaffolder && git pull origin main`
+2. Вивчи файли зі списку вище перед змінами
+3. Редагуй файли ЛОКАЛЬНО на AGY3 (TypeScript/TSX)
+4. ОБОВ'ЯЗКОВО синхронізуй: `cp -r src/components/ .lovable/src/components/` після кожної зміни
+5. Перевір build: `npm run build 2>&1 | tail -10`
+6. git add -A && git commit -m "..." && git push origin main
+7. НЕ SSH на 192.168.3.184 — це frontend проект, деплоїться через Cloudflare з .lovable/
