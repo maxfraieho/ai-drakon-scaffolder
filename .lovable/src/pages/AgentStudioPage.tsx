@@ -11,6 +11,7 @@ import { getPipeline, savePipeline } from "@/lib/graph-pipeline-api";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
 import { convertDiagramToIr } from "@/lib/htse/diagram-to-ir";
 import { usePipelineExecution } from "@/hooks/usePipelineExecution";
+import { UnsavedChangesGuard } from "@/components/workspace/UnsavedChangesGuard";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import type { DrakonDiagram } from "@/types/drakonwidget";
@@ -416,6 +417,8 @@ export default function AgentStudioPage() {
         isOpen={consoleOpen}
         onToggle={() => setConsoleOpen((v) => !v)}
       />
+
+      <UnsavedChangesGuard isDirty={isDirty} />
     </div>
   );
 }
