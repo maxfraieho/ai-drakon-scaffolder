@@ -6810,6 +6810,8 @@ Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeo
 Переробити мобільний інтерфейс ai-drakon: замінити sidebar на `MobileNavigationDock` (bottom nav, glassmorphism).
 На основі guide: `docs/opendesign-mobile-integration.md`.
 
+**!!AUTO-EXECUTE — НЕ ЧЕКАТИ APPROVE!! Просто виконай кроки і закоміть.**
+
 ### !!IMPORTANT!! Де запускати
 **ЛОКАЛЬНО на AGY3 Termux** — `cd ~/workspace/ai-drakon-scaffolder && git pull origin main`
 
