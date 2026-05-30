@@ -6804,6 +6804,158 @@ git -C ~/workspace/ai-drakon-scaffolder push origin main
 Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeout|response-<15s|commit:<hash>|★★★"
 
 
+## [ ] TASK-90
+
+### Мета
+Переробити мобільний інтерфейс ai-drakon: замінити sidebar на `MobileNavigationDock` (bottom nav, glassmorphism).
+На основі guide: `docs/opendesign-mobile-integration.md`.
+
+### !!IMPORTANT!! Де запускати
+**ЛОКАЛЬНО на AGY3 Termux** — `cd ~/workspace/ai-drakon-scaffolder && git pull origin main`
+
+### Крок 1: Створити `src/components/mobile/MobileNavigationDock.tsx`
+
+```tsx
+import React from "react";
+import { LayoutGrid, FileText, Code2, Cpu, Settings } from "lucide-react";
+import { useNavigate, useLocation } from "react-router-dom";
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  path: string;
+}
+
+export const MobileNavigationDock: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const items: NavItem[] = [
+    { id: "overview",  label: "Огляд",   icon: LayoutGrid, path: "/overview" },
+    { id: "pipelines", label: "Схеми",   icon: FileText,   path: "/pipelines" },
+    { id: "code",      label: "Код",     icon: Code2,      path: "/code" },
+    { id: "agents",    label: "Агенти",  icon: Cpu,        path: "/agents" },
+    { id: "settings",  label: "Опції",   icon: Settings,   path: "/settings" },
+  ];
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-black/60 backdrop-blur-lg border-t border-zinc-800 pb-safe md:hidden">
+      <div className="flex justify-around items-center h-16 max-w-md mx-auto px-4">
+        {items.map((item) => {
+          const Icon = item.icon;
+          const isActive = location.pathname.startsWith(item.path);
+          return (
+            <button
+              key={item.id}
+              onClick={() => navigate(item.path)}
+              className={"relative flex flex-col items-center justify-center w-14 h-12 transition-colors " + (isActive ? "text-white" : "text-zinc-400 hover:text-zinc-100")}
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px] mt-1 font-medium select-none">{item.label}</span>
+              {isActive && (
+                <span className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-white" />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+```
+
+### Крок 2: Оновити `src/components/app/AppLayout.tsx`
+
+Зміни:
+- Додати `import { MobileNavigationDock }` зверху
+- `<aside>` отримує клас `hidden md:block`
+- `<main>` отримує `pb-20 md:pb-6`
+- Перед закриваючим `</div>` (корінь) додати `<MobileNavigationDock />`
+
+```tsx
+import { NavLink, Outlet } from "react-router-dom";
+import { LanguageSwitcher } from "@/components/app/LanguageSwitcher";
+import { MobileNavigationDock } from "@/components/mobile/MobileNavigationDock";
+
+const navItems = [
+  { to: "/overview",     label: "Overview" },
+  { to: "/proxies",      label: "Proxies" },
+  { to: "/providers",    label: "Providers" },
+  { to: "/models",       label: "Models" },
+  { to: "/credentials",  label: "Credentials" },
+  { to: "/observability",label: "Observability" },
+  { to: "/routing",      label: "Routing" },
+  { to: "/settings",     label: "Settings" },
+] as const;
+
+export function AppLayout() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border bg-card">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-4 py-3">
+          <div className="text-sm font-semibold">AI Drakon</div>
+          <LanguageSwitcher />
+        </div>
+      </header>
+      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-4 px-4 py-4 md:grid-cols-[220px_1fr]">
+        <aside className="hidden md:block rounded-md border border-border bg-card p-2">
+          <nav className="flex flex-col gap-1">
+            {navItems.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  ["rounded-sm px-3 py-2 text-sm transition-colors",
+                   isActive ? "bg-primary text-primary-foreground"
+                             : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  ].join(" ")}
+              >{item.label}</NavLink>
+            ))}
+          </nav>
+        </aside>
+        <main className="rounded-md border border-border bg-card p-4 pb-20 md:pb-6 md:p-6">
+          <Outlet />
+        </main>
+      </div>
+      <MobileNavigationDock />
+    </div>
+  );
+}
+```
+
+### Крок 3: CSS — додати в `src/index.css`
+
+```css
+/* Mobile safe area */
+.pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+```
+
+### Крок 4: Синхронізація з .lovable
+```bash
+cp src/components/app/AppLayout.tsx .lovable/src/components/app/AppLayout.tsx
+mkdir -p .lovable/src/components/mobile
+cp src/components/mobile/MobileNavigationDock.tsx .lovable/src/components/mobile/MobileNavigationDock.tsx
+```
+
+### Верифікація
+```bash
+npm run build 2>&1 | tail -10
+grep -r "MobileNavigationDock" src/ --include="*.tsx"
+```
+
+### Коміт
+```
+feat(mobile): add MobileNavigationDock bottom nav, hide sidebar on mobile (TASK-90)
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-90:mobile-nav-dock|MobileNavigationDock+AppLayout-mobile|glassmorphism-bottom-nav|commit:<hash>|★★★
+```
+
+---
+
 ## [x] TASK-89
 
 ### Мета
