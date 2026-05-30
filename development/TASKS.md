@@ -5443,7 +5443,7 @@ Diary: "SESSION:2026-05-30|TASK-66:agy-task-mempalace-rule|AGY3+phone|★★★"
 
 ---
 
-[ ] TASK-67
+[x] TASK-67
 Title: SYNC_METHODOLOGY.md — add MemPalace-First section
 Agent: AGY3
 Run: locally on AGY3
