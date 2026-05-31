@@ -7181,75 +7181,67 @@ SESSION:2026-05-31|TASK-101:pipeline-analysis|score-proximity+refactor|screensho
 
 ## [ ] TASK-100
 
-**Мета**: Як користувач ai-drakon — використати DRAKON-агент для аналізу функції keyword_classify з uav_watcher.py і отримати DRAKON-схему.
+**Мета**: Як користувач ai-drakon — відкрити /agents, знайти DRAKON IR агента, вставити код keyword_classify і отримати відповідь.
 
 **!!IMPORTANT!! AGY phone — browser mode (mcp-aws.py). Скіли НЕ оцінювати.**
 
-### Кроки
+### Алгоритм (виконуй крок за кроком, не пропускай)
 
+**Крок 1 — Отримати код:**
 ```bash
 TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
-
-# 1. Отримати keyword_classify (рядки 220-244 uav_watcher.py) 
-curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" \
-  | python3 -c "
+curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
 lines=d.get('content','').split('\n')
 snippet='\n'.join(lines[219:244])
 open('/tmp/kw_classify.txt','w').write(snippet)
-print('=== keyword_classify snippet ===')
-print(snippet)
+print(snippet[:300])
 "
-
-# 2. Запустити браузер
-python3 ~/bin/mcp-aws.py start
-sleep 2
-python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
-sleep 4
-python3 ~/bin/mcp-aws.py login
-sleep 4
-python3 ~/bin/mcp-aws.py screenshot $TMPD/s1-login.png
-view_file $TMPD/s1-login.png
-
-# 3. Перейти до /agents
-python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents
-sleep 3
-python3 ~/bin/mcp-aws.py screenshot $TMPD/s2-agents.png
-view_file $TMPD/s2-agents.png
-
-# 4. Зробити snapshot — знайти DRAKON IR Generator агента
-python3 ~/bin/mcp-aws.py snapshot
-# Знайти і клікнути на агента (шукати "DRAKON" або "Pipeline A")
-# python3 ~/bin/mcp-aws.py click X Y
-# sleep 2
-# python3 ~/bin/mcp-aws.py screenshot $TMPD/s3-agent-open.png
-# view_file $TMPD/s3-agent-open.png
-
-# 5. Знайти поле вводу в чаті агента, клікнути і ввести код
-# python3 ~/bin/mcp-aws.py click X Y  # поле chat input
-# python3 ~/bin/mcp-aws.py type "$(cat /tmp/kw_classify.txt)"
-# python3 ~/bin/mcp-aws.py key "Return"
-# sleep 10  # чекати відповідь агента
-
-# 6. Скріншот відповіді
-# python3 ~/bin/mcp-aws.py screenshot $TMPD/s4-drakon-result.png
-# view_file $TMPD/s4-drakon-result.png
-
-# 7. Навігація на /diagrams — подивитись чи з'явилась нова схема
-# python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/diagrams
-# sleep 3
-# python3 ~/bin/mcp-aws.py screenshot $TMPD/s5-diagrams.png
-# view_file $TMPD/s5-diagrams.png
-
-python3 ~/bin/mcp-aws.py stop
 ```
 
-**ВАЖЛИВО**: Адаптуй координати click на основі скріншотів. Спочатку завжди screenshot → snapshot → click.
-
-### Commit
+**Крок 2 — Запустити браузер і залогінитись:**
 ```bash
-cd ~/workspace/ai-drakon-scaffolder
+python3 ~/bin/mcp-aws.py start && sleep 3
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev && sleep 5
+python3 ~/bin/mcp-aws.py login && sleep 5
+python3 ~/bin/mcp-aws.py screenshot $TMPD/s1.png
+view_file $TMPD/s1.png
+```
+
+**Крок 3 — Відкрити /agents, зробити snapshot, знайти DRAKON агента:**
+```bash
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents && sleep 4
+python3 ~/bin/mcp-aws.py screenshot $TMPD/s2-agents.png
+view_file $TMPD/s2-agents.png
+python3 ~/bin/mcp-aws.py snapshot
+```
+З snapshot або screenshot визначи X Y координати агента "Pipeline A" або "DRAKON IR Generator" (він в лівій панелі, приблизно x=150 y=150-250).
+
+**Крок 4 — Клікнути на агента і ввести код:**
+```bash
+python3 ~/bin/mcp-aws.py click 150 180 && sleep 3
+python3 ~/bin/mcp-aws.py screenshot $TMPD/s3-agent-chat.png
+view_file $TMPD/s3-agent-chat.png
+python3 ~/bin/mcp-aws.py snapshot
+```
+З snapshot знайди textarea або input для чату (внизу сторінки або в правій панелі).
+
+**Крок 5 — Клікнути на поле вводу і ввести код:**
+```bash
+python3 ~/bin/mcp-aws.py click 640 800 && sleep 1
+python3 ~/bin/mcp-aws.py key "ctrl+a" && sleep 0.5
+KW_CODE=$(cat /tmp/kw_classify.txt | head -10)
+python3 ~/bin/mcp-aws.py type "$KW_CODE" && sleep 2
+python3 ~/bin/mcp-aws.py key "Return" && sleep 12
+python3 ~/bin/mcp-aws.py screenshot $TMPD/s4-response.png
+view_file $TMPD/s4-response.png
+```
+
+**Крок 6 — Зупинити і закомітити:**
+```bash
+python3 ~/bin/mcp-aws.py stop
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
 sed -i 's/\[ \] TASK-100/[x] TASK-100/' development/TASKS.md
 git add development/TASKS.md
 git commit -m "chore(tasks): mark TASK-100 done — DRAKON agent analysis uav-watcher"
@@ -7258,7 +7250,7 @@ git push origin main
 
 ### Diary
 ```
-SESSION:2026-05-31|TASK-100:drakon-agent-uav-watcher|keyword-classify+drakon-ir|screenshot-result|commit:<hash>|★★★
+SESSION:2026-05-31|TASK-100:drakon-agent|agents-page+click+code-input+response|commit:<hash>|★★★
 ```
 
 ---
