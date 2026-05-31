@@ -7002,6 +7002,82 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 
 ---
 
+## [ ] TASK-98
+
+### Мета
+В Settings ai-drakon змінити GitHub repo з `maxfraieho/drakon-setup-hub` на `maxfraieho/uav-watcher` через браузер.
+
+### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux.
+
+### Кроки
+
+**1. Запустити браузер і залогінитись**
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+python3 ~/bin/mcp-aws.py start
+sleep 2
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
+sleep 4
+python3 ~/bin/mcp-aws.py login
+sleep 4
+python3 ~/bin/mcp-aws.py screenshot $TMPD/ss1-login.png
+view_file $TMPD/ss1-login.png
+```
+
+**2. Перейти до Settings і зробити скріншот**
+```bash
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/settings
+sleep 3
+python3 ~/bin/mcp-aws.py screenshot $TMPD/ss2-settings.png
+view_file $TMPD/ss2-settings.png
+```
+На скріншоті знайди поле де написано "maxfraieho/drakon-setup-hub" або "GitHub repository".
+
+**3. Зробити DOM snapshot щоб знайти координати поля**
+```bash
+python3 ~/bin/mcp-aws.py snapshot
+```
+Знайди input або text field з "drakon-setup-hub" в тексті.
+
+**4. Клікнути на поле repo і змінити на uav-watcher**
+```bash
+# Клікни на поле (знайди координати зі скріншоту)
+python3 ~/bin/mcp-aws.py click X Y
+sleep 1
+# Очистити поле (Ctrl+A) і ввести новий репо
+python3 ~/bin/mcp-aws.py key "ctrl+a"
+python3 ~/bin/mcp-aws.py type "maxfraieho/uav-watcher"
+sleep 1
+python3 ~/bin/mcp-aws.py screenshot $TMPD/ss3-filled.png
+view_file $TMPD/ss3-filled.png
+```
+
+**5. Зберегти і перевірити**
+```bash
+# Знайти і натиснути кнопку Save/Зберегти
+python3 ~/bin/mcp-aws.py key "Return"
+sleep 2
+python3 ~/bin/mcp-aws.py screenshot $TMPD/ss4-saved.png
+view_file $TMPD/ss4-saved.png
+python3 ~/bin/mcp-aws.py stop
+```
+
+**6. Закомітити TASK-98 як done**
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+sed -i 's/\[ \] TASK-98/[x] TASK-98/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-98 done — uav-watcher github connected"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-98:settings-github-uav-watcher|browser+click+save|commit:<hash>|★★★
+```
+
+---
+
 ## [x] TASK-96
 
 ### Мета
