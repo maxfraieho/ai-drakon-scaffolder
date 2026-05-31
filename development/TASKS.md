@@ -9077,6 +9077,163 @@ SESSION:DATE|TASK-109:sprint2-audit|problem-map-updated|issues:N|new-tasks:M|com
 
 
 ## ═══════════════════════════════════════════
+## SPRINT 3 — UX FIXES (TASK-110..112)
+## Виявлені в Sprint2 (TASK-109 аудит)
+## ═══════════════════════════════════════════
+
+## [ ] TASK-110
+
+**Мета**: CodePage.tsx — додати `toast.success` з посиланням на /diagrams після успішного аналізу.
+
+**!!IMPORTANT!! Run locally on Termux. NO mempalace. ONE file change only.**
+
+### Контекст
+- Файл: `src/pages/CodePage.tsx`
+- Проблема: після `status === "done"` викликається `setResult()` але немає toast.success і посилання на /diagrams
+- Уже є: `import { toast } from "sonner"`, `navigate` (useNavigate)
+
+### Зміна
+
+Знайти блок (приблизно рядок 275):
+```typescript
+if (status.status === "done" && status.result) {
+  clearInterval(pollRef.current!);
+  setAnalyzing(false);
+  setResult(status.result);
+```
+
+Додати після `setResult(status.result);`:
+```typescript
+toast.success("Аналіз завершено", {
+  action: { label: "Відкрити схему", onClick: () => navigate({ to: "/diagrams" }) },
+});
+```
+
+### Верифікація
+```bash
+grep -n "Відкрити схему" src/pages/CodePage.tsx
+```
+Має знайти 1 рядок.
+
+### Коміт
+```bash
+cp src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
+git add src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
+git commit -m "feat(code): toast.success + open-diagram link after analysis (TASK-110)"
+sed -i 's/\[ \] TASK-110/[x] TASK-110/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-110 done"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-110:analyze-toast|CodePage.tsx+1line|commit:<hash>|★★
+```
+
+
+## [ ] TASK-111
+
+**Мета**: useAgentChatStore.ts — покращити error messages для architect agent (500, 401).
+
+**!!IMPORTANT!! Run locally on Termux. NO mempalace. ONE file change only.**
+
+### Контекст
+- Файл: `src/store/useAgentChatStore.ts`
+- Проблема: при HTTP 500 (config error) і 401 (bad token) показується загальне "тимчасово недоступний"
+- Уже є: блок catch з перевіркою raw.includes("502") || raw.includes("503")
+
+### Зміна
+
+Знайти рядок (приблизно 79):
+```typescript
+} else if (raw.includes("502") || raw.includes("503")) {
+  friendly = "Агент тимчасово недоступний. Зачекайте хвилину та спробуйте.";
+}
+```
+
+Замінити на:
+```typescript
+} else if (raw.includes("401") || raw.includes("403")) {
+  friendly = "Помилка авторизації агента (401/403). Перевірте PROXY_TOKEN у налаштуваннях сервера.";
+} else if (raw.includes("500")) {
+  friendly = "Помилка конфігурації агента (500). Перевірте PROXY_TOKEN та PROXY_URL у .env на сервері.";
+} else if (raw.includes("502") || raw.includes("503")) {
+  friendly = "Агент тимчасово недоступний. Зачекайте хвилину та спробуйте.";
+}
+```
+
+### Верифікація
+```bash
+grep -n "Помилка конфігурації" src/store/useAgentChatStore.ts
+```
+Має знайти 1 рядок.
+
+### Коміт
+```bash
+cp src/store/useAgentChatStore.ts .lovable/src/store/useAgentChatStore.ts
+git add src/store/useAgentChatStore.ts .lovable/src/store/useAgentChatStore.ts
+git commit -m "feat(agents): add 401/500 error messages for architect config issues (TASK-111)"
+sed -i 's/\[ \] TASK-111/[x] TASK-111/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-111 done"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-111:agent-errors|useAgentChatStore.ts+2cases|commit:<hash>|★★
+```
+
+
+## [ ] TASK-112
+
+**Мета**: CodePage.tsx — після завершення аналізу автоматично показувати кнопку "Відкрити в /diagrams" у result-панелі.
+
+**!!IMPORTANT!! Run locally on Termux. NO mempalace. Перевір що TASK-110 вже merged (git pull спочатку).**
+
+### Контекст
+- Файл: `src/pages/CodePage.tsx`
+- Де: в result-панелі внизу — після render DRAKON IR результату є `goToDiagram(fn)` для кожної функції
+- Проблема: немає загального "Відкрити всі схеми" або хоча б underscored посилання
+
+### Зміна
+
+Знайти в JSX блок де result рендериться (шукати `result.drakon_ir.map` або `goToDiagram`).
+Перед або після мапи додати кнопку "Відкрити /diagrams":
+```tsx
+<button
+  onClick={() => navigate({ to: "/diagrams" })}
+  className="mt-2 text-xs font-mono text-[var(--accent)] underline hover:opacity-80"
+>
+  → Переглянути в /diagrams
+</button>
+```
+
+### Верифікація
+```bash
+grep -n "Переглянути в /diagrams" src/pages/CodePage.tsx
+```
+Має знайти 1 рядок.
+
+### Коміт
+```bash
+cp src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
+git add src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
+git commit -m "feat(code): add open-diagrams link in result panel (TASK-112)"
+sed -i 's/\[ \] TASK-112/[x] TASK-112/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-112 done"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-112:diagrams-link|CodePage.tsx+button|commit:<hash>|★★
+```
+
+
+## ═══════════════════════════════════════════
 ## SONATE SOLIDAIRE — SPRINT 1
 ## Проект: violin-integration.works / sonate-solidaire.me
 ## Дата: 2026-05-31
