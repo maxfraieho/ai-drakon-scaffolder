@@ -21,6 +21,7 @@ lang: uk
 | [[architecture/03_live_tracing_protocol]] | Протокол інтерактивного live-трейсингу виконання | canonical | 1 |
 | [[architecture/04_validation_and_errors]] | Валідація та автоматична петля виправлень HTSE | canonical | 1 |
 | [[architecture/05_security_and_deployment]] | Безпека, ізоляція та конфігурація розгортання | canonical | 1 |
+| [[architecture/agents-overview]] | Unified LangGraph агенти — ендпоінти, pipelines, Sonate Solidaire | canonical | 1 |
 
 ## Семантичні зв'язки
 **Батьківський індекс:** [[architecture/_INDEX]]

@@ -4,7 +4,7 @@ tags:
   - status:active
   - format:guide
 created: 2026-05-26
-updated: 2026-05-31
+updated: 2026-06-01
 tier: 2
 title: "Мануал: Agent Studio — Редактор логіки агентів"
 lang: uk
@@ -20,18 +20,36 @@ lang: uk
 
 ## 2. Агенти в системі та їхні інтерфейси
 
-Система базується на взаємодії спеціалізованих агентів через API-шлюзи та MCP-протоколи:
+Всі агенти об'єднані в єдиний сервіс **architect-agent** (порт **8766**) через LangGraph.
 
-| Агент | Роль та відповідальність |
-|-------|--------------------------|
-| **Architect Agent** | Аналіз архітектури, планування змін, виділення бізнес-логіки. |
-| **Docs Agent** | Робота з базою знань, DQL-запити, генерація документації. |
-| **Drakon Agent** | Синтаксична валідація, побудова DRAKON IR графа, генерація коду. |
+| Agent ID | Роль та відповідальність |
+|----------|--------------------------|
+| `architect` | Головний архітектор — аналіз, планування, file tools, agent_mode |
+| `drakon` | Python/TypeScript → DRAKON IR JSON |
+| `docs` | Документознавець — wiki-links, читання та редагування файлів |
+| `sonate-solidaire` | Публічний асистент асоціації (без авторизації) |
 
-**Технічні параметри взаємодії:**
-* **API Endpoint:** `https://drakon-mcp-worker.maxfraieho.workers.dev/v1/`
-* **Автентифікація:** Використовувати `PROXY_TOKEN` з ENV-змінних. Уникати хардкоду.
-* **Обробка даних:** При отриманні бінарних даних використовувати `TextDecoder('utf-8').decode(Uint8Array.from(atob(data), c => c.charCodeAt(0)))`.
+**API ендпоінти агентів:**
+```
+GET  /agents/{id}/health
+POST /agents/{id}/chat
+     body: { "message": "...", "context"?: {}, "agent_mode"?: true }
+```
+
+**Через Cloudflare Worker:**
+```
+POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/agents/{id}/chat
+     Authorization: Bearer <token>   (не потрібен для sonate-solidaire)
+```
+
+**File tools (для агентів з agent_mode):**
+```
+GET  /files/list?path=docs/
+GET  /files/read?path=docs/file.md
+POST /files/write  { "path": "...", "content": "..." }
+POST /files/patch  { "path": "...", "old_string": "...", "new_string": "..." }
+POST /files/delete { "path": "..." }
+```
 
 ---
 
@@ -58,18 +76,33 @@ lang: uk
 
 ---
 
-## 5. Відомі обмеження та баги
+## 5. LangGraph pipeline
 
-> [!WARNING]
-> **Поточний стан (станом на 2026-05-31):**
+Кожен агент — це DRAKON IR pipeline що компілюється у LangGraph StateGraph:
 
-1. **BUG-6 (Inline Chat на /agents)**: На сторінці `/agents` відсутній інтерактивний чат. Для взаємодії з агентами використовуйте окрему вкладку `/chat`.
-2. **Відсутність візуального редактора на /agents**: Візуалізація схем доступна лише через загальний редактор `/diagrams`.
-3. **Pipeline API**: Статус виконання перевіряється через `GET /pipeline/status/{id}`.
+```
+pipelines/*.drakon.json
+  ↓ load_graph_from_ir()   (pipeline/graph_loader.py)
+  ↓ NODE_REGISTRY[node_name](state)
+  ↓ відповідь через /agents/{id}/chat або SSE через /graph-pipelines/{name}/execute
+```
 
-**Обхідний шлях (Workaround):**
-* Редагування конфігурацій агентів виконується через файли у директорії `/.agents/`.
-* Візуальні графи створюються у `/diagrams` з подальшим імпортом у конфігурацію.
+**Доступні pipelines:**
+```
+GET /graph-pipelines
+→ ["drakon-agent", "docs-agent", "sonate-solidaire-agent", "pipeline_a", "pipeline_b", ...]
+```
+
+## 6. Поточний стан (2026-06-01)
+
+> ✅ **BUG-6 виправлено** — чат на `/agents` працює через unified endpoint `/agents/{id}/chat`.
+
+| Функція | Статус |
+|---------|--------|
+| Chat на /agents | ✅ Працює |
+| LangGraph pipelines | ✅ Всі агенти уніфіковані |
+| File tools для агентів | ✅ `/files/write,patch,delete,read,list` |
+| Sonate Solidaire агент | ✅ Публічний, `sonate-solidaire.me/assistant` |
 
 ---
 
