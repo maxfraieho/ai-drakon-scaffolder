@@ -9075,3 +9075,164 @@ git push origin main
 SESSION:DATE|TASK-109:sprint2-audit|problem-map-updated|issues:N|new-tasks:M|commit:<hash>|★★★
 ```
 
+
+## ═══════════════════════════════════════════
+## SONATE SOLIDAIRE — SPRINT 1
+## Проект: violin-integration.works / sonate-solidaire.me
+## Дата: 2026-05-31
+## ═══════════════════════════════════════════
+
+## [ ] TASK-SS-01
+
+**Мета**: Юридичне дослідження через goclaw — правовий статус Protection S для культурної діяльності + створення асоціації в Canton de Vaud.
+
+**!!IMPORTANT!! SSH до 192.168.3.184 для goclaw. Run locally on AGY Termux.**
+
+### Дослідницькі запити для goclaw
+
+```bash
+# Перевірити доступність goclaw
+curl -s http://192.168.3.184/api/health 2>/dev/null | head -5 || \
+curl -s http://192.168.3.184:3000/api/health 2>/dev/null | head -5 || \
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'ps aux | grep goclaw | grep -v grep | head -3'
+
+# Якщо недоступний — використати Gemini CLI напряму:
+agy --print "Recherche juridique Suisse:
+1. Quels droits a une personne avec statut Protection S (Schutzbedarf temporär) pour exercer une activité culturelle/musicale rémunérée dans le canton de Vaud?
+2. Quelles sont les étapes exactes pour créer une association (art. 60-79 CC) dans le canton de Vaud? Documents requis, délais, coûts.
+3. Un trésorier bénévole d'une association suisse a-t-il une responsabilité personnelle financière?
+4. Quelles sont les conditions pour obtenir l'exonération fiscale ACI pour une association culturelle à Vaud?
+Répondre en français avec références légales précises."
+```
+
+### Résultats attendus (fichier de sortie)
+
+Créer: `/home/vokov/projects/Арсену/recherche_juridique_SS_2026.md`
+
+Format:
+```markdown
+# Recherche Juridique — Sonate Solidaire
+## 1. Protection S + Activité culturelle
+[réponse + références]
+## 2. Création association Vaud — étapes
+[réponse + formulaires + délais]
+## 3. Responsabilité trésorier
+[réponse + conditions]
+## 4. Exonération fiscale ACI Vaud
+[réponse + critères]
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-01/[x] TASK-SS-01/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-01 done — legal research Sonate Solidaire"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-01:legal-research|protection-S+association-vaud+tresorier|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-SS-02
+
+**Мета**: Написати лист Philippe Leroy (потенційний trésorier/garant) — персональний, переконливий, французькою.
+
+**!!IMPORTANT!! Run locally on AGY Termux — НЕ SSH.**
+
+### Контекст
+
+M. Philippe Leroy — банківський спеціаліст, потенційний trésorier et garant для Sonate Solidaire.
+Lист має:
+- Пояснити роль trésorier (bénévole, honorifique, sans risque financier personnel — art. 9 statuts)
+- Презентувати проект коротко + сайт violin-integration.works
+- Підкреслити сильні сторони: 8.7/10 сайт, статути готові, EVAM support
+- Запросити на зустріч 30 хв
+
+### Завдання
+
+```bash
+agy --print "Tu es expert en communication institutionnelle suisse. 
+Rédige une lettre professionnelle en français pour:
+- Destinataire: M. Philippe Leroy, spécialiste bancaire
+- Objet: Invitation à devenir trésorier bénévole de l'Association Sonate Solidaire
+- Expéditeur: Arsen Kovalenko, initiateur du projet
+- Points clés à inclure:
+  1. Présentation projet: intégration culturelle par la musique, Canton Vaud, statut Protection S
+  2. Rôle trésorier: bénévole, honorifique, pas de responsabilité financière personnelle (CC art. 60+)
+  3. Preuves de sérieux: statuts conformes CC 60-79, site 8.7/10 (violin-integration.works), dossier EVAM
+  4. Ce qu'on demande: gestion compte bancaire + signature documents officiels
+  5. Invitation réunion 30 min
+- Format: lettre formelle suisse, 1 page, ton professionnel mais humain
+- Signature: Arsen Kovalenko, +41 78 326 11 12, arsen.k111999@gmail.com"
+```
+
+Зберегти результат в `/home/vokov/projects/Арсену/lettre_Philippe_Leroy_2026.md`
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-02/[x] TASK-SS-02/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-02 done — lettre trésorier Philippe Leroy"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-02:lettre-tresorier|Philippe-Leroy-draft|saved-to-Арсену|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-SS-03
+
+**Мета**: Скласти список 20 інституцій Canton Vaud з контактами для першого звернення (ратуші, EVAM, церкви, фундації).
+
+**!!IMPORTANT!! Run locally on AGY Termux — НЕ SSH.**
+
+### Завдання
+
+```bash
+agy --print "Tu es expert en prospection institutionnelle en Suisse romande.
+Pour le projet Sonate Solidaire (intégration culturelle par la musique, Canton Vaud),
+dresse une liste de 20 institutions prioritaires à contacter avec:
+- Nom institution
+- Adresse complète (rue, CP, ville)
+- Email si connu
+- Type de relation souhaitée (partenaire lieu / financement / soutien / référencement)
+- Priorité (1=urgent, 2=court terme, 3=moyen terme)
+
+Catégories:
+1. Communes Vaud (Gland, Nyon, Morges, Rolle, Lausanne minimum)
+2. Institutions sociales (EVAM, Caritas Vaud, CSP, Croix-Rouge Vaud)
+3. Fondations culturelles (Leenaards, Loterie Romande, PACTE culturel)
+4. Eglises/Communautés (catholique, réformée, Gland et région)
+5. Lieux culturels (bibliothèques, médiathèques, salles)
+
+Format: tableau Markdown avec colonnes: Nom | Adresse | Email | Type | Priorité"
+```
+
+Зберегти в `/home/vokov/projects/Арсену/liste_contacts_VD_20.md`
+Також сохранить копію в `~/workspace/ai-drakon-scaffolder/docs/plans/contacts_vaud_institutions.md`
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+cp ~/workspace/ai-drakon-scaffolder/docs/plans/contacts_vaud_institutions.md . 2>/dev/null || true
+sed -i 's/\[ \] TASK-SS-03/[x] TASK-SS-03/' development/TASKS.md
+git add development/TASKS.md docs/plans/contacts_vaud_institutions.md 2>/dev/null
+git commit -m "chore(tasks): mark TASK-SS-03 done — 20 institutions VD list"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-03:institutions-list|20-contacts-VD|EVAM+communes+fondations+eglises|commit:<hash>|★★★
+```
+
