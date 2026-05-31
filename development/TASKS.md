@@ -7004,7 +7004,13 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 
 ## [ ] TASK-103
 
-**Мета**: Фінальний звіт спринту — зібрати знахідки з TASK-100/101/102, записати sprint1-report.md і додати TASK-104+ для наступного спринту.
+**Мета**: Фінальний звіт спринту — зібрати знахідки з TASK-100/101/102/104, записати sprint1-report.md.
+
+**Знахідки для включення в звіт:**
+- TASK-100: DRAKON agent живий, код приймає, але AGY proxy не був налаштований (виправлено TASK-104)
+- TASK-101: Pipeline /pipelines відкривається, browser automation timeout на typing (відомий limitation)
+- TASK-102: OpenDesign огляд (результат — після завершення)
+- TASK-104: ✅ localStorage очищено, drakon+architect+docs → AGY proxy gemini-2.5-flash
 
 **!!IMPORTANT!! Run locally on AGY Termux — НЕ SSH до 192.168.3.184**
 
