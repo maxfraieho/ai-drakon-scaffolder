@@ -317,7 +317,7 @@ disabled={!selectedDiagram}
 </div>
 <div
 className={cn(
-"flex-col overflow-hidden border-r border-[var(--border-subtle)]",
+"flex min-h-0 flex-1 flex-col overflow-hidden border-r border-[var(--border-subtle)] md:flex-none",
 showEditor ? "hidden" : "flex w-full",
 col2Collapsed ? "md:hidden" : "md:flex md:w-[220px] md:shrink-0",
 )}
