@@ -9236,3 +9236,57 @@ git push origin main
 SESSION:DATE|TASK-SS-03:institutions-list|20-contacts-VD|EVAM+communes+fondations+eglises|commit:<hash>|★★★
 ```
 
+
+## [ ] TASK-SS-04
+
+**Мета**: Написати методологічний документ — "Розробка соціальних проектів за допомогою мультиагентного ШІ" для включення в документацію Sonate Solidaire.
+
+**!!IMPORTANT!! Run locally on AGY3 Termux (u0_a410@192.168.3.204). НЕ SSH до 192.168.3.184.**
+
+### Контекст
+
+Проект Sonate Solidaire розробляється за допомогою:
+- Claude (Sonnet 4.6) — архітектор, стратег, оркестратор на OrangePi
+- AGY phone (Gemini 3.5 Flash, +41 78 326 11 12) — виконавець задач, дослідник
+- AGY3/Arsen tablet (Google AI Pro, Gemini 3.5 Flash) — другий виконавець, листування
+
+### Завдання
+
+```bash
+agy --print "Tu es expert en innovation et intelligence artificielle appliquee aux projets sociaux.
+
+Redige un document methodologique de 600-800 mots en francais intitule:
+'Intelligence Artificielle Collaborative: Notre Methode de Developpement'
+
+Contenu requis:
+1. Introduction: qu'est-ce qu'un systeme multi-agents IA et pourquoi c'est innovant pour des projets associatifs
+2. Notre architecture: Claude (architecte strategique) + 2 agents AGY (Gemini) comme executants paralleles
+3. Avantages concrets pour Sonate Solidaire:
+   - Recherche juridique simultanee et structuree
+   - Generation de lettres institutionnelles professionnelles
+   - Prospection systematique avec listes detaillees
+   - Accumulation des connaissances dans NotebookLM
+   - Gain de temps: travail de 2 semaines realise en 2 heures
+4. Comparaison avec methodes traditionnelles (recherche manuelle vs IA)
+5. Ce que ca signifie pour un tresorier/garant: transparence et professionnalisme
+6. Conclusion: innovation comme preuve de serieux du projet
+
+Ton: professionnel mais accessible, montrer que cest moderne et fiable" --dangerously-skip-permissions 2>&1
+```
+
+Зберегти в `/home/vokov/projects/Арсену/methode_IA_collaborative.md` (через SCP з phone якщо потрібно)
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-04/[x] TASK-SS-04/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-04 done — AI methodology document"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-04:methodology-doc|IA-collaborative+Sonate-Solidaire|commit:<hash>|★★★
+```
+
