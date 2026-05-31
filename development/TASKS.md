@@ -6910,68 +6910,92 @@ SESSION:2026-05-31|TASK-92:agentworkspace-rpi|install+test|NotebookLM-preserved|
 ## [ ] TASK-94
 
 ### Мета
-Протестувати функціональність **ai-drakon** через браузер на RPi за допомогою **agent-workspace** MCP.
-Знайти баги, перевірити мобільний UI, зробити скріншоти, задокументувати проблеми.
+**Працювати в ai-drakon** над проектом uav-watcher через браузер на RPi (agent-workspace).
+Знаходити проблеми в ai-drakon UI/інструментах → одразу виправляти їх у коді.
+Результат: реальні DRAKON схеми uav-watcher + покращення ai-drakon.
 
 ### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux.
-### agent-workspace MCP вже налаштований в ~/.gemini/config/mcp_config.json
+### !!CRITICAL!! Використовуй agent-workspace MCP tools для браузера. Конфіг: ~/.gemini/config/mcp_config.json
 
 ### Контекст
-- ai-drakon frontend: `http://192.168.3.184:8082` (локальний dev) або `http://192.168.3.184:5173` (vite dev)
-- RPi для браузера: `192.168.3.234` (agent-workspace там встановлено)
-- MCP tools доступні: `workspace_doctor`, `workspace_start`, `workspace_open_browser`, `workspace_browser_navigate`, `workspace_screenshot`, `workspace_browser_snapshot`, `workspace_browser_click`, `workspace_type_text`
+
+**ai-drakon (ціль покращень):**
+- Репо: `~/workspace/ai-drakon-scaffolder/` (локально на AGY3)
+- Frontend src: `~/workspace/ai-drakon-scaffolder/src/`
+- Dev сервер: `http://192.168.3.184:8082` (або 5173)
+- Перевірити порт: `sshpass -p '805235io.' ssh vokov@192.168.3.184 'ss -tlnp | grep -E "8082|5173|3000"'`
+
+**uav-watcher (над чим працюємо в ai-drakon):**
+- Архітектура вже задокументована: `docs/uav-watcher-analysis/` (TASK-93 ✅)
+- Sharon: Telethon userbot → AI класифікатор загроз → сповіщення → Sharon consultant FastAPI
+
+**agent-workspace (браузер на RPi 192.168.3.234):**
+- MCP tools: workspace_doctor, workspace_start, workspace_open_browser,
+  workspace_browser_navigate, workspace_screenshot, workspace_browser_snapshot,
+  workspace_browser_click, workspace_type_text, workspace_scroll, workspace_stop
 
 ### Кроки
 
-**1. Перевірити який порт слухає ai-drakon**
+**1. Запустити browser workspace на RPi**
+```
+MCP: workspace_doctor
+MCP: workspace_start(acknowledge_hidden_workspace=true, purpose="ai-drakon uav-watcher work")
+MCP: workspace_open_browser
+```
+
+**2. Відкрити ai-drakon і перейти до роботи**
+```
+MCP: workspace_browser_navigate(url="http://192.168.3.184:8082")
+MCP: workspace_screenshot  → зберегти як docs/screenshots/task94-01-home.png
+MCP: workspace_browser_snapshot → перевірити DOM/errors
+```
+
+**3. Створити новий проект "UAV Watcher / Sharon" в ai-drakon**
+- Знайти кнопку New Project / Create
+- Назвати: "UAV Watcher — Sharon System"
+- MCP: workspace_browser_click, workspace_type_text
+- Скріншот після створення
+
+**4. Розробити DRAKON схеми для uav-watcher:**
+Для кожної схеми — спробувати створити в ai-drakon, зафіксувати проблеми:
+
+4a. **Threat Detection Pipeline**: Telegram message → filter → AI classify → send alert
+4b. **AllClear Sync**: catchup_history → detect missed allclear → update state
+4c. **Sharon Consultant**: user query → LangGraph → OSM/Telegram → response
+4d. **Shelter Search**: location share → find shelters → return results
+
+**5. Після кожної спроби — фіксити проблеми в коді:**
+Якщо щось не працює в UI:
 ```bash
-sshpass -p '805235io.' ssh vokov@192.168.3.184 'ss -tlnp | grep -E "8082|5173|3000|8080"'
+# Знайти і виправити в src/:
+grep -r "проблемний текст" ~/workspace/ai-drakon-scaffolder/src/
+# Відредагувати файл
+# Закомітити фікс
+```
+Якщо frontend не стартує — перезапустити на dev сервері:
+```bash
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd ~/projects/ai-drakon && npm run dev &'
 ```
 
-**2. Запустити agent-workspace на RPi**
-```
-Use MCP tool: workspace_doctor
-Use MCP tool: workspace_start (acknowledge_hidden_workspace=true, purpose="ai-drakon UI testing")
-```
-
-**3. Відкрити браузер і перейти на ai-drakon**
-```
-Use MCP tool: workspace_open_browser
-Use MCP tool: workspace_browser_navigate (url="http://192.168.3.184:8082")
-Use MCP tool: workspace_screenshot → зберегти скріншот
+**6. Зібрати знайдені проблеми**
+```bash
+cat > ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/ai-drakon-improvements.md << 'EOF'
+# AI-Drakon — Покращення (TASK-94)
+## Знайдені проблеми
+...
+## Виправлення
+...
+EOF
 ```
 
-**4. Тестувати функції послідовно:**
-
-4a. Головна сторінка — завантажилась? Скріншот.
-4b. Навігація — всі пункти меню працюють?
-4c. **MobileNavigationDock** — є bottom nav? (перевір на вузькому вікні)
-4d. **Diagrams page** — відкрити, перевірити пошук/фільтр папок
-4e. Створити нову схему — кнопка Create/New працює?
-4f. Редактор схем — canvas відкривається?
-4g. **Sharon consultant** — відкрити `http://192.168.3.184:8770/docs`, перевірити endpoints
-
-Після кожного кроку:
+**7. Зупинити workspace і закомітити все**
 ```
-Use MCP tool: workspace_screenshot → зберегти в docs/screenshots/TASK-94/
+MCP: workspace_stop
 ```
-
-**5. Зібрати знайдені проблеми**
-Записати в `docs/uav-watcher-analysis/ai-drakon-ui-issues.md`:
-- Що зламано
-- Що не відповідає очікуваному
-- Консольні помилки (через workspace_browser_snapshot → перевірити errors)
-
-**6. Зупинити workspace**
-```
-Use MCP tool: workspace_stop
-```
-
-**7. Коміт**
 ```bash
 cd ~/workspace/ai-drakon-scaffolder
-git add docs/
-git commit -m "test(ai-drakon): UI functional test via agent-workspace browser (TASK-94)"
+git add docs/ src/
+git commit -m "feat(ai-drakon): uav-watcher DRAKON diagrams + UI fixes (TASK-94)"
 git push origin main
 sed -i 's/^## \[ \] TASK-94/## [x] TASK-94/' development/TASKS.md
 git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-94 done" && git push origin main
@@ -6979,13 +7003,14 @@ git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-94 done" 
 
 ### Верифікація
 ```bash
-ls ~/workspace/ai-drakon-scaffolder/docs/
-# Має бути: ai-drakon-ui-issues.md + скріншоти
+ls ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/
+# Має бути: ai-drakon-improvements.md
+git log --oneline -3
 ```
 
 ### Diary
 ```
-SESSION:2026-05-31|TASK-94:ai-drakon-ui-test|agent-workspace+browser|screenshots+issues|commit:<hash>|★★★
+SESSION:2026-05-31|TASK-94:ai-drakon-work+fixes|agent-workspace-browser|uav-watcher-diagrams|DRAKON+improvements|commit:<hash>|★★★
 ```
 
 ---
