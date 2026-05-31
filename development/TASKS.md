@@ -8584,3 +8584,114 @@ SESSION:2026-05-30|TASK-83:ux-audit-p0-p1|commit:<hash>|fix:mixed-content+unsave
 5. Перевір build: `npm run build 2>&1 | tail -10`
 6. git add -A && git commit -m "..." && git push origin main
 7. НЕ SSH на 192.168.3.184 — це frontend проект, деплоїться через Cloudflare з .lovable/
+
+## [ ] TASK-104
+
+**Мета**: Виправити LLM endpoint для DRAKON/Architect/Docs агентів — очистити стару localStorage (`drakon-assistant-proxy`) щоб вони впали на default AGY proxy.
+
+**!!IMPORTANT!! AGY phone — browser mode (mcp-aws.py). Скіли НЕ оцінювати.**
+
+### Чому
+
+Код вже правильний: `isAgyAgent = id.includes("drakon"|"docs"|"architect")` → default `https://agy.exodus.pp.ua`.
+Але стара localStorage перекриває: `drakon_llm_base_url = "drakon-assistant-proxy"`.
+Фікс: видалити stale ключі — нічого більше не треба.
+
+### Кроки
+
+**Крок 1 — Відкрити браузер і залогінитись:**
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+python3 ~/bin/mcp-aws.py start && sleep 3
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev && sleep 5
+python3 ~/bin/mcp-aws.py login && sleep 5
+python3 ~/bin/mcp-aws.py screenshot $TMPD/t104-before.png
+view_file $TMPD/t104-before.png
+```
+
+**Крок 2 — Навігація до /agents, перевірити поточний стан:**
+```bash
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents && sleep 4
+python3 ~/bin/mcp-aws.py screenshot $TMPD/t104-agents.png
+view_file $TMPD/t104-agents.png
+```
+
+**Крок 3 — Через CDP очистити stale localStorage і встановити AGY:**
+
+Написати Python скрипт на RPi і запустити:
+```bash
+sshpass -p 'vokov' ssh -o StrictHostKeyChecking=no vokov@192.168.3.234 'python3 - << '"'"'PYEOF'"'"'
+import json, socket, struct
+s = socket.create_connection(("127.0.0.1", 38587), timeout=10)
+
+# Get CDP target ID
+import urllib.request
+targets = json.loads(urllib.request.urlopen("http://127.0.0.1:38587/json").read())
+target = next((t["id"] for t in targets if t.get("type") == "page"), None)
+print("Target:", target)
+
+s.send(("GET /devtools/page/"+target+" HTTP/1.1\r\nHost: 127.0.0.1:38587\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Version: 13\r\n\r\n").encode())
+s.recv(4096)
+
+def ws_s(d):
+    p=json.dumps(d).encode();n=len(p);m=b"\xfe\xdc\xba\x98"
+    r=bytes([p[i]^m[i%4] for i in range(n)])
+    s.send((struct.pack("BB",0x81,0x80|n) if n<126 else struct.pack("!BBH",0x81,0xfe,n))+m+r)
+
+def ws_r():
+    s.settimeout(15);h=s.recv(2);n=h[1]&0x7f
+    if n==126:n=struct.unpack("!H",s.recv(2))[0]
+    d=b""
+    while len(d)<n:d+=s.recv(n-len(d))
+    return json.loads(d)
+
+js = """(function() {
+  var agents = ["drakon", "architect", "docs"];
+  var keys = ["_llm_base_url", "_llm_protocol", "_llm_api_key", "_llm_model", "_llm_max_tokens"];
+  agents.forEach(function(a) {
+    keys.forEach(function(k) { localStorage.removeItem(a+k); });
+  });
+  localStorage.setItem("drakon_llm_base_url", "https://agy.exodus.pp.ua");
+  localStorage.setItem("drakon_llm_protocol", "agy");
+  localStorage.setItem("drakon_llm_model", "gemini-2.5-flash");
+  localStorage.setItem("architect_llm_base_url", "https://agy.exodus.pp.ua");
+  localStorage.setItem("architect_llm_protocol", "agy");
+  localStorage.setItem("docs_llm_base_url", "https://agy.exodus.pp.ua");
+  localStorage.setItem("docs_llm_protocol", "agy");
+  return "DONE: " + JSON.stringify({
+    drakon: localStorage.getItem("drakon_llm_base_url"),
+    architect: localStorage.getItem("architect_llm_base_url"),
+    docs: localStorage.getItem("docs_llm_base_url")
+  });
+})()"""
+
+ws_s({"id":1,"method":"Runtime.evaluate","params":{"expression":js,"returnByValue":True}})
+r = ws_r()
+print(r.get("result",{}).get("result",{}).get("value","ERROR"))
+s.close()
+PYEOF'
+```
+
+**Крок 4 — Screenshot після виправлення:**
+```bash
+sleep 2
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents && sleep 3
+python3 ~/bin/mcp-aws.py screenshot $TMPD/t104-after.png
+view_file $TMPD/t104-after.png
+python3 ~/bin/mcp-aws.py stop
+```
+
+**Крок 5 — Commit:**
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-104/[x] TASK-104/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-104 done — agents LLM set to AGY proxy"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-104:agent-llm-fix|localStorage-cleared+AGY-set|drakon+architect+docs|commit:<hash>|★★★
+```
+
