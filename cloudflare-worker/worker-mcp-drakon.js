@@ -1922,7 +1922,7 @@ async function handleHealth(env) {
 // Logs each request to MinIO (agent, ms, status).
 // ============================================
 
-const VALID_AGENT_IDS = ['drakon', 'architect', 'docs'];
+const VALID_AGENT_IDS = ['drakon', 'architect', 'docs', 'sonate-solidaire'];
 const DOCS_AGENT_URL = 'https://docs-agent.exodus.pp.ua';
 
 function isPythonCode(msg) {
@@ -1945,18 +1945,21 @@ async function handleAgentChat(agentId, request, env, ctx) {
   }
 
   // agentUrl from client (from Settings), fallback to env vars
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   const defaultUrls = {
     drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
-    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    architect: architectUrl,
     docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+    'sonate-solidaire': architectUrl,
   };
   const targetUrl = (typeof agentUrl === 'string' && agentUrl.startsWith('https://'))
     ? agentUrl
     : defaultUrls[agentId];
 
-  // Route: DRAKON + Python code → /analyze, otherwise → /chat
+  // Route: DRAKON + Python → /analyze; multi-agent IDs → /agents/{id}/chat; else → /chat
   const usesAnalyze = agentId === 'drakon' && isPythonCode(message);
-  const endpoint = usesAnalyze ? '/analyze' : '/chat';
+  const usesAgentRoute = ['sonate-solidaire'].includes(agentId);
+  const endpoint = usesAnalyze ? '/analyze' : usesAgentRoute ? `/agents/${agentId}/chat` : '/chat';
   const agentBody = usesAnalyze
     ? JSON.stringify({ code: message, refine: true })
     : JSON.stringify({ message, context: context || null });
@@ -2142,6 +2145,11 @@ export default {
         const streamPayload = await verifyJWT(qToken, env.JWT_SECRET).catch(() => null);
         if (!streamPayload) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
         return await handlePipelineStream(streamJobId, env, ctx);
+      }
+      // ─── Sonate Solidaire public chat (no auth required) ─────────────────
+      const ssChatMatch = path.match(/^\/v1\/agents\/(sonate-solidaire)\/chat$/);
+      if (method === 'POST' && ssChatMatch) {
+        return await handleAgentChat(ssChatMatch[1], request, env, ctx);
       }
       // ─────────────────────────────────────────────────────────────────────
 
