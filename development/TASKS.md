@@ -9862,7 +9862,7 @@ SESSION:DATE|TASK-SS-10:ai-strategy-v2|Claude+AGY+GoClaw+NotebookLM|commit:<hash
 
 ---
 
-## [ ] TASK-SS-11
+## [x] TASK-SS-11
 
 **Мета**: Оновити sonate-solidaire.me — зробити головним доменом з повним контентом (зараз порожня оболонка).
 
@@ -9903,7 +9903,7 @@ SESSION:DATE|TASK-SS-11:domain-migration|sonate-solidaire.me+canonical|commit:<h
 
 ---
 
-## [ ] TASK-SS-12
+## [x] TASK-SS-12
 
 **Мета**: Оновити NotebookLM — додати всі нові документи (SS-06 через SS-10) як джерела.
 
