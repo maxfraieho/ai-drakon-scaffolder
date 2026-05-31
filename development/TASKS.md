@@ -10629,3 +10629,131 @@ git push origin main
 ```
 SESSION:DATE|TASK-113:manual-testing-plan+docs-audit|scenarios:7|docs-checked:4|commit:<hash>|★★★
 ```
+
+
+## [ ] TASK-114
+
+**Мета**: Оновити 4 застарілих мануали через docs-агент (architect-agent /chat) — агент читає, переписує, AGY зберігає файли.
+
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. Агент = інструмент, AGY = виконавець.**
+
+---
+
+### Контекст (з аудиту TASK-113)
+
+**Актуальний стан системи (для передачі агенту):**
+```
+- Worker URL: https://drakon-mcp-worker.maxfraieho.workers.dev/v1/...
+- Architect agent: http://192.168.3.184:8766 (LAN), продакшн = Cloudflare Worker
+- DRAKON agent: через proxy agy.exodus.pp.ua/v1
+- Pipeline analyze: POST /pipeline/analyze {"source_code": "..."} → job_id → /pipeline/status/{id}
+- Cyrillic fix: Worker використовує TextDecoder('utf-8') (виправлено в Sprint2)
+- PROXY_TOKEN fallback: os.getenv("PROXY_TOKEN","freecc") or "freecc" (виправлено)
+- Кнопка "Аналізувати" тепер має toast.success + посилання на /diagrams (Sprint3)
+- DRAKON IR вузли: b0 (branch, обов'язковий), action, question, end
+- BUG-6: /agents не має inline chat (відомо, не виправлено)
+```
+
+**Знайдені проблеми (з docs-audit-2026-05-31.md):**
+```
+manual-pipeline-a.md: застарілі порти, немає redirect на /diagrams, обірвана секція MCP API
+manual-pipeline-b.md: кнопки ref=e132 видалені, GitHub зберігання через MCP, застарілий API приклад
+manual-agent-studio.md: порти застаріли, BUG-6 не задокументований, термінологія b0/Start
+manual-mcp-access.md: застарілий endpoint, хардкод токена, відсутні files.* інструменти
+```
+
+---
+
+### Алгоритм для кожного мануалу (повторити 4 рази):
+
+```python
+# Псевдокод — реалізувати як python3 скрипт
+import json, urllib.request
+
+BASE = "http://192.168.3.184:8766"
+REPO = "/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder"
+
+manuals = [
+    ("docs/manuals/manual-pipeline-a.md", "Pipeline A (Код→DRAKON IR)"),
+    ("docs/manuals/manual-pipeline-b.md", "Pipeline B (Ідея→IR)"),
+    ("docs/manuals/manual-agent-studio.md", "Agent Studio"),
+    ("docs/manuals/manual-mcp-access.md", "MCP Access"),
+]
+
+SYSTEM_CONTEXT = """
+Актуальний стан AI-DRAKON (2026-05-31):
+- Worker: drakon-mcp-worker.maxfraieho.workers.dev/v1/
+- Pipeline API: POST /pipeline/analyze {"source_code":"..."} → job_id → GET /pipeline/status/{id}
+- Worker UTF-8 fix: TextDecoder('utf-8').decode(Uint8Array.from(atob(...), c=>c.charCodeAt(0)))
+- DRAKON IR вузли: b0 (branchId:0, обов'язковий), action (content+one), question (content+one+two), end
+- Кнопка "Аналізувати": має toast.success + "Відкрити схему" link після done
+- /agents: BUG-6 — немає inline chat, потрібно переходити на /chat секцію
+- Architect agent: POST /chat {"message":"..."} → {"reply":"...","suggested_mutations":null|[...]}
+- PROXY_TOKEN: завжди використовувати fallback або ENV змінну, не хардкодити
+"""
+
+for rel_path, name in manuals:
+    full_path = f"{REPO}/{rel_path}"
+    current = open(full_path).read()
+    
+    prompt = f"""Ти — документознавець AI-DRAKON. ЗАДАЧА: повністю переписати застарілий мануал '{name}'.
+
+ПОТОЧНИЙ ВМІСТ (ЗАСТАРІЛО):
+{current}
+
+{SYSTEM_CONTEXT}
+
+ВИМОГИ ДО ОНОВЛЕНОГО ДОКУМЕНТА:
+1. Зберегти ВЕСЬ frontmatter (tags, created, tier тощо), оновити поле updated: 2026-05-31
+2. Зберегти структуру розділів та wiki-посилання [[...]]
+3. Виправити всі застарілі порти, URL, назви кнопок
+4. Додати нові можливості (toast, UTF-8 fix, PROXY_TOKEN)
+5. Для manual-agent-studio: додати секцію "Відомі обмеження" з BUG-6
+6. Для manual-mcp-access: додати розділ про files.* інструменти та resources
+7. Мова: УКРАЇНСЬКА, стиль — технічний посібник
+
+ВИВЕСТИ ТІЛЬКИ ПОВНИЙ ОНОВЛЕНИЙ MARKDOWN ДОКУМЕНТ. Нічого більше."""
+
+    payload = json.dumps({"message": prompt}).encode()
+    req = urllib.request.Request(f"{BASE}/chat", data=payload,
+        headers={"Content-Type": "application/json"}, method="POST")
+    resp = json.loads(urllib.request.urlopen(req, timeout=120).read())
+    
+    updated_content = resp.get("reply", "")
+    
+    # Validate: must have frontmatter and content
+    if "---" in updated_content and len(updated_content) > 500:
+        with open(full_path, "w") as f:
+            f.write(updated_content)
+        print(f"✓ Updated: {rel_path} ({len(updated_content)} chars)")
+    else:
+        print(f"✗ SKIP {rel_path}: response too short or invalid ({len(updated_content)} chars)")
+        print(f"  Preview: {updated_content[:200]}")
+```
+
+---
+
+### Збереження та коміт:
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+
+git add docs/manuals/manual-pipeline-a.md \
+        docs/manuals/manual-pipeline-b.md \
+        docs/manuals/manual-agent-studio.md \
+        docs/manuals/manual-mcp-access.md
+
+git diff --cached --stat
+
+git commit -m "docs(manuals): update 4 stale manuals via docs-agent audit findings (TASK-114)"
+
+sed -i 's/\[ \] TASK-114/[x] TASK-114/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-114 done"
+git push origin main
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-114:docs-update|4-manuals-rewritten|pipeline-a+b+agent-studio+mcp-access|commit:<hash>|★★★
+```
