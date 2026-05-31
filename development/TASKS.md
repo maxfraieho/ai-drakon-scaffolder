@@ -9497,7 +9497,7 @@ SESSION:DATE|TASK-SS-07:dossier-leroy|6-sections+plan-financier+IA-argument|comm
 
 ---
 
-## [ ] TASK-SS-08
+## [x] TASK-SS-08
 
 **Мета**: Розробити PIPELINE РЕКРУТИНГУ МУЗИКАНТІВ — стратегія пошуку, оголошення, воронка, форма на сайті.
 
