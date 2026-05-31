@@ -9997,3 +9997,61 @@ git push origin main
 SESSION:DATE|TASK-107a-v2:code-screenshot|token-injected+screenshot|FILES_OK/ERROR|commit:<hash>|★★★
 ```
 
+
+---
+
+## [ ] TASK-107d
+
+**Мета**: Виправити DRAKON agent proxy — перемкнути з localhost:18880 (503) на agy.exodus.pp.ua (живий).
+
+**!!IMPORTANT!! SSH to 192.168.3.184 (dev server). НЕ locally on AGY.**
+
+### Контекст
+- DRAKON agent: `/home/vokov/workspace/ai-drakon-setup/services/drakon-agent/main.py`
+- .env: `/home/vokov/workspace/ai-drakon-setup/services/drakon-agent/.env`
+- Проблема: `PROXY_URL=http://localhost:18880/v1` → 503 Service Unavailable
+- Рішення: змінити на `PROXY_URL=https://agy.exodus.pp.ua/v1` + `PROXY_MODEL=gemini-2.5-flash`
+
+### Кроки
+
+```bash
+# 1. Бекап поточного .env
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'cp /home/vokov/workspace/ai-drakon-setup/services/drakon-agent/.env \
+      /home/vokov/workspace/ai-drakon-setup/services/drakon-agent/.env.bak && echo "backup ok"'
+
+# 2. Оновити PROXY_URL і PROXY_MODEL
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sed -i "s|PROXY_URL=.*|PROXY_URL=https://agy.exodus.pp.ua/v1|" \
+       /home/vokov/workspace/ai-drakon-setup/services/drakon-agent/.env &&
+   sed -i "s|PROXY_MODEL=.*|PROXY_MODEL=gemini-2.5-flash|" \
+       /home/vokov/workspace/ai-drakon-setup/services/drakon-agent/.env &&
+   grep "PROXY" /home/vokov/workspace/ai-drakon-setup/services/drakon-agent/.env'
+
+# 3. Перезапустити сервіс
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sudo rc-service ai-drakon-agent restart && sleep 5 && \
+   curl -s http://localhost:8765/health && echo " agent ok"'
+
+# 4. Тест:
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'curl -s -X POST http://localhost:8765/analyze \
+   -H "Content-Type: application/json" \
+   -d "{\"code\":\"def hello():\\n  return 1\",\"language\":\"python\"}" | \
+   python3 -c "import sys,json; d=json.load(sys.stdin); print(\"OK\" if d.get(\"diagrams\") else \"FAIL:\"+str(d)[:100])"'
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-107d/[x] TASK-107d/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-107d done — DRAKON agent proxy fix → agy.exodus"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-107d:drakon-proxy-fix|localhost18880→agy.exodus.pp.ua|result:OK/FAIL|commit:<hash>|★★★
+```
+
