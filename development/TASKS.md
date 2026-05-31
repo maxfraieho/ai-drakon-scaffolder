@@ -11974,3 +11974,95 @@ git push origin main
 ```
 SESSION:DATE|TASK-119:ss-analytics|jsonl-log+endpoint+audience-stats|commit:<hash>|★★★
 ```
+
+---
+
+## [ ] TASK-120
+
+**Мета**: Оновити загальну документацію ai-drakon з урахуванням архітектурних змін агентів (Sprint 2).
+
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. NO writing-plans. Execute immediately step by step.**
+
+---
+
+### Контекст архітектурних змін (для довідки):
+
+**Що змінилось (Sprint 2):**
+1. **BUG-6 виправлено** — всі агенти (drakon, docs, architect, sonate-solidaire) тепер через єдиний сервіс `architect-agent` на порту 8766
+2. **Уніфікація на LangGraph** — всі агенти — це DRAKON IR pipelines що компілюються в StateGraph через `graph_loader.py`
+3. **Ендпоінти агентів** — `GET /agents/{id}/health`, `POST /agents/{id}/chat`
+4. **File tools для агентів** — `POST /files/write`, `/files/patch`, `/files/delete`, `GET /files/read`, `/files/list`
+5. **Новий Sonate Solidaire агент** — pipeline `sonate-solidaire-agent`, KB в `sonate-solidsite/public/kb/`
+6. **Cloudflare Worker** — `sonate-solidaire` додано як публічний route без авторизації
+
+**Файли що потребують оновлення:**
+- `docs/manuals/manual-pipeline-a.md` — додати LangGraph секцію
+- `docs/manuals/manual-agent-studio.md` — оновити список агентів, ендпоінти
+- `docs/manuals/mcp-access.md` — перевірити актуальність
+- `docs/architecture/` — якщо є, оновити або створити `docs/architecture/agents-overview.md`
+
+---
+
+### Кроки:
+
+#### Крок 1 — Запуск docs агента для аудиту документації
+```bash
+# SSH на dev server і викликати docs агента напряму:
+curl -s -X POST http://192.168.3.184:8766/agents/docs/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Зроби аудит документації в docs/manuals/ та docs/architecture/. Перелічи файли, перевір їх актуальність щодо нових агентів (port 8766, LangGraph unification, /agents/{id}/chat endpoint, sonate-solidaire agent). Поверни список файлів що потребують оновлення з конкретними описами що застаріло.",
+    "agent_mode": true
+  }' | python3 -m json.tool
+```
+
+#### Крок 2 — Створити/оновити docs/architecture/agents-overview.md
+Створити файл `docs/architecture/agents-overview.md` через файловий інструмент docs агента або напряму через curl:
+
+```bash
+curl -s -X POST http://192.168.3.184:8766/files/write \
+  -H "Content-Type: application/json" \
+  -d '{
+    "path": "docs/architecture/agents-overview.md",
+    "content": "# AI-DRAKON — Архітектура агентів\n\n## Єдиний сервіс\n\nВсі агенти об'\''єднані в `architect-agent` (порт 8766).\n\n## Агенти\n\n| Agent ID | Призначення | System prompt |\n|----------|-------------|---------------|\n| `architect` | Головний архітектор, file tools | ARCHITECT_SYSTEM_PROMPT |\n| `drakon` | Python код → DRAKON IR JSON | DRAKON_SYSTEM |\n| `docs` | Документознавець, wiki-links | DOCS_SYSTEM |\n| `sonate-solidaire` | Публічний асистент асоціації | KB з sonate-solidaire.me/kb/ |\n\n## Ендпоінти\n\n```\nGET  /agents/{id}/health\nPOST /agents/{id}/chat\n     body: { message, context?, agent_mode? }\n```\n\n## LangGraph Pipeline\n\nDRAKON IR JSON → graph_loader.py → StateGraph\n\n```\npipelines/*.drakon.json\n  ↓ load_graph_from_ir()\n  ↓ NODE_REGISTRY[node_name](state)\n  ↓ SSE stream або sync response\n```\n\n## File Tools (для агентів)\n\n```\nGET  /files/list?path=docs/\nGET  /files/read?path=docs/file.md\nPOST /files/write  { path, content }\nPOST /files/patch  { path, old_string, new_string }\nPOST /files/delete { path }\n```\n\n## Cloudflare Worker\n\n`drakon-mcp-worker.maxfraieho.workers.dev`\n\n- `/v1/agents/{id}/chat` → proxies до architect-agent\n- `sonate-solidaire` — публічний route (без auth)\n- інші агенти — потребують Bearer token\n",
+    "create_dirs": true
+  }'
+```
+
+#### Крок 3 — Оновити docs/manuals/manual-agent-studio.md через docs агента
+```bash
+curl -s -X POST http://192.168.3.184:8766/agents/docs/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Прочитай файл docs/manuals/manual-agent-studio.md. Знайди застарілу інформацію про порти агентів (8765, 8767 — вони більше не використовуються). Замінити на: всі агенти через порт 8766, endpoint /agents/{id}/chat. Додай секцію про LangGraph якщо її немає. Виправ файл за допомогою files_patch або files_write.",
+    "agent_mode": true
+  }' | python3 -m json.tool
+```
+
+#### Крок 4 — Зробити git commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git pull origin main --quiet
+git add docs/
+git commit -m "docs(agents): update architecture docs for LangGraph unification (TASK-120)"
+sed -i 's/\[ \] TASK-120/[x] TASK-120/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-120 done"
+git push origin main
+```
+
+---
+
+### Верифікація:
+```bash
+# Файл існує?
+ls ~/workspace/ai-drakon-scaffolder/docs/architecture/agents-overview.md
+
+# Коміти?
+git log --oneline origin/main -3
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-120:docs-update|agents-architecture+LangGraph+unified-port-8766|commit:<hash>|★★★
+```
