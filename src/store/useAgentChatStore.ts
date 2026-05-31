@@ -76,6 +76,10 @@ friendly =
 } else if (raw.includes("400")) {
 friendly =
 "Агент повернув помилку (400). Спробуйте переформулювати повідомлення.";
+} else if (raw.includes("401") || raw.includes("403")) {
+friendly = "Помилка авторизації агента (401/403). Перевірте PROXY_TOKEN у налаштуваннях сервера.";
+} else if (raw.includes("500")) {
+friendly = "Помилка конфігурації агента (500). Перевірте PROXY_TOKEN та PROXY_URL у .env на сервері.";
 } else if (raw.includes("502") || raw.includes("503")) {
 friendly = "Агент тимчасово недоступний. Зачекайте хвилину та спробуйте.";
 } else if (raw.includes("timeout") || raw.includes("AbortError")) {
