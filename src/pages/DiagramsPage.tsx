@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { api } from "@/lib/api";
+import { useIsMobile } from "@/hooks/use-mobile";
 import {
 readDiagramsFromStorage,
 upsertDiagramInStorage,
@@ -42,6 +43,7 @@ import type { IrDiagram } from "@/lib/graph-pipeline-api";
 export function DiagramsPage() {
 const navigate = useNavigate();
 const importInputRef = useRef<HTMLInputElement | null>(null);
+const isMobile = useIsMobile();
 
 type ViewMode = "local" | "ir";
 const [viewMode, setViewMode] = useState<ViewMode>("local");
@@ -65,6 +67,7 @@ const [irSheetIr, setIrSheetIr] = useState<IrDiagram | null>(null);
 
 const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 const [newFolderName, setNewFolderName] = useState("");
+const [mobileSearch, setMobileSearch] = useState("");
 
 const selectedFolder =
 folders.find((f) => f.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
