@@ -9941,3 +9941,59 @@ git push origin main
 SESSION:DATE|TASK-107c:drakon-agent-test|result:OK/FAIL/TIMEOUT|commit:<hash>|★★★
 ```
 
+
+---
+
+## [ ] TASK-107a-v2
+
+**Мета**: АТОМАРНА v2 — відкрити Code section ai-drakon, GitHub token inject, screenshot. БЕЗ mempalace context.
+
+**!!IMPORTANT!! Run locally on AGY3 Termux. NO SSH. NO mempalace search. Execute steps directly.**
+
+### Кроки
+
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+# Крок 1: старт браузера на RPi
+python3 ~/bin/mcp-aws.py start 2>/dev/null
+sleep 4
+
+# Крок 2: відкрити ai-drakon
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
+sleep 6
+
+# Крок 3: login
+python3 ~/bin/mcp-aws.py login
+sleep 5
+
+# Крок 4: inject GitHub token
+python3 ~/bin/mcp-aws.py js "var s=JSON.parse(localStorage.getItem('drakon.settings')||'{}');s.github={owner:'maxfraieho',repo:'uav-watcher',branch:'master',token:'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'};localStorage.setItem('drakon.settings',JSON.stringify(s));'token:'+s.github.token.slice(0,8)"
+sleep 2
+
+# Крок 5: перейти в /code
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/code
+sleep 5
+
+# Крок 6: screenshot
+python3 ~/bin/mcp-aws.py screenshot $TMPD/t107a2-code.png
+echo "Screenshot saved: $TMPD/t107a2-code.png"
+
+python3 ~/bin/mcp-aws.py stop
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-107a-v2/[x] TASK-107a-v2/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-107a-v2 done — Code section screenshot" --no-verify 2>/dev/null || \
+git commit -m "chore(tasks): mark TASK-107a-v2 done — Code section screenshot"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-107a-v2:code-screenshot|token-injected+screenshot|FILES_OK/ERROR|commit:<hash>|★★★
+```
+
