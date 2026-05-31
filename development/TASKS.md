@@ -7002,7 +7002,7 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 
 ---
 
-## [ ] TASK-96
+## [x] TASK-96
 
 ### Мета
 Проаналізувати скріншоти ai-drakon UI і написати звіт що потрібно виправити/додати для роботи з uav-watcher.
