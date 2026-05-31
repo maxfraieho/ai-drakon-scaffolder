@@ -10055,3 +10055,60 @@ git push origin main
 SESSION:DATE|TASK-107d:drakon-proxy-fix|localhost18880→agy.exodus.pp.ua|result:OK/FAIL|commit:<hash>|★★★
 ```
 
+
+---
+
+## [ ] TASK-107e
+
+**Мета**: Виправити architect-agent proxy з agy3.exodus (404) на agy.exodus.pp.ua + перезапустити.
+
+**!!IMPORTANT!! SSH to 192.168.3.184 (dev server). НЕ locally.**
+
+### Кроки
+
+```bash
+# 1. Бекап
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'cp /home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/.env \
+      /home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/.env.bak && echo "backup ok"'
+
+# 2. Виправити PROXY_URL в architect-agent
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sed -i "s|PROXY_URL=.*|PROXY_URL=https://agy.exodus.pp.ua/v1|" \
+       /home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/.env &&
+   grep "PROXY" /home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/.env'
+
+# 3. Також перевірити docs-agent
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'grep "PROXY" /home/vokov/workspace/ai-drakon-scaffolder/services/docs-agent/.env 2>/dev/null && \
+   sed -i "s|PROXY_URL=https://agy3.*|PROXY_URL=https://agy.exodus.pp.ua/v1|" \
+       /home/vokov/workspace/ai-drakon-scaffolder/services/docs-agent/.env 2>/dev/null'
+
+# 4. Перезапустити обидва сервіси
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sudo rc-service ai-architect-agent restart && sleep 5 && \
+   sudo rc-service ai-docs-agent restart && sleep 3 && \
+   curl -s http://localhost:8766/health && echo " architect ok"'
+
+# 5. Тест pipeline через Worker
+curl -s --max-time 20 -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer drakon-mcp-2026" \
+  -d "{\"code\":\"def hello():\\n  return 1\",\"language\":\"python\",\"filename\":\"test.py\"}" | \
+  python3 -c "import sys,json; d=json.load(sys.stdin); print('job_id:', d.get('job_id','none'), 'status:', d.get('status','?')[:50])"
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-107e/[x] TASK-107e/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-107e done — architect-agent proxy fix → agy.exodus"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-107e:architect-proxy-fix|agy3→agy.exodus|result:OK/FAIL|commit:<hash>|★★★
+```
+
