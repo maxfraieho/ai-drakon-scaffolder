@@ -11977,7 +11977,7 @@ SESSION:DATE|TASK-119:ss-analytics|jsonl-log+endpoint+audience-stats|commit:<has
 
 ---
 
-## [ ] TASK-120
+## [x] TASK-120
 
 **Мета**: Оновити загальну документацію ai-drakon з урахуванням архітектурних змін агентів (Sprint 2).
 
