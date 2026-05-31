@@ -10759,7 +10759,7 @@ SESSION:DATE|TASK-114:docs-update|4-manuals-rewritten|pipeline-a+b+agent-studio+
 ```
 
 
-## [ ] TASK-115
+## [x] TASK-115
 
 **Мета**: Додати file manipulation (write/delete/patch) в architect-agent + agentic tool-use loop для всіх агентів (DOCS, ARCHITECT, DRAKON).
 
