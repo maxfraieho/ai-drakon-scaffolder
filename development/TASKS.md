@@ -9291,7 +9291,7 @@ SESSION:DATE|TASK-SS-04:methodology-doc|IA-collaborative+Sonate-Solidaire|commit
 ```
 
 
-## [ ] TASK-SS-05
+## [x] TASK-SS-05
 
 **Мета**: ТЕРМІНОВО! Сьогодні ввечері Арсен представляє проект Philippe Leroy за вечерею. Потрібна коротка неформальна презентація для телефону + розмовник французькою.
 
