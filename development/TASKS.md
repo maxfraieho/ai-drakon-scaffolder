@@ -10058,7 +10058,7 @@ SESSION:DATE|TASK-107d:drakon-proxy-fix|localhost18880→agy.exodus.pp.ua|result
 
 ---
 
-## [ ] TASK-107e
+## [x] TASK-107e
 
 **Мета**: Виправити architect-agent proxy з agy3.exodus (404) на agy.exodus.pp.ua + перезапустити.
 
