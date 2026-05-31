@@ -7002,6 +7002,267 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 
 ---
 
+## [ ] TASK-103
+
+**Мета**: Фінальний звіт спринту — зібрати знахідки з TASK-100/101/102, записати sprint1-report.md і додати TASK-104+ для наступного спринту.
+
+**!!IMPORTANT!! Run locally on AGY Termux — НЕ SSH до 192.168.3.184**
+
+### Кроки
+
+**1. Прочитати підсумки попередніх задач**
+```bash
+cat ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/problem-map.md
+git -C ~/workspace/ai-drakon-scaffolder log --oneline -10
+```
+
+**2. Написати docs/uav-watcher-analysis/sprint1-report.md**
+
+Формат звіту:
+```markdown
+# AI-Drakon Sprint 1 — UAV-Watcher Integration Report
+> Date: 2026-05-31 | Agents: AGY phone + Claude
+
+## What Was Tested
+- DRAKON agent: [result from TASK-100]
+- Pipeline analysis: [result from TASK-101]
+- OpenDesign UI: [result from TASK-102]
+
+## Working Well
+[list]
+
+## Issues Found
+[list with severity]
+
+## Next Sprint Tasks (TASK-104+)
+[list]
+```
+
+**3. Закомітити і пушити**
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add docs/uav-watcher-analysis/sprint1-report.md
+git commit -m "docs(sprint1): uav-watcher integration sprint report"
+sed -i 's/\[ \] TASK-103/[x] TASK-103/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-103 done"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-103:sprint1-report|uav-watcher+ai-drakon|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-102
+
+**Мета**: Як користувач ai-drakon — відкрити OpenDesign (RPi :7459) і сфотографувати поточний дизайн мобільного інтерфейсу. Зафіксувати знахідки.
+
+**!!IMPORTANT!! AGY phone — browser mode (mcp-aws.py). Скіли НЕ оцінювати.**
+
+### Кроки
+
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+# 1. Запустити браузер
+python3 ~/bin/mcp-aws.py start
+sleep 2
+
+# 2. Відкрити OpenDesign на RPi
+python3 ~/bin/mcp-aws.py browser http://192.168.3.234:7459
+sleep 5
+python3 ~/bin/mcp-aws.py screenshot $TMPD/od1-main.png
+view_file $TMPD/od1-main.png
+
+# 3. Зробити snapshot DOM — подивитися що завантажилось
+python3 ~/bin/mcp-aws.py snapshot
+
+# 4. Якщо є проекти — відкрити ai-drakon проект
+# (шукати текст "ai-drakon" або "mobile" в snapshot)
+# Клікнути на потрібний проект
+# python3 ~/bin/mcp-aws.py click X Y  (координати зі скріншоту)
+# sleep 3
+# python3 ~/bin/mcp-aws.py screenshot $TMPD/od2-project.png
+# view_file $TMPD/od2-project.png
+
+# 5. Зупинити
+python3 ~/bin/mcp-aws.py stop
+```
+
+### Що записати в diary
+- Чи завантажився OpenDesign (yes/no)
+- Що видно на головній сторінці
+- Назви проектів якщо є
+- Пр��блеми або помилки
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+sed -i 's/\[ \] TASK-102/[x] TASK-102/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-102 done — OpenDesign UI review"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-102:opendesign-review|RPi-7459+screenshots|opendesign-status:OK/FAIL|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-101
+
+**Мета**: Як користувач ai-drakon — запустити Pipeline "Рефакторинг" на функції з uav-watcher і зафіксувати результат.
+
+**!!IMPORTANT!! AGY phone — browser mode (mcp-aws.py). Скіли НЕ оцінювати.**
+
+### Кроки
+
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+# 1. Отримати функцію score_proximity (рядки 78-100 uav_watcher.py)
+curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" \
+  | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+lines=d.get('content','').split('\n')
+snippet='\n'.join(lines[77:110])
+open('/tmp/score_prox.txt','w').write(snippet)
+print('Lines:',len(snippet.split('\n')))
+print(snippet[:200])
+"
+
+# 2. Запустити браузер і залогінитись
+python3 ~/bin/mcp-aws.py start
+sleep 2
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
+sleep 4
+python3 ~/bin/mcp-aws.py login
+sleep 4
+
+# 3. Перейти на /pipelines
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/pipelines
+sleep 3
+python3 ~/bin/mcp-aws.py screenshot $TMPD/pipeline1.png
+view_file $TMPD/pipeline1.png
+
+# 4. Зробити snapshot — знайти поле вводу і кнопку "Рефакторинг"
+python3 ~/bin/mcp-aws.py snapshot
+# Знайти textarea або input для коду, клікнути
+# python3 ~/bin/mcp-aws.py click X Y
+# python3 ~/bin/mcp-aws.py type "$(cat /tmp/score_prox.txt)"
+
+# 5. Фінальний скріншот результату
+python3 ~/bin/mcp-aws.py screenshot $TMPD/pipeline2-result.png
+view_file $TMPD/pipeline2-result.png
+python3 ~/bin/mcp-aws.py stop
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+sed -i 's/\[ \] TASK-101/[x] TASK-101/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-101 done — pipeline analysis uav-watcher"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-101:pipeline-analysis|score-proximity+refactor|screenshot-result|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-100
+
+**Мета**: Як користувач ai-drakon — використати DRAKON-агент для аналізу функції keyword_classify з uav_watcher.py і отримати DRAKON-схему.
+
+**!!IMPORTANT!! AGY phone — browser mode (mcp-aws.py). Скіли НЕ оцінювати.**
+
+### Кроки
+
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+# 1. Отримати keyword_classify (рядки 220-244 uav_watcher.py) 
+curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" \
+  | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+lines=d.get('content','').split('\n')
+snippet='\n'.join(lines[219:244])
+open('/tmp/kw_classify.txt','w').write(snippet)
+print('=== keyword_classify snippet ===')
+print(snippet)
+"
+
+# 2. Запустити браузер
+python3 ~/bin/mcp-aws.py start
+sleep 2
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
+sleep 4
+python3 ~/bin/mcp-aws.py login
+sleep 4
+python3 ~/bin/mcp-aws.py screenshot $TMPD/s1-login.png
+view_file $TMPD/s1-login.png
+
+# 3. Перейти до /agents
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents
+sleep 3
+python3 ~/bin/mcp-aws.py screenshot $TMPD/s2-agents.png
+view_file $TMPD/s2-agents.png
+
+# 4. Зробити snapshot — знайти DRAKON IR Generator агента
+python3 ~/bin/mcp-aws.py snapshot
+# Знайти і клікнути на агента (шукати "DRAKON" або "Pipeline A")
+# python3 ~/bin/mcp-aws.py click X Y
+# sleep 2
+# python3 ~/bin/mcp-aws.py screenshot $TMPD/s3-agent-open.png
+# view_file $TMPD/s3-agent-open.png
+
+# 5. Знайти поле вводу в чаті агента, клікнути і ввести код
+# python3 ~/bin/mcp-aws.py click X Y  # поле chat input
+# python3 ~/bin/mcp-aws.py type "$(cat /tmp/kw_classify.txt)"
+# python3 ~/bin/mcp-aws.py key "Return"
+# sleep 10  # чекати відповідь агента
+
+# 6. Скріншот відповіді
+# python3 ~/bin/mcp-aws.py screenshot $TMPD/s4-drakon-result.png
+# view_file $TMPD/s4-drakon-result.png
+
+# 7. Навігація на /diagrams — подивитись чи з'явилась нова схема
+# python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/diagrams
+# sleep 3
+# python3 ~/bin/mcp-aws.py screenshot $TMPD/s5-diagrams.png
+# view_file $TMPD/s5-diagrams.png
+
+python3 ~/bin/mcp-aws.py stop
+```
+
+**ВАЖЛИВО**: Адаптуй координати click на основі скріншотів. Спочатку завжди screenshot → snapshot → click.
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+sed -i 's/\[ \] TASK-100/[x] TASK-100/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-100 done — DRAKON agent analysis uav-watcher"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-100:drakon-agent-uav-watcher|keyword-classify+drakon-ir|screenshot-result|commit:<hash>|★★★
+```
+
+---
+
 ## [x] TASK-99
 
 ### Мета
