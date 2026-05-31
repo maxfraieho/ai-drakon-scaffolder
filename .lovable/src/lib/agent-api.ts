@@ -6,6 +6,7 @@ const AGENT_LABELS: Record<AgentId, string> = {
 drakon: "DRAKON",
 architect: "Architect",
 docs: "Docs",
+"sonate-solidaire": "Sonate SS",
 };
 
 export function getAgentLabel(agentId: AgentId): string {
@@ -20,6 +21,7 @@ const AGENT_PORTS: Record<AgentId, number> = {
   drakon: 8766,
   architect: 8766,
   docs: 8766,
+  "sonate-solidaire": 8766,
 };
 
 function readAgentBaseUrl(): string {

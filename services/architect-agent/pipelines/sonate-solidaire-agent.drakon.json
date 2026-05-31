@@ -1,5 +1,5 @@
 {
-  "name": "sonate-solidaire-agent",
+  "name": "Sonate Solidaire — Assistant",
   "description": "Sonate Solidaire multi-audience assistant with KB routing",
   "schema": {"state_class": "SSAgentState"},
   "items": {
