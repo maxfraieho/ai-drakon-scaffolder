@@ -12340,3 +12340,84 @@ cd ~/workspace/sonate-solidsite && git log --oneline -2
 ```
 SESSION:DATE|TASK-121:ss-kb-fill|4-kb-generated-by-gemini|events+musicians+partners+general|commit:<hash>|★★★
 ```
+
+---
+
+## [ ] TASK-122
+
+**Мета**: В CodePage GitHub Settings перезаписуються збереженим activeProject (uav-watcher). Потрібно щоб Settings GitHub мали пріоритет якщо вони явно змінені.
+
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. NO writing-plans. Execute immediately.**
+
+---
+
+### Root Cause
+
+`src/pages/CodePage.tsx` рядки ~179-181:
+```js
+const projectGh = activeProject?.github;
+const owner = projectGh?.owner || ghCfg.owner || "";
+const repo  = projectGh?.repo  || ghCfg.repo  || "";
+```
+
+`projectGh` (з localStorage activeProject) перекриває `ghCfg` (Settings).
+Якщо activeProject містить `github.repo = "uav-watcher"` → CodePage показує uav-watcher навіть якщо Settings змінені.
+
+### Fix — `src/pages/CodePage.tsx`
+
+**Файл:** `~/workspace/ai-drakon-scaffolder/src/pages/CodePage.tsx`
+
+Знайти блок (рядки ~176-182):
+```js
+const { activeProject } = useProject();
+
+const projectGh = activeProject?.github;
+const owner = projectGh?.owner || ghCfg.owner || "";
+const repo = projectGh?.repo || ghCfg.repo || "";
+const branch = projectGh?.branch || ghCfg.branch || "main";
+const token = owner.toLowerCase() === ghCfg.owner.toLowerCase() ? ghCfg.token : "";
+```
+
+Замінити на:
+```js
+const { activeProject } = useProject();
+
+// Settings GitHub завжди має пріоритет якщо явно задано.
+// activeProject.github використовується тільки як fallback.
+const projectGh = activeProject?.github;
+const owner = ghCfg.owner || projectGh?.owner || "";
+const repo  = ghCfg.repo  || projectGh?.repo  || "";
+const branch = ghCfg.branch || projectGh?.branch || "main";
+const token = ghCfg.token || "";
+```
+
+**Файл `.lovable`:** Після зміни в `src/` — одразу скопіювати:
+```bash
+cp ~/workspace/ai-drakon-scaffolder/src/pages/CodePage.tsx \
+   ~/workspace/ai-drakon-scaffolder/.lovable/src/pages/CodePage.tsx
+```
+
+### Верифікація
+
+```bash
+grep -n "const owner\|const repo\|const branch\|ghCfg\|projectGh" \
+  ~/workspace/ai-drakon-scaffolder/src/pages/CodePage.tsx | head -10
+```
+
+### Commit
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git pull origin main --quiet
+git add src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
+git commit -m "fix(code-page): Settings GitHub takes priority over activeProject cache (TASK-122)"
+sed -i 's/\[ \] TASK-122/[x] TASK-122/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-122 done"
+git push origin main
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-122:code-page-github-priority|Settings>activeProject|commit:<hash>|★★★
+```
