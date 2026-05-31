@@ -7002,7 +7002,7 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 
 ---
 
-## [ ] TASK-99
+## [x] TASK-99
 
 ### Мета
 Виправити Code section (src/pages/CodePage.tsx) — замість мовчазного "Не вдалося завантажити" показувати зрозумілий fallback UI коли GitHub токен не налаштований.
