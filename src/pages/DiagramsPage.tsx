@@ -72,6 +72,18 @@ const [mobileSearch, setMobileSearch] = useState("");
 const selectedFolder =
 folders.find((f) => f.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
 
+const filteredFolders = useMemo(() => {
+const query = mobileSearch.trim().toLowerCase();
+if (!query) return folders;
+return folders.filter((folder) => {
+const inFolder = diagrams.filter((d) => d.folderId === folder.slug);
+return (
+folder.name.toLowerCase().includes(query) ||
+inFolder.some((d) => d.name.toLowerCase().includes(query))
+);
+});
+}, [mobileSearch, folders, diagrams]);
+
 const loadDiagrams = async (folderSlug: string) => {
 const local = readDiagramsFromStorage().filter((d) => d.folderId === folderSlug);
 setDiagrams(local);
