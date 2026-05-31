@@ -10112,3 +10112,119 @@ git push origin main
 SESSION:DATE|TASK-107e:architect-proxy-fix|agy3→agy.exodus|result:OK/FAIL|commit:<hash>|★★★
 ```
 
+
+---
+
+## [ ] TASK-107f
+
+**Мета**: Виправити architect-agent для підтримки Anthropic format (/v1/messages) коли PROXY_PROTOCOL=anthropic — щоб AGY proxy (agy.exodus.pp.ua) працював.
+
+**!!IMPORTANT!! SSH to 192.168.3.184. Змінити файл Python напряму через sed/awk.**
+
+### Контекст
+- Файл: `/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/ai_chat/architect_chat.py`
+- Зараз: `httpx.post(f"{PROXY_URL}/chat/completions", ...)`  → 404 на AGY proxy
+- Треба: якщо PROXY_PROTOCOL==anthropic → використати `/messages` формат Anthropic API
+
+### Кроки
+
+```bash
+# 1. Перевірити поточний .env architect-agent
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'cat /home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/.env'
+
+# 2. Написати Python patch скрипт
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 'python3 << '"'"'PEOF'"'"'
+import re
+
+fpath = "/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/ai_chat/architect_chat.py"
+with open(fpath) as f:
+    code = f.read()
+
+# Add PROXY_PROTOCOL support after existing env vars
+old_vars = 'PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc")\nPROXY_MODEL = os.getenv("PROXY_MODEL", "fast-proxy")'
+new_vars = 'PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc")\nPROXY_MODEL = os.getenv("PROXY_MODEL", "fast-proxy")\nPROXY_PROTOCOL = os.getenv("PROXY_PROTOCOL", "openai")'
+code = code.replace(old_vars, new_vars)
+
+# Replace the httpx call with protocol-aware version
+old_call = '''    resp = httpx.post(
+        f"{PROXY_URL}/chat/completions",
+        json={"model": PROXY_MODEL, "messages": messages, "temperature": 0.2},
+        headers={"Authorization": f"Bearer {PROXY_TOKEN}"},
+        timeout=90.0,
+    )
+    resp.raise_for_status()
+    content = resp.json()["choices"][0]["message"]["content"]'''
+
+new_call = '''    if PROXY_PROTOCOL == "anthropic":
+        # Anthropic /v1/messages format
+        system_msg = next((m["content"] for m in messages if m["role"]=="system"), "")
+        user_msgs = [{"role": m["role"], "content": m["content"]} for m in messages if m["role"]!="system"]
+        resp = httpx.post(
+            f"{PROXY_URL}/messages",
+            json={"model": PROXY_MODEL, "system": system_msg, "messages": user_msgs, "max_tokens": 4096},
+            headers={"x-api-key": PROXY_TOKEN, "anthropic-version": "2023-06-01"},
+            timeout=90.0,
+        )
+        resp.raise_for_status()
+        content = resp.json()["content"][0]["text"]
+    else:
+        resp = httpx.post(
+            f"{PROXY_URL}/chat/completions",
+            json={"model": PROXY_MODEL, "messages": messages, "temperature": 0.2},
+            headers={"Authorization": f"Bearer {PROXY_TOKEN}"},
+            timeout=90.0,
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"]'''
+
+if old_call in code:
+    code = code.replace(old_call, new_call)
+    with open(fpath, "w") as f:
+        f.write(code)
+    print("PATCHED OK")
+else:
+    print("Pattern not found - check manually")
+PEOF'
+
+# 3. Оновити .env: anthropic protocol + model
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'cat > /home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/.env << "ENVEOF"
+PROXY_URL=https://agy.exodus.pp.ua/v1
+PROXY_PROTOCOL=anthropic
+PROXY_MODEL=claude-sonnet-4-6
+PROXY_TOKEN=any
+REPO_ROOT=/home/vokov/workspace/sharon-global
+GITHUB_REPO=maxfraieho/sharon-global
+GITHUB_BRANCH=main
+ENVEOF
+echo "env updated"'
+
+# 4. Перезапустити
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sudo rc-service ai-architect-agent restart && sleep 5 && \
+   curl -s http://localhost:8766/health && echo " architect ok"'
+
+# 5. Тест через Worker
+sleep 5
+curl -s --max-time 30 -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer drakon-mcp-2026" \
+  --data-raw '{"source_code":"def check_level(level):\n  if level > 3:\n    return \"ALERT\"\n  return None","language":"python","filename":"test.py"}' | \
+  python3 -c "import sys,json; d=json.load(sys.stdin); print('job:', d.get('job_id','?')[:20], 'status:', d.get('status','?'))"
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-107f/[x] TASK-107f/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-107f done — architect-agent anthropic protocol patch"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-107f:architect-anthropic-patch|proxy_protocol=anthropic|result:OK/FAIL|commit:<hash>|★★★
+```
+
