@@ -13,13 +13,33 @@ def load_drakon_kb() -> str:
     return ""
 
 def load_docs_kb(query: str = "") -> str:
-    """Load relevant docs from manuals/."""
-    manuals_dir = _DOCS_ROOT / "manuals"
-    if not manuals_dir.exists():
-        return ""
+    """Load relevant docs from manuals/ and architecture/."""
+    query_lower = query.lower()
     texts = []
-    for f in sorted(manuals_dir.glob("*.md"))[:4]:
-        texts.append(f"## {f.name}\n" + f.read_text(encoding="utf-8")[:800])
+
+    # Priority files based on query keywords
+    priority = []
+    if any(w in query_lower for w in ["agent", "агент", "pipeline", "endpoint", "8766", "langgraph"]):
+        arch_file = _DOCS_ROOT / "architecture" / "agents-overview.md"
+        if arch_file.exists():
+            priority.append(arch_file)
+        studio_file = _DOCS_ROOT / "manuals" / "manual-agent-studio.md"
+        if studio_file.exists():
+            priority.append(studio_file)
+
+    seen = set(f.name for f in priority)
+    for f in priority:
+        texts.append(f"## {f.name}\n" + f.read_text(encoding="utf-8")[:2000])
+
+    # Fill remaining slots from manuals + architecture
+    all_files = sorted((_DOCS_ROOT / "manuals").glob("*.md")) + \
+                sorted((_DOCS_ROOT / "architecture").glob("*.md"))
+    for f in all_files:
+        if f.name in seen or len(texts) >= 5:
+            break
+        seen.add(f.name)
+        texts.append(f"## {f.name}\n" + f.read_text(encoding="utf-8")[:1200])
+
     return "\n\n".join(texts)
 
 # ── DRAKON agent nodes ─────────────────────────────────────────────────────
