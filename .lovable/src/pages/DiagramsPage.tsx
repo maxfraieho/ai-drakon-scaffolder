@@ -362,20 +362,92 @@ DRAKON IR
 </button>
 </div>
 {viewMode === "local" ? (
-<DiagramsLeftPanel
-folders={folders}
-diagrams={allDiagrams}
-selectedFolderSlug={selectedFolderSlug}
-selectedDiagramId={selectedDiagram?.id ?? null}
-onSelectFolder={setSelectedFolderSlug}
-onSelectDiagram={(d) => {
-setSelectedFolderSlug(d.folderId);
-setSelectedDiagram(d);
-setShowEditor(true);
-}}
-onNewDiagram={openNewDiagram}
-onNewFolder={() => setIsCreateFolderOpen(true)}
-/>
+isMobile ? (
+  <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--bg-surface)]">
+    <div className="border-b border-[var(--border-subtle)] p-2">
+      <Input
+        value={mobileSearch}
+        onChange={(e) => setMobileSearch(e.target.value)}
+        placeholder="Фільтр…"
+        className="h-7 font-mono text-[11px]"
+      />
+    </div>
+    <div className="flex-1 overflow-y-auto">
+      {filteredFolders.length === 0 ? (
+        <div className="px-3 py-3 font-mono text-[10px] text-[var(--text-muted)]">Немає схем</div>
+      ) : (
+        filteredFolders.map((folder) => {
+          const items = allDiagrams.filter((d) => d.folderId === folder.slug).filter((d) => {
+            const query = mobileSearch.trim().toLowerCase();
+            return !query || d.name.toLowerCase().includes(query);
+          });
+          return (
+            <div key={folder.id} className="border-b border-[var(--border-subtle)]/70">
+              <button
+                type="button"
+                onClick={() => setSelectedFolderSlug(folder.slug)}
+                className={cn(
+                  "flex h-8 w-full items-center justify-between px-3 font-mono text-[10px] uppercase tracking-[0.14em]",
+                  selectedFolderSlug === folder.slug ? "text-[var(--accent-amber)]" : "text-[var(--text-secondary)]",
+                )}
+              >
+                <span className="truncate text-left">{folder.name}</span>
+                <span className="text-[9px] text-[var(--text-muted)]">{items.length}</span>
+              </button>
+              {selectedFolderSlug === folder.slug && (
+                <div className="pb-1">
+                  {items.length === 0 ? (
+                    <div className="px-3 py-2 font-mono text-[10px] text-[var(--text-muted)]">порожньо</div>
+                  ) : (
+                    items.map((d) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => {
+                          setSelectedFolderSlug(d.folderId);
+                          setSelectedDiagram(d);
+                          setShowEditor(true);
+                        }}
+                        className={cn(
+                          "flex h-8 w-full items-center justify-between px-3 text-left font-mono text-[11px]",
+                          selectedDiagram?.id === d.id
+                            ? "bg-[rgba(245,158,11,0.06)] text-[var(--text-primary)]"
+                            : "text-[var(--text-secondary)]",
+                        )}
+                      >
+                        <span className="truncate">{d.name}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })
+      )}
+    </div>
+    <div className="border-t border-[var(--border-subtle)] p-2">
+      <Button type="button" variant="outline" className="h-7 w-full font-mono text-[10px] uppercase" onClick={() => setIsCreateFolderOpen(true)}>
+        Папка
+      </Button>
+    </div>
+  </div>
+) : (
+  <DiagramsLeftPanel
+    folders={folders}
+    diagrams={allDiagrams}
+    selectedFolderSlug={selectedFolderSlug}
+    selectedDiagramId={selectedDiagram?.id ?? null}
+    onSelectFolder={setSelectedFolderSlug}
+    onSelectDiagram={(d) => {
+      setSelectedFolderSlug(d.folderId);
+      setSelectedDiagram(d);
+      setShowEditor(true);
+    }}
+    onNewDiagram={openNewDiagram}
+    onNewFolder={() => setIsCreateFolderOpen(true)}
+  />
+)
 ):(
 <DrakonIrPanel
 onSelectDiagram={handleIrSelect}
