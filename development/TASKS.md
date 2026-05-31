@@ -11075,7 +11075,7 @@ SESSION:DATE|TASK-115:agent-file-tools|files-write+patch+delete+agent_mode|test:
 ## SPRINT 5 — LangGraph Unification
 ## ═══════════════════════════════════════════
 
-## [ ] TASK-116
+## [x] TASK-116
 
 **Мета**: Виправити BUG-6 — всі 3 агенти (drakon/architect/docs) через один порт 8766.
 
