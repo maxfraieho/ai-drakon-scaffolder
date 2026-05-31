@@ -7180,152 +7180,237 @@ SESSION:2026-05-31|TASK-96:ai-drakon-ui-report|screenshots-analyzed+report+recom
 ## [ ] TASK-94
 
 ### Мета
-Працювати в **ai-drakon UI** над проектом uav-watcher через браузер на RPi.
-Знайти проблеми в ai-drakon та виправити їх у коді. Результат: DRAKON схеми для uav-watcher + фікси.
+**Комплексний аудит ai-drakon** — AGY3 виступає тестувальником-розробником, який реально працює над проектом **uav-watcher** через інтерфейс ai-drakon.
+Мета: практично перевірити кожен інструмент ai-drakon (DRAKON схеми, Агент-Архітектор, Агент-Документатор, Pipeline), задокументувати всі знайдені проблеми, написати карту покращень та створити перші DRAKON схеми для uav-watcher.
 
 ### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux. NO skill loading.
-### !!CRITICAL!! Використовуй ТІЛЬКИ run_command. Файли пиши через run_command з heredoc.
+### !!CRITICAL!! Використовуй ТІЛЬКИ run_command. Файли пиши через python3 з f-string або cat heredoc.
 
-### Перевірені команди (все вже протестовано — просто виконуй)
+### Контекст для AGY3
 
-**BROWSER TOOL: ~/bin/mcp-aws.py**
+**Ти — тестувальник-розробник.** Твоя роль: реально працювати над проектом uav-watcher ЧЕРЕЗ ІНСТРУМЕНТИ ai-drakon, одночасно виявляючи недоліки платформи.
+
+**uav-watcher (Sharon)** — система моніторингу повітряних загроз. Ключові компоненти:
+1. **Threat Detection Pipeline**: Telegram → Telethon → GeoFilter → LangGraph Classifier → Alert
+2. **AllClear Sync**: catchup_history → detect missed allclear → update state
+3. **Sharon Consultant**: user query → LangGraph RAG → OSM/Telegram → response
+4. **Shelter Search**: location share → Overpass API → find shelters → return list
+
+Документація: `~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/`
+- `architecture.md` — повна архітектура
+- `components.md` — компоненти
+- `data-flow.md` — потоки даних
+
+**ai-drakon URL**: https://ai-drakon-scaffolder.pages.dev
+**Login**: owner / drakon-mcp-2026
+**OpenDesign**: http://192.168.3.234:7459 (UI design tool, якщо доступний)
+
+**Проблеми вже відомі** (з попереднього аналізу):
+- `/pipelines` → 404 виправлено, але pipeline editor не протестований
+- Settings GitHub: вже встановлено maxfraieho/uav-watcher, але token порожній
+- Агенти: Sharon LangGraph Pipeline + Shelter Search є, але чи працюють?
+
+### Браузерні команди
 ```bash
-# Важливо: screenshots зберігай в $TMPDIR (НЕ /tmp/) — Termux специфіка
-TMPDIR_PATH=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
-
-python3 ~/bin/mcp-aws.py doctor                    # перевірити RPi
-python3 ~/bin/mcp-aws.py start                     # запустити workspace
-python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev  # відкрити браузер
-python3 ~/bin/mcp-aws.py login                     # логін (owner/drakon-mcp-2026) — вже протестовано!
-python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss.png   # скріншот
-view_file $TMPDIR_PATH/ss.png                      # ПОБАЧИТИ скріншот (важливо!)
-python3 ~/bin/mcp-aws.py navigate URL              # навігація
-python3 ~/bin/mcp-aws.py snapshot                  # DOM дерево
-python3 ~/bin/mcp-aws.py click X Y                 # клік (координати від viewport)
-python3 ~/bin/mcp-aws.py type "текст"              # введення тексту
-python3 ~/bin/mcp-aws.py stop                      # зупинити workspace
-```
-
-### Кроки — ВИКОНУВАТИ ПОСЛІДОВНО
-
-**КРОК 1: Запустити браузер і залогінитись**
-```bash
-TMPDIR_PATH=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+T=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
 python3 ~/bin/mcp-aws.py start
-sleep 2
 python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
-sleep 3
-python3 ~/bin/mcp-aws.py login
-sleep 4
-python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss1-login.png
+python3 ~/bin/mcp-aws.py login          # auto-dismiss password dialog
+python3 ~/bin/mcp-aws.py screenshot $T/ss.png && view_file $T/ss.png
+python3 ~/bin/mcp-aws.py navigate URL
+python3 ~/bin/mcp-aws.py snapshot       # DOM tree
+python3 ~/bin/mcp-aws.py click X Y
+python3 ~/bin/mcp-aws.py type "text"
+python3 ~/bin/mcp-aws.py key "Return"
+python3 ~/bin/mcp-aws.py scroll down
+python3 ~/bin/mcp-aws.py stop
 ```
-Перевір скріншот — має бути `/diagrams` page з сайдбаром: Pipeline, Схеми, Код, Нотатки, Агенти.
+**ВАЖЛИВО**: після кожного `screenshot` — одразу `view_file` щоб бачити стан UI.
 
-**КРОК 2: Вивчити поточний стан — що є в ai-drakon**
+### SETUP (виконуй один раз)
 ```bash
-# Зробити скріншот /diagrams
+T=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+python3 ~/bin/mcp-aws.py start && sleep 2
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev && sleep 4
+python3 ~/bin/mcp-aws.py login && sleep 3
+python3 ~/bin/mcp-aws.py screenshot $T/s0-start.png && view_file $T/s0-start.png
+# Перевір: бачиш /diagrams з сайдбаром? Якщо ні — повтори login.
+```
+
+---
+
+### ФАЗА 1: Читання документації uav-watcher (без браузера)
+```bash
+read_file ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/architecture.md
+read_file ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/components.md
+```
+Ти маєш зрозуміти: що таке Sharon, які є потоки даних, які компоненти ключові.
+
+---
+
+### ФАЗА 2: Аудит розділів ai-drakon (скріншоти + нотатки)
+
+Для кожного розділу: navigate → screenshot → view_file → занотуй проблему.
+
+```bash
+T=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+# 2a. Diagrams (головна)
 python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/diagrams
-sleep 2
-python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss2-diagrams.png
-view_file $TMPDIR_PATH/ss2-diagrams.png
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f2a-diagrams.png && view_file $T/f2a-diagrams.png
+# Що бачиш? Є кнопка "+" для нової схеми? Яка схема відкрита?
 
-# DOM snapshot — зрозуміти структуру
-python3 ~/bin/mcp-aws.py snapshot
-```
+# 2b. Pipelines
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/pipelines
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f2b-pipelines.png && view_file $T/f2b-pipelines.png
+# Що бачиш? Чи є список pipeline-ів? Чи є кнопка "Create"?
 
-**КРОК 3: Перевірити кожен розділ ai-drakon**
-```bash
-# Pipeline
-python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/pipeline
-sleep 2
-python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss3-pipeline.png
-view_file $TMPDIR_PATH/ss3-pipeline.png
-
-# Агенти
+# 2c. Agents
 python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents
-sleep 2
-python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss4-agents.png
-view_file $TMPDIR_PATH/ss4-agents.png
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f2c-agents.png && view_file $T/f2c-agents.png
+# Які агенти є? Sharon LangGraph Pipeline, Shelter Search — чи можна їх запустити?
 
-# Налаштування
-python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/settings
-sleep 2
-python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss5-settings.png
-view_file $TMPDIR_PATH/ss5-settings.png
+# 2d. Code editor
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/code
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f2d-code.png && view_file $T/f2d-code.png
+# Є редактор коду? Що в ньому?
+
+# 2e. Notes
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/notes
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f2e-notes.png && view_file $T/f2e-notes.png
 ```
-Для кожного розділу — **запам'ятай що бачиш**: які кнопки є, що не працює, помилки.
 
-**КРОК 4: Спробувати створити нову DRAKON схему для uav-watcher**
+**Checkpoint 1**: Після кожного view_file — занотуй одним реченням що бачиш і чи є проблема.
+
+---
+
+### ФАЗА 3: Практична робота — DRAKON схеми для uav-watcher
+
+Створити 2 DRAKON схеми прямо в ai-drakon UI:
+
+**3a. Схема "Threat Detection Pipeline"**
 ```bash
-# Повернутись до Схеми
+# Перейти до diagrams
 python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/diagrams
-sleep 2
-python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss6-before-create.png
-view_file $TMPDIR_PATH/ss6-before-create.png
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f3a-before.png && view_file $T/f3a-before.png
 
-# Знайти кнопку "+" або "New" — подивись на скріншот і визнач координати
-# Зазвичай кнопка створення схеми в правому верхньому куті або біля заголовку DIAGRAMS
-# Клікнути на неї:
-python3 ~/bin/mcp-aws.py click X Y   # замінити X Y на реальні координати з скріншоту
-sleep 1
-python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss7-create-dialog.png
-view_file $TMPDIR_PATH/ss7-create-dialog.png
+# Знайти кнопку "+" (new diagram) — зазвичай у правому верхньому куті панелі DIAGRAMS
+# На основі скріншоту визнач координати і клікни:
+python3 ~/bin/mcp-aws.py click X Y   # замінити X Y
+sleep 1 && python3 ~/bin/mcp-aws.py screenshot $T/f3a-dialog.png && view_file $T/f3a-dialog.png
+
+# Якщо з'явився dialog з полем назви — ввести назву:
+python3 ~/bin/mcp-aws.py type "Threat Detection Pipeline"
+python3 ~/bin/mcp-aws.py key "Return"
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f3a-created.png && view_file $T/f3a-created.png
 ```
+Якщо schema створена — це вже успіх. Зафіксуй в нотатках.
+Якщо кнопки немає або dialog не з'явився — запиши в проблеми: "Cannot create new diagram".
 
-**КРОК 5: Записати всі знайдені проблеми і що було досліджено**
+**3b. Робота з агентом ARCHITECT**
 ```bash
-cd ~/workspace/ai-drakon-scaffolder
-git pull origin main
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f3b-agents.png && view_file $T/f3b-agents.png
 
-# Написати звіт через run_command з heredoc — НЕ через write_file
+# Знайди агента (Sharon LangGraph Pipeline або будь-який агент-архітектор)
+# Клікни на нього — подивись що відкривається
+python3 ~/bin/mcp-aws.py click X Y   # координати кнопки агента зі скріншоту
+sleep 2 && python3 ~/bin/mcp-aws.py screenshot $T/f3b-agent-open.png && view_file $T/f3b-agent-open.png
+
+# Якщо є поле вводу — спробуй ввести запит про uav-watcher:
+python3 ~/bin/mcp-aws.py click X Y   # поле вводу
+python3 ~/bin/mcp-aws.py type "Analyze the Threat Detection Pipeline of uav-watcher system. Create DRAKON diagram nodes for: Telegram input -> GeoFilter -> LangGraph Classifier -> Alert Dispatcher"
+python3 ~/bin/mcp-aws.py key "Return"
+sleep 5 && python3 ~/bin/mcp-aws.py screenshot $T/f3b-agent-result.png && view_file $T/f3b-agent-result.png
 ```
+Занотуй: чи відповів агент? Чи є результат? Які проблеми з UX?
 
-Після дослідження UI, виконай в run_command:
-Запиши файл `docs/uav-watcher-analysis/ai-drakon-ui-research.md` з такою структурою:
-- **Розділи що працюють**: список
-- **Розділи з проблемами**: що саме не так
-- **UI bugs**: конкретні описи
-- **Схеми що існують**: що є в /diagrams
-- **Кроки для створення схеми**: детальна інструкція
-
-**КРОК 6: Виправити знайдені проблеми в коді**
+**3c. OpenDesign (якщо доступний)**
 ```bash
-# Переглянь src/ для знайдених проблем:
-ls ~/workspace/ai-drakon-scaffolder/src/components/
-ls ~/workspace/ai-drakon-scaffolder/src/pages/
-
-# Знайди файл з проблемою:
-grep -r "ПРОБЛЕМНИЙ_ТЕКСТ" ~/workspace/ai-drakon-scaffolder/src/ | head -5
-
-# Виправ файл через run_command (відредагуй напряму)
-# Після кожної зміни: cp src/X.tsx .lovable/src/X.tsx
+python3 ~/bin/mcp-aws.py navigate http://192.168.3.234:7459
+sleep 3 && python3 ~/bin/mcp-aws.py screenshot $T/f3c-opendesign.png && view_file $T/f3c-opendesign.png
+# Якщо відкрився — зафіксуй що є. Якщо 404 — запиши "OpenDesign недоступний на :7459"
 ```
 
-**КРОК 7: Зупинити workspace і закомітити**
+---
+
+### ФАЗА 4: Написати карту проблем (PROBLEM MAP)
+
+На основі всього що бачив — написати файл `docs/uav-watcher-analysis/problem-map.md`.
+
+Структура:
+```
+# AI-Drakon Problem Map (TASK-94 Audit)
+> Date: 2026-05-31 | Auditor: AGY3
+
+## CRITICAL (блокує роботу)
+- [ ] ПРОБЛЕМА: опис | Де: URL | Репро: кроки
+
+## HIGH (заважає роботі)
+- [ ] ...
+
+## MEDIUM (незручно)
+- [ ] ...
+
+## LOW (дрібниці)
+- [ ] ...
+
+## WORKING WELL (що добре)
+- ...
+
+## MISSING FEATURES (чого немає)
+- ...
+
+## DRAKON DIAGRAMS CREATED
+- ...
+
+## NEXT STEPS (план виправлення)
+1. ...
+```
+
+Записати файл через python3:
+```bash
+python3 -c "
+content = '''# AI-Drakon Problem Map (TASK-94 Audit)
+...
+'''
+open('docs/uav-watcher-analysis/problem-map.md', 'w').write(content)
+print('written')
+"
+```
+
+---
+
+### ФАЗА 5: Зупинити workspace і закомітити ВСЕ
 ```bash
 python3 ~/bin/mcp-aws.py stop
 
-cd ~/workspace/ai-drakon-scaffolder
-git add docs/uav-watcher-analysis/
-git add src/ .lovable/src/ 2>/dev/null || true
-git commit -m "docs(ai-drakon): uav-watcher UI research + fixes (TASK-94)"
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+git add docs/uav-watcher-analysis/problem-map.md
+git add docs/ 2>/dev/null || true
+git commit -m "docs(audit): ai-drakon problem map + uav-watcher DRAKON work (TASK-94)"
 git push origin main
 
+# Позначити TASK-94 виконаним
 sed -i 's/## \[ \] TASK-94/## [x] TASK-94/' development/TASKS.md
 git add development/TASKS.md
 git commit -m "chore(tasks): mark TASK-94 done"
 git push origin main
+
+# Diary
+python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-31|TASK-94:ai-drakon-audit|phases:1-5+problem-map+DRAKON-diagrams|commit:$(git rev-parse --short HEAD)|done|★★★"
 ```
 
 ### Верифікація
 ```bash
-ls ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/ai-drakon-ui-research.md
+ls docs/uav-watcher-analysis/problem-map.md && echo "OK"
 git log --oneline -3
 ```
 
 ### Diary
 ```
-SESSION:2026-05-31|TASK-94:ai-drakon-uav-research|browser-nav+screenshots+fixes|commit:<hash>|★★★
+SESSION:2026-05-31|TASK-94:ai-drakon-comprehensive-audit|5-phases:docs+diagrams+agents+opendesign+problem-map|commit:<hash>|★★★
 ```
 
 ---
