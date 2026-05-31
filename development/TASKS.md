@@ -10231,7 +10231,7 @@ SESSION:DATE|TASK-107f:architect-anthropic-patch|proxy_protocol=anthropic|result
 
 ---
 
-## [ ] TASK-107g
+## [x] TASK-107g
 
 **Мета**: Виправити architect-agent proxy — використати пряме LAN підключення до AGY phone (192.168.3.195:8080) замість tunnel agy.exodus.pp.ua (тільки /health доступний).
 

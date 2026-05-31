@@ -91,18 +91,31 @@ import os as _os
 _PROXY_URL = _os.getenv("PROXY_URL", "http://localhost:18880/v1")
 _PROXY_TOKEN = _os.getenv("PROXY_TOKEN", "freecc")
 _PROXY_MODEL = _os.getenv("PROXY_MODEL", "coding-proxy")
+_PROXY_PROTOCOL = _os.getenv("PROXY_PROTOCOL", "openai")
 _JSON_RE = re.compile(r"```json\s*(\{.*?\}|\[.*?\])\s*```", re.DOTALL)
 
 
 def _llm(messages: list) -> str:
-    resp = httpx.post(
-        f"{_PROXY_URL}/chat/completions",
-        json={"model": _PROXY_MODEL, "messages": messages, "temperature": 0.1},
-        headers={"Authorization": f"Bearer {_PROXY_TOKEN}"},
-        timeout=120.0,
-    )
-    resp.raise_for_status()
-    return resp.json()["choices"][0]["message"]["content"]
+    if _PROXY_PROTOCOL == "anthropic":
+        system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
+        user_msgs = [{"role": m["role"], "content": m["content"]} for m in messages if m["role"] != "system"]
+        resp = httpx.post(
+            f"{_PROXY_URL}/messages",
+            json={"model": _PROXY_MODEL, "system": system_msg, "messages": user_msgs, "max_tokens": 4096},
+            headers={"x-api-key": _PROXY_TOKEN, "anthropic-version": "2023-06-01"},
+            timeout=120.0,
+        )
+        resp.raise_for_status()
+        return resp.json()["content"][0]["text"]
+    else:
+        resp = httpx.post(
+            f"{_PROXY_URL}/chat/completions",
+            json={"model": _PROXY_MODEL, "messages": messages, "temperature": 0.1},
+            headers={"Authorization": f"Bearer {_PROXY_TOKEN}"},
+            timeout=120.0,
+        )
+        resp.raise_for_status()
+        return resp.json()["choices"][0]["message"]["content"]
 
 
 def yaml_gen_node(state: "AnalysisState") -> dict:
