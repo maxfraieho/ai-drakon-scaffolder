@@ -9190,7 +9190,7 @@ SESSION:DATE|TASK-SS-02:lettre-tresorier|Philippe-Leroy-draft|saved-to-Арсе�
 
 ---
 
-## [ ] TASK-SS-03
+## [x] TASK-SS-03
 
 **Мета**: Скласти список 20 інституцій Canton Vaud з контактами для першого звернення (ратуші, EVAM, церкви, фундації).
 
