@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PipelineList } from "@/components/agents/PipelineList";
 import { StudioToolbar } from "@/components/agents/StudioToolbar";
 import { PropertiesPanel } from "@/components/agents/PropertiesPanel";
@@ -36,7 +36,7 @@ export default function AgentStudioPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
-  const [consoleOpen, setConsoleOpen] = useState(true);
+  const [consoleOpen, setConsoleOpen] = useState(false);
   const [pendingPipelineName, setPendingPipelineName] = useState<string | null>(null);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
 
@@ -47,6 +47,7 @@ export default function AgentStudioPage() {
   const [leftPanelMobileOpen, setLeftPanelMobileOpen] = useState(false);
   const [rightPanelMobileOpen, setRightPanelMobileOpen] = useState(false);
   const isMobile = useIsMobile();
+  const hasOpenedMobileListRef = useRef(false);
 
   // SSE Pipeline Execution Hook
   const {
@@ -234,9 +235,21 @@ export default function AgentStudioPage() {
 
   const selectedNode = selectedNodeId && activeDiagram ? activeDiagram.items[selectedNodeId] : null;
 
+  useEffect(() => {
+    if (!isMobile || hasOpenedMobileListRef.current || selectedPipelineName) return;
+    hasOpenedMobileListRef.current = true;
+    setLeftPanelMobileOpen(true);
+  }, [isMobile, selectedPipelineName]);
+
+  useEffect(() => {
+    if (isMobile) {
+      setConsoleOpen(false);
+    }
+  }, [isMobile]);
+
   return (
     <div
-      className="flex h-screen w-full flex-col overflow-hidden text-xs"
+      className="flex h-full min-h-0 w-full flex-col overflow-hidden text-xs"
       style={{
         backgroundColor: "var(--bg-base)",
         color: "var(--text-primary)",
