@@ -6907,6 +6907,101 @@ SESSION:2026-05-31|TASK-92:agentworkspace-rpi|install+test|NotebookLM-preserved|
 
 ---
 
+## [ ] TASK-95
+
+### Мета
+Виправити і протестувати роботу в **ai-drakon UI** через `mcp-aws.py`:
+1. Залогінитись у ai-drakon (credentials тепер відомі)
+2. Навігувати по розділах (Схеми, Pipeline, Агенти)
+3. Зробити скріншоти кожного розділу
+4. Знайти і виправити UI баги в коді
+5. Записати результати
+
+### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux.
+### mcp-aws.py вже є на ~/bin/mcp-aws.py — всі кроки через нього
+
+### Credentials ai-drakon
+- URL: https://ai-drakon-scaffolder.pages.dev або http://192.168.3.184:8080
+- Логін: `owner`
+- Пароль: `drakon-mcp-2026` (Bearer Token)
+
+### Кроки
+
+**1. Запустити workspace і браузер (якщо не запущено)**
+```bash
+python3 ~/bin/mcp-aws.py doctor
+python3 ~/bin/mcp-aws.py start
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
+```
+
+**2. Залогінитись**
+```bash
+python3 ~/bin/mcp-aws.py login owner drakon-mcp-2026
+```
+
+**3. Перевірити скріншот після логіну**
+```bash
+python3 ~/bin/mcp-aws.py screenshot /tmp/ss-logged-in.png
+view_file /tmp/ss-logged-in.png
+```
+
+**4. Навігувати по розділах**
+Для кожного розділу — клікнути і screenshot:
+```bash
+# Схеми
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/diagrams
+python3 ~/bin/mcp-aws.py screenshot /tmp/ss-diagrams.png
+view_file /tmp/ss-diagrams.png
+
+# Pipeline
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/pipeline
+python3 ~/bin/mcp-aws.py screenshot /tmp/ss-pipeline.png
+view_file /tmp/ss-pipeline.png
+
+# Агенти
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents
+python3 ~/bin/mcp-aws.py screenshot /tmp/ss-agents.png
+view_file /tmp/ss-agents.png
+```
+
+**5. DOM snapshot для розуміння структури**
+```bash
+python3 ~/bin/mcp-aws.py snapshot
+```
+
+**6. Виправити знайдені баги**
+Якщо бачиш помилки або broken UI:
+```bash
+grep -r "проблемний компонент" ~/workspace/ai-drakon-scaffolder/src/ | head
+# Виправити файл
+# Зберегти в .lovable теж: cp src/X.tsx .lovable/src/X.tsx
+```
+
+**7. Записати результати і закомітити**
+```bash
+mkdir -p ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis
+# Написати ai-drakon-ui-test.md з результатами
+cd ~/workspace/ai-drakon-scaffolder
+git add docs/ src/ .lovable/src/ 2>/dev/null
+git commit -m "test(ai-drakon): browser UI test results + fixes (TASK-95)"
+git push origin main
+sed -i 's/\[ \] TASK-95/[x] TASK-95/' development/TASKS.md
+git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-95 done" && git push origin main
+```
+
+### Верифікація
+```bash
+ls /tmp/ss-*.png | head -5  # скріншоти існують
+ls ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|commit:<hash>|★★★
+```
+
+---
+
 ## [ ] TASK-94
 
 ### Мета
