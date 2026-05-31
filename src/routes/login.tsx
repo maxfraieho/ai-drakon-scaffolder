@@ -1,4 +1,5 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
 import { hasClientJwt } from "@/lib/route-auth";
 import { LoginPage } from "@/pages/LoginPage";
@@ -8,6 +9,9 @@ component: LoginRoute,
 });
 
 function LoginRoute() {
+const [hydrated, setHydrated] = useState(false);
+useEffect(() => setHydrated(true), []);
+if (!hydrated) return null;
 if (hasClientJwt()) {
 return <Navigate to="/diagrams" replace />;
 }
