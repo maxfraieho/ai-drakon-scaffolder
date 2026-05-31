@@ -9139,7 +9139,7 @@ SESSION:DATE|TASK-SS-01:legal-research|protection-S+association-vaud+tresorier|c
 
 ---
 
-## [ ] TASK-SS-02
+## [x] TASK-SS-02
 
 **Мета**: Написати лист Philippe Leroy (потенційний trésorier/garant) — персональний, переконливий, французькою.
 
