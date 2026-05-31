@@ -9994,7 +9994,7 @@ SESSION:DATE|TASK-107a:code-token-screenshot|result:FILES_OK/GITHUB_ERROR|commit
 
 ---
 
-## [ ] TASK-107b
+## [x] TASK-107b
 
 **Мета**: АТОМАРНА — клікнути uav_watcher.py в Code section, screenshot вмісту.
 
