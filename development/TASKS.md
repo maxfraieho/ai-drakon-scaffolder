@@ -11457,7 +11457,7 @@ SESSION:DATE|TASK-117:langgraph-unification|drakon-agent+docs-agent|DRAKON-IR→
 ## SPRINT SS — Sonate Solidaire Assistant
 ## ═══════════════════════════════════════════
 
-## [ ] TASK-118
+## [x] TASK-118
 
 **Мета**: SS-агент на LangGraph з routing по аудиторії + веб-чат на sonate-solidaire.me.
 
