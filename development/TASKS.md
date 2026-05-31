@@ -7179,7 +7179,7 @@ SESSION:2026-05-31|TASK-101:pipeline-analysis|score-proximity+refactor|screensho
 
 ---
 
-## [ ] TASK-100
+## [x] TASK-100
 
 **Мета**: Як користувач ai-drakon — відкрити /agents, знайти DRAKON IR агента, вставити код keyword_classify і отримати відповідь.
 
