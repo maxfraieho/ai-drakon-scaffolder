@@ -9081,7 +9081,7 @@ SESSION:DATE|TASK-109:sprint2-audit|problem-map-updated|issues:N|new-tasks:M|com
 ## Виявлені в Sprint2 (TASK-109 аудит)
 ## ═══════════════════════════════════════════
 
-## [ ] TASK-110
+## [x] TASK-110
 
 **Мета**: CodePage.tsx — додати `toast.success` з посиланням на /diagrams після успішного аналізу.
 
