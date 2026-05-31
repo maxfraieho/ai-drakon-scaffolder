@@ -8701,3 +8701,78 @@ git push origin main
 SESSION:2026-05-31|TASK-104:agent-llm-fix|localStorage-cleared+AGY-set|drakon+architect+docs|commit:<hash>|★★★
 ```
 
+
+## [ ] TASK-105
+
+**Мета**: Додати 18880 proxy slots (standard-proxy, coding-proxy та ін.) у OpenDesign model picker — зараз вони в agy-wrapper але не видні в UI.
+
+**!!IMPORTANT!! Run locally on AGY Termux або SSH до 192.168.3.184**
+
+### Контекст
+- agy-wrapper (`/home/vokov/agy-wrapper/agy`) вже знає LOCAL_SLOTS але не включає їх в `DISPLAY_TO_ID`
+- OpenDesign (`antigravity.ts`) має захардкоджений список з 9 моделей
+- Потрібно синхронізувати обидва файли та зробити rebuild daemon
+
+### Крок 1 — Оновити agy-wrapper DISPLAY_TO_ID
+
+SSH до 192.168.3.184:
+```bash
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+```
+
+Відредагувати `/home/vokov/agy-wrapper/agy` — додати в `DISPLAY_TO_ID`:
+```python
+    "Standard (GPT-4o)":           "standard-proxy",
+    "Coding (o3)":                 "coding-proxy",
+    "Agent (Claude Sonnet)":       "agent-proxy",
+    "Reasoning (o1)":              "reasoning-proxy",
+    "Analytics (Gemini Pro)":      "analytics-proxy",
+    "Fast (GPT-4o-mini)":          "fast-proxy",
+    "Cheap (Gemini Flash)":        "cheap-proxy",
+    "Docs Assistant":              "docs-assistant-proxy",
+```
+
+### Крок 2 — Оновити antigravity.ts model list
+
+Відредагувати `/home/vokov/open-design/apps/daemon/src/runtimes/defs/antigravity.ts`:
+
+Знайти `models: [` array і додати після існуючих 9 записів:
+```typescript
+    { id: "Standard (GPT-4o)", label: "Standard (GPT-4o)" },
+    { id: "Coding (o3)", label: "Coding (o3)" },
+    { id: "Agent (Claude Sonnet)", label: "Agent (Claude Sonnet)" },
+    { id: "Reasoning (o1)", label: "Reasoning (o1)" },
+    { id: "Analytics (Gemini Pro)", label: "Analytics (Gemini Pro)" },
+    { id: "Fast (GPT-4o-mini)", label: "Fast (GPT-4o-mini)" },
+    { id: "Cheap (Gemini Flash)", label: "Cheap (Gemini Flash)" },
+    { id: "Docs Assistant", label: "Docs Assistant" },
+```
+
+### Крок 3 — Rebuild OpenDesign daemon
+
+```bash
+cd /home/vokov/open-design
+pnpm --filter @opendesign/daemon build
+sudo rc-service opendesign restart
+```
+
+### Крок 4 — Верифікація
+
+```bash
+curl -s -H "Authorization: Bearer 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a" \
+  http://192.168.3.184:7459/api/agents | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for a in d['agents']:
+    if a['id']=='antigravity':
+        print('Models:', len(a.get('models',[])))
+        [print(' -', m['id']) for m in a.get('models',[])]
+"
+```
+Очікується: 17+ моделей (9 старих + 8 нових).
+
+### Diary
+```
+SESSION:DATE|TASK-105:opendesign-18880-models|agy-wrapper+antigravity.ts+rebuild|models:17|commit:<hash>|★★★
+```
+
