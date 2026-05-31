@@ -1088,7 +1088,9 @@ async function handleGithubGetFile(args, env, requestToken = '') {
     {},
     requestToken,
   );
-  const content = data.encoding === 'base64' ? atob((data.content || '').replace(/\n/g, '')) : String(data.content || '');
+  const content = data.encoding === 'base64'
+    ? new TextDecoder('utf-8').decode(Uint8Array.from(atob((data.content || '').replace(/\n/g, '')), c => c.charCodeAt(0)))
+    : String(data.content || '');
 
   return {
     success: true,
