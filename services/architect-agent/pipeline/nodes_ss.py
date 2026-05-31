@@ -16,9 +16,10 @@ _AUDIENCE_KEYWORDS = {
         "programme", "soirée", "event",
     ],
     "musicians": [
-        "musicien", "музикант", "refugee", "bijeganets", "protection s",
-        "evam", "біженець", "integration", "інтеграція", "audition",
-        "rejoindre", "participer", "statut", "permis", "droit de travail",
+        "musicien", "музикант", "instrument", "jouer", "грати", "виступати",
+        "intégrer", "інтеграція", "audition", "rejoindre", "participer",
+        "приєднатися", "заявка", "колектив", "mitmachen", "beitreten",
+        "candidature", "postuler",
     ],
     "partners": [
         "volunteer", "волонтер", "partner", "don", "financement",
