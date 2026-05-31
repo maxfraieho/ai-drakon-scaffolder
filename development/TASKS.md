@@ -9290,3 +9290,54 @@ git push origin main
 SESSION:DATE|TASK-SS-04:methodology-doc|IA-collaborative+Sonate-Solidaire|commit:<hash>|★★★
 ```
 
+
+## [ ] TASK-SS-05
+
+**Мета**: ТЕРМІНОВО! Сьогодні ввечері Арсен представляє проект Philippe Leroy за вечерею. Потрібна коротка неформальна презентація для телефону + розмовник французькою.
+
+**!!IMPORTANT!! Run locally on AGY3 Termux. ТЕРМІНОВО.**
+
+### Контекст
+- Philippe Leroy = банківський спеціаліст + ГОСПОДАР де живе Арсен (програма житла для біженців)
+- Сьогодні ввечері: неформальна вечеря (ковбаски + вино)
+- Арсен: французька A2, хвилюється
+- Мета: показати на телефоні, щоб Leroy зацікавився і погодився на роль trésorier
+
+### Завдання
+
+```bash
+agy --print "Tu es expert en communication interpersonnelle et en projets associatifs suisses.
+
+Redige DEUX documents en francais simple (niveau A2-B1) pour un jeune violoniste ukrainien (Arsen, 26 ans, statut S) qui vit chez Philippe Leroy (specialiste bancaire) dans le cadre du programme de logement pour refugies. Ce soir, ils dinent ensemble informellement (grillades et vin). Arsen veut presenter son projet.
+
+DOCUMENT 1 — Une-Page de Presentation (a montrer sur le telephone):
+- Titre elegant: Sonate Solidaire — Un projet qui vous concerne
+- 3 lignes sur le projet (musique + integration + Canton Vaud)
+- Ce que vous demandez a Philippe: etre tresorier benevole (role honorifique, 0 risque financier personnel)
+- Site web: violin-integration.works
+- 1 phrase finale de remerciement personnel (mentionner son accueil)
+
+DOCUMENT 2 — Guide de Conversation pour Arsen (ce qu il dit):
+5 etapes simples, chacune avec 1-2 phrases courtes que Arsen peut lire ou paraphraser:
+Etape 1: Introduire le sujet pendant le repas (naturellement)
+Etape 2: Montrer la page web sur telephone
+Etape 3: Expliquer le role de tresorier en 3 mots
+Etape 4: Repondre si Philippe demande c est quoi le risque pour moi
+Etape 5: Proposer une vraie reunion la semaine prochaine
+
+Ton: chaleureux, personnel, reconnaissant (Philippe l heberge), jamais formel ni insistant.
+Arsen doit sembler confiant et prepare, pas desespere.
+" --dangerously-skip-permissions 2>&1
+```
+
+Зберегти в `~/presentation_leroy_soir.md` і вивести на екран.
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-05/[x] TASK-SS-05/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-05 done — presentation Leroy ce soir"
+git push origin main
+```
+
