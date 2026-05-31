@@ -7005,107 +7005,152 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 ## [ ] TASK-94
 
 ### Мета
-**Працювати в ai-drakon** над проектом uav-watcher через браузер на RPi (agent-workspace).
-Знаходити проблеми в ai-drakon UI/інструментах → одразу виправляти їх у коді.
-Результат: реальні DRAKON схеми uav-watcher + покращення ai-drakon.
+Працювати в **ai-drakon UI** над проектом uav-watcher через браузер на RPi.
+Знайти проблеми в ai-drakon та виправити їх у коді. Результат: DRAKON схеми для uav-watcher + фікси.
 
-### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux.
-### !!CRITICAL!! Використовуй agent-workspace MCP tools для браузера. Конфіг: ~/.gemini/config/mcp_config.json
+### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux. NO skill loading.
+### !!CRITICAL!! Використовуй ТІЛЬКИ run_command. Файли пиши через run_command з heredoc.
 
-### Контекст
+### Перевірені команди (все вже протестовано — просто виконуй)
 
-**ai-drakon (ціль покращень):**
-- Репо: `~/workspace/ai-drakon-scaffolder/` (локально на AGY3)
-- Frontend src: `~/workspace/ai-drakon-scaffolder/src/`
-- Dev сервер: `http://192.168.3.184:8082` (або 5173)
-- Перевірити порт: `sshpass -p '805235io.' ssh vokov@192.168.3.184 'ss -tlnp | grep -E "8082|5173|3000"'`
-
-**uav-watcher (над чим працюємо в ai-drakon):**
-- Архітектура вже задокументована: `docs/uav-watcher-analysis/` (TASK-93 ✅)
-- Sharon: Telethon userbot → AI класифікатор загроз → сповіщення → Sharon consultant FastAPI
-
-**agent-workspace (браузер на RPi 192.168.3.234):**
-- MCP tools: workspace_doctor, workspace_start, workspace_open_browser,
-  workspace_browser_navigate, workspace_screenshot, workspace_browser_snapshot,
-  workspace_browser_click, workspace_type_text, workspace_scroll, workspace_stop
-
-### Кроки
-
-**1. Запустити browser workspace на RPi**
-```
-MCP: workspace_doctor
-MCP: workspace_start(acknowledge_hidden_workspace=true, purpose="ai-drakon uav-watcher work")
-MCP: workspace_open_browser
-```
-
-**2. Відкрити ai-drakon і перейти до роботи**
-```
-MCP: workspace_browser_navigate(url="http://192.168.3.184:8082")
-MCP: workspace_screenshot  → зберегти як docs/screenshots/task94-01-home.png
-MCP: workspace_browser_snapshot → перевірити DOM/errors
-```
-
-**3. Створити новий проект "UAV Watcher / Sharon" в ai-drakon**
-- Знайти кнопку New Project / Create
-- Назвати: "UAV Watcher — Sharon System"
-- MCP: workspace_browser_click, workspace_type_text
-- Скріншот після створення
-
-**4. Розробити DRAKON схеми для uav-watcher:**
-Для кожної схеми — спробувати створити в ai-drakon, зафіксувати проблеми:
-
-4a. **Threat Detection Pipeline**: Telegram message → filter → AI classify → send alert
-4b. **AllClear Sync**: catchup_history → detect missed allclear → update state
-4c. **Sharon Consultant**: user query → LangGraph → OSM/Telegram → response
-4d. **Shelter Search**: location share → find shelters → return results
-
-**5. Після кожної спроби — фіксити проблеми в коді:**
-Якщо щось не працює в UI:
+**BROWSER TOOL: ~/bin/mcp-aws.py**
 ```bash
-# Знайти і виправити в src/:
-grep -r "проблемний текст" ~/workspace/ai-drakon-scaffolder/src/
-# Відредагувати файл
-# Закомітити фікс
-```
-Якщо frontend не стартує — перезапустити на dev сервері:
-```bash
-sshpass -p '805235io.' ssh vokov@192.168.3.184 'cd ~/projects/ai-drakon && npm run dev &'
+# Важливо: screenshots зберігай в $TMPDIR (НЕ /tmp/) — Termux специфіка
+TMPDIR_PATH=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+python3 ~/bin/mcp-aws.py doctor                    # перевірити RPi
+python3 ~/bin/mcp-aws.py start                     # запустити workspace
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev  # відкрити браузер
+python3 ~/bin/mcp-aws.py login                     # логін (owner/drakon-mcp-2026) — вже протестовано!
+python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss.png   # скріншот
+view_file $TMPDIR_PATH/ss.png                      # ПОБАЧИТИ скріншот (важливо!)
+python3 ~/bin/mcp-aws.py navigate URL              # навігація
+python3 ~/bin/mcp-aws.py snapshot                  # DOM дерево
+python3 ~/bin/mcp-aws.py click X Y                 # клік (координати від viewport)
+python3 ~/bin/mcp-aws.py type "текст"              # введення тексту
+python3 ~/bin/mcp-aws.py stop                      # зупинити workspace
 ```
 
-**6. Зібрати знайдені проблеми**
+### Кроки — ВИКОНУВАТИ ПОСЛІДОВНО
+
+**КРОК 1: Запустити браузер і залогінитись**
 ```bash
-cat > ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/ai-drakon-improvements.md << 'EOF'
-# AI-Drakon — Покращення (TASK-94)
-## Знайдені проблеми
-...
-## Виправлення
-...
-EOF
+TMPDIR_PATH=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+python3 ~/bin/mcp-aws.py start
+sleep 2
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
+sleep 3
+python3 ~/bin/mcp-aws.py login
+sleep 4
+python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss1-login.png
+```
+Перевір скріншот — має бути `/diagrams` page з сайдбаром: Pipeline, Схеми, Код, Нотатки, Агенти.
+
+**КРОК 2: Вивчити поточний стан — що є в ai-drakon**
+```bash
+# Зробити скріншот /diagrams
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/diagrams
+sleep 2
+python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss2-diagrams.png
+view_file $TMPDIR_PATH/ss2-diagrams.png
+
+# DOM snapshot — зрозуміти структуру
+python3 ~/bin/mcp-aws.py snapshot
 ```
 
-**7. Зупинити workspace і закомітити все**
+**КРОК 3: Перевірити кожен розділ ai-drakon**
+```bash
+# Pipeline
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/pipeline
+sleep 2
+python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss3-pipeline.png
+view_file $TMPDIR_PATH/ss3-pipeline.png
+
+# Агенти
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents
+sleep 2
+python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss4-agents.png
+view_file $TMPDIR_PATH/ss4-agents.png
+
+# Налаштування
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/settings
+sleep 2
+python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss5-settings.png
+view_file $TMPDIR_PATH/ss5-settings.png
 ```
-MCP: workspace_stop
+Для кожного розділу — **запам'ятай що бачиш**: які кнопки є, що не працює, помилки.
+
+**КРОК 4: Спробувати створити нову DRAKON схему для uav-watcher**
+```bash
+# Повернутись до Схеми
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/diagrams
+sleep 2
+python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss6-before-create.png
+view_file $TMPDIR_PATH/ss6-before-create.png
+
+# Знайти кнопку "+" або "New" — подивись на скріншот і визнач координати
+# Зазвичай кнопка створення схеми в правому верхньому куті або біля заголовку DIAGRAMS
+# Клікнути на неї:
+python3 ~/bin/mcp-aws.py click X Y   # замінити X Y на реальні координати з скріншоту
+sleep 1
+python3 ~/bin/mcp-aws.py screenshot $TMPDIR_PATH/ss7-create-dialog.png
+view_file $TMPDIR_PATH/ss7-create-dialog.png
 ```
+
+**КРОК 5: Записати всі знайдені проблеми і що було досліджено**
 ```bash
 cd ~/workspace/ai-drakon-scaffolder
-git add docs/ src/
-git commit -m "feat(ai-drakon): uav-watcher DRAKON diagrams + UI fixes (TASK-94)"
+git pull origin main
+
+# Написати звіт через run_command з heredoc — НЕ через write_file
+```
+
+Після дослідження UI, виконай в run_command:
+Запиши файл `docs/uav-watcher-analysis/ai-drakon-ui-research.md` з такою структурою:
+- **Розділи що працюють**: список
+- **Розділи з проблемами**: що саме не так
+- **UI bugs**: конкретні описи
+- **Схеми що існують**: що є в /diagrams
+- **Кроки для створення схеми**: детальна інструкція
+
+**КРОК 6: Виправити знайдені проблеми в коді**
+```bash
+# Переглянь src/ для знайдених проблем:
+ls ~/workspace/ai-drakon-scaffolder/src/components/
+ls ~/workspace/ai-drakon-scaffolder/src/pages/
+
+# Знайди файл з проблемою:
+grep -r "ПРОБЛЕМНИЙ_ТЕКСТ" ~/workspace/ai-drakon-scaffolder/src/ | head -5
+
+# Виправ файл через run_command (відредагуй напряму)
+# Після кожної зміни: cp src/X.tsx .lovable/src/X.tsx
+```
+
+**КРОК 7: Зупинити workspace і закомітити**
+```bash
+python3 ~/bin/mcp-aws.py stop
+
+cd ~/workspace/ai-drakon-scaffolder
+git add docs/uav-watcher-analysis/
+git add src/ .lovable/src/ 2>/dev/null || true
+git commit -m "docs(ai-drakon): uav-watcher UI research + fixes (TASK-94)"
 git push origin main
-sed -i 's/^## \[ \] TASK-94/## [x] TASK-94/' development/TASKS.md
-git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-94 done" && git push origin main
+
+sed -i 's/## \[ \] TASK-94/## [x] TASK-94/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-94 done"
+git push origin main
 ```
 
 ### Верифікація
 ```bash
-ls ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/
-# Має бути: ai-drakon-improvements.md
+ls ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/ai-drakon-ui-research.md
 git log --oneline -3
 ```
 
 ### Diary
 ```
-SESSION:2026-05-31|TASK-94:ai-drakon-work+fixes|agent-workspace-browser|uav-watcher-diagrams|DRAKON+improvements|commit:<hash>|★★★
+SESSION:2026-05-31|TASK-94:ai-drakon-uav-research|browser-nav+screenshots+fixes|commit:<hash>|★★★
 ```
 
 ---
