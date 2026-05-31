@@ -10000,7 +10000,7 @@ SESSION:DATE|TASK-107a-v2:code-screenshot|token-injected+screenshot|FILES_OK/ERR
 
 ---
 
-## [ ] TASK-107d
+## [x] TASK-107d
 
 **Мета**: Виправити DRAKON agent proxy — перемкнути з localhost:18880 (503) на agy.exodus.pp.ua (живий).
 
