@@ -10449,7 +10449,7 @@ SESSION:DATE|TASK-107g:architect-proxy-LAN|192.168.3.195:8080/v1|result:OK/FAIL|
 ## SPRINT 4 — UAV-WATCHER MANUAL TEST + DOCS REVIEW
 ## ═══════════════════════════════════════════
 
-## [ ] TASK-113
+## [x] TASK-113
 
 **Мета**: Розробити план ручного тестування UI ai-drakon по всіх сценаріях (A–G) в контексті проекту uav-watcher + провести ревізію документації через docs-агент MCP.
 
