@@ -22,7 +22,7 @@ if _DRAKON_AGENT not in sys.path:
     sys.path.append(_DRAKON_AGENT)
 
 from memory_manager import ensure_agent_memory, save_memory, get_memory, list_memory
-from ai_chat.architect_chat import architect_chat
+from ai_chat.architect_chat import architect_chat, agent_chat_with_tools
 
 AGENT_NAME = os.getenv("AGENT_NAME", "architect")
 PORT = int(os.getenv("PORT", "8766"))
@@ -55,6 +55,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], all
 class ChatRequest(BaseModel):
     message: str
     context: Optional[dict] = None
+    agent_mode: bool = False
 
 
 class MemorySaveRequest(BaseModel):
@@ -93,12 +94,20 @@ def chat(req: ChatRequest):
         pass
 
     try:
-        result = architect_chat(
-            req.message,
-            file_tree=file_tree,
-            current_diagram=current_diagram,
-            memory_context=memory_context,
-        )
+        if req.agent_mode:
+            result = agent_chat_with_tools(
+                req.message,
+                file_tree=file_tree,
+                current_diagram=current_diagram,
+                memory_context=memory_context,
+            )
+        else:
+            result = architect_chat(
+                req.message,
+                file_tree=file_tree,
+                current_diagram=current_diagram,
+                memory_context=memory_context,
+            )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc))
 

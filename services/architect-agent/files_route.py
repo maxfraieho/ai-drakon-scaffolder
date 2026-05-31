@@ -1,9 +1,10 @@
-"""architect-agent /files/list and /files/read endpoints."""
+"""architect-agent /files/* endpoints — list, read, write, patch, delete."""
 import os
 from pathlib import Path
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/files", tags=["files"])
 
@@ -77,3 +78,59 @@ def read_file(
         "size": len(content),
         "truncated": truncated,
     }
+
+
+class WriteRequest(BaseModel):
+    path: str
+    content: str
+    create_dirs: bool = True
+
+
+class PatchRequest(BaseModel):
+    path: str
+    old_string: str
+    new_string: str
+    replace_all: bool = False
+
+
+class DeleteRequest(BaseModel):
+    path: str
+
+
+@router.post("/write")
+def write_file(req: WriteRequest):
+    target = (REPO_ROOT / req.path).resolve()
+    if not str(target).startswith(str(REPO_ROOT)):
+        raise HTTPException(status_code=403, detail="Path outside project root")
+    if req.create_dirs:
+        target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(req.content, encoding="utf-8")
+    return {"path": req.path, "written": len(req.content), "ok": True}
+
+
+@router.post("/patch")
+def patch_file(req: PatchRequest):
+    target = (REPO_ROOT / req.path).resolve()
+    if not str(target).startswith(str(REPO_ROOT)):
+        raise HTTPException(status_code=403, detail="Path outside project root")
+    if not target.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {req.path}")
+    content = target.read_text(encoding="utf-8")
+    if req.old_string not in content:
+        raise HTTPException(status_code=422, detail="old_string not found in file")
+    count = content.count(req.old_string)
+    new_content = content.replace(req.old_string, req.new_string) if req.replace_all \
+        else content.replace(req.old_string, req.new_string, 1)
+    target.write_text(new_content, encoding="utf-8")
+    return {"path": req.path, "replacements": count if req.replace_all else 1, "ok": True}
+
+
+@router.post("/delete")
+def delete_file(req: DeleteRequest):
+    target = (REPO_ROOT / req.path).resolve()
+    if not str(target).startswith(str(REPO_ROOT)):
+        raise HTTPException(status_code=403, detail="Path outside project root")
+    if not target.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {req.path}")
+    target.unlink()
+    return {"path": req.path, "deleted": True, "ok": True}
