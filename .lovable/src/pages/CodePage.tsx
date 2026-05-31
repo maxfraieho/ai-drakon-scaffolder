@@ -276,6 +276,9 @@ export default function CodePage() {
             clearInterval(pollRef.current!);
             setAnalyzing(false);
             setResult(status.result);
+            toast.success("Аналіз завершено", {
+              action: { label: "Відкрити схему", onClick: () => navigate({ to: "/diagrams" }) },
+            });
           } else if (status.status === "error") {
             clearInterval(pollRef.current!);
             setAnalyzing(false);
