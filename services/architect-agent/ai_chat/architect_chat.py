@@ -7,7 +7,7 @@ from typing import Optional
 import httpx
 
 PROXY_URL = os.getenv("PROXY_URL", "http://localhost:18880/v1")
-PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc")
+PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc") or "freecc"
 PROXY_MODEL = os.getenv("PROXY_MODEL", "fast-proxy")
 PROXY_PROTOCOL = os.getenv("PROXY_PROTOCOL", "openai")
 

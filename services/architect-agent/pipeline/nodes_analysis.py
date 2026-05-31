@@ -89,7 +89,7 @@ import httpx
 import os as _os
 
 _PROXY_URL = _os.getenv("PROXY_URL", "http://localhost:18880/v1")
-_PROXY_TOKEN = _os.getenv("PROXY_TOKEN", "freecc")
+_PROXY_TOKEN = _os.getenv("PROXY_TOKEN", "freecc") or "freecc"
 _PROXY_MODEL = _os.getenv("PROXY_MODEL", "coding-proxy")
 _PROXY_PROTOCOL = _os.getenv("PROXY_PROTOCOL", "openai")
 _JSON_RE = re.compile(r"```json\s*(\{.*?\}|\[.*?\])\s*```", re.DOTALL)
