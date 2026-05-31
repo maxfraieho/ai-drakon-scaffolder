@@ -1,7 +1,13 @@
-"""Sonate Solidaire agent nodes."""
+"""Sonate Solidaire agent nodes.
+
+KB files live in sonate-solidsite repo and are served via Cloudflare Pages.
+The agent fetches them at runtime from https://sonate-solidaire.me/kb/.
+"""
+import os
 from pathlib import Path
 
-_KB_SS = Path(__file__).parent.parent / "kb" / "sonate-solidaire"
+_KB_BASE_URL = os.getenv("SS_KB_BASE_URL", "https://sonate-solidaire.me/kb")
+_KB_SS_LOCAL = Path(__file__).parent.parent / "kb" / "sonate-solidaire"
 
 _AUDIENCE_KEYWORDS = {
     "events": [
@@ -31,13 +37,27 @@ def ss_detect_audience(state: dict) -> dict:
     return {"ss_audience": "general"}
 
 
+def _fetch_kb(audience: str) -> str:
+    """Fetch KB from sonate-solidaire.me, fall back to local copy."""
+    import httpx
+    url = f"{_KB_BASE_URL}/kb-{audience}.md"
+    try:
+        r = httpx.get(url, timeout=8.0, follow_redirects=True)
+        if r.status_code == 200:
+            return r.text
+    except Exception:
+        pass
+    # Local fallback (local copy in repo for dev/offline)
+    local = _KB_SS_LOCAL / f"kb-{audience}.md"
+    fallback = _KB_SS_LOCAL / "kb-general.md"
+    f = local if local.exists() else fallback
+    return f.read_text(encoding="utf-8") if f.exists() else ""
+
+
 def ss_load_kb(state: dict) -> dict:
-    """Load KB based on detected audience."""
+    """Load KB based on detected audience — primary source: sonate-solidaire.me/kb/."""
     audience = state.get("ss_audience", "general")
-    kb_file = _KB_SS / f"kb-{audience}.md"
-    fallback = _KB_SS / "kb-general.md"
-    f = kb_file if kb_file.exists() else fallback
-    content = f.read_text(encoding="utf-8") if f.exists() else ""
+    content = _fetch_kb(audience)
     return {"kb_context": content}
 
 
