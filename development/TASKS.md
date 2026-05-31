@@ -7002,6 +7002,69 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 
 ---
 
+## [ ] TASK-96
+
+### Мета
+Створити новий проект **"UAV Watcher"** в ai-drakon і додати перші DRAKON схеми для uav-watcher.
+
+### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux.
+
+### Контекст
+- ai-drakon URL: https://ai-drakon-scaffolder.pages.dev
+- Login: owner / drakon-mcp-2026 (через `python3 ~/bin/mcp-aws.py login`)
+- Поточний активний проект в ai-drakon: "En_ukrainien" (потрібно створити новий)
+- uav-watcher архітектура задокументована в: `docs/uav-watcher-analysis/`
+
+### Кроки
+
+**1. Запустити браузер і залогінитись**
+```bash
+python3 ~/bin/mcp-aws.py start
+sleep 2
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
+sleep 4
+python3 ~/bin/mcp-aws.py login
+sleep 4
+python3 ~/bin/mcp-aws.py screenshot ss1.png
+view_file ${TMPDIR}/ss1.png
+```
+
+**2. Зробити скріншоти кожного розділу (Pipeline, Агенти, Налаштування)**
+```bash
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/pipeline && sleep 2 && python3 ~/bin/mcp-aws.py screenshot ss-pipeline.png && view_file ${TMPDIR}/ss-pipeline.png
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents && sleep 2 && python3 ~/bin/mcp-aws.py screenshot ss-agents.png && view_file ${TMPDIR}/ss-agents.png
+```
+
+**3. DOM snapshot для розуміння структури**
+```bash
+python3 ~/bin/mcp-aws.py snapshot
+```
+
+**4. Написати звіт `docs/uav-watcher-analysis/ai-drakon-ui-report.md`**
+На основі скріншотів і snapshot — описати:
+- Що є в кожному розділі
+- Які кнопки/функції доступні
+- Знайдені проблеми або відсутні функції
+- Що потрібно додати для uav-watcher
+
+**5. Зупинити workspace і закомітити**
+```bash
+python3 ~/bin/mcp-aws.py stop
+cd ~/workspace/ai-drakon-scaffolder
+git add docs/uav-watcher-analysis/
+git commit -m "docs(ai-drakon): UI analysis report for uav-watcher project (TASK-96)"
+git push origin main
+sed -i 's/\[ \] TASK-96/[x] TASK-96/' development/TASKS.md
+git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-96 done" && git push origin main
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-96:ai-drakon-ui-report|browser+screenshots+analysis|commit:<hash>|★★★
+```
+
+---
+
 ## [ ] TASK-94
 
 ### Мета
