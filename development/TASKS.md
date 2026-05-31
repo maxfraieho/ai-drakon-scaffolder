@@ -9132,7 +9132,7 @@ SESSION:DATE|TASK-110:analyze-toast|CodePage.tsx+1line|commit:<hash>|★★
 ```
 
 
-## [ ] TASK-111
+## [x] TASK-111
 
 **Мета**: useAgentChatStore.ts — покращити error messages для architect agent (500, 401).
 
