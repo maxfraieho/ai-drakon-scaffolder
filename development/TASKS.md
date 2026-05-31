@@ -12343,7 +12343,7 @@ SESSION:DATE|TASK-121:ss-kb-fill|4-kb-generated-by-gemini|events+musicians+partn
 
 ---
 
-## [ ] TASK-122
+## [x] TASK-122
 
 **Мета**: В CodePage GitHub Settings перезаписуються збереженим activeProject (uav-watcher). Потрібно щоб Settings GitHub мали пріоритет якщо вони явно змінені.
 
