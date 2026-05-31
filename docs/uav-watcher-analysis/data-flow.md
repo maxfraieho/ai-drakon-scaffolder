@@ -21,7 +21,7 @@ sequenceDiagram
 
     Ch->>TH: New Message event
     TH->>Geo: Check location match (build_pattern_from_locations)
-    Note over Geo: Check active family GPS coordinates<br/>Query Overpass for 30km settlements
+    Note over Geo: Check active family GPS coordinates<br/>Query Overpass for 30 km settlements
     alt No geographic match
         Geo-->>TH: False
         Note over TH: Drop message (no action)
@@ -33,7 +33,7 @@ sequenceDiagram
         LLM-->>LGC: JSON: threat_type, region, time
         LGC->>LGC: Assess severity level (LOW, MEDIUM, HIGH, CRITICAL)
         LGC-->>TH: Severity details & Formatted text
-        
+
         alt Severity is LOW or ALL-CLEAR
             alt Is All-Clear
                 TH->>DB: Save all-clear threat event
@@ -47,7 +47,7 @@ sequenceDiagram
                 Note over TH: Drop alert dispatch
             else Throttle pass
                 TH->>DB: Save threat event to threat_events
-                
+
                 alt Severity is HIGH or CRITICAL
                     TH->>DB: Query registered family members
                     DB-->>TH: List of user IDs
@@ -55,7 +55,7 @@ sequenceDiagram
                         TH->>Bot: Direct push private alert message
                     end
                 end
-                
+
                 TH->>Bot: Post formatted alert message to channel/group
             end
         end
@@ -83,10 +83,10 @@ sequenceDiagram
     User->>BotCmd: Send text message
     BotCmd->>API: HTTP POST /chat (message, session_id, lang)
     API->>Graph: Invoke CrisisState graph
-    
+
     Note over Graph: retrieve_kb node starts
     Graph->>Graph: Normalize query typos (fuzzy match)
-    
+
     alt Is Shelter Query
         alt Session is Web (non-numeric UUID)
             Graph-->>BotCmd: Return Bot redirection prompt
@@ -108,17 +108,16 @@ sequenceDiagram
         Graph->>DDG: Search query + Ukraine
         DDG-->>Graph: Snippets / News context
     end
-
     Note over Graph: generate node starts
     Graph->>Graph: Detect user psychological state (Panic, Suicidal, etc.)
     Graph->>Graph: Prepend state rules & safety constraints to system prompt
     Graph->>LLM: POST chat/completions (History + Context + Prompt)
     LLM-->>Graph: Response text
-    
+
     alt State is SUICIDAL RISK
         Graph->>Graph: Append Lifeline Ukraine hotline 7333
     end
-    
+
     Graph-->>API: ChatResponse (reply text, kb_sections_used)
     API-->>BotCmd: JSON reply
     BotCmd->>User: Deliver text message

@@ -81,7 +81,7 @@ FastAPI application that handles endpoint routing and KB file-watcher lifespans.
   - `/feed`: Returns stats of current threat channels, recent threats, and summary.
   - `/situation`: Outputs current state from regional alerts.in.ua.
 
-### File: [consultant/pipeline/nodes.py](file:///home/vokov/projects/uav-watcher/consultant/consultant/pipeline/nodes.py)
+### File: [consultant/pipeline/nodes.py](file:///home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py)
 Logic behind the chatbot pipeline nodes.
 
 - **Key Functions:**

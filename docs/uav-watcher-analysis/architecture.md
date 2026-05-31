@@ -49,7 +49,7 @@ graph TD
 
 ### B. Dynamic Geospatial Geofencing ([geo_monitor.py](file:///home/vokov/projects/uav-watcher/geo_monitor.py))
 - To minimize alert noise, incoming messages are filtered using a regex pattern.
-- This pattern is generated dynamically by [build_pattern_from_locations](file:///home/vokov/projects/uav-watcher/geo_monitor.py#L102-L134):
+- This pattern is generated dynamically:
   1. Queries the SQLite database ([families.db](file:///home/vokov/projects/uav-watcher/db/models.py)) for all coordinates reported by active family members in the last 8 hours.
   2. Queries the Openpass OpenStreetMap API to find all settlements (cities, villages, towns) within a 30 km radius of those coordinates.
   3. Combines these names with the home city keywords from `config.json` to compile a master geographical regex pattern.
@@ -58,7 +58,7 @@ graph TD
 ### C. LangGraph Threat Classifier Pipeline ([sharon/pipelines/threat_classifier.py](file:///home/vokov/projects/uav-watcher/sharon/pipelines/threat_classifier.py))
 - Integrates a structured graph pipeline to analyze threats:
   1. **`extract_entities`**: Calls LLM (Gemini 2.5 Flash) via API proxies to extract `threat_type` (Shahed, Missile, Ballistics, Recon, Unknown), `region`, and `time`.
-  2. **`assess_severity`**: Computes an threat severity score based on keywords, proximity score (derived from proximity keywords), and official air-raid indicators.
+  2. **`assess_severity`**: Computes a threat severity score based on keywords, proximity score (derived from proximity keywords), and official air-raid indicators.
   3. **`decide_alert`**: Routes the state to formatting if the threat severity is `MEDIUM`, `HIGH`, or `CRITICAL`.
   4. **`format_message`**: Generates a warning message with clear action recommendations.
 
@@ -70,5 +70,5 @@ graph TD
 ### E. Consultant FastAPI Backend & RAG Pipeline
 - The FastAPI app hosts the Sharon interactive agent.
 - Queries are normalized and analyzed to detect user state: `ACTIVE THREAT`, `PANIC`, `STUPOR`, `DISSOCIATION`, or `SUICIDAL RISK`.
-- **RAG Integration**: Retrives emergency context from local markdown guides, matches it with recent threat logs, and falls back to a DuckDuckGo search if current information is requested.
+- **RAG Integration**: Retrieves emergency context from local markdown guides, matches it with recent threat logs, and falls back to a DuckDuckGo search if current information is requested.
 - Outputs are generated via LLM Proxy with strict constraints (no markdown formatting, short conversational paragraphs, directive verbs in emergencies).
