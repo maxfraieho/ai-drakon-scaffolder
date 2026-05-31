@@ -11461,7 +11461,7 @@ SESSION:DATE|TASK-117:langgraph-unification|drakon-agent+docs-agent|DRAKON-IR→
 
 **Мета**: SS-агент на LangGraph з routing по аудиторії + веб-чат на sonate-solidaire.me.
 
-**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. Два репозиторії.**
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. NO writing-plans. NO planning mode. Execute immediately step by step. Два репозиторії.**
 
 ---
 
