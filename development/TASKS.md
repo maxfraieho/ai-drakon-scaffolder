@@ -6910,105 +6910,65 @@ SESSION:2026-05-31|TASK-92:agentworkspace-rpi|install+test|NotebookLM-preserved|
 ## [ ] TASK-93
 
 ### Мета
-Провести повний аналіз функціоналу та архітектури проекту **uav-watcher** (Sharon) за допомогою інструментів ai-drakon:
-- Прочитати та проаналізувати весь codebase uav-watcher
-- Запустити OpenDesign пайплайни для генерації DRAKON схем логіки компонентів
-- Задокументувати архітектуру, потоки даних, агентів
-- Виправляти знайдені проблеми по ходу роботи
-- Коли закінчуються ліміти — зберегти прогрес і передати роботу AGY phone через TASKS.md
+Провести аналіз коду **uav-watcher (Sharon)** і написати документацію.
 
-### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux. SSH до dev server (192.168.3.184) де потрібно.
+### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux.
+### !!CRITICAL!! НЕ ЧІПАЙ OpenDesign, плагіни, Docker, контейнери. ТІЛЬКИ читання коду + документація + git.
 
-### Контекст проектів
-
-**uav-watcher (Sharon):**
-- Репо: `/home/vokov/projects/uav-watcher/` на dev server `192.168.3.184`
-- SSH: `sshpass -p '805235io.' ssh vokov@192.168.3.184`
-- Головний файл: `uav_watcher.py`
-- Telegram userbot: Telethon, 8+ каналів
-- AI консультант: FastAPI :8770
-- Сервіс: `sudo rc-service uav-watcher restart`
-- Логи: `tail -f /var/log/uav-watcher.log`
-
-**OpenDesign (для DRAKON схем):**
-- URL: `http://192.168.3.184:7459`
-- Token: `2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a`
-- Проект: `ai-drakon-design` (conversationId: `cd5a933a-ea7f-4e1b-a84c-ba494eb494d0`)
-- Плагін: `ai-drakon-mobile` (встановлено в `/app/.od/plugins/`)
-- MCP: agent-workspace (SSH → RPi 192.168.3.234, підключено в ~/.gemini/config/mcp_config.json)
-
-**opendesign-mcp:**
-- Файл: `/home/vokov/workspace/opendesign-mcp/server.py` на OrangePi
-- (Недоступний з AGY3 напряму — використовуй REST API напряму)
+### Контекст
+- uav-watcher repo: `/home/vokov/projects/uav-watcher/` на сервері `192.168.3.184`
+- SSH команда: `sshpass -p '805235io.' ssh vokov@192.168.3.184`
+- Головний файл: `uav_watcher.py` (~1500-2000 рядків Python)
+- Також: `sharon_consultant.py` (FastAPI :8770), `config.json` (не в git)
+- Документацію пиши локально в `~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/`
 
 ### Кроки
 
-**1. Читання codebase uav-watcher**
+**1. Список файлів**
 ```bash
-sshpass -p '805235io.' ssh vokov@192.168.3.184 '
-echo "=== Структура ===" && find ~/projects/uav-watcher -name "*.py" | grep -v __pycache__ | sort
-echo "=== Розмір ===" && wc -l ~/projects/uav-watcher/*.py 2>/dev/null
-'
-# Прочитай всі .py файли: uav_watcher.py, sharon_consultant.py (якщо є), config тощо
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'find ~/projects/uav-watcher -name "*.py" | grep -v __pycache__ | sort && wc -l ~/projects/uav-watcher/*.py'
 ```
 
-**2. Аналіз архітектури — скласти map:**
-- Всі класи та їх відповідальності
-- Telegram handlers: які канали, які patterns
-- AI pipeline: як класифікуються загрози
-- Sharon consultant: endpoints, logic
-- Shelter search: як працює
-- Стан: `_active_threat`, `_allclear_time`, catchup sync
-
-**3. Генерація DRAKON схем через OpenDesign API**
+**2. Читання коду через SSH**
 ```bash
-# Використай REST API напряму (без MCP):
-curl -s -X POST http://192.168.3.184:7459/api/v1/conversations/cd5a933a-ea7f-4e1b-a84c-ba494eb494d0/runs \
-  -H "Authorization: Bearer 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Create DRAKON diagram for uav-watcher threat detection pipeline: Telegram message → AI classification → threat level → notification logic → allclear detection",
-    "taskType": "Live artifact"
-  }'
-# Дочекайся результату (може тривати 30-120 сек)
+# Головний файл:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cat ~/projects/uav-watcher/uav_watcher.py'
+# Консультант:
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'cat ~/projects/uav-watcher/sharon_consultant.py 2>/dev/null || echo "not found"'
+# Інші .py файли по одному
 ```
 
-**4. Документація в репо ai-drakon-scaffolder**
+**3. Написати 4 markdown файли** (локально на AGY3):
 ```bash
-# Локально на AGY3:
-cd ~/workspace/ai-drakon-scaffolder
-mkdir -p docs/uav-watcher-analysis
-# Записати:
-# docs/uav-watcher-analysis/architecture.md — архітектурний огляд
-# docs/uav-watcher-analysis/components.md  — компоненти та відповідальності
-# docs/uav-watcher-analysis/data-flow.md   — потоки даних
-# docs/uav-watcher-analysis/issues.md      — знайдені проблеми
+mkdir -p ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis
 ```
+- `architecture.md` — загальна архітектура: Telethon userbot → AI classifier → notifications → Sharon API
+- `components.md` — всі класи/функції: назва, відповідальність, ключові змінні стану
+- `data-flow.md` — потоки даних: Telegram msg → обробка → сповіщення; user query → Sharon → відповідь
+- `issues.md` — знайдені проблеми, tech debt, потенційні баги
 
-**5. Виправлення проблем**
-По ходу аналізу — фіксити знайдені баги в `uav_watcher.py` на dev сервері:
+**4. Виправити критичні баги** (якщо знайдеш очевидні):
 ```bash
+# Виправлення на сервері через scp або heredoc
 # Після виправлення:
 sshpass -p '805235io.' ssh vokov@192.168.3.184 'sudo rc-service uav-watcher restart && sleep 3 && tail -20 /var/log/uav-watcher.log'
 ```
 
-**6. Механізм handoff (коли закінчуються ліміти)**
-Якщо модель наближається до ліміту контексту або ліміту запитів:
-1. Зберегти прогрес у `docs/uav-watcher-analysis/HANDOFF.md`:
-   - Що проаналізовано
-   - Що залишилось
-   - Відкриті питання
-2. Додати TASK-94 в TASKS.md з деталями для продовження
-3. Закомітити і запушити
-4. Написати в diary: `SESSION:...|TASK-93:partial|handoff→TASK-94|AGY-phone`
-
-**7. Коміт і push**
+**5. Коміт і push**
 ```bash
 cd ~/workspace/ai-drakon-scaffolder
 git add docs/uav-watcher-analysis/
-git commit -m "docs(uav-watcher): architecture analysis + DRAKON diagrams (TASK-93)"
+git commit -m "docs(uav-watcher): architecture analysis, components, data-flow, issues (TASK-93)"
+git push origin main
+# Потім позначити в TASKS.md:
+sed -i 's/^## \[ \] TASK-93/## [x] TASK-93/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-93 done"
 git push origin main
 ```
+
+**6. Handoff якщо не вистачає часу**
+Якщо не встигаєш — закоміть що є + додай TASK-94 в TASKS.md з описом що залишилось.
 
 ### Верифікація
 ```bash
@@ -7018,7 +6978,7 @@ ls ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/
 
 ### Diary
 ```
-SESSION:2026-05-31|TASK-93:uav-watcher-analysis|DRAKON-diagrams+docs+fixes|opendesign-pipeline|commit:<hash>|★★★
+SESSION:2026-05-31|TASK-93:uav-watcher-docs|architecture+components+data-flow+issues|commit:<hash>|★★★
 ```
 
 ---
