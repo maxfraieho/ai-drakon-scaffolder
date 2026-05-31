@@ -1,6 +1,6 @@
 import React from "react";
 import { LayoutGrid, FileText, Code2, Cpu, Settings } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "@tanstack/react-router";
 
 interface NavItem {
   id: string;
@@ -30,7 +30,7 @@ export const MobileNavigationDock: React.FC = () => {
           return (
             <button
               key={item.id}
-              onClick={() => navigate(item.path)}
+              onClick={() => navigate({ to: item.path })}
               className={"relative flex flex-col items-center justify-center w-14 h-12 transition-colors " + (isActive ? "text-white" : "text-zinc-400 hover:text-zinc-100")}
             >
               <Icon className="w-5 h-5" />

@@ -47,6 +47,7 @@ import { AgentStatusBar } from "@/components/workspace/AgentStatusBar";
 import { cn } from "@/lib/utils";
 import { clearAccessToken } from "@/lib/auth";
 import { useTheme } from "@/components/theme-provider";
+import { MobileNavigationDock } from "@/components/mobile/MobileNavigationDock";
 
 type NavItem = {
   to: string;
@@ -356,10 +357,12 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           {navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
-        <main className="flex h-full min-h-0 flex-1 min-w-0 overflow-hidden">
+        <main className="flex h-full min-h-0 flex-1 min-w-0 overflow-hidden pb-16 lg:pb-0">
           {children}
         </main>
       </div>
+
+      <MobileNavigationDock />
 
       <CommandPalette
         open={cmdOpen}
