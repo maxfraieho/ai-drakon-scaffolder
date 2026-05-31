@@ -9415,7 +9415,7 @@ SESSION:DATE|TASK-SS-06:ukrainian-summary|father+arsen+5parts|commit:<hash>|★�
 
 ---
 
-## [ ] TASK-SS-07
+## [x] TASK-SS-07
 
 **Мета**: Написати DOSSIER COMPLET для Philippe Leroy — офіційний комплект для зустрічі (після вечері). Французькою, бездоганно.
 
