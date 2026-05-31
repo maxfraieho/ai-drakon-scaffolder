@@ -9186,7 +9186,7 @@ SESSION:DATE|TASK-111:agent-errors|useAgentChatStore.ts+2cases|commit:<hash>|★
 ```
 
 
-## [ ] TASK-112
+## [x] TASK-112
 
 **Мета**: CodePage.tsx — після завершення аналізу автоматично показувати кнопку "Відкрити в /diagrams" у result-панелі.
 
