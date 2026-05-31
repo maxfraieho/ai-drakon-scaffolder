@@ -9341,3 +9341,66 @@ git commit -m "chore(tasks): mark TASK-SS-05 done — presentation Leroy ce soir
 git push origin main
 ```
 
+
+## [ ] TASK-SS-06
+
+**Мета**: Написати зведений документ УКРАЇНСЬКОЮ для батька і Арсена — все що є, як це презентувати, поведінкові інструкції.
+
+**!!IMPORTANT!! Run locally on AGY3 Termux.**
+
+### Завдання
+
+```bash
+agy --print "Tu parles ukrainien couramment. Redige un document complet EN UKRAINIEN pour un pere (depuis l Ukraine) et son fils Arsen (violoniste, 26 ans, vit a Gland Vaud, statut S).
+
+Le document doit avoir 4 parties:
+
+PARTIE 1 — ЩО МИ МАЄМО (список всіх матеріалів)
+Перелічи все що підготовлено для проекту Sonate Solidaire:
+- Юридичні документи: статути (CC 60-79), досьє EVAM, CV Арсена французькою
+- Цифрова присутність: violin-integration.works (головний для інституцій), violin.pp.ua (основний сайт 8.7/10), sonate-solidaire.me
+- Досліджені ШІ: юридичний аналіз (Protection S + асоціація VD), список 21 інституції Canton Vaud з контактами, методологія ШІ Multi-Agents
+- Готові документи для розробки: лист Philippe Leroy, план 90 днів, стратегія фінансування
+
+PARTIE 2 — ЮРИДИЧНИЙ СТАТУС (коротко і чітко)
+- Арсен може займатися музичною діяльністю за Protection S: потрібне просте оголошення на EasyGov.swiss
+- Асоціацію можна створити БЕЗКОШТОВНО і МИТТЄВО (CC 60-79), реєстрація RC не обов'язкова
+- Казначей НЕ несе особистої фінансової відповідальності (тільки майно асоціації)
+- Шлях до звільнення від податків: через ACI Canton Vaud після 1 року діяльності
+
+PARTIE 3 — ПЛАН ДІЙ (конкретно, по тижнях)
+Тиждень 1-2: Philippe Leroy → казначей → відкрити рахунок
+Місяць 1-2: EVAM + Commune Gland + перший атлье (бесплатно)
+Місяць 2-4: Перший концерт → Loterie Romande (заява CHF 10k)
+Місяць 4-12: Fondation Leenaards + автономна робота асоціації
+
+PARTIE 4 — ПОВЕДІНКОВІ ІНСТРУКЦІЇ
+Для Арсена:
+- Як поводитися при зустрічі з Philippe Leroy (тон, що казати, що не казати)
+- Як звернутися до EVAM (ввічливо, з документами, без спішки)
+- Як говорити про проект з швейцарцями (просто, без пафосу, конкретно)
+
+Для батька (від України):
+- Яку роль відігравати: підтримка морально + координація документів
+- Як допомогти з підготовкою документів через агентів ШІ
+- Що НЕ робити: не тиснути на сина, не поспішати з реєстрацією
+
+Тон: теплий, практичний, конкретний. Як розмова між досвідченим другом і родиною." --dangerously-skip-permissions 2>&1
+```
+
+Зберегти в `~/ЗВІТ_SONATE_SOLIDAIRE_UA.md`
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-06/[x] TASK-SS-06/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-06 done — Ukrainian summary for father and Arsen"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-06:ukrainian-summary|father+arsen+behavioral-guide|commit:<hash>|★★★
+```
+
