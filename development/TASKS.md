@@ -9024,7 +9024,7 @@ SESSION:DATE|TASK-108:architect-drakon-flow|threat-detection+allclear+sharon|dia
 
 ---
 
-## [ ] TASK-109
+## [x] TASK-109
 
 **Мета**: AGY як тестувальник — знайти 3+ UX/UI проблеми в ai-drakon під час роботи над uav-watcher, додати їх в problem-map.md і запропонувати fixes.
 

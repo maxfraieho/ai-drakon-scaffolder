@@ -1,6 +1,7 @@
 # AI-Drakon Problem Map — UAV Watcher Audit
 > Date: 2026-05-31 | Auditor: Claude (architect) + AGY3 (tester)
-> Screenshots: docs/screenshots/task96/ + /tmp/audit-*.png
+> Sprint2 update: 2026-05-31 | Based on TASK-107/108 testing
+> Screenshots: docs/screenshots/task96/ + docs/uav-watcher-analysis/screenshots/
 
 ---
 
@@ -22,6 +23,26 @@
 ---
 
 ## HIGH (заважає роботі)
+
+- [ ] **Code→DRAKON: відсутній feedback після "Аналізувати"** *(Sprint2, TASK-107)*
+  - Де: `/code` → кнопка "Аналізувати" → нічого не відбувається візуально
+  - Проблема: pipeline запускається (API повертає job_id), але UI не показує loading state або progress
+  - Репро: натиснути "Аналізувати" → жодного spinner/toast/статусу → не зрозуміло чи аналіз почався
+  - Фікс: показувати loading spinner + polling статусу + toast "Аналіз завершено" з посиланням на /diagrams
+  - Файли: `src/pages/code.tsx`, `src/components/AnalyzeButton*`
+
+- [ ] **Architect agent: "Агент тимчасово недоступний" без debug-info** *(Sprint2, TASK-108)*
+  - Де: `/chat` або `/agents` → Architect agent
+  - Причина: PROXY_TOKEN="" (empty) → httpx відхиляє `Authorization: Bearer ` header → HTTP 500
+  - Проблема: UI показує лише "тимчасово недоступний" без деталей помилки, складно діагностувати
+  - Фікс: відображати server-side error code (не повне повідомлення, але клас помилки — config/network/timeout)
+  - Файли: `src/pages/agents.tsx`, `services/architect-agent/main.py` (error response format)
+
+- [ ] **Post-analysis: діаграма не з'являється автоматично в /diagrams** *(Sprint2, TASK-107)*
+  - Де: після успішного "Аналізувати" в /code
+  - Проблема: нова DRAKON-схема генерується, але список /diagrams не оновлюється без ручної навігації
+  - Фікс: після polling "done" — автоматичний redirect або toast "Схему створено → [Відкрити]"
+  - Файли: `src/pages/code.tsx`, `src/pages/diagrams.tsx`
 
 - [ ] **Agents: модель невідома / drakon-assistant-proxy**
   - Де: `/agents` → Inspector → "за замовчуванням: OpenAI" + "drakon-assistant-proxy → модель невідома"
@@ -64,6 +85,12 @@
 
 ## LOW (дрібниці)
 
+- [ ] **Diagrams: старі схеми мають garbled назви після UTF-8 fix** *(Sprint2)*
+  - Де: `/diagrams` → список схем
+  - Причина: Worker раніше декодував base64 як Latin-1 → Кирилиця у назвах збережена некоректно в БД
+  - Фікс: міграція існуючих записів або кнопка "Rename" у списку схем
+  - Файли: DB migration script, `src/pages/diagrams.tsx`
+
 - [ ] **Settings: Personal Access Token не валідується при збереженні**
   - Можна зберегти порожній токен без попередження
   - Фікс: перевіряти формат ghp_*** при введенні
@@ -85,6 +112,9 @@
 - ✅ **GitHub Settings** — repo `maxfraieho/uav-watcher` встановлено (токен потрібен)
 - ✅ **Navigation** — всі маршрути доступні (після TASK-97 fix)
 - ✅ **DRAKON agent chat** — відповідає "Готово. Вставте Python-код — згенерую DRAKON-схему"
+- ✅ **Code editor Cyrillic** — виправлено в Sprint2 (Worker: atob→TextDecoder UTF-8, TASK-107)
+- ✅ **Architect agent /chat** — виправлено в Sprint2 (PROXY_TOKEN fallback "freecc", TASK-108)
+- ✅ **Pipeline API** — `architect-agent:8766/pipeline/analyze` повертає DRAKON IR за 45с для 3 uav-watcher flows
 
 ---
 
@@ -112,6 +142,11 @@
 4. **TASK-102**: Налаштувати drakon-assistant-proxy з правильною моделлю
 5. **TASK-103**: UI покращення — Notes section, Pipeline previews, Agent UX
 6. **TASK-104**: Encoding fix для назв DRAKON схем (UTF-8 issue)
+
+### Sprint2 виявлені (пріоритет HIGH)
+7. **TASK-110**: Loading state для "Аналізувати" + polling UI + toast "Схему створено → [Відкрити]"
+8. **TASK-111**: Architect agent error response — показувати клас помилки (config/network/timeout) замість "тимчасово недоступний"
+9. **TASK-112**: Post-analysis auto-redirect або notification після завершення pipeline job
 
 ### Стратегічні
 - Встановити GitHub Personal Access Token для uav-watcher repo
