@@ -7002,7 +7002,7 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 
 ---
 
-## [ ] TASK-98
+## [x] TASK-98
 
 ### Мета
 В Settings ai-drakon змінити GitHub repo з `maxfraieho/drakon-setup-hub` на `maxfraieho/uav-watcher` через браузер.
@@ -7592,7 +7592,7 @@ SESSION:2026-05-31|TASK-91:opendesign-plugin|ai-drakon-mobile-plugin|SKILL.md+op
 
 ---
 
-## [ ] TASK-90
+## [x] TASK-90
 
 ### Мета
 Переробити мобільний інтерфейс ai-drakon: замінити sidebar на `MobileNavigationDock` (bottom nav, glassmorphism).
