@@ -8585,7 +8585,7 @@ SESSION:2026-05-30|TASK-83:ux-audit-p0-p1|commit:<hash>|fix:mixed-content+unsave
 6. git add -A && git commit -m "..." && git push origin main
 7. НЕ SSH на 192.168.3.184 — це frontend проект, деплоїться через Cloudflare з .lovable/
 
-## [ ] TASK-104
+## [x] TASK-104
 
 **Мета**: Виправити LLM endpoint для DRAKON/Architect/Docs агентів — очистити стару localStorage (`drakon-assistant-proxy`) щоб вони впали на default AGY proxy.
 
