@@ -7005,54 +7005,90 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 ## [ ] TASK-96
 
 ### Мета
-Створити новий проект **"UAV Watcher"** в ai-drakon і додати перші DRAKON схеми для uav-watcher.
+Проаналізувати скріншоти ai-drakon UI і написати звіт що потрібно виправити/додати для роботи з uav-watcher.
 
-### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux.
+### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux. NO browser needed — screenshots already in repo.
 
 ### Контекст
-- ai-drakon URL: https://ai-drakon-scaffolder.pages.dev
-- Login: owner / drakon-mcp-2026 (через `python3 ~/bin/mcp-aws.py login`)
-- Поточний активний проект в ai-drakon: "En_ukrainien" (потрібно створити новий)
-- uav-watcher архітектура задокументована в: `docs/uav-watcher-analysis/`
+Скріншоти вже в репо: `docs/screenshots/task96/`
+- `ai-drakon-1-home.png` — головна після логіну (/diagrams)
+- `ai-drakon-2-diagrams.png` — розділ Схеми (є діаграма SlotRouter)
+- `ai-drakon-3-pipeline.png` — розділ Pipeline
+- `ai-drakon-4-agents.png` — розділ Агенти
+- `ai-drakon-5-settings.png` — розділ Налаштування
+
+uav-watcher аналіз: `docs/uav-watcher-analysis/architecture.md` (прочитай для контексту)
 
 ### Кроки
 
-**1. Запустити браузер і залогінитись**
+**1. Pull репо і переглянь скріншоти**
 ```bash
-python3 ~/bin/mcp-aws.py start
-sleep 2
-python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev
-sleep 4
-python3 ~/bin/mcp-aws.py login
-sleep 4
-python3 ~/bin/mcp-aws.py screenshot ss1.png
-view_file ${TMPDIR}/ss1.png
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+```
+Переглянь файли:
+```
+view_file ~/workspace/ai-drakon-scaffolder/docs/screenshots/task96/ai-drakon-1-home.png
+view_file ~/workspace/ai-drakon-scaffolder/docs/screenshots/task96/ai-drakon-2-diagrams.png
+view_file ~/workspace/ai-drakon-scaffolder/docs/screenshots/task96/ai-drakon-3-pipeline.png
+view_file ~/workspace/ai-drakon-scaffolder/docs/screenshots/task96/ai-drakon-4-agents.png
+view_file ~/workspace/ai-drakon-scaffolder/docs/screenshots/task96/ai-drakon-5-settings.png
 ```
 
-**2. Зробити скріншоти кожного розділу (Pipeline, Агенти, Налаштування)**
-```bash
-python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/pipeline && sleep 2 && python3 ~/bin/mcp-aws.py screenshot ss-pipeline.png && view_file ${TMPDIR}/ss-pipeline.png
-python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents && sleep 2 && python3 ~/bin/mcp-aws.py screenshot ss-agents.png && view_file ${TMPDIR}/ss-agents.png
+**2. Прочитай архітектуру uav-watcher**
+```
+view_file ~/workspace/ai-drakon-scaffolder/docs/uav-watcher-analysis/architecture.md
 ```
 
-**3. DOM snapshot для розуміння структури**
-```bash
-python3 ~/bin/mcp-aws.py snapshot
+**3. Напиши звіт `docs/uav-watcher-analysis/ai-drakon-ui-report.md`**
+
+Структура звіту:
+```markdown
+# AI-Drakon UI Analysis for UAV Watcher (TASK-96)
+
+## Поточний стан UI
+
+### Головна (Diagrams)
+[опис що бачиш]
+
+### Pipeline
+[опис]
+
+### Агенти
+[опис]
+
+### Налаштування
+[опис]
+
+## Що добре працює
+[список]
+
+## Знайдені проблеми
+[список з описом]
+
+## Що потрібно для uav-watcher
+[список нових фічей/схем]
+
+## Рекомендовані DRAKON схеми для uav-watcher
+1. Threat Detection Pipeline
+2. AllClear Sync
+3. Sharon Consultant Flow
+4. Shelter Search
 ```
 
-**4. Написати звіт `docs/uav-watcher-analysis/ai-drakon-ui-report.md`**
-На основі скріншотів і snapshot — описати:
-- Що є в кожному розділі
-- Які кнопки/функції доступні
-- Знайдені проблеми або відсутні функції
-- Що потрібно додати для uav-watcher
-
-**5. Зупинити workspace і закомітити**
+Запиши файл через run_command:
 ```bash
-python3 ~/bin/mcp-aws.py stop
+python3 -c "
+content = '''# AI-Drakon UI Analysis...'''
+open('docs/uav-watcher-analysis/ai-drakon-ui-report.md','w').write(content)
+print('written')
+"
+```
+
+**4. Закомітити**
+```bash
 cd ~/workspace/ai-drakon-scaffolder
-git add docs/uav-watcher-analysis/
-git commit -m "docs(ai-drakon): UI analysis report for uav-watcher project (TASK-96)"
+git add docs/uav-watcher-analysis/ai-drakon-ui-report.md
+git commit -m "docs(ai-drakon): UI analysis report for uav-watcher (TASK-96)"
 git push origin main
 sed -i 's/\[ \] TASK-96/[x] TASK-96/' development/TASKS.md
 git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-96 done" && git push origin main
@@ -7060,7 +7096,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-96 done" 
 
 ### Diary
 ```
-SESSION:2026-05-31|TASK-96:ai-drakon-ui-report|browser+screenshots+analysis|commit:<hash>|★★★
+SESSION:2026-05-31|TASK-96:ai-drakon-ui-report|screenshots-analyzed+report+recommendations|commit:<hash>|★★★
 ```
 
 ---
