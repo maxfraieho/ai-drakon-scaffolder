@@ -6907,6 +6907,89 @@ SESSION:2026-05-31|TASK-92:agentworkspace-rpi|install+test|NotebookLM-preserved|
 
 ---
 
+## [ ] TASK-94
+
+### Мета
+Протестувати функціональність **ai-drakon** через браузер на RPi за допомогою **agent-workspace** MCP.
+Знайти баги, перевірити мобільний UI, зробити скріншоти, задокументувати проблеми.
+
+### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux.
+### agent-workspace MCP вже налаштований в ~/.gemini/config/mcp_config.json
+
+### Контекст
+- ai-drakon frontend: `http://192.168.3.184:8082` (локальний dev) або `http://192.168.3.184:5173` (vite dev)
+- RPi для браузера: `192.168.3.234` (agent-workspace там встановлено)
+- MCP tools доступні: `workspace_doctor`, `workspace_start`, `workspace_open_browser`, `workspace_browser_navigate`, `workspace_screenshot`, `workspace_browser_snapshot`, `workspace_browser_click`, `workspace_type_text`
+
+### Кроки
+
+**1. Перевірити який порт слухає ai-drakon**
+```bash
+sshpass -p '805235io.' ssh vokov@192.168.3.184 'ss -tlnp | grep -E "8082|5173|3000|8080"'
+```
+
+**2. Запустити agent-workspace на RPi**
+```
+Use MCP tool: workspace_doctor
+Use MCP tool: workspace_start (acknowledge_hidden_workspace=true, purpose="ai-drakon UI testing")
+```
+
+**3. Відкрити браузер і перейти на ai-drakon**
+```
+Use MCP tool: workspace_open_browser
+Use MCP tool: workspace_browser_navigate (url="http://192.168.3.184:8082")
+Use MCP tool: workspace_screenshot → зберегти скріншот
+```
+
+**4. Тестувати функції послідовно:**
+
+4a. Головна сторінка — завантажилась? Скріншот.
+4b. Навігація — всі пункти меню працюють?
+4c. **MobileNavigationDock** — є bottom nav? (перевір на вузькому вікні)
+4d. **Diagrams page** — відкрити, перевірити пошук/фільтр папок
+4e. Створити нову схему — кнопка Create/New працює?
+4f. Редактор схем — canvas відкривається?
+4g. **Sharon consultant** — відкрити `http://192.168.3.184:8770/docs`, перевірити endpoints
+
+Після кожного кроку:
+```
+Use MCP tool: workspace_screenshot → зберегти в docs/screenshots/TASK-94/
+```
+
+**5. Зібрати знайдені проблеми**
+Записати в `docs/uav-watcher-analysis/ai-drakon-ui-issues.md`:
+- Що зламано
+- Що не відповідає очікуваному
+- Консольні помилки (через workspace_browser_snapshot → перевірити errors)
+
+**6. Зупинити workspace**
+```
+Use MCP tool: workspace_stop
+```
+
+**7. Коміт**
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add docs/
+git commit -m "test(ai-drakon): UI functional test via agent-workspace browser (TASK-94)"
+git push origin main
+sed -i 's/^## \[ \] TASK-94/## [x] TASK-94/' development/TASKS.md
+git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-94 done" && git push origin main
+```
+
+### Верифікація
+```bash
+ls ~/workspace/ai-drakon-scaffolder/docs/
+# Має бути: ai-drakon-ui-issues.md + скріншоти
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-94:ai-drakon-ui-test|agent-workspace+browser|screenshots+issues|commit:<hash>|★★★
+```
+
+---
+
 ## [x] TASK-93
 
 ### Мета
