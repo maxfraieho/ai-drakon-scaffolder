@@ -21,3 +21,20 @@ class VibeCodingState(TypedDict):
     generated_code: str
     syntax_errors: list[str]
     iteration_count: int
+
+
+class DrakonAgentState(TypedDict):
+    message: str
+    source_code: str
+    kb_context: str
+    llm_prompt: str
+    llm_reply: str
+    drakon_ir: list
+    parse_ok: bool
+
+
+class DocsAgentState(TypedDict):
+    message: str
+    kb_context: str
+    llm_prompt: str
+    llm_reply: str

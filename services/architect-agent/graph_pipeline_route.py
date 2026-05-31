@@ -77,14 +77,24 @@ class ExecuteRequest(BaseModel):
 
 
 @router.post("/{name}/execute")
-def start_execution(name: str, body: ExecuteRequest):
+def start_execution(name: str, body: dict):
     _load_ir(name)  # validate exists
     job_id = str(uuid.uuid4())
+    
+    # Support both nested initial_state and direct root-level parameters
+    initial_state = body.get("initial_state", {})
+    if not initial_state:
+        initial_state = {k: v for k, v in body.items() if k != "breakpoints"}
+        
+    breakpoints = body.get("breakpoints", [])
+    if not isinstance(breakpoints, list):
+        breakpoints = []
+
     _sessions[job_id] = {
         "status": "pending",
         "graph_name": name,
-        "initial_state": body.initial_state,
-        "breakpoints": set(body.breakpoints),
+        "initial_state": initial_state,
+        "breakpoints": set(breakpoints),
         "current_node": None,
         "current_state": {},
         "events": [],
@@ -103,7 +113,11 @@ async def _run_pipeline(job_id: str) -> None:
         session["status"] = "running"
         initial = session["initial_state"]
 
-        for node_name, state_update in graph.stream(initial):
+        for step in graph.stream(initial):
+            if not step:
+                continue
+            node_name = list(step.keys())[0]
+            state_update = step[node_name]
             session["current_node"] = node_name
             session["current_state"].update(state_update)
             session["events"].append({

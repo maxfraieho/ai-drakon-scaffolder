@@ -1,0 +1,11 @@
+{
+  "name": "Docs Agent — Documentation Q&A",
+  "schema": {"state_class": "DocsAgentState"},
+  "items": {
+    "h0": {"type": "header", "one": "n1"},
+    "n1": {"type": "action", "content": "docs_load_kb", "one": "n2"},
+    "n2": {"type": "action", "content": "docs_format_prompt", "one": "n3"},
+    "n3": {"type": "action", "content": "llm_call", "one": "end"},
+    "end": {"type": "end"}
+  }
+}

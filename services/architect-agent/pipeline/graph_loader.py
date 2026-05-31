@@ -14,8 +14,30 @@ from .nodes_analysis import (
     code_gen_node as code_gen,
 )
 from .nodes_vibe import check_syntax
+from .nodes_agents import (
+    drakon_load_kb, drakon_format_prompt, drakon_parse_result,
+    docs_load_kb, docs_format_prompt,
+)
 from .graphs import _route_by_complexity, _route_after_validate, _route_after_syntax
-from .states import AnalysisState, VibeCodingState
+from .states import AnalysisState, VibeCodingState, DrakonAgentState, DocsAgentState
+
+
+def llm_call_node(state: dict) -> dict:
+    """Universal LLM call node — reads 'llm_prompt' from state."""
+    import httpx, os
+    proxy_url = os.getenv("PROXY_URL", "http://localhost:18880/v1")
+    proxy_token = os.getenv("PROXY_TOKEN", "freecc") or "freecc"
+    proxy_model = os.getenv("PROXY_MODEL", "coding-proxy")
+    resp = httpx.post(f"{proxy_url}/chat/completions",
+        json={"model": proxy_model, "messages": [
+            {"role": "user", "content": state.get("llm_prompt", "")}
+        ], "temperature": 0.1},
+        headers={"Authorization": f"Bearer {proxy_token}"},
+        timeout=120.0)
+    resp.raise_for_status()
+    content = resp.json()["choices"][0]["message"]["content"]
+    return {"llm_reply": content}
+
 
 NODE_REGISTRY: dict[str, Any] = {
     "measure_cc": measure_cc,
@@ -26,6 +48,12 @@ NODE_REGISTRY: dict[str, Any] = {
     "validate": validate,
     "code_gen": code_gen,
     "check_syntax": check_syntax,
+    "drakon_load_kb": drakon_load_kb,
+    "drakon_format_prompt": drakon_format_prompt,
+    "drakon_parse_result": drakon_parse_result,
+    "docs_load_kb": docs_load_kb,
+    "docs_format_prompt": docs_format_prompt,
+    "llm_call": llm_call_node,
 }
 
 ROUTER_REGISTRY: dict[str, Any] = {
@@ -37,6 +65,8 @@ ROUTER_REGISTRY: dict[str, Any] = {
 STATE_REGISTRY: dict[str, Any] = {
     "AnalysisState": AnalysisState,
     "VibeCodingState": VibeCodingState,
+    "DrakonAgentState": DrakonAgentState,
+    "DocsAgentState": DocsAgentState,
 }
 
 

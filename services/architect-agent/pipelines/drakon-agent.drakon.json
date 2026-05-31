@@ -1,0 +1,12 @@
+{
+  "name": "DRAKON Agent — Code to IR",
+  "schema": {"state_class": "DrakonAgentState"},
+  "items": {
+    "h0": {"type": "header", "one": "n1"},
+    "n1": {"type": "action", "content": "drakon_load_kb", "one": "n2"},
+    "n2": {"type": "action", "content": "drakon_format_prompt", "one": "n3"},
+    "n3": {"type": "action", "content": "llm_call", "one": "n4"},
+    "n4": {"type": "action", "content": "drakon_parse_result", "one": "end"},
+    "end": {"type": "end"}
+  }
+}
