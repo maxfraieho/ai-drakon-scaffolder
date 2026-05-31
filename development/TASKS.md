@@ -9726,7 +9726,7 @@ SESSION:DATE|TASK-SS-08:musician-pipeline|channels+template+YAML|commit:<hash>|�
 
 ---
 
-## [ ] TASK-SS-09
+## [x] TASK-SS-09
 
 **Мета**: Розробити PIPELINE БЕНЕФІЦІАРІВ (соціальних клієнтів) — хто вони, де шукати, як залучати через EVAM/Caritas/церкви.
 
@@ -9789,7 +9789,7 @@ SESSION:DATE|TASK-SS-09:beneficiary-pipeline|EVAM+Caritas+site-form|commit:<hash
 
 ---
 
-## [ ] TASK-SS-10
+## [x] TASK-SS-10
 
 **Мета**: Оновити "Проект ШІ" — нова версія стратегії AI для Sonate Solidaire з актуальними інструментами (AGY3, NotebookLM, Claude, GoClaw).
 
