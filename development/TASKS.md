@@ -12069,7 +12069,7 @@ SESSION:DATE|TASK-120:docs-update|agents-architecture+LangGraph+unified-port-876
 
 ---
 
-## [ ] TASK-121
+## [x] TASK-121
 
 **Мета**: Заповнити початкову базу знань Sonate Solidaire агента через Gemini — 4 KB файли по групах аудиторії.
 
