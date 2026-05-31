@@ -10228,3 +10228,61 @@ git push origin main
 SESSION:DATE|TASK-107f:architect-anthropic-patch|proxy_protocol=anthropic|result:OK/FAIL|commit:<hash>|★★★
 ```
 
+
+---
+
+## [ ] TASK-107g
+
+**Мета**: Виправити architect-agent proxy — використати пряме LAN підключення до AGY phone (192.168.3.195:8080) замість tunnel agy.exodus.pp.ua (тільки /health доступний).
+
+**!!IMPORTANT!! SSH to 192.168.3.184. Тест локальний — НЕ через tunnel.**
+
+### Кроки
+
+```bash
+# 1. Оновити .env architect-agent — пряма LAN адреса AGY phone
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'cat > /home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/.env << "ENVEOF"
+PROXY_URL=http://192.168.3.195:8080/v1
+PROXY_PROTOCOL=openai
+PROXY_MODEL=gemini-2.5-flash
+PROXY_TOKEN=
+REPO_ROOT=/home/vokov/workspace/sharon-global
+GITHUB_REPO=maxfraieho/sharon-global
+GITHUB_BRANCH=main
+ENVEOF
+echo "env updated"'
+
+# 2. Оновити nodes_analysis.py теж (PROXY_PROTOCOL=openai вже стоїть там як default)
+
+# 3. Перезапустити architect
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sudo rc-service ai-architect-agent restart && sleep 5 && \
+   curl -s http://localhost:8766/health && echo " OK"'
+
+# 4. Тест через worker
+sleep 5
+curl -s --max-time 30 -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer drakon-mcp-2026" \
+  --data-raw '{"source_code":"def check(lvl):\n  if lvl > 3:\n    return \"ALERT\"\n  return None","language":"python","filename":"test.py"}' 2>/dev/null
+
+# 5. Poll result (wait 20s then check)
+sleep 20
+# Get job_id from above and check status — відобразити результат
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-107g/[x] TASK-107g/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-107g done — architect proxy via LAN 192.168.3.195:8080"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-107g:architect-proxy-LAN|192.168.3.195:8080/v1|result:OK/FAIL|commit:<hash>|★★★
+```
+
