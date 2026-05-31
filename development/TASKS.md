@@ -9785,3 +9785,159 @@ git push origin main
 SESSION:DATE|TASK-SS-12:notebooklm-update|5-new-sources-added|commit:<hash>|★★★
 ```
 
+
+---
+
+## [ ] TASK-107a
+
+**Мета**: АТОМАРНА — відкрити ai-drakon, встановити GitHub token, зробити screenshot Code section.
+
+**!!IMPORTANT!! Run locally on AGY phone. NO SSH. ONE screenshot only.**
+
+### Кроки
+
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+# Старт браузера + логін
+python3 ~/bin/mcp-aws.py start 2>/dev/null; sleep 3
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev; sleep 5
+python3 ~/bin/mcp-aws.py login; sleep 4
+
+# Встановити GitHub token через localStorage (JS injection)
+python3 ~/bin/mcp-aws.py js "
+var s=JSON.parse(localStorage.getItem('drakon.settings')||'{}');
+s.github={owner:'maxfraieho',repo:'uav-watcher',branch:'master',token:'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'};
+localStorage.setItem('drakon.settings',JSON.stringify(s));
+JSON.stringify(s.github).slice(0,40);
+" 2>/dev/null; sleep 1
+
+# Перейти в Code section + screenshot
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/code; sleep 5
+python3 ~/bin/mcp-aws.py screenshot $TMPD/t107a-code.png
+agy --print "Describe this screenshot: does it show a file tree with uav-watcher files OR 'GitHub не налаштований' error? Answer in one line." \
+  --image $TMPD/t107a-code.png 2>/dev/null || echo "screenshot saved: $TMPD/t107a-code.png"
+
+python3 ~/bin/mcp-aws.py stop
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-107a/[x] TASK-107a/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-107a done — Code section token+screenshot"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-107a:code-token-screenshot|result:FILES_OK/GITHUB_ERROR|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-107b
+
+**Мета**: АТОМАРНА — клікнути uav_watcher.py в Code section, screenshot вмісту.
+
+**!!IMPORTANT!! Run locally on AGY phone. Виконувати ТІЛЬКИ якщо TASK-107a показав файли.**
+
+### Кроки
+
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+python3 ~/bin/mcp-aws.py start 2>/dev/null; sleep 2
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev; sleep 4
+python3 ~/bin/mcp-aws.py login; sleep 3
+
+# Відновити token
+python3 ~/bin/mcp-aws.py js "
+var s=JSON.parse(localStorage.getItem('drakon.settings')||'{}');
+s.github={owner:'maxfraieho',repo:'uav-watcher',branch:'master',token:'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'};
+localStorage.setItem('drakon.settings',JSON.stringify(s));'ok'
+" 2>/dev/null
+
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/code; sleep 4
+
+# Знайти uav_watcher.py — перший знімок для координат
+python3 ~/bin/mcp-aws.py snapshot > $TMPD/t107b-snapshot.txt 2>/dev/null
+grep -i "uav_watcher\|watcher" $TMPD/t107b-snapshot.txt | head -5
+
+# Клікнути на файл (координати з snapshot або спробувати 120 180)
+python3 ~/bin/mcp-aws.py click 120 180; sleep 3
+python3 ~/bin/mcp-aws.py screenshot $TMPD/t107b-file.png
+python3 ~/bin/mcp-aws.py stop
+echo "screenshot: $TMPD/t107b-file.png"
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-107b/[x] TASK-107b/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-107b done — uav_watcher.py clicked"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-107b:file-click|uav_watcher-opened|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-107c
+
+**Мета**: АТОМАРНА — відправити код uav_watcher.py в DRAKON агент, чекати відповідь, screenshot.
+
+**!!IMPORTANT!! Run locally on AGY phone. Виконувати після TASK-107b.**
+
+### Кроки
+
+```bash
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+
+python3 ~/bin/mcp-aws.py start 2>/dev/null; sleep 2
+python3 ~/bin/mcp-aws.py browser https://ai-drakon-scaffolder.pages.dev; sleep 4
+python3 ~/bin/mcp-aws.py login; sleep 3
+
+# Встановити token
+python3 ~/bin/mcp-aws.py js "var s=JSON.parse(localStorage.getItem('drakon.settings')||'{}');s.github={owner:'maxfraieho',repo:'uav-watcher',branch:'master',token:'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'};localStorage.setItem('drakon.settings',JSON.stringify(s));'ok'" 2>/dev/null
+
+# Перейти до /agents → DRAKON агент
+python3 ~/bin/mcp-aws.py navigate https://ai-drakon-scaffolder.pages.dev/agents; sleep 4
+python3 ~/bin/mcp-aws.py screenshot $TMPD/t107c-agents.png
+
+# Клікнути Pipeline A DRAKON (приблизні координати — уточнити з snapshot)
+python3 ~/bin/mcp-aws.py snapshot > $TMPD/t107c-snap.txt 2>/dev/null
+grep -i "drakon\|pipeline" $TMPD/t107c-snap.txt | head -5
+python3 ~/bin/mcp-aws.py click 150 85; sleep 3
+
+# Написати простий тест-запит в textarea (не весь код — перевірка роботи агента)
+python3 ~/bin/mcp-aws.py click 640 820; sleep 1
+python3 ~/bin/mcp-aws.py type "def process_alert(msg): return msg.upper()"; sleep 1
+python3 ~/bin/mcp-aws.py key Return; sleep 20
+
+python3 ~/bin/mcp-aws.py screenshot $TMPD/t107c-result.png
+python3 ~/bin/mcp-aws.py stop
+echo "result screenshot: $TMPD/t107c-result.png"
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-107c/[x] TASK-107c/' development/TASKS.md
+mkdir -p docs/uav-watcher-analysis
+echo "TASK-107c: DRAKON agent test $(date)" >> docs/uav-watcher-analysis/sprint2-task107.md
+git add development/TASKS.md docs/uav-watcher-analysis/
+git commit -m "chore(tasks): mark TASK-107c done — DRAKON agent smoke test"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-107c:drakon-agent-test|result:OK/FAIL/TIMEOUT|commit:<hash>|★★★
+```
+
