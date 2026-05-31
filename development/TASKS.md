@@ -6907,7 +6907,7 @@ SESSION:2026-05-31|TASK-92:agentworkspace-rpi|install+test|NotebookLM-preserved|
 
 ---
 
-## [ ] TASK-95
+## [x] TASK-95
 
 ### Мета
 Виправити і протестувати роботу в **ai-drakon UI** через `mcp-aws.py`:
