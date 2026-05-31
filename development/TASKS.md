@@ -10115,7 +10115,7 @@ SESSION:DATE|TASK-107e:architect-proxy-fix|agy3→agy.exodus|result:OK/FAIL|comm
 
 ---
 
-## [ ] TASK-107f
+## [x] TASK-107f
 
 **Мета**: Виправити architect-agent для підтримки Anthropic format (/v1/messages) коли PROXY_PROTOCOL=anthropic — щоб AGY proxy (agy.exodus.pp.ua) працював.
 

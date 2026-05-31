@@ -9,6 +9,7 @@ import httpx
 PROXY_URL = os.getenv("PROXY_URL", "http://localhost:18880/v1")
 PROXY_TOKEN = os.getenv("PROXY_TOKEN", "freecc")
 PROXY_MODEL = os.getenv("PROXY_MODEL", "fast-proxy")
+PROXY_PROTOCOL = os.getenv("PROXY_PROTOCOL", "openai")
 
 _DRAKON_AGENT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "drakon-agent"))
 if _DRAKON_AGENT not in sys.path:
@@ -70,14 +71,27 @@ def architect_chat(
         {"role": "user", "content": "\n\n".join(parts)},
     ]
 
-    resp = httpx.post(
-        f"{PROXY_URL}/chat/completions",
-        json={"model": PROXY_MODEL, "messages": messages, "temperature": 0.2},
-        headers={"Authorization": f"Bearer {PROXY_TOKEN}"},
-        timeout=90.0,
-    )
-    resp.raise_for_status()
-    content = resp.json()["choices"][0]["message"]["content"]
+    if PROXY_PROTOCOL == "anthropic":
+        # Anthropic /v1/messages format
+        system_msg = next((m["content"] for m in messages if m["role"]=="system"), "")
+        user_msgs = [{"role": m["role"], "content": m["content"]} for m in messages if m["role"]!="system"]
+        resp = httpx.post(
+            f"{PROXY_URL}/messages",
+            json={"model": PROXY_MODEL, "system": system_msg, "messages": user_msgs, "max_tokens": 4096},
+            headers={"x-api-key": PROXY_TOKEN, "anthropic-version": "2023-06-01"},
+            timeout=90.0,
+        )
+        resp.raise_for_status()
+        content = resp.json()["content"][0]["text"]
+    else:
+        resp = httpx.post(
+            f"{PROXY_URL}/chat/completions",
+            json={"model": PROXY_MODEL, "messages": messages, "temperature": 0.2},
+            headers={"Authorization": f"Bearer {PROXY_TOKEN}"},
+            timeout=90.0,
+        )
+        resp.raise_for_status()
+        content = resp.json()["choices"][0]["message"]["content"]
 
     mutations = None
     m = _JSON_BLOCK_RE.search(content)
