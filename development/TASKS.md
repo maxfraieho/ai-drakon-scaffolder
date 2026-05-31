@@ -9237,7 +9237,7 @@ SESSION:DATE|TASK-SS-03:institutions-list|20-contacts-VD|EVAM+communes+fondation
 ```
 
 
-## [ ] TASK-SS-04
+## [x] TASK-SS-04
 
 **Мета**: Написати методологічний документ — "Розробка соціальних проектів за допомогою мультиагентного ШІ" для включення в документацію Sonate Solidaire.
 
