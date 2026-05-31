@@ -10443,3 +10443,189 @@ git push origin main
 SESSION:DATE|TASK-107g:architect-proxy-LAN|192.168.3.195:8080/v1|result:OK/FAIL|commit:<hash>|★★★
 ```
 
+
+
+## ═══════════════════════════════════════════
+## SPRINT 4 — UAV-WATCHER MANUAL TEST + DOCS REVIEW
+## ═══════════════════════════════════════════
+
+## [ ] TASK-113
+
+**Мета**: Розробити план ручного тестування UI ai-drakon по всіх сценаріях (A–G) в контексті проекту uav-watcher + провести ревізію документації через docs-агент MCP.
+
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. NO browser. Тільки curl + файли.**
+
+---
+
+### Частина 1 — План ручного тестування UI
+
+Написати файл `docs/manuals/manual-testing-uav-watcher.md` у форматі **Garden Bloom** проекту.
+
+#### Формат файлу (frontmatter обов'язковий):
+```markdown
+---
+tags:
+  - domain:manuals
+  - status:active
+  - format:manual
+created: 2026-05-31
+updated: 2026-05-31
+tier: 2
+title: "Посібник ручного тестування UI — UAV-Watcher"
+lang: uk
+---
+```
+
+#### Зміст плану (обов'язкові секції):
+
+**1. Передумови**
+- Обліковий запис: `owner / drakon-mcp-2026`
+- URL: `https://ai-drakon-scaffolder.pages.dev`
+- GitHub repo налаштовано: `maxfraieho/uav-watcher`
+- Посилання: `[[manuals/manual-pipeline-a]]`, `[[architecture/_INDEX]]`
+
+**2. Тест-кейси для кожного сценарію (A–G)**
+
+Для кожного сценарію:
+- **ID**: TC-D-01 (де D = літера сценарію)
+- **Назва**: назва сценарію
+- **Функція uav-watcher**: яка функція тестується
+- **Кроки**: нумеровані, конкретні
+- **Очікуваний результат**
+- **Посилання**: `[[manuals/manual-pipeline-X]]` або `[[kb/_INDEX]]`
+
+**Функції uav-watcher для кожного сценарію:**
+- A (Код → DRAKON IR): `score_proximity` (lines 78-105 uav_watcher.py)
+- B (Ідея → IR): "AllerClear sync flow — автосинхронізація відбою"
+- C (Тест-кейси): `keyword_classify` function
+- D (Рефакторинг): `score_proximity` (CC ≈ 5, 4 loops)
+- E (Пояснення): `threat_detection` flow
+- F (Специфікація): "Sharon Consultant — query → LangGraph → shelters"
+- G (Batch аналіз): весь модуль `uav_watcher.py`
+
+**3. Тестування секцій UI**
+- `/code` — GitHub файловий браузер
+- `/pipelines` — 7 сценаріїв
+- `/diagrams` — DRAKON редактор
+- `/agents` — 3 агенти (DRAKON, ARCHITECT, DOCS)
+- `/notes` — нотатки
+
+**4. Критерії Pass/Fail**
+
+**5. Відомі обмеження** (з problem-map.md)
+- Посилання: `[[../uav-watcher-analysis/problem-map]]`
+
+#### Код для отримання функцій:
+```bash
+# score_proximity function
+curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" \
+  | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+lines=d.get('content','').split('\n')
+print('\n'.join(lines[77:106]))
+"
+```
+
+---
+
+### Частина 2 — Ревізія документації через docs-агент MCP
+
+Виконати аудит актуальності документації. Результати в `docs/reports/docs-audit-2026-05-31.md`.
+
+#### Крок 1 — Перевірити доступні проекти:
+```bash
+curl -s http://192.168.3.184:8766/projects | python3 -m json.tool 2>/dev/null | head -20
+```
+
+#### Крок 2 — Перевірити docs агент для uav-watcher:
+```bash
+# Якщо є проект uav-watcher:
+curl -s http://192.168.3.184:8766/projects/uav-watcher/agents/ 2>/dev/null | python3 -m json.tool | head -20
+
+# Або через загальний /chat endpoint з контекстом документації:
+python3 - << 'PYEOF'
+import json, urllib.request
+
+BASE = "http://192.168.3.184:8766"
+
+docs_to_review = [
+    "docs/manuals/manual-pipeline-a.md",
+    "docs/manuals/manual-pipeline-b.md", 
+    "docs/manuals/manual-agent-studio.md",
+    "docs/manuals/manual-mcp-access.md",
+]
+
+for doc_path in docs_to_review:
+    # Read file content
+    try:
+        with open(f"/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/{doc_path}") as f:
+            content = f.read()
+        
+        # Ask docs agent to review
+        payload = json.dumps({
+            "message": f"Перевір актуальність документа '{doc_path}'. Визнач: 1) Чи відповідає опис реальному стану UI? 2) Які секції застарілі? 3) Що потрібно оновити? Відповідь коротко: АКТУАЛЬНО/ЗАСТАРІЛО + список пунктів.\n\nВміст документа:\n{content[:2000]}"
+        }).encode()
+        req = urllib.request.Request(f"{BASE}/chat",
+            data=payload, headers={"Content-Type": "application/json"}, method="POST")
+        resp = json.loads(urllib.request.urlopen(req, timeout=60).read())
+        reply = resp.get("reply", "?")[:300]
+        print(f"\n=== {doc_path} ===")
+        print(reply)
+    except Exception as e:
+        print(f"ERROR {doc_path}: {e}")
+PYEOF
+```
+
+#### Крок 3 — Записати результати аудиту:
+
+Формат файлу `docs/reports/docs-audit-2026-05-31.md`:
+```markdown
+---
+tags:
+  - domain:reports
+  - status:active
+  - format:audit
+created: 2026-05-31
+updated: 2026-05-31
+tier: 3
+title: "Аудит документації — актуальність 2026-05-31"
+lang: uk
+---
+
+# Аудит документації AI-DRAKON — 2026-05-31
+
+## Методологія
+Перевірка актуальності через docs-агент (architect-agent /chat).
+Перевірялись: [[manuals/manual-pipeline-a]], [[manuals/manual-pipeline-b]],
+[[manuals/manual-agent-studio]], [[manuals/manual-mcp-access]]
+
+## Результати
+
+| Документ | Статус | Проблеми |
+|----------|--------|----------|
+| ... | АКТУАЛЬНО / ЗАСТАРІЛО | ... |
+
+## Рекомендації
+...
+```
+
+---
+
+### Коміти:
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+
+git add docs/manuals/manual-testing-uav-watcher.md docs/reports/docs-audit-2026-05-31.md
+git commit -m "docs(testing): manual UI test plan uav-watcher + docs audit (TASK-113)"
+
+sed -i 's/\[ \] TASK-113/[x] TASK-113/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-113 done"
+git push origin main
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-113:manual-testing-plan+docs-audit|scenarios:7|docs-checked:4|commit:<hash>|★★★
+```
