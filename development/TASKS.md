@@ -10757,3 +10757,315 @@ git push origin main
 ```
 SESSION:DATE|TASK-114:docs-update|4-manuals-rewritten|pipeline-a+b+agent-studio+mcp-access|commit:<hash>|★★★
 ```
+
+
+## [ ] TASK-115
+
+**Мета**: Додати file manipulation (write/delete/patch) в architect-agent + agentic tool-use loop для всіх агентів (DOCS, ARCHITECT, DRAKON).
+
+**!!IMPORTANT!! Run locally on AGY Termux. Після змін — scp на 192.168.3.184 + restart сервісу.**
+
+---
+
+### Що треба реалізувати
+
+**1. `services/architect-agent/files_route.py`** — додати 3 нових ендпоінти:
+
+```python
+from pydantic import BaseModel
+
+class WriteRequest(BaseModel):
+    path: str           # відносний шлях від REPO_ROOT
+    content: str        # повний вміст файлу
+    create_dirs: bool = True  # створити батьківські директорії
+
+class PatchRequest(BaseModel):
+    path: str
+    old_string: str     # точний рядок для пошуку (унікальний)
+    new_string: str     # замінити на
+    replace_all: bool = False
+
+class DeleteRequest(BaseModel):
+    path: str
+
+@router.post("/write")
+def write_file(req: WriteRequest):
+    target = (REPO_ROOT / req.path).resolve()
+    if not str(target).startswith(str(REPO_ROOT)):
+        raise HTTPException(status_code=403, detail="Path outside project root")
+    if req.create_dirs:
+        target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(req.content, encoding="utf-8")
+    return {"path": req.path, "written": len(req.content), "ok": True}
+
+@router.post("/patch")
+def patch_file(req: PatchRequest):
+    target = (REPO_ROOT / req.path).resolve()
+    if not str(target).startswith(str(REPO_ROOT)):
+        raise HTTPException(status_code=403, detail="Path outside project root")
+    if not target.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {req.path}")
+    content = target.read_text(encoding="utf-8")
+    if req.old_string not in content:
+        raise HTTPException(status_code=422, detail=f"old_string not found in file")
+    if req.replace_all:
+        new_content = content.replace(req.old_string, req.new_string)
+    else:
+        new_content = content.replace(req.old_string, req.new_string, 1)
+    target.write_text(new_content, encoding="utf-8")
+    count = content.count(req.old_string)
+    return {"path": req.path, "replacements": count if req.replace_all else 1, "ok": True}
+
+@router.post("/delete")
+def delete_file(req: DeleteRequest):
+    target = (REPO_ROOT / req.path).resolve()
+    if not str(target).startswith(str(REPO_ROOT)):
+        raise HTTPException(status_code=403, detail="Path outside project root")
+    if not target.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {req.path}")
+    target.unlink()
+    return {"path": req.path, "deleted": True, "ok": True}
+```
+
+**2. `services/architect-agent/ai_chat/architect_chat.py`** — додати agentic tool-use loop:
+
+Додати константу TOOLS_SCHEMA і функцію `agent_chat_with_tools()`:
+
+```python
+_TOOLS_SCHEMA = """
+## File Tools (use JSON blocks to call them):
+
+<tool_call>{"tool":"files_read","args":{"path":"relative/path.md"}}</tool_call>
+→ повертає {"content":"...","size":N}
+
+<tool_call>{"tool":"files_write","args":{"path":"relative/path.md","content":"...повний вміст..."}}</tool_call>
+→ повертає {"written":N,"ok":true}
+
+<tool_call>{"tool":"files_patch","args":{"path":"relative/path.md","old_string":"...","new_string":"..."}}</tool_call>
+→ повертає {"replacements":1,"ok":true}
+
+<tool_call>{"tool":"files_delete","args":{"path":"relative/path.md"}}</tool_call>
+→ повертає {"deleted":true,"ok":true}
+
+<tool_call>{"tool":"files_list","args":{"path":"docs/manuals"}}</tool_call>
+→ повертає {"entries":[...]}
+
+Правила:
+- Один <tool_call> за раз
+- Після виконання інструменту отримаєш <tool_result>...</tool_result>
+- Можеш продовжити ще tool_calls або написати фінальну відповідь
+- Для завершення напиши DONE: [коротке резюме]
+"""
+
+import re as _re
+
+_TOOL_CALL_RE = _re.compile(r"<tool_call>(.*?)</tool_call>", _re.DOTALL)
+
+def _execute_tool(tool: str, args: dict, repo_root: Path) -> str:
+    import httpx
+    BASE = "http://localhost:8766"
+    try:
+        if tool == "files_read":
+            r = httpx.get(f"{BASE}/files/read", params={"path": args["path"]}, timeout=10)
+        elif tool == "files_list":
+            r = httpx.get(f"{BASE}/files/list", params={"path": args.get("path",".")}, timeout=10)
+        elif tool == "files_write":
+            r = httpx.post(f"{BASE}/files/write", json=args, timeout=15)
+        elif tool == "files_patch":
+            r = httpx.post(f"{BASE}/files/patch", json=args, timeout=15)
+        elif tool == "files_delete":
+            r = httpx.post(f"{BASE}/files/delete", json=args, timeout=10)
+        else:
+            return f"Unknown tool: {tool}"
+        r.raise_for_status()
+        result = r.json()
+        if tool == "files_read":
+            return result.get("content","")[:3000]
+        return json.dumps(result)
+    except Exception as e:
+        return f"Tool error: {e}"
+
+def agent_chat_with_tools(
+    message: str,
+    file_tree=None,
+    current_diagram=None,
+    memory_context: str = "",
+    kb_context: str = "",
+    project_slug=None,
+    project_path=None,
+    max_iterations: int = 8,
+) -> dict:
+    from pathlib import Path as _Path
+    repo_root = _Path(os.getenv("REPO_ROOT", os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", ".."))))
+
+    system_prompt = ARCHITECT_SYSTEM_PROMPT + "\n\n" + _TOOLS_SCHEMA
+    if project_slug:
+        loc = f" at {project_path}" if project_path else ""
+        system_prompt += f"\n\n**Active project: {project_slug}{loc}.**"
+
+    parts = []
+    if memory_context:
+        parts.append(f"## My Memory\n{memory_context}")
+    drakon_rules = kb_context or _load_kb_snippet()
+    if drakon_rules:
+        parts.append(f"## DRAKON Rules\n{drakon_rules[:1000]}")
+    if file_tree:
+        parts.append(f"## File Tree\n{json.dumps(file_tree, indent=2)[:2000]}")
+    parts.append(f"## User Request\n{message}")
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "\n\n".join(parts)},
+    ]
+
+    all_tool_calls = []
+    final_reply = ""
+
+    for iteration in range(max_iterations):
+        # LLM call
+        if PROXY_PROTOCOL == "anthropic":
+            system_msg = messages[0]["content"]
+            user_msgs = [m for m in messages if m["role"] != "system"]
+            resp = httpx.post(f"{PROXY_URL}/messages",
+                json={"model": PROXY_MODEL, "system": system_msg, "messages": user_msgs, "max_tokens": 4096},
+                headers={"x-api-key": PROXY_TOKEN, "anthropic-version": "2023-06-01"},
+                timeout=120.0)
+        else:
+            resp = httpx.post(f"{PROXY_URL}/chat/completions",
+                json={"model": PROXY_MODEL, "messages": messages, "temperature": 0.1},
+                headers={"Authorization": f"Bearer {PROXY_TOKEN}"},
+                timeout=120.0)
+        resp.raise_for_status()
+        if PROXY_PROTOCOL == "anthropic":
+            content = resp.json()["content"][0]["text"]
+        else:
+            content = resp.json()["choices"][0]["message"]["content"]
+
+        messages.append({"role": "assistant", "content": content})
+
+        # Check for tool calls
+        tool_match = _TOOL_CALL_RE.search(content)
+        if not tool_match:
+            final_reply = content
+            break
+
+        # Execute tool
+        try:
+            call = json.loads(tool_match.group(1).strip())
+            tool_name = call.get("tool","")
+            tool_args = call.get("args", {})
+            result = _execute_tool(tool_name, tool_args, repo_root)
+            all_tool_calls.append({"tool": tool_name, "args": tool_args, "result": result[:200]})
+        except Exception as e:
+            result = f"Parse error: {e}"
+
+        # Feed result back
+        messages.append({"role": "user", "content": f"<tool_result>{result}</tool_result>"})
+
+        if "DONE:" in content:
+            final_reply = content
+            break
+
+    return {
+        "reply": final_reply or content,
+        "tool_calls": all_tool_calls,
+        "iterations": iteration + 1,
+        "suggested_mutations": None,
+    }
+```
+
+**3. `services/architect-agent/main.py`** — додати параметр `agent_mode` в `/chat`:
+
+```python
+class ChatRequest(BaseModel):
+    message: str
+    file_tree: Optional[dict] = None
+    current_diagram: Optional[dict] = None
+    memory_context: str = ""
+    kb_context: str = ""
+    project_slug: Optional[str] = None
+    project_path: Optional[str] = None
+    agent_mode: bool = False  # NEW
+
+@app.post("/chat")
+def chat(req: ChatRequest):
+    if req.agent_mode:
+        from ai_chat.architect_chat import agent_chat_with_tools
+        return agent_chat_with_tools(
+            message=req.message,
+            file_tree=req.file_tree,
+            current_diagram=req.current_diagram,
+            memory_context=req.memory_context,
+            kb_context=req.kb_context,
+            project_slug=req.project_slug,
+            project_path=req.project_path,
+        )
+    # existing architect_chat call...
+```
+
+---
+
+### Кроки:
+
+```bash
+REPO=~/workspace/ai-drakon-scaffolder
+AGENT=$REPO/services/architect-agent
+
+# 1. Відредагувати файли
+nano $AGENT/files_route.py        # додати Write/Patch/Delete
+nano $AGENT/ai_chat/architect_chat.py  # додати agent_chat_with_tools
+nano $AGENT/main.py               # додати agent_mode param
+
+# 2. Скопіювати на сервер
+sshpass -p '805235io.' scp -o StrictHostKeyChecking=no \
+  $AGENT/files_route.py \
+  $AGENT/ai_chat/architect_chat.py \
+  $AGENT/main.py \
+  vokov@192.168.3.184:~/workspace/ai-drakon-scaffolder/services/architect-agent/
+
+sshpass -p '805235io.' scp -o StrictHostKeyChecking=no \
+  $AGENT/ai_chat/architect_chat.py \
+  vokov@192.168.3.184:~/workspace/ai-drakon-scaffolder/services/architect-agent/ai_chat/
+
+# 3. Рестарт сервісу
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sudo rc-service ai-architect-agent restart && sleep 3 && curl -s http://localhost:8766/health'
+
+# 4. Тест нових ендпоінтів
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'curl -s -X POST http://localhost:8766/files/write \
+    -H "Content-Type: application/json" \
+    -d "{\"path\":\"docs/test-file-tools.md\",\"content\":\"# Test\\nfile tools work!\"}" | python3 -m json.tool'
+
+# 5. Тест agent_mode
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'curl -s -X POST http://localhost:8766/chat \
+    -H "Content-Type: application/json" \
+    -d "{\"message\":\"Прочитай файл docs/test-file-tools.md і скажи що там\",\"agent_mode\":true}" \
+    | python3 -c "import json,sys; d=json.load(sys.stdin); print(d.get(\"reply\",\"\")[:200]); print(\"tools:\",d.get(\"tool_calls\",[]))"'
+
+# 6. Видалити тестовий файл
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'curl -s -X POST http://localhost:8766/files/delete \
+    -H "Content-Type: application/json" \
+    -d "{\"path\":\"docs/test-file-tools.md\"}" | python3 -m json.tool'
+```
+
+### Коміт:
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+git add services/architect-agent/files_route.py \
+        services/architect-agent/ai_chat/architect_chat.py \
+        services/architect-agent/main.py
+git commit -m "feat(architect-agent): add files/write/patch/delete + agent_mode tool-use loop (TASK-115)"
+sed -i 's/\[ \] TASK-115/[x] TASK-115/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-115 done"
+git push origin main
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-115:agent-file-tools|files-write+patch+delete+agent_mode|test:OK|commit:<hash>|★★★★
+```
