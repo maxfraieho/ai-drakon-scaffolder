@@ -12066,3 +12066,277 @@ git log --oneline origin/main -3
 ```
 SESSION:DATE|TASK-120:docs-update|agents-architecture+LangGraph+unified-port-8766|commit:<hash>|★★★
 ```
+
+---
+
+## [ ] TASK-121
+
+**Мета**: Заповнити початкову базу знань Sonate Solidaire агента через Gemini — 4 KB файли по групах аудиторії.
+
+**!!IMPORTANT!! Run locally on THIS Termux device. NO SSH to 192.168.3.184. NO mempalace. NO writing-plans. Execute immediately.**
+
+---
+
+### Де зберігати результати:
+Репозиторій `sonate-solidsite` вже клонований або клонувати:
+```bash
+cd ~/workspace
+git clone git@github.com:maxfraieho/sonate-solidsite.git 2>/dev/null || (cd sonate-solidsite && git pull)
+```
+
+KB файли: `~/workspace/sonate-solidsite/public/kb/`
+
+---
+
+### Крок 1 — Згенерувати KB для групи "events" через Gemini
+
+```bash
+python3 - << 'PYEOF'
+import json, urllib.request
+
+PROMPT_EVENTS = """Tu représentes l'association Sonate Solidaire (Gland, Vaud, Suisse).
+Mission: intégration culturelle par la musique — pour tous ceux qui cherchent leur place en Suisse.
+Nous organisons des concerts et cherchons des organisateurs d'événements comme partenaires.
+
+Génère un contenu structuré en markdown pour la base de connaissances d'un assistant IA.
+Le contenu doit répondre aux questions typiques des organisateurs d'événements:
+
+1. Quels types de prestations musicales proposons-nous (formats, instruments, durée)?
+2. Comment se passe la réservation et quels sont les délais?
+3. Quelle est la zone géographique de prestation?
+4. Comment contacter l'association pour organiser un événement?
+5. Quels sont les tarifs (général — sur demande, mais expliquer le processus)?
+6. Exemples de types d'événements auxquels nous participons?
+
+Format: markdown avec titres H2/H3, listes à puces, liens vers https://sonate-solidaire.me/contact?subject=event
+Langue: français, chaleureux et professionnel. Maximum 400 mots.
+"""
+
+payload = json.dumps({
+    "model": "gemini-2.5-flash",
+    "max_tokens": 2000,
+    "messages": [{"role": "user", "content": PROMPT_EVENTS}]
+}).encode()
+
+req = urllib.request.Request(
+    "http://localhost:8080/v1/messages",
+    data=payload,
+    headers={"Content-Type": "application/json"},
+    method="POST"
+)
+with urllib.request.urlopen(req, timeout=60) as r:
+    resp = json.loads(r.read())
+
+text = ""
+for b in resp.get("content", []):
+    if b.get("type") == "text":
+        text = b["text"]
+        break
+
+# Prepend header
+header = """# Sonate Solidaire — Pour les organisateurs d'événements
+
+"""
+with open("/data/data/com.termux/files/home/workspace/sonate-solidsite/public/kb/kb-events.md", "w") as f:
+    f.write(header + text)
+print("kb-events.md written, chars:", len(text))
+PYEOF
+```
+
+---
+
+### Крок 2 — KB для групи "musicians"
+
+```bash
+python3 - << 'PYEOF'
+import json, urllib.request
+
+PROMPT_MUSICIANS = """Tu représentes l'association Sonate Solidaire (Gland, Vaud, Suisse).
+Nous invitons TOUS les musiciens à rejoindre notre collectif — quelle que soit leur origine.
+Nous soutenons aussi les personnes en cours d'intégration en Suisse par la culture et la musique.
+
+Génère un contenu markdown pour la base de connaissances d'un assistant IA qui dialogue avec des musiciens.
+Le contenu doit répondre à:
+
+1. Qui peut rejoindre? (tous musiciens, toutes origines, tous niveaux)
+2. Quelles sont les activités du collectif? (répétitions, concerts, communauté)
+3. Comment se passe le processus de candidature? (formulaire sur le site)
+4. Quel soutien l'association offre-t-elle aux personnes en intégration?
+5. Ressources utiles dans le canton de Vaud pour les musiciens immigrants?
+6. Comment contacter l'association?
+
+Inclure aussi une version courte des mêmes infos en ukrainien (pour les visiteurs ukrainiens).
+Format: markdown H2/H3, lien vers https://sonate-solidaire.me/contact?subject=integration
+Langue principale: français. Ton: chaleureux, inclusif. Maximum 500 mots.
+"""
+
+payload = json.dumps({
+    "model": "gemini-2.5-flash",
+    "max_tokens": 2500,
+    "messages": [{"role": "user", "content": PROMPT_MUSICIANS}]
+}).encode()
+
+req = urllib.request.Request(
+    "http://localhost:8080/v1/messages",
+    data=payload,
+    headers={"Content-Type": "application/json"},
+    method="POST"
+)
+with urllib.request.urlopen(req, timeout=60) as r:
+    resp = json.loads(r.read())
+
+text = ""
+for b in resp.get("content", []):
+    if b.get("type") == "text":
+        text = b["text"]
+        break
+
+header = """# Sonate Solidaire — Pour les musiciens
+
+"""
+with open("/data/data/com.termux/files/home/workspace/sonate-solidsite/public/kb/kb-musicians.md", "w") as f:
+    f.write(header + text)
+print("kb-musicians.md written, chars:", len(text))
+PYEOF
+```
+
+---
+
+### Крок 3 — KB для групи "partners"
+
+```bash
+python3 - << 'PYEOF'
+import json, urllib.request
+
+PROMPT_PARTNERS = """Tu représentes l'association Sonate Solidaire (Gland, Vaud, Suisse).
+Association à but non lucratif (art. 60 CC). Mission: intégration culturelle par la musique.
+Trésorier: Philippe Leroy.
+
+Génère un contenu markdown pour la base de connaissances d'un assistant IA pour les partenaires/bénévoles:
+
+1. Comment peut-on soutenir l'association? (bénévolat, dons, partenariat)
+2. Quels types de partenariats cherchons-nous? (écoles, communes, fondations)
+3. Quels programmes de subventions existent dans le canton de Vaud pour ce type d'association?
+   (Loterie Romande, Fondation Leenaards, Pro Helvetia, fonds communaux)
+4. Comment recruter des bénévoles en Suisse romande?
+5. Forme juridique et transparence de l'association?
+6. Comment contacter pour un partenariat?
+
+Format: markdown H2/H3, liens vers https://sonate-solidaire.me/support et /contact?subject=institutional
+Langue: français professionnel. Maximum 400 mots.
+"""
+
+payload = json.dumps({
+    "model": "gemini-2.5-flash",
+    "max_tokens": 2000,
+    "messages": [{"role": "user", "content": PROMPT_PARTNERS}]
+}).encode()
+
+req = urllib.request.Request(
+    "http://localhost:8080/v1/messages",
+    data=payload,
+    headers={"Content-Type": "application/json"},
+    method="POST"
+)
+with urllib.request.urlopen(req, timeout=60) as r:
+    resp = json.loads(r.read())
+
+text = ""
+for b in resp.get("content", []):
+    if b.get("type") == "text":
+        text = b["text"]
+        break
+
+header = """# Sonate Solidaire — Pour les partenaires et bénévoles
+
+"""
+with open("/data/data/com.termux/files/home/workspace/sonate-solidsite/public/kb/kb-partners.md", "w") as f:
+    f.write(header + text)
+print("kb-partners.md written, chars:", len(text))
+PYEOF
+```
+
+---
+
+### Крок 4 — KB для "general"
+
+```bash
+python3 - << 'PYEOF'
+import json, urllib.request
+
+PROMPT_GENERAL = """Tu représentes l'association Sonate Solidaire (Gland, Vaud, Suisse).
+Notre mission: réunir des musiciens et soutenir l'intégration de ceux qui cherchent leur place en Suisse, par la culture et la musique.
+
+Génère un contenu markdown général pour un assistant IA qui répond à tout visiteur du site:
+
+1. Présentation de l'association (qui sommes-nous, où sommes-nous, quoi faisons-nous)
+2. Nos trois audiences principales et ce que nous offrons à chacune
+3. Comment nous contacter selon le besoin
+4. Événements à venir (dire que les infos sont sur le site)
+5. Pourquoi la musique comme vecteur d'intégration?
+
+Format: markdown chaleureux, H2/H3, ton humain et authentique (pas marketing).
+Liens vers https://sonate-solidaire.me, /contact, /integration, /support
+Langue: français. Maximum 350 mots.
+"""
+
+payload = json.dumps({
+    "model": "gemini-2.5-flash",
+    "max_tokens": 1800,
+    "messages": [{"role": "user", "content": PROMPT_GENERAL}]
+}).encode()
+
+req = urllib.request.Request(
+    "http://localhost:8080/v1/messages",
+    data=payload,
+    headers={"Content-Type": "application/json"},
+    method="POST"
+)
+with urllib.request.urlopen(req, timeout=60) as r:
+    resp = json.loads(r.read())
+
+text = ""
+for b in resp.get("content", []):
+    if b.get("type") == "text":
+        text = b["text"]
+        break
+
+header = """# Sonate Solidaire
+
+"""
+with open("/data/data/com.termux/files/home/workspace/sonate-solidsite/public/kb/kb-general.md", "w") as f:
+    f.write(header + text)
+print("kb-general.md written, chars:", len(text))
+PYEOF
+```
+
+---
+
+### Крок 5 — Commit і push sonate-solidsite
+
+```bash
+cd ~/workspace/sonate-solidsite
+git pull origin main --quiet
+git add public/kb/
+git diff --cached --stat
+git commit -m "feat(kb): initial AI-generated KB content for SS agent audiences (TASK-121)"
+git push origin main
+echo "DONE: sonate-solidsite KB pushed"
+```
+
+---
+
+### Верифікація:
+```bash
+# Файли існують?
+ls ~/workspace/sonate-solidsite/public/kb/
+# Розмір?
+wc -l ~/workspace/sonate-solidsite/public/kb/*.md
+# Коміт?
+cd ~/workspace/sonate-solidsite && git log --oneline -2
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-121:ss-kb-fill|4-kb-generated-by-gemini|events+musicians+partners+general|commit:<hash>|★★★
+```
