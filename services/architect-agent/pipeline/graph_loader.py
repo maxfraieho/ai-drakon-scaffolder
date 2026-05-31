@@ -18,8 +18,11 @@ from .nodes_agents import (
     drakon_load_kb, drakon_format_prompt, drakon_parse_result,
     docs_load_kb, docs_format_prompt,
 )
+from .nodes_ss import (
+    ss_detect_audience, ss_load_kb, ss_format_prompt, ss_format_response,
+)
 from .graphs import _route_by_complexity, _route_after_validate, _route_after_syntax
-from .states import AnalysisState, VibeCodingState, DrakonAgentState, DocsAgentState
+from .states import AnalysisState, VibeCodingState, DrakonAgentState, DocsAgentState, SSAgentState
 
 
 def llm_call_node(state: dict) -> dict:
@@ -32,6 +35,27 @@ def llm_call_node(state: dict) -> dict:
         json={"model": proxy_model, "messages": [
             {"role": "user", "content": state.get("llm_prompt", "")}
         ], "temperature": 0.1},
+        headers={"Authorization": f"Bearer {proxy_token}"},
+        timeout=120.0)
+    resp.raise_for_status()
+    content = resp.json()["choices"][0]["message"]["content"]
+    return {"llm_reply": content}
+
+
+def llm_call_with_system(state: dict) -> dict:
+    """LLM call that uses 'ss_system' from state as system prompt."""
+    import httpx, os
+    proxy_url = os.getenv("PROXY_URL", "http://localhost:18880/v1")
+    proxy_token = os.getenv("PROXY_TOKEN", "freecc") or "freecc"
+    proxy_model = os.getenv("PROXY_MODEL", "coding-proxy")
+    system = state.get("ss_system", "")
+    prompt = state.get("llm_prompt", "")
+    messages = []
+    if system:
+        messages.append({"role": "system", "content": system})
+    messages.append({"role": "user", "content": prompt})
+    resp = httpx.post(f"{proxy_url}/chat/completions",
+        json={"model": proxy_model, "messages": messages, "temperature": 0.2},
         headers={"Authorization": f"Bearer {proxy_token}"},
         timeout=120.0)
     resp.raise_for_status()
@@ -54,6 +78,11 @@ NODE_REGISTRY: dict[str, Any] = {
     "docs_load_kb": docs_load_kb,
     "docs_format_prompt": docs_format_prompt,
     "llm_call": llm_call_node,
+    "llm_call_with_system": llm_call_with_system,
+    "ss_detect_audience": ss_detect_audience,
+    "ss_load_kb": ss_load_kb,
+    "ss_format_prompt": ss_format_prompt,
+    "ss_format_response": ss_format_response,
 }
 
 ROUTER_REGISTRY: dict[str, Any] = {
@@ -67,6 +96,7 @@ STATE_REGISTRY: dict[str, Any] = {
     "VibeCodingState": VibeCodingState,
     "DrakonAgentState": DrakonAgentState,
     "DocsAgentState": DocsAgentState,
+    "SSAgentState": SSAgentState,
 }
 
 

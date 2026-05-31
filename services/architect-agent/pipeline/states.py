@@ -38,3 +38,12 @@ class DocsAgentState(TypedDict):
     kb_context: str
     llm_prompt: str
     llm_reply: str
+
+
+class SSAgentState(TypedDict):
+    message: str
+    ss_audience: str
+    kb_context: str
+    ss_system: str
+    llm_prompt: str
+    llm_reply: str
