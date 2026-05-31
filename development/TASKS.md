@@ -11451,3 +11451,526 @@ git push origin main
 ```
 SESSION:DATE|TASK-117:langgraph-unification|drakon-agent+docs-agent|DRAKON-IR→StateGraph|commit:<hash>|★★★★
 ```
+
+
+## ═══════════════════════════════════════════
+## SPRINT SS — Sonate Solidaire Assistant
+## ═══════════════════════════════════════════
+
+## [ ] TASK-118
+
+**Мета**: SS-агент на LangGraph з routing по аудиторії + веб-чат на sonate-solidaire.me.
+
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. Два репозиторії.**
+
+---
+
+### Репозиторії:
+- Backend: `~/workspace/ai-drakon-scaffolder` (architect-agent)
+- Frontend: клонувати `git@github.com:maxfraieho/sonate-solidsite.git` в `~/workspace/sonate-solidsite`
+
+---
+
+### Частина A — Backend (architect-agent)
+
+#### A1 — KB файли: `services/architect-agent/kb/sonate-solidaire/`
+
+Створити 4 файли:
+
+**`kb/sonate-solidaire/kb-events.md`** — для замовників заходів:
+```markdown
+# Sonate Solidaire — Інформація для замовників заходів
+
+## Про проект
+Sonate Solidaire — швейцарська асоціація у Гланді (кантон Во), яка організовує концерти та культурні заходи за участю музикантів-біженців.
+
+## Контакт для букінгу
+- Email: contact@sonate-solidaire.me
+- Сайт: https://sonate-solidaire.me/contact
+- Тел: через форму на сайті
+
+## Що ми пропонуємо
+- Камерні концерти (скрипка, фортепіано, вокал)
+- Майстер-класи та освітні програми
+- Культурні вечори з українською та східноєвропейською музикою
+- Виступи на приватних та корпоративних заходах
+
+## Географія
+Кантон Во, Швейцарія. Можливі виїзди при домовленості.
+
+## Як замовити
+Заповніть форму на https://sonate-solidaire.me/contact або напишіть на email.
+```
+
+**`kb/sonate-solidaire/kb-musicians.md`** — для музикантів-біженців:
+```markdown
+# Sonate Solidaire — Для музикантів-біженців
+
+## Хто ми
+Допомагаємо музикантам з України та інших країн інтегруватися у Швейцарії через музику.
+
+## Що пропонуємо музикантам
+- Можливість виступати та отримувати гонорар
+- Підтримка у процесі легалізації (Protection S)
+- Зв'язки з EVAM (établissement vaudois d'accueil des migrants)
+- Мережа контактів у культурному секторі кантону Во
+
+## Процес приєднання
+1. Зв'яжіться через форму на сайті або email
+2. Аудиція або надішліть відео-запис
+3. Обговорення умов співпраці
+
+## Protection S статус
+Музиканти з статусом Protection S мають право працювати у Швейцарії. Ми допомагаємо з оформленням документів.
+
+## Контакт
+contact@sonate-solidaire.me | https://sonate-solidaire.me/integration-path
+```
+
+**`kb/sonate-solidaire/kb-partners.md`** — для волонтерів та партнерів:
+```markdown
+# Sonate Solidaire — Для партнерів та волонтерів
+
+## Місія асоціації
+Культурна інтеграція музикантів-біженців у Швейцарії через організацію концертів та освітніх програм.
+
+## Правова форма
+Асоціація за швейцарським правом (art. 60 CC). Статути зареєстровані у кантоні Во.
+Тезаур'є: Philippe Leroy.
+
+## Як можна допомогти
+- Фінансова підтримка (пожертви не підлягають поверненню)
+- Волонтерство на заходах
+- Розповсюдження інформації
+- Партнерство установ (школи, культурні центри, церкви)
+
+## Фінансування
+Асоціація подає заявки на гранти: Loterie Romande, Fondation Leenaards, communales VD.
+
+## Контакт
+contact@sonate-solidaire.me | https://sonate-solidaire.me/support
+```
+
+**`kb/sonate-solidaire/kb-general.md`** — загальна інформація:
+```markdown
+# Sonate Solidaire
+
+Швейцарська асоціація культурної інтеграції музикантів-біженців.
+Місце: Гланд, кантон Во, Швейцарія.
+Сайт: https://sonate-solidaire.me
+Email: contact@sonate-solidaire.me
+
+## Наша діяльність
+Організовуємо концерти, майстер-класи та культурні заходи за участю музикантів з України та інших країн.
+
+## Для кого ми працюємо
+- Музиканти-біженці, які шукають можливості виступати
+- Організатори заходів, які хочуть унікальних виконавців
+- Громадськість, яка підтримує культурну інтеграцію
+```
+
+#### A2 — nodes_ss.py: `services/architect-agent/pipeline/nodes_ss.py`
+
+```python
+"""Sonate Solidaire agent nodes."""
+import os
+from pathlib import Path
+
+_KB_SS = Path(__file__).parent.parent / "kb" / "sonate-solidaire"
+
+_AUDIENCE_KEYWORDS = {
+    "events": ["concert", "booking", "заход", "konzert", "tarif", "замовити", "виступ", "organisation"],
+    "musicians": ["musicien", "музикант", "refugee", "bijeganets", "protection s", "evam", "біженець", "integration", "інтеграція"],
+    "partners": ["volunteer", "волонтер", "partner", "don", "financement", "association", "statut", "підтримати"],
+}
+
+def ss_detect_audience(state: dict) -> dict:
+    """Detect audience type from message content."""
+    msg = (state.get("message") or "").lower()
+    for audience, keywords in _AUDIENCE_KEYWORDS.items():
+        if any(kw in msg for kw in keywords):
+            return {"ss_audience": audience}
+    return {"ss_audience": "general"}
+
+def ss_load_kb(state: dict) -> dict:
+    """Load KB based on detected audience."""
+    audience = state.get("ss_audience", "general")
+    kb_file = _KB_SS / f"kb-{audience}.md"
+    fallback = _KB_SS / "kb-general.md"
+    f = kb_file if kb_file.exists() else fallback
+    content = f.read_text(encoding="utf-8") if f.exists() else ""
+    return {"kb_context": content}
+
+def ss_format_prompt(state: dict) -> dict:
+    """Build multilingual prompt."""
+    msg = state.get("message", "")
+    kb = state.get("kb_context", "")
+    audience = state.get("ss_audience", "general")
+    lang_hint = ""
+    if any(c in msg for c in "абвгдеєжзиіїйклмнопрстуфхцчшщьюя"):
+        lang_hint = "Respond in Ukrainian."
+    elif any(c in msg.lower() for c in ["ü","ö","ä","ß"]):
+        lang_hint = "Antworte auf Deutsch."
+    else:
+        lang_hint = "Réponds en français."
+
+    system = (
+        "Tu es l'assistant de l'association Sonate Solidaire. "
+        "Tu réponds aux questions sur l'association, ses activités et ses services. "
+        f"Audience détectée: {audience}. {lang_hint} "
+        "Sois concis, chaleureux et professionnel. "
+        "Si tu ne sais pas, dirige vers contact@sonate-solidaire.me"
+    )
+    prompt = f"Contexte:\n{kb[:2000]}\n\nQuestion: {msg}"
+    return {"llm_prompt": prompt, "ss_system": system}
+
+def ss_format_response(state: dict) -> dict:
+    """Format final response with contact CTA."""
+    reply = state.get("llm_reply", "")
+    audience = state.get("ss_audience", "general")
+    ctas = {
+        "events": "\n\n→ [Formulaire de contact](https://sonate-solidaire.me/contact)",
+        "musicians": "\n\n→ [Chemin d'intégration](https://sonate-solidaire.me/integration-path)",
+        "partners": "\n\n→ [Soutenir l'association](https://sonate-solidaire.me/support)",
+        "general": "\n\n→ [En savoir plus](https://sonate-solidaire.me)",
+    }
+    return {"llm_reply": reply + ctas.get(audience, "")}
+```
+
+#### A3 — StateGraph state у `pipeline/states.py` — додати:
+
+```python
+class SSAgentState(TypedDict):
+    message: str
+    ss_audience: str
+    kb_context: str
+    ss_system: str
+    llm_prompt: str
+    llm_reply: str
+```
+
+#### A4 — LLM node з кастомним system prompt у `graph_loader.py` — додати:
+
+```python
+def llm_call_with_system(state: dict) -> dict:
+    """LLM call that uses ss_system from state as system prompt."""
+    import httpx, os
+    proxy_url = os.getenv("PROXY_URL", "http://localhost:18880/v1")
+    proxy_token = os.getenv("PROXY_TOKEN", "freecc") or "freecc"
+    proxy_model = os.getenv("PROXY_MODEL", "coding-proxy")
+    system = state.get("ss_system", "You are a helpful assistant.")
+    resp = httpx.post(f"{proxy_url}/chat/completions",
+        json={"model": proxy_model, "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": state.get("llm_prompt", "")}
+        ], "temperature": 0.3},
+        headers={"Authorization": f"Bearer {proxy_token}"},
+        timeout=60.0)
+    resp.raise_for_status()
+    return {"llm_reply": resp.json()["choices"][0]["message"]["content"]}
+```
+
+#### A5 — Pipeline JSON: `pipelines/sonate-solidaire-agent.drakon.json`
+
+```json
+{
+  "name": "Sonate Solidaire Assistant",
+  "description": "Multi-audience assistant for Sonate Solidaire association",
+  "schema": {"state_class": "SSAgentState"},
+  "items": {
+    "h0": {"type": "header", "one": "n1"},
+    "n1": {"type": "action", "content": "ss_detect_audience", "one": "n2"},
+    "n2": {"type": "action", "content": "ss_load_kb", "one": "n3"},
+    "n3": {"type": "action", "content": "ss_format_prompt", "one": "n4"},
+    "n4": {"type": "action", "content": "llm_call_with_system", "one": "n5"},
+    "n5": {"type": "action", "content": "ss_format_response", "one": "end"},
+    "end": {"type": "end"}
+  }
+}
+```
+
+#### A6 — Зареєструвати всі нові nodes у `graph_loader.py`:
+```python
+from .nodes_ss import ss_detect_audience, ss_load_kb, ss_format_prompt, ss_format_response
+# додати в NODE_REGISTRY:
+"ss_detect_audience": ss_detect_audience,
+"ss_load_kb": ss_load_kb,
+"ss_format_prompt": ss_format_prompt,
+"ss_format_response": ss_format_response,
+"llm_call_with_system": llm_call_with_system,
+```
+
+#### A7 — Додати `SSAgentState` у `STATE_REGISTRY`.
+
+#### A8 — Deploy + тест:
+```bash
+# scp всіх нових файлів на 192.168.3.184
+# restart сервісу
+# тест:
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'curl -s http://localhost:8766/graph-pipelines | python3 -c "import json,sys; [print(p[\"name\"]) for p in json.load(sys.stdin)[\"pipelines\"]]"'
+```
+
+---
+
+### Частина B — Frontend (sonate-solidsite)
+
+```bash
+cd ~/workspace && git clone git@github.com:maxfraieho/sonate-solidsite.git 2>/dev/null || \
+  (cd sonate-solidsite && git pull origin main --quiet)
+```
+
+#### B1 — `src/components/SsAssistant.tsx` — чат компонент
+
+```tsx
+import { useState, useRef, useEffect } from "react";
+import { Send, Bot, User, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+const WORKER_URL = "https://drakon-mcp-worker.maxfraieho.workers.dev";
+const AGENT_URL = "http://192.168.3.184:8766";
+
+interface Message { role: "user" | "assistant"; content: string; }
+
+const WELCOME: Record<string, string> = {
+  fr: "Bonjour ! Je suis l'assistant de Sonate Solidaire. Que puis-je faire pour vous ?",
+  de: "Guten Tag! Ich bin der Assistent von Sonate Solidaire. Wie kann ich Ihnen helfen?",
+  uk: "Доброго дня! Я асистент Sonate Solidaire. Чим можу допомогти?",
+};
+
+export function SsAssistant({ lang = "fr" }: { lang?: string }) {
+  const [messages, setMessages] = useState<Message[]>([
+    { role: "assistant", content: WELCOME[lang] || WELCOME.fr }
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, loading]);
+
+  const send = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput("");
+    setMessages(prev => [...prev, { role: "user", content: text }]);
+    setLoading(true);
+    try {
+      const resp = await fetch(`${WORKER_URL}/v1/agents/sonate-solidaire/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, agentUrl: AGENT_URL }),
+      });
+      const data = await resp.json();
+      const reply = data.reply || data.message || "Je n'ai pas pu répondre. Contactez-nous: contact@sonate-solidaire.me";
+      setMessages(prev => [...prev, { role: "assistant", content: reply }]);
+    } catch {
+      setMessages(prev => [...prev, { role: "assistant", content: "Erreur de connexion. Réessayez." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col h-[500px] border rounded-xl bg-white shadow-sm">
+      <div className="px-4 py-3 border-b bg-amber-50 rounded-t-xl">
+        <div className="flex items-center gap-2">
+          <Bot className="h-5 w-5 text-amber-600" />
+          <span className="font-semibold text-amber-900 text-sm">Assistant Sonate Solidaire</span>
+          <span className="ml-auto h-2 w-2 rounded-full bg-emerald-500" />
+        </div>
+      </div>
+      <ScrollArea ref={scrollRef} className="flex-1 p-4">
+        <div className="flex flex-col gap-3">
+          {messages.map((m, i) => (
+            <div key={i} className={`flex gap-2 ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+              {m.role === "assistant" && <div className="h-7 w-7 rounded-full bg-amber-100 flex items-center justify-center shrink-0"><Bot className="h-4 w-4 text-amber-700" /></div>}
+              <div className={`rounded-xl px-3 py-2 text-sm max-w-[85%] whitespace-pre-wrap ${m.role === "user" ? "bg-amber-600 text-white" : "bg-gray-100 text-gray-800"}`}>
+                {m.content}
+              </div>
+              {m.role === "user" && <div className="h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center shrink-0"><User className="h-4 w-4" /></div>}
+            </div>
+          ))}
+          {loading && <div className="flex gap-2"><div className="h-7 w-7 rounded-full bg-amber-100 flex items-center justify-center"><Loader2 className="h-4 w-4 animate-spin text-amber-700" /></div><div className="bg-gray-100 rounded-xl px-3 py-2 text-sm text-gray-500">…</div></div>}
+        </div>
+      </ScrollArea>
+      <div className="p-3 border-t flex gap-2">
+        <Textarea value={input} onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) send(); }}
+          placeholder={lang === "uk" ? "Ваше питання…" : lang === "de" ? "Ihre Frage…" : "Votre question…"}
+          className="min-h-[44px] max-h-[100px] resize-none text-sm flex-1" disabled={loading} />
+        <Button size="icon" onClick={send} disabled={loading || !input.trim()}><Send className="h-4 w-4" /></Button>
+      </div>
+    </div>
+  );
+}
+```
+
+#### B2 — `src/pages/Assistant.tsx` — сторінка асистента
+
+```tsx
+import { useTranslation } from "react-i18next";
+import { SsAssistant } from "@/components/SsAssistant";
+import { Navbar } from "@/components/Navbar";
+
+export default function Assistant() {
+  const { i18n } = useTranslation();
+  const lang = i18n.language?.split("-")[0] || "fr";
+  const titles: Record<string, string> = {
+    fr: "Assistant virtuel",
+    de: "Virtueller Assistent",
+    uk: "Віртуальний асистент",
+  };
+  const subtitles: Record<string, string> = {
+    fr: "Posez vos questions sur Sonate Solidaire",
+    de: "Stellen Sie Ihre Fragen zu Sonate Solidaire",
+    uk: "Задайте ваші питання про Sonate Solidaire",
+  };
+  return (
+    <>
+      <Navbar />
+      <main className="max-w-2xl mx-auto px-4 py-12">
+        <h1 className="text-3xl font-bold mb-2 text-amber-900">{titles[lang] || titles.fr}</h1>
+        <p className="text-gray-600 mb-8">{subtitles[lang] || subtitles.fr}</p>
+        <SsAssistant lang={lang} />
+      </main>
+    </>
+  );
+}
+```
+
+#### B3 — Додати route в `src/App.tsx`
+
+Знайти імпорти lazy і додати:
+```tsx
+const Assistant = lazy(() => import("./pages/Assistant"));
+```
+У `<Routes>` додати:
+```tsx
+<Route path="/assistant" element={<Assistant />} />
+<Route path="/fr/assistant" element={<Assistant />} />
+<Route path="/de/assistant" element={<Assistant />} />
+<Route path="/uk/assistant" element={<Assistant />} />
+```
+
+#### B4 — Додати посилання в `Navbar.tsx`
+
+Знайти меню навігації і додати `Assistant` link.
+
+#### B5 — Коміт в sonate-solidsite:
+```bash
+cd ~/workspace/sonate-solidsite && git pull origin main --quiet
+git add src/components/SsAssistant.tsx src/pages/Assistant.tsx src/App.tsx src/components/Navbar.tsx
+git commit -m "feat(assistant): add Sonate Solidaire multi-audience chat assistant (TASK-118)"
+git push origin main
+```
+
+#### B6 — Коміт в ai-drakon-scaffolder:
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+git add services/architect-agent/pipeline/nodes_ss.py \
+        services/architect-agent/pipeline/graph_loader.py \
+        services/architect-agent/pipeline/states.py \
+        services/architect-agent/pipelines/sonate-solidaire-agent.drakon.json \
+        services/architect-agent/kb/sonate-solidaire/
+git commit -m "feat(ss-agent): Sonate Solidaire LangGraph agent with audience routing (TASK-118)"
+sed -i 's/\[ \] TASK-118/[x] TASK-118/' development/TASKS.md
+git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-118 done"
+git push origin main
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-118:ss-agent|4-kb-files+pipeline+webchat|sonate-solidaire.me/assistant|commit:<hash>|★★★★
+```
+
+
+## [ ] TASK-119
+
+**Мета**: Analytics logging для SS-агента — логувати запити (аудиторія, мова, питання) без PII.
+
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace.**
+
+### Що логувати (без персональних даних):
+
+```json
+{
+  "ts": "2026-06-01T00:00:00Z",
+  "audience": "events|musicians|partners|general",
+  "lang": "fr|de|uk|en",
+  "question_len": 42,
+  "question_keywords": ["concert", "booking"],
+  "response_len": 156
+}
+```
+
+### Реалізація — додати `ss_log_analytics` node:
+
+В `pipeline/nodes_ss.py` додати:
+
+```python
+import json, datetime
+
+_LOG_FILE = Path(__file__).parent.parent / "kb" / "sonate-solidaire" / "analytics.jsonl"
+
+def ss_log_analytics(state: dict) -> dict:
+    """Log anonymized interaction data."""
+    try:
+        msg = state.get("message", "")
+        keywords = [kw for kw in ["concert", "booking", "musician", "bijeganets", "volunteer", "contact", "price"]
+                    if kw in msg.lower()]
+        lang = "uk" if any(c in msg for c in "абвгдеєж") else \
+               "de" if any(c in msg.lower() for c in ["ü","ö","ä"]) else "fr"
+        entry = {
+            "ts": datetime.datetime.utcnow().isoformat(),
+            "audience": state.get("ss_audience", "general"),
+            "lang": lang,
+            "question_len": len(msg),
+            "question_keywords": keywords[:5],
+            "response_len": len(state.get("llm_reply", "")),
+        }
+        with open(_LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+    return {}
+```
+
+Оновити `sonate-solidaire-agent.drakon.json` — додати `ss_log_analytics` перед `end`.
+
+### Endpoint для читання аналітики:
+
+В `main.py` додати:
+```python
+@app.get("/agents/ss/analytics")
+def ss_analytics():
+    from pathlib import Path
+    log_file = Path(os.getenv("REPO_ROOT","")) / "services/architect-agent/kb/sonate-solidaire/analytics.jsonl"
+    if not log_file.exists():
+        return {"entries": [], "total": 0}
+    lines = [json.loads(l) for l in log_file.read_text().splitlines() if l.strip()]
+    from collections import Counter
+    audiences = Counter(e["audience"] for e in lines)
+    langs = Counter(e["lang"] for e in lines)
+    return {"total": len(lines), "by_audience": dict(audiences), "by_lang": dict(langs), "recent": lines[-10:]}
+```
+
+### Коміт:
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+git add services/architect-agent/pipeline/nodes_ss.py \
+        services/architect-agent/pipelines/sonate-solidaire-agent.drakon.json \
+        services/architect-agent/main.py
+git commit -m "feat(ss-analytics): add anonymous interaction logging for SS agent (TASK-119)"
+sed -i 's/\[ \] TASK-119/[x] TASK-119/' development/TASKS.md
+git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-119 done"
+git push origin main
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-119:ss-analytics|jsonl-log+endpoint+audience-stats|commit:<hash>|★★★
+```
