@@ -104,11 +104,12 @@ def extract_text(result):
 
 
 def save_screenshot(result, path):
-    """Save screenshot PNG from MCP result."""
+    """Save screenshot PNG from MCP result. Screenshot runs on RPi, copies to local."""
     content = result.get("result", {}).get("content", [])
-    local_path = path
-    if local_path.startswith("/tmp/"):
-        local_path = local_path.replace("/tmp/", os.environ.get("TMPDIR", "/data/data/com.termux/files/usr/tmp") + "/")
+    # Always save locally to TMPDIR (Termux has no /tmp)
+    tmpdir = os.environ.get("TMPDIR", "/data/data/com.termux/files/usr/tmp")
+    basename = os.path.basename(path)
+    local_path = os.path.join(tmpdir, basename)
     # Try image content first
     for item in content:
         if item.get("type") == "image" and item.get("data"):
@@ -284,11 +285,13 @@ def main():
             save_state(state)
 
         elif cmd == "screenshot":
-            out_path = args[1] if len(args) > 1 else "/tmp/aws-screenshot.png"
-            r = mcp.call("workspace_screenshot", {"output_path": out_path})
+            user_path = args[1] if len(args) > 1 else "aws-screenshot.png"
+            # workspace_screenshot saves on RPi - use RPi /tmp path
+            rpi_path = f"/tmp/{os.path.basename(user_path)}"
+            r = mcp.call("workspace_screenshot", {"output_path": rpi_path})
             text = extract_text(r)
-            # Try to save
-            saved = save_screenshot(r, out_path)
+            # Copy from RPi to local TMPDIR
+            saved = save_screenshot(r, user_path)
             if saved and os.path.exists(saved):
                 print(f"Screenshot saved: {saved} ({os.path.getsize(saved)} bytes)")
             else:
