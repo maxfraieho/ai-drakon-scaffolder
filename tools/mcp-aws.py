@@ -225,8 +225,14 @@ ws_s({{"id":2,"method":"Runtime.evaluate","params":{{"expression":
     "document.querySelector(\\"button\\").click();location.href","returnByValue":True}}}})
 ws_r()
 time.sleep(4)
+# Dismiss "Save password?" dialog if it appeared
+ws_s({{"id":10,"method":"Runtime.evaluate","params":{{"expression":
+    "(function(){{var btns=Array.from(document.querySelectorAll('button'));var b=btns.find(function(x){{return x.textContent.includes('No thanks')||x.textContent.includes('Never');}});if(b){{b.click();return 'dismissed';}}return 'no dialog';}})()","returnByValue":True}}}})
+ws_r()
+time.sleep(1)
 ws_s({{"id":3,"method":"Runtime.evaluate","params":{{"expression":"location.href","returnByValue":True}}}}); r=ws_r()
 print("url:",r.get("result",{{}}).get("result",{{}}).get("value"))
+print("Login successful")
 sock.close()
 """
     result = subprocess.run(
