@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   ChevronLeft, ChevronRight, Copy, Check, FileCode, FolderOpen,
-  Folder, Play, Save, Loader2, AlertCircle, RefreshCw,
+  Play, Save, Loader2, AlertCircle, RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Editor from "@monaco-editor/react";
@@ -301,11 +301,12 @@ export default function CodePage() {
   };
 
   return (
-    <div className="flex h-full overflow-hidden bg-[var(--bg-base)]">
+    <div className="flex h-full flex-col overflow-hidden bg-[var(--bg-base)] md:flex-row">
       {/* File tree panel */}
       <div className={cn(
         "shrink-0 flex flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
         treeCollapsed ? "w-0 border-r-0" : "w-44",
+        "hidden md:flex",
       )}>
         <div className="px-2 py-1.5 border-b border-[var(--border-subtle)] shrink-0">
           <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
@@ -323,7 +324,7 @@ export default function CodePage() {
       <button
         type="button"
         onClick={() => setTreeCollapsed((v) => !v)}
-        className="h-full w-2 shrink-0 flex items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-muted)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
+        className="hidden h-full w-2 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] text-[var(--text-muted)] transition-colors hover:bg-[var(--accent-dim)] hover:text-[var(--accent-amber)] cursor-pointer md:flex"
         title={treeCollapsed ? "Показати файли" : "Сховати файли"}
       >
         {treeCollapsed
@@ -383,7 +384,7 @@ export default function CodePage() {
       </div>
 
       {/* Pipeline A panel */}
-      <div className="w-48 shrink-0 flex flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+      <div className="flex h-44 w-full shrink-0 flex-col border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] md:h-auto md:w-48 md:border-t-0 md:border-l">
         <div className="px-3 py-2 border-b border-[var(--border-subtle)]">
           <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
             Pipeline A
