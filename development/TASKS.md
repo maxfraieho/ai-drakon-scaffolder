@@ -6808,56 +6808,64 @@ Diary: "SESSION:2026-05-30|TASK-82:sharon-bot-timeout|LocalProxy-first+60s-timeo
 
 ### Мета
 1. Вивчити записник **AgentWorkspace** в NotebookLM (через MCP 192.168.3.234:8002)
-2. Встановити AgentWorkspace на RPi (192.168.3.234) замість PinchTab
+2. Встановити AgentWorkspace на RPi (192.168.3.234) — aarch64 binary
 3. Зберегти NotebookLM MCP (порт 8002) — НЕ видаляти!
-4. Задокументувати результат у `docs/agentworkspace-setup.md`
+4. PinchTab — на **dev сервері** (192.168.3.184), зупинити SSH тунель з RPi до нього
+5. Задокументувати результат у `docs/agentworkspace-setup.md`
 
-### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux (деякі команди через SSH на 192.168.3.234).
+### Архітектура (важливо розуміти)
+```
+RPi (192.168.3.234) → SSH → dev server (192.168.3.184)
+                              └─ /home/vokov/.pinchtab/bin/pinchtab mcp --server :9867
+```
+PinchTab встановлений на dev сервері. RPi лише запускає його через SSH.
+AgentWorkspace встановлюється на RPi і замінює цей SSH→PinchTab тунель.
+
+### !!IMPORTANT!! AUTO-EXECUTE. Run locally on AGY3 Termux (деякі команди через SSH).
 
 ### Що є на RPi (192.168.3.234)
 - Armbian aarch64 (rpi4b), 9.7GB вільно
 - User: `vokov`, pass: `805235io.`
 - **Зберегти:** `/home/vokov/notebooklm_mcp_server.py` (порт 8002)
-- **Видалити:** claude сесію, pinchtab, goose, opencode якщо є
-- **Встановити:** AgentWorkspace binary
+- **Зупинити:** SSH сесію до pinchtab (`pkill -f "ssh.*pinchtab"`)
+- **Зупинити:** claude сесію (`pkill -f claude`)
+- **Встановити:** AgentWorkspace binary на RPi
 
 ### Кроки
 
 **1. Вивчити AgentWorkspace через NotebookLM MCP**
-```python
-# notebook_id = c0bd6b52-78a6-4811-a724-9eb40e6eaeb4
-import urllib.request, json
-# Використай MCP script: python3 ~/.claude/skills/notebooklm-mcp/scripts/notebooklm_mcp.py
-# list-sources c0bd6b52-78a6-4811-a724-9eb40e6eaeb4
+```bash
+# На AGY3 локально:
+python3 ~/.claude/skills/notebooklm-mcp/scripts/notebooklm_mcp.py list-sources c0bd6b52-78a6-4811-a724-9eb40e6eaeb4
 ```
 
 **2. Завантажити бінарник на RPi**
 ```bash
 sshpass -p '805235io.' ssh vokov@192.168.3.234 "
-wget -O /tmp/agent-workspace https://github.com/agent-sh/agent-workspace-linux/releases/download/v0.1.1/agent-workspace-linux-aarch64-unknown-linux-gnu
+wget -q --show-progress -O /tmp/agent-workspace \
+  https://github.com/agent-sh/agent-workspace-linux/releases/download/v0.1.1/agent-workspace-linux-aarch64-unknown-linux-gnu
 chmod +x /tmp/agent-workspace
-/tmp/agent-workspace --version
+/tmp/agent-workspace --version 2>&1 || echo 'version check failed'
 "
 ```
 
 **3. Встановити системні залежності на RPi**
 ```bash
 sshpass -p '805235io.' ssh vokov@192.168.3.234 "
-sudo apt install -y xvfb openbox xdotool xauth x11-utils imagemagick xclip bubblewrap 2>&1 | tail -3
+sudo apt install -y xvfb openbox xdotool xauth x11-utils imagemagick xclip bubblewrap 2>&1 | tail -5
 sudo mv /tmp/agent-workspace /usr/local/bin/agent-workspace
+echo 'Installed:' \$(agent-workspace --version 2>&1)
 "
 ```
 
-**4. Зупинити claude + pinchtab сесії (НЕ видаляти notebooklm)**
+**4. Зупинити pinchtab SSH тунель та claude на RPi (НЕ чіпати notebooklm)**
 ```bash
 sshpass -p '805235io.' ssh vokov@192.168.3.234 "
-# Stop claude session
-pkill -f 'claude' 2>/dev/null || true
-# Stop pinchtab
-pkill -f 'pinchtab' 2>/dev/null || true
-# Verify notebooklm_mcp_server still runs
+pkill -f 'ssh.*pinchtab' 2>/dev/null && echo 'pinchtab SSH stopped' || echo 'pinchtab not running'
+pkill -f 'claude' 2>/dev/null && echo 'claude stopped' || echo 'claude not running'
 sleep 2
 pgrep -f 'notebooklm_mcp_server' && echo 'NotebookLM OK' || echo 'WARN: NotebookLM stopped!'
+pgrep -f 'claude' && echo 'WARN: claude still running' || echo 'claude gone OK'
 "
 ```
 
