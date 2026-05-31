@@ -11069,3 +11069,385 @@ git push origin main
 ```
 SESSION:DATE|TASK-115:agent-file-tools|files-write+patch+delete+agent_mode|test:OK|commit:<hash>|★★★★
 ```
+
+
+## ═══════════════════════════════════════════
+## SPRINT 5 — LangGraph Unification
+## ═══════════════════════════════════════════
+
+## [ ] TASK-116
+
+**Мета**: Виправити BUG-6 — всі 3 агенти (drakon/architect/docs) через один порт 8766.
+
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. Два файли: main.py + agent-api.ts.**
+
+### Проблема
+- Frontend: drakon=8765, docs=8767, architect=8766
+- Але лише 8766 живий → health fail для drakon/docs → red dots, chat не працює
+
+### Крок 1 — `services/architect-agent/main.py` — додати health + chat роути для всіх агентів
+
+Після `@app.get("/health")` додати:
+
+```python
+DRAKON_SYSTEM = "Ти — DRAKON-агент. Отримуєш Python-код і генеруєш DRAKON IR JSON. Відповідай тільки JSON у форматі DRAKON IR або поясненням помилки."
+DOCS_SYSTEM = "Ти — документознавець AI-DRAKON. Відповідаєш на питання про документацію, архітектуру та використання платформи. Посилайся на [[wiki-links]] де доречно."
+
+@app.get("/agents/{agent_id}/health")
+def agent_health(agent_id: str):
+    return {"status": "ok", "agent": agent_id, "service": "architect-agent", "port": PORT}
+
+@app.post("/agents/{agent_id}/chat")
+def agent_chat_route(agent_id: str, req: ChatRequest):
+    ctx = req.context or {}
+    file_tree = ctx.get("fileTree") or ctx.get("file_tree")
+    current_diagram = ctx.get("currentDiagram") or ctx.get("current_diagram")
+    memory_context = ""
+    try:
+        memory_context = get_memory(AGENT_NAME, "MEMORY.md") or ""
+    except Exception:
+        pass
+    try:
+        if agent_id == "architect" or req.agent_mode:
+            result = agent_chat_with_tools(req.message, file_tree=file_tree,
+                current_diagram=current_diagram, memory_context=memory_context)
+        else:
+            # drakon / docs — використовують architect_chat з кастомним system prompt
+            from ai_chat.architect_chat import architect_chat_with_system
+            system = DRAKON_SYSTEM if agent_id == "drakon" else DOCS_SYSTEM
+            result = architect_chat_with_system(req.message, system_prompt=system,
+                file_tree=file_tree, current_diagram=current_diagram)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    return result
+```
+
+### Крок 2 — `services/architect-agent/ai_chat/architect_chat.py` — додати `architect_chat_with_system`
+
+Після функції `architect_chat(...)` додати:
+
+```python
+def architect_chat_with_system(
+    message: str,
+    system_prompt: str,
+    file_tree=None,
+    current_diagram=None,
+) -> dict:
+    """Chat with a custom system prompt (for drakon/docs agents)."""
+    parts = []
+    if file_tree:
+        parts.append(f"## Project File Tree\n{json.dumps(file_tree, indent=2)[:2000]}")
+    if current_diagram:
+        parts.append(f"## Current Diagram\n{json.dumps(current_diagram, indent=2)[:1500]}")
+    parts.append(f"## User Message\n{message}")
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "\n\n".join(parts)},
+    ]
+
+    if PROXY_PROTOCOL == "anthropic":
+        system_msg = messages[0]["content"]
+        user_msgs = [m for m in messages if m["role"] != "system"]
+        resp = httpx.post(f"{PROXY_URL}/messages",
+            json={"model": PROXY_MODEL, "system": system_msg, "messages": user_msgs, "max_tokens": 2048},
+            headers={"x-api-key": PROXY_TOKEN, "anthropic-version": "2023-06-01"},
+            timeout=90.0)
+    else:
+        resp = httpx.post(f"{PROXY_URL}/chat/completions",
+            json={"model": PROXY_MODEL, "messages": messages, "temperature": 0.1},
+            headers={"Authorization": f"Bearer {PROXY_TOKEN}"},
+            timeout=90.0)
+    resp.raise_for_status()
+    content = resp.json()["content"][0]["text"] if PROXY_PROTOCOL == "anthropic" \
+        else resp.json()["choices"][0]["message"]["content"]
+    return {"reply": content, "suggested_mutations": None}
+```
+
+### Крок 3 — `src/lib/agent-api.ts` — порт 8766 для ВСІХ агентів
+
+Знайти:
+```typescript
+const AGENT_PORTS: Record<AgentId, number> = {
+  drakon: 8765,
+  architect: 8766,
+  docs: 8767,
+};
+```
+Замінити на:
+```typescript
+const AGENT_PORTS: Record<AgentId, number> = {
+  drakon: 8766,
+  architect: 8766,
+  docs: 8766,
+};
+```
+
+### Крок 4 — Deploy + restart + тест
+
+```bash
+AGENT=~/workspace/ai-drakon-scaffolder/services/architect-agent
+sshpass -p '805235io.' scp -o StrictHostKeyChecking=no \
+  $AGENT/main.py $AGENT/ai_chat/architect_chat.py \
+  vokov@192.168.3.184:~/workspace/ai-drakon-scaffolder/services/architect-agent/
+sshpass -p '805235io.' scp -o StrictHostKeyChecking=no \
+  $AGENT/ai_chat/architect_chat.py \
+  vokov@192.168.3.184:~/workspace/ai-drakon-scaffolder/services/architect-agent/ai_chat/
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sudo rc-service ai-architect-agent restart && sleep 4 && \
+   curl -s http://localhost:8766/agents/drakon/health && \
+   curl -s http://localhost:8766/agents/docs/health'
+```
+
+### Коміт:
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+git add services/architect-agent/main.py \
+        services/architect-agent/ai_chat/architect_chat.py \
+        src/lib/agent-api.ts \
+        .lovable/src/lib/agent-api.ts
+git commit -m "fix(agents): BUG-6 — route all agents through port 8766, add drakon/docs health+chat (TASK-116)"
+sed -i 's/\[ \] TASK-116/[x] TASK-116/' development/TASKS.md
+git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-116 done"
+git push origin main
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-116:BUG-6-fix|all-agents-8766|drakon+docs-health+chat|commit:<hash>|★★★
+```
+
+
+## [ ] TASK-117
+
+**Мета**: Уніфікація агентів на LangGraph — docs-agent і drakon-agent як DRAKON-схеми з власними KB і логікою.
+
+**!!IMPORTANT!! Run locally on AGY Termux. NO mempalace. Тільки файли + scp + restart.**
+
+### Концепція (прочитай перед виконанням)
+```
+Один architect-agent (8766) містить ВСІ агенти:
+  drakon-agent.drakon.json  → graph_loader → StateGraph → /graph-pipelines/drakon-agent/execute
+  docs-agent.drakon.json    → graph_loader → StateGraph → /graph-pipelines/docs-agent/execute
+  pipeline_a.drakon.json    → (вже є)
+
+Кожен агент = DRAKON-схема + KB файли + nodes у NODE_REGISTRY
+```
+
+### Крок 1 — Нові nodes у `pipeline/nodes_agents.py` (новий файл)
+
+```python
+"""Agent-specific LangGraph nodes for drakon-agent and docs-agent."""
+import os, json, glob
+from pathlib import Path
+
+_KB_ROOT = Path(__file__).parent.parent / "kb"
+_DOCS_ROOT = Path(__file__).parent.parent.parent.parent / "docs"
+
+def load_drakon_kb() -> str:
+    """Load DRAKON rules KB."""
+    rules_file = _KB_ROOT / "00-drakon-rules.md"
+    if rules_file.exists():
+        return rules_file.read_text(encoding="utf-8")[:3000]
+    return ""
+
+def load_docs_kb(query: str = "") -> str:
+    """Load relevant docs from manuals/."""
+    manuals_dir = _DOCS_ROOT / "manuals"
+    if not manuals_dir.exists():
+        return ""
+    texts = []
+    for f in sorted(manuals_dir.glob("*.md"))[:4]:
+        texts.append(f"## {f.name}\n" + f.read_text(encoding="utf-8")[:800])
+    return "\n\n".join(texts)
+
+# ── DRAKON agent nodes ─────────────────────────────────────────────────────
+def drakon_load_kb(state: dict) -> dict:
+    return {"kb_context": load_drakon_kb()}
+
+def drakon_format_prompt(state: dict) -> dict:
+    code = state.get("source_code") or state.get("message", "")
+    kb = state.get("kb_context", "")
+    prompt = (
+        f"KB:\n{kb[:1500]}\n\n"
+        f"Згенеруй DRAKON IR JSON для функції:\n```python\n{code[:3000]}\n```\n"
+        "Виведи тільки JSON масив у ```json ... ``` блоці."
+    )
+    return {"llm_prompt": prompt}
+
+def drakon_parse_result(state: dict) -> dict:
+    import re
+    reply = state.get("llm_reply", "")
+    m = re.search(r"```json\s*(\[.*?\]|\{.*?\})\s*```", reply, re.DOTALL)
+    if m:
+        try:
+            ir = json.loads(m.group(1))
+            return {"drakon_ir": ir if isinstance(ir, list) else [ir], "parse_ok": True}
+        except Exception:
+            pass
+    return {"drakon_ir": [], "parse_ok": False}
+
+# ── DOCS agent nodes ───────────────────────────────────────────────────────
+def docs_load_kb(state: dict) -> dict:
+    query = state.get("message", "")
+    return {"kb_context": load_docs_kb(query)}
+
+def docs_format_prompt(state: dict) -> dict:
+    query = state.get("message", "")
+    kb = state.get("kb_context", "")
+    prompt = (
+        f"Документація проекту:\n{kb[:2000]}\n\n"
+        f"Питання: {query}\n\n"
+        "Відповідай українською, посилайся на [[wiki-links]] де доречно."
+    )
+    return {"llm_prompt": prompt}
+```
+
+### Крок 2 — Додати нові nodes у `pipeline/graph_loader.py`
+
+Знайти `NODE_REGISTRY` і додати:
+```python
+from .nodes_agents import (
+    drakon_load_kb, drakon_format_prompt, drakon_parse_result,
+    docs_load_kb, docs_format_prompt,
+)
+
+# Додати в NODE_REGISTRY:
+"drakon_load_kb": drakon_load_kb,
+"drakon_format_prompt": drakon_format_prompt,
+"drakon_parse_result": drakon_parse_result,
+"docs_load_kb": docs_load_kb,
+"docs_format_prompt": docs_format_prompt,
+```
+
+### Крок 3 — Додати LLM node у `pipeline/graph_loader.py`
+
+Додати в NODE_REGISTRY LLM виклик:
+```python
+def llm_call_node(state: dict) -> dict:
+    """Universal LLM call node — reads 'llm_prompt' from state."""
+    import httpx, os
+    proxy_url = os.getenv("PROXY_URL", "http://localhost:18880/v1")
+    proxy_token = os.getenv("PROXY_TOKEN", "freecc") or "freecc"
+    proxy_model = os.getenv("PROXY_MODEL", "coding-proxy")
+    resp = httpx.post(f"{proxy_url}/chat/completions",
+        json={"model": proxy_model, "messages": [
+            {"role": "user", "content": state.get("llm_prompt", "")}
+        ], "temperature": 0.1},
+        headers={"Authorization": f"Bearer {proxy_token}"},
+        timeout=120.0)
+    resp.raise_for_status()
+    content = resp.json()["choices"][0]["message"]["content"]
+    return {"llm_reply": content}
+
+# Додати в NODE_REGISTRY:
+"llm_call": llm_call_node,
+```
+
+### Крок 4 — Нові StateGraph states у `pipeline/states.py`
+
+Додати:
+```python
+class DrakonAgentState(TypedDict):
+    message: str
+    source_code: str
+    kb_context: str
+    llm_prompt: str
+    llm_reply: str
+    drakon_ir: list
+    parse_ok: bool
+
+class DocsAgentState(TypedDict):
+    message: str
+    kb_context: str
+    llm_prompt: str
+    llm_reply: str
+```
+
+### Крок 5 — Нові DRAKON pipeline JSON файли
+
+**`services/architect-agent/pipelines/drakon-agent.drakon.json`:**
+```json
+{
+  "name": "DRAKON Agent — Code to IR",
+  "schema": {"state_class": "DrakonAgentState"},
+  "items": {
+    "h0": {"type": "header", "one": "n1"},
+    "n1": {"type": "action", "content": "drakon_load_kb", "one": "n2"},
+    "n2": {"type": "action", "content": "drakon_format_prompt", "one": "n3"},
+    "n3": {"type": "action", "content": "llm_call", "one": "n4"},
+    "n4": {"type": "action", "content": "drakon_parse_result", "one": "end"},
+    "end": {"type": "end"}
+  }
+}
+```
+
+**`services/architect-agent/pipelines/docs-agent.drakon.json`:**
+```json
+{
+  "name": "Docs Agent — Documentation Q&A",
+  "schema": {"state_class": "DocsAgentState"},
+  "items": {
+    "h0": {"type": "header", "one": "n1"},
+    "n1": {"type": "action", "content": "docs_load_kb", "one": "n2"},
+    "n2": {"type": "action", "content": "docs_format_prompt", "one": "n3"},
+    "n3": {"type": "action", "content": "llm_call", "one": "end"},
+    "end": {"type": "end"}
+  }
+}
+```
+
+### Крок 6 — Оновити STATE_REGISTRY у `graph_loader.py`
+
+```python
+from .states import AnalysisState, VibeCodingState, DrakonAgentState, DocsAgentState
+
+STATE_REGISTRY = {
+    "AnalysisState": AnalysisState,
+    "VibeCodingState": VibeCodingState,
+    "DrakonAgentState": DrakonAgentState,
+    "DocsAgentState": DocsAgentState,
+}
+```
+
+### Крок 7 — Deploy + тест
+
+```bash
+AGENT=~/workspace/ai-drakon-scaffolder/services/architect-agent
+# scp всі змінені файли на 192.168.3.184
+for F in pipeline/nodes_agents.py pipeline/graph_loader.py pipeline/states.py \
+         pipelines/drakon-agent.drakon.json pipelines/docs-agent.drakon.json; do
+  sshpass -p '805235io.' scp -o StrictHostKeyChecking=no \
+    $AGENT/$F vokov@192.168.3.184:~/workspace/ai-drakon-scaffolder/services/architect-agent/$F
+done
+
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'sudo rc-service ai-architect-agent restart && sleep 4 && \
+   curl -s http://localhost:8766/graph-pipelines | python3 -m json.tool'
+
+# Тест drakon-agent pipeline
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'curl -s -X POST http://localhost:8766/graph-pipelines/drakon-agent/execute \
+    -H "Content-Type: application/json" \
+    -d "{\"source_code\":\"def hello():\\n  return 42\",\"message\":\"convert to DRAKON\"}" \
+    | head -5'
+```
+
+### Коміт:
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+git add services/architect-agent/pipeline/nodes_agents.py \
+        services/architect-agent/pipeline/graph_loader.py \
+        services/architect-agent/pipeline/states.py \
+        services/architect-agent/pipelines/drakon-agent.drakon.json \
+        services/architect-agent/pipelines/docs-agent.drakon.json
+git commit -m "feat(langgraph): add drakon-agent + docs-agent as LangGraph pipelines via DRAKON IR (TASK-117)"
+sed -i 's/\[ \] TASK-117/[x] TASK-117/' development/TASKS.md
+git add development/TASKS.md && git commit -m "chore(tasks): mark TASK-117 done"
+git push origin main
+```
+
+### Diary:
+```
+SESSION:DATE|TASK-117:langgraph-unification|drakon-agent+docs-agent|DRAKON-IR→StateGraph|commit:<hash>|★★★★
+```
