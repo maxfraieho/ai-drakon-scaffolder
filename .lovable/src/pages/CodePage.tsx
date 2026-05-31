@@ -175,11 +175,14 @@ export default function CodePage() {
   const navigate = useNavigate();
   const { activeProject } = useProject();
   const ghCfg = getGithubConfig();
+
+  // Settings GitHub завжди має пріоритет якщо явно задано.
+  // activeProject.github використовується тільки як fallback.
   const projectGh = activeProject?.github;
-  const owner = projectGh?.owner || ghCfg.owner || "";
-  const repo = projectGh?.repo || ghCfg.repo || "";
-  const branch = projectGh?.branch || ghCfg.branch || "main";
-  const token = owner.toLowerCase() === ghCfg.owner.toLowerCase() ? ghCfg.token : "";
+  const owner = ghCfg.owner || projectGh?.owner || "";
+  const repo  = ghCfg.repo  || projectGh?.repo  || "";
+  const branch = ghCfg.branch || projectGh?.branch || "main";
+  const token = ghCfg.token || "";
 
   const [code, setCode] = useState("");
   const [filePath, setFilePath] = useState("untitled.py");
