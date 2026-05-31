@@ -84,6 +84,28 @@ def health():
 DRAKON_SYSTEM = "Ти — DRAKON-агент. Отримуєш Python-код і генеруєш DRAKON IR JSON. Відповідай тільки JSON у форматі DRAKON IR або поясненням помилки."
 DOCS_SYSTEM = "Ти — документознавець AI-DRAKON. Відповідаєш на питання про документацію, архітектуру та використання платформи. Посилайся на [[wiki-links]] де доречно."
 
+_SS_PIPELINE_NAME = "sonate-solidaire-agent"
+
+
+def _run_ss_agent(message: str) -> dict:
+    """Synchronously run SS LangGraph pipeline for a message."""
+    import json
+    from pathlib import Path
+    from pipeline.graph_loader import load_graph_from_ir
+    pipelines_dir = Path(__file__).parent / "pipelines"
+    ir_path = pipelines_dir / f"{_SS_PIPELINE_NAME}.drakon.json"
+    if not ir_path.exists():
+        return {"reply": "Assistant non disponible.", "suggested_mutations": None}
+    ir = json.loads(ir_path.read_text())
+    graph = load_graph_from_ir(ir)
+    final_state = {}
+    for step in graph.stream({"message": message}):
+        for node_state in step.values():
+            if isinstance(node_state, dict):
+                final_state.update(node_state)
+    reply = final_state.get("llm_reply", "")
+    return {"reply": reply, "suggested_mutations": None}
+
 @app.get("/agents/{agent_id}/health")
 def agent_health(agent_id: str):
     return {"status": "ok", "agent": agent_id, "service": "architect-agent", "port": PORT}
@@ -102,6 +124,8 @@ def agent_chat_route(agent_id: str, req: ChatRequest):
         if agent_id == "architect" or req.agent_mode:
             result = agent_chat_with_tools(req.message, file_tree=file_tree,
                 current_diagram=current_diagram, memory_context=memory_context)
+        elif agent_id == "sonate-solidaire":
+            result = _run_ss_agent(req.message)
         else:
             # drakon / docs — використовують architect_chat з кастомним system prompt
             from ai_chat.architect_chat import architect_chat_with_system
