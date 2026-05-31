@@ -8702,7 +8702,7 @@ SESSION:2026-05-31|TASK-104:agent-llm-fix|localStorage-cleared+AGY-set|drakon+ar
 ```
 
 
-## [ ] TASK-105
+## [x] TASK-105
 
 **Мета**: Додати 18880 proxy slots (standard-proxy, coding-proxy та ін.) у OpenDesign model picker — зараз вони в agy-wrapper але не видні в UI.
 
