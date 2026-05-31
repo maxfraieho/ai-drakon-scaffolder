@@ -9404,3 +9404,449 @@ git push origin main
 SESSION:DATE|TASK-SS-06:ukrainian-summary|father+arsen+behavioral-guide|commit:<hash>|★★★
 ```
 
+
+---
+
+## [ ] TASK-SS-06
+
+**Мета**: Написати зведений документ УКРАЇНСЬКОЮ для батька і Арсена — повний поточний стан, юридика, план дій, поведінкові інструкції.
+
+**!!IMPORTANT!! Run locally on AGY3 Termux (u0_a410@192.168.3.204). НЕ SSH.**
+
+### Контекст
+Вже є: юридичний аналіз, 20 контактів VD, лист Leroy, презентація на вечерю, методологія IA.
+Сайт: violin.pp.ua / sonate-solidaire.me — React SPA (fr/de/uk), форми → Telegram webhook.
+Arsen: 26р, Protection S, Gland VD, 15р музичної освіти, 8.7/10 сайт.
+
+### Завдання
+
+```bash
+agy --print "Ти розмовляєш українською вільно. Напиши ОДНИМ документом (1000-1200 слів) для батька Арсена (від України) та самого Арсена Коваленко (26 р, скрипаль, Gland Vaud, Protection S).
+
+ЧАСТИНА 1 — ЩО МИ МАЄМО (250 слів)
+Перелічи все підготовлене для Sonate Solidaire:
+- Юридичні документи: статути (CC 60-79), досьє EVAM (7 документів), CV Арсена
+- Цифрова присутність: violin.pp.ua + sonate-solidaire.me (React-сайт оцінений 8.7/10, три мови: FR/DE/UK)
+- Форми на сайті: для фізичних осіб + організацій + церков + загальний контакт → автоматично в Telegram
+- Документи AI: юридичний аналіз Protection S + асоціація Vaud, список 20 інституцій з адресами, лист Leroy, методологія мультиагентного IA (Claude+AGY+Gemini = 2 тижні роботи за 2 години)
+- NotebookLM база знань: 12 джерел завантажено
+
+ЧАСТИНА 2 — ЮРИДИКА ПРОСТО (200 слів)
+- Арсен може займатися культурною/музичною діяльністю за Protection S: декларація через EasyGov.swiss + дозвіл SPOP/SDE перед першим виступом
+- Асоціацію можна заснувати БЕЗКОШТОВНО: 2+ людини + збори + статути = готово (CC 60-79)
+- Казначей: НУЛЬ особистої фінансової відповідальності (тільки майно асоціації — CC 75a)
+- Рахунок в банку: потрібен казначей-швейцарець або резидент + статути + PV зборів
+- Звільнення від податків: через ACI Canton Vaud через 1 рік діяльності
+
+ЧАСТИНА 3 — ПЛАН ДІЙ ПО ТИЖНЯХ (250 слів)
+Тижень 1-2: Philippe Leroy → рішення → казначей + відкрити рахунок BCV або PostFinance
+Місяць 1: Установчі збори (3 особи мінімум) → підписати статути + ПВ → EVAM консультація
+Місяць 2-3: Перший атлє (майстер-клас, 15-20 людей, бесплатно) → Commune de Gland (зала)
+Місяць 3-4: Перший концерт (80-100 людей) → документація → Loterie Romande CHF 10k
+Місяць 6-12: Fondation Leenaards + автономія асоціації + 2-3 постійних музиканти
+
+ЧАСТИНА 4 — ПОВЕДІНКА ДЛЯ АРСЕНА (200 слів)
+При спілкуванні з Philippe Leroy (і будь-яким швейцарцем-гарантом):
+- Тон: спокійний, впевнений, конкретний (не молити — пропонувати участь у чомусь гарному)
+- Ключова фраза: 'Ваша роль — тільки підпис на рахунку, решту ми берем на себе'
+- Документи завжди готові: статути + CV + revue 8.7 + план фінансовий
+При зверненні до EVAM: записатися онлайн, прийти з папкою документів, просити консультацію
+При зверненні до Commune Gland: email contact@gland.ch, тема 'Demande de salle — Sonate Solidaire'
+
+ЧАСТИНА 5 — РОЛЬ БАТЬКА (150 слів)
+Від України: моральна підтримка + допомога в підготовці документів через IA
+Практично: координувати роботу Claude+AGY для генерації листів, досліджень, звітності
+Що НЕ робити: не тиснути на дати, не реєструвати RC поспіхом, не обіцяти Leroy гроші
+Разом ми (Claude + AGY + Gemini) = юридичний консультант + комунікаційний агент + касир
+
+Тон: теплий, практичний, як досвідчений друг." --dangerously-skip-permissions 2>&1
+```
+
+Зберегти в `~/ЗВІТ_SONATE_SOLIDAIRE_UA.md`
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-06/[x] TASK-SS-06/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-06 done — Ukrainian summary father+Arsen"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-06:ukrainian-summary|father+arsen+5parts|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-SS-07
+
+**Мета**: Написати DOSSIER COMPLET для Philippe Leroy — офіційний комплект для зустрічі (після вечері). Французькою, бездоганно.
+
+**!!IMPORTANT!! Run locally on AGY3 Termux.**
+
+### Контекст
+Philippe Leroy — банківський спеціаліст, господар де живе Арсен. Вже бачив неформальну презентацію на вечерю. Тепер треба офіційна зустріч 30 хв.
+
+### Завдання
+
+```bash
+agy --print "Tu es expert en communication institutionnelle suisse et en droit des associations. Rédige un DOSSIER COMPLET (800-1000 mots, français parfait et formel) pour M. Philippe Leroy, spécialiste bancaire à Lausanne.
+
+Ce dossier servira lors d'une réunion de 30 minutes pour lui demander de devenir trésorier bénévole de l'Association Sonate Solidaire.
+
+Structure requise:
+
+PAGE DE GARDE:
+Sonate Solidaire | Intégration culturelle par la musique | Canton de Vaud
+Dossier de présentation — M. Philippe Leroy
+Arsen Kovalenko | arsen.k111999@gmail.com | +41 78 326 11 12
+
+SECTION 1 — LE PROJET EN 60 SECONDES:
+Vision, mission, ancrage territorial Canton Vaud, valeur ajoutée pour la communauté locale
+
+SECTION 2 — LE CONTEXTE LÉGAL RASSURANT:
+- Association CC art. 60-79: création immédiate, sans coûts
+- Responsabilité trésorier: ZÉRO responsabilité financière personnelle (CC 75a + CO 398)
+- Activité d'Arsen sous Protection S: autorisée avec déclaration SPOP/SDE
+- Notre site violin-integration.works: évalué 8.7/10 indépendamment
+
+SECTION 3 — CE QU ON VOUS DEMANDE:
+Rôle: Trésorier bénévole
+Tâches concrètes (10-15min/semaine max):
+1. Cosigner l'ouverture du compte bancaire associatif (BCV ou PostFinance)
+2. Cosigner les dépenses exceptionnelles (>CHF 500) sur présentation des pièces
+3. Approuver le bilan annuel avec le Président
+Ce que vous n'avez pas à faire: comptabilité quotidienne, secrétariat, démarches administratives
+
+SECTION 4 — NOTRE MÉTHODE DE TRAVAIL (argument clé):
+Nous utilisons une architecture IA collaborative (Claude + 2 agents Gemini) qui:
+- Automatise la recherche juridique et administrative
+- Génère les lettres officielles aux institutions
+- Maintient une base de connaissance structurée (NotebookLM)
+- Résultat: 2 semaines de travail en 2 heures — rigueur garantie
+
+SECTION 5 — PLAN FINANCIER 90 JOURS:
+Phase 0 (J1-J30): 0 CHF revenus, CHF 150-300 frais ouverture compte
+Phase 1 (J31-J60): Premier atelier gratuit → lettre de soutien Commune Gland
+Phase 2 (J61-J90): Premier concert (entrée libre, dons) → dossier Loterie Romande CHF 10k
+
+SECTION 6 — DOCUMENTS JOINTS:
+[✓] Statuts Association Sonate Solidaire (conformes CC 60-79)
+[✓] CV Arsen Kovalenko (15 ans de pratique, Bachelor, Stravinsky College)
+[✓] Évaluation indépendante du site: 8.7/10
+[✓] Extrait du dossier EVAM (reconnaissance institutionnelle)
+
+APPEL À L ACTION:
+Proposer: 'Nous souhaiterions, si vous y consentez, tenir notre Assemblée Générale constitutive dès que possible. Votre présence en qualité de trésorier serait le point de départ.'
+
+Ton: professionnel, confiant, pas suppliant. L'association existe déjà intellectuellement — on propose à Leroy une opportunité d'y participer." --dangerously-skip-permissions 2>&1
+```
+
+Zберегти в `/home/vokov/projects/Арсену/dossier_Leroy_officiel.md`
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-07/[x] TASK-SS-07/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-07 done — dossier officiel Leroy FR"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-07:dossier-leroy|6-sections+plan-financier+IA-argument|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-SS-08
+
+**Мета**: Розробити PIPELINE РЕКРУТИНГУ МУЗИКАНТІВ — стратегія пошуку, оголошення, воронка, форма на сайті.
+
+**!!IMPORTANT!! Run locally on AGY3 Termux.**
+
+### Контекст
+Сайт violin.pp.ua має /integration (описова) та /support (форми підтримки). 
+Треба окрему стратегію рекрутингу музикантів: де шукати, як залучати, яку форму додати.
+
+### Завдання
+
+```bash
+agy --print "Tu es expert en ressources humaines artistiques et en gestion d'associations musicales en Suisse romande.
+
+Pour l'association Sonate Solidaire (intégration culturelle, Canton Vaud), développe une STRATÉGIE COMPLÈTE DE RECRUTEMENT DE MUSICIENS (400-500 mots, français).
+
+Sections requises:
+
+1. PROFIL DES MUSICIENS RECHERCHÉS:
+- Bénévoles vs rémunérés (cadre légal Protection S)
+- Instruments prioritaires pour musique de chambre
+- Niveau requis minimum
+- Disponibilités typiques
+
+2. CANAUX DE RECRUTEMENT (avec contacts concrets VD):
+a) Conservatoire de Lausanne (HEMU) — adresse + contact recrutement étudiants
+b) Haute École de Musique de Lausanne — contact stage/bénévolat
+c) Écoles de musique régionales (Nyon, Gland, Morges) — liste + contacts
+d) Groupes Facebook/WhatsApp musiciens Suisse romande — noms de groupes
+e) Ukrainian musicians network Switzerland — communauté ukrainienne musicale
+f) Site de petites annonces: anibis.ch, musiciens.ch
+
+3. MESSAGE DE RECRUTEMENT (template):
+Un message court (FR + UK) à poster dans les groupes:
+- Description du projet (1 phrase)
+- Ce qu'on offre (visibilité, réseau, expérience)
+- Ce qu'on demande (disponibilité, niveau)
+- Contact
+
+4. FORMULAIRE SITE RECOMMANDÉ:
+Champs pour /support onglet 4 'Musicien':
+- instrument, niveau, disponibilité, motivation
+Lien: violin-integration.works/support → onglet Musicien
+
+5. PIPELINE DE SUIVI:
+Étapes: Candidature → Entretien (15min) → Premier atelier test → Intégration
+Format YAML pour AGY tracking:
+musician_pipeline:
+  status: [applied, contacted, workshop_invited, active, inactive]
+
+Livrable final: document opérationnel utilisable immédiatement." --dangerously-skip-permissions 2>&1
+```
+
+Зберегти в `/home/vokov/projects/Арсену/pipeline_musiciens.md`
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-08/[x] TASK-SS-08/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-08 done — musician recruitment pipeline"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-08:musician-pipeline|channels+template+YAML|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-SS-09
+
+**Мета**: Розробити PIPELINE БЕНЕФІЦІАРІВ (соціальних клієнтів) — хто вони, де шукати, як залучати через EVAM/Caritas/церкви.
+
+**!!IMPORTANT!! Run locally on AGY3 Termux.**
+
+### Завдання
+
+```bash
+agy --print "Tu es expert en travail social et en médiation culturelle en Suisse romande.
+
+Pour Sonate Solidaire, développe une STRATÉGIE DE RECRUTEMENT DES BÉNÉFICIAIRES (personnes en cours d'intégration, réfugiés, nouveaux arrivants). 350-450 mots.
+
+Sections:
+
+1. PROFIL DES BÉNÉFICIAIRES CIBLES:
+- Statuts légaux qui peuvent participer: Protection S, permis F, permis B, N
+- Tranches d'âge et profils musicaux préférables
+- Motivations pour participer (intégration sociale, langue, réseau)
+
+2. CANAUX DE RÉFÉRENCEMENT (contacts concrets de notre liste 20):
+a) EVAM Lausanne: Route de Berne 155 — info@evam.ch — demander 'référencement participants'
+b) Caritas Vaud: Rue du Grand-Pont 2 — info@caritas-vaud.ch — partenariat programme
+c) CSP Vaud: Beau-Séjour 28 — info@csp-vd.ch
+d) Croix-Rouge Vaud: info@croixrougevaud.ch
+e) Communauté ukrainienne orthodoxe Lausanne: Avenue de Rumine 26
+
+3. MESSAGE TYPE AUX INSTITUTIONS (email template):
+Objet: Partenariat de référencement — Sonate Solidaire
+Corps: [50 mots max, professionnel, mention lettre de soutien EVAM]
+
+4. FORMULAIRE BÉNÉFICIAIRE SUR LE SITE:
+Le site violin.pp.ua/integration est descriptif — ajouter bouton 'Rejoindre le programme'
+Champs: nom, email, statut (Protection S / autre), instrument (si applicable), motivation
+
+5. PIPELINE SUIVI YAML:
+beneficiary_pipeline:
+  status: [interested, contacted, workshop_1, active, testimonial_given]
+
+6. ARGUMENT CLÉ POUR EVAM:
+Phrase: 'Notre programme offre une intégration culturelle mesurable: réseau social + langue + confiance — complémentaire aux cours de français.'
+
+Livrable: document immédiatement opérationnel." --dangerously-skip-permissions 2>&1
+```
+
+Зберегти в `/home/vokov/projects/Арсену/pipeline_beneficiaires.md`
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-09/[x] TASK-SS-09/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-09 done — beneficiary pipeline"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-09:beneficiary-pipeline|EVAM+Caritas+site-form|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-SS-10
+
+**Мета**: Оновити "Проект ШІ" — нова версія стратегії AI для Sonate Solidaire з актуальними інструментами (AGY3, NotebookLM, Claude, GoClaw).
+
+**!!IMPORTANT!! Run locally on AGY3 Termux.**
+
+### Завдання
+
+```bash
+agy --print "Tu es architecte de systèmes d'IA appliqués aux projets sociaux. Rédige la VERSION 2.0 du document 'Système IA pour Sonate Solidaire' (600-700 mots, français professionnel).
+
+Contexte actuel (2026-05-31):
+- Claude Sonnet 4.6 (OrangePi): architecte, rédige les plans et TASKS.md
+- AGY phone (Gemini 2.5 Flash): agent exécutant tâches courantes
+- AGY3 tablet Arsen (Gemini Pro): agent exécutant tâches critiques + coordination locale
+- NotebookLM (12 sources chargées): base de connaissance centralisée
+- GoClaw (serveur 192.168.3.184): moteur de recherche légale en droit suisse
+- Site violin.pp.ua: React SPA, 3 langues, formes → Telegram webhook
+
+Sections:
+
+1. ARCHITECTURE ACTUELLE (avec schéma texte):
+Claude → [AGY phone] → Tâches rapides (lettres, recherches)
+Claude → [AGY3/Arsen] → Tâches critiques (présentations, dossiers officiels)
+GoClaw → Recherche droit suisse (LEI, CC, LAsi)
+NotebookLM → Capitalisation et synthèse de toute la documentation
+
+2. PIPELINE DE DÉVELOPPEMENT DE PROJET (comment ça marche):
+Besoin identifié → Claude définit TASK-SS-XX → AGY exécute → NotebookLM mis à jour → Claude valide
+
+3. RÉSULTATS CONCRETS À DATE:
+- TASK-SS-01 à SS-05 complétées en < 3 jours
+- Recherche juridique Protection S + VD = exhaustive
+- 20 institutions ciblées avec contacts précis
+- Lettre Leroy = professionnelle (standard bancaire suisse)
+- Méthodologie documentée et communicable aux partenaires
+
+4. PROCHAINES PHASES IA:
+- TASK-SS-06: Guide complet UA pour père et fils
+- TASK-SS-07: Dossier officiel Leroy
+- TASK-SS-08/09: Pipelines musiciens + bénéficiaires
+- TASK-SS-11: Mise à jour sonate-solidaire.me (domaine principal)
+- GoClaw: Recherche Loterie Romande + Fondation Leenaards critères 2026
+
+5. VALEUR POUR LES PARTENAIRES:
+Ce système IA = notre équipe virtuelle de 5 spécialistes:
+- Juriste suisse (GoClaw + Claude)
+- Communicant institutionnel (AGY + Claude)
+- Prospecteur (liste 20 contacts → CRM YAML)
+- Financier (plans 3 phases)
+- Secrétaire (documents, archives, NotebookLM)
+
+Ton: document officiel inclus dans le dossier Leroy." --dangerously-skip-permissions 2>&1
+```
+
+Зберегти в `/home/vokov/projects/Арсену/strategie_IA_v2.md`
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-10/[x] TASK-SS-10/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-10 done — AI strategy v2.0"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-10:ai-strategy-v2|Claude+AGY+GoClaw+NotebookLM|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-SS-11
+
+**Мета**: Оновити sonate-solidaire.me — зробити головним доменом з повним контентом (зараз порожня оболонка).
+
+**!!IMPORTANT!! Run locally on AGY3 або OrangePi.**
+
+### Контекст
+sonate-solidaire.me = файл /home/vokov/sonate + /home/vokov/ngnx/www/sonate
+Треба: оновити canonical URL в index.html з violin.pp.ua → sonate-solidaire.me
+
+### Кроки
+
+```bash
+# Перевірити поточний canonical
+grep "canonical" /home/vokov/sonate/index.html
+
+# Оновити через sed
+sed -i 's|https://violin.pp.ua/|https://sonate-solidaire.me/|g' /home/vokov/sonate/index.html
+sed -i 's|violin.pp.ua|sonate-solidaire.me|g' /home/vokov/sonate/index.html
+
+# Перебудувати та задеплоїти
+cd /home/vokov/sonate && npm run build 2>&1 | tail -5
+# Або: git push → Cloudflare Pages автодеплой
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-11/[x] TASK-SS-11/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-11 done — sonate-solidaire.me as primary domain"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-11:domain-migration|sonate-solidaire.me+canonical|commit:<hash>|★★★
+```
+
+---
+
+## [ ] TASK-SS-12
+
+**Мета**: Оновити NotebookLM — додати всі нові документи (SS-06 через SS-10) як джерела.
+
+**!!IMPORTANT!! Run on OrangePi (Claude/local).**
+
+### Кроки
+
+```bash
+SCRIPT=~/.claude/skills/notebooklm-mcp/scripts/notebooklm_mcp.py
+NB="3b7c4e0c-c29c-4ce3-b40a-18cef0309914"
+
+# Додати всі нові документи
+for F in \
+  "/home/vokov/projects/Арсену/ЗВІТ_SONATE_SOLIDAIRE_UA.md" \
+  "/home/vokov/projects/Арсену/dossier_Leroy_officiel.md" \
+  "/home/vokov/projects/Арсену/pipeline_musiciens.md" \
+  "/home/vokov/projects/Арсену/pipeline_beneficiaires.md" \
+  "/home/vokov/projects/Арсену/strategie_IA_v2.md"; do
+  TITLE=$(basename "$F" .md)
+  sshpass -p '805235io.' scp -o StrictHostKeyChecking=no vokov@192.168.3.184:"$F" /tmp/ 2>/dev/null
+  python3 $SCRIPT add-text $NB "$TITLE 2026-05-31" /tmp/$(basename "$F") && echo "Added: $TITLE"
+done
+```
+
+### Commit
+```bash
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main --quiet
+sed -i 's/\[ \] TASK-SS-12/[x] TASK-SS-12/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-SS-12 done — NotebookLM updated with SS-06..10"
+git push origin main
+```
+
+### Diary
+```
+SESSION:DATE|TASK-SS-12:notebooklm-update|5-new-sources-added|commit:<hash>|★★★
+```
+
