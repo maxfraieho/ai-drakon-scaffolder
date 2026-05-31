@@ -473,6 +473,13 @@ export default function CodePage() {
                   )}
                 </button>
               ))}
+
+              <button
+                onClick={() => navigate({ to: "/diagrams" })}
+                className="mt-2 text-xs font-mono text-[var(--accent)] underline hover:opacity-80"
+              >
+                → Переглянути в /diagrams
+              </button>
             </div>
           )}
         </div>
