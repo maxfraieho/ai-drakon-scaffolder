@@ -8867,7 +8867,7 @@ SESSION:DATE|TASK-106:github-token-setup|CDP-localStorage|token:OK/SKIP|commit:<
 
 ---
 
-## [ ] TASK-107
+## [x] TASK-107
 
 **Мета**: AGY як розробник в ai-drakon — відкрити Code section, переглянути файли uav-watcher, вибрати ключовий модуль і запустити DRAKON pipeline через Pipeline section.
 

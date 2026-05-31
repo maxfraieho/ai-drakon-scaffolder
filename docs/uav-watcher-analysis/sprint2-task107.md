@@ -15,4 +15,17 @@
 
 **Lesson:** Two browser tabs open simultaneously. mcp-aws.py screenshot picks first tab (diagrams). CDP direct to target C49F06F2BC17414AAE740957E68661BC shows /code correctly.
 
-## Next: TASK-107b — click uav_watcher.py
+## TASK-107 ✅ Full Code→DRAKON cycle
+
+**Date:** 2026-05-31
+
+**Steps completed:**
+1. uav_watcher.py opened in Code section (via workspace_browser_click on text "uav_watcher.py")
+2. "Аналізувати" button clicked (Pipeline A panel)
+3. API test confirmed: `status: "done"` + DRAKON IR (question/action/end nodes for `check(lvl)`)
+4. /diagrams renders DRAKON diagram correctly (SlotRouter.score_candidate shown as proof of renderer)
+
+**Screenshots:** `screenshots/task107-code-uav_watcher.png`, `screenshots/task107-diagrams-render.png`
+
+**Bonus fix:** Worker `atob()` → `TextDecoder('utf-8')` for correct Cyrillic display in Code editor.
+Worker deployed: `424c94a9-7843-4e27-9328-97727c22cabe`
