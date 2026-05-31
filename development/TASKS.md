@@ -9788,7 +9788,7 @@ SESSION:DATE|TASK-SS-12:notebooklm-update|5-new-sources-added|commit:<hash>|★�
 
 ---
 
-## [ ] TASK-107a
+## [x] TASK-107a
 
 **Мета**: АТОМАРНА — відкрити ai-drakon, встановити GitHub token, зробити screenshot Code section.
 
