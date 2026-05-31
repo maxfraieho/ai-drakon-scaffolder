@@ -9028,7 +9028,7 @@ SESSION:DATE|TASK-108:architect-drakon-flow|threat-detection+allclear+sharon|dia
 
 **Мета**: AGY як тестувальник — знайти 3+ UX/UI проблеми в ai-drakon під час роботи над uav-watcher, додати їх в problem-map.md і запропонувати fixes.
 
-**!!IMPORTANT!! Run locally on AGY Termux — НЕ браузер.**
+**!!IMPORTANT!! Run locally on AGY Termux — НЕ браузер. NO mempalace lookup — пропусти Крок 2 повністю.**
 
 ### Контекст
 - problem-map.md є в `docs/uav-watcher-analysis/problem-map.md`
