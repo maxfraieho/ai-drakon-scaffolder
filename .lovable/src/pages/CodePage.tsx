@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import {
   ChevronLeft, ChevronRight, Copy, Check, FileCode, FolderOpen,
-  Play, Save, Loader2, AlertCircle, RefreshCw,
+  Play, Save, Loader2, AlertCircle, RefreshCw, Cog,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Editor from "@monaco-editor/react";
@@ -299,6 +299,33 @@ export default function CodePage() {
     sessionStorage.setItem("pending_ir", JSON.stringify(fn));
     navigate({ to: "/diagrams" });
   };
+
+  // Early return if GitHub not configured
+  if (!ghCfg.token || !ghCfg.owner || !ghCfg.repo) {
+    return (
+      <div className="flex h-full items-center justify-center bg-[var(--bg-base)]">
+        <div className="flex flex-col items-center gap-4 text-center max-w-xs">
+          <FileCode className="h-10 w-10 text-[var(--text-muted)]" />
+          <div>
+            <p className="font-mono text-[13px] font-semibold text-[var(--text-primary)]">
+              GitHub не налаштований
+            </p>
+            <p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">
+              Додайте токен та репозиторій у Налаштуваннях
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/settings" })}
+            className="inline-flex items-center gap-2 rounded px-4 py-1.5 font-mono text-[11px] font-medium bg-[var(--accent-amber)] text-[#1a1000] hover:brightness-110 transition-all"
+          >
+            <Cog className="h-3.5 w-3.5" />
+            Відкрити Налаштування
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-[var(--bg-base)] md:flex-row">
