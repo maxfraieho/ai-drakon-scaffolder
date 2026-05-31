@@ -105,6 +105,43 @@ def architect_chat(
     return {"reply": content, "suggested_mutations": mutations}
 
 
+def architect_chat_with_system(
+    message: str,
+    system_prompt: str,
+    file_tree=None,
+    current_diagram=None,
+) -> dict:
+    """Chat with a custom system prompt (for drakon/docs agents)."""
+    parts = []
+    if file_tree:
+        parts.append(f"## Project File Tree\n{json.dumps(file_tree, indent=2)[:2000]}")
+    if current_diagram:
+        parts.append(f"## Current Diagram\n{json.dumps(current_diagram, indent=2)[:1500]}")
+    parts.append(f"## User Message\n{message}")
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": "\n\n".join(parts)},
+    ]
+
+    if PROXY_PROTOCOL == "anthropic":
+        system_msg = messages[0]["content"]
+        user_msgs = [m for m in messages if m["role"] != "system"]
+        resp = httpx.post(f"{PROXY_URL}/messages",
+            json={"model": PROXY_MODEL, "system": system_msg, "messages": user_msgs, "max_tokens": 2048},
+            headers={"x-api-key": PROXY_TOKEN, "anthropic-version": "2023-06-01"},
+            timeout=90.0)
+    else:
+        resp = httpx.post(f"{PROXY_URL}/chat/completions",
+            json={"model": PROXY_MODEL, "messages": messages, "temperature": 0.1},
+            headers={"Authorization": f"Bearer {PROXY_TOKEN}"},
+            timeout=90.0)
+    resp.raise_for_status()
+    content = resp.json()["content"][0]["text"] if PROXY_PROTOCOL == "anthropic" \
+        else resp.json()["choices"][0]["message"]["content"]
+    return {"reply": content, "suggested_mutations": None}
+
+
 _TOOLS_SCHEMA = """
 ## File Tools — використовуй JSON-блоки для роботи з файлами:
 

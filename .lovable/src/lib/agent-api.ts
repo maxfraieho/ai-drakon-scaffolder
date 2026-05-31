@@ -17,9 +17,9 @@ return readSettings().app.workerUrl.replace(/\/+$/, "");
 }
 
 const AGENT_PORTS: Record<AgentId, number> = {
-drakon: 8765,
-architect: 8766,
-docs: 8767,
+  drakon: 8766,
+  architect: 8766,
+  docs: 8766,
 };
 
 function readAgentBaseUrl(): string {

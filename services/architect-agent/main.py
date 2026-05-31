@@ -81,6 +81,38 @@ def health():
     return {"status": "ok", "service": "architect-agent", "port": PORT}
 
 
+DRAKON_SYSTEM = "Ти — DRAKON-агент. Отримуєш Python-код і генеруєш DRAKON IR JSON. Відповідай тільки JSON у форматі DRAKON IR або поясненням помилки."
+DOCS_SYSTEM = "Ти — документознавець AI-DRAKON. Відповідаєш на питання про документацію, архітектуру та використання платформи. Посилайся на [[wiki-links]] де доречно."
+
+@app.get("/agents/{agent_id}/health")
+def agent_health(agent_id: str):
+    return {"status": "ok", "agent": agent_id, "service": "architect-agent", "port": PORT}
+
+@app.post("/agents/{agent_id}/chat")
+def agent_chat_route(agent_id: str, req: ChatRequest):
+    ctx = req.context or {}
+    file_tree = ctx.get("fileTree") or ctx.get("file_tree")
+    current_diagram = ctx.get("currentDiagram") or ctx.get("current_diagram")
+    memory_context = ""
+    try:
+        memory_context = get_memory(AGENT_NAME, "MEMORY.md") or ""
+    except Exception:
+        pass
+    try:
+        if agent_id == "architect" or req.agent_mode:
+            result = agent_chat_with_tools(req.message, file_tree=file_tree,
+                current_diagram=current_diagram, memory_context=memory_context)
+        else:
+            # drakon / docs — використовують architect_chat з кастомним system prompt
+            from ai_chat.architect_chat import architect_chat_with_system
+            system = DRAKON_SYSTEM if agent_id == "drakon" else DOCS_SYSTEM
+            result = architect_chat_with_system(req.message, system_prompt=system,
+                file_tree=file_tree, current_diagram=current_diagram)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+    return result
+
+
 @app.post("/chat")
 def chat(req: ChatRequest):
     ctx = req.context or {}
