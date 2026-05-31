@@ -8783,7 +8783,7 @@ SESSION:DATE|TASK-105:opendesign-18880-models|agy-wrapper+antigravity.ts+rebuild
 ## Дата: 2026-05-31
 ## ═══════════════════════════════════════════
 
-## [ ] TASK-106
+## [x] TASK-106
 
 **Мета**: Встановити GitHub Personal Access Token в ai-drakon Settings щоб Code section показував файли uav-watcher.
 
