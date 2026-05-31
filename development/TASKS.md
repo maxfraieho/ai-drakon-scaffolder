@@ -11218,7 +11218,7 @@ SESSION:DATE|TASK-116:BUG-6-fix|all-agents-8766|drakon+docs-health+chat|commit:<
 ```
 
 
-## [ ] TASK-117
+## [x] TASK-117
 
 **Мета**: Уніфікація агентів на LangGraph — docs-agent і drakon-agent як DRAKON-схеми з власними KB і логікою.
 
