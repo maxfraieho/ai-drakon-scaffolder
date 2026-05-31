@@ -8792,15 +8792,16 @@ SESSION:DATE|TASK-105:opendesign-18880-models|agy-wrapper+antigravity.ts+rebuild
 ### Контекст
 Без GitHub PAT код-секція показує fallback "GitHub не налаштований" (наш TASK-99).
 Token потрібен для читання файлів `maxfraieho/uav-watcher` через Cloudflare Worker.
+**Token вже збережено в `$TMPDIR/gh_token.txt` на AGY phone.**
 
 ### Кроки
 
-**Крок 1 — Отримати GitHub token зі змінних оточення dev сервера:**
+**Крок 1 — Перевірити токен:**
 ```bash
-sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
-  'grep -r "github.*token\|GITHUB_TOKEN\|GH_TOKEN" /home/vokov/projects/uav-watcher/ --include="*.env" --include="config.json" 2>/dev/null | head -5'
+TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
+TOKEN=$(cat $TMPD/gh_token.txt 2>/dev/null | tr -d '\n')
+echo "Token: ${TOKEN:0:8}..."
 ```
-Якщо є — зберегти в /tmp/gh_token.txt
 
 **Крок 2 — Відкрити браузер, залогінитись:**
 ```bash
