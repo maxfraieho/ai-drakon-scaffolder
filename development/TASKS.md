@@ -7002,6 +7002,80 @@ SESSION:2026-05-31|TASK-95:ai-drakon-browser-test|login+nav+screenshots+fixes|co
 
 ---
 
+## [ ] TASK-99
+
+### Мета
+Виправити Code section (src/pages/CodePage.tsx) — замість мовчазного "Не вдалося завантажити" показувати зрозумілий fallback UI коли GitHub токен не налаштований.
+
+### !!IMPORTANT!! Run locally on AGY Termux — НЕ SSH до 192.168.3.184
+
+### Файли для зміни
+- `src/pages/CodePage.tsx` + `.lovable/src/pages/CodePage.tsx` (обов'язково обидва)
+
+### Що зробити
+
+**В `CodePage.tsx` (export default function CodePage) — перед блоком `return (...)`:**
+
+Після рядків де визначені `owner`, `repo`, `branch`, `token` (рядки ~177-182), додати early return:
+
+```tsx
+  // Early return if GitHub not configured
+  if (!ghCfg.token || !ghCfg.owner || !ghCfg.repo) {
+    return (
+      <div className="flex h-full items-center justify-center bg-[var(--bg-base)]">
+        <div className="flex flex-col items-center gap-4 text-center max-w-xs">
+          <FileCode className="h-10 w-10 text-[var(--text-muted)]" />
+          <div>
+            <p className="font-mono text-[13px] font-semibold text-[var(--text-primary)]">
+              GitHub не налаштований
+            </p>
+            <p className="mt-1 font-mono text-[11px] text-[var(--text-muted)]">
+              Додайте токен та репозиторій у Налаштуваннях
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/settings" })}
+            className="inline-flex items-center gap-2 rounded px-4 py-1.5 font-mono text-[11px] font-medium bg-[var(--accent-amber)] text-[#1a1000] hover:brightness-110 transition-all"
+          >
+            <Cog className="h-3.5 w-3.5" />
+            Відкрити Налаштування
+          </button>
+        </div>
+      </div>
+    );
+  }
+```
+
+**Перевір що `Cog` та `FileCode` вже імпортовані** (вони є в lucide-react, скоріше за все вже є — перевір рядок imports).
+
+### Верифікація
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+# TypeScript build
+npm run build 2>&1 | grep -E "error|warning" | head -10
+
+# Sync перевірка
+diff src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx && echo "SYNC OK"
+```
+
+### Commit
+```bash
+git add src/pages/CodePage.tsx .lovable/src/pages/CodePage.tsx
+git commit -m "fix(code-page): show settings prompt when GitHub token not configured"
+sed -i 's/\[ \] TASK-99/[x] TASK-99/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-99 done"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-05-31|TASK-99:code-page-no-token-fallback|early-return+settings-btn|commit:<hash>|★★★
+```
+
+---
+
 ## [x] TASK-98
 
 ### Мета
