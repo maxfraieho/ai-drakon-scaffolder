@@ -6907,7 +6907,7 @@ SESSION:2026-05-31|TASK-92:agentworkspace-rpi|install+test|NotebookLM-preserved|
 
 ---
 
-## [ ] TASK-91
+## [x] TASK-91
 
 ### Мета
 Створити OpenDesign Plugin для проекту ai-drakon — pre-configured skill що обходить discovery form.
