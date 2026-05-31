@@ -10631,7 +10631,7 @@ SESSION:DATE|TASK-113:manual-testing-plan+docs-audit|scenarios:7|docs-checked:4|
 ```
 
 
-## [ ] TASK-114
+## [x] TASK-114
 
 **Мета**: Оновити 4 застарілих мануали через docs-агент (architect-agent /chat) — агент читає, переписує, AGY зберігає файли.
 
