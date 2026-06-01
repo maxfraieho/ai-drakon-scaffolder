@@ -182,6 +182,7 @@ export interface ProjectInfo {
   branch: string;
   has_repo: boolean;
   agents: string[];
+  github?: { owner: string; repo: string; branch: string };
 }
 
 export async function listProjectsArch(): Promise<ProjectInfo[]> {

@@ -83,7 +83,9 @@ const loadProjects = useCallback(async () => {
     const result = await listProjectsArch();
     const parsed = result.map((p) => {
       let github: Project["github"];
-      if (p.repo_url) {
+      if (p.github?.owner && p.github?.repo) {
+        github = { owner: p.github.owner, repo: p.github.repo, branch: p.github.branch || p.branch || "main" };
+      } else if (p.repo_url) {
         try {
           const u = new URL(p.repo_url);
           const parts = u.pathname.replace(/^\//, "").split("/");
