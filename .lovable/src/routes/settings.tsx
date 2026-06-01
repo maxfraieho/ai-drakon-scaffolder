@@ -268,7 +268,7 @@ return (
 </TabsList>
 </div>
 
-<TabsContent value="github">
+<TabsContent value="github" className="pb-20 md:pb-0">
 <Card>
 <CardHeader>
 <CardTitle>GitHub</CardTitle>
@@ -939,7 +939,7 @@ style={{ touchAction: "manipulation" }}
 </TabsContent>
 </Tabs>
 
-<div className="fixed inset-x-0 bottom-0 border-t border-border bg-background/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
+<div className="fixed inset-x-0 bottom-16 border-t border-border bg-background/95 p-3 backdrop-blur md:static md:mt-4 md:border-0 md:bg-transparent md:p-0">
 <div className="mx-auto flex w-full max-w-4xl justify-end gap-2">
 <Button variant="outline" onClick={() => navigate({ to: "/diagrams" })}>
 Скасувати
