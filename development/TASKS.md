@@ -183,7 +183,249 @@ cp src/components/docs/NotesGraphTab.tsx .lovable/src/components/docs/NotesGraph
 
 **Diary:** `"SESSION:2026-06-01|TASK-124:docs-tab-rename+github-docs|★★★"`
 
-[ ] TASK-124
+[x] TASK-124
+
+---
+
+## TASK-125: Документація — inline редактор файлів (відкрити/редагувати/зберегти → GitHub commit)
+
+**Виконавець:** AGY phone (192.168.3.195)
+**Де запускати:** !!IMPORTANT!! Run locally on AGY Termux. Edit `~/workspace/ai-drakon-scaffolder/src/`. Commit + push + scp to .lovable/.
+
+### Що зробити
+
+Файл: `src/components/docs/DocsFilesTab.tsx`
+
+Коли юзер клікає на файл (тип `"note"`) у списку документів, відкривається inline editor:
+1. `api.githubGetFile(owner, repo, path, branch)` → отримати вміст
+2. Показати `<textarea>` або простий редактор з вмістом
+3. Кнопка "Зберегти" → `api.githubCommitFile(owner, repo, path, content, "docs: update " + path, branch, token)`
+4. Кнопка "Скасувати" → закрити редактор
+
+**Де брати token:** `getGithubConfig().token` (з settings-storage)
+
+**Мінімальний дизайн:** додати state в `DocsFilesTab`:
+```typescript
+const [editingPath, setEditingPath] = useState<string | null>(null);
+const [editContent, setEditContent] = useState("");
+const [editSaving, setEditSaving] = useState(false);
+
+// При кліку на файл → завантажити і відкрити editor
+const openEditor = async (path: string) => {
+  const result = await api.githubGetFile(ghOwner, ghRepoName, path, ghBranch);
+  const content = result.content ? atob(result.content.replace(/\n/g, "")) : (result.raw ?? "");
+  setEditContent(content);
+  setEditingPath(path);
+};
+
+const saveFile = async () => {
+  if (!editingPath) return;
+  setEditSaving(true);
+  try {
+    const token = getGithubConfig().token;
+    await api.githubCommitFile(ghOwner, ghRepoName, editingPath, editContent,
+      `docs: update ${editingPath}`, ghBranch, token);
+    setEditingPath(null);
+  } finally { setEditSaving(false); }
+};
+```
+
+Показати editor панель замість списку коли `editingPath !== null`:
+```tsx
+{editingPath ? (
+  <div className="flex flex-col h-full gap-2 p-3">
+    <div className="flex justify-between items-center">
+      <span className="text-xs font-mono text-muted-foreground">{editingPath}</span>
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" onClick={() => setEditingPath(null)}>Скасувати</Button>
+        <Button size="sm" onClick={saveFile} disabled={editSaving}>
+          {editSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : "Зберегти"}
+        </Button>
+      </div>
+    </div>
+    <textarea
+      className="flex-1 resize-none rounded border bg-background p-2 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-amber-500"
+      value={editContent}
+      onChange={e => setEditContent(e.target.value)}
+    />
+  </div>
+) : (/* existing list UI */)}
+```
+
+**Файл api.ts** — перевірити тип `GithubFileResponse`:
+```bash
+grep -n "GithubFileResponse\|content.*base64\|raw" src/lib/api.ts | head -10
+```
+
+**Верифікація:**
+```bash
+grep -n "editingPath\|openEditor\|saveFile" src/components/docs/DocsFilesTab.tsx
+```
+
+**Sync .lovable:**
+```bash
+cp src/components/docs/DocsFilesTab.tsx .lovable/src/components/docs/DocsFilesTab.tsx
+```
+
+**Коміт:** `feat(docs): inline file editor with GitHub commit (TASK-125)`
+**Diary:** `"SESSION:2026-06-01|TASK-125:docs-editor|★★★"`
+
+[ ] TASK-125
+
+---
+
+## TASK-126: Agent Studio — DRAKON editor повний доступ (зберігання, завантаження з репо)
+
+**Виконавець:** AGY phone (192.168.3.195)
+**Де запускати:** !!IMPORTANT!! Run locally on AGY Termux. `~/workspace/ai-drakon-scaffolder/src/`
+
+### Проблема
+AgentStudioPage вже має DrakonEditor + savePipeline/getPipeline. Але:
+- Збереження йде на локальний сервер (architect-agent), не в GitHub
+- Треба додати кнопку "Save to GitHub" що комітить `.drakon.json` в репозиторій
+
+### Що зробити
+
+Файл: `src/pages/AgentStudioPage.tsx`
+
+Знайти де відбувається save (рядок ~151):
+```typescript
+await savePipeline(selectedPipelineName, ir);
+```
+
+Додати після `savePipeline` опціональний GitHub commit:
+```typescript
+// Після локального save — запитати чи зберегти в GitHub
+const ghCfg = getGithubConfig();
+if (ghCfg.owner && ghCfg.repo && ghCfg.token) {
+  const path = `services/architect-agent/pipelines/${selectedPipelineName}.drakon.json`;
+  const content = JSON.stringify(ir, null, 2);
+  try {
+    await api.githubCommitFile(
+      ghCfg.owner, ghCfg.repo, path, content,
+      `feat(drakon): update ${selectedPipelineName} pipeline`, ghCfg.branch || "main", ghCfg.token
+    );
+    toast.success("Збережено локально + GitHub");
+  } catch {
+    toast.success("Збережено локально (GitHub save failed)");
+  }
+} else {
+  toast.success("Збережено локально");
+}
+```
+
+Додати import:
+```typescript
+import { getGithubConfig } from "@/lib/settings-storage";
+import { api } from "@/lib/api";
+```
+
+**Верифікація:**
+```bash
+grep -n "githubCommitFile\|getGithubConfig" src/pages/AgentStudioPage.tsx
+```
+
+**Sync:** `cp src/pages/AgentStudioPage.tsx .lovable/src/pages/AgentStudioPage.tsx`
+
+**Коміт:** `feat(agents): save DRAKON pipeline to GitHub on save (TASK-126)`
+**Diary:** `"SESSION:2026-06-01|TASK-126:drakon-github-save|★★★"`
+
+[ ] TASK-126
+
+---
+
+## TASK-127: Architect-agent — інструмент запису файлів в GitHub (для агентів)
+
+**Виконавець:** AGY phone (192.168.3.195)
+**Де запускати:** !!IMPORTANT!! Run on 192.168.3.184 via SSH: `sshpass -p 805235io. ssh vokov@192.168.3.184`
+
+### Що зробити
+
+Файл: `/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/ai_chat/architect_chat.py`
+
+Додати новий `github_write` тул для агента що дозволяє записувати файли в GitHub:
+
+**1. Додати env vars в `/etc/init.d/ai-architect-agent`:**
+```bash
+# Знайти рядок environment= і додати:
+GITHUB_TOKEN=<token_from_settings>
+GITHUB_OWNER=maxfraieho
+GITHUB_REPO=ai-drakon-scaffolder
+GITHUB_BRANCH=main
+```
+Прочитати поточний token з `/home/vokov/workspace/ai-drakon-scaffolder/services/architect-agent/.env` або `/opt/free-claude-code/.env`.
+
+**2. В architect_chat.py додати github_write tool:**
+
+Знайти де визначаються tools (шукай `"name": "read_file"` або `tools = [`).
+Додати новий tool:
+```python
+{
+    "name": "github_write_file",
+    "description": "Write or update a file in the GitHub repository. Use to save documentation, code, or configs.",
+    "input_schema": {
+        "type": "object",
+        "properties": {
+            "path": {"type": "string", "description": "File path in repo, e.g. docs/readme.md"},
+            "content": {"type": "string", "description": "Full file content to write"},
+            "message": {"type": "string", "description": "Commit message"}
+        },
+        "required": ["path", "content", "message"]
+    }
+}
+```
+
+**3. Додати обробник tool_use:**
+
+Знайти де обробляються tool results (шукай `tool_use` або `tool_calls`).
+Додати case для `github_write_file`:
+```python
+elif tool_name == "github_write_file":
+    import httpx, base64, os
+    github_token = os.getenv("GITHUB_TOKEN", "")
+    owner = os.getenv("GITHUB_OWNER", "maxfraieho")
+    repo = os.getenv("GITHUB_REPO", "ai-drakon-scaffolder")
+    branch = os.getenv("GITHUB_BRANCH", "main")
+    path = tool_input.get("path", "")
+    content = tool_input.get("content", "")
+    message = tool_input.get("message", "update via agent")
+    
+    if not github_token:
+        tool_result = "Error: GITHUB_TOKEN not configured"
+    else:
+        # Get current SHA if file exists
+        headers = {"Authorization": f"Bearer {github_token}", "Accept": "application/vnd.github+json"}
+        get_r = httpx.get(f"https://api.github.com/repos/{owner}/{repo}/contents/{path}",
+                         headers=headers, timeout=10)
+        sha = get_r.json().get("sha") if get_r.status_code == 200 else None
+        
+        payload = {
+            "message": message,
+            "content": base64.b64encode(content.encode()).decode(),
+            "branch": branch
+        }
+        if sha:
+            payload["sha"] = sha
+        
+        put_r = httpx.put(f"https://api.github.com/repos/{owner}/{repo}/contents/{path}",
+                         json=payload, headers=headers, timeout=15)
+        if put_r.status_code in (200, 201):
+            tool_result = f"File {path} written successfully to GitHub ({branch})"
+        else:
+            tool_result = f"GitHub write error: {put_r.status_code} {put_r.text[:100]}"
+```
+
+**Верифікація (на сервері):**
+```bash
+sshpass -p 805235io. ssh vokov@192.168.3.184 'grep -n "github_write_file" ~/workspace/ai-drakon-scaffolder/services/architect-agent/ai_chat/architect_chat.py'
+sudo rc-service ai-architect-agent restart
+```
+
+**Коміт:** `feat(architect): add github_write_file tool for agent (TASK-127)`
+
+**Diary:** `"SESSION:2026-06-01|TASK-127:agent-github-write|★★★"`
+
+[ ] TASK-127
 
 ---
 
