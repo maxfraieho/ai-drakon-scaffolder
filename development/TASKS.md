@@ -79,7 +79,7 @@ chore(tasks): TASK-128 done
 
 **Diary:** `"SESSION:2026-06-01|TASK-128:projectinfo-github-field|★★★"`
 
-[ ] TASK-128
+[x] TASK-128
 
 ---
 
