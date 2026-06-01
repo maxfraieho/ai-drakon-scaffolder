@@ -150,6 +150,7 @@ _TOOLS_SCHEMA = """
 <tool_call>{"tool":"files_write","args":{"path":"docs/manuals/example.md","content":"# Вміст"}}</tool_call>
 <tool_call>{"tool":"files_patch","args":{"path":"docs/file.md","old_string":"застаріле","new_string":"актуальне"}}</tool_call>
 <tool_call>{"tool":"files_delete","args":{"path":"docs/old-file.md"}}</tool_call>
+<tool_call>{"tool":"github_write","args":{"path":"docs/notes.md","content":"# Notes","message":"docs: update"}}</tool_call>
 
 Правила: один <tool_call> за раз. Після виконання отримаєш <tool_result>...</tool_result>.
 Для завершення напиши DONE: [резюме що зроблено].
@@ -172,6 +173,43 @@ def _execute_tool(tool: str, args: dict) -> str:
             r = httpx.post(f"{_BASE_URL}/files/patch", json=args, timeout=15)
         elif tool == "files_delete":
             r = httpx.post(f"{_BASE_URL}/files/delete", json=args, timeout=10)
+        elif tool == "github_write":
+            import subprocess as _sp, os as _os, base64
+            # Try git-based approach first (uses SSH key, no token needed)
+            repo_root = _os.getenv("GIT_REPO_PATH", "/home/vokov/workspace/ai-drakon-scaffolder")
+            file_path = args.get("path", "")
+            file_content = args.get("content", "")
+            commit_msg = args.get("message", f"agent: update {file_path}")
+            full_path = _os.path.join(repo_root, file_path)
+            _os.makedirs(_os.path.dirname(full_path), exist_ok=True)
+            with open(full_path, "w", encoding="utf-8") as _f:
+                _f.write(file_content)
+            _sp.run(["git", "-C", repo_root, "add", file_path], capture_output=True)
+            r2 = _sp.run(["git", "-C", repo_root, "commit", "-m", commit_msg],
+                         capture_output=True, text=True)
+            if "nothing to commit" in r2.stdout + r2.stderr:
+                return f"No changes: {file_path} already up-to-date"
+            r3 = _sp.run(["git", "-C", repo_root, "push", "origin", "main"],
+                         capture_output=True, text=True)
+            if r3.returncode == 0:
+                return f"OK: {file_path} committed and pushed to GitHub"
+            # Fallback: GitHub REST API with token
+            gh_token = _os.getenv("GITHUB_TOKEN", "")
+            if not gh_token:
+                return f"Push failed (no SSH access) and GITHUB_TOKEN not set. Commit: {r2.stdout[:100]}"
+            gh_repo_full = _os.getenv("GITHUB_REPO", "maxfraieho/ai-drakon-scaffolder")
+            gh_owner, _, gh_repo = gh_repo_full.partition("/")
+            gh_branch = _os.getenv("GITHUB_BRANCH", "main")
+            gh_headers = {"Authorization": f"Bearer {gh_token}", "Accept": "application/vnd.github+json"}
+            api_url = f"https://api.github.com/repos/{gh_owner}/{gh_repo}/contents/{file_path}"
+            get_r = httpx.get(api_url, headers=gh_headers, params={"ref": gh_branch}, timeout=10)
+            sha = get_r.json().get("sha") if get_r.status_code == 200 else None
+            payload = {"message": commit_msg, "content": base64.b64encode(file_content.encode()).decode(), "branch": gh_branch}
+            if sha: payload["sha"] = sha
+            put_r = httpx.put(api_url, json=payload, headers=gh_headers, timeout=15)
+            if put_r.status_code in (200, 201):
+                return f"OK: {file_path} committed to GitHub via API"
+            return f"GitHub API error {put_r.status_code}: {put_r.text[:200]}"
         else:
             return f"Unknown tool: {tool}"
         r.raise_for_status()
