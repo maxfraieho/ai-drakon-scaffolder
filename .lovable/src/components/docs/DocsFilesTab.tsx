@@ -112,7 +112,7 @@ const load = async () => {
   try {
     if (ghOwner && ghRepoName) {
       console.log("[DocsFilesTab] loading github", ghOwner, ghRepoName, ghBranch);
-      const result = await api.githubGetTree(ghOwner, ghRepoName, "docs", ghBranch);
+      const result = await api.githubListTree(ghOwner, ghRepoName, "docs", ghBranch);
       console.log("[DocsFilesTab] result", result);
       const items: Array<{ path?: string; name?: string; type?: string }> =
         result.entries ?? [];
