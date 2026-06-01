@@ -141,7 +141,7 @@ function DocsRoute() {
           <h1 className="text-lg font-semibold md:text-2xl">Документація</h1>
         </header>
 
-        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="flex flex-1 min-h-0 flex-col w-full px-4 pb-4">
+        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="flex w-full flex-1 min-h-0 flex-col px-4 pb-4">
           <TabsList className="no-scrollbar mb-3 flex w-full shrink-0 justify-start overflow-x-auto whitespace-nowrap md:w-auto md:inline-flex">
             <TabsTrigger value="generator">
               <Play className="mr-1.5 h-3.5 w-3.5" />
@@ -263,7 +263,7 @@ function DocsRoute() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="notes" className="h-full min-h-0 overflow-hidden">
+          <TabsContent value="notes" className="w-full h-full min-h-0 overflow-hidden">
             {activeProject?.github?.owner && activeProject?.github?.repo ? (
               <DocsFilesTab onNoteOpen={(slug) => setFocusedSlug(slug)} />
             ) : (
