@@ -18,6 +18,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getPipeline, savePipeline } from "@/lib/graph-pipeline-api";
+import { api } from "@/lib/api";
+import { getGithubConfig } from "@/lib/settings-storage";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
 import { convertDiagramToIr } from "@/lib/htse/diagram-to-ir";
 import { usePipelineExecution } from "@/hooks/usePipelineExecution";
@@ -147,13 +149,31 @@ export default function AgentStudioPage() {
         state_class: stateClass,
       };
 
-      // 2. PUT request to commit changes
+      // 2. Save to local backend
       await savePipeline(selectedPipelineName, ir);
-      
+
+      // 3. Optional: save to GitHub if configured
+      const ghCfg = getGithubConfig();
+      if (ghCfg.owner && ghCfg.repo && ghCfg.token) {
+        const ghPath = `services/architect-agent/pipelines/${selectedPipelineName}.drakon.json`;
+        try {
+          await api.githubCommitFile(
+            ghCfg.owner, ghCfg.repo, ghPath,
+            JSON.stringify(ir, null, 2),
+            `feat(drakon): update ${selectedPipelineName}`,
+            ghCfg.branch || "main", ghCfg.token,
+          );
+          toast.success("Збережено локально + GitHub");
+        } catch {
+          toast.success("Збережено локально (GitHub недоступний)");
+        }
+      } else {
+        toast.success("Пайплайн успішно збережено та скомпільовано на бекенді!");
+      }
+
       // Update local state
       setActiveDiagram(diagramToSave);
       setIsDirty(false);
-      toast.success("Пайплайн успішно збережено та скомпільовано на бекенді!");
       return true;
     } catch (err) {
       console.error("Save error:", err);
