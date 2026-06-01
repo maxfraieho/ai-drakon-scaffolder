@@ -18,14 +18,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getPipeline, savePipeline } from "@/lib/graph-pipeline-api";
-import { api } from "@/lib/api";
-import { getGithubConfig } from "@/lib/settings-storage";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
 import { convertDiagramToIr } from "@/lib/htse/diagram-to-ir";
 import { usePipelineExecution } from "@/hooks/usePipelineExecution";
 import { UnsavedChangesGuard } from "@/components/workspace/UnsavedChangesGuard";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { getGithubConfig } from "@/lib/settings-storage";
+import { api } from "@/lib/api";
 import type { DrakonDiagram } from "@/types/drakonwidget";
 
 export default function AgentStudioPage() {
@@ -149,28 +149,33 @@ export default function AgentStudioPage() {
         state_class: stateClass,
       };
 
-      // 2. Save to local backend
+      // 2. PUT request to commit changes
       await savePipeline(selectedPipelineName, ir);
-
-      // 3. Optional: save to GitHub if configured
+      
+      // Після локального save — комітимо в GitHub якщо налаштовано
       const ghCfg = getGithubConfig();
       if (ghCfg.owner && ghCfg.repo && ghCfg.token) {
-        const ghPath = `services/architect-agent/pipelines/${selectedPipelineName}.drakon.json`;
+        const path = `services/architect-agent/pipelines/${selectedPipelineName}.drakon.json`;
+        const content = JSON.stringify(ir, null, 2);
         try {
           await api.githubCommitFile(
-            ghCfg.owner, ghCfg.repo, ghPath,
-            JSON.stringify(ir, null, 2),
-            `feat(drakon): update ${selectedPipelineName}`,
-            ghCfg.branch || "main", ghCfg.token,
+            ghCfg.owner,
+            ghCfg.repo,
+            path,
+            content,
+            `feat(drakon): update ${selectedPipelineName} pipeline`,
+            ghCfg.branch || "main",
+            ghCfg.token
           );
-          toast.success("Збережено локально + GitHub");
-        } catch {
-          toast.success("Збережено локально (GitHub недоступний)");
+          toast.success("Пайплайн збережено локально + GitHub!");
+        } catch (commitErr) {
+          console.error("GitHub commit failed:", commitErr);
+          toast.success("Пайплайн збережено локально (GitHub save failed)");
         }
       } else {
-        toast.success("Пайплайн успішно збережено та скомпільовано на бекенді!");
+        toast.success("Пайплайн збережено локально");
       }
-
+      
       // Update local state
       setActiveDiagram(diagramToSave);
       setIsDirty(false);
