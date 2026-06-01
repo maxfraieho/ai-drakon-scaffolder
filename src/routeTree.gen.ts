@@ -13,6 +13,7 @@ import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PipelinesRouteImport } from './routes/pipelines'
+import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
@@ -43,6 +44,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const PipelinesRoute = PipelinesRouteImport.update({
   id: '/pipelines',
   path: '/pipelines',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -96,9 +102,9 @@ const DiagramEditorRoute = DiagramEditorRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
-  id: '/pipeline/$pipelineId/edit',
-  path: '/pipeline/$pipelineId/edit',
-  getParentRoute: () => rootRouteImport,
+  id: '/$pipelineId/edit',
+  path: '/$pipelineId/edit',
+  getParentRoute: () => PipelineRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
   '/login': typeof LoginRoute
+  '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipeline'
     | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipeline'
     | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/docs'
     | '/github'
     | '/login'
+    | '/pipeline'
     | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
@@ -216,13 +228,13 @@ export interface RootRouteChildren {
   DocsRoute: typeof DocsRoute
   GithubRoute: typeof GithubRoute
   LoginRoute: typeof LoginRoute
+  PipelineRoute: typeof PipelineRouteWithChildren
   PipelinesRoute: typeof PipelinesRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SyncRoute: typeof SyncRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
-  PipelinePipelineIdEditRoute: typeof PipelinePipelineIdEditRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -253,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/pipelines'
       fullPath: '/pipelines'
       preLoaderRoute: typeof PipelinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -327,13 +346,25 @@ declare module '@tanstack/react-router' {
     }
     '/pipeline/$pipelineId/edit': {
       id: '/pipeline/$pipelineId/edit'
-      path: '/pipeline/$pipelineId/edit'
+      path: '/$pipelineId/edit'
       fullPath: '/pipeline/$pipelineId/edit'
       preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
-      parentRoute: typeof rootRouteImport
+      parentRoute: typeof PipelineRoute
     }
   }
 }
+
+interface PipelineRouteChildren {
+  PipelinePipelineIdEditRoute: typeof PipelinePipelineIdEditRoute
+}
+
+const PipelineRouteChildren: PipelineRouteChildren = {
+  PipelinePipelineIdEditRoute: PipelinePipelineIdEditRoute,
+}
+
+const PipelineRouteWithChildren = PipelineRoute._addFileChildren(
+  PipelineRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -344,13 +375,13 @@ const rootRouteChildren: RootRouteChildren = {
   DocsRoute: DocsRoute,
   GithubRoute: GithubRoute,
   LoginRoute: LoginRoute,
+  PipelineRoute: PipelineRouteWithChildren,
   PipelinesRoute: PipelinesRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SyncRoute: SyncRoute,
   DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,
-  PipelinePipelineIdEditRoute: PipelinePipelineIdEditRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
