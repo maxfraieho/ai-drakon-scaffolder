@@ -111,12 +111,11 @@ const load = async () => {
     if (ghOwner && ghRepoName) {
       const result = await api.githubGetTree(ghOwner, ghRepoName, "docs", ghBranch);
       const items: Array<{ path?: string; name?: string; type?: string }> =
-        (result as { tree?: unknown[]; items?: unknown[] }).tree ??
-        (result as { items?: unknown[] }).items ?? [];
+        result.entries ?? [];
       const nodes: TreeNode[] = items.map((item) => ({
         slug: ((item.path ?? item.name ?? "") as string).replace(/\.md$/, ""),
         title: ((item.name ?? item.path ?? "") as string).replace(/\.md$/, ""),
-        type: (item.type === "tree" ? "folder" : "note") as "note" | "folder",
+        type: (item.type === "dir" ? "folder" : "note") as "note" | "folder",
         path: (item.path ?? item.name ?? "") as string,
         children: [],
       }));
