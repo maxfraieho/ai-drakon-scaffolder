@@ -96,6 +96,7 @@ export function DocsFilesTab({ onNoteOpen }: DocsFilesTabProps) {
 const { activeProject } = useProject();
 const [tree, setTree] = useState<TreeNode[]>([]);
 const [loading, setLoading] = useState(false);
+const [loadError, setLoadError] = useState<string | null>(null);
 const [searchQuery, setSearchQuery] = useState("");
 const [editingPath, setEditingPath] = useState<string | null>(null);
 const [editContent, setEditContent] = useState("");
@@ -107,9 +108,12 @@ const ghBranch = activeProject?.github?.branch || getGithubConfig().branch || "m
 
 const load = async () => {
   setLoading(true);
+  setLoadError(null);
   try {
     if (ghOwner && ghRepoName) {
+      console.log("[DocsFilesTab] loading github", ghOwner, ghRepoName, ghBranch);
       const result = await api.githubGetTree(ghOwner, ghRepoName, "docs", ghBranch);
+      console.log("[DocsFilesTab] result", result);
       const items: Array<{ path?: string; name?: string; type?: string }> =
         result.entries ?? [];
       const nodes: TreeNode[] = items.map((item) => ({
@@ -121,10 +125,12 @@ const load = async () => {
       }));
       setTree(nodes);
     } else {
+      console.log("[DocsFilesTab] no github config, fetching notes tree for", activeProject?.slug);
       setTree(await fetchNotesTree(activeProject?.slug || undefined));
     }
   } catch (e) {
-    console.error("docs load error", e);
+    console.error("[DocsFilesTab] load error", e);
+    setLoadError(String(e));
   } finally {
     setLoading(false);
   }
@@ -214,6 +220,8 @@ title="Оновити"
 
 <div className="border-b border-border px-3 py-1.5 text-xs text-muted-foreground">
 {loading ? "Завантаження…" : `${countNotes(tree)} документів`}
+{!loading && !ghOwner && <span className="ml-2 text-yellow-500">⚠ repo не вказано</span>}
+{loadError && <span className="ml-2 text-red-500">❌ {loadError}</span>}
 </div>
 
 <ScrollArea className="flex-1">
