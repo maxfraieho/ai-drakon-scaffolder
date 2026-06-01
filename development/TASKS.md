@@ -330,7 +330,7 @@ grep -n "githubCommitFile\|getGithubConfig" src/pages/AgentStudioPage.tsx
 **Коміт:** `feat(agents): save DRAKON pipeline to GitHub on save (TASK-126)`
 **Diary:** `"SESSION:2026-06-01|TASK-126:drakon-github-save|★★★"`
 
-[ ] TASK-126
+[x] TASK-126
 
 ---
 
