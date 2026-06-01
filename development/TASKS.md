@@ -347,7 +347,7 @@ cp src/components/docs/DocsFilesTab.tsx .lovable/src/components/docs/DocsFilesTa
 **Коміт:** `feat(docs): inline file editor with GitHub commit (TASK-125)`
 **Diary:** `"SESSION:2026-06-01|TASK-125:docs-editor|★★★"`
 
-[ ] TASK-125
+[x] TASK-125 ✅
 
 ---
 
