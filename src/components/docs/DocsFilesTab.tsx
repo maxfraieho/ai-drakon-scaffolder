@@ -140,9 +140,7 @@ const openEditor = async (path: string) => {
   setEditSaving(true);
   try {
     const result = await api.githubGetFile(ghOwner, ghRepoName, path, ghBranch);
-    const decoded = result.content
-      ? atob(result.content.replace(/\n/g, ""))
-      : "";
+    const decoded = result.content ?? "";
     setEditContent(decoded);
     setEditingPath(path);
   } catch (e) {
@@ -239,7 +237,14 @@ title="Оновити"
       <TreeNodeItem
         node={node}
         level={0}
-        onNoteClick={(slug) => onNoteOpen(slug)}
+        onNoteClick={(slug) => {
+          const found = tree.find((n) => n.slug === slug);
+          if (found) {
+            void openEditor(found.path ?? found.slug ?? "");
+          } else {
+            onNoteOpen(slug);
+          }
+        }}
         searchQuery={searchQuery}
       />
     </div>
