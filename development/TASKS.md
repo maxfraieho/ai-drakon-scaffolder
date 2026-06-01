@@ -2,7 +2,93 @@
 
 > Власник: Claude (оркестратор)
 > Виконавець: AGY (executor)
-> Оновлено: 2026-05-29 22:00
+> Оновлено: 2026-06-01 10:30
+
+---
+
+## TASK-123: ai-drakon IDE — project switch must use GitHub repo (not local filesystem)
+
+**Виконавець:** AGY3 (192.168.3.204)
+**Де запускати:** !!IMPORTANT!! Run on 192.168.3.184 via SSH. Use `sshpass -p 805235io. ssh vokov@192.168.3.184`
+
+**Проблема:**
+Коли в Settings змінити GitHub project на `sonate-solidsite`, всі вкладки (Code, Docs, DRAKON, Agents) залишаються в контексті `uav-watcher`. Потрібно щоб вибір GitHub repo в Settings змінював контекст ВСЮДИ.
+
+**Архітектура:**
+- Settings зберігаються в `localStorage` (key: `drakon.settings`)
+- `CodePage.tsx` вже читає `ghCfg.owner/repo` з settings через `getGithubConfig()`
+- `activeProject` в localStorage (`ai_drakon_active_project`) — окремий стан
+- `project_pipeline_route.py` → `PROJECTS_BASE = ~/projects` (на 192.168.3.184) — НЕ пов'язаний з GitHub
+
+**Що потрібно виправити:**
+
+### 1. Конфіг проекту sonate-solidsite на сервері
+На 192.168.3.184 створити:
+```
+/home/vokov/projects/sonate-solidsite/config.json
+```
+Зміст:
+```json
+{
+  "name": "Sonate Solidaire",
+  "description": "Website violin-integration.works / sonate-solidaire.me",
+  "repo_url": "https://github.com/maxfraieho/sonate-solidsite",
+  "branch": "main",
+  "github": {
+    "owner": "maxfraieho",
+    "repo": "sonate-solidsite",
+    "branch": "main"
+  }
+}
+```
+
+### 2. GitHub-aware project listing
+Файл: `services/architect-agent/project_pipeline_route.py`
+
+В `list_projects()` функції (рядок ~41) — додати `github` поле в response якщо є в `config.json`:
+```python
+gh = config.get('github', {})
+projects.append({...existing fields...,
+    'github': gh if gh else None
+})
+```
+
+### 3. Frontend ProjectContext — прийняти github з API
+Файл: `src/context/ProjectContext.tsx`
+
+У функції `toProject()` (рядок ~35) вже є обробка `d.github`. 
+Перевірити що `listProjectsArch()` повертає `github` поле і воно потрапляє в `Project.github`.
+Файл: `src/lib/graph-pipeline-api.ts` — функція `listProjectsArch()`
+
+### 4. Синхронізація Settings ↔ activeProject
+Файл: `src/pages/SettingsPage.tsx` або компонент де зберігаються GitHub settings.
+
+Коли user зберігає GitHub settings (owner/repo), треба також спробувати знайти відповідний project в списку і встановити його як `activeProject`.
+
+**Спрощений варіант для швидкого фіксу:**
+- При завантаженні Settings перевіряти чи активний `ghCfg.owner/repo` відповідає якомусь project у списку
+- Якщо відповідає — автоматично встановити `activeProject`
+
+### 5. Код браузер і агенти
+- `CodePage.tsx` рядок ~179-184: вже використовує `ghCfg` — перевірити що settings зберігаються коректно
+- `AgentChatPanel.tsx` рядок ~144: передає `activeProject.slug` і `activeProject.path` — після кроку 4 буде правильним
+
+**Верифікація:**
+```bash
+# На сервері:
+sshpass -p 805235io. ssh vokov@192.168.3.184 'ls ~/projects/sonate-solidsite/ && cat ~/projects/sonate-solidsite/config.json'
+curl -s http://localhost:8766/projects | python3 -c "import json,sys; [print(p['slug'],p.get('github','NO')) for p in json.load(sys.stdin)['projects'] if 'sonate' in p['slug']]"
+```
+
+**Коміт:**
+```
+feat(projects): add sonate-solidsite project config + github field in list API
+chore(tasks): TASK-123 done
+```
+
+**Diary:** `"SESSION:2026-06-01|TASK-123:project-switch-github|sonate-solidsite config added|API fixed|★★★"`
+
+[ ] TASK-123
 
 ---
 
