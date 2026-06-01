@@ -88,7 +88,102 @@ chore(tasks): TASK-123 done
 
 **Diary:** `"SESSION:2026-06-01|TASK-123:project-switch-github|sonate-solidsite config added|API fixed|★★★"`
 
-[ ] TASK-123
+[x] TASK-123
+
+---
+
+## TASK-124: ai-drakon IDE — rename "Нотатки"→"Документація" + show GitHub docs/ folder
+
+**Виконавець:** AGY3 (192.168.3.204)
+**Де запускати:** !!IMPORTANT!! Run locally on AGY3 Termux. Edit files in `~/workspace/ai-drakon-scaffolder/src/`. Then commit + push + scp to .lovable/.
+
+### Частина 1: Перейменувати "Нотатки" → "Документація"
+
+Файл: `src/components/workspace/WorkspaceShell.tsx`
+- Рядок ~62: `label: "Нотатки"` → `label: "Документація"`
+- Рядок ~74: `section: "Нотатки"` → `section: "Документація"`
+
+Файл: `src/components/workspace/CommandPalette.tsx`
+- Рядок ~26: `label: "Нотатки"` → `label: "Документація"`
+
+Файл: `src/components/docs/NotesGraphTab.tsx`
+- Рядок ~64: підпис "Нотаток поки немає" → "Документів поки немає"
+
+### Частина 2: DocsFilesTab — читати docs/ з GitHub коли є активний проект
+
+Файл: `src/components/docs/DocsFilesTab.tsx`
+
+**Поточний стан** (рядки ~94-108):
+```typescript
+const { activeProject } = useProject();
+const ghRepo = activeProject?.slug || "";
+// ...
+setTree(await fetchNotesTree(ghRepo || undefined));
+```
+
+**Що змінити:**
+1. Додати import: `import { api } from "@/lib/api";`
+2. Додати import: `import { getGithubConfig } from "@/lib/settings-storage";`
+3. В функції `load()` замінити логіку:
+
+```typescript
+const load = async () => {
+  setLoading(true);
+  try {
+    const gh = activeProject?.github;
+    const ghCfg = getGithubConfig();
+    const owner = gh?.owner || ghCfg.owner;
+    const repo  = gh?.repo  || ghCfg.repo;
+    const branch = gh?.branch || ghCfg.branch || "main";
+
+    if (owner && repo) {
+      // GitHub mode: читати docs/ з репозиторію
+      const result = await api.githubGetTree(owner, repo, "docs", branch);
+      const nodes = (result.tree || result.items || []).map((item: { path?: string; name?: string; type?: string }) => ({
+        slug: (item.path || item.name || "").replace(/\.md$/, ""),
+        title: (item.name || item.path || "").replace(/\.md$/, ""),
+        type: item.type === "tree" ? "folder" : "note",
+        path: item.path || item.name || "",
+        children: [],
+      }));
+      setTree(nodes);
+    } else {
+      // Fallback: локальна нотатки система
+      setTree(await fetchNotesTree(activeProject?.slug || undefined));
+    }
+  } catch (e) {
+    console.error("docs load error", e);
+  } finally {
+    setLoading(false);
+  }
+};
+```
+
+**Тип TreeNode** (якщо потрібно) — перевірити `src/lib/garden/notesApi.ts` що `TreeNode` має поля `slug, title, type, path, children`.
+
+### Верифікація:
+```bash
+grep -n "Документація" src/components/workspace/WorkspaceShell.tsx
+grep -n "githubGetTree\|owner\|repo" src/components/docs/DocsFilesTab.tsx
+```
+
+### Коміт:
+```
+feat(docs): rename Notes→Documentation tab + show GitHub docs/ folder (TASK-124)
+chore(tasks): TASK-124 done
+```
+
+**Sync .lovable:**
+```bash
+cp src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx
+cp src/components/workspace/CommandPalette.tsx .lovable/src/components/workspace/CommandPalette.tsx
+cp src/components/docs/DocsFilesTab.tsx .lovable/src/components/docs/DocsFilesTab.tsx
+cp src/components/docs/NotesGraphTab.tsx .lovable/src/components/docs/NotesGraphTab.tsx
+```
+
+**Diary:** `"SESSION:2026-06-01|TASK-124:docs-tab-rename+github-docs|★★★"`
+
+[ ] TASK-124
 
 ---
 
