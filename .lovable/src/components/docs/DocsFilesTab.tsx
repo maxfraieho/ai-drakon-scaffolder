@@ -8,6 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useProject } from "@/context/ProjectContext";
 import { cn } from "@/lib/utils";
 import { fetchNotesTree, type TreeNode } from "@/lib/garden/notesApi";
+import { api } from "@/lib/api";
+import { getGithubConfig } from "@/lib/settings-storage";
 function nodeMatchesSearch(node: TreeNode, q: string): boolean {
 if (!q) return true;
 const lq = q.toLowerCase();
@@ -92,25 +94,44 @@ onNoteOpen: (slug: string) => void;
 
 export function DocsFilesTab({ onNoteOpen }: DocsFilesTabProps) {
 const { activeProject } = useProject();
-const ghRepo = activeProject?.slug || "";
 const [tree, setTree] = useState<TreeNode[]>([]);
 const [loading, setLoading] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
 
+const ghOwner = activeProject?.github?.owner || getGithubConfig().owner || "";
+const ghRepoName = activeProject?.github?.repo || getGithubConfig().repo || "";
+const ghBranch = activeProject?.github?.branch || getGithubConfig().branch || "main";
+
 const load = async () => {
-setLoading(true);
-try {
-setTree(await fetchNotesTree(ghRepo || undefined));
-} catch (e) {
-console.error("tree load error", e);
-} finally {
-setLoading(false);
-}
+  setLoading(true);
+  try {
+    if (ghOwner && ghRepoName) {
+      const result = await api.githubGetTree(ghOwner, ghRepoName, "docs", ghBranch);
+      const items: Array<{ path?: string; name?: string; type?: string }> =
+        (result as { tree?: unknown[]; items?: unknown[] }).tree ??
+        (result as { items?: unknown[] }).items ?? [];
+      const nodes: TreeNode[] = items.map((item) => ({
+        slug: ((item.path ?? item.name ?? "") as string).replace(/\.md$/, ""),
+        title: ((item.name ?? item.path ?? "") as string).replace(/\.md$/, ""),
+        type: (item.type === "tree" ? "folder" : "note") as "note" | "folder",
+        path: (item.path ?? item.name ?? "") as string,
+        children: [],
+      }));
+      setTree(nodes);
+    } else {
+      setTree(await fetchNotesTree(activeProject?.slug || undefined));
+    }
+  } catch (e) {
+    console.error("docs load error", e);
+  } finally {
+    setLoading(false);
+  }
 };
 
 useEffect(() => {
-void load();
-}, [ghRepo]);
+  void load();
+// eslint-disable-next-line react-hooks/exhaustive-deps
+}, [ghOwner, ghRepoName, ghBranch]);
 
 return (
 <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border">

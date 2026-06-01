@@ -23,7 +23,7 @@ interface CommandPaletteProps {
 
 const NAV_ITEMS = [
   { label: "Схеми", to: "/diagrams", icon: LayoutDashboard, shortcut: "G D" },
-  { label: "Нотатки", to: "/docs", icon: FileText, shortcut: "G N" },
+  { label: "Документація", to: "/docs", icon: FileText, shortcut: "G N" },
   { label: "Код", to: "/code", icon: FileCode, shortcut: "G C" },
   { label: "Агенти", to: "/agents", icon: Cpu, shortcut: "G A" },
   { label: "Налаштування", to: "/settings", icon: Cog, shortcut: "G ," },

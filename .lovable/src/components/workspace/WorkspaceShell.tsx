@@ -59,7 +59,7 @@ const NAV_WORKSPACE: NavItem[] = [
   { to: "/pipelines", label: "Pipeline", icon: Workflow },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
   { to: "/code", label: "Код", icon: FileCode },
-  { to: "/docs", label: "Нотатки", icon: FileText },
+  { to: "/docs", label: "Документація", icon: FileText },
 ];
 
 const NAV_SYSTEM: NavItem[] = [
@@ -71,7 +71,7 @@ const NAV_SYSTEM: NavItem[] = [
 function getBreadcrumb(pathname: string): { section: string; sectionPath: string; sub?: string } {
   if (pathname.startsWith("/diagram/editor")) return { section: "Diagrams", sectionPath: "/diagrams", sub: "Editor" };
   if (pathname.startsWith("/diagrams")) return { section: "Diagrams", sectionPath: "/diagrams" };
-  if (pathname.startsWith("/docs")) return { section: "Нотатки", sectionPath: "/docs" };
+  if (pathname.startsWith("/docs")) return { section: "Документація", sectionPath: "/docs" };
   if (pathname.startsWith("/github")) return { section: "GitHub", sectionPath: "/github" };
   if (pathname.startsWith("/settings")) return { section: "Settings", sectionPath: "/settings" };
   if (pathname.startsWith("/agents")) return { section: "Агенти", sectionPath: "/agents" };
