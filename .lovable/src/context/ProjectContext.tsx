@@ -81,7 +81,8 @@ const loadProjects = useCallback(async () => {
   setLoading(true);
   try {
     const result = await listProjectsArch();
-    const parsed = result.map((p) => {
+    const configured = result.filter((p) => p.github?.owner || p.repo_url);
+    const parsed = configured.map((p) => {
       let github: Project["github"];
       // Пріоритет: github поле з API (новий підхід) > парсинг repo_url (старий)
       if (p.github?.owner && p.github?.repo) {
@@ -126,9 +127,9 @@ const loadProjects = useCallback(async () => {
     setActiveProjectState((prev) => {
       if (prev) {
         const updated = parsed.find((p) => p.slug === prev.slug);
-        return updated ?? fallbackActive ?? parsed[0] ?? null;
+        return updated ?? fallbackActive ?? null;
       }
-      return saved ?? fallbackActive ?? parsed[0] ?? null;
+      return saved ?? fallbackActive ?? null;
     });
   } catch (err) {
     console.error("Failed to load projects:", err);
