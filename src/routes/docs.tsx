@@ -11,6 +11,8 @@ import { DaviaSettingsPanel } from "@/components/docs/DaviaSettingsPanel";
 import { DocsVersionPanel } from "@/components/docs/DocsVersionPanel";
 import { NotesTab } from "@/components/docs/NotesTab";
 import { NotesGraphTab } from "@/components/docs/NotesGraphTab";
+import { DocsFilesTab } from "@/components/docs/DocsFilesTab";
+import { useProject } from "@/context/ProjectContext";
 import { useDaviaSettings } from "@/hooks/useDaviaSettings";
 import { docsApi, type DocsAnalysisItem } from "@/lib/docs-api";
 import { hasClientJwt } from "@/lib/route-auth";
@@ -22,6 +24,7 @@ export const Route = createFileRoute("/docs")({
 type JobStatus = "idle" | "running" | "done" | "error";
 
 function DocsRoute() {
+  const { activeProject } = useProject();
   const { settings: davia, save: saveDavia, reset: resetDavia } = useDaviaSettings();
   const [jobId, setJobId] = useState<string | null>(null);
   const [jobStatus, setJobStatus] = useState<JobStatus>("idle");
@@ -261,7 +264,11 @@ function DocsRoute() {
           </TabsContent>
 
           <TabsContent value="notes" className="h-full min-h-0 overflow-hidden">
-            <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
+            {activeProject?.github?.owner && activeProject?.github?.repo ? (
+              <DocsFilesTab onNoteOpen={(slug) => setFocusedSlug(slug)} />
+            ) : (
+              <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
+            )}
           </TabsContent>
 
 
