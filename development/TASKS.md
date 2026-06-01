@@ -6,6 +6,83 @@
 
 ---
 
+## TASK-128: ProjectInfo + ProjectContext — використовувати github поле з API (не парсити repo_url)
+
+**Виконавець:** AGY phone (192.168.3.195)
+**Де запускати:** !!IMPORTANT!! Run locally on AGY Termux. Edit `~/workspace/ai-drakon-scaffolder/src/`. Commit + push + scp .lovable.
+
+### Проблема
+В вкладці Документація при виборі проекту `sonate-solidsite` показує "Документів поки немає".
+
+**Root cause:** `ProjectInfo` interface в `graph-pipeline-api.ts` не має поля `github`. Тому `loadProjects()` в `ProjectContext.tsx` парсить github config тільки з `repo_url` (старий підхід), а не з `github` поля яке тепер повертає API.
+
+### Файли та зміни
+
+#### 1. `src/lib/graph-pipeline-api.ts` — додати github поле
+
+Знайти `interface ProjectInfo` (рядок ~177) і додати:
+```typescript
+export interface ProjectInfo {
+  slug: string;
+  name: string;
+  description: string;
+  repo_url: string;
+  branch: string;
+  has_repo: boolean;
+  agents: string[];
+  github?: { owner: string; repo: string; branch: string };  // ← ДОДАТИ
+}
+```
+
+#### 2. `src/context/ProjectContext.tsx` — використовувати p.github якщо є
+
+Знайти `loadProjects` функцію (рядок ~80), знайти де будується `github`:
+```typescript
+let github: Project["github"];
+if (p.repo_url) {
+  // старий код — парсить URL
+```
+
+Замінити на:
+```typescript
+let github: Project["github"];
+// Пріоритет: github поле з API (новий підхід) > парсинг repo_url (старий)
+if (p.github?.owner && p.github?.repo) {
+  github = { owner: p.github.owner, repo: p.github.repo, branch: p.github.branch || p.branch || "main" };
+} else if (p.repo_url) {
+  try {
+    const u = new URL(p.repo_url);
+    const parts = u.pathname.replace(/^\//, "").split("/");
+    if (parts.length >= 2) {
+      github = { owner: parts[0], repo: parts[1], branch: p.branch || "main" };
+    }
+  } catch {}
+}
+```
+
+### Верифікація
+```bash
+grep -n "p.github\|ProjectInfo" src/lib/graph-pipeline-api.ts src/context/ProjectContext.tsx | head -10
+```
+
+### Sync .lovable
+```bash
+cp src/lib/graph-pipeline-api.ts .lovable/src/lib/graph-pipeline-api.ts
+cp src/context/ProjectContext.tsx .lovable/src/context/ProjectContext.tsx
+```
+
+### Коміт
+```
+fix(projects): use github field from API in ProjectContext (TASK-128)
+chore(tasks): TASK-128 done
+```
+
+**Diary:** `"SESSION:2026-06-01|TASK-128:projectinfo-github-field|★★★"`
+
+[ ] TASK-128
+
+---
+
 ## TASK-123: ai-drakon IDE — project switch must use GitHub repo (not local filesystem)
 
 **Виконавець:** AGY3 (192.168.3.204)
