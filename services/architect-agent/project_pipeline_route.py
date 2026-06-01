@@ -49,10 +49,12 @@ def list_projects():
                     try: config = _json.loads(config_file.read_text())
                     except Exception: pass
                 agents = [a.name for a in (d/'agents').iterdir() if a.is_dir()] if (d/'agents').exists() else []
+                gh = config.get('github') or None
                 projects.append({'slug': d.name, 'name': config.get('name', d.name),
                     'description': config.get('description', ''), 'repo_url': config.get('repo_url', ''),
                     'branch': config.get('branch', 'main'),
-                    'has_repo': (d/'repo').exists(), 'agents': agents})
+                    'has_repo': (d/'repo').exists(), 'agents': agents,
+                    'github': gh})
     return {'projects': projects}
 
 @router.post('/{slug}')
