@@ -196,6 +196,7 @@ export default function CodePage() {
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [treeCollapsed, setTreeCollapsed] = useState(false);
+  const [mobileFiles, setMobileFiles] = useState<TreeEntry[]>([]);
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -210,6 +211,28 @@ export default function CodePage() {
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const loadMobileFiles = async () => {
+      if (!owner || !repo) {
+        if (active) setMobileFiles([]);
+        return;
+      }
+      try {
+        const res = await api.githubListTree(owner, repo, "", branch, token);
+        if (!active) return;
+        const files = (res.entries ?? []).filter((entry) => entry.type === "file");
+        setMobileFiles(files);
+      } catch {
+        if (active) setMobileFiles([]);
+      }
+    };
+    void loadMobileFiles();
+    return () => {
+      active = false;
+    };
+  }, [owner, repo, branch, token]);
   const monacoTheme = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "vs-dark" : "vs-light";
 
   // Load file from GitHub
@@ -368,6 +391,27 @@ export default function CodePage() {
 
       {/* Editor */}
       <div className="flex flex-col flex-1 min-w-0">
+        <div className="md:hidden border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-2 py-1.5">
+          <div className="overflow-x-auto whitespace-nowrap">
+            <div className="inline-flex gap-1">
+              {mobileFiles.map((entry) => (
+                <button
+                  key={entry.path}
+                  type="button"
+                  onClick={() => openFile(entry.path)}
+                  className={cn(
+                    "h-7 rounded px-2 font-mono text-[10px]",
+                    filePath === entry.path
+                      ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
+                      : "text-[var(--text-secondary)]",
+                  )}
+                >
+                  {entry.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
         <div className="flex items-center gap-2 px-3 h-9 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
           <FileCode className="h-3.5 w-3.5 text-[var(--accent-amber)] shrink-0" />
           <input
