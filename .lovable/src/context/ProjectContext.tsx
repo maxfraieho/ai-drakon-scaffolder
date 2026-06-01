@@ -83,6 +83,7 @@ const loadProjects = useCallback(async () => {
     const result = await listProjectsArch();
     const parsed = result.map((p) => {
       let github: Project["github"];
+      // Пріоритет: github поле з API (новий підхід) > парсинг repo_url (старий)
       if (p.github?.owner && p.github?.repo) {
         github = { owner: p.github.owner, repo: p.github.repo, branch: p.github.branch || p.branch || "main" };
       } else if (p.repo_url) {
