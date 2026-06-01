@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-ChevronDown, ChevronRight, FileText, Folder, FolderOpen, Loader2, RefreshCw,
+ChevronDown, ChevronRight, FileText, Folder, FolderOpen, Loader2, RefreshCw, Pencil, X, Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -97,6 +97,9 @@ const { activeProject } = useProject();
 const [tree, setTree] = useState<TreeNode[]>([]);
 const [loading, setLoading] = useState(false);
 const [searchQuery, setSearchQuery] = useState("");
+const [editingPath, setEditingPath] = useState<string | null>(null);
+const [editContent, setEditContent] = useState("");
+const [editSaving, setEditSaving] = useState(false);
 
 const ghOwner = activeProject?.github?.owner || getGithubConfig().owner || "";
 const ghRepoName = activeProject?.github?.repo || getGithubConfig().repo || "";
@@ -128,10 +131,66 @@ const load = async () => {
   }
 };
 
+const openEditor = async (path: string) => {
+  setEditSaving(true);
+  try {
+    const result = await api.githubGetFile(ghOwner, ghRepoName, path, ghBranch);
+    const decoded = result.content
+      ? atob(result.content.replace(/\n/g, ""))
+      : "";
+    setEditContent(decoded);
+    setEditingPath(path);
+  } catch (e) {
+    console.error("open editor error", e);
+  } finally {
+    setEditSaving(false);
+  }
+};
+
+const saveFile = async () => {
+  if (!editingPath) return;
+  setEditSaving(true);
+  try {
+    const token = getGithubConfig().token;
+    await api.githubCommitFile(
+      ghOwner, ghRepoName, editingPath, editContent,
+      `docs: update ${editingPath}`, ghBranch, token,
+    );
+    setEditingPath(null);
+  } catch (e) {
+    console.error("save file error", e);
+  } finally {
+    setEditSaving(false);
+  }
+};
+
 useEffect(() => {
   void load();
 // eslint-disable-next-line react-hooks/exhaustive-deps
 }, [ghOwner, ghRepoName, ghBranch]);
+
+if (editingPath) {
+  return (
+    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border">
+      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
+        <span className="flex-1 truncate font-mono text-xs text-muted-foreground">{editingPath}</span>
+        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingPath(null)} title="Скасувати">
+          <X className="h-3.5 w-3.5" />
+        </Button>
+        <Button size="sm" className="h-7 gap-1 px-2 text-xs" onClick={saveFile} disabled={editSaving}>
+          {editSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+          Зберегти
+        </Button>
+      </div>
+      <textarea
+        className="flex-1 resize-none bg-background p-3 font-mono text-sm focus:outline-none"
+        value={editContent}
+        onChange={(e) => setEditContent(e.target.value)}
+        spellCheck={false}
+      />
+    </div>
+  );
+}
 
 return (
 <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border">
@@ -168,13 +227,27 @@ title="Оновити"
 ):(
 <div className="py-1">
 {tree.map((node, i) => (
-<TreeNodeItem
-key={node.slug ?? node.path ?? i}
-node={node}
-level={0}
-onNoteClick={(slug) => onNoteOpen(slug)}
-searchQuery={searchQuery}
-/>
+  <div key={node.slug ?? node.path ?? i} className="group flex items-center">
+    <div className="flex-1">
+      <TreeNodeItem
+        node={node}
+        level={0}
+        onNoteClick={(slug) => onNoteOpen(slug)}
+        searchQuery={searchQuery}
+      />
+    </div>
+    {node.type === "note" && ghOwner && ghRepoName && (
+      <Button
+        size="icon"
+        variant="ghost"
+        className="mr-1 h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100"
+        title="Редагувати"
+        onClick={() => openEditor(node.path ?? node.slug ?? "")}
+      >
+        <Pencil className="h-3 w-3" />
+      </Button>
+    )}
+  </div>
 ))}
 </div>
 )}
