@@ -1,5 +1,5 @@
 import React from "react";
-import { LayoutGrid, FileText, Code2, Cpu, Settings } from "lucide-react";
+import { LayoutGrid, FileText, Code2, Cpu, Settings, BookOpen } from "lucide-react";
 import { useNavigate, useLocation } from "@tanstack/react-router";
 
 interface NavItem {
@@ -18,6 +18,7 @@ export const MobileNavigationDock: React.FC = () => {
     { id: "pipelines", label: "Схеми",   icon: FileText,   path: "/pipelines" },
     { id: "code",      label: "Код",     icon: Code2,      path: "/code" },
     { id: "agents",    label: "Агенти",  icon: Cpu,        path: "/agents" },
+    { id: "docs",      label: "Docs",    icon: BookOpen,   path: "/docs" },
     { id: "settings",  label: "Опції",   icon: Settings,   path: "/settings" },
   ];
 
