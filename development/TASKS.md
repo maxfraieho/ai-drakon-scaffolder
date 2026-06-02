@@ -49,10 +49,30 @@ BOT_TOKEN=YOUR_TOKEN_HERE
 
 ### Технічні деталі
 - Library: `python-telegram-bot` v20 (async)
-- Events: читати по HTTP GET з `https://sonate-solidaire.me/kb/kb-events.md`, парсити markdown
-- Мови: FR основна, UA та DE якщо `language_code` юзера відповідає
+- **КЛЮЧОВА ІНТЕГРАЦІЯ з SS-Agent AI:**
+  Всі вільні повідомлення (не команди) → SS-Agent API → відповідь AI:
+  ```python
+  import httpx
+  async def ask_agent(text: str) -> str:
+      async with httpx.AsyncClient() as client:
+          r = await client.post(
+              "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/agents/sonate-solidaire/chat",
+              json={"message": text}, timeout=30
+          )
+          return r.json().get("reply", "...")
+  ```
+  Endpoint ПУБЛІЧНИЙ — авторизація не потрібна.
+- Команди (швидкі shortcuts):
+  - `/start` — привітання FR/UA/DE + "Posez-moi n'importe quelle question!"
+  - `/events` — спитати SS-Agent "Quels sont les prochains événements?"
+  - `/join` → посилання `https://sonate-solidaire.me/integration`
+  - `/contact` → `https://sonate-solidaire.me/contact`
+  - `/assistant` → `https://sonate-solidaire.me/assistant`
+- Всі інші повідомлення → `ask_agent(text)` → відповідь
+- Typing indicator: `context.bot.send_chat_action(chat_id, ChatAction.TYPING)` поки чекає
+- Мови: FR основна, UA та DE по `update.effective_user.language_code`
 - Токен: з `os.environ["BOT_TOKEN"]` або `.env` файлу через `python-dotenv`
-- НЕ потрібен webhook — polling режим (`Application.run_polling()`)
+- НЕ потрібен webhook — polling (`Application.run_polling()`)
 
 ### Верифікація
 ```bash
