@@ -2,21 +2,31 @@
   "$schema": "https://open-design.ai/schemas/plugin.v1.json",
   "specVersion": "1.0.0",
   "name": "ai-drakon-mobile",
-  "title": "AI-Drakon Mobile Designer",
-  "version": "0.1.0",
-  "description": "Pre-configured mobile UI generator for ai-drakon React/TypeScript project. Skips discovery form, outputs Tailwind+Lucide components directly.",
-  "capabilitiesRequired": ["prompt:inject"],
+  "title": "AI-Drakon Code Generator",
+  "version": "0.2.0",
+  "description": "React TypeScript code generator for ai-drakon platform. Generates TSX components directly without discovery forms.",
+  "license": "MIT",
+  "compat": {
+    "agentSkills": [
+      {
+        "path": "./SKILL.md"
+      }
+    ]
+  },
   "od": {
     "agent": "antigravity",
     "designSystem": "agentic",
     "pipeline": {
-      "stages": ["generate"]
+      "stages": [
+        "generate"
+      ]
     },
     "defaults": {
       "taskType": "Live artifact",
       "audience": "developers",
       "brand": "pick_direction",
-      "constraints": "Tailwind CSS, Lucide icons, react-router-dom, TypeScript, dark theme"
+      "scale": "single React TypeScript component",
+      "constraints": "Tailwind CSS, Lucide icons, react-router-dom v6, TypeScript, dark theme, no new dependencies"
     }
   }
 }
