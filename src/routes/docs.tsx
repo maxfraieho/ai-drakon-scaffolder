@@ -133,31 +133,55 @@ function DocsRoute() {
 
   const running = jobStatus === "running";
 
+  const sidebarItems = [
+    { id: "generator" as const, label: "Генератор", icon: Play },
+    { id: "notes" as const, label: "Документи", icon: BookOpen },
+    { id: "graph" as const, label: "Граф", icon: Network },
+  ];
+
   return (
-    <div className="flex h-full flex-col overflow-hidden bg-background">
-      <div className="mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-hidden px-3 py-4 md:px-6">
-        <header className="mb-4 flex items-center gap-2">
-          <FileText className="h-5 w-5 text-[var(--accent-amber)]" />
-          <h1 className="text-lg font-semibold md:text-2xl">Документація</h1>
-        </header>
+    <div className="flex h-full w-full overflow-hidden bg-background">
+      {/* Desktop sidebar — hidden on mobile */}
+      <aside className="hidden md:flex w-56 shrink-0 flex-col border-r border-border">
+        <div className="flex items-center gap-2 border-b border-border px-4 py-3">
+          <FileText className="h-4 w-4 text-[var(--accent-amber)]" />
+          <span className="text-sm font-semibold">Документація</span>
+        </div>
+        <nav className="flex-1 space-y-0.5 p-2">
+          {sidebarItems.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              onClick={() => setDocsTab(id)}
+              className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                docsTab === id
+                  ? "bg-muted text-foreground"
+                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+              }`}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {label}
+            </button>
+          ))}
+        </nav>
+      </aside>
 
-        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="flex w-full flex-1 min-h-0 flex-col px-4 pb-4">
-          <TabsList className="no-scrollbar mb-3 flex w-full shrink-0 justify-start overflow-x-auto whitespace-nowrap md:w-auto md:inline-flex">
-            <TabsTrigger value="generator">
-              <Play className="mr-1.5 h-3.5 w-3.5" />
-              Генератор
-            </TabsTrigger>
-            <TabsTrigger value="notes">
-              <BookOpen className="mr-1.5 h-3.5 w-3.5" />
-              Документи
-            </TabsTrigger>
-            <TabsTrigger value="graph">
-              <Network className="mr-1.5 h-3.5 w-3.5" />
-              Граф
-            </TabsTrigger>
-          </TabsList>
+      {/* Main area */}
+      <div className="flex flex-1 min-w-0 flex-col overflow-hidden">
+        {/* Mobile header with tabs */}
+        <div className="flex md:hidden items-center gap-2 border-b border-border px-3 py-2">
+          <FileText className="h-4 w-4 shrink-0 text-[var(--accent-amber)]" />
+          <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="flex-1">
+            <TabsList className="no-scrollbar flex w-full justify-start overflow-x-auto whitespace-nowrap">
+              <TabsTrigger value="generator"><Play className="mr-1.5 h-3.5 w-3.5" />Генератор</TabsTrigger>
+              <TabsTrigger value="notes"><BookOpen className="mr-1.5 h-3.5 w-3.5" />Документи</TabsTrigger>
+              <TabsTrigger value="graph"><Network className="mr-1.5 h-3.5 w-3.5" />Граф</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-          <div className="mt-2 flex-1 min-h-0 overflow-hidden">
+        {/* Content panels — controlled by docsTab state */}
+        <Tabs value={docsTab} onValueChange={(v) => setDocsTab(v as typeof docsTab)} className="flex flex-1 min-h-0 flex-col overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden p-4 md:p-6">
           <TabsContent value="generator" className="h-full min-h-0 space-y-4 overflow-auto">
             <Card>
               <CardHeader>
@@ -270,7 +294,6 @@ function DocsRoute() {
               <NotesTab focusSlug={focusedSlug} onFocusClear={() => setFocusedSlug(null)} />
             )}
           </TabsContent>
-
 
           <TabsContent value="graph" className="h-full min-h-0 overflow-hidden">
             <NotesGraphTab onNodeClick={handleGraphNodeClick} />
