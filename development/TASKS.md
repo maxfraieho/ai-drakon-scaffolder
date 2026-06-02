@@ -6,7 +6,7 @@
 
 ---
 
-## [ ] TASK-SS-20: Telegram-бот для Sonate Solidaire
+## [x] TASK-SS-20: Telegram-бот для Sonate Solidaire
 
 **!!IMPORTANT!! Run locally on Termux (AGY3). NO SSH to dev server.**
 
