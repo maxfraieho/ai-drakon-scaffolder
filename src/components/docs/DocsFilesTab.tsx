@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import {
-ChevronDown, ChevronRight, FileText, Folder, FolderOpen, Loader2, RefreshCw, Pencil, X, Save,
+ChevronDown, ChevronRight, FileText, Folder, FolderOpen, Loader2, RefreshCw, Pencil,
 } from "lucide-react";
+import { MarkdownEditor } from "@/components/docs/MarkdownEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -174,22 +175,14 @@ useEffect(() => {
 
 if (editingPath) {
   return (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border border-border">
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <span className="flex-1 truncate font-mono text-xs text-muted-foreground">{editingPath}</span>
-        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingPath(null)} title="Скасувати">
-          <X className="h-3.5 w-3.5" />
-        </Button>
-        <Button size="sm" className="h-7 gap-1 px-2 text-xs" onClick={saveFile} disabled={editSaving}>
-          {editSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
-          Зберегти
-        </Button>
-      </div>
-      <textarea
-        className="flex-1 resize-none bg-background p-3 font-mono text-sm focus:outline-none"
-        value={editContent}
-        onChange={(e) => setEditContent(e.target.value)}
-        spellCheck={false}
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
+      <MarkdownEditor
+        path={editingPath}
+        content={editContent}
+        onContentChange={setEditContent}
+        onSave={saveFile}
+        onClose={() => setEditingPath(null)}
+        saving={editSaving}
       />
     </div>
   );
