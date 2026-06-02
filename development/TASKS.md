@@ -2,7 +2,79 @@
 
 > Власник: Claude (оркестратор)
 > Виконавець: AGY (executor)
-> Оновлено: 2026-06-01 10:30
+> Оновлено: 2026-06-02 12:00
+
+---
+
+## [ ] TASK-SS-20: Telegram-бот для Sonate Solidaire
+
+**!!IMPORTANT!! Run locally on Termux (AGY3). NO SSH to dev server.**
+
+### Мета
+Створити Python Telegram-бот @SonateSolidaireBot для асоціації Sonate Solidaire (Gland VD, Швейцарія).
+
+### Репозиторій
+- Repo: `git@github.com:maxfraieho/sonate-solidsite.git`
+- Клонувати або оновити: `cd ~/projects && git clone git@github.com:maxfraieho/sonate-solidsite.git || (cd sonate-solidsite && git pull)`
+- Створити папку: `~/projects/sonate-solidsite/telegram-bot/`
+
+### Файли до створення
+
+**1. `telegram-bot/bot.py`** — основний бот:
+```python
+# Команди:
+# /start — привітання FR/UA/DE (авто-detect по мові Telegram)
+# /events — список концертів (читати з https://sonate-solidaire.me/kb/kb-events.md)
+# /join — посилання на форму: https://sonate-solidaire.me/integration
+# /contact — контакти: https://sonate-solidaire.me/contact
+# /assistant — AI-помічник: https://sonate-solidaire.me/assistant
+# /about — коротко про асоціацію (FR + UA)
+```
+
+**2. `telegram-bot/requirements.txt`**:
+```
+python-telegram-bot==20.7
+httpx==0.25.0
+```
+
+**3. `telegram-bot/.env.example`**:
+```
+BOT_TOKEN=YOUR_TOKEN_HERE
+```
+
+**4. `telegram-bot/README.md`** — інструкція:
+- Як отримати токен через @BotFather
+- Як задеплоїти на dev server (192.168.3.184)
+- Список Telegram-чатів для публікації бота (UA Швейцарія)
+
+### Технічні деталі
+- Library: `python-telegram-bot` v20 (async)
+- Events: читати по HTTP GET з `https://sonate-solidaire.me/kb/kb-events.md`, парсити markdown
+- Мови: FR основна, UA та DE якщо `language_code` юзера відповідає
+- Токен: з `os.environ["BOT_TOKEN"]` або `.env` файлу через `python-dotenv`
+- НЕ потрібен webhook — polling режим (`Application.run_polling()`)
+
+### Верифікація
+```bash
+cd ~/projects/sonate-solidsite/telegram-bot
+pip install -r requirements.txt
+# Перевірити що bot.py синтаксично правильний:
+python3 -m py_compile bot.py && echo "OK"
+```
+
+### Коміт
+```bash
+cd ~/projects/sonate-solidsite
+git add telegram-bot/
+git commit -m "feat(telegram): add @SonateSolidaireBot — /events /join /contact /assistant"
+git push origin main
+sed -i 's/\[ \] TASK-SS-20/[x] TASK-SS-20/' development/TASKS.md 2>/dev/null || true
+```
+
+### Diary
+```
+SESSION:2026-06-02|TASK-SS-20:telegram-bot|bot.py+requirements+README|commit:<hash>|★★★
+```
 
 ---
 
