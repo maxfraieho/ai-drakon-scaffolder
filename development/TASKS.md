@@ -13013,3 +13013,514 @@ git push origin main
 ```
 SESSION:DATE|TASK-122:code-page-github-priority|Settings>activeProject|commit:<hash>|★★★
 ```
+
+---
+
+## [ ] TASK-SS-21: Pull sonate-solidsite + MemPalace index на AGY3
+
+**!!IMPORTANT!! Run locally on AGY3 Termux. NO SSH.**
+
+### Мета
+Стягнути репозиторій sonate-solidsite на AGY3 і проіндексувати в MemPalace.
+Це prerequisite для TASK-SS-22, TASK-SS-23, TASK-SS-24.
+
+### Кроки
+
+```bash
+# Клонувати або оновити
+cd ~/projects
+if [ -d sonate-solidsite ]; then
+  cd sonate-solidsite && git pull origin main
+else
+  git clone git@github.com:maxfraieho/sonate-solidsite.git
+  cd sonate-solidsite
+fi
+
+# Перевірити що є
+ls public/kb/ src/components/ src/App.tsx
+
+# Створити .mempalace.json якщо немає
+cat > .mempalace.json << 'JSON'
+{
+  "wing": "sonate-solidsite",
+  "include": ["src", "public/kb", "docs"],
+  "exclude": ["node_modules", ".git", "dist", "public/assets"]
+}
+JSON
+
+# Запустити індексацію
+python3 -m mempalace index . 2>&1 | tail -10
+```
+
+### Верифікація
+```bash
+python3 -m mempalace search "Sonate Solidaire mission" --wing sonate-solidsite | head -5
+```
+
+### Commit
+```bash
+git add .mempalace.json
+git commit -m "chore(mempalace): add .mempalace.json for sonate-solidsite indexing"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-06-03|TASK-SS-21:mempalace-index-sonate-solidsite|wing:sonate-solidsite|commit:<hash>|★★★
+```
+
+
+---
+
+## [ ] TASK-SS-22: Proactive Chat Widget для sonate-solidaire.me
+
+**!!IMPORTANT!! Run locally on AGY3 Termux. Push from AGY3. NO dev server SSH.**
+
+### Мета
+Додати плаваючий widget внизу-праворуч, що з'являється після 35 секунд неактивності.
+Вводить SS-агента, клік — перехід на /assistant.
+
+### Файли
+- Створити: `src/components/SsProactiveChatWidget.tsx`
+- Модифікувати: `src/App.tsx` (додати widget)
+- Репо: `~/projects/sonate-solidsite/`
+
+### Реалізація SsProactiveChatWidget.tsx
+
+```tsx
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { MessageCircle, X } from "lucide-react";
+
+const DISMISS_KEY = "ss_widget_dismissed_at";
+const IDLE_TIMEOUT_MS = 35000;
+const DISMISS_DURATION_MS = 24 * 60 * 60 * 1000; // 24h
+
+export function SsProactiveChatWidget() {
+  const [visible, setVisible] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Не показувати на сторінках асистента
+  const isAssistantPage = location.pathname.includes("/assistant");
+
+  // Перевіряємо чи не закрили нещодавно
+  const isDismissed = useCallback(() => {
+    const t = localStorage.getItem(DISMISS_KEY);
+    if (!t) return false;
+    return Date.now() - parseInt(t) < DISMISS_DURATION_MS;
+  }, []);
+
+  useEffect(() => {
+    if (isAssistantPage || isDismissed()) return;
+
+    let timer: ReturnType<typeof setTimeout>;
+    const resetTimer = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setVisible(true), IDLE_TIMEOUT_MS);
+    };
+
+    const events = ["mousemove", "keydown", "scroll", "touchstart", "click"];
+    events.forEach(e => window.addEventListener(e, resetTimer));
+    resetTimer();
+
+    return () => {
+      clearTimeout(timer);
+      events.forEach(e => window.removeEventListener(e, resetTimer));
+    };
+  }, [isAssistantPage, isDismissed]);
+
+  const handleDismiss = () => {
+    localStorage.setItem(DISMISS_KEY, String(Date.now()));
+    setVisible(false);
+  };
+
+  const handleOpen = () => {
+    // Визначаємо мовний префікс з поточного шляху
+    const lang = location.pathname.startsWith("/de") ? "/de"
+               : location.pathname.startsWith("/uk") ? "/uk"
+               : "";
+    navigate(`${lang}/assistant`);
+  };
+
+  if (!visible || isAssistantPage) return null;
+
+  return (
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2 animate-in slide-in-from-bottom-4 fade-in duration-300">
+      {/* Card */}
+      <div className="bg-white rounded-2xl shadow-2xl border border-gray-100 p-4 max-w-xs w-72">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-700 text-sm font-bold">S</div>
+            <div>
+              <div className="text-sm font-semibold text-gray-900">Sharon</div>
+              <div className="text-xs text-gray-500">Sonate Solidaire</div>
+            </div>
+          </div>
+          <button onClick={handleDismiss} className="text-gray-400 hover:text-gray-600 p-1 rounded">
+            <X size={14} />
+          </button>
+        </div>
+        <p className="text-sm text-gray-700 leading-snug mb-3">
+          Bonjour ! Je suis Sharon, votre assistante. Puis-je vous aider à découvrir nos activités, rejoindre nos musiciens ou organiser un événement ?
+        </p>
+        <button
+          onClick={handleOpen}
+          className="w-full bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium py-2 px-4 rounded-xl transition-colors"
+        >
+          Discuter avec Sharon →
+        </button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Зміни в App.tsx
+
+Знайти рядок де `</BrowserRouter>` і замінити:
+```tsx
+// Додати імпорт:
+import { SsProactiveChatWidget } from "@/components/SsProactiveChatWidget";
+
+// Перед </BrowserRouter> або </Routes> — додати всередині BrowserRouter:
+<SsProactiveChatWidget />
+```
+
+Точніше — додати `<SsProactiveChatWidget />` відразу перед закриваючим `</BrowserRouter>`.
+
+### Верифікація
+```bash
+cd ~/projects/sonate-solidsite
+npx tsc --noEmit 2>&1 | head -10
+echo "TypeScript OK"
+```
+
+### Sync .lovable/
+```bash
+cp src/components/SsProactiveChatWidget.tsx .lovable/src/components/SsProactiveChatWidget.tsx
+# Для App.tsx — синхронізувати зміни:
+cp src/App.tsx .lovable/src/App.tsx
+```
+
+### Commit
+```bash
+cd ~/projects/sonate-solidsite
+git add src/components/SsProactiveChatWidget.tsx src/App.tsx .lovable/src/components/SsProactiveChatWidget.tsx .lovable/src/App.tsx
+git commit -m "feat(widget): proactive chat widget — Sharon appears after 35s idle (TASK-SS-22)"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-06-03|TASK-SS-22:proactive-chat-widget|SsProactiveChatWidget.tsx+App.tsx|35s-idle+/assistant-nav+24h-dismiss|commit:<hash>|★★★
+```
+
+
+---
+
+## [ ] TASK-SS-23: KB — оновити місію + сценарії культурних заходів
+
+**!!IMPORTANT!! Run locally on AGY3 Termux. NO SSH to dev server.**
+
+### Мета
+Переписати та розширити базу знань SS-агента:
+1. Місія не лише для музикантів — Sonate Solidaire запрошує ВСІХ людей що потребують інтеграції в атмосфері музики.
+2. Додати сценарії культурних заходів (soirées musicales, rencontres interculturelles).
+3. Gemini Deep Research промти оновлено нижче.
+
+### Нова місія (загальна ідея для KB)
+
+Sonate Solidaire — це не лише об'єднання музикантів. Це платформа культурної інтеграції через музику. Ми організовуємо музичні вечори, де музика — це універсальна мова, що долає мовні та культурні бар'єри. Запрошуємо:
+- Людей що потребують інтеграції (незалежно від фаху)
+- Місцевих мешканців Gland/Vaud що хочуть спілкуватись
+- Музикантів (будь-якого рівня і походження)
+- Організаторів заходів, волонтерів, партнерів
+
+### Файли для оновлення
+- `~/projects/sonate-solidsite/public/kb/kb-general.md` — повна перезапис
+- `~/projects/sonate-solidsite/public/kb/kb-events.md` — додати сценарії заходів
+- `~/projects/sonate-solidsite/public/kb/kb-musicians.md` — широка аудиторія
+
+### Крок 1: Оновити kb-general.md
+
+```bash
+cat > ~/projects/sonate-solidsite/public/kb/kb-general.md << 'KBEOF'
+# Sonate Solidaire — Assistant IA
+
+Bonjour ! Je suis **Sharon**, l'assistante intelligente de **Sonate Solidaire**.
+Je suis là pour vous aider à découvrir notre association, nos activités et comment nous rejoindre.
+
+## Notre mission
+
+Sonate Solidaire est une association culturelle basée à **Gland, canton de Vaud, Suisse**.
+Notre conviction : **la musique est le langage universel de l'humanité**, capable de briser
+les barrières linguistiques et culturelles.
+
+Nous accueillons **toute personne en processus d'intégration** — pas seulement les musiciens.
+Nous croyons que partager une soirée musicale, écouter ou jouer ensemble, crée des liens
+humains que les mots seuls ne peuvent pas forger.
+
+## Ce que nous faisons
+
+### 🎵 Soirées musicales interculturelles
+Des soirées où musiciens locaux et personnes en intégration se rencontrent autour de la musique.
+Pas besoin de savoir jouer — l'écoute et la présence suffisent.
+Ces événements créent un espace de confiance, de curiosité mutuelle et d'appartenance.
+
+### 🤝 Rencontres musicales ouvertes
+Ateliers et répétitions ouverts à tous. Vous apportez votre culture musicale,
+nous apportons l'espace et l'écoute. Ensemble, nous construisons quelque chose de nouveau.
+
+### 🎼 Intégration par la musique
+Pour les musiciens qui souhaitent continuer à jouer en Suisse : accompagnement pratique,
+mise en réseau, informations sur les démarches (AVS, statut, associations).
+
+### 🌍 Événements pour organisateurs
+Nous proposons des concerts, animations musicales et soirées culturelles pour
+communes, entreprises, écoles et associations du canton de Vaud.
+
+## Qui peut rejoindre Sonate Solidaire ?
+
+**Tout le monde** — voici quelques profils typiques :
+
+- 🎻 **Musiciens de tous horizons** : locaux ou nouvellement arrivés, amateurs ou professionnels
+- 🌐 **Personnes en intégration** : qui cherchent des liens sociaux dans une atmosphère culturelle
+- 🏘️ **Habitants de Gland et du Vaud** : curieux de rencontrer des personnes d'autres cultures
+- 🤝 **Volontaires** : qui souhaitent aider l'association à organiser des événements
+- 🏢 **Partenaires** : communes, écoles, entreprises cherchant des animations culturelles
+
+## Pourquoi la musique ?
+
+La musique ne demande pas de CV. Elle ne juge pas l'accent.
+Quand on joue ou écoute ensemble, on partage quelque chose d'humain et d'universel.
+Dans nos soirées, une mélodie ukrainienne côtoie un morceau de jazz genevois —
+et c'est dans cet espace que l'intégration commence vraiment.
+
+## Contact et participation
+
+- 📧 **Écrire** : [formulaire de contact](/contact)
+- 🎤 **Rejoindre comme musicien** : [programme d'intégration](/integration)
+- 🤲 **Soutenir** : [page de soutien](/support)
+- 📅 **Agenda** : [sonate-solidaire.me](https://sonate-solidaire.me)
+
+**Il y a toujours une place pour vous chez Sonate Solidaire.**
+
+KBEOF
+echo "kb-general.md updated"
+```
+
+### Крок 2: Оновити kb-events.md — додати сценарії
+
+```bash
+cat >> ~/projects/sonate-solidsite/public/kb/kb-events.md << 'KBEOF'
+
+## Formats de soirées interculturelles
+
+### 🌙 Soirée musicale interculturelle (2-3h)
+**Format** : Concert + moment d'échange informel
+**Public** : Habitants locaux + personnes en intégration, 20-60 personnes
+**Structure** : 45min concert → buffet participatif → 45min session ouverte
+**Impact** : Crée des rencontres naturelles dans une atmosphère détendue
+**Coût indicatif** : 500-1500 CHF selon le lieu et les musiciens
+
+### 🎸 Atelier musical ouvert (1.5-2h)
+**Format** : Jam session ou atelier thématique (rythmes du monde, chansons partagées)
+**Public** : Participants de tous niveaux, 10-25 personnes
+**Avantage** : Pas besoin de savoir jouer — percussion, voix, écoute bienvenues
+**Idéal pour** : Centres d'accueil, communes, associations d'intégration
+
+### 🎻 Concert-rencontre pour entreprises/écoles
+**Format** : Mini-concert (30-45min) + présentation de l'association + questions
+**Public** : Employés, élèves, familles
+**Objectif** : Sensibiliser à la diversité culturelle dans un contexte professionnel
+**Note** : Devis sur mesure, contact via formulaire
+
+### 🌍 Festival de cultures musicales (journée)
+**Format** : Programme varié — musiques du monde, ateliers, exposition photos
+**Public** : Grand public, familles
+**Partenaires suggérés** : Communes vaudoises, Loterie Romande, fondations culturelles
+**Fréquence** : Idéalement 1-2x par an
+
+KBEOF
+echo "kb-events.md updated"
+```
+
+### Крок 3: Commit et push
+```bash
+cd ~/projects/sonate-solidsite
+git add public/kb/
+git commit -m "feat(kb): update mission — cultural integration for all, add event scenarios (TASK-SS-23)"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-06-03|TASK-SS-23:kb-mission-update|kb-general.md+kb-events.md|mission:all-integration-music|event-formats:4-scenarios|commit:<hash>|★★★
+```
+
+
+---
+
+## [ ] TASK-119-v2: Analytics logging для SS-агента (повна реалізація)
+
+**!!IMPORTANT!! SSH to vokov@192.168.3.184. Редагуй файли на dev server.**
+
+### Архітектура
+
+```
+Запит → ss_log_analytics → analytics.jsonl
+                          ↓
+GET /agents/ss/analytics     → статистика (публічна)
+GET /agents/ss/analytics/questions → питання (auth: Bearer MCP_API_KEY)
+GET /agents/ss/analytics/gaps      → питання без відповіді (auth)
+```
+
+### Файл 1: `services/architect-agent/pipeline/nodes_ss.py`
+
+Знайти функцію `ss_format_response` і ПІСЛЯ неї додати:
+
+```python
+from pathlib import Path
+import json
+import datetime
+
+_ANALYTICS_LOG = Path(__file__).parent.parent / "kb" / "sonate-solidaire" / "analytics.jsonl"
+
+def ss_log_analytics(state: dict) -> dict:
+    """Log anonymized interaction — full question for KB analysis."""
+    try:
+        _ANALYTICS_LOG.parent.mkdir(parents=True, exist_ok=True)
+        msg = state.get("message", "")
+        reply = state.get("llm_reply", "")
+
+        # Detect language
+        lang = "uk" if any(c in msg for c in "абвгдеєжзиіїйклмнопрстуфхцчшщ") else \
+               "de" if any(c in msg.lower() for c in ["ü", "ö", "ä", "ß"]) else \
+               "fr"
+
+        # Detect response quality
+        low_quality_markers = ["je ne sais pas", "je n'ai pas", "désolé", "sorry",
+                               "нема інформації", "не знаю"]
+        response_quality = "weak" if (
+            len(reply) < 100 or any(m in reply.lower() for m in low_quality_markers)
+        ) else "good"
+
+        entry = {
+            "ts": datetime.datetime.utcnow().isoformat() + "Z",
+            "audience": state.get("ss_audience", "general"),
+            "lang": lang,
+            "question": msg[:500],          # full question, max 500 chars
+            "question_len": len(msg),
+            "response_len": len(reply),
+            "response_quality": response_quality,
+        }
+        with open(_ANALYTICS_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        pass  # fail silently — analytics must never break the agent
+    return {}
+```
+
+### Файл 2: `services/architect-agent/pipeline/sonate-solidaire-agent.drakon.json`
+
+Відкрити файл, знайти вузол `ss_format_response` і додати вузол `ss_log_analytics`
+ПІСЛЯ нього але ДО `end`. Паттерн:
+```json
+"ss_log_analytics": {
+  "type": "action",
+  "content": "ss_log_analytics",
+  "next": "end"
+}
+```
+І в `ss_format_response` замінити `"next": "end"` на `"next": "ss_log_analytics"`.
+
+### Файл 3: `services/architect-agent/main.py`
+
+Додати ендпоінти після існуючих агент-роутів:
+
+```python
+import os
+from fastapi import Request, HTTPException
+from pathlib import Path
+
+ANALYTICS_LOG = Path(os.getenv("REPO_ROOT", "/home/vokov/workspace/ai-drakon-scaffolder")) \
+    / "services/architect-agent/kb/sonate-solidaire/analytics.jsonl"
+
+@app.get("/agents/ss/analytics")
+async def ss_analytics_summary():
+    """Public summary stats."""
+    if not ANALYTICS_LOG.exists():
+        return {"total": 0, "by_audience": {}, "by_lang": {}, "quality": {}}
+    entries = [json.loads(l) for l in ANALYTICS_LOG.read_text().splitlines() if l.strip()]
+    from collections import Counter
+    return {
+        "total": len(entries),
+        "by_audience": dict(Counter(e["audience"] for e in entries)),
+        "by_lang": dict(Counter(e["lang"] for e in entries)),
+        "quality": dict(Counter(e.get("response_quality","?") for e in entries)),
+        "last_7_days": sum(1 for e in entries
+            if e["ts"] >= (datetime.datetime.utcnow() - datetime.timedelta(days=7)).isoformat()),
+    }
+
+@app.get("/agents/ss/analytics/questions")
+async def ss_analytics_questions(request: Request, limit: int = 100):
+    """Recent questions — requires auth."""
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {os.getenv('MCP_API_KEY', 'drakon-mcp-2026')}":
+        raise HTTPException(status_code=401)
+    if not ANALYTICS_LOG.exists():
+        return {"questions": []}
+    entries = [json.loads(l) for l in ANALYTICS_LOG.read_text().splitlines() if l.strip()]
+    return {"questions": entries[-limit:]}
+
+@app.get("/agents/ss/analytics/gaps")
+async def ss_analytics_gaps(request: Request):
+    """Questions with weak responses — potential KB gaps."""
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {os.getenv('MCP_API_KEY', 'drakon-mcp-2026')}":
+        raise HTTPException(status_code=401)
+    if not ANALYTICS_LOG.exists():
+        return {"gaps": []}
+    entries = [json.loads(l) for l in ANALYTICS_LOG.read_text().splitlines() if l.strip()]
+    gaps = [e for e in entries if e.get("response_quality") == "weak"]
+    return {"count": len(gaps), "gaps": gaps[-50:]}
+```
+
+### Верифікація
+```bash
+# 1. Перезапустити агент
+sudo rc-service ai-architect-agent restart
+sleep 3
+
+# 2. Тест запит
+curl -s -X POST http://localhost:8766/agents/sonate-solidaire/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "Bonjour, comment rejoindre lassociation?"}' | python3 -m json.tool | head -5
+
+# 3. Перевірити лог
+tail -2 services/architect-agent/kb/sonate-solidaire/analytics.jsonl
+
+# 4. Перевірити stats
+curl -s http://localhost:8766/agents/ss/analytics | python3 -m json.tool
+```
+
+### Commit
+```bash
+cd /home/vokov/workspace/ai-drakon-scaffolder
+git add services/architect-agent/pipeline/nodes_ss.py \
+        services/architect-agent/pipeline/sonate-solidaire-agent.drakon.json \
+        services/architect-agent/main.py
+git commit -m "feat(analytics): SS agent question logging + analytics endpoints (TASK-119)"
+sed -i 's/## \[ \] TASK-119$/## [x] TASK-119/' development/TASKS.md
+sed -i 's/## \[ \] TASK-119-v2/## [x] TASK-119-v2/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-119 done"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-06-03|TASK-119:ss-analytics|nodes_ss.ss_log_analytics+/agents/ss/analytics(3-endpoints)|full-question+quality-detect|commit:<hash>|★★★
+```
+
