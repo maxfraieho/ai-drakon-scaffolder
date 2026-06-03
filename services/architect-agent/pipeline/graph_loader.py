@@ -20,6 +20,7 @@ from .nodes_agents import (
 )
 from .nodes_ss import (
     ss_detect_audience, ss_load_kb, ss_format_prompt, ss_format_response,
+    ss_log_analytics,
 )
 from .graphs import _route_by_complexity, _route_after_validate, _route_after_syntax
 from .states import AnalysisState, VibeCodingState, DrakonAgentState, DocsAgentState, SSAgentState
@@ -83,6 +84,7 @@ NODE_REGISTRY: dict[str, Any] = {
     "ss_load_kb": ss_load_kb,
     "ss_format_prompt": ss_format_prompt,
     "ss_format_response": ss_format_response,
+    "ss_log_analytics": ss_log_analytics,
 }
 
 ROUTER_REGISTRY: dict[str, Any] = {

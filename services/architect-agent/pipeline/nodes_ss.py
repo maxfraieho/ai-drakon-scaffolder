@@ -100,3 +100,44 @@ def ss_format_response(state: dict) -> dict:
         "general": "\n\n→ [sonate-solidaire.me](https://sonate-solidaire.me)",
     }
     return {"llm_reply": reply + ctas.get(audience, "")}
+
+
+from pathlib import Path
+import json
+import datetime
+
+_ANALYTICS_LOG = Path(__file__).parent.parent / "kb" / "sonate-solidaire" / "analytics.jsonl"
+
+def ss_log_analytics(state: dict) -> dict:
+    """Log anonymized interaction — full question for KB analysis."""
+    try:
+        _ANALYTICS_LOG.parent.mkdir(parents=True, exist_ok=True)
+        msg = state.get("message", "")
+        reply = state.get("llm_reply", "")
+
+        # Detect language
+        lang = "uk" if any(c in msg for c in "абвгдеєжзиіїйклмнопрстуфхцчшщ") else \
+               "de" if any(c in msg.lower() for c in ["ü", "ö", "ä", "ß"]) else \
+               "fr"
+
+        # Detect response quality
+        low_quality_markers = ["je ne sais pas", "je n'ai pas", "désolé", "sorry",
+                               "нема інформації", "не знаю"]
+        response_quality = "weak" if (
+            len(reply) < 100 or any(m in reply.lower() for m in low_quality_markers)
+        ) else "good"
+
+        entry = {
+            "ts": datetime.datetime.utcnow().isoformat() + "Z",
+            "audience": state.get("ss_audience", "general"),
+            "lang": lang,
+            "question": msg[:500],          # full question, max 500 chars
+            "question_len": len(msg),
+            "response_len": len(reply),
+            "response_quality": response_quality,
+        }
+        with open(_ANALYTICS_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception as e:
+        pass  # fail silently — analytics must never break the agent
+    return {}
