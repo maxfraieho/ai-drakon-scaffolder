@@ -13808,3 +13808,23 @@ SESSION:2026-06-03|TASK-131:gitnexus-skill-AGY3|★★
 ```
 
 [x] TASK-131
+
+---
+
+## TASK-132: GitNexus інтеграція в Architect Agent
+
+**Виконавець: AGY3** | **SSH to 192.168.3.184**
+
+Підключити GitNexus (http://localhost:4747/api/mcp) до architect-agent (порт 8766) щоб будувати DRAKON-схеми з реального call graph коду.
+
+**Кроки:**
+1. Дослідити architect-agent tools (`/home/vokov/workspace/ai-drakon-scaffolder/src/agents/`)
+2. Через Copilot+GitNexus: query/route_map/tool_map на ai-drakon-scaffolder → архітектурний огляд
+3. Додати tool `gitnexus_analyze_for_drakon` → POST до GitNexus MCP → форматувати як DRAKON JSON `{nodes, edges, entry_point, flows}`
+4. Додати GitNexus до mcp_config architect-agent
+5. Тест: `curl http://localhost:8766/analyze -d '{"repo":"ai-drakon-scaffolder","concept":"agent pipeline"}'`
+
+**Коміт:** `feat(architect): GitNexus integration for DRAKON schema generation (TASK-132)`
+**Diary:** `SESSION:2026-06-04|TASK-132:gitnexus-drakon-architect|★★★`
+
+[ ] TASK-132
