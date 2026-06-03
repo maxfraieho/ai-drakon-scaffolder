@@ -13692,3 +13692,97 @@ SESSION:2026-06-03|TASK-129:copilot-gitnexus-research|indexed:uav-watcher+sonate
 ```
 
 [ ] TASK-129
+
+---
+
+## TASK-130: Мануал по GitNexus — практичний гайд для команди
+
+**!!IMPORTANT!! Run locally on Termux (AGY phone). NO SSH needed.**
+
+### Контекст
+GitNexus — це code knowledge graph tool, встановлений на 192.168.3.184 (Docker, порт 4747).
+MCP endpoint: `http://192.168.3.184:4747/api/mcp`
+
+Проіндексовані репо:
+- `free-claude-code` (7458 nodes) — OpenAI proxy  
+- `uav-watcher` (2451 nodes) — Python Telegram alert bot
+- `sonate-solidsite` (1808 nodes) — React/Vite сайт
+- `ai-drakon-scaffolder` — LangGraph agents + TypeScript (індексується зараз)
+
+### Що зробити
+
+#### 1. Отримай інфо через MCP API
+```python
+import urllib.request, json
+
+def mcp_call(method, params={}):
+    url = "http://192.168.3.184:4747/api/mcp"
+    data = json.dumps({"jsonrpc":"2.0","id":1,"method":method,"params":params}).encode()
+    req = urllib.request.Request(url, data=data,
+        headers={"Content-Type":"application/json","Accept":"application/json, text/event-stream"},
+        method="POST")
+    with urllib.request.urlopen(req, timeout=10) as r:
+        for line in r.read().decode().split("\n"):
+            if line.startswith("data:"):
+                return json.loads(line[5:])
+
+# Список інструментів
+tools = mcp_call("tools/list")
+for t in tools["result"]["tools"]:
+    print(t["name"], "-", t["description"][:80])
+```
+
+#### 2. Напиши мануал в /home/vokov/docs/copilot-gitnexus-guide.md
+Файл повинен містити (українською):
+
+```markdown
+# GitNexus + Copilot — Практичний мануал
+
+## Що таке GitNexus
+...
+
+## Проіндексовані репо
+...
+
+## 12 MCP Tools — коли що використовувати
+| Tool | Для чого | Коли використовувати |
+|------|----------|---------------------|
+| query | ... | ... |
+...
+
+## Шаблони Copilot-запитів
+
+### Impact analysis перед зміною функції
+```
+Using GitNexus impact tool, analyze blast radius of changing function [NAME] in repo [REPO]. List all affected files and functions.
+```
+
+### Пошук всіх викликів функції  
+...
+
+### Code review з контекстом графу
+...
+
+## Приклад реального запиту
+...
+```
+
+#### 3. Збережи файл
+```bash
+# Через SSH на dev server:
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "cat > ~/docs/copilot-gitnexus-guide.md << 'EOF'
+[CONTENT]
+EOF"
+```
+
+### Верифікація
+```bash
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "wc -l ~/docs/copilot-gitnexus-guide.md && head -5 ~/docs/copilot-gitnexus-guide.md"
+```
+
+### Diary
+```
+SESSION:2026-06-03|TASK-130:gitnexus-manual|file:copilot-gitnexus-guide.md|★★★
+```
+
+[ ] TASK-130
