@@ -13786,3 +13786,25 @@ SESSION:2026-06-03|TASK-130:gitnexus-manual|file:copilot-gitnexus-guide.md|★�
 ```
 
 [x] TASK-130
+
+---
+
+## TASK-131: Встанови gitnexus skill на AGY3
+
+**!!IMPORTANT!! Run locally on Termux (AGY3). NO SSH.**
+
+### Що зробити
+```bash
+mkdir -p ~/.claude/skills/gitnexus
+sshpass -p '805235io.' scp -o StrictHostKeyChecking=no \
+  vokov@192.168.3.184:/home/vokov/.claude/skills/gitnexus/SKILL.md \
+  ~/.claude/skills/gitnexus/SKILL.md
+echo "done: $(ls -la ~/.claude/skills/gitnexus/SKILL.md)"
+```
+
+### Diary
+```
+SESSION:2026-06-03|TASK-131:gitnexus-skill-AGY3|★★
+```
+
+[ ] TASK-131
