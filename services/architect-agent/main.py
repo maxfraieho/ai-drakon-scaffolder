@@ -191,6 +191,55 @@ def memory_save(req: MemorySaveRequest):
     return result
 
 
+import json
+import datetime
+from pathlib import Path
+from fastapi import Request
+
+ANALYTICS_LOG = Path(__file__).parent / "kb" / "sonate-solidaire" / "analytics.jsonl"
+if not ANALYTICS_LOG.exists():
+    ANALYTICS_LOG = Path(os.getenv("REPO_ROOT", "/home/vokov/workspace/ai-drakon-scaffolder")) \
+        / "services/architect-agent/kb/sonate-solidaire/analytics.jsonl"
+
+@app.get("/agents/ss/analytics")
+async def ss_analytics_summary():
+    """Public summary stats."""
+    if not ANALYTICS_LOG.exists():
+        return {"total": 0, "by_audience": {}, "by_lang": {}, "quality": {}}
+    entries = [json.loads(l) for l in ANALYTICS_LOG.read_text().splitlines() if l.strip()]
+    from collections import Counter
+    return {
+        "total": len(entries),
+        "by_audience": dict(Counter(e["audience"] for e in entries)),
+        "by_lang": dict(Counter(e["lang"] for e in entries)),
+        "quality": dict(Counter(e.get("response_quality","?") for e in entries)),
+        "last_7_days": sum(1 for e in entries
+            if e["ts"] >= (datetime.datetime.utcnow() - datetime.timedelta(days=7)).isoformat()),
+    }
+
+@app.get("/agents/ss/analytics/questions")
+async def ss_analytics_questions(request: Request, limit: int = 100):
+    """Recent questions — requires auth."""
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {os.getenv('MCP_API_KEY', 'drakon-mcp-2026')}":
+        raise HTTPException(status_code=401)
+    if not ANALYTICS_LOG.exists():
+        return {"questions": []}
+    entries = [json.loads(l) for l in ANALYTICS_LOG.read_text().splitlines() if l.strip()]
+    return {"questions": entries[-limit:]}
+
+@app.get("/agents/ss/analytics/gaps")
+async def ss_analytics_gaps(request: Request):
+    """Questions with weak responses — potential KB gaps."""
+    auth = request.headers.get("Authorization", "")
+    if auth != f"Bearer {os.getenv('MCP_API_KEY', 'drakon-mcp-2026')}":
+        raise HTTPException(status_code=401)
+    if not ANALYTICS_LOG.exists():
+        return {"gaps": []}
+    entries = [json.loads(l) for l in ANALYTICS_LOG.read_text().splitlines() if l.strip()]
+    return {"gaps": [e for e in entries if e.get("response_quality") == "weak"]}
+
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=PORT)
