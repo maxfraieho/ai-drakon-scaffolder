@@ -13524,3 +13524,94 @@ git push origin main
 SESSION:2026-06-03|TASK-119:ss-analytics|nodes_ss.ss_log_analytics+/agents/ss/analytics(3-endpoints)|full-question+quality-detect|commit:<hash>|★★★
 ```
 
+
+---
+
+## [ ] TASK-SS-24: Створити docs/kb-agent/ з mempalace scan SS
+
+**!!IMPORTANT!! Run locally on AGY3 Termux. NO SSH to dev server.**
+
+### Мета
+Використати mempalace scan sonate-solidsite (wing: sonate-solidsite) для створення
+двох документів у `docs/kb-agent/`:
+1. `site-structure.md` — структура сайту (маршрути, компоненти, сторінки)
+2. `site-content-map.md` — карта контенту (що є на кожній сторінці, ключові тексти)
+
+Ці документи допоможуть Sharon агенту краще відповідати на питання про сайт.
+
+### Репо
+```bash
+cd ~/projects/sonate-solidsite
+git pull origin main
+```
+
+### Крок 1: Зробити mempalace search для структури
+
+```bash
+# Знайти всі маршрути і сторінки
+python3 -m mempalace search "routes pages navigation menu" --wing sonate-solidsite --limit 10
+
+# Знайти компоненти
+python3 -m mempalace search "components React layout header footer" --wing sonate-solidsite --limit 10
+
+# Знайти контент (текст, заголовки)
+python3 -m mempalace search "mission association musicians integration events" --wing sonate-solidsite --limit 10
+```
+
+### Крок 2: Створити site-structure.md через AGY/Gemini
+
+Запусти AGY з таким промтом (через `agy` CLI):
+```
+Я маю доступ до mempalace wing sonate-solidsite.
+Зроби такі пошуки і на основі результатів напиши docs/kb-agent/site-structure.md:
+
+1. python3 -m mempalace search "routes pages navigation" --wing sonate-solidsite --limit 10
+2. python3 -m mempalace search "components SsAssistant Navbar Footer" --wing sonate-solidsite --limit 10
+3. python3 -m mempalace search "i18n languages French German Ukrainian" --wing sonate-solidsite --limit 5
+
+Формат site-structure.md:
+# Sonate Solidaire — Структура сайту
+
+## Маршрути (Routes)
+[список маршрутів з описом]
+
+## Головні компоненти
+[список ключових компонентів]
+
+## Мови
+[підтримувані мови і маршрути]
+
+## Асистент Sharon
+[технічні деталі підключення]
+
+Мова файлу: АНГЛІЙСЬКА (для агента)
+```
+
+### Крок 3: Створити site-content-map.md
+
+```
+Зроби такі пошуки і напиши docs/kb-agent/site-content-map.md:
+
+1. python3 -m mempalace search "mission statement association Gland Vaud" --wing sonate-solidsite --limit 5
+2. python3 -m mempalace search "events concerts soirees musicales" --wing sonate-solidsite --limit 5
+3. python3 -m mempalace search "join musicians integration application" --wing sonate-solidsite --limit 5
+4. python3 -m mempalace search "contact form email support" --wing sonate-solidsite --limit 5
+
+Формат: # Site Content Map
+Для кожної основної сторінки — назва, URL, головний контент, CTA.
+Мова: АНГЛІЙСЬКА
+```
+
+### Commit
+```bash
+cd ~/projects/sonate-solidsite
+git add docs/kb-agent/
+git commit -m "docs(kb-agent): site structure and content map from mempalace scan (TASK-SS-24)"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-06-03|TASK-SS-24:kb-agent-docs|site-structure.md+site-content-map.md|mempalace-scan|commit:<hash>|★★★
+```
+
