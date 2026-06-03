@@ -13615,3 +13615,80 @@ git push origin main
 SESSION:2026-06-03|TASK-SS-24:kb-agent-docs|site-structure.md+site-content-map.md|mempalace-scan|commit:<hash>|★★★
 ```
 
+
+---
+
+## TASK-129: Copilot + GitNexus — дослідження інтеграції та індексація репо
+
+**!!IMPORTANT!! Run via SSH to 192.168.3.184 (dev server). NOT locally.**  
+SSH: `sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184`
+
+### Контекст
+На dev server (192.168.3.184) налаштовано:
+- **Copilot CLI** v1.0.59 (`~/.npm-global/bin/copilot`), модель `claude-haiku-4.5`
+- **GitNexus** MCP server на `http://localhost:4747/api/mcp` (Docker, 12 tools)
+- GitNexus підключений до Copilot через `~/.copilot/mcp-config.json`
+- GitNexus вже проіндексував `/opt/free-claude-code` (7458 nodes)
+- Volumes: `/home/vokov/projects` → `/projects` в контейнері
+
+### Що зробити
+
+#### 1. Вивчи GitNexus tools
+Запусти та прочитай результати кожного інструменту:
+```bash
+export PATH=$PATH:/home/vokov/.npm-global/bin
+# Список інструментів
+echo "List all GitNexus tools and describe each in 2-3 sentences. What is each tool best for?" | copilot -p - --allow-all-tools 2>&1 | tee /tmp/gitnexus-tools.txt
+```
+
+#### 2. Проіндексуй 3 проекти в GitNexus
+Кожен проект — окремий docker exec:
+```bash
+# uav-watcher
+docker exec gitnexus-server gitnexus index /projects/uav-watcher 2>&1 | tail -5
+
+# sonate-solidsite  
+docker exec gitnexus-server gitnexus index /projects/sonate-solidsite 2>&1 | tail -5
+
+# Перевір що проіндексувалось
+docker exec gitnexus-server cat /data/gitnexus/registry.json | python3 -m json.tool
+```
+
+#### 3. Протестуй Copilot + GitNexus на реальному коді
+```bash
+cd /home/vokov/projects/uav-watcher
+echo "Using GitNexus tools, find the main alert-sending function in this repo and show its call graph. List all functions that call it." | \
+  copilot -p - --allow-all-tools --add-dir /home/vokov/projects/uav-watcher 2>&1 | tee /tmp/gitnexus-test.txt
+```
+
+#### 4. Напиши гайд
+Збережи результати в `/home/vokov/docs/copilot-gitnexus-guide.md`:
+- Які 3-5 GitNexus tools найкорисніші для нашого стека
+- Шаблон команди для code review через Copilot+GitNexus
+- Шаблон для impact analysis перед змінами
+
+#### 5. Оновлення dev server — ~/bin/copilot-task.sh
+Перевір що скрипт існує:
+```bash
+cat ~/bin/copilot-task.sh | head -10
+```
+Якщо не існує — повідом в diary.
+
+### Верифікація
+```bash
+# Репо проіндексовані?
+docker exec gitnexus-server cat /data/gitnexus/registry.json | python3 -c "import json,sys; repos=json.load(sys.stdin); print(len(repos),'repos:', [r['name'] for r in repos])"
+
+# Файл гайду існує?
+cat /home/vokov/docs/copilot-gitnexus-guide.md | head -20
+```
+
+### Коміт
+Не потрібен (все на dev server, не в git).
+
+### Diary
+```
+SESSION:2026-06-03|TASK-129:copilot-gitnexus-research|indexed:uav-watcher+sonate-solidsite|guide:/home/vokov/docs/copilot-gitnexus-guide.md|★★★
+```
+
+[ ] TASK-129
