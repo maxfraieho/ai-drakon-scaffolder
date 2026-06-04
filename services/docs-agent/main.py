@@ -24,6 +24,7 @@ from notes_route import router as notes_router
 from drakon_ir_route import router as drakon_ir_router
 from projects_route import router as projects_router
 from dataview_route import router as dataview_router
+from gitnexus_route import router as gitnexus_router
 
 AGENT_NAME = os.getenv("AGENT_NAME", "docs")
 PORT = int(os.getenv("PORT", "8767"))
@@ -45,6 +46,7 @@ app.include_router(notes_router)
 app.include_router(drakon_ir_router)
 app.include_router(projects_router)
 app.include_router(dataview_router)
+app.include_router(gitnexus_router)
 
 
 class ChatRequest(BaseModel):
