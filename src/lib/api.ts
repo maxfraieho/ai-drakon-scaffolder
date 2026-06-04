@@ -342,6 +342,28 @@ export const api = {
     return parseResponse<DeleteKnowledgeZoneResponse>(response);
   },
 
+  notebooklmChat: async (data: {
+    notebookUrl: string;
+    message: string;
+    kind: "answer" | "summary" | "study_guide" | "flashcards";
+    history: { role: string; content: string }[];
+  }): Promise<{
+    success: boolean;
+    answer: string;
+    citations?: { title: string; url: string }[];
+    error?: string;
+    message?: string;
+  }> => {
+    const response = await fetch(`/api/notebooklm/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    return parseResponse(response);
+  },
+
   githubListTree: (
     owner: string,
     repo: string,

@@ -16,6 +16,7 @@ import {
   Terminal,
   Workflow,
   Brain, // Added Brain icon
+  BookOpen,
 } from "lucide-react";
 import {
   Sheet,
@@ -60,6 +61,7 @@ const NAV_WORKSPACE: NavItem[] = [
   { to: "/pipelines", label: "Pipeline", icon: Workflow },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
   { to: "/knowledge", label: "Знання", icon: Brain }, // Added Knowledge item
+  { to: "/notebooks", label: "NotebookLM", icon: BookOpen },
   { to: "/code", label: "Код", icon: FileCode },
   { to: "/docs", label: "Документація", icon: FileText },
 ];
@@ -78,6 +80,8 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/settings")) return { section: "Settings", sectionPath: "/settings" };
   if (pathname.startsWith("/agents")) return { section: "Агенти", sectionPath: "/agents" };
   if (pathname.startsWith("/pipelines")) return { section: "Pipeline", sectionPath: "/pipelines" };
+  if (pathname.startsWith("/knowledge")) return { section: "Знання", sectionPath: "/knowledge" };
+  if (pathname.startsWith("/notebooks")) return { section: "NotebookLM", sectionPath: "/notebooks" };
   if (pathname.startsWith("/code")) return { section: "Код", sectionPath: "/code" };
   return { section: "Workspace", sectionPath: "/" };
 }
