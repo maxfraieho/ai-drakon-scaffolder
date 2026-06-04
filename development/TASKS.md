@@ -14525,3 +14525,151 @@ git push origin main
 SESSION:2026-06-05|TASK-131:bloom-drakon-spec|doc:bloom-drakon-integration-spec.md|commit:pushed|★★★
 
 [x] TASK-131
+
+## TASK-132: Knowledge API proxy endpoints в AI-DRAKON backend
+
+**!!IMPORTANT!! Виконуй локально в Termux на AGY3. SSH до 192.168.3.184 тільки для перевірки.**
+
+**Мета:** Додати 6 API route-ів в AI-DRAKON backend (TanStack Start) що проксують
+запити до Garden Gateway https://garden-mcp.exodus.pp.ua
+
+**Читай спочатку:**
+  ~/workspace/exodus-infra/analysis/bloom-drakon-integration-spec.md — секція "Нові API endpoint-и"
+
+**Де знаходиться backend AI-DRAKON:**
+  ~/workspace/ai-drakon-scaffolder/src/server.ts (Fastify backend)
+  ~/workspace/ai-drakon-scaffolder/src/ (TanStack Start routes)
+
+### 1. Підготовка
+
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+Прочитай src/server.ts та src/routes/ щоб зрозуміти архітектуру.
+Знайди де додаються нові route-и (чи Fastify plugins чи TanStack API routes).
+
+### 2. Реалізація
+
+Створи файл src/server/knowledge.ts (або відповідний до архітектури проекту):
+
+Додай наступні endpoints:
+
+GET /api/knowledge/zones
+  → proxy GET https://garden-mcp.exodus.pp.ua/zones/list
+  → Header: Authorization: Bearer GARDEN_OWNER_TOKEN (з env)
+  → Return: JSON response від Gateway
+
+POST /api/knowledge/zones
+  → proxy POST https://garden-mcp.exodus.pp.ua/zones/create
+  → Forward request body
+  → Header: Authorization: Bearer GARDEN_OWNER_TOKEN
+
+DELETE /api/knowledge/zones/:zoneId
+  → proxy DELETE https://garden-mcp.exodus.pp.ua/zones/:zoneId
+  → Header: Authorization: Bearer GARDEN_OWNER_TOKEN
+
+GET /api/knowledge/zones/:zoneId/notebooklm
+  → proxy GET https://garden-mcp.exodus.pp.ua/zones/:zoneId/notebooklm
+
+POST /api/knowledge/zones/:zoneId/notebooklm/retry
+  → proxy POST https://garden-mcp.exodus.pp.ua/zones/:zoneId/notebooklm/retry-import
+
+POST /api/notebooklm/chat
+  → proxy POST https://garden-mcp.exodus.pp.ua/notebooklm/chat
+  → Forward: message, notebookUrl, kind, history
+
+GARDEN_OWNER_TOKEN береться з process.env.GARDEN_OWNER_TOKEN
+Якщо token відсутній — повертати 503 з помилкою "GARDEN_OWNER_TOKEN not configured"
+
+### 3. Реєстрація routes
+
+Підключи новий файл у src/server.ts або відповідному entry point.
+
+### 4. Env variable
+
+Перевір чи є в проекті .env або env config файл.
+Додай GARDEN_OWNER_TOKEN= (порожнє значення, буде заповнено пізніше).
+
+### 5. Коміт
+
+git add src/server/knowledge.ts (або відповідний шлях)
+git add src/server.ts (або де підключається)
+git commit -m "feat(knowledge): add Garden Gateway proxy API endpoints"
+git push origin main
+
+### Верифікація
+  grep -r "knowledge" src/ | grep route | head -5
+  grep "GARDEN_OWNER_TOKEN" src/ -r | head -3
+
+### Diary
+SESSION:2026-06-05|TASK-132:knowledge-api-proxy|endpoints:6|commit:pushed|★★★
+
+[ ] TASK-132
+
+## TASK-133: KnowledgePage UI — сторінка керування зонами знань
+
+**!!IMPORTANT!! Виконуй локально в Termux на AGY3.**
+
+**Мета:** Реалізувати сторінку /knowledge в AI-DRAKON з компонентами управління
+Knowledge Zones згідно специфікації в bloom-drakon-integration-spec.md
+
+**Читай спочатку:**
+  ~/workspace/exodus-infra/analysis/bloom-drakon-integration-spec.md — секція "KnowledgePage"
+  ~/workspace/ai-drakon-scaffolder/src/pages/ — список існуючих сторінок для розуміння стилю
+
+### 1. Підготовка
+
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+Прочитай одну з існуючих сторінок (наприклад DiagramsPage.tsx) щоб зрозуміти структуру.
+Прочитай src/routes/__root.tsx та навігацію.
+
+### 2. Реалізація
+
+Створи такі файли:
+
+**src/pages/KnowledgePage.tsx** — головна сторінка
+  - Заголовок "Knowledge Zones"
+  - KnowledgeZonesList компонент
+  - Кнопка "Create Zone" що відкриває ZoneCreationDialog
+
+**src/components/knowledge/KnowledgeZonesList.tsx** — список зон
+  - useQuery для GET /api/knowledge/zones
+  - Таблиця або cards: name, description, expiresAt, noteCount
+  - NotebookLM status badge (queued/pending/running/completed/failed)
+  - Кнопка Delete для кожної зони (useMutation DELETE)
+  - Empty state якщо зон немає
+
+**src/components/knowledge/ZoneCreationDialog.tsx** — діалог створення
+  - Поля: name (required), description, TTL (select: 1h/24h/7d), accessType (web/mcp/both)
+  - Checkbox "Create NotebookLM notebook"
+  - Якщо checkbox: показати поля notebookTitle, shareEmails
+  - useMutation POST /api/knowledge/zones
+  - Після success: закрити діалог, refetch list
+
+**src/routes/knowledge.tsx** — TanStack Router route
+  - Підключення до KnowledgePage
+
+**src/routes/__root.tsx** або навігаційний файл:
+  - Додати Knowledge в nav menu (іконка Brain або BookOpen з lucide-react)
+
+### 3. Lovable sync
+
+Після кожного нового файлу:
+  cp src/X .lovable/src/X
+
+### 4. Коміт
+
+git add src/pages/KnowledgePage.tsx src/components/knowledge/ src/routes/knowledge.tsx
+git add .lovable/src/pages/KnowledgePage.tsx .lovable/src/components/knowledge/ .lovable/src/routes/knowledge.tsx
+git commit -m "feat(knowledge): add KnowledgePage with ZonesList and CreateDialog"
+git push origin main
+
+### Верифікація
+  ls src/pages/KnowledgePage.tsx
+  ls src/components/knowledge/
+  ls src/routes/knowledge.tsx
+  grep "knowledge" src/routes/__root.tsx | head -3
+
+### Diary
+SESSION:2026-06-05|TASK-133:knowledge-page-ui|files:KnowledgePage+ZonesList+CreateDialog+route|commit:pushed|★★★
+
+[ ] TASK-133
