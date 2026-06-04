@@ -14429,3 +14429,213 @@ SESSION:2026-06-04|TASK-135:ai-memory-routing|AGY-phone+AGY3+Copilot|★★★
 ```
 
 [x] TASK-135
+
+## TASK-130: Bloom repos clone + MemPalace mine + gap analysis
+
+**!!IMPORTANT!! Run locally in Termux on AGY4. Do NOT SSH anywhere.**
+
+**Мета:** Клонувати Garden Bloom repos, проіндексувати в MemPalace, написати gap-analysis
+відносно AI-DRAKON.
+
+### 1. Клонування / оновлення репозиторіїв
+
+Перейди в ~/workspace/
+
+Bloom backend (agent-onboarding-kit):
+  Якщо ~/workspace/agent-onboarding-kit існує — git pull там.
+  Інакше — git clone https://github.com/maxfraieho/agent-onboarding-kit.git ~/workspace/agent-onboarding-kit
+
+Bloom frontend (garden-seedling-stage):
+  Якщо ~/workspace/garden-seedling-stage-d69fe8be існує — git pull там.
+  Інакше — git clone https://github.com/maxfraieho/garden-seedling-stage-d69fe8be.git ~/workspace/garden-seedling-stage-d69fe8be
+
+Також оновити:
+  cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+  cd ~/workspace/exodus-infra && git pull origin main
+
+### 2. MemPalace mine — індексація (по черзі!)
+
+cd ~/workspace/agent-onboarding-kit
+python3 -m mempalace mine
+
+cd ~/workspace/garden-seedling-stage-d69fe8be
+python3 -m mempalace mine
+
+cd ~/workspace/ai-drakon-scaffolder
+python3 -m mempalace mine
+
+Якщо mempalace mine падає — запиши помилку в diary і продовжуй без нього.
+
+### 3. Читання документів (ключові файли)
+
+Прочитай:
+  ~/workspace/agent-onboarding-kit/README.md
+  ~/workspace/agent-onboarding-kit/docs/ІНДЕКС.md
+  ~/workspace/agent-onboarding-kit/docs/КАРТА_СИСТЕМИ.md
+  ~/workspace/agent-onboarding-kit/docs/PROJECT_DESCRIPTION_CANONICAL.md
+  ~/workspace/garden-seedling-stage-d69fe8be/README.md
+  ~/workspace/garden-seedling-stage-d69fe8be/AGENT_HANDOFF.md
+  ~/workspace/ai-drakon-scaffolder/src/pages/ (список файлів + прочитай App або index)
+
+### 4. Написання gap-analysis документу
+
+Напиши файл ~/workspace/exodus-infra/analysis/bloom-drakon-gap-analysis.md
+
+Структура документу:
+
+# Bloom → AI-DRAKON: Gap Analysis
+Дата: 2026-06-05
+Автор: AGY4
+
+## Bloom Platform — ключові можливості
+Що надає Garden Bloom (на основі прочитаних доків):
+- Knowledge zones (MinIO: що це, як використовується)
+- NotebookLM integration (Python API port 5000)
+- Agent execution + Proposal system
+- Memory API (TypeScript port 3001, isomorphic-git, BM25 search)
+- MCP Gateway: https://garden-mcp.exodus.pp.ua (Cloudflare Worker, живий)
+- GitHub operations (canonical storage)
+- DRAKON diagram persistence
+
+## AI-DRAKON — поточний стан
+Що вже є в AI-DRAKON (на основі src/pages/):
+- DRAKON diagram editor
+- Agent Studio
+- Pipeline editor
+- LangGraph agents
+- Observability, Code, Routing pages
+
+Чого немає:
+- MinIO knowledge zones
+- NotebookLM UI
+- Knowledge base management
+- Obsidian sync
+
+## Gap Analysis таблиця
+| Функція | Bloom | AI-DRAKON | Пріоритет |
+
+## Рекомендовані точки інтеграції
+1. Garden MCP Worker (garden-mcp.exodus.pp.ua) як gateway API
+2. Bloom Memory API (port 3001) для search/recall
+3. NotebookLM Python API (port 5000) для knowledge management
+4. MinIO S3 API для zone storage
+
+### 5. Коміт
+
+cd ~/workspace/exodus-infra
+git add analysis/bloom-drakon-gap-analysis.md
+git commit -m "analysis(bloom-drakon): AGY4 gap analysis 2026-06-05"
+git push origin main
+
+### Верифікація
+  ls ~/workspace/agent-onboarding-kit/
+  ls ~/workspace/garden-seedling-stage-d69fe8be/
+  ls ~/workspace/exodus-infra/analysis/bloom-drakon-gap-analysis.md
+  git -C ~/workspace/exodus-infra log --oneline -1
+
+### Diary
+SESSION:2026-06-05|TASK-130:bloom-gap-analysis|cloned:agent-onboarding-kit+garden-seedling|mined:mempalace|doc:bloom-drakon-gap-analysis.md|commit:pushed|★★★
+
+[ ] TASK-130
+
+## TASK-131: Bloom→DRAKON технічна специфікація інтеграції
+
+**!!IMPORTANT!! Виконуй локально в Termux (~/workspace/). SSH до 192.168.3.184 тільки
+для читання документації — НЕ вноси жодних змін на dev server.**
+
+**Мета:** Розробити детальну технічну специфікацію: які нові сторінки / компоненти / API
+додати в AI-DRAKON щоб покрити функціонал Garden Bloom.
+
+### 1. Підготовка
+
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+cd ~/workspace/exodus-infra && git pull origin main
+
+Прочитай (якщо є):
+  ~/workspace/exodus-infra/analysis/bloom-drakon-gap-analysis.md
+
+### 2. Читання Bloom документації через SSH
+
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+
+На dev server прочитай:
+  ls /home/vokov/workspace/agent-onboarding-kit/docs/architecture/
+  cat /home/vokov/workspace/agent-onboarding-kit/docs/PROJECT_DESCRIPTION_CANONICAL.md
+  ls /home/vokov/workspace/agent-onboarding-kit/src/routes/
+  cat /home/vokov/workspace/agent-onboarding-kit/src/routes/memory.ts
+  cat /home/vokov/workspace/agent-onboarding-kit/src/routes/auth.ts
+  ls /home/vokov/workspace/garden-seedling-stage-d69fe8be/src/pages/
+  head -150 /home/vokov/workspace/garden-seedling-stage-d69fe8be/_collab/infrastructure/cloudflare/worker/index.js
+
+### 3. Читання AI-DRAKON codebase
+
+Локально прочитай:
+  ~/workspace/ai-drakon-scaffolder/src/pages/ (всі .tsx)
+  ~/workspace/ai-drakon-scaffolder/src/routes/ (структура маршрутів)
+  ~/workspace/ai-drakon-scaffolder/src/server.ts (backend структура)
+
+Знайди де і як DRAKON editor зберігає схеми (grep -r "save\|persist\|storage" в src/).
+
+### 4. Написання специфікації
+
+Напиши ~/workspace/exodus-infra/analysis/bloom-drakon-integration-spec.md
+
+Структура:
+
+# Bloom → AI-DRAKON Integration Specification
+Дата: 2026-06-05
+Автор: AGY3
+
+## Загальна архітектура інтеграції
+Як Bloom і DRAKON стають єдиною системою.
+Gateway: https://garden-mcp.exodus.pp.ua (Cloudflare Worker, вже живий)
+
+## Нові сторінки в AI-DRAKON
+
+### KnowledgePage (/knowledge)
+- Компонент: KnowledgeZonesList
+- API calls до garden-mcp.exodus.pp.ua
+- Операції: list zones, create zone, upload file, delete
+- Кнопка "Додати в NotebookLM"
+
+### NotebookLMPage (/notebooks) або вкладка в existing page
+- Список notebooks (через Bloom backend API port 5000 або через Gateway)
+- Додавання source з MinIO zone
+- Chat interface (embed або link)
+
+## Нові API endpoint-и в AI-DRAKON backend
+
+Перелічи конкретні endpoint-и які треба додати в src/server.ts:
+- GET /api/knowledge/zones
+- POST /api/knowledge/zones
+- тощо
+
+## Garden MCP Worker — API контракт
+На основі прочитаного worker/index.js:
+- Які endpoints доступні
+- Як auth (JWT? Bearer?)
+- Формат запитів
+
+## MinIO Zones — структура
+Як організовані зони, папки, файли в MinIO.
+
+## Перші 3 задачі для реалізації
+
+Напиши як TASK-132, TASK-133, TASK-134 (що саме, в яких файлах, верифікація).
+Задачі мають бути атомарні — кожна виконується за 1-2 год.
+
+### 5. Коміт
+
+cd ~/workspace/exodus-infra
+git add analysis/bloom-drakon-integration-spec.md
+git commit -m "spec(bloom-drakon): AGY3 technical integration spec 2026-06-05"
+git push origin main
+
+### Верифікація
+  ls ~/workspace/exodus-infra/analysis/bloom-drakon-integration-spec.md
+  git -C ~/workspace/exodus-infra log --oneline -2
+
+### Diary
+SESSION:2026-06-05|TASK-131:bloom-drakon-spec|doc:bloom-drakon-integration-spec.md|commit:pushed|★★★
+
+[ ] TASK-131
