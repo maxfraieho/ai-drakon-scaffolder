@@ -25,6 +25,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
 import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
 import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
+import { Route as ApiNotebooklmChatRouteImport } from './routes/api.notebooklm.chat'
+import { Route as ApiKnowledgeZonesRouteImport } from './routes/api.knowledge.zones'
+import { Route as ApiKnowledgeZonesZoneIdRouteImport } from './routes/api.knowledge.zones.$zoneId'
+import { Route as ApiKnowledgeZonesZoneIdNotebooklmRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm'
+import { Route as ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm.retry'
 
 const SyncRoute = SyncRouteImport.update({
   id: '/sync',
@@ -106,6 +111,33 @@ const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
   path: '/$pipelineId/edit',
   getParentRoute: () => PipelineRoute,
 } as any)
+const ApiNotebooklmChatRoute = ApiNotebooklmChatRouteImport.update({
+  id: '/api/notebooklm/chat',
+  path: '/api/notebooklm/chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKnowledgeZonesRoute = ApiKnowledgeZonesRouteImport.update({
+  id: '/api/knowledge/zones',
+  path: '/api/knowledge/zones',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKnowledgeZonesZoneIdRoute = ApiKnowledgeZonesZoneIdRouteImport.update({
+  id: '/$zoneId',
+  path: '/$zoneId',
+  getParentRoute: () => ApiKnowledgeZonesRoute,
+} as any)
+const ApiKnowledgeZonesZoneIdNotebooklmRoute =
+  ApiKnowledgeZonesZoneIdNotebooklmRouteImport.update({
+    id: '/notebooklm',
+    path: '/notebooklm',
+    getParentRoute: () => ApiKnowledgeZonesZoneIdRoute,
+  } as any)
+const ApiKnowledgeZonesZoneIdNotebooklmRetryRoute =
+  ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport.update({
+    id: '/retry',
+    path: '/retry',
+    getParentRoute: () => ApiKnowledgeZonesZoneIdNotebooklmRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -123,7 +155,12 @@ export interface FileRoutesByFullPath {
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
+  '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
+  '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
+  '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
+  '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -141,7 +178,12 @@ export interface FileRoutesByTo {
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
+  '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
+  '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
+  '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
+  '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -160,7 +202,12 @@ export interface FileRoutesById {
   '/sync': typeof SyncRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
+  '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
+  '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
+  '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
+  '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -180,7 +227,12 @@ export interface FileRouteTypes {
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/api/knowledge/zones'
+    | '/api/notebooklm/chat'
     | '/pipeline/$pipelineId/edit'
+    | '/api/knowledge/zones/$zoneId'
+    | '/api/knowledge/zones/$zoneId/notebooklm'
+    | '/api/knowledge/zones/$zoneId/notebooklm/retry'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -198,7 +250,12 @@ export interface FileRouteTypes {
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/api/knowledge/zones'
+    | '/api/notebooklm/chat'
     | '/pipeline/$pipelineId/edit'
+    | '/api/knowledge/zones/$zoneId'
+    | '/api/knowledge/zones/$zoneId/notebooklm'
+    | '/api/knowledge/zones/$zoneId/notebooklm/retry'
   id:
     | '__root__'
     | '/'
@@ -216,7 +273,12 @@ export interface FileRouteTypes {
     | '/sync'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/api/knowledge/zones'
+    | '/api/notebooklm/chat'
     | '/pipeline/$pipelineId/edit'
+    | '/api/knowledge/zones/$zoneId'
+    | '/api/knowledge/zones/$zoneId/notebooklm'
+    | '/api/knowledge/zones/$zoneId/notebooklm/retry'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -235,6 +297,8 @@ export interface RootRouteChildren {
   SyncRoute: typeof SyncRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
+  ApiKnowledgeZonesRoute: typeof ApiKnowledgeZonesRouteWithChildren
+  ApiNotebooklmChatRoute: typeof ApiNotebooklmChatRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -351,6 +415,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
       parentRoute: typeof PipelineRoute
     }
+    '/api/notebooklm/chat': {
+      id: '/api/notebooklm/chat'
+      path: '/api/notebooklm/chat'
+      fullPath: '/api/notebooklm/chat'
+      preLoaderRoute: typeof ApiNotebooklmChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/knowledge/zones': {
+      id: '/api/knowledge/zones'
+      path: '/api/knowledge/zones'
+      fullPath: '/api/knowledge/zones'
+      preLoaderRoute: typeof ApiKnowledgeZonesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/knowledge/zones/$zoneId': {
+      id: '/api/knowledge/zones/$zoneId'
+      path: '/$zoneId'
+      fullPath: '/api/knowledge/zones/$zoneId'
+      preLoaderRoute: typeof ApiKnowledgeZonesZoneIdRouteImport
+      parentRoute: typeof ApiKnowledgeZonesRoute
+    }
+    '/api/knowledge/zones/$zoneId/notebooklm': {
+      id: '/api/knowledge/zones/$zoneId/notebooklm'
+      path: '/notebooklm'
+      fullPath: '/api/knowledge/zones/$zoneId/notebooklm'
+      preLoaderRoute: typeof ApiKnowledgeZonesZoneIdNotebooklmRouteImport
+      parentRoute: typeof ApiKnowledgeZonesZoneIdRoute
+    }
+    '/api/knowledge/zones/$zoneId/notebooklm/retry': {
+      id: '/api/knowledge/zones/$zoneId/notebooklm/retry'
+      path: '/retry'
+      fullPath: '/api/knowledge/zones/$zoneId/notebooklm/retry'
+      preLoaderRoute: typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport
+      parentRoute: typeof ApiKnowledgeZonesZoneIdNotebooklmRoute
+    }
   }
 }
 
@@ -365,6 +464,47 @@ const PipelineRouteChildren: PipelineRouteChildren = {
 const PipelineRouteWithChildren = PipelineRoute._addFileChildren(
   PipelineRouteChildren,
 )
+
+interface ApiKnowledgeZonesZoneIdNotebooklmRouteChildren {
+  ApiKnowledgeZonesZoneIdNotebooklmRetryRoute: typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
+}
+
+const ApiKnowledgeZonesZoneIdNotebooklmRouteChildren: ApiKnowledgeZonesZoneIdNotebooklmRouteChildren =
+  {
+    ApiKnowledgeZonesZoneIdNotebooklmRetryRoute:
+      ApiKnowledgeZonesZoneIdNotebooklmRetryRoute,
+  }
+
+const ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren =
+  ApiKnowledgeZonesZoneIdNotebooklmRoute._addFileChildren(
+    ApiKnowledgeZonesZoneIdNotebooklmRouteChildren,
+  )
+
+interface ApiKnowledgeZonesZoneIdRouteChildren {
+  ApiKnowledgeZonesZoneIdNotebooklmRoute: typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
+}
+
+const ApiKnowledgeZonesZoneIdRouteChildren: ApiKnowledgeZonesZoneIdRouteChildren =
+  {
+    ApiKnowledgeZonesZoneIdNotebooklmRoute:
+      ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren,
+  }
+
+const ApiKnowledgeZonesZoneIdRouteWithChildren =
+  ApiKnowledgeZonesZoneIdRoute._addFileChildren(
+    ApiKnowledgeZonesZoneIdRouteChildren,
+  )
+
+interface ApiKnowledgeZonesRouteChildren {
+  ApiKnowledgeZonesZoneIdRoute: typeof ApiKnowledgeZonesZoneIdRouteWithChildren
+}
+
+const ApiKnowledgeZonesRouteChildren: ApiKnowledgeZonesRouteChildren = {
+  ApiKnowledgeZonesZoneIdRoute: ApiKnowledgeZonesZoneIdRouteWithChildren,
+}
+
+const ApiKnowledgeZonesRouteWithChildren =
+  ApiKnowledgeZonesRoute._addFileChildren(ApiKnowledgeZonesRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -382,7 +522,19 @@ const rootRouteChildren: RootRouteChildren = {
   SyncRoute: SyncRoute,
   DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,
+  ApiKnowledgeZonesRoute: ApiKnowledgeZonesRouteWithChildren,
+  ApiNotebooklmChatRoute: ApiNotebooklmChatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

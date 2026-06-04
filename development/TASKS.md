@@ -14142,7 +14142,7 @@ git push origin main
 ### Diary
 SESSION:2026-06-05|TASK-132:knowledge-api-proxy|endpoints:6|commit:pushed|★★★
 
-[ ] TASK-132
+[x] TASK-132
 
 ## TASK-133: KnowledgePage UI — сторінка керування зонами знань
 
