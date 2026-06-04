@@ -14298,3 +14298,134 @@ def _notify_ai_memory(event, data):
 Diary: `SESSION:2026-06-04|TASK-134:ai-memory-gitnexus|★★★`
 
 [ ] TASK-134
+
+---
+
+## TASK-135: ai-memory routing для AGY phone, AGY3, Copilot
+
+**Виконавець: AGY phone (192.168.3.195)**
+**!!IMPORTANT!! Run locally on Termux (AGY phone). SSH до dev server для Copilot.**
+
+### Мета
+Налаштувати всі агенти на використання ai-memory (http://192.168.3.184:49374) як спільної пам'яті.
+
+### Контекст
+ai-memory MCP server вже підключений до Claude Code на OrangePi (.claude.json + CLAUDE.md).
+Треба налаштувати AGY phone, AGY3, і Copilot.
+
+### 1. AGY phone — додай ai-memory routing в CLAUDE.md
+
+```bash
+# Отримай routing snippet від ai-memory
+BLOCK=$(curl -sf --max-time 15 \
+  http://192.168.3.184:49374/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -X POST \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"memory_install_self_routing","arguments":{}}}' \
+  | python3 -c "
+import json,sys
+d=json.loads(sys.stdin.read())
+r=json.loads(d['result']['content'][0]['text'])
+print(r['markered_block'])
+")
+
+# Перевір чи вже є
+if grep -q "ai-memory:start" ~/.claude/CLAUDE.md 2>/dev/null; then
+  echo "already installed"
+else
+  echo "" >> ~/.claude/CLAUDE.md
+  echo "$BLOCK" >> ~/.claude/CLAUDE.md
+  echo "installed on AGY phone"
+fi
+```
+
+### 2. AGY phone — додай ai-memory до .claude.json MCP servers
+
+```bash
+python3 - << 'PY'
+import json
+with open('/data/data/com.termux/files/home/.claude/.claude.json') as f:
+    d = json.load(f)
+if 'mcpServers' not in d:
+    d['mcpServers'] = {}
+d['mcpServers']['ai-memory'] = {
+    'type': 'http',
+    'url': 'http://192.168.3.184:49374/mcp'
+}
+with open('/data/data/com.termux/files/home/.claude/.claude.json', 'w') as f:
+    json.dump(d, f, indent=2)
+print('ai-memory added to AGY phone MCP config')
+PY
+```
+
+### 3. AGY3 — те саме (SSH до 192.168.3.204)
+
+```bash
+sshpass -p 'TermuxSsh2026!' ssh -o StrictHostKeyChecking=no -p 8022 u0_a410@192.168.3.204 'python3 - << '"'"'PY'"'"'
+import json, subprocess
+BLOCK = subprocess.run(["curl","-sf","--max-time","15",
+  "http://192.168.3.184:49374/mcp",
+  "-H","Content-Type: application/json",
+  "-H","Accept: application/json, text/event-stream",
+  "-X","POST",
+  "-d","{ \"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/call\",\"params\":{\"name\":\"memory_install_self_routing\",\"arguments\":{}}}"
+], capture_output=True, text=True).stdout
+r = json.loads(json.loads(BLOCK)["result"]["content"][0]["text"])
+block = r["markered_block"]
+with open("/data/data/com.termux/files/home/.claude/CLAUDE.md","a") as f:
+    f.write("\n" + block)
+# MCP config
+try:
+    with open("/data/data/com.termux/files/home/.claude/.claude.json") as f:
+        d = json.load(f)
+except:
+    d = {}
+d.setdefault("mcpServers",{})["ai-memory"] = {"type":"http","url":"http://192.168.3.184:49374/mcp"}
+with open("/data/data/com.termux/files/home/.claude/.claude.json","w") as f:
+    json.dump(d,f,indent=2)
+print("AGY3 ai-memory configured")
+PY'
+```
+
+### 4. Copilot (dev server 192.168.3.184) — ai-memory як MCP
+
+```bash
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 '
+# Додай ai-memory до Copilot mcp-config.json
+python3 - << '"'"'PY'"'"'
+import json
+with open("/home/vokov/.copilot/mcp-config.json") as f:
+    d = json.load(f)
+d["mcpServers"]["ai-memory"] = {
+    "url": "http://localhost:49374/mcp",
+    "type": "http"
+}
+with open("/home/vokov/.copilot/mcp-config.json","w") as f:
+    json.dump(d,f,indent=2)
+print("Copilot ai-memory MCP configured:", list(d["mcpServers"].keys()))
+PY
+'
+```
+
+### 5. Перевір ai-memory статус
+
+```bash
+curl -sf http://192.168.3.184:49374/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -X POST \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"memory_status","arguments":{}}}' \
+  2>/dev/null | python3 -c "
+import json,sys
+d=json.loads(sys.stdin.read())
+print(d.get('result',{}).get('content',[{}])[0].get('text','?')[:500])
+"
+```
+
+### Diary
+```
+SESSION:2026-06-04|TASK-135:ai-memory-routing|AGY-phone+AGY3+Copilot|★★★
+```
+
+[ ] TASK-135
