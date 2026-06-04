@@ -14212,3 +14212,82 @@ git push origin main
 SESSION:2026-06-05|TASK-133:knowledge-page-ui|files:KnowledgePage+ZonesList+CreateDialog+route|commit:pushed|★★★
 
 [x] TASK-133
+
+## TASK-134: NotebookLMPage — сторінка чату з AI (/notebooks)
+
+**!!IMPORTANT!! Виконуй локально в Termux на AGY3.**
+
+**Мета:** Реалізувати сторінку /notebooks з двопанельним інтерфейсом чату NotebookLM
+згідно bloom-drakon-integration-spec.md секція "NotebookLMPage".
+
+**Читай спочатку:**
+  ~/workspace/exodus-infra/analysis/bloom-drakon-integration-spec.md — секція "NotebookLMPage"
+  ~/workspace/ai-drakon-scaffolder/src/pages/KnowledgePage.tsx — стиль аналогічної сторінки
+  ~/workspace/ai-drakon-scaffolder/src/components/knowledge/ — приклад компонентів
+
+### 1. Підготовка
+
+cd ~/workspace/ai-drakon-scaffolder && git pull origin main
+
+### 2. Реалізація файлів
+
+**src/pages/NotebookLMPage.tsx** — головна сторінка
+  - Заголовок "NotebookLM"
+  - NotebookLMChatPanel компонент
+  - Інформаційний банер: "Connect to knowledge zones via Garden Gateway"
+
+**src/components/notebooklm/NotebookLMChatPanel.tsx** — двопанельний чат
+  Ліва панель:
+    - Поле вводу notebookUrl (label: "Notebook URL")
+    - Textarea для початкового питання
+    - Select для kind: answer | summary | study_guide | flashcards
+    - Кнопка "Ask"
+  Права панель:
+    - Список повідомлень (messages: {role, content}[])
+    - Loading spinner під час запиту
+    - Citations блок (якщо є в response)
+    - Markdown rendering через dangerouslySetInnerHTML або текст
+  State: notebookUrl, kind, messages[], isLoading, error
+  API call: POST /api/notebooklm/chat з {notebookUrl, message, kind, history}
+
+**src/routes/notebooks.tsx** — TanStack Router route
+  import { createFileRoute } from "@tanstack/react-router"
+  Route path: "/notebooks"
+
+**src/components/workspace/WorkspaceShell.tsx** — додати nav пункт
+  Знайди де додавав "Знання" (Brain icon) і додай поряд:
+  to: "/notebooks", label: "NotebookLM", icon: BookOpen (з lucide-react)
+
+### 3. Lovable sync (після кожного файлу)
+
+  mkdir -p .lovable/src/components/notebooklm
+  cp src/pages/NotebookLMPage.tsx .lovable/src/pages/NotebookLMPage.tsx
+  cp src/components/notebooklm/NotebookLMChatPanel.tsx .lovable/src/components/notebooklm/NotebookLMChatPanel.tsx
+  cp src/routes/notebooks.tsx .lovable/src/routes/notebooks.tsx
+  cp src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx
+
+### 4. Коміт
+
+git add src/pages/NotebookLMPage.tsx \
+        src/components/notebooklm/NotebookLMChatPanel.tsx \
+        src/routes/notebooks.tsx \
+        src/components/workspace/WorkspaceShell.tsx \
+        .lovable/src/pages/NotebookLMPage.tsx \
+        .lovable/src/components/notebooklm/NotebookLMChatPanel.tsx \
+        .lovable/src/routes/notebooks.tsx \
+        .lovable/src/components/workspace/WorkspaceShell.tsx
+git commit -m "feat(notebooklm): add NotebookLMPage with chat panel UI (TASK-134)"
+git push origin main
+
+### 5. Верифікація
+
+  ls src/pages/NotebookLMPage.tsx
+  ls src/components/notebooklm/NotebookLMChatPanel.tsx
+  ls src/routes/notebooks.tsx
+  grep "notebooks\|NotebookLM" src/components/workspace/WorkspaceShell.tsx | head -3
+  git log --oneline -1
+
+### Diary
+SESSION:2026-06-05|TASK-134:notebooklm-page|files:NotebookLMPage+ChatPanel+route+nav|commit:pushed|★★★
+
+[ ] TASK-134
