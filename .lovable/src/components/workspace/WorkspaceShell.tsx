@@ -15,6 +15,7 @@ import {
   Sun,
   Terminal,
   Workflow,
+  Brain, // Added Brain icon
 } from "lucide-react";
 import {
   Sheet,
@@ -58,6 +59,7 @@ type NavItem = {
 const NAV_WORKSPACE: NavItem[] = [
   { to: "/pipelines", label: "Pipeline", icon: Workflow },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
+  { to: "/knowledge", label: "Знання", icon: Brain }, // Added Knowledge item
   { to: "/code", label: "Код", icon: FileCode },
   { to: "/docs", label: "Документація", icon: FileText },
 ];

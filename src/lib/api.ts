@@ -85,14 +85,57 @@ branches: string[];
 };
 
 type ProjectActionResponse = {
-success?: boolean;
-error?: string;
-message?: string;
+  success?: boolean;
+  error?: string;
+  message?: string;
+};
+
+// Knowledge Zone Types
+export type KnowledgeZone = {
+  id: string;
+  name: string;
+  description?: string;
+  expiresAt?: string; // ISO date string
+  noteCount: number;
+  notebookLmStatus: "queued" | "pending" | "running" | "completed" | "failed" | "none";
+  accessType: "web" | "mcp" | "both";
+  notebookLmId?: string;
+  notebookLmTitle?: string;
+};
+
+export type ListKnowledgeZonesResponse = {
+  success: boolean;
+  zones: KnowledgeZone[];
+  error?: string;
+  message?: string;
+};
+
+export type CreateKnowledgeZoneRequest = {
+  name: string;
+  description?: string;
+  ttl?: "1h" | "24h" | "7d"; // Time to live
+  accessType: "web" | "mcp" | "both";
+  createNotebookLm?: boolean;
+  notebookLmTitle?: string;
+  shareEmails?: string[];
+};
+
+export type CreateKnowledgeZoneResponse = {
+  success: boolean;
+  zone?: KnowledgeZone;
+  error?: string;
+  message?: string;
+};
+
+export type DeleteKnowledgeZoneResponse = {
+  success: boolean;
+  error?: string;
+  message?: string;
 };
 
 const headers = (): HeadersInit => ({
-Authorization: `Bearer ${getAccessToken() ?? ""}`,
-"Content-Type": "application/json",
+  Authorization: `Bearer ${getAccessToken() ?? ""}`,
+  "Content-Type": "application/json",
 });
 
 const githubHeaders = (owner?: string, token?: string): HeadersInit => {
@@ -109,215 +152,242 @@ const githubRequestHeaders = (owner?: string, token?: string): HeadersInit => ({
 });
 
 async function parseResponse<T>(response: Response): Promise<T> {
-const data = (await response.json()) as T;
+  const data = (await response.json()) as T;
 
-if (!response.ok) {
-const maybeError = data as { error?: string; message?: string };
-throw new Error(maybeError.message || maybeError.error || `HTTP ${response.status}`);
-}
+  if (!response.ok) {
+    const maybeError = data as { error?: string; message?: string };
+    throw new Error(maybeError.message || maybeError.error || `HTTP ${response.status}`);
+  }
 
-return data;
+  return data;
 }
 
 export const api = {
-login: async (username: string, password: string): Promise<LoginResponse> => {
-const response = await fetch(`${resolveApiBase()}/auth/login`, {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({ username, password }),
-});
+  login: async (username: string, password: string): Promise<LoginResponse> => {
+    const response = await fetch(`${resolveApiBase()}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
 
-return parseResponse<LoginResponse>(response);
-},
+    return parseResponse<LoginResponse>(response);
+  },
 
-generate: async (input: string, type: GenerateType): Promise<GenerateResponse> => {
-const response = await fetch(`${resolveApiBase()}/v1/drakon/generate`, {
-method: "POST",
-headers: headers(),
-body: JSON.stringify({ input, type }),
-});
+  generate: async (input: string, type: GenerateType): Promise<GenerateResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/generate`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ input, type }),
+    });
 
-return parseResponse<GenerateResponse>(response);
-},
+    return parseResponse<GenerateResponse>(response);
+  },
 
-commit: async (folderId: string, diagramId: string, data: Diagram): Promise<ApiResponse> => {
-const response = await fetch(`${resolveApiBase()}/v1/drakon/commit`, {
-method: "POST",
-headers: headers(),
-body: JSON.stringify({ folderSlug: folderId, diagramId, diagram: data }),
-});
+  commit: async (folderId: string, diagramId: string, data: Diagram): Promise<ApiResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/commit`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ folderSlug: folderId, diagramId, diagram: data }),
+    });
 
-return parseResponse<ApiResponse>(response);
-},
+    return parseResponse<ApiResponse>(response);
+  },
 
-saveDiagram: async (
-folderSlug: string,
-diagramId: string,
-diagram: unknown,
-): Promise<SaveDiagramResponse> => {
-const response = await fetch(`${resolveApiBase()}/v1/drakon/commit`, {
-method: "POST",
-headers: headers(),
-body: JSON.stringify({ folderSlug, diagramId, diagram }),
-});
+  saveDiagram: async (
+    folderSlug: string,
+    diagramId: string,
+    diagram: unknown,
+  ): Promise<SaveDiagramResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/commit`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ folderSlug, diagramId, diagram }),
+    });
 
-return parseResponse<SaveDiagramResponse>(response);
-},
+    return parseResponse<SaveDiagramResponse>(response);
+  },
 
-getDiagram: (folderId: string, diagramId: string): Promise<DiagramGetResponse> =>
-fetch(`${resolveApiBase()}/v1/drakon/${folderId}/${diagramId}`, {
-headers: headers(),
-}).then((r) => r.json()),
+  getDiagram: (folderId: string, diagramId: string): Promise<DiagramGetResponse> =>
+    fetch(`${resolveApiBase()}/v1/drakon/${folderId}/${diagramId}`, {
+      headers: headers(),
+    }).then((r) => r.json()),
 
-listDiagrams: (folderId: string): Promise<DiagramListResponse> =>
-fetch(`${resolveApiBase()}/v1/drakon/${folderId}`, {
-headers: headers(),
-}).then((r) => r.json()),
+  listDiagrams: (folderId: string): Promise<DiagramListResponse> =>
+    fetch(`${resolveApiBase()}/v1/drakon/${folderId}`, {
+      headers: headers(),
+    }).then((r) => r.json()),
 
-deleteDiagram: async (folderId: string, diagramId: string): Promise<ApiResponse> => {
-const response = await fetch(`${resolveApiBase()}/v1/drakon/${folderId}/${diagramId}`, {
-method: "DELETE",
-headers: headers(),
-});
+  deleteDiagram: async (folderId: string, diagramId: string): Promise<ApiResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/${folderId}/${diagramId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
 
-return parseResponse<ApiResponse>(response);
-},
+    return parseResponse<ApiResponse>(response);
+  },
 
-analyzeCodebase: async (request: CodebaseAnalysisRequest): Promise<{ jobId: string }> => {
-const response = await fetch(`${resolveApiBase()}/v1/analysis/codebase`, {
-method: "POST",
-headers: headers(),
-body: JSON.stringify(request),
-});
+  analyzeCodebase: async (request: CodebaseAnalysisRequest): Promise<{ jobId: string }> => {
+    const response = await fetch(`${resolveApiBase()}/v1/analysis/codebase`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(request),
+    });
 
-const data = await parseResponse<AnalyzeCodebaseResponse>(response);
-return { jobId: data.jobId };
-},
+    const data = await parseResponse<AnalyzeCodebaseResponse>(response);
+    return { jobId: data.jobId };
+  },
 
-getAnalysisJob: async (jobId: string): Promise<AnalysisJob> => {
-const response = await
-fetch(`${resolveApiBase()}/v1/analysis/jobs/${encodeURIComponent(jobId)}`, {
-method: "GET",
-headers: headers(),
-});
+  getAnalysisJob: async (jobId: string): Promise<AnalysisJob> => {
+    const response = await
+    fetch(`${resolveApiBase()}/v1/analysis/jobs/${encodeURIComponent(jobId)}`, {
+      method: "GET",
+      headers: headers(),
+    });
 
-return parseResponse<AnalysisJob>(response);
-},
+    return parseResponse<AnalysisJob>(response);
+  },
 
-listAnalysisJobs: async (): Promise<AnalysisJob[]> => {
-const response = await fetch(`${resolveApiBase()}/v1/analysis/jobs`, {
-method: "GET",
-headers: headers(),
-});
+  listAnalysisJobs: async (): Promise<AnalysisJob[]> => {
+    const response = await fetch(`${resolveApiBase()}/v1/analysis/jobs`, {
+      method: "GET",
+      headers: headers(),
+    });
 
-return parseResponse<AnalysisJob[]>(response);
-},
+    return parseResponse<AnalysisJob[]>(response);
+  },
 
-listProjects: (): Promise<{ success: boolean; projects: unknown[] }> =>
-fetch(`${resolveApiBase()}/v1/projects/list`, { headers: headers() }).then((r) => r.json()),
+  listProjects: (): Promise<{ success: boolean; projects: unknown[] }> =>
+    fetch(`${resolveApiBase()}/v1/projects/list`, { headers: headers() }).then((r) => r.json()),
 
-listDrakonIr: (project?: string): Promise<{ success: boolean; diagrams: string[]; count: number
-}> => {
-const qs = project ? `?project=${encodeURIComponent(project)}` : "";
-return fetch(`${resolveApiBase()}/v1/drakon-ir/list${qs}`, { headers: headers() }).then((r) => r.json());
-},
+  listDrakonIr: (project?: string): Promise<{ success: boolean; diagrams: string[]; count: number
+  }> => {
+    const qs = project ? `?project=${encodeURIComponent(project)}` : "";
+    return fetch(`${resolveApiBase()}/v1/drakon-ir/list${qs}`, { headers: headers() }).then((r) => r.json());
+  },
 
-getDrakonIr: (name: string, project?: string): Promise<{ success: boolean; name: string;
-diagram: object }> => {
-const proj = project ? `&project=${encodeURIComponent(project)}` : "";
-return fetch(`${resolveApiBase()}/v1/drakon-ir/${encodeURIComponent(name)}?_=1${proj}`, { headers: headers() }).then((r) => r.json());
-},
+  getDrakonIr: (name: string, project?: string): Promise<{ success: boolean; name: string;
+  diagram: object }> => {
+    const proj = project ? `&project=${encodeURIComponent(project)}` : "";
+    return fetch(`${resolveApiBase()}/v1/drakon-ir/${encodeURIComponent(name)}?_=1${proj}`, { headers: headers() }).then((r) => r.json());
+  },
 
-addProject: (data: {
-slug: string; name: string; path: string; description?: string;
-hasDrakonIr?: boolean; hasDocs?: boolean;
-github?: { owner: string; repo: string; branch: string };
-}): Promise<{ success: boolean; project: unknown }> =>
-fetch(`${resolveApiBase()}/v1/projects/add`, {
-method: "POST",
-headers: { ...headers(), "Content-Type": "application/json" },
-body: JSON.stringify(data),
-}).then((r) => r.json()),
+  addProject: (data: {
+    slug: string; name: string; path: string; description?: string;
+    hasDrakonIr?: boolean; hasDocs?: boolean;
+    github?: { owner: string; repo: string; branch: string };
+  }): Promise<{ success: boolean; project: unknown }> =>
+    fetch(`${resolveApiBase()}/v1/projects/add`, {
+      method: "POST",
+      headers: { ...headers(), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }).then((r) => r.json()),
 
-deleteProject: (slug: string): Promise<{ success: boolean; deleted: string }> =>
-fetch(`${resolveApiBase()}/v1/projects/${encodeURIComponent(slug)}`, {
-method: "DELETE",
-headers: headers(),
-}).then((r) => r.json()),
+  deleteProject: (slug: string): Promise<{ success: boolean; deleted: string }> =>
+    fetch(`${resolveApiBase()}/v1/projects/${encodeURIComponent(slug)}`, {
+      method: "DELETE",
+      headers: headers(),
+    }).then((r) => r.json()),
 
-runArchitectAnalyze: async (project: string): Promise<ProjectActionResponse> => {
-const response = await fetch(`${resolveApiBase()}/v1/architect/analyze`, {
-method: "POST",
-headers: headers(),
-body: JSON.stringify({ project }),
-});
-return parseResponse<ProjectActionResponse>(response);
-},
+  runArchitectAnalyze: async (project: string): Promise<ProjectActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/architect/analyze`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ project }),
+    });
+    return parseResponse<ProjectActionResponse>(response);
+  },
 
-runDrakonGenerate: async (project: string): Promise<ProjectActionResponse> => {
-const response = await fetch(`${resolveApiBase()}/v1/drakon/generate`, {
-method: "POST",
-headers: headers(),
-body: JSON.stringify({ project }),
-});
-return parseResponse<ProjectActionResponse>(response);
-},
+  runDrakonGenerate: async (project: string): Promise<ProjectActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/drakon/generate`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ project }),
+    });
+    return parseResponse<ProjectActionResponse>(response);
+  },
 
-runDocsDocument: async (project: string, instructions = ""): Promise<ProjectActionResponse> => {
-const response = await fetch(`${resolveApiBase()}/v1/docs/document`, {
-method: "POST",
-headers: headers(),
-body: JSON.stringify({ project, instructions }),
-});
-return parseResponse<ProjectActionResponse>(response);
-},
+  runDocsDocument: async (project: string, instructions = ""): Promise<ProjectActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/docs/document`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ project, instructions }),
+    });
+    return parseResponse<ProjectActionResponse>(response);
+  },
 
-githubListTree: (
-owner: string,
-repo: string,
-path = "",
-branch = "main",
-token?: string,
-): Promise<GithubTreeResponse> =>
-fetch(
-`${resolveApiBase()}/v1/github/tree?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
-{ headers: githubRequestHeaders(owner, token) },
-).then((r) => r.json()),
+  // Knowledge Zone API
+  listKnowledgeZones: async (): Promise<ListKnowledgeZonesResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/knowledge/zones`, {
+      headers: headers(),
+    });
+    return parseResponse<ListKnowledgeZonesResponse>(response);
+  },
 
-githubGetFile: (
-owner: string,
-repo: string,
-path: string,
-branch = "main",
-token?: string,
-): Promise<GithubFileResponse> =>
-fetch(
-`${resolveApiBase()}/v1/github/file?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
-{ headers: githubRequestHeaders(owner, token) },
-).then((r) => r.json()),
+  createKnowledgeZone: async (
+    data: CreateKnowledgeZoneRequest,
+  ): Promise<CreateKnowledgeZoneResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/knowledge/zones`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(data),
+    });
+    return parseResponse<CreateKnowledgeZoneResponse>(response);
+  },
 
-githubCommitFile: async (
-owner: string,
-repo: string,
-path: string,
-content: string,
-message: string,
-branch = "main",
-token?: string,
-): Promise<GithubCommitResponse> => {
-const response = await fetch(`${resolveApiBase()}/v1/github/commit`, {
-method: "POST",
-headers: githubRequestHeaders(owner, token),
-body: JSON.stringify({ owner, repo, path, content, message, branch }),
-});
+  deleteKnowledgeZone: async (zoneId: string): Promise<DeleteKnowledgeZoneResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/knowledge/zones/${zoneId}`, {
+      method: "DELETE",
+      headers: headers(),
+    });
+    return parseResponse<DeleteKnowledgeZoneResponse>(response);
+  },
 
-return response.json();
-},
+  githubListTree: (
+    owner: string,
+    repo: string,
+    path = "",
+    branch = "main",
+    token?: string,
+  ): Promise<GithubTreeResponse> =>
+    fetch(
+      `${resolveApiBase()}/v1/github/tree?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
+      { headers: githubRequestHeaders(owner, token) },
+    ).then((r) => r.json()),
 
-githubListBranches: (owner: string, repo: string, token?: string):
-Promise<GithubBranchesResponse> =>
-fetch(
-`${resolveApiBase()}/v1/github/branches?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
-{ headers: githubRequestHeaders(owner, token) },
-).then((r) => r.json()),
+  githubGetFile: (
+    owner: string,
+    repo: string,
+    path: string,
+    branch = "main",
+    token?: string,
+  ): Promise<GithubFileResponse> =>
+    fetch(
+      `${resolveApiBase()}/v1/github/file?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
+      { headers: githubRequestHeaders(owner, token) },
+    ).then((r) => r.json()),
+
+  githubCommitFile: async (
+    owner: string,
+    repo: string,
+    path: string,
+    content: string,
+    message: string,
+    branch = "main",
+    token?: string,
+  ): Promise<GithubCommitResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/github/commit`, {
+      method: "POST",
+      headers: githubRequestHeaders(owner, token),
+      body: JSON.stringify({ owner, repo, path, content, message, branch }),
+    });
+
+    return response.json();
+  },
+
+  githubListBranches: (owner: string, repo: string, token?: string):
+  Promise<GithubBranchesResponse> =>
+    fetch(
+      `${resolveApiBase()}/v1/github/branches?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
+      { headers: githubRequestHeaders(owner, token) },
+    ).then((r) => r.json()),
 };
