@@ -13699,32 +13699,6 @@ SESSION:2026-06-03|TASK-129:copilot-gitnexus-research|indexed:uav-watcher+sonate
 
 
 
-## TASK-134: ai-memory інтеграція в gitnexus_route.py
-
-**Виконавець: AGY phone** | **SSH to 192.168.3.184**
-
-Додати `_notify_ai_memory(event, data)` в обидва `gitnexus_route.py` (architect:8766 + docs:8767).
-Викликати після: `/analyze` → `GitNexusAnalyze`, `/impact` → `GitNexusImpact`, `/generate-docs` → `GitNexusGenDocs`.
-
-```python
-def _notify_ai_memory(event, data):
-    try:
-        import urllib.request, json
-        payload = json.dumps({"event": event, **data}).encode()
-        req = urllib.request.Request("http://localhost:49374/hook", data=payload,
-            headers={"Content-Type": "application/json"}, method="POST")
-        urllib.request.urlopen(req, timeout=3)
-    except Exception:
-        pass
-```
-
-Після додавання: restart обох сервісів + тест `curl http://localhost:49374/events?limit=3`.
-Коміт: `feat(gitnexus): ai-memory event sync (TASK-134)`
-Diary: `SESSION:2026-06-04|TASK-134:ai-memory-gitnexus|★★★`
-
-[ ] TASK-134
-
----
 
 ## TASK-135: ai-memory routing для AGY phone, AGY3, Copilot
 
