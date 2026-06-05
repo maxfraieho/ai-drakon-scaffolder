@@ -6,6 +6,7 @@ PanelLeftOpen, PanelLeftClose,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
 import { NoteEditor } from "@/components/docs/garden/NoteEditor";
 import { useNotesEditor } from "@/hooks/useNotesEditor";
@@ -40,6 +41,18 @@ const LOCAL_FOLDERS_KEY = "docs.localFolders";
 interface NotesTabProps {
 focusSlug?: string | null;
 onFocusClear?: () => void;
+}
+
+
+function stripMarkdown(s: string): string {
+  return s
+    .replace(/^#{1,6}\s+/, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[_~]/g, "")
+    .trim();
 }
 
 function slugifySegment(s: string): string {
@@ -103,7 +116,7 @@ isActive && "font-medium",
 )}
 >
 <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
-<span className="truncate">{node.title ?? node.slug}</span>
+<span className="truncate">{stripMarkdown(node.title ?? node.slug ?? "")}</span>
 </button>
 <button
 onClick={(e) => { e.stopPropagation(); onDeleteNote(node.slug!); }}
@@ -344,7 +357,7 @@ return (
 className={cn(
 "min-w-0 flex-col border-border bg-muted/20",
 sidebarOpen ? "flex max-h-[38dvh] border-b" : "hidden",
-"md:flex md:h-full md:max-h-none md:w-56 md:shrink-0 md:border-b-0 md:border-r",
+"md:flex md:h-full md:max-h-none md:w-64 md:shrink-0 md:border-b-0 md:border-r md:resize-x md:overflow-auto",
 )}
 >
 <div className="flex items-center justify-between border-b border-border p-2">

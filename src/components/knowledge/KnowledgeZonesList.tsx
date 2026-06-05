@@ -9,6 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
+
+function getExpiryColor(expiresAt?: string): string {
+  if (!expiresAt) return "";
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  if (diff < 0) return "text-destructive";
+  if (diff < 3_600_000) return "text-destructive";
+  if (diff < 86_400_000) return "text-yellow-500";
+  return "text-emerald-500";
+}
+
+function copyText(text: string, label: string) {
+  navigator.clipboard.writeText(text).then(
+    () => { try { (window as any).__toast?.success?.(`${label} copied`); } catch {} },
+    () => {}
+  );
+}
+
 export function KnowledgeZonesList() {
   const queryClient = useQueryClient();
 
@@ -110,8 +127,14 @@ export function KnowledgeZonesList() {
               
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {zone.expiresAt && (
-                  <span className="text-muted-foreground">
-                    Expires {formatDistanceToNow(parseISO(zone.expiresAt), { addSuffix: true })}
+                  <span className={(() => {
+                    const diff = new Date(zone.expiresAt!).getTime() - Date.now();
+                    if (diff < 0) return "text-destructive font-medium";
+                    if (diff < 3_600_000) return "text-destructive";
+                    if (diff < 86_400_000) return "text-yellow-500";
+                    return "text-emerald-500";
+                  })()}>
+                    ⏱ {formatDistanceToNow(parseISO(zone.expiresAt!), { addSuffix: true })}
                   </span>
                 )}
                 <Badge variant="outline">Notes: {zone.noteCount}</Badge>
