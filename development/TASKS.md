@@ -14422,7 +14422,7 @@ curl -s https://notebooklm.exodus.pp.ua/mcp \
 ### Diary
 SESSION:2026-06-05|TASK-135:notebooklm-mcp-switch|commit:<hash>|★★★
 
-[ ] TASK-135
+[x] TASK-135 (in_progress)
 done cat
 done cat
 done cat
