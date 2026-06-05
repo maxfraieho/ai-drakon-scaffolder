@@ -1,4 +1,5 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
+import { client } from "@/lib/appwrite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
 Outlet,
@@ -131,6 +132,8 @@ href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wg
 
 function RootComponent() {
 const { queryClient } = Route.useRouteContext();
+
+useEffect(() => { client.ping(); }, []);
 
 
 const location = useLocation();
