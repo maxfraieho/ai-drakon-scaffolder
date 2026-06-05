@@ -14488,6 +14488,87 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
 [x] TASK-136
 
 
+## TASK-139: Knowledge UI redesign — browser research + OpenDesign improvement
+[ ] TASK-139
+    Run on dev server: sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+    Project: ~/workspace/ai-drakon-scaffolder/
+
+    ### Goal
+    The /knowledge page (Zones + Vault tabs) has UX problems. Research the UI via browser
+    automation, then use OpenDesign to generate improved components, implement them.
+
+    ### Current UI Problems (from user feedback)
+    1. Vault tab (NotesTab): article titles shown with raw markdown tags visible
+    2. Vault file tree: columns not resizable, file names truncated/cramped
+    3. Zone creation dialog: folder checkboxes layout needs improvement
+    4. KnowledgeZonesList: zone cards need better layout
+    5. Overall tabs layout is inconvenient
+
+    ### Step 1 — Study current UI via browser
+    Use agent-workspace MCP browser on RPi (192.168.3.234) to navigate to:
+    https://ai-drakon-scaffolder.pages.dev
+    Take screenshots of /knowledge page — Zones tab, Vault tab, Create Zone dialog.
+    Note all visual issues.
+
+    ### Step 2 — Use OpenDesign to generate improved UI
+    OpenDesign REST API base: http://192.168.3.184:7459
+    Auth: Bearer token (find full token: grep "opendesign\|7459\|token" ~/workspace/ai-drakon-scaffolder/.env 2>/dev/null
+          or check: curl -s http://192.168.3.184:7459/v1/agents -H "Authorization: Bearer 2269d" | head -100)
+
+    POST http://192.168.3.184:7459/v1/run
+    Content-Type: application/json
+    Authorization: Bearer <token>
+    Body: {"prompt": "Design improved vault file manager: left panel = folder tree (200-300px, collapsible folders, plain text titles no markdown), right panel = note content. Use ResizablePanelGroup if available in shadcn. Clean, dense layout for developer tool.", "pluginId": "ai-drakon-mobile"}
+
+    Also generate improved KnowledgeZonesList card layout with OpenDesign.
+
+    ### Step 3 — Implement fixes on dev server
+
+    A. CRITICAL FIX — strip markdown from note titles in tree:
+    File: src/components/docs/NotesTab.tsx
+    Find where note.title is displayed in the tree (look for TreeNode title display)
+    Add: const cleanTitle = (t: string) => t.replace(/[*_#`\[\]()]/g, "").trim()
+    Apply cleanTitle() to all title displays in the tree
+
+    B. Vault 2-panel layout:
+    File: src/components/docs/NotesTab.tsx
+    Check if ResizablePanel exists: ls ~/workspace/ai-drakon-scaffolder/src/components/ui/resizable* 2>/dev/null
+    If yes: wrap tree panel + editor panel in ResizablePanelGroup with ResizableHandle
+    If no: use flex layout: tree panel w-64 shrink-0 border-r, editor panel flex-1
+
+    C. KnowledgePage tabs styling:
+    File: src/pages/KnowledgePage.tsx
+    Improve tab navigation visual design based on OpenDesign output
+
+    D. KnowledgeZonesList cards:
+    File: src/components/knowledge/KnowledgeZonesList.tsx
+    Improve card layout: show folders array, note count, better spacing
+
+    ### Step 4 — Commit + .lovable sync + Push
+    cd ~/workspace/ai-drakon-scaffolder
+    git add src/components/docs/NotesTab.tsx src/components/knowledge/ src/pages/KnowledgePage.tsx
+    git commit -m "feat(knowledge-ui): markdown strip + 2-panel vault + zone cards (TASK-139)"
+    git push origin main
+    for f in src/components/docs/NotesTab.tsx src/components/knowledge/KnowledgeZonesList.tsx src/components/knowledge/ZoneCreationDialog.tsx src/pages/KnowledgePage.tsx; do
+      cp $f .lovable/$f && echo synced $f
+    done
+    git add .lovable && git commit -m "sync(lovable): TASK-139 UI" && git push origin main
+
+    ### Mark done + diary
+    python3 -c "
+import re
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-139','[x] TASK-139',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+    git add development/TASKS.md && git commit -m "chore(tasks): TASK-139 done" && git push origin main
+    python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-06-05|TASK-139:knowledge-ui|vault-markdown-fix+2panel+zones|commit:<hash>|STAR3"
+
+    !!IMPORTANT!! Run on dev server 192.168.3.184 NOT locally
+    !!IMPORTANT!! .lovable sync MANDATORY before final push
+    !!IMPORTANT!! OpenDesign at http://192.168.3.184:7459
+
+
 ## TASK-138: Knowledge Vault tab + ZoneCreationDialog folder selection + JIT accessCode
 [x] TASK-138
     Run on dev server: sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
