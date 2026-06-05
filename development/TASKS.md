@@ -14427,3 +14427,62 @@ done cat
 done cat
 done cat
 done cat
+
+## TASK-136: Діагностика та виправлення garden-mcp.exodus.pp.ua 502
+
+**!!IMPORTANT!! Run locally on AGY2 (Windows). Use PowerShell/curl. NO SSH.**
+
+### Контекст
+- garden-mcp.exodus.pp.ua — Cloudflare Worker повертає 502 на всі запити
+- Потрібен для Knowledge Zones в AI-DRAKON (MinIO зони)
+- CF Account ID: c354ea45a11a1e1c14f1f41fe780cb34
+- CF API Token: cfat_em4yaiFnrrV7sHcDVIC2j9XzWaC3mujKwY0phHm0449cf8de
+- KV namespace ID: 3fbc4a87aa36480cb661b2b93fe01aa5
+- Worker name: garden-mcp-server
+
+### Крок 1: Перевірити bindings Worker
+```powershell
+$h = @{ Authorization = "Bearer cfat_em4yaiFnrrV7sHcDVIC2j9XzWaC3mujKwY0phHm0449cf8de" }
+$r = Invoke-RestMethod "https://api.cloudflare.com/client/v4/accounts/c354ea45a11a1e1c14f1f41fe780cb34/workers/scripts/garden-mcp-server/bindings" -Headers $h
+$r | ConvertTo-Json -Depth 5
+```
+Очікуємо binding type=kv_namespace name=GARDEN_KV з правильним namespace_id.
+
+### Крок 2: Перевірити KV ключі
+```powershell
+$r2 = Invoke-RestMethod "https://api.cloudflare.com/client/v4/accounts/c354ea45a11a1e1c14f1f41fe780cb34/storage/kv/namespaces/3fbc4a87aa36480cb661b2b93fe01aa5/keys" -Headers $h
+$r2 | ConvertTo-Json
+```
+
+### Крок 3: Спробувати init Worker
+```powershell
+$body = '{"password":"bloom2026!"}'
+try {
+    Invoke-RestMethod "https://garden-mcp.exodus.pp.ua/auth/setup" -Method POST -Body $body -ContentType "application/json"
+} catch {
+    Write-Host "Error: $_"
+}
+```
+
+### Крок 4: Перевірити Worker deployments
+```powershell
+$r3 = Invoke-RestMethod "https://api.cloudflare.com/client/v4/accounts/c354ea45a11a1e1c14f1f41fe780cb34/workers/scripts/garden-mcp-server/deployments" -Headers $h
+$r3 | ConvertTo-Json -Depth 3
+```
+
+### Результат
+Записати в файл development\garden-mcp-diagnosis.md з висновком що зламано.
+
+### Git commit
+```powershell
+cd C:\Users\vokov\workspace\ai-drakon-scaffolder
+git pull origin main
+git add development\garden-mcp-diagnosis.md development\TASKS.md
+git commit -m "chore(tasks): mark TASK-136 done + garden-mcp diagnosis"
+git push origin main
+```
+
+### Diary
+SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-diagnosis-md|***
+
+[ ] TASK-136
