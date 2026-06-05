@@ -14486,3 +14486,6 @@ git push origin main
 SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-diagnosis-md|***
 
 [x] TASK-136
+
+## TASK-137: GARDEN_OWNER_PASSWORD setup
+[x] TASK-137
