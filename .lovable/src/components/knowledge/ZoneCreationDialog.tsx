@@ -295,7 +295,7 @@ export function ZoneCreationDialog({
   const handleClose = () => {
     setName("");
     setDescription("");
-    setTtl("24h");
+    setTtlMinutes(1440);
     setAccessType("web");
     setCreateNotebookLm(false);
     setNotebookLmTitle("");

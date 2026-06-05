@@ -355,6 +355,8 @@ export const api = {
   }): Promise<{
     success: boolean;
     answer: string;
+    citations?: any[];
+    message?: string;
     error?: string;
   }> => {
     const response = await fetch(`/api/notebooklm/chat`, {

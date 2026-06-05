@@ -14566,7 +14566,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
 
 
 ## TASK-141: Diagnose and fix /knowledge page crash
-[ ] TASK-141
+[x] TASK-141
     !!IMPORTANT!! Run ALL commands on dev server 192.168.3.184
     Project: ~/workspace/ai-drakon-scaffolder/
 
