@@ -14488,6 +14488,53 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
 [x] TASK-136
 
 
+## TASK-141: Diagnose and fix /knowledge page crash
+[ ] TASK-141
+    !!IMPORTANT!! Run ALL commands on dev server 192.168.3.184
+    Project: ~/workspace/ai-drakon-scaffolder/
+
+    ### Problem
+    /knowledge page shows "This page did not load" after commits 93af1a4..87b7165.
+
+    ### Step 1 MANDATORY — MemPalace first
+    python3 -m mempalace search "knowledge page crash zones vault" --wing ai-drakon-scaffolder
+    python3 -m mempalace search "KnowledgePage ZoneCreationDialog" --wing ai-drakon-scaffolder
+
+    ### Step 2 MANDATORY — GitNexus research
+    curl -s http://192.168.3.184:4747/api/repos | python3 -m json.tool | grep -A2 ai-drakon
+    curl -s "http://192.168.3.184:4747/api/repos/ai-drakon-scaffolder/context?name=KnowledgePage" | python3 -m json.tool | head -40
+
+    ### Step 3 — Build check (source of truth)
+    cd ~/workspace/ai-drakon-scaffolder/.lovable
+    npm run build 2>&1 | tail -60
+    # Fix ALL build errors found
+
+    ### Step 4 — Sync check
+    for f in src/pages/KnowledgePage.tsx src/routes/knowledge.tsx src/components/knowledge/ZoneCreationDialog.tsx src/components/docs/NotesTab.tsx src/routes/api.knowledge.zones.ts; do
+      diff ~/workspace/ai-drakon-scaffolder/$f ~/workspace/ai-drakon-scaffolder/.lovable/$f && echo "$f OK" || echo "$f OUT OF SYNC"
+    done
+    # Fix any out-of-sync files: cp src/X .lovable/src/X
+
+    ### Step 5 — Fix all issues, rebuild to confirm 0 errors
+
+    ### Step 6 — Commit + push
+    cd ~/workspace/ai-drakon-scaffolder
+    git add src/ .lovable/src/
+    git commit -m "fix(knowledge): resolve page crash TASK-141"
+    git push origin main
+    python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-141','[x] TASK-141',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+    git add development/TASKS.md && git commit -m "chore(tasks): TASK-141 done" && git push origin main
+    python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-06-05|TASK-141:knowledge-crash|root-cause:BUILD-ERROR|commit:<hash>|STAR3"
+
+    !!IMPORTANT!! MemPalace + GitNexus MANDATORY before reading files
+    !!IMPORTANT!! npm run build must pass with 0 errors before commit
+    !!IMPORTANT!! .lovable sync mandatory for ALL changed files
+
+
 ## TASK-140: Fix zone creation — ttlMinutes + fetch note content before submit
 [x] TASK-140
     !!IMPORTANT!! Run ALL commands on dev server 192.168.3.184, NOT locally on Termux
