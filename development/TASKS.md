@@ -14794,7 +14794,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
 
 
 ## TASK-139: Knowledge UI redesign — browser research + OpenDesign improvement
-[ ] TASK-139
+[x] TASK-139
     Run on dev server: sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
     Project: ~/workspace/ai-drakon-scaffolder/
 
