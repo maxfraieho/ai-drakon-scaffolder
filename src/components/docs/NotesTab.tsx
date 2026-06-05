@@ -6,7 +6,6 @@ PanelLeftOpen, PanelLeftClose,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
 import { NoteEditor } from "@/components/docs/garden/NoteEditor";
 import { useNotesEditor } from "@/hooks/useNotesEditor";

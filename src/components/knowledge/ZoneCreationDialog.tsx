@@ -23,7 +23,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Folder, ChevronRight, ChevronDown } from "lucide-react";
 import { api, type CreateKnowledgeZoneRequest, type KnowledgeZone } from "@/lib/api";
-import { fetchNotesTree, type TreeNode } from "@/lib/garden/notesApi";
+import { fetchNotesTree, fetchNote, type TreeNode } from "@/lib/garden/notesApi";
 import { ZoneCreatedDialog } from "./ZoneCreatedDialog";
 import { cn } from "@/lib/utils";
 

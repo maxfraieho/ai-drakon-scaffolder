@@ -6,44 +6,52 @@ export const Route = createFileRoute("/api/knowledge/zones")({
     handlers: {
       GET: async ({ request }) => {
         const resp = await handleProxyRequest("/zones/list", "GET", request);
+        const text = await resp.text();
         try {
-          const body = await resp.json() as any;
-          // garden-mcp returns array directly or {zones:[]}
-          const rawZones = Array.isArray(body) ? body : (body.zones ?? body.data ?? []);
+          const body = JSON.parse(text) as any;
+          const rawZones = Array.isArray(body)
+            ? body
+            : Array.isArray(body.zones)
+            ? body.zones
+            : [];
           const zones = rawZones.map((z: any) => ({
-            id: z.id ?? z.zoneId,
+            id: z.id ?? z.zoneId ?? "",
             name: z.name ?? "",
             description: z.description,
             expiresAt: z.expiresAt,
             createdAt: z.createdAt,
             noteCount: z.noteCount ?? 0,
-            accessType: z.accessType ?? "web",
-            notebookLmStatus: z.notebookLmStatus ?? "none",
+            accessType: (z.accessType ?? "web") as "web" | "mcp" | "both",
+            notebookLmStatus: (z.notebookLmStatus ?? "none") as "none",
             accessCode: z.accessCode,
             webUrl: z.webUrl ?? z.zoneUrl,
             mcpUrl: z.mcpUrl,
             folders: z.folders ?? [],
           }));
-          return new Response(JSON.stringify({ success: true, zones }), {
-            status: 200,
+          return new Response(
+            JSON.stringify({ success: true, zones }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
+          );
+        } catch {
+          // pass through raw response if not JSON
+          return new Response(text, {
+            status: resp.status,
             headers: { "Content-Type": "application/json" },
           });
-        } catch {
-          return resp;
         }
       },
       POST: async ({ request }) => {
-        const resp = await handleProxyRequest("/zones/create", "POST", request, { forwardBody: true });
+        const resp = await handleProxyRequest("/zones/create", "POST", request);
+        const text = await resp.text();
         try {
-          const body = await resp.json() as any;
-          if (body.success && (body.zoneId || body.id)) {
+          const body = JSON.parse(text) as any;
+          if (body.success && (body.zoneId ?? body.id)) {
             const zone = {
-              id: body.zoneId ?? body.id,
+              id: body.zoneId ?? body.id ?? "",
               name: body.name ?? "",
               description: body.description,
               accessCode: body.accessCode,
               webUrl: body.webUrl ?? body.zoneUrl,
-              zoneUrl: body.zoneUrl,
               mcpUrl: body.mcpUrl,
               expiresAt: body.expiresAt,
               noteCount: body.noteCount ?? 0,
@@ -51,17 +59,20 @@ export const Route = createFileRoute("/api/knowledge/zones")({
               accessType: (body.accessType ?? "web") as "web" | "mcp" | "both",
               folders: body.folders ?? [],
             };
-            return new Response(JSON.stringify({ success: true, zone }), {
-              status: 200,
-              headers: { "Content-Type": "application/json" },
-            });
+            return new Response(
+              JSON.stringify({ success: true, zone }),
+              { status: 200, headers: { "Content-Type": "application/json" } },
+            );
           }
-          return new Response(JSON.stringify(body), {
+          return new Response(text, {
             status: resp.status,
             headers: { "Content-Type": "application/json" },
           });
         } catch {
-          return resp;
+          return new Response(text, {
+            status: resp.status,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       },
     },
