@@ -14489,7 +14489,7 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
 
 
 ## TASK-140: Fix zone creation — ttlMinutes + fetch note content before submit
-[ ] TASK-140
+[x] TASK-140
     !!IMPORTANT!! Run ALL commands on dev server 192.168.3.184, NOT locally on Termux
     Project: ~/workspace/ai-drakon-scaffolder/
 

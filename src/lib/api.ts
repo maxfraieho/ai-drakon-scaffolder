@@ -118,7 +118,7 @@ export type ListKnowledgeZonesResponse = {
 export type CreateKnowledgeZoneRequest = {
   name: string;
   description?: string;
-  ttl?: "1h" | "24h" | "7d"; // Time to live
+  ttlMinutes?: number; // minutes: 60=1h, 1440=24h, 10080=7d
   accessType: "web" | "mcp" | "both";
   createNotebookLm?: boolean;
   notebookLmTitle?: string;

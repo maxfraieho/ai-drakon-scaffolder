@@ -120,7 +120,7 @@ export function ZoneCreationDialog({
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [ttl, setTtl] = useState<CreateKnowledgeZoneRequest["ttl"]>("24h");
+  const [ttlMinutes, setTtlMinutes] = useState(1440); // default 24h
   const [accessType, setAccessType] = useState<
     CreateKnowledgeZoneRequest["accessType"]
   >("web");
@@ -250,7 +250,7 @@ export function ZoneCreationDialog({
     const data: CreateKnowledgeZoneRequest = {
       name,
       description: description.trim() || undefined,
-      ttl,
+      ttlMinutes,
       accessType,
       createNotebookLm,
       folders: Array.from(selectedFolders),
@@ -262,7 +262,34 @@ export function ZoneCreationDialog({
       data.shareEmails = shareEmails.split(",").map((s) => s.trim()).filter(Boolean);
     }
 
-    createZoneMutation.mutate(data);
+    // Fetch note content for selected folders
+    const fetchAndSubmit = async () => {
+      const treeData = treeQuery.data ?? [];
+      const noteNodes: TreeNode[] = [];
+      const walk = (nodes: TreeNode[]) => {
+        for (const n of nodes) {
+          if (n.type === "note" && n.slug) {
+            const parts = n.slug.split("/");
+            const folder = parts.slice(0, -1).join("/");
+            if (selectedFolders.size === 0 || selectedFolders.has(folder) || selectedFolders.has(parts[0])) {
+              noteNodes.push(n);
+            }
+          }
+          if (n.children) walk(n.children);
+        }
+      };
+      walk(treeData);
+      const notes = await Promise.all(noteNodes.map(async (n) => {
+        try {
+          const nc = await fetchNote(n.slug!);
+          return { slug: n.slug!, title: n.title ?? n.slug!, content: nc?.content ?? "", tags: nc?.tags ?? [] };
+        } catch { return { slug: n.slug!, title: n.title ?? n.slug!, content: "", tags: [] }; }
+      }));
+      data.noteCount = notes.length;
+      (data as any).notes = notes;
+      createZoneMutation.mutate(data);
+    };
+    void fetchAndSubmit();
   };
 
   const handleClose = () => {
@@ -347,19 +374,15 @@ export function ZoneCreationDialog({
             </div>
 
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="ttl" className="text-right">
-                TTL
-              </Label>
-              <Select value={ttl} onValueChange={(value) => setTtl(value as any)}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select TTL" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1h">1 Hour</SelectItem>
-                  <SelectItem value="24h">24 Hours</SelectItem>
-                  <SelectItem value="7d">7 Days</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-right">TTL</Label>
+              <div className="col-span-3 flex flex-wrap gap-1.5">
+                {[{label:"15m",value:15},{label:"1h",value:60},{label:"6h",value:360},{label:"24h",value:1440},{label:"7d",value:10080}].map(opt => (
+                  <button key={opt.value} type="button"
+                    onClick={() => setTtlMinutes(opt.value)}
+                    className={`px-3 py-1 rounded-md text-xs font-medium border transition-colors ${ttlMinutes === opt.value ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:border-foreground"}`}
+                  >{opt.label}</button>
+                ))}
+              </div>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="accessType" className="text-right">
