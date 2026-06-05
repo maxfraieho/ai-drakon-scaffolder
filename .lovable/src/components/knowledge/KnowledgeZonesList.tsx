@@ -92,15 +92,15 @@ export function KnowledgeZonesList() {
               <CardTitle className="text-sm font-medium">{zone.name}</CardTitle>
               <div className="flex items-center gap-2">
                 {zone.accessType === "web" && (
-                  <BookOpen className="h-4 w-4 text-muted-foreground" title="Web Access" />
+                  <span title="Web Access"><BookOpen className="h-4 w-4 text-muted-foreground" /></span>
                 )}
                 {zone.accessType === "mcp" && (
-                  <Brain className="h-4 w-4 text-muted-foreground" title="MCP Access" />
+                  <span title="MCP Access"><Brain className="h-4 w-4 text-muted-foreground" /></span>
                 )}
                 {zone.accessType === "both" && (
                   <>
-                    <BookOpen className="h-4 w-4 text-muted-foreground" title="Web Access" />
-                    <Brain className="h-4 w-4 text-muted-foreground" title="MCP Access" />
+                    <span title="Web Access"><BookOpen className="h-4 w-4 text-muted-foreground" /></span>
+                    <span title="MCP Access"><Brain className="h-4 w-4 text-muted-foreground" /></span>
                   </>
                 )}
               </div>
