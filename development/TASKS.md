@@ -15012,3 +15012,93 @@ with open('development/TASKS.md','w') as f: f.write(c)
 
 ## TASK-137: GARDEN_OWNER_PASSWORD setup
 [x] TASK-137
+
+[ ] TASK-143
+    !!IMPORTANT!! Run ALL commands on dev server 192.168.3.184
+    Project: ~/workspace/ai-drakon-scaffolder/
+
+    ## Goal
+    1. Fix webUrl/mcpUrl construction in zones API route (garden-mcp does not return them - must build)
+    2. Add ZoneDetailSheet component: clicking zone card opens Sheet with full zone info + copy buttons
+    3. Same pattern as Bloom ZoneViewPage/AccessZonesWall (reference: ~/projects/garden-seedling-stage/)
+
+    ## Context from Bloom (garden-seedling-stage/src/hooks/useAccessZones.ts)
+    Bloom builds URLs:
+      webUrl  = https://garden-mcp.exodus.pp.ua/zone/${zone.id}?code=${zone.accessCode}
+      mcpUrl  = https://garden-mcp.exodus.pp.ua/mcp/${zone.id}
+    accessType "web"  -> only webUrl
+    accessType "mcp"  -> only mcpUrl
+    accessType "both" -> both
+
+    ## Step 1 - Fix URL construction in api.knowledge.zones.ts
+    File: src/routes/api.knowledge.zones.ts (on dev server)
+    In GET handler zones.map() replace webUrl/mcpUrl fields with:
+      webUrl: (z.accessType !== "mcp" && z.accessCode)
+        ? "https://garden-mcp.exodus.pp.ua/zone/" + (z.id ?? z.zoneId) + "?code=" + z.accessCode
+        : (z.webUrl ?? z.zoneUrl ?? undefined),
+      mcpUrl: (z.accessType !== "web" && (z.id ?? z.zoneId))
+        ? "https://garden-mcp.exodus.pp.ua/mcp/" + (z.id ?? z.zoneId)
+        : z.mcpUrl ?? undefined,
+    Apply same fix in POST handler.
+
+    ## Step 2 - Create src/components/knowledge/ZoneDetailSheet.tsx
+    Use Sheet from "@/components/ui/sheet" (right side panel, width ~500px on desktop)
+    Props interface:
+      zone: KnowledgeZone | null (import from "@/lib/api")
+      open: boolean
+      onClose: () => void
+      onDelete: (id: string) => void
+    Content sections:
+      Header: zone name (font-mono text-xl font-bold), Badge with accessType
+      Description (if present, text-sm text-muted-foreground)
+      Expiry row: color-coded (green>24h, yellow 1-24h, red<1h/expired), formatDistanceToNow
+      Stats row: folders count, note count
+      Folder pills: Badge per folder (Folder icon + last segment of path)
+      --- ACCESS CREDENTIALS ---
+      For each credential (show only if accessType matches):
+        Label + readonly Input + Copy button (toast.success on copy)
+        access_code: always show if present
+        web_url: show if accessType !== "mcp"
+        mcp_url: show if accessType !== "web"
+        Web URL also gets ExternalLink button to open in new tab
+      NotebookLM status badge if notebookLmStatus !== "none"
+      --- DANGER ---
+      Delete Zone button (variant="destructive", full-width, calls onDelete)
+    Imports needed: Sheet, SheetContent, SheetHeader, SheetTitle from "@/components/ui/sheet"
+    Input from "@/components/ui/input", Button, Badge, Separator
+
+    ## Step 3 - Update KnowledgeZonesList.tsx
+    File: src/components/knowledge/KnowledgeZonesList.tsx
+    Changes:
+    1. Add import: import { ZoneDetailSheet } from "./ZoneDetailSheet"
+    2. Add import: import { useState } from "react" (already there likely)
+    3. Add state: const [selectedZone, setSelectedZone] = useState<KnowledgeZone | null>(null)
+    4. Card: add cursor-pointer class + onClick={() => setSelectedZone(zone)}
+    5. Remove inline Copy buttons and Trash button from inside card
+    6. Keep on card: name, expiry badge, note count, folder pills only
+    7. handleDelete function: calls deleteZoneMutation.mutate(zone.id) + setSelectedZone(null) + queryClient.invalidateQueries
+    8. After closing div of zones grid, add:
+       <ZoneDetailSheet
+         zone={selectedZone}
+         open={!!selectedZone}
+         onClose={() => setSelectedZone(null)}
+         onDelete={(id) => { deleteZoneMutation.mutate(id); setSelectedZone(null); }}
+       />
+
+    ## Step 4 - Sync + commit + push
+    cp src/routes/api.knowledge.zones.ts .lovable/src/routes/api.knowledge.zones.ts
+    cp src/components/knowledge/ZoneDetailSheet.tsx .lovable/src/components/knowledge/ZoneDetailSheet.tsx
+    cp src/components/knowledge/KnowledgeZonesList.tsx .lovable/src/components/knowledge/KnowledgeZonesList.tsx
+    git add src/ .lovable/ development/TASKS.md
+    git commit -m "feat(knowledge): zone detail sheet + webUrl/mcpUrl construction (TASK-143)"
+    git push origin main
+
+    ## Mark done
+    sed -i "s/\[ \] TASK-143/[x] TASK-143/" development/TASKS.md
+    git add development/TASKS.md && git commit -m "chore(tasks): TASK-143 done" && git push origin main
+
+    !!IMPORTANT!! KnowledgeZone type: import from "@/lib/api" - check existing fields
+    !!IMPORTANT!! Sheet component: "@/components/ui/sheet" already exists in project
+    !!IMPORTANT!! Do NOT use ResizablePanel - it caused issues before
+    !!IMPORTANT!! .lovable sync after every src/ change
+    !!IMPORTANT!! toast from "sonner"
