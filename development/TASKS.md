@@ -15104,7 +15104,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
     !!IMPORTANT!! toast from "sonner"
 
 
-[ ] TASK-144
+[x] TASK-144
     !!IMPORTANT!! Research task — run on AGY3 locally (Termux). NO SSH needed unless checking project files.
     Output: research report saved to ~/workspace/ai-drakon-scaffolder/docs/appwrite-migration-research.md
 
