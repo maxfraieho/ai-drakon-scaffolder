@@ -14489,7 +14489,7 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
 
 
 ## TASK-138: Knowledge Vault tab + ZoneCreationDialog folder selection + JIT accessCode
-[ ] TASK-138
+[x] TASK-138
     Run on dev server: sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
     Project: ~/workspace/ai-drakon-scaffolder/
 
