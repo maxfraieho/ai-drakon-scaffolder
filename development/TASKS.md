@@ -14488,6 +14488,187 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
 [x] TASK-136
 
 
+## TASK-140: Fix zone creation — ttlMinutes + fetch note content before submit
+[ ] TASK-140
+    !!IMPORTANT!! Run ALL commands on dev server 192.168.3.184, NOT locally on Termux
+    Project: ~/workspace/ai-drakon-scaffolder/
+
+    ### Root cause (confirmed via direct garden-mcp API test)
+    garden-mcp /zones/create requires:
+      - ttlMinutes: number (integer minutes), NOT ttl: "1h"/"24h"/"7d" string
+      - notes: [{slug, title, content, tags}] array WITH actual file content
+    Currently frontend sends wrong format → "internal error"
+
+    ### Fix A — api.ts: change ttl to ttlMinutes
+    File: src/lib/api.ts
+    Change in CreateKnowledgeZoneRequest:
+      FROM: ttl?: "1h" | "24h" | "7d";
+      TO:   ttlMinutes?: number;
+
+    Also update KnowledgeZone type — add missing fields from garden-mcp response:
+      accessCode?: string;
+      webUrl?: string;
+      mcpUrl?: string;
+      zoneUrl?: string;
+      folders?: string[];
+      createdAt?: string;
+
+    ### Fix B — ZoneCreationDialog.tsx: TTL picker + fetch note content
+    File: src/components/knowledge/ZoneCreationDialog.tsx
+
+    1. Replace Select TTL with button pills (like Bloom):
+       Remove: useState for ttl string + Select component
+       Add:
+         const [ttlMinutes, setTtlMinutes] = useState(1440); // default 24h
+         const TTL_OPTIONS = [
+           { label: "15m", value: 15 },
+           { label: "1h", value: 60 },
+           { label: "6h", value: 360 },
+           { label: "24h", value: 1440 },
+           { label: "7d", value: 10080 },
+         ];
+       Render: row of Button pills, selected pill has bg-primary text-primary-foreground
+
+    2. Fetch note content before submitting:
+       Import: fetchNote from "@/lib/garden/notesApi"
+       In handleSubmit, before mutate():
+         - Get all notes from tree that are in selectedFolders
+         - Fetch content for each: await fetchNote(node.slug, project)
+         - Build notes array: [{slug, title, content, tags}]
+         - Include in request: notes: notesArray
+
+       Helper to get notes in selected folders:
+         function getNotesInFolders(tree: TreeNode[], selectedFolders: Set<string>): TreeNode[] {
+           const result: TreeNode[] = [];
+           function walk(nodes: TreeNode[]) {
+             for (const n of nodes) {
+               if (n.type === "note" && n.slug) {
+                 const parts = n.slug.split("/");
+                 const folder = parts.slice(0, -1).join("/");
+                 if (selectedFolders.size === 0 || selectedFolders.has(folder) || selectedFolders.has(parts[0])) {
+                   result.push(n);
+                 }
+               }
+               if (n.children) walk(n.children);
+             }
+           }
+           walk(tree);
+           return result;
+         }
+
+    3. Fix the request body — change ttl to ttlMinutes:
+       IN handleSubmit:
+         Change: { ...data, ttl, ... }
+         To: { ...data, ttlMinutes, ... }
+
+    4. Add loading state for content fetch:
+       const [fetchingContent, setFetchingContent] = useState(false);
+       Show spinner while fetching notes content
+
+    Full handleSubmit flow:
+      1. Validate name
+      2. setFetchingContent(true)
+      3. const noteNodes = getNotesInFolders(treeFromQuery, selectedFolders)
+      4. const notes = await Promise.all(noteNodes.map(async n => {
+           const content = await fetchNote(n.slug!, ghProject || undefined)
+           return { slug: n.slug!, title: n.title ?? n.slug!, content: content?.content ?? "", tags: content?.tags ?? [] }
+         }))
+      5. setFetchingContent(false)
+      6. createZoneMutation.mutate({ name, description, ttlMinutes, accessType, folders: Array.from(selectedFolders), noteCount: notes.length, notes, createNotebookLm, notebookLmTitle })
+
+    NOTE: fetchNote signature: fetchNote(slug: string, project?: string): Promise<NoteContent | null>
+    Where NoteContent = { slug, path, title, content, tags, sha? }
+
+    ### Fix C — api.knowledge.zones.ts: Map response to KnowledgeZone format
+    File: src/routes/api.knowledge.zones.ts
+
+    After proxying to garden-mcp /zones/create, garden-mcp returns:
+      { success: true, zoneId, accessCode, zoneUrl, expiresAt, noteCount }
+
+    The frontend expects:
+      { success: true, zone: { id, name, accessCode, webUrl, expiresAt, noteCount } }
+
+    Add response mapping in the POST handler:
+      POST: async ({ request }) => {
+        const resp = await handleProxyRequest("/zones/create", "POST", request);
+        const body = await resp.json() as any;
+        if (body.success && body.zoneId) {
+          const zone = {
+            id: body.zoneId,
+            name: body.name ?? "",
+            accessCode: body.accessCode,
+            webUrl: body.zoneUrl,
+            mcpUrl: body.mcpUrl,
+            expiresAt: body.expiresAt,
+            noteCount: body.noteCount ?? 0,
+            notebookLmStatus: "none" as const,
+            accessType: "web" as const,
+          };
+          return new Response(JSON.stringify({ success: true, zone }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        return new Response(JSON.stringify(body), {
+          status: resp.status,
+          headers: { "Content-Type": "application/json" },
+        });
+      },
+
+    Also do same for GET (list zones) — garden-mcp /zones/list returns array, map to { success: true, zones: [] }:
+    Check current response format from garden-mcp /zones/list and map accordingly.
+
+    ### Reference: Bloom zone creation request format (confirmed working)
+    {
+      name: string,
+      description?: string,
+      folders: string[],
+      noteCount: number,
+      accessType: "web" | "mcp" | "both",
+      ttlMinutes: number,   <-- INTEGER minutes!
+      notes: [{slug, title, content, tags}],  <-- actual content!
+      consentRequired?: boolean
+    }
+
+    Garden-mcp success response:
+    { success: true, zoneId: "...", accessCode: "ACCESS-...", zoneUrl: "https://...", expiresAt: "...", noteCount: N }
+
+    ### Verify the fix works
+    After implementing, test via curl on dev server:
+    Check: does /api/knowledge/zones POST return { success: true, zone: { id, accessCode, webUrl } } ?
+
+    Token for testing (get from browser localStorage: jwt key):
+    Or test the proxy directly without auth to see garden-mcp response.
+
+    ### TypeScript check
+    find ~/workspace/ai-drakon-scaffolder -name "tsc" -not -path "*/npm/*" 2>/dev/null | head -1
+    # or: cd ~/workspace/ai-drakon-scaffolder && cat tsconfig.json | grep -i strict
+
+    ### Commit + .lovable sync + push
+    cd ~/workspace/ai-drakon-scaffolder
+    git add src/lib/api.ts src/components/knowledge/ZoneCreationDialog.tsx src/routes/api.knowledge.zones.ts src/routes/api.knowledge.zones.\$zoneId.ts
+    git commit -m "fix(knowledge): ttlMinutes + notes content + response mapping for zone creation (TASK-140)"
+    git push origin main
+
+    for f in src/lib/api.ts src/components/knowledge/ZoneCreationDialog.tsx src/routes/api.knowledge.zones.ts; do
+      mkdir -p .lovable/$(dirname $f) && cp $f .lovable/$f && echo "synced $f"
+    done
+    git add .lovable && git commit -m "sync(lovable): TASK-140 zone fixes" && git push origin main
+
+    ### Mark done + diary
+    python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-140','[x] TASK-140',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+    git add development/TASKS.md && git commit -m "chore(tasks): TASK-140 done" && git push origin main
+    python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-06-05|TASK-140:zone-creation-fix|ttlMinutes+notes-content+response-mapping|commit:<hash>|STAR3"
+
+    !!IMPORTANT!! Run on dev server 192.168.3.184
+    !!IMPORTANT!! .lovable sync MANDATORY
+    !!IMPORTANT!! Do NOT touch MinIO setup — that's separate
+
+
 ## TASK-139: Knowledge UI redesign — browser research + OpenDesign improvement
 [ ] TASK-139
     Run on dev server: sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
