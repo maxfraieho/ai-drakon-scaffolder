@@ -14487,5 +14487,142 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
 
 [x] TASK-136
 
+
+## TASK-138: Knowledge Vault tab + ZoneCreationDialog folder selection + JIT accessCode
+[ ] TASK-138
+    Run on dev server: sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+    Project: ~/workspace/ai-drakon-scaffolder/
+
+    ### Goal
+    Complete the Knowledge feature in AI-DRAKON:
+    A. Add "Vault" tab to /knowledge page (reuse existing NotesTab — file tree + editor)
+    B. Update ZoneCreationDialog to select folders from the vault (like Bloom)
+    C. Show JIT accessCode + URLs after zone creation (copy-to-clipboard dialog)
+    D. Update KnowledgeZonesList to show accessCode/webUrl/mcpUrl copy buttons
+
+    ### Context — what already exists
+
+    **Vault storage: drakon-mcp-worker** (NOT garden-mcp)
+    - `src/lib/garden/notesApi.ts` has:
+      - fetchNotesTree() → GET /v1/notes/list?flat=false → {tree: TreeNode[]}
+        where TreeNode = {type:"folder"|"note", path, name, children?, slug?, title?}
+      - fetchNotesList(), fetchNote(), commitNote(), deleteNote()
+    - `src/components/docs/NotesTab.tsx` — COMPLETE file tree + editor UI (use as-is)
+    - `src/components/docs/garden/NoteEditor.tsx` — markdown editor
+    - `src/lib/garden/notesApi.ts` — all CRUD operations
+
+    **Knowledge zones: garden-mcp Worker** (https://garden-mcp.exodus.pp.ua)
+    - `src/server/knowledge.ts` — proxy with dynamic JWT auth (GARDEN_OWNER_PASSWORD)
+    - `src/components/knowledge/KnowledgeZonesList.tsx` — zones list (needs accessCode/URLs)
+    - `src/components/knowledge/ZoneCreationDialog.tsx` — create dialog (needs folder tree)
+    - `src/pages/KnowledgePage.tsx` — page with zones list (needs Vault tab added)
+    - `src/lib/api.ts` — types CreateKnowledgeZoneRequest, KnowledgeZone
+
+    **Bloom reference** (code donor on dev server at /home/vokov/projects/garden-seedling-stage/):
+    - /home/vokov/projects/garden-seedling-stage/src/components/garden/ZoneCreationDialog.tsx
+      → Has folder tree with checkboxes, TTL picker, accessType, noteCount counter
+      → Uses getFolderStructure() for folder tree — we use fetchNotesTree() instead
+    - /home/vokov/projects/garden-seedling-stage/src/components/garden/AccessZonesManager.tsx
+      → Has zone cards with accessCode copy, webUrl, mcpUrl, QR code buttons
+    - FilesPage in Bloom: /home/vokov/projects/garden-seedling-stage/src/pages/FilesPage.tsx
+
+    **GitNexus** — use for code search:
+    mcp__gitnexus__query(query="...", repo="ai-drakon-scaffolder")
+    mcp__gitnexus__query(query="...", repo="garden-seedling-stage")
+
+    **OpenDesign** — use for UI generation if needed:
+    URL: http://192.168.3.184:7459, pluginId: ai-drakon-mobile
+    POST /v1/run with {prompt, pluginId, od.mode:"generate"}
+
+    ### Changes required
+
+    **Step 1: src/lib/api.ts — update types**
+    In KnowledgeZone type ADD:
+      folders?: string[];
+      accessCode?: string;
+      webUrl?: string;
+      mcpUrl?: string;
+      createdAt?: string;
+
+    In CreateKnowledgeZoneRequest ADD:
+      folders?: string[];
+      noteCount?: number;
+
+    **Step 2: src/components/knowledge/ZoneCreationDialog.tsx — folder tree**
+    - Import: fetchNotesTree, TreeNode from "@/lib/garden/notesApi"
+    - Import: useQuery from "@tanstack/react-query"
+    - Import: Checkbox, ScrollArea from shadcn/ui
+    - Add useQuery to load tree: queryKey: ["notesTree"], queryFn: () => fetchNotesTree()
+    - Add state: selectedFolders = new Set<string>(), expandedFolders = new Set<string>()
+    - Extract folder nodes from tree (type === "folder") recursively
+    - Render ScrollArea (h-48) with folder checkboxes, indented by depth
+    - Add "Select All" / "Clear All" buttons
+    - Calculate noteCount from selected folders (count notes in tree under selected paths)
+    - Show "📁 N folders · 📝 N notes" summary
+    - Pass folders: Array.from(selectedFolders), noteCount to createZoneMutation.mutate(data)
+    - After onSuccess: if response.zone?.accessCode → open ZoneCreatedDialog
+      (new state: createdZone = zone, showCreatedDialog = true)
+
+    **Step 3: ZoneCreatedDialog (new component or inline state in ZoneCreationDialog)**
+    Show dialog after zone creation with:
+    - Title: "Zone Created ✓"
+    - Name, description of zone
+    - accessCode (if exists): Input[readOnly] + Copy button
+    - webUrl (if exists): Input[readOnly] + Copy button  
+    - mcpUrl (if exists): Input[readOnly] + Copy button
+    - TTL / expires info
+    - Close button
+    Copy uses: navigator.clipboard.writeText() + toast.success()
+    Can be a new file: src/components/knowledge/ZoneCreatedDialog.tsx
+
+    **Step 4: src/components/knowledge/KnowledgeZonesList.tsx — show URLs**
+    Update KnowledgeZone card to show:
+    - Copy buttons for accessCode, webUrl, mcpUrl (if present in zone object)
+    - zone.folders list (if any)
+    Use pattern: navigator.clipboard.writeText(text)
+
+    **Step 5: src/pages/KnowledgePage.tsx — add Vault tab**
+    - Import Tabs, TabsContent, TabsList, TabsTrigger from "@/components/ui/tabs"
+    - Import NotesTab from "@/components/docs/NotesTab"
+    - Add state: activeTab = "zones" | "vault"
+    - Desktop sidebar with 2 items: "Zones" (Database icon) | "Vault" (FileText icon)
+    - Mobile: top Tabs bar
+    - Vault tab renders: <NotesTab />
+    - Zones tab renders: current KnowledgeZonesList + Create Zone button
+
+    ### TypeScript check
+    After changes run: cd ~/workspace/ai-drakon-scaffolder && npx tsc --noEmit 2>&1 | head -20
+
+    ### Commit
+    git add src/components/knowledge/ src/pages/KnowledgePage.tsx src/lib/api.ts
+    git commit -m "feat(knowledge): vault tab + folder selection + JIT accessCode (TASK-138)"
+    git push origin main
+
+    ### Lovable sync (ВАЖЛИВО — після git push)
+    for f in src/components/knowledge/ZoneCreationDialog.tsx src/components/knowledge/ZoneCreationDialog.tsx src/components/knowledge/KnowledgeZonesList.tsx src/pages/KnowledgePage.tsx src/lib/api.ts; do
+      mkdir -p .lovable/$(dirname $f) && cp $f .lovable/$f
+    done
+    # If ZoneCreatedDialog.tsx was created:
+    cp src/components/knowledge/ZoneCreatedDialog.tsx .lovable/src/components/knowledge/ZoneCreatedDialog.tsx 2>/dev/null || true
+    git add .lovable && git commit -m "sync(lovable): knowledge vault + zones (TASK-138)" && git push origin main
+
+    ### Diary
+    After completion write: python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-06-05|TASK-138:knowledge-vault+folder-selection+accessCode|commit:<hash>|★★★"
+
+    ### Mark done
+    cd ~/workspace/ai-drakon-scaffolder && python3 -c "
+    import re
+    with open('development/TASKS.md', 'r') as f:
+        c = f.read()
+    c = re.sub(r'\[ \] TASK-138', '[x] TASK-138', c, count=1)
+    with open('development/TASKS.md', 'w') as f:
+        f.write(c)
+    "
+    git add development/TASKS.md && git commit -m "chore(tasks): TASK-138 done" && git push origin main
+
+    !!IMPORTANT!! Run ALL commands on dev server (192.168.3.184), NOT locally on Termux
+    !!IMPORTANT!! Bloom reference files are at /home/vokov/projects/garden-seedling-stage/ on dev server
+    !!IMPORTANT!! After implementing — npx tsc --noEmit must show 0 errors
+
 ## TASK-137: GARDEN_OWNER_PASSWORD setup
 [x] TASK-137
