@@ -32,29 +32,50 @@ export function KnowledgePage() {
       {/* Main Content Area with sidebar layout */}
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop Sidebar */}
-        <aside className="hidden md:flex flex-col w-56 border-r border-border bg-card/50 p-4 space-y-1">
-          <button
-            onClick={() => setActiveTab("zones")}
-            className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "zones"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            }`}
-          >
-            <Database className="w-4 h-4" />
-            <span>Zones</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("vault")}
-            className={`flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all ${
-              activeTab === "vault"
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>Vault</span>
-          </button>
+        <aside className="hidden md:flex flex-col w-56 border-r border-border/60 bg-card/20 backdrop-blur-md p-4 justify-between">
+          <div className="space-y-1">
+            <div className="px-3 mb-3 text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">
+              Knowledge Base
+            </div>
+            <button
+              onClick={() => setActiveTab("zones")}
+              className={`relative flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-semibold tracking-wide transition-all duration-200 ${
+                activeTab === "zones"
+                  ? "bg-zinc-900 border border-zinc-800/60 text-[var(--accent-amber)] shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/30 hover:text-foreground border border-transparent"
+              }`}
+            >
+              {activeTab === "zones" && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r bg-[var(--accent-amber)]" />
+              )}
+              <Database className="w-4 h-4" />
+              <span>Zones</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("vault")}
+              className={`relative flex items-center gap-3 w-full px-3 py-2.5 rounded-md text-sm font-semibold tracking-wide transition-all duration-200 ${
+                activeTab === "vault"
+                  ? "bg-zinc-900 border border-zinc-800/60 text-[var(--accent-amber)] shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/30 hover:text-foreground border border-transparent"
+              }`}
+            >
+              {activeTab === "vault" && (
+                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-r bg-[var(--accent-amber)]" />
+              )}
+              <FileText className="w-4 h-4" />
+              <span>Vault</span>
+            </button>
+          </div>
+          
+          <div className="bg-zinc-900/40 border border-zinc-800/60 rounded-lg p-3 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse inline-block" />
+              <span>MCP Vault Synced</span>
+            </div>
+            <p className="text-[9px] text-zinc-500 leading-normal">
+              Secure local sharing active on dev server.
+            </p>
+          </div>
         </aside>
 
         {/* Content Pane */}

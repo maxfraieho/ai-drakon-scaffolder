@@ -312,7 +312,7 @@ export function ZoneCreationDialog({
   return (
     <>
       <Dialog open={isOpen && !showCreatedDialog} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[550px]">
           <DialogHeader>
             <DialogTitle>Create New Knowledge Zone</DialogTitle>
           </DialogHeader>
@@ -340,35 +340,59 @@ export function ZoneCreationDialog({
               />
             </div>
 
-            {/* Folder Tree Selection */}
+            {/* Folder Tree Selection - Redesigned as Two Panel */}
             <div className="grid grid-cols-4 items-start gap-4">
               <Label className="text-right pt-2">Folders *</Label>
-              <div className="col-span-3 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">Select folders to share</span>
-                  <div className="flex gap-1.5">
-                    <Button variant="ghost" size="sm" onClick={selectAll} className="h-6 px-1.5 text-[10px]">
-                      Select All
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={clearAll} className="h-6 px-1.5 text-[10px]">
-                      Clear All
-                    </Button>
+              <div className="col-span-3">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 border rounded-lg overflow-hidden bg-card/30 border-border/80">
+                  {/* Left Panel: Tree Explorer */}
+                  <div className="md:col-span-3 p-3 flex flex-col gap-2 min-h-[200px]">
+                    <div className="flex justify-between items-center pb-2 border-b border-border/50">
+                      <span className="text-[11px] text-muted-foreground font-medium">Explorer</span>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={selectAll} className="h-5 px-1.5 text-[9px] uppercase tracking-wider font-mono">
+                          All
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={clearAll} className="h-5 px-1.5 text-[9px] uppercase tracking-wider font-mono">
+                          Clear
+                        </Button>
+                      </div>
+                    </div>
+                    <ScrollArea className="h-44 bg-muted/5 rounded p-1">
+                      {hasFolders ? (
+                        renderFolders(notesTree)
+                      ) : (
+                        <p className="text-xs text-muted-foreground text-center py-8">
+                          No folders found in vault.
+                        </p>
+                      )}
+                    </ScrollArea>
                   </div>
-                </div>
-                <ScrollArea className="h-48 border rounded-md bg-muted/10">
-                  <div className="p-1">
-                    {hasFolders ? (
-                      renderFolders(notesTree)
-                    ) : (
-                      <p className="text-xs text-muted-foreground text-center py-8">
-                        No folders found in vault.
-                      </p>
-                    )}
+
+                  {/* Right Panel: Selection Summary */}
+                  <div className="md:col-span-2 p-3 bg-muted/10 flex flex-col justify-between border-t md:border-t-0 md:border-l border-border/50">
+                    <div className="space-y-3">
+                      <h4 className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">Summary</h4>
+                      <div className="space-y-2">
+                        <div className="bg-background/50 border border-border/50 p-2 rounded flex flex-col">
+                          <span className="text-[10px] text-muted-foreground">Folders Selected</span>
+                          <span className="text-lg font-bold font-mono tracking-tight text-[var(--accent-amber)]">
+                            {selectedFolders.size}
+                          </span>
+                        </div>
+                        <div className="bg-background/50 border border-border/50 p-2 rounded flex flex-col">
+                          <span className="text-[10px] text-muted-foreground">Notes Shared</span>
+                          <span className="text-lg font-bold font-mono tracking-tight text-foreground">
+                            {noteCount}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-[10px] text-muted-foreground leading-relaxed pt-3 border-t border-border/30">
+                      Shared as a secure, temporary knowledge zone.
+                    </div>
                   </div>
-                </ScrollArea>
-                <div className="text-[11px] text-muted-foreground flex justify-between">
-                  <span>📁 {selectedFolders.size} folders selected</span>
-                  <span>📝 {noteCount} notes</span>
                 </div>
               </div>
             </div>
