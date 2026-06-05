@@ -15102,3 +15102,137 @@ with open('development/TASKS.md','w') as f: f.write(c)
     !!IMPORTANT!! Do NOT use ResizablePanel - it caused issues before
     !!IMPORTANT!! .lovable sync after every src/ change
     !!IMPORTANT!! toast from "sonner"
+
+
+[ ] TASK-144
+    !!IMPORTANT!! Research task — run on AGY3 locally (Termux). NO SSH needed unless checking project files.
+    Output: research report saved to ~/workspace/ai-drakon-scaffolder/docs/appwrite-migration-research.md
+
+    ## Goal
+    Research Appwrite Cloud (GitHub Student Pack — 2 projects) as platform for ai-drakon-scaffolder.
+    Compare with current stack (Cloudflare Pages + Workers + KV + D1).
+    Produce a structured decision report with migration feasibility assessment.
+
+    ## Current stack (ai-drakon-scaffolder)
+    - Frontend: Cloudflare Pages (TanStack Start, SSR)
+    - Backend: CF Workers (API routes as CF Pages Functions)
+    - Storage: CF KV (sessions, cache), CF D1 (SQLite DB)
+    - Auth: custom / none currently
+    - Tunnel: cloudflared (OrangePi) → public URLs
+    - Garden MCP: CF Worker (garden-mcp.exodus.pp.ua)
+
+    ## Research areas
+
+    ### 1. Appwrite Cloud Student Plan limits
+    - Project count (2 confirmed), requests/month, bandwidth, storage, DB rows
+    - Team members / MAU (Monthly Active Users) limits
+    - Functions execution limits (GB-hours, invocations)
+    - Realtime connections
+    - Verify: https://appwrite.io/pricing + GitHub Student Pack page
+
+    ### 2. Appwrite capabilities relevant to ai-drakon-scaffolder
+    A. **Auth** (Appwrite Auth):
+       - OAuth2 (Google, GitHub), Email/Password, Magic Link
+       - Teams + Roles — multi-user mode with permissions
+       - Session management
+    B. **Database** (Appwrite Databases):
+       - Collections, Documents, Relationships
+       - Compare to current CF D1 schema (if any)
+       - Real-time subscriptions
+    C. **Storage** (Appwrite Storage):
+       - File buckets, access permissions
+       - Replace MinIO for user-uploaded files?
+    D. **Functions** (Appwrite Functions):
+       - Runtime: Node.js, Python, others
+       - Can replace CF Workers for API logic?
+       - Cold start, execution limits
+    E. **Messaging** (Appwrite Messaging):
+       - Email, SMS, Push — useful for billing notifications
+
+    ### 3. Migration scenarios
+
+    **Option A — Full migration (Appwrite replaces CF)**
+    - Frontend still on CF Pages (static hosting stays)
+    - Backend: CF Workers → Appwrite Functions
+    - DB: CF D1 → Appwrite Databases
+    - Auth: add Appwrite Auth (currently missing)
+    - Files: MinIO → Appwrite Storage
+    Pros / Cons / Effort estimate
+
+    **Option B — Hybrid (Appwrite for auth+users, CF for compute)**
+    - Keep CF Pages + Workers for core app logic
+    - Add Appwrite for: Auth, User management, Billing metadata
+    - Appwrite SDK in frontend for auth flows
+    Pros / Cons / Effort estimate
+
+    **Option C — Appwrite for new features only**
+    - Don't touch existing CF stack
+    - New features (multi-user, billing) built on Appwrite
+    - Appwrite Auth as the identity layer
+    Pros / Cons / Effort estimate
+
+    ### 4. Multi-user mode design sketch
+    How would ai-drakon-scaffolder support multiple users with Appwrite?
+    - User registration/login flow
+    - Per-user Knowledge Zones (Garden MCP isolation)
+    - Per-user Vault (NotebookLM notebooks)
+    - RBAC: owner, editor, viewer
+
+    ### 5. Billing & AI LLM packages
+    How to implement tiered AI access (free/paid):
+    - Free tier: limited requests/month to LLM APIs
+    - Paid tier: higher limits, priority routing
+    - Appwrite as billing metadata store (not payment processor)
+    - Integration with Stripe or LemonSqueezy for payments
+    - Appwrite Functions as webhook receiver for payment events
+
+    ### 6. TanStack Start + Appwrite compatibility
+    - Appwrite Web SDK (v16+) — works in CF Pages SSR?
+    - Server-side Appwrite calls from CF Workers
+    - Any known issues with SSR + Appwrite sessions
+
+    ## Output format
+    Save report to: ~/workspace/ai-drakon-scaffolder/docs/appwrite-migration-research.md
+
+    Structure:
+    # Appwrite Migration Research — AI-DRAKON Scaffolder
+
+    ## Executive Summary (3-5 sentences recommendation)
+
+    ## Student Plan Limits (table)
+
+    ## Capability Comparison (table: feature | CF stack | Appwrite | winner)
+
+    ## Migration Option Analysis
+    ### Option A — Full migration
+    ### Option B — Hybrid
+    ### Option C — New features only
+
+    ## Recommended Path (with reasoning)
+
+    ## Multi-user Mode Design
+
+    ## Billing & AI Packages Design
+
+    ## Technical Risks & Open Questions
+
+    ## Next Steps (concrete tasks if we proceed)
+
+    ## Commit report
+    cd ~/workspace/ai-drakon-scaffolder
+    git add docs/appwrite-migration-research.md
+    git commit -m "research(appwrite): migration feasibility + multi-user + billing analysis (TASK-144)"
+    git push origin main
+
+    ## Mark done
+    python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-144','[x] TASK-144',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+    git add development/TASKS.md && git commit -m "chore(tasks): TASK-144 done" && git push origin main
+
+    !!IMPORTANT!! This is a RESEARCH task — use web search to get current Appwrite pricing/docs
+    !!IMPORTANT!! docs/ directory may not exist — create it: mkdir -p docs/
+    !!IMPORTANT!! Be specific about Student Pack limits (verify actual numbers, not guesses)
+    !!IMPORTANT!! Recommendation must consider: 2-project limit on Student plan, TanStack Start SSR
