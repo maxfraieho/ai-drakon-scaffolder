@@ -14488,6 +14488,83 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
 [x] TASK-136
 
 
+## TASK-142: Knowledge UI redesign via OpenDesign (after TASK-141 crash fix)
+[ ] TASK-142
+    !!IMPORTANT!! Run ALL on dev server 192.168.3.184
+    Project: ~/workspace/ai-drakon-scaffolder/
+    Depends on: TASK-141 must be done first
+
+    ### Goal
+    Use OpenDesign to generate improved UI for /knowledge page:
+    1. KnowledgeZonesList - better zone cards
+    2. ZoneCreationDialog - cleaner folder selection
+    3. KnowledgePage - improved sidebar/tab layout
+
+    ### OpenDesign API (MANDATORY - use this for UI generation)
+    URL: http://192.168.3.184:7456
+    Token: 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a
+    Plugin: ai-drakon-mobile
+
+    Run a design task:
+    curl -s http://192.168.3.184:7456/api/runs -X POST \
+      -H "Authorization: Bearer 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a" \
+      -H "Content-Type: application/json" \
+      -d '{"prompt":"<your prompt>","pluginId":"ai-drakon-mobile","od.mode":"generate"}'
+
+    Poll result (repeat until status=complete):
+    curl -s "http://192.168.3.184:7456/api/runs/<runId>" \
+      -H "Authorization: Bearer 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a"
+
+    Also use RPi browser (agent-workspace) to see current /knowledge UI:
+    Navigate to: https://ai-drakon-scaffolder.pages.dev/knowledge
+
+    ### Step 1 - MemPalace + GitNexus research
+    python3 -m mempalace search "knowledge zones vault UI redesign" --wing ai-drakon-scaffolder
+    curl -s "http://192.168.3.184:4747/api/repos/ai-drakon-scaffolder/context?name=KnowledgeZonesList" \
+      | python3 -m json.tool | head -30
+
+    ### Step 2 - Generate improved KnowledgeZonesList via OpenDesign
+    Prompt: "Redesign Knowledge Zones list cards for AI developer tool. Dark theme.
+    Each card: zone name (bold), folder pills (small badges with folder icon),
+    note count badge, color-coded expiry (green>24h, yellow<24h, red<1h),
+    action buttons row: Copy Code / Copy URL / Delete.
+    Compact layout, max 3 columns grid. shadcn/ui TypeScript React."
+
+    ### Step 3 - Generate improved ZoneCreationDialog folder tree
+    Prompt: "Design folder tree selector for zone creation dialog.
+    Two-panel: left=folder tree with checkboxes (indented, expand/collapse),
+    right=selected count + note count summary. Compact, developer tool style."
+
+    ### Step 4 - Apply generated code to project files
+    Files to update:
+    - src/components/knowledge/KnowledgeZonesList.tsx
+    - src/components/knowledge/ZoneCreationDialog.tsx (folder tree section only)
+    - src/pages/KnowledgePage.tsx (sidebar improvements if needed)
+
+    ### Step 5 - Commit + .lovable sync + push
+    cd ~/workspace/ai-drakon-scaffolder
+    for f in src/components/knowledge/KnowledgeZonesList.tsx src/components/knowledge/ZoneCreationDialog.tsx src/pages/KnowledgePage.tsx; do
+      cp $f .lovable/$f && echo synced $f
+    done
+    git add src/ .lovable/
+    git commit -m "feat(knowledge-ui): OpenDesign redesign - zone cards + folder tree (TASK-142)"
+    git push origin main
+
+    ### Mark done
+    python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-142','[x] TASK-142',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+    git add development/TASKS.md && git commit -m "chore(tasks): TASK-142 done" && git push origin main
+    python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-06-05|TASK-142:knowledge-opendesign-redesign|commit:<hash>|STAR3"
+
+    !!IMPORTANT!! OpenDesign URL: http://192.168.3.184:7456 (NOT 7459 or 7460)
+    !!IMPORTANT!! Poll OpenDesign runId until status=complete before reading result
+    !!IMPORTANT!! .lovable sync mandatory
+    !!IMPORTANT!! npm run build must pass in .lovable/ before commit
+
+
 ## TASK-141: Diagnose and fix /knowledge page crash
 [ ] TASK-141
     !!IMPORTANT!! Run ALL commands on dev server 192.168.3.184
