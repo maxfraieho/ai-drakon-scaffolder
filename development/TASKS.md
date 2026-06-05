@@ -13827,7 +13827,7 @@ print(d.get('result',{}).get('content',[{}])[0].get('text','?')[:500])
 SESSION:2026-06-04|TASK-135:ai-memory-routing|AGY-phone+AGY3+Copilot|★★★
 ```
 
-[ ] TASK-135
+[x] TASK-135
 
 ## TASK-130: Bloom repos clone + MemPalace mine + gap analysis
 
