@@ -15,7 +15,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { api, type KnowledgeZone } from "@/lib/api";
+import { api } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,12 +36,8 @@ interface Message {
 }
 
 export function NotebookLMChatPanel() {
-  const [notebookUrl, setNotebookUrl] = useState(() => {
-    try {
-      return localStorage.getItem("notebooklm_url") || "";
-    } catch {
-      return "";
-    }
+  const [notebookId, setNotebookId] = useState(() => {
+    try { return localStorage.getItem("notebooklm_id") || ""; } catch { return ""; }
   });
   const [kind, setKind] = useState<"answer" | "summary" | "study_guide" | "flashcards">("answer");
   const [initialQuestion, setInitialQuestion] = useState("");
@@ -49,66 +45,39 @@ export function NotebookLMChatPanel() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedZoneId, setSelectedZoneId] = useState<string>("manual");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Fetch knowledge zones to populate the dropdown
-  const { data: zones } = useQuery<KnowledgeZone[]>({
-    queryKey: ["knowledgeZones"],
-    queryFn: async () => {
-      const response = await api.listKnowledgeZones();
-      if (!response.success) {
-        throw new Error(response.message || "Failed to fetch knowledge zones");
-      }
-      return response.zones;
-    },
+  const { data: notebooksData } = useQuery({
+    queryKey: ["notebooklmNotebooks"],
+    queryFn: () => api.listNotebooks(),
+    staleTime: 60_000,
   });
+  const notebooks = notebooksData?.notebooks ?? [];
 
   // Save notebookUrl to localStorage when it changes
   useEffect(() => {
     try {
-      localStorage.setItem("notebooklm_url", notebookUrl);
+      localStorage.setItem("notebooklm_id", notebookId);
     } catch (e) {
       // Ignore storage errors
     }
-  }, [notebookUrl]);
+  }, [notebookId]);
 
   // Scroll to bottom of message list
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
 
-  // Auto-fill notebook URL if a zone is selected
-  const handleZoneChange = (zoneId: string) => {
-    setSelectedZoneId(zoneId);
-    if (zoneId === "manual") {
-      return;
-    }
-
-    const zone = zones?.find((z) => z.id === zoneId);
-    if (zone) {
-      if (zone.notebookLmId) {
-        const url = zone.notebookLmId.startsWith("http")
-          ? zone.notebookLmId
-          : `https://notebooklm.google.com/notebook/${zone.notebookLmId}`;
-        setNotebookUrl(url);
-        toast.info(`Loaded notebook from zone "${zone.name}"`);
-      } else {
-        toast.warning(`Zone "${zone.name}" does not have an associated NotebookLM ID.`);
-      }
-    }
-  };
-
-  const handleAsk = async (questionText: string, isInitial: boolean) => {
+    const handleAsk = async (questionText: string, isInitial: boolean) => {
     const trimmedQuestion = questionText.trim();
     if (!trimmedQuestion) {
       toast.error("Please enter a question.");
       return;
     }
 
-    if (!notebookUrl.trim()) {
-      toast.error("Please specify a Notebook URL.");
+    if (!notebookId.trim()) {
+      toast.error("Please select a notebook.");
       return;
     }
 
@@ -126,16 +95,10 @@ export function NotebookLMChatPanel() {
 
     try {
       // Create request payload matching api contract
-      const historyPayload = messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
 
       const response = await api.notebooklmChat({
-        notebookUrl,
-        message: trimmedQuestion,
-        kind,
-        history: historyPayload,
+        notebookId,
+        question: trimmedQuestion,
       });
 
       if (response.success) {
@@ -179,43 +142,28 @@ export function NotebookLMChatPanel() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
-            {/* Knowledge Zone Select */}
+            {/* Notebook Select */}
             <div className="space-y-2">
               <Label className="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)]">
-                Connect to Knowledge Zone
+                Select Notebook
               </Label>
-              <Select value={selectedZoneId} onValueChange={handleZoneChange}>
+              <Select value={notebookId} onValueChange={setNotebookId}>
                 <SelectTrigger className="w-full h-8 font-mono text-[11px] rounded-sm border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
-                  <SelectValue placeholder="Manual configuration" />
+                  <SelectValue placeholder="Choose a notebook..." />
                 </SelectTrigger>
                 <SelectContent className="border-[var(--border-subtle)] bg-[var(--bg-overlay)]">
-                  <SelectItem value="manual" className="font-mono text-[11px]">
-                    -- Manual URL Mode --
-                  </SelectItem>
-                  {zones?.map((zone) => (
-                    <SelectItem key={zone.id} value={zone.id} className="font-mono text-[11px]">
-                      {zone.name} {zone.notebookLmId ? "(Notebook available)" : "(No notebook)"}
+                  {notebooks.length === 0 && (
+                    <SelectItem value="_none" disabled className="font-mono text-[11px] text-[var(--text-muted)]">
+                      No notebooks found
+                    </SelectItem>
+                  )}
+                  {notebooks.map((nb) => (
+                    <SelectItem key={nb.id} value={nb.id} className="font-mono text-[11px]">
+                      {nb.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            {/* Notebook URL Input */}
-            <div className="space-y-2">
-              <Label htmlFor="notebook-url" className="font-mono text-[11px] uppercase tracking-wider text-[var(--text-secondary)]">
-                Notebook URL
-              </Label>
-              <div className="relative">
-                <Input
-                  id="notebook-url"
-                  placeholder="https://notebooklm.google.com/notebook/..."
-                  value={notebookUrl}
-                  onChange={(e) => setNotebookUrl(e.target.value)}
-                  className="w-full font-mono text-[11px] rounded-sm border-[var(--border-subtle)] bg-[var(--bg-elevated)] focus:border-[var(--accent-amber)] pr-8"
-                />
-                <BookOpen className="absolute right-2.5 top-2.5 h-3.5 w-3.5 text-[var(--text-muted)]" />
-              </div>
             </div>
 
             {/* Kind Select */}
@@ -259,7 +207,7 @@ export function NotebookLMChatPanel() {
             <div className="flex gap-2">
               <Button
                 onClick={() => handleAsk(initialQuestion, true)}
-                disabled={isLoading || !notebookUrl.trim() || !initialQuestion.trim()}
+                disabled={isLoading || !notebookId.trim() || !initialQuestion.trim()}
                 className="flex-1 rounded-sm bg-[var(--accent-amber)] hover:brightness-110 active:scale-[0.98] transition-transform text-black font-mono text-[11px] uppercase tracking-wider font-semibold"
               >
                 {isLoading ? (
@@ -299,15 +247,10 @@ export function NotebookLMChatPanel() {
               NotebookLM Session
             </span>
           </div>
-          {notebookUrl && (
-            <a
-              href={notebookUrl}
-              target="_blank"
-              rel="noreferrer noopener"
-              className="font-mono text-[10px] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors flex items-center gap-1"
-            >
-              Open Notebook <ExternalLink className="h-3 w-3" />
-            </a>
+          {notebookId && notebooks.find(n => n.id === notebookId) && (
+            <span className="font-mono text-[10px] text-[var(--text-secondary)]">
+              {notebooks.find(n => n.id === notebookId)?.title}
+            </span>
           )}
         </div>
 

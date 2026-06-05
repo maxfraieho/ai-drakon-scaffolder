@@ -343,24 +343,27 @@ export const api = {
   },
 
   notebooklmChat: async (data: {
-    notebookUrl: string;
-    message: string;
-    kind: "answer" | "summary" | "study_guide" | "flashcards";
-    history: { role: string; content: string }[];
+    notebookId: string;
+    question: string;
   }): Promise<{
     success: boolean;
     answer: string;
-    citations?: { title: string; url: string }[];
     error?: string;
-    message?: string;
   }> => {
     const response = await fetch(`/api/notebooklm/chat`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
+    return parseResponse(response);
+  },
+
+  listNotebooks: async (): Promise<{
+    success: boolean;
+    notebooks: Array<{ id: string; title: string }>;
+    error?: string;
+  }> => {
+    const response = await fetch(`/api/notebooklm/notebooks`);
     return parseResponse(response);
   },
 
