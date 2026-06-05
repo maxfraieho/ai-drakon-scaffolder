@@ -14265,3 +14265,165 @@ git push origin main
 SESSION:2026-06-05|TASK-134:notebooklm-page|files:NotebookLMPage+ChatPanel+route+nav|commit:pushed|★★★
 
 [x] TASK-134
+
+## TASK-135: Перемкнути NotebookLM chat на notebooklm.exodus.pp.ua/mcp
+
+**!!IMPORTANT!! Run locally on AGY4 Termux. DO NOT SSH anywhere.**
+**Model: gemini-2.5-flash**
+
+### Контекст
+- `/notebooks` сторінка в AI-DRAKON зараз проксує chat через `garden-mcp.exodus.pp.ua` — повертає 502
+- На RPi 3b (192.168.3.234:8002) живе FastMCP сервер з повним набором NotebookLM tools
+- Публічний URL: `https://notebooklm.exodus.pp.ua/mcp`
+- Протокол: streamable-http (JSON-RPC 2.0)
+
+### MCP API (підтверджено)
+```
+POST https://notebooklm.exodus.pp.ua/mcp
+Content-Type: application/json
+Accept: application/json, text/event-stream
+
+# Список ноутбуків:
+{"jsonrpc":"2.0","method":"tools/call","params":{"name":"notebooks_list","arguments":{}},"id":1}
+# Відповідь: {"result":{"content":[{"type":"text","text":"[{\"id\":\"...\",\"title\":\"...\"}]"}]}}
+
+# Чат:
+{"jsonrpc":"2.0","method":"tools/call","params":{"name":"chat_ask","arguments":{"notebook_id":"<id>","question":"<text>"}},"id":2}
+# Відповідь: {"result":{"content":[{"type":"text","text":"<answer>"}]}}
+```
+
+### Що зробити
+
+#### 1. Створити helper `src/server/notebooklm-mcp.ts`
+```typescript
+const NLM_MCP_URL = "https://notebooklm.exodus.pp.ua/mcp";
+
+async function mcpCall(toolName: string, args: Record<string, unknown>) {
+  const res = await fetch(NLM_MCP_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Accept": "application/json, text/event-stream",
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      method: "tools/call",
+      params: { name: toolName, arguments: args },
+      id: Date.now(),
+    }),
+  });
+  if (!res.ok) throw new Error(`MCP error: ${res.status}`);
+  const data = await res.json() as any;
+  if (data.error) throw new Error(data.error.message);
+  const text = data?.result?.content?.[0]?.text ?? "";
+  try { return JSON.parse(text); } catch { return text; }
+}
+
+export const nlmMcp = {
+  listNotebooks: () => mcpCall("notebooks_list", {}),
+  chat: (notebookId: string, question: string) =>
+    mcpCall("chat_ask", { notebook_id: notebookId, question }),
+};
+```
+
+#### 2. Оновити `src/routes/api.notebooklm.chat.ts`
+Замість проксі до garden-mcp — викликати `nlmMcp.chat()`:
+```typescript
+import { createFileRoute } from "@tanstack/react-router";
+import { nlmMcp } from "../server/notebooklm-mcp";
+
+export const Route = createFileRoute("/api/notebooklm/chat")({
+  server: {
+    handlers: {
+      POST: async ({ request }) => {
+        try {
+          const { notebookId, question } = await request.json() as any;
+          if (!notebookId || !question) {
+            return new Response(JSON.stringify({ error: "notebookId and question required" }), { status: 400 });
+          }
+          const answer = await nlmMcp.chat(notebookId, question);
+          return new Response(JSON.stringify({ answer }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (e: any) {
+          return new Response(JSON.stringify({ error: e.message }), { status: 502 });
+        }
+      },
+    },
+  },
+});
+```
+
+#### 3. Додати `src/routes/api.notebooklm.notebooks.ts`
+```typescript
+import { createFileRoute } from "@tanstack/react-router";
+import { nlmMcp } from "../server/notebooklm-mcp";
+
+export const Route = createFileRoute("/api/notebooklm/notebooks")({
+  server: {
+    handlers: {
+      GET: async () => {
+        try {
+          const notebooks = await nlmMcp.listNotebooks();
+          return new Response(JSON.stringify({ notebooks }), {
+            status: 200,
+            headers: { "Content-Type": "application/json" },
+          });
+        } catch (e: any) {
+          return new Response(JSON.stringify({ error: e.message }), { status: 502 });
+        }
+      },
+    },
+  },
+});
+```
+
+#### 4. Оновити `src/components/notebooklm/NotebookLMChatPanel.tsx`
+- Замінити поле `notebookUrl` на `notebookId` (select dropdown)
+- Додати `useQuery` для `GET /api/notebooklm/notebooks` → populate dropdown `[{id, title}]`
+- POST body змінити: `{ notebookId, question: input }` замість `{ notebookUrl, query, kind }`
+- Відображати `answer` з відповіді
+
+#### 5. Sync .lovable
+Після кожного зміненого файлу `src/X`:
+```bash
+cp src/server/notebooklm-mcp.ts .lovable/src/server/notebooklm-mcp.ts
+cp src/routes/api.notebooklm.chat.ts .lovable/src/routes/api.notebooklm.chat.ts
+cp src/routes/api.notebooklm.notebooks.ts .lovable/src/routes/api.notebooklm.notebooks.ts
+cp src/components/notebooklm/NotebookLMChatPanel.tsx .lovable/src/components/notebooklm/NotebookLMChatPanel.tsx
+```
+
+#### 6. Git commit + push
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add src/server/notebooklm-mcp.ts \
+        src/routes/api.notebooklm.chat.ts \
+        src/routes/api.notebooklm.notebooks.ts \
+        src/components/notebooklm/NotebookLMChatPanel.tsx \
+        .lovable/src/server/notebooklm-mcp.ts \
+        .lovable/src/routes/api.notebooklm.chat.ts \
+        .lovable/src/routes/api.notebooklm.notebooks.ts \
+        .lovable/src/components/notebooklm/NotebookLMChatPanel.tsx \
+        development/TASKS.md
+git commit -m "feat(notebooklm): switch chat to notebooklm.exodus.pp.ua MCP (TASK-135)"
+git push origin main
+```
+
+### Верифікація
+```bash
+# Список ноутбуків доступний:
+curl -s https://notebooklm.exodus.pp.ua/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d jsonrpc:2.0 | head -100
+```
+
+### Diary
+SESSION:2026-06-05|TASK-135:notebooklm-mcp-switch|commit:<hash>|★★★
+
+[ ] TASK-135
+done cat
+done cat
+done cat
+done cat
