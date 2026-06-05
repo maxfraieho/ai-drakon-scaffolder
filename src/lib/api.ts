@@ -101,6 +101,11 @@ export type KnowledgeZone = {
   accessType: "web" | "mcp" | "both";
   notebookLmId?: string;
   notebookLmTitle?: string;
+  folders?: string[];
+  accessCode?: string;
+  webUrl?: string;
+  mcpUrl?: string;
+  createdAt?: string;
 };
 
 export type ListKnowledgeZonesResponse = {
@@ -118,6 +123,8 @@ export type CreateKnowledgeZoneRequest = {
   createNotebookLm?: boolean;
   notebookLmTitle?: string;
   shareEmails?: string[];
+  folders?: string[];
+  noteCount?: number;
 };
 
 export type CreateKnowledgeZoneResponse = {
