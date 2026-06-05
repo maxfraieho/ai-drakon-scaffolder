@@ -14489,7 +14489,7 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
 
 
 ## TASK-142: Knowledge UI redesign via OpenDesign (after TASK-141 crash fix)
-[ ] TASK-142
+[x] TASK-142
     !!IMPORTANT!! Run ALL on dev server 192.168.3.184
     Project: ~/workspace/ai-drakon-scaffolder/
     Depends on: TASK-141 must be done first

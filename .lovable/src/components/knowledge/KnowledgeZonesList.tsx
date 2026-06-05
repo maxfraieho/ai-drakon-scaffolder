@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { BookOpen, Brain, Trash2, Copy, Folder } from "lucide-react";
+import { BookOpen, Brain, Trash2, Copy, Folder, PlusCircle } from "lucide-react";
 
 import { api, type KnowledgeZone } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,38 +9,23 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
-
-function getExpiryColor(expiresAt?: string): string {
-  if (!expiresAt) return "";
+function getExpiryClass(expiresAt?: number | string): string {
+  if (!expiresAt) return "text-muted-foreground";
   const diff = new Date(expiresAt).getTime() - Date.now();
-  if (diff < 0) return "text-destructive";
+  if (diff < 0) return "text-destructive font-medium";
   if (diff < 3_600_000) return "text-destructive";
   if (diff < 86_400_000) return "text-yellow-500";
   return "text-emerald-500";
 }
 
-function copyText(text: string, label: string) {
-  navigator.clipboard.writeText(text).then(
-    () => { try { (window as any).__toast?.success?.(`${label} copied`); } catch {} },
-    () => {}
-  );
-}
-
 export function KnowledgeZonesList() {
   const queryClient = useQueryClient();
 
-  const {
-    data: zones,
-    isLoading,
-    isError,
-    error,
-  } = useQuery<KnowledgeZone[]>({
+  const { data: zones, isLoading, isError, error } = useQuery<KnowledgeZone[]>({
     queryKey: ["knowledgeZones"],
     queryFn: async () => {
       const response = await api.listKnowledgeZones();
-      if (!response.success) {
-        throw new Error(response.message || "Failed to fetch knowledge zones");
-      }
+      if (!response.success) throw new Error(response.message || "Failed to fetch knowledge zones");
       return response.zones;
     },
   });
@@ -49,21 +34,19 @@ export function KnowledgeZonesList() {
     mutationFn: (zoneId: string) => api.deleteKnowledgeZone(zoneId),
     onSuccess: (response) => {
       if (response.success) {
-        toast.success("Knowledge zone deleted successfully.");
+        toast.success("Zone deleted.");
         queryClient.invalidateQueries({ queryKey: ["knowledgeZones"] });
       } else {
-        toast.error(response.message || "Failed to delete knowledge zone.");
+        toast.error(response.message || "Failed to delete zone.");
       }
     },
-    onError: (err) => {
-      toast.error(`Error deleting knowledge zone: ${err.message}`);
-    },
+    onError: (err) => toast.error(`Error: ${err.message}`),
   });
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success(`${label} copied to clipboard`);
+      toast.success(`${label} copied`);
     } catch {
       toast.error(`Failed to copy ${label}`);
     }
@@ -73,14 +56,14 @@ export function KnowledgeZonesList() {
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-6 w-3/4" />
+          <Card key={i} className="border-border/60">
+            <CardHeader className="pb-2">
+              <Skeleton className="h-5 w-3/4" />
             </CardHeader>
             <CardContent className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-3 w-full" />
+              <Skeleton className="h-3 w-5/6" />
+              <Skeleton className="h-6 w-1/3 mt-3" />
             </CardContent>
           </Card>
         ))}
@@ -89,13 +72,18 @@ export function KnowledgeZonesList() {
   }
 
   if (isError) {
-    return <div className="text-red-500">Error: {error?.message}</div>;
+    return (
+      <div className="text-destructive text-sm p-4 rounded-md border border-destructive/30 bg-destructive/5">
+        Error: {error?.message}
+      </div>
+    );
   }
 
   if (!zones || zones.length === 0) {
     return (
-      <div className="text-center text-muted-foreground py-8">
-        No knowledge zones found. Create one to get started!
+      <div className="flex flex-col items-center justify-center gap-3 py-16 text-muted-foreground">
+        <PlusCircle className="w-10 h-10 opacity-30" />
+        <p className="text-sm">No active knowledge zones. Create one to get started.</p>
       </div>
     );
   }
@@ -103,124 +91,89 @@ export function KnowledgeZonesList() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {zones.map((zone) => (
-        <Card key={zone.id} className="flex flex-col justify-between">
-          <div>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{zone.name}</CardTitle>
-              <div className="flex items-center gap-2">
-                {zone.accessType === "web" && (
-                  <span title="Web Access"><BookOpen className="h-4 w-4 text-muted-foreground" /></span>
-                )}
-                {zone.accessType === "mcp" && (
-                  <span title="MCP Access"><Brain className="h-4 w-4 text-muted-foreground" /></span>
-                )}
-                {zone.accessType === "both" && (
-                  <>
-                    <span title="Web Access"><BookOpen className="h-4 w-4 text-muted-foreground" /></span>
-                    <span title="MCP Access"><Brain className="h-4 w-4 text-muted-foreground" /></span>
-                  </>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <p className="text-xs text-muted-foreground">{zone.description || "No description."}</p>
-              
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                {zone.expiresAt && (
-                  <span className={(() => {
-                    const diff = new Date(zone.expiresAt!).getTime() - Date.now();
-                    if (diff < 0) return "text-destructive font-medium";
-                    if (diff < 3_600_000) return "text-destructive";
-                    if (diff < 86_400_000) return "text-yellow-500";
-                    return "text-emerald-500";
-                  })()}>
-                    ⏱ {formatDistanceToNow(new Date(zone.expiresAt!), { addSuffix: true })}
-                  </span>
-                )}
-                <Badge variant="outline">Notes: {zone.noteCount}</Badge>
-                {zone.notebookLmStatus && (
-                  <Badge
-                    variant={
-                      zone.notebookLmStatus === "completed"
-                        ? "default"
-                        : zone.notebookLmStatus === "failed"
-                        ? "destructive"
-                        : "secondary"
-                    }
-                  >
-                    NLM: {zone.notebookLmStatus}
+        <Card key={zone.id} className="flex flex-col border-border/60 hover:border-border transition-colors">
+          <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+            <CardTitle className="text-sm font-mono font-semibold leading-tight">{zone.name}</CardTitle>
+            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+              {(zone.accessType === "web" || zone.accessType === "both") && (
+                <BookOpen className="h-3.5 w-3.5 text-muted-foreground" title="Web Access" />
+              )}
+              {(zone.accessType === "mcp" || zone.accessType === "both") && (
+                <Brain className="h-3.5 w-3.5 text-muted-foreground" title="MCP Access" />
+              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                onClick={() => deleteZoneMutation.mutate(zone.id)}
+                disabled={deleteZoneMutation.isPending}
+                title="Delete zone"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </CardHeader>
+
+          <CardContent className="flex-1 space-y-3">
+            {zone.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2">{zone.description}</p>
+            )}
+
+            {/* Expiry + note count */}
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              {zone.expiresAt && (
+                <span className={getExpiryClass(zone.expiresAt)}>
+                  ⏱ {formatDistanceToNow(new Date(zone.expiresAt), { addSuffix: true })}
+                </span>
+              )}
+              <Badge variant="outline" className="text-[10px] h-5">
+                {zone.noteCount ?? 0} notes
+              </Badge>
+              {zone.notebookLmStatus && zone.notebookLmStatus !== "none" && (
+                <Badge
+                  variant={zone.notebookLmStatus === "completed" ? "default" : zone.notebookLmStatus === "failed" ? "destructive" : "secondary"}
+                  className="text-[10px] h-5"
+                >
+                  NLM: {zone.notebookLmStatus}
+                </Badge>
+              )}
+            </div>
+
+            {/* Folders */}
+            {zone.folders && zone.folders.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {zone.folders.map((folder, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 font-mono flex items-center gap-1">
+                    <Folder className="w-2.5 h-2.5" />
+                    {folder.split("/").pop()}
                   </Badge>
+                ))}
+              </div>
+            )}
+
+            {/* Credentials */}
+            {(zone.accessCode || zone.webUrl || zone.mcpUrl) && (
+              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/40">
+                {zone.accessCode && (
+                  <Button variant="outline" size="sm" className="h-6 px-2 text-[10px] gap-1"
+                    onClick={() => copyToClipboard(zone.accessCode!, "Access Code")}>
+                    <Copy className="w-3 h-3" /> Code
+                  </Button>
+                )}
+                {zone.webUrl && (
+                  <Button variant="outline" size="sm" className="h-6 px-2 text-[10px] gap-1"
+                    onClick={() => copyToClipboard(zone.webUrl!, "Web URL")}>
+                    <Copy className="w-3 h-3" /> Web
+                  </Button>
+                )}
+                {zone.mcpUrl && (
+                  <Button variant="outline" size="sm" className="h-6 px-2 text-[10px] gap-1"
+                    onClick={() => copyToClipboard(zone.mcpUrl!, "MCP URL")}>
+                    <Copy className="w-3 h-3" /> MCP
+                  </Button>
                 )}
               </div>
-
-              {/* Folders List */}
-              {zone.folders && zone.folders.length > 0 && (
-                <div className="space-y-1">
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">Folders</p>
-                  <div className="flex flex-wrap gap-1">
-                    {zone.folders.map((folder, idx) => (
-                      <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0.5 flex items-center gap-1 font-mono">
-                        <Folder className="w-3 h-3 text-muted-foreground" />
-                        {folder.split("/").pop()}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Credentials Copy Buttons */}
-              {(zone.accessCode || zone.webUrl || zone.mcpUrl) && (
-                <div className="space-y-1">
-                  <p className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider">Credentials</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {zone.accessCode && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-[10px] flex items-center gap-1"
-                        onClick={() => copyToClipboard(zone.accessCode!, "Access Code")}
-                      >
-                        <Copy className="w-3 h-3" />
-                        Code
-                      </Button>
-                    )}
-                    {zone.webUrl && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-[10px] flex items-center gap-1"
-                        onClick={() => copyToClipboard(zone.webUrl!, "Web URL")}
-                      >
-                        <Copy className="w-3 h-3" />
-                        Web URL
-                      </Button>
-                    )}
-                    {zone.mcpUrl && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 px-2 text-[10px] flex items-center gap-1"
-                        onClick={() => copyToClipboard(zone.mcpUrl!, "MCP URL")}
-                      >
-                        <Copy className="w-3 h-3" />
-                        MCP URL
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </div>
-          <CardContent className="pt-0">
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => deleteZoneMutation.mutate(zone.id)}
-              disabled={deleteZoneMutation.isPending}
-              className="mt-2 w-full"
-            >
-              <Trash2 className="h-4 w-4 mr-2" /> Delete
-            </Button>
+            )}
           </CardContent>
         </Card>
       ))}
