@@ -264,7 +264,7 @@ export function ZoneCreationDialog({
 
     // Fetch note content for selected folders
     const fetchAndSubmit = async () => {
-      const treeData = treeQuery.data ?? [];
+      const treeData = notesTree;
       const noteNodes: TreeNode[] = [];
       const walk = (nodes: TreeNode[]) => {
         for (const n of nodes) {
