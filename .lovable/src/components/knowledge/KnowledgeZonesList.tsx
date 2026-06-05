@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { formatDistanceToNow, parseISO } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { BookOpen, Brain, Trash2, Copy, Folder } from "lucide-react";
 
 import { api, type KnowledgeZone } from "@/lib/api";
@@ -134,7 +134,7 @@ export function KnowledgeZonesList() {
                     if (diff < 86_400_000) return "text-yellow-500";
                     return "text-emerald-500";
                   })()}>
-                    ⏱ {formatDistanceToNow(parseISO(zone.expiresAt!), { addSuffix: true })}
+                    ⏱ {formatDistanceToNow(new Date(zone.expiresAt!), { addSuffix: true })}
                   </span>
                 )}
                 <Badge variant="outline">Notes: {zone.noteCount}</Badge>
