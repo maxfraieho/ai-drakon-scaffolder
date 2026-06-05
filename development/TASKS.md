@@ -15013,7 +15013,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
 ## TASK-137: GARDEN_OWNER_PASSWORD setup
 [x] TASK-137
 
-[ ] TASK-143
+[x] TASK-143
     !!IMPORTANT!! Run ALL commands on dev server 192.168.3.184
     Project: ~/workspace/ai-drakon-scaffolder/
 
