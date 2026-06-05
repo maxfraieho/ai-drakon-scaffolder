@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { BookOpen, Brain, Trash2, Copy, Folder, PlusCircle } from "lucide-react";
+import { BookOpen, Brain, Folder, PlusCircle } from "lucide-react";
+import { useState } from "react";
 
 import { api, type KnowledgeZone } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ZoneDetailSheet } from "./ZoneDetailSheet";
 
 function getExpiryClass(expiresAt?: number | string): string {
   if (!expiresAt) return "text-muted-foreground";
@@ -20,6 +21,7 @@ function getExpiryClass(expiresAt?: number | string): string {
 
 export function KnowledgeZonesList() {
   const queryClient = useQueryClient();
+  const [selectedZone, setSelectedZone] = useState<KnowledgeZone | null>(null);
 
   const { data: zones, isLoading, isError, error } = useQuery<KnowledgeZone[]>({
     queryKey: ["knowledgeZones"],
@@ -42,15 +44,6 @@ export function KnowledgeZonesList() {
     },
     onError: (err) => toast.error(`Error: ${err.message}`),
   });
-
-  const copyToClipboard = async (text: string, label: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      toast.success(`${label} copied`);
-    } catch {
-      toast.error(`Failed to copy ${label}`);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -89,94 +82,82 @@ export function KnowledgeZonesList() {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      {zones.map((zone) => (
-        <Card key={zone.id} className="flex flex-col border-border/60 hover:border-border transition-colors">
-          <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
-            <CardTitle className="text-sm font-mono font-semibold leading-tight">{zone.name}</CardTitle>
-            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-              {(zone.accessType === "web" || zone.accessType === "both") && (
-                <BookOpen className="h-3.5 w-3.5 text-muted-foreground" title="Web Access" />
-              )}
-              {(zone.accessType === "mcp" || zone.accessType === "both") && (
-                <Brain className="h-3.5 w-3.5 text-muted-foreground" title="MCP Access" />
-              )}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                onClick={() => deleteZoneMutation.mutate(zone.id)}
-                disabled={deleteZoneMutation.isPending}
-                title="Delete zone"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </div>
-          </CardHeader>
+    <>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {zones.map((zone) => (
+          <Card
+            key={zone.id}
+            className="flex flex-col border-border/60 hover:border-border transition-colors cursor-pointer"
+            onClick={() => setSelectedZone(zone)}
+          >
+            <CardHeader className="pb-2 flex flex-row items-start justify-between gap-2">
+              <CardTitle className="text-sm font-mono font-semibold leading-tight truncate max-w-[200px]">
+                {zone.name}
+              </CardTitle>
+              <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                {(zone.accessType === "web" || zone.accessType === "both") && (
+                  <span title="Web Access">
+                    <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />
+                  </span>
+                )}
+                {(zone.accessType === "mcp" || zone.accessType === "both") && (
+                  <span title="MCP Access">
+                    <Brain className="h-3.5 w-3.5 text-muted-foreground" />
+                  </span>
+                )}
+              </div>
+            </CardHeader>
 
-          <CardContent className="flex-1 space-y-3">
-            {zone.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2">{zone.description}</p>
-            )}
-
-            {/* Expiry + note count */}
-            <div className="flex flex-wrap items-center gap-2 text-xs">
-              {zone.expiresAt && (
-                <span className={getExpiryClass(zone.expiresAt)}>
-                  ⏱ {formatDistanceToNow(new Date(zone.expiresAt), { addSuffix: true })}
-                </span>
+            <CardContent className="flex-1 space-y-3">
+              {zone.description && (
+                <p className="text-xs text-muted-foreground line-clamp-2">{zone.description}</p>
               )}
-              <Badge variant="outline" className="text-[10px] h-5">
-                {zone.noteCount ?? 0} notes
-              </Badge>
-              {zone.notebookLmStatus && zone.notebookLmStatus !== "none" && (
-                <Badge
-                  variant={zone.notebookLmStatus === "completed" ? "default" : zone.notebookLmStatus === "failed" ? "destructive" : "secondary"}
-                  className="text-[10px] h-5"
-                >
-                  NLM: {zone.notebookLmStatus}
+
+              {/* Expiry + note count */}
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                {zone.expiresAt && (
+                  <span className={getExpiryClass(zone.expiresAt)}>
+                    ⏱ {formatDistanceToNow(new Date(zone.expiresAt), { addSuffix: true })}
+                  </span>
+                )}
+                <Badge variant="outline" className="text-[10px] h-5">
+                  {zone.noteCount ?? 0} notes
                 </Badge>
-              )}
-            </div>
-
-            {/* Folders */}
-            {zone.folders && zone.folders.length > 0 && (
-              <div className="flex flex-wrap gap-1">
-                {zone.folders.map((folder, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 font-mono flex items-center gap-1">
-                    <Folder className="w-2.5 h-2.5" />
-                    {folder.split("/").pop()}
+                {zone.notebookLmStatus && zone.notebookLmStatus !== "none" && (
+                  <Badge
+                    variant={zone.notebookLmStatus === "completed" ? "default" : zone.notebookLmStatus === "failed" ? "destructive" : "secondary"}
+                    className="text-[10px] h-5"
+                  >
+                    NLM: {zone.notebookLmStatus}
                   </Badge>
-                ))}
+                )}
               </div>
-            )}
 
-            {/* Credentials */}
-            {(zone.accessCode || zone.webUrl || zone.mcpUrl) && (
-              <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border/40">
-                {zone.accessCode && (
-                  <Button variant="outline" size="sm" className="h-6 px-2 text-[10px] gap-1"
-                    onClick={() => copyToClipboard(zone.accessCode!, "Access Code")}>
-                    <Copy className="w-3 h-3" /> Code
-                  </Button>
-                )}
-                {zone.webUrl && (
-                  <Button variant="outline" size="sm" className="h-6 px-2 text-[10px] gap-1"
-                    onClick={() => copyToClipboard(zone.webUrl!, "Web URL")}>
-                    <Copy className="w-3 h-3" /> Web
-                  </Button>
-                )}
-                {zone.mcpUrl && (
-                  <Button variant="outline" size="sm" className="h-6 px-2 text-[10px] gap-1"
-                    onClick={() => copyToClipboard(zone.mcpUrl!, "MCP URL")}>
-                    <Copy className="w-3 h-3" /> MCP
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+              {/* Folders */}
+              {zone.folders && zone.folders.length > 0 && (
+                <div className="flex flex-wrap gap-1">
+                  {zone.folders.map((folder, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-[10px] px-1.5 py-0 h-5 font-mono flex items-center gap-1">
+                      <Folder className="w-2.5 h-2.5" />
+                      {folder.split("/").pop()}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      <ZoneDetailSheet
+        zone={selectedZone}
+        open={!!selectedZone}
+        onClose={() => setSelectedZone(null)}
+        onDelete={(id) => {
+          deleteZoneMutation.mutate(id);
+          setSelectedZone(null);
+        }}
+      />
+    </>
   );
 }
