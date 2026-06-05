@@ -14501,18 +14501,18 @@ SESSION:2026-06-05|TASK-136:garden-mcp-502-diagnosis|commit:<hash>|results:see-d
     3. KnowledgePage - improved sidebar/tab layout
 
     ### OpenDesign API (MANDATORY - use this for UI generation)
-    URL: http://192.168.3.184:7456
+    URL: https://opendesign.exodus.pp.ua
     Token: 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a
     Plugin: ai-drakon-mobile
 
     Run a design task:
-    curl -s http://192.168.3.184:7456/api/runs -X POST \
+    curl -s https://opendesign.exodus.pp.ua/api/runs -X POST \
       -H "Authorization: Bearer 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a" \
       -H "Content-Type: application/json" \
       -d '{"prompt":"<your prompt>","pluginId":"ai-drakon-mobile","od.mode":"generate"}'
 
     Poll result (repeat until status=complete):
-    curl -s "http://192.168.3.184:7456/api/runs/<runId>" \
+    curl -s "https://opendesign.exodus.pp.ua/api/runs/<runId>" \
       -H "Authorization: Bearer 2269d21455f772f62878631c5665d7ff1e57fe58790d976e80871c427a3dee4a"
 
     Also use RPi browser (agent-workspace) to see current /knowledge UI:
@@ -14559,7 +14559,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
     git add development/TASKS.md && git commit -m "chore(tasks): TASK-142 done" && git push origin main
     python3 -m mempalace diary write --agent agt-ogy "SESSION:2026-06-05|TASK-142:knowledge-opendesign-redesign|commit:<hash>|STAR3"
 
-    !!IMPORTANT!! OpenDesign URL: http://192.168.3.184:7456 (NOT 7459 or 7460)
+    !!IMPORTANT!! OpenDesign URL: https://opendesign.exodus.pp.ua (NOT 7459 or 7460)
     !!IMPORTANT!! Poll OpenDesign runId until status=complete before reading result
     !!IMPORTANT!! .lovable sync mandatory
     !!IMPORTANT!! npm run build must pass in .lovable/ before commit
