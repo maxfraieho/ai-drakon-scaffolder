@@ -324,7 +324,7 @@ export const api = {
 
   // Knowledge Zone API
   listKnowledgeZones: async (): Promise<ListKnowledgeZonesResponse> => {
-    const response = await fetch(`${resolveApiBase()}/v1/knowledge/zones`, {
+    const response = await fetch(`/api/knowledge/zones`, {
       headers: headers(),
     });
     return parseResponse<ListKnowledgeZonesResponse>(response);
@@ -333,7 +333,7 @@ export const api = {
   createKnowledgeZone: async (
     data: CreateKnowledgeZoneRequest,
   ): Promise<CreateKnowledgeZoneResponse> => {
-    const response = await fetch(`${resolveApiBase()}/v1/knowledge/zones`, {
+    const response = await fetch(`/api/knowledge/zones`, {
       method: "POST",
       headers: headers(),
       body: JSON.stringify(data),
@@ -342,7 +342,7 @@ export const api = {
   },
 
   deleteKnowledgeZone: async (zoneId: string): Promise<DeleteKnowledgeZoneResponse> => {
-    const response = await fetch(`${resolveApiBase()}/v1/knowledge/zones/${zoneId}`, {
+    const response = await fetch(`/api/knowledge/zones/${zoneId}`, {
       method: "DELETE",
       headers: headers(),
     });
