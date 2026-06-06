@@ -15236,3 +15236,105 @@ with open('development/TASKS.md','w') as f: f.write(c)
     !!IMPORTANT!! docs/ directory may not exist — create it: mkdir -p docs/
     !!IMPORTANT!! Be specific about Student Pack limits (verify actual numbers, not guesses)
     !!IMPORTANT!! Recommendation must consider: 2-project limit on Student plan, TanStack Start SSR
+
+## TASK-138: Migrate AI-DRAKON agents from Python/LangGraph to TypeScript/Flue (CF Workers)
+[ ] TASK-138
+
+### GOAL
+Research Flue framework docs and create a complete migration plan + PoC for migrating
+all 3 AI-DRAKON agents (drakon-agent, architect-agent, docs-agent) from Python/FastAPI/LangGraph
+to TypeScript/Flue deployed on Cloudflare Workers.
+
+### CONTEXT
+Current stack:
+- drakon-agent  :8765  Python/FastAPI  (routes: analyze, feedback, chat, health)
+- architect-agent :8766  Python/FastAPI + LangGraph  (pipeline/ with graphs.py, states.py, nodes_*.py)
+- docs-agent    :8767  Python/FastAPI  (routes: docs, notes, drakon_ir, projects, dataview, gitnexus)
+- All on dev server 192.168.3.184, managed by rc-service
+
+Target stack:
+- TypeScript/Flue framework (https://flueframework.com)
+- Deployed as Cloudflare Workers (3 workers OR 1 worker with routing)
+- LLM calls via Flue built-in tools or custom Tool to proxy at https://agy3.exodus.pp.ua/v1
+- No Python servers, no dev server dependency
+
+### STEPS
+
+STEP 1 - Read Flue documentation:
+```
+curl -s https://flueframework.com/start.md > /tmp/flue-start.md
+cat /tmp/flue-start.md | head -200
+```
+Also fetch these Flue doc pages:
+- https://flueframework.com/docs/agents
+- https://flueframework.com/docs/workflows
+- https://flueframework.com/docs/tools
+- https://flueframework.com/docs/deploy/cloudflare
+- https://flueframework.com/docs/routing
+
+STEP 2 - Read current Python agent code on dev server (SSH):
+```
+HOST="192.168.3.184"
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@$HOST "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/routes/analyze.py"
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@$HOST "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/pipeline/graphs.py"
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@$HOST "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/pipeline/states.py"
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@$HOST "cat /home/vokov/projects/ai-drakon-scaffolder/services/docs-agent/docs_route.py"
+```
+
+STEP 3 - Create migration plan document:
+Write to: ~/workspace/ai-drakon-scaffolder/development/FLUE-MIGRATION-PLAN.md
+Include:
+  a) Flue framework summary (key concepts, how it works)
+  b) Architecture decision: 3 separate Workers OR 1 Worker with routing (recommend which)
+  c) Mapping table: Python routes -> Flue agents/tools
+  d) LangGraph replacement strategy: how Flue Workflows replace StateGraph
+  e) CF Workers config: wrangler.toml structure for each agent
+  f) LLM provider: how to connect to https://agy3.exodus.pp.ua/v1 proxy as Flue LLM provider
+  g) Step-by-step migration order (which agent to migrate first)
+  h) Estimated effort per agent
+
+STEP 4 - Create PoC for drakon-agent:
+Create directory: ~/workspace/ai-drakon-scaffolder/services/drakon-agent-flue/
+Create these files based on Flue docs:
+  - package.json (with flue dependency)
+  - flue.config.ts
+  - wrangler.toml (CF Workers deployment)
+  - agents/drakon.ts (main Flue agent with analyze + chat tools)
+  - agents/tools/analyze-code.ts (Tool that replicates /analyze endpoint logic)
+  - agents/tools/drakon-chat.ts (Tool that replicates /chat endpoint)
+
+The agent should:
+  - Accept code analysis requests via POST /agents/drakon/:id
+  - Use custom LLM via proxy at https://agy3.exodus.pp.ua/v1
+  - Return analysis results in same JSON format as current Python agent
+
+### VERIFICATION
+```
+cd ~/workspace/ai-drakon-scaffolder/services/drakon-agent-flue
+cat package.json
+cat flue.config.ts
+cat agents/drakon.ts
+find . -name "*.ts" | xargs wc -l
+```
+
+### COMMIT
+```
+cd ~/workspace/ai-drakon-scaffolder
+git add development/FLUE-MIGRATION-PLAN.md services/drakon-agent-flue/
+git commit -m "feat(agents): Flue migration plan + drakon-agent TypeScript PoC"
+git push origin main
+```
+
+### DIARY
+Write: "SESSION:$(date +%Y-%m-%d)|TASK-138:flue-migration|commit:<hash>|plan+poc:done"
+Agent: agt-ogy3
+
+### NOTES
+- !!IMPORTANT!! Work locally on AGY3 Termux. Use SSH only to READ Python code on 192.168.3.184
+- Read Flue docs FIRST before writing any code
+- NotebookLM notebook "Flue" (ID: 83ab40c7-7ca6-4685-9eb8-cf72dfa25f19) has indexed docs
+  Access via: curl -s http://192.168.3.234:8002/... (NotebookLM MCP on RPi .234)
+- LLM proxy: https://agy3.exodus.pp.ua/v1 (OpenAI-compatible, model: gemini-2.5-flash)
+- CF Workers wrangler config: DO NOT put real API keys - use wrangler secrets
+- The PoC needs to be correct TypeScript (no need to actually run/deploy)
+- sshpass password for dev server: 805235io.
