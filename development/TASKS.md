@@ -15237,8 +15237,8 @@ with open('development/TASKS.md','w') as f: f.write(c)
     !!IMPORTANT!! Be specific about Student Pack limits (verify actual numbers, not guesses)
     !!IMPORTANT!! Recommendation must consider: 2-project limit on Student plan, TanStack Start SSR
 
-## TASK-138: Migrate AI-DRAKON agents from Python/LangGraph to TypeScript/Flue (CF Workers)
-[ ] TASK-138
+## TASK-145: Migrate AI-DRAKON agents from Python/LangGraph to TypeScript/Flue (CF Workers)
+[ ] TASK-145
 
 ### GOAL
 Research Flue framework docs and create a complete migration plan + PoC for migrating
