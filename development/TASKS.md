@@ -15340,7 +15340,7 @@ Agent: agt-ogy3
 - sshpass password for dev server: 805235io.
 
 ## TASK-146: Full drakon-agent migration to Flue (TypeScript, CF Workers, MCP server)
-[ ] TASK-146
+[x] TASK-146
 
 ### GOAL
 Fully migrate `drakon-agent` from Python/FastAPI to TypeScript/Flue deployed on Cloudflare Workers.
@@ -15602,7 +15602,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-146:drakon-agent-flue|ast-ts+mcp-server+h
 - The PoC tools (analyze-code.ts, drakon-chat.ts) should be REPLACED, not patched
 
 ## TASK-147: Migrate docs-agent to TypeScript/Flue (CF Workers + GitHub API + MCP server)
-[ ] TASK-147
+[x] TASK-147
 
 ### GOAL
 Fully migrate `docs-agent` from Python/FastAPI to TypeScript/Flue on Cloudflare Workers.
@@ -15969,3 +15969,450 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-147:docs-agent-flue|github-api+mcp+hono|c
 - MCP server: same JSON-RPC 2.0 pattern as in drakon-agent-flue/src/mcp-server.ts
 - DOCS_SYSTEM_PROMPT must be copied EXACTLY from Python prompts.py (Ukrainian text)
 - Do NOT install yaml/js-yaml — implement minimal frontmatter parser from scratch
+
+
+## TASK-148: Migrate architect-agent to Flue (CF Workers + D1 + NotebookLM patterns + MCP)
+[ ] TASK-148
+
+### GOAL
+Fully migrate `architect-agent` from Python/FastAPI/LangGraph to TypeScript/Flue on Cloudflare Workers.
+NEW FEATURE: integrate AwesomeArchitecture patterns from NotebookLM into the KB —
+the agent recommends patterns based on project docs + developer chat, then creates pipelines
+visible in the Pipelines tab.
+
+### KEY CHANGES FROM PYTHON
+| Python | TypeScript CF Workers |
+|--------|----------------------|
+| LangGraph StateGraph | Flue Workflows (native TS control flow) |
+| SQLite kb.db | Cloudflare D1 database |
+| radon (cyclomatic complexity) | TypeScript CC calculator |
+| subprocess/file pipelines | GitHub API + KV |
+| In-memory job store dict | Cloudflare Durable Objects |
+| SSE via FastAPI | CF Workers streaming (ReadableStream) |
+| http://localhost:18880/v1 | https://agy3.exodus.pp.ua/v1 |
+| http://localhost:4747 GitNexus | https://gitnexus.exodus.pp.ua/api/mcp |
+
+### NEW FEATURE: AwesomeArchitecture Pattern KB
+The architect-agent's KB must include architectural patterns from NotebookLM:
+- Notebook: "AwesomeArchitecture" ID: c21dd88b-79cd-47db-bb72-a52730218eb9
+- NotebookLM MCP server: http://192.168.3.234:8002
+
+Patterns to load into KB (pre-seeded in D1 or KV):
+Categories and patterns from AwesomeArchitecture:
+  - Core: Layered, Microservices, Event-driven, CQRS
+  - Data Consistency: Saga, Outbox, Event sourcing, Idempotency
+  - Migration: Strangler fig, Parallel run, Branch by abstraction, Shadow traffic
+  - Application: Modular monolith, Three-tier, Offline-first, Local-first, OT/CRDT
+  - AI Systems: RAG Knowledge Base, AI Agent/Workflow, Inference Serving
+
+Tool `suggest_patterns(project_docs, chat_context, requirements)`:
+  1. Build query from project_docs + requirements
+  2. Call NotebookLM MCP: POST http://192.168.3.234:8002/mcp
+     Method: tools/call, name: chat_ask
+     Args: { notebook_id: "c21dd88b-79cd-47db-bb72-a52730218eb9", question: <query> }
+  3. Parse response, return top 3-5 pattern recommendations with rationale
+  4. Developer selects patterns → agent creates pipeline based on them
+
+### FILE STRUCTURE: `services/architect-agent-flue/`
+
+```
+services/architect-agent-flue/
+├── package.json
+├── tsconfig.json
+├── flue.config.ts
+├── wrangler.toml
+│
+├── src/
+│   ├── index.ts          (Hono: REST routes backward-compat + MCP endpoint)
+│   └── mcp-server.ts     (MCP JSON-RPC 2.0 — all architect tools)
+│
+├── agents/
+│   └── architect.ts      (Flue agent with ARCHITECT_SYSTEM_PROMPT)
+│
+├── workflows/
+│   ├── pipeline-a.ts     (Code → DRAKON IR — replaces LangGraph analysis_graph)
+│   └── pipeline-b.ts     (DRAKON IR → Code — replaces LangGraph vibe_graph)
+│
+├── tools/
+│   ├── architect-chat.ts    (port of ai_chat/architect_chat.py)
+│   ├── kb-crud.ts           (port of kb_route.py — D1 database)
+│   ├── graph-pipelines.ts   (port of graph_pipeline_route.py — GitHub API + SSE)
+│   ├── project-pipelines.ts (port of project_pipeline_route.py — GitHub API)
+│   ├── files.ts             (port of files_route.py)
+│   ├── gitnexus.ts          (port of gitnexus_route.py)
+│   └── suggest-patterns.ts  (NEW — NotebookLM MCP query for AwesomeArchitecture)
+│
+└── lib/
+    ├── llm-client.ts     (copy from drakon-agent-flue)
+    ├── github-api.ts     (copy from docs-agent-flue)
+    ├── ir-types.ts       (copy from drakon-agent-flue)
+    ├── ir-validator.ts   (copy from drakon-agent-flue)
+    ├── ast-analyzer.ts   (copy from drakon-agent-flue)
+    ├── cc-calculator.ts  (NEW — cyclomatic complexity for JS/TS, LLM for Python)
+    ├── prompts.ts        (ARCHITECT_SYSTEM_PROMPT from Python prompts.py)
+    └── job-store.ts      (NEW — Durable Object for async job tracking)
+```
+
+### STEP 1 — Read Python source on dev server
+```
+HOST="192.168.3.184"
+S="sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@$HOST"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/prompts.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/pipeline/nodes_vibe.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/pipeline/nodes_agents.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/pipeline/nodes_ss.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/pipeline/job_store.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/files_route.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/gitnexus_route.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/graph_pipeline_route.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/project_pipeline_route.py"
+# Also read drakon-agent-flue libs to copy them:
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent-flue/lib/llm-client.ts"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent-flue/lib/ir-types.ts"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent-flue/lib/ir-validator.ts"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent-flue/lib/ast-analyzer.ts"
+```
+
+### STEP 2 — workflows/pipeline-a.ts (replaces LangGraph analysis_graph)
+
+Pipeline A: Code → DRAKON IR
+Python: StateGraph with nodes: measure_cc → classify → ast_translate/yaml_gen → ir_gen → validate (loop max 3)
+
+TypeScript Flue Workflow:
+```typescript
+export async function runPipelineA(code: string, filePath: string, env: Env): Promise<PipelineAResult> {
+  // 1. measure_cc: calculate cyclomatic complexity
+  const cc = calculateCC(code, filePath);  // lib/cc-calculator.ts
+
+  // 2. classify complexity (same thresholds as Python)
+  const treeLevel = cc <= 10 ? 'primitive' : cc <= 20 ? 'silhouette' : cc <= 50 ? 'branch' : 'deep';
+
+  let drakonIr: DrakonDiagram[];
+
+  if (treeLevel === 'primitive') {
+    // 3a. ast_translate: use acorn/TS AST (for JS/TS) or LLM (for Python)
+    drakonIr = await astTranslate(code, filePath, env);
+  } else {
+    // 3b. yaml_gen → ir_gen: LLM generates YAML then IR
+    const yaml = await llmYamlGen(code, filePath, env);
+    drakonIr = await llmIrGen(yaml, code, env);
+  }
+
+  // 4. validate + retry loop (max 3 iterations)
+  let errors: string[] = validateIrList(drakonIr);
+  let iteration = 0;
+  while (errors.length > 0 && iteration < MAX_ITERATIONS) {
+    drakonIr = await llmIrGen(null, code, env, errors);  // pass errors for correction
+    errors = validateIrList(drakonIr);
+    iteration++;
+  }
+
+  return { drakonIr, treeLevel, cc, validationErrors: errors };
+}
+```
+
+### STEP 3 — workflows/pipeline-b.ts (replaces LangGraph vibe_graph)
+
+Pipeline B: DRAKON IR → Code
+Python: StateGraph: code_gen → check_syntax (loop max 3)
+
+TypeScript Flue Workflow:
+```typescript
+export async function runPipelineB(
+  drakonIr: DrakonDiagram, description: string, language: string, env: Env
+): Promise<PipelineBResult> {
+  let generatedCode = await llmCodeGen(drakonIr, description, language, env);
+
+  // check_syntax: use acorn for JS/TS, LLM for Python
+  let syntaxErrors = await checkSyntax(generatedCode, language, env);
+  let iteration = 0;
+
+  while (syntaxErrors.length > 0 && iteration < MAX_ITERATIONS) {
+    generatedCode = await llmCodeGen(drakonIr, description, language, env, syntaxErrors);
+    syntaxErrors = await checkSyntax(generatedCode, language, env);
+    iteration++;
+  }
+
+  return { code: generatedCode, language, syntaxErrors, iterations: iteration };
+}
+```
+
+### STEP 4 — lib/cc-calculator.ts
+
+Cyclomatic complexity (replaces Python `radon` library):
+```typescript
+// For JS/TS files: parse with acorn, count decision points
+// Decision points: if, else if, for, while, do-while, switch case, catch, &&, ||, ??
+export function calculateCC(code: string, filePath: string): number {
+  const ext = filePath.split('.').pop() || '';
+  if (['js', 'ts', 'tsx', 'jsx', 'mjs'].includes(ext)) {
+    // Use acorn to count branches
+    return calculateJSCC(code);
+  }
+  // For Python and others: simple regex-based count
+  // Count: if, elif, for, while, except, with, assert, and, or
+  return calculatePythonCC(code);
+}
+```
+
+### STEP 5 — tools/kb-crud.ts (replaces SQLite kb.db → Cloudflare D1)
+
+D1 binding: `KB_DB`
+```typescript
+// Schema: same as Python
+// CREATE TABLE contributions (id TEXT PRIMARY KEY, timestamp INTEGER, language TEXT,
+//   description TEXT, code TEXT, ir_yaml TEXT, job_id TEXT, tags TEXT)
+
+// SEED DATA: Pre-populated patterns from AwesomeArchitecture
+const ARCHITECTURE_PATTERNS = [
+  { id: 'p-layered', language: 'pattern', description: 'Layered Architecture',
+    code: 'Classic three-tier: Presentation → Business → Data. Good enough for standard web apps.',
+    ir_yaml: '...', tags: 'architecture,layered,three-tier' },
+  { id: 'p-microservices', language: 'pattern', description: 'Microservices',
+    code: 'Independent services, each owning its data. Use for scale, team autonomy.',
+    ir_yaml: '...', tags: 'architecture,microservices,distributed' },
+  { id: 'p-event-driven', language: 'pattern', description: 'Event-Driven Architecture',
+    code: 'Async events via message broker. Use for decoupling, real-time processing.',
+    ir_yaml: '...', tags: 'architecture,events,async' },
+  { id: 'p-cqrs', language: 'pattern', description: 'CQRS',
+    code: 'Separate read/write models. Use when reads and writes have different scaling needs.',
+    ir_yaml: '...', tags: 'architecture,cqrs,data' },
+  // ... Saga, Outbox, Strangler fig, etc.
+  { id: 'p-rag', language: 'pattern', description: 'RAG Knowledge Base',
+    code: 'Retrieval-Augmented Generation: vector DB + LLM. Use for AI doc search, Q&A.',
+    ir_yaml: '...', tags: 'ai,rag,vector' },
+  { id: 'p-agent-workflow', language: 'pattern', description: 'AI Agent/Workflow',
+    code: 'Tool-calling LLM with sandboxing. Use for autonomous coding, research agents.',
+    ir_yaml: '...', tags: 'ai,agent,flue' },
+];
+
+// Initialize D1 with seed patterns on first run:
+export async function initKB(db: D1Database): Promise<void>
+
+// Standard CRUD:
+export async function contributeToKB(db, code, irYaml, language, description, jobId, tags)
+export async function listKB(db, limit, offset)
+export async function getKBEntry(db, id)
+export async function deleteKBEntry(db, id)
+
+// Pattern search (new):
+export async function searchPatterns(db, query, limit = 5)
+// SELECT * FROM contributions WHERE language = 'pattern' AND (description LIKE ? OR tags LIKE ?)
+```
+
+### STEP 6 — tools/suggest-patterns.ts (NEW — AwesomeArchitecture integration)
+
+```typescript
+const AWESOME_ARCH_NOTEBOOK = 'c21dd88b-79cd-47db-bb72-a52730218eb9';
+const NOTEBOOKLM_MCP = 'http://192.168.3.234:8002/mcp';
+
+export async function suggestPatterns(
+  projectDocs: string,
+  chatContext: string,
+  requirements: string,
+  env: Env
+): Promise<PatternSuggestion[]> {
+
+  // 1. Query NotebookLM AwesomeArchitecture notebook
+  const query = `Given this project context:
+${projectDocs}
+
+Requirements: ${requirements}
+
+What architectural patterns from AwesomeArchitecture would best fit this project?
+Recommend 3-5 patterns with specific rationale for each. For each pattern explain:
+1. Pattern name
+2. Why it fits this project specifically
+3. Key trade-offs to consider
+4. Which systems use this pattern (examples)`;
+
+  // NotebookLM MCP: initialize session first, then tools/call
+  // POST http://192.168.3.234:8002/mcp
+  const initResp = await callNotebookLMMCP('initialize', {
+    protocolVersion: '2024-11-05',
+    capabilities: {},
+    clientInfo: { name: 'architect-agent', version: '1.0' }
+  });
+  const sessionId = initResp.sessionId;
+
+  const result = await callNotebookLMMCP('tools/call', {
+    name: 'chat_ask',
+    arguments: { notebook_id: AWESOME_ARCH_NOTEBOOK, question: query }
+  }, sessionId);
+
+  // 2. Parse response into structured patterns
+  const rawText = result?.result?.content?.[0]?.text || '';
+  return parsePatternSuggestions(rawText);
+}
+
+// Create pipeline IR from selected patterns:
+export async function createPipelineFromPatterns(
+  patterns: PatternSuggestion[],
+  projectSlug: string,
+  agentName: string,
+  env: Env
+): Promise<DrakonDiagram> {
+  // Build DRAKON IR that represents the architectural decision flow
+  // Each pattern = a node in the diagram
+  // Store to GitHub API under projects/${projectSlug}/agents/${agentName}/pipeline.drakon.json
+}
+```
+
+### STEP 7 — tools/graph-pipelines.ts (replaces graph_pipeline_route.py)
+
+DRAKON-defined pipelines CRUD + SSE execution:
+- Storage: GitHub API (files in `services/architect-agent-flue/pipelines/*.drakon.json`)
+- SSE: Cloudflare Workers `ReadableStream` streaming
+- Job state: Cloudflare Durable Object `ArchitectJobStore`
+
+```typescript
+// list_pipelines() → GitHub API listDir('services/architect-agent-flue/pipelines')
+// get_pipeline(name) → GitHub API getFile
+// update_pipeline(name, ir) → GitHub API putFile + validate IR
+// execute_pipeline_sse(name, initialState) → Cloudflare Workers streaming SSE:
+//   Run pipeline workflow, stream events via ReadableStream
+//   Each step: { event: 'node_start', node: 'measure_cc' }
+//             { event: 'node_done', node: 'measure_cc', result: {...} }
+//             { event: 'done', result: finalState }
+```
+
+### STEP 8 — lib/job-store.ts (Durable Object)
+
+```typescript
+// Durable Object class for async job tracking (replaces Python in-memory dict)
+export class ArchitectJobStore {
+  // state.storage.put/get for job persistence
+  // Jobs survive Worker restarts
+  create_job() → jobId
+  update_job(jobId, status, result?, error?)
+  get_job(jobId) → { job_id, status, result, error }
+}
+```
+
+### STEP 9 — src/mcp-server.ts
+
+MCP server exposing all tools:
+```
+- architect_chat — chat about architecture + patterns
+- pipeline_a — run Code → DRAKON IR workflow
+- pipeline_b — run DRAKON IR → Code workflow  
+- suggest_patterns — query AwesomeArchitecture for pattern recommendations
+- kb_contribute — add to knowledge base
+- kb_list — list KB entries
+- kb_search_patterns — search patterns in KB
+- list_pipelines — list DRAKON pipelines
+- get_pipeline — get pipeline IR
+- update_pipeline — save pipeline IR
+- execute_pipeline — run pipeline (async, returns job_id)
+- job_status — check job status
+- list_projects — list projects with agents
+- create_project — create project
+```
+
+### STEP 10 — src/index.ts (Hono, backward-compatible REST)
+
+```typescript
+app.get('/health', ...)
+app.post('/mcp', handleMcp)
+app.post('/chat', ...)                    // architect_chat
+app.post('/pipeline/analyze', ...)        // pipeline_a
+app.post('/pipeline/generate', ...)       // pipeline_b
+app.get('/pipeline/status/:id', ...)      // job_status
+app.get('/graph-pipelines', ...)          // list_pipelines
+app.get('/graph-pipelines/:name', ...)    // get_pipeline
+app.put('/graph-pipelines/:name', ...)    // update_pipeline
+app.post('/graph-pipelines/:name/execute', ...) // SSE execution
+app.get('/kb', ...)                       // kb_list
+app.post('/kb/contribute', ...)           // kb_contribute
+app.delete('/kb/:id', ...)               // kb_delete
+app.post('/suggest-patterns', ...)        // suggest_patterns (NEW)
+app.get('/projects', ...)                 // list_projects
+app.post('/projects/:slug', ...)          // create_project
+app.route('/', flue())
+export { ArchitectJobStore }  // Durable Object export
+```
+
+### STEP 11 — wrangler.toml
+```toml
+name = "architect-agent-flue"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+PROXY_URL = "https://agy3.exodus.pp.ua/v1"
+PROXY_MODEL = "gemini-2.5-flash"
+GITHUB_REPO = "maxfraieho/ai-drakon-scaffolder"
+NOTEBOOKLM_MCP = "http://192.168.3.234:8002/mcp"
+AWESOME_ARCH_NOTEBOOK_ID = "c21dd88b-79cd-47db-bb72-a52730218eb9"
+
+[[d1_databases]]
+binding = "KB_DB"
+database_name = "architect-kb"
+database_id = "placeholder_d1_id"
+
+[[kv_namespaces]]
+binding = "PIPELINES_KV"
+id = "placeholder_kv_id"
+
+[durable_objects]
+bindings = [
+  { name = "JOB_STORE", class_name = "ArchitectJobStore" },
+  { name = "FLUE_ARCHITECT_AGENT", class_name = "FlueArchitectAgent" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["ArchitectJobStore", "FlueArchitectAgent"]
+```
+
+### VERIFICATION
+```
+cd ~/workspace/ai-drakon-scaffolder/services/architect-agent-flue
+
+# All files present
+find . -name "*.ts" -not -path "*/node_modules/*" | sort
+find . -name "*.ts" -not -path "*/node_modules/*" | xargs wc -l | sort -rn | head -15
+
+# Pipeline A workflow has CC calculation + LLM fallback
+grep -n "calculateCC\|primitive\|silhouette\|yaml_gen\|ir_gen" workflows/pipeline-a.ts | head -10
+
+# Pattern suggestion calls NotebookLM
+grep -n "chat_ask\|AwesomeArchitecture\|c21dd88b" tools/suggest-patterns.ts | head -5
+
+# MCP server exposes suggest_patterns
+grep -n "suggest_patterns\|pipeline_a\|pipeline_b" src/mcp-server.ts | head -10
+
+# Hono has /suggest-patterns and SSE endpoint
+grep -n "suggest-patterns\|execute\|stream\|ReadableStream" src/index.ts | head -10
+
+# D1 KB has pattern seeds
+grep -n "ARCHITECTURE_PATTERNS\|p-layered\|p-rag" tools/kb-crud.ts | head -5
+```
+
+### COMMIT
+```
+cd ~/workspace/ai-drakon-scaffolder
+git add services/architect-agent-flue/
+git commit -m "feat(architect-agent): Flue migration — D1 KB + patterns from AwesomeArchitecture + pipelines + MCP"
+git push origin main
+```
+
+### DIARY
+Agent: agt-ogy3
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-148:architect-agent-flue|d1-kb+patterns+workflows+mcp|commit:<hash>|★★★★★"
+
+### NOTES
+- !!IMPORTANT!! Work locally on AGY3 Termux. SSH to 192.168.3.184 to READ Python files only.
+- sshpass dev server password: 805235io.
+- COPY lib files from drakon-agent-flue: llm-client.ts, ir-types.ts, ir-validator.ts, ast-analyzer.ts
+- LangGraph is COMPLETELY replaced by native TypeScript in workflows/pipeline-a.ts and pipeline-b.ts
+- NO radon Python library — implement CC calculation in TypeScript
+- D1 replaces SQLite — use env.KB_DB.prepare().bind().all() syntax
+- NotebookLM MCP at http://192.168.3.234:8002/mcp — initialize first, then tools/call chat_ask
+- AwesomeArchitecture notebook ID: c21dd88b-79cd-47db-bb72-a52730218eb9
+- DOCS_SYSTEM_PROMPT: copy ARCHITECT_SYSTEM_PROMPT exactly from Python prompts.py
+- SSE streaming: use Cloudflare Workers ReadableStream (NOT Node.js stream)
+- Durable Objects: ArchitectJobStore must be exported from src/index.ts
+- The Pipelines tab in frontend calls GET /graph-pipelines and POST /graph-pipelines/:name/execute
+- gitignore: node_modules/, dist/
