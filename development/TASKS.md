@@ -17052,3 +17052,80 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-151:testing+visual-qa|vitest+tsc+agent-wo
 - If agent-workspace MCP not responding — skip E2E, write note in diary
 - Fix ALL TypeScript errors before committing
 - Screenshots go to /tmp/ on RPi, need scp to AGY3
+
+---
+
+## TASK-152: Redesign AppLayout — Agent-Centric Sidebar Navigation
+[ ] TASK-152
+
+### GOAL
+Replace current AppLayout.tsx with agent-centric sidebar navigation.
+ONE file only: `src/components/app/AppLayout.tsx`
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### STEP 1 — GitNexus context (MANDATORY, do this FIRST, do NOT read files manually)
+
+```bash
+# Get current AppLayout structure:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"context","arguments":{"repo":"ai-drakon-scaffolder","path":"src/components/app/AppLayout.tsx"}}}' \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('content',[{}])[0].get('text','')[:3000])"
+
+# Find what imports AppLayout (to understand what props it needs):
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"impact","arguments":{"repo":"ai-drakon-scaffolder","symbol":"AppLayout"}}}' \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('content',[{}])[0].get('text','')[:2000])"
+```
+
+Use GitNexus output as context. Do NOT read files with view_file for this step.
+
+### STEP 2 — Write new AppLayout.tsx
+
+Replace `src/components/app/AppLayout.tsx` with:
+- Left sidebar (desktop): icons + labels for: Diagrams, Agents, Pipelines, Docs, Knowledge, Notebooks
+- Each item uses NavLink from react-router-dom v6 (active state highlight)
+- Collapsible on mobile (hamburger → drawer)
+- Agent status dots: small colored badge next to "Agents" nav item
+- Settings gear at bottom of sidebar
+- Main content area: `<Outlet />` from react-router-dom
+- Dark theme, Tailwind only, Lucide icons
+
+Keep same props interface as current AppLayout (check GitNexus output from Step 1).
+
+### STEP 3 — Sync to .lovable
+```bash
+cp src/components/app/AppLayout.tsx .lovable/src/components/app/AppLayout.tsx
+```
+
+### STEP 4 — TypeScript check
+```bash
+cd .lovable && npx tsc --noEmit 2>&1 | grep error | head -10
+```
+Fix errors if any.
+
+### VERIFICATION
+```bash
+grep -c "NavLink" src/components/app/AppLayout.tsx
+grep "Outlet" src/components/app/AppLayout.tsx
+diff src/components/app/AppLayout.tsx .lovable/src/components/app/AppLayout.tsx | head -3
+```
+
+### COMMIT
+```bash
+git add src/components/app/AppLayout.tsx .lovable/src/components/app/AppLayout.tsx
+git commit -m "feat(ui): redesign AppLayout with agent-centric sidebar nav"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-152','[x] TASK-152',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-152 done"
+git push origin main
+```
+
+### DIARY
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-152:AppLayout-sidebar|NavLink+Outlet+Lucide|commit:<hash>|★★★"
