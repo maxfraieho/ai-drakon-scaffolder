@@ -17056,7 +17056,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-151:testing+visual-qa|vitest+tsc+agent-wo
 ---
 
 ## TASK-152: Redesign AppLayout — Agent-Centric Sidebar Navigation
-[ ] TASK-152
+[x] TASK-152
 
 ### GOAL
 Replace current AppLayout.tsx with agent-centric sidebar navigation.
