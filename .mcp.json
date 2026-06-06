@@ -12,6 +12,16 @@
       "type": "http",
       "url": "https://notebooklm.exodus.pp.ua/mcp",
       "serverUrl": "https://notebooklm.exodus.pp.ua/mcp"
+    },
+    "agent-workspace": {
+      "type": "stdio",
+      "command": "ssh",
+      "args": [
+        "-o", "StrictHostKeyChecking=no",
+        "-T",
+        "vokov@192.168.3.234",
+        "agent-workspace", "mcp", "--headless"
+      ]
     }
   }
 }
