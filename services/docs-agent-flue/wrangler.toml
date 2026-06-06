@@ -1,0 +1,23 @@
+name = "docs-agent-flue"
+main = "dist/index.js"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+GITHUB_REPO = "maxfraieho/ai-drakon-scaffolder"
+DOCS_PATH = "docs"
+
+[durable_objects]
+bindings = [
+  { name = "FLUE_REGISTRY", class_name = "FlueRegistry" },
+  { name = "FLUE_DOCS_AGENT", class_name = "FlueDocsAgent" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["FlueRegistry", "FlueDocsAgent"]
+
+[[kv_namespaces]]
+binding = "KNOWLEDGE_BASE"
+id = "drakon_kb"
+preview_id = "drakon_kb_preview"
