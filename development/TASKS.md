@@ -16882,3 +16882,173 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-150:frontend-redesign|agent-centric-nav+d
 - Репо на AGY3: ~/workspace/ai-drakon-scaffolder (git pull origin main спочатку!)
 - Поточний сайт: https://ai-drakon-setup.pages.dev (Cloudflare Pages, будується з .lovable/)
 - ВАЖЛИВО після змін в src/: `cp -r src/ .lovable/src/` (Lovable sync rule!)
+
+
+---
+
+## TASK-151: Testing + Visual QA — AI-DRAKON Frontend
+[ ] TASK-151
+
+### GOAL
+1. Run existing tests and verify pass
+2. Write new Vitest unit tests for key modules
+3. E2E visual verification via agent-workspace (browser on RPi 3B)
+4. TypeScript type-check the full codebase
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### PREREQUISITE
+Run AFTER TASK-150 is committed. Check first:
+```bash
+git log --oneline -3
+# Must see TASK-150 commit
+```
+
+### STEP 1 — GitNexus context (MANDATORY first step)
+```bash
+# Get route map to understand all endpoints:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"route_map","arguments":{"repo":"ai-drakon-scaffolder"}}}' \
+  | python3 -m json.tool | head -80
+
+# Find all test-related files:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query","arguments":{"repo":"ai-drakon-scaffolder","q":"vitest describe it expect"}}}' \
+  | python3 -m json.tool | head -40
+```
+
+### STEP 2 — Run existing tests
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+npm run test 2>&1 | tee /tmp/test-run-1.log
+cat /tmp/test-run-1.log | tail -20
+```
+If tests fail — fix before continuing.
+
+### STEP 3 — TypeScript check
+```bash
+cd ~/workspace/ai-drakon-scaffolder/.lovable
+npx tsc --noEmit 2>&1 | tee /tmp/tsc-check.log
+echo "TSC errors: $(grep -c error /tmp/tsc-check.log || echo 0)"
+```
+Fix any type errors found.
+
+### STEP 4 — Write new unit tests
+
+Write tests for these modules (check if they exist first with find):
+
+#### 4a. src/lib/api.ts — API client functions
+File: src/lib/__tests__/api.test.ts (NEW)
+```typescript
+// Test that API functions return expected shapes
+// Use vi.fn() to mock fetch — no real network calls
+import { describe, it, expect, vi } from 'vitest'
+// test getDiagrams, saveDiagram, etc.
+```
+
+#### 4b. src/lib/worker-url.ts — URL resolution
+File: src/lib/__tests__/worker-url.test.ts (NEW)
+```typescript
+// Test that worker URLs resolve correctly for each agent
+// Test dev vs prod URL switching
+```
+
+#### 4c. New TASK-150 components (from AppLayout redesign)
+Find what TASK-150 created:
+```bash
+git diff HEAD~3 --name-only | grep "src/components"
+```
+Write basic render tests for each new component:
+```typescript
+import { render } from '@testing-library/react'
+// Test renders without crash, shows expected text
+```
+
+Check if @testing-library/react is installed:
+```bash
+cat ~/workspace/ai-drakon-scaffolder/.lovable/package.json | grep testing-library
+```
+If NOT installed: skip render tests, write logic-only tests instead.
+
+### STEP 5 — Run all tests after writing
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+npm run test 2>&1 | tee /tmp/test-run-2.log
+cat /tmp/test-run-2.log | tail -30
+```
+All tests must PASS before committing.
+
+### STEP 6 — E2E visual check via agent-workspace
+
+agent-workspace доступний через MCP (в .mcp.json проекту).
+Повна інструкція: ~/workspace/ai-drakon-scaffolder/development/docs/agent-workspace-usage.md
+
+```bash
+# Wait for Cloudflare Pages deploy after TASK-150 push (~3 min):
+echo "Waiting for CF Pages deploy..."
+sleep 180
+
+# Then use agent-workspace MCP tools:
+# workspace_browser_navigate(url="https://ai-drakon-setup.pages.dev", wait_ms=4000)
+# workspace_paste_text — enter token: drakon-mcp-2026
+# workspace_browser_snapshot() — get HTML state
+# workspace_screenshot(output_path="/tmp/drakon-screen.png")
+# scp vokov@192.168.3.234:/tmp/drakon-screen.png /tmp/
+```
+
+Check these routes:
+- / (Home dashboard — new after TASK-150)
+- /diagrams (DRAKON editor)
+- /agents (Agent status)
+- /pipelines (Pipelines)
+
+Note any visual issues in the test report.
+
+### STEP 7 — Sync to .lovable
+```bash
+cp -r src/ .lovable/src/
+```
+
+### VERIFICATION
+```bash
+# All tests pass:
+npm run test 2>&1 | grep -E "passed|failed|Tests"
+# No TS errors:
+grep -c error /tmp/tsc-check.log || echo "0 errors"
+# New test files exist:
+find src -name "*.test.ts" | grep -v __tests__/ir-validator
+# Screenshots saved:
+ls /tmp/drakon-screen*.png 2>/dev/null | wc -l
+```
+
+### COMMIT
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add src/lib/__tests__/ src/components/
+cp -r src/ .lovable/src/
+git add .lovable/src/lib/__tests__/
+git commit -m "test(frontend): add unit tests for api client + new TASK-150 components"
+
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-151','[x] TASK-151',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-151 done"
+git push origin main
+```
+
+### DIARY
+Agent: agt-ogy3
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-151:testing+visual-qa|vitest+tsc+agent-workspace|commit:<hash>|★★★"
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- Run AFTER TASK-150 is committed
+- If @testing-library/react not installed — skip render tests
+- If agent-workspace MCP not responding — skip E2E, write note in diary
+- Fix ALL TypeScript errors before committing
+- Screenshots go to /tmp/ on RPi, need scp to AGY3
