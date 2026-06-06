@@ -15338,3 +15338,265 @@ Agent: agt-ogy3
 - CF Workers wrangler config: DO NOT put real API keys - use wrangler secrets
 - The PoC needs to be correct TypeScript (no need to actually run/deploy)
 - sshpass password for dev server: 805235io.
+
+## TASK-146: Full drakon-agent migration to Flue (TypeScript, CF Workers, MCP server)
+[ ] TASK-146
+
+### GOAL
+Fully migrate `drakon-agent` from Python/FastAPI to TypeScript/Flue deployed on Cloudflare Workers.
+The agent must expose both REST API (backward compatible) AND an MCP server endpoint,
+because the AI-DRAKON platform will use MCP to connect generated user agents to services.
+
+Build on the existing PoC in `services/drakon-agent-flue/` (from TASK-145).
+
+### ARCHITECTURE CONTEXT
+AI-DRAKON is a PLATFORM for building agents:
+- The 3 agents (drakon/architect/docs) build NEW agents for users
+- Generated agents are Flue-based and connect to user services via MCP
+- Therefore: drakon-agent itself must speak MCP (be an MCP server) so Claude Code
+  and other agents can call it as a tool
+- Final deployment: single CF Worker `ai-drakon-flue` with Hono routing (per FLUE-MIGRATION-PLAN.md)
+
+### WHAT EXISTS (PoC from TASK-145)
+Directory: `services/drakon-agent-flue/`
+Files already created (but are stubs):
+- `package.json`, `flue.config.ts`, `wrangler.toml`
+- `agents/drakon.ts` — basic agent stub
+- `agents/tools/analyze-code.ts` — LLM-only analysis (no real AST)
+- `agents/tools/drakon-chat.ts` — chat tool
+
+### WHAT TO IMPLEMENT (Full Implementation)
+
+#### 1. Read Flue docs for MCP server support
+```
+curl -s https://flueframework.com/docs/mcp > /tmp/flue-mcp.md
+curl -s https://flueframework.com/docs/workflows > /tmp/flue-workflows.md
+curl -s https://raw.githubusercontent.com/withastro/flue/main/README.md > /tmp/flue-readme.md
+```
+
+#### 2. Read current Python code on dev server
+```
+HOST="192.168.3.184"
+SSH="sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@$HOST"
+$SSH "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/analyzer/js_analyzer.py"
+$SSH "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/analyzer/cfg_builder.py"
+$SSH "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/knowledge_base/retrieval.py"
+$SSH "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/routes/feedback.py"
+$SSH "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/ai_refiner/prompts.py"
+$SSH "ls /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/knowledge"
+```
+
+#### 3. Full file structure to create in `services/drakon-agent-flue/`
+
+```
+services/drakon-agent-flue/
+├── package.json              (UPDATE: add acorn, acorn-walk, typescript deps)
+├── tsconfig.json             (NEW)
+├── flue.config.ts            (UPDATE: add mcp server config if supported)
+├── wrangler.toml             (UPDATE: add KV for knowledge base)
+│
+├── src/
+│   ├── index.ts              (NEW: main Hono app, registers all routes + MCP)
+│   └── mcp-server.ts         (NEW: MCP server endpoint /mcp — exposes tools to Claude Code)
+│
+├── agents/
+│   ├── drakon.ts             (UPDATE: full agent, uses all tools)
+│   └── tools/
+│       ├── analyze-code.ts   (REWRITE: proper JS/TS AST + LLM for Python)
+│       ├── drakon-chat.ts    (UPDATE: system prompt from Python, Ukrainian)
+│       ├── analyze-folder.ts (NEW: port from Python analyze_folder route)
+│       └── feedback.ts       (NEW: port from Python feedback route)
+│
+└── lib/
+    ├── ast-analyzer.ts       (NEW: TypeScript AST for JS/TS files using acorn)
+    ├── ir-validator.ts       (NEW: port from Python ir_validator.py)
+    ├── ir-types.ts           (NEW: TypeScript types for DRAKON IR)
+    ├── llm-client.ts         (NEW: shared fetch wrapper for agy3.exodus.pp.ua/v1)
+    └── prompts.ts            (NEW: port from Python ai_refiner/prompts.py)
+```
+
+#### 4. Key implementation details
+
+**lib/ir-types.ts** — DRAKON IR TypeScript types:
+```typescript
+export interface DrakonNode {
+  type: 'branch' | 'action' | 'question' | 'end';
+  content?: string;
+  branchId?: string;
+  one?: string;  // next node id
+  two?: string;  // else branch (for question nodes)
+}
+
+export interface DrakonDiagram {
+  name: string;
+  params: string;
+  items: Record<string, DrakonNode>;
+  _valid?: boolean;
+  _errors?: string[];
+  _warnings?: string[];
+  _refine_error?: string;
+}
+
+export interface AnalyzeResponse {
+  filename: string;
+  diagrams: DrakonDiagram[];
+  count: number;
+}
+```
+
+**lib/ast-analyzer.ts** — TypeScript AST analysis for JS/TS files:
+- Use `acorn` to parse JS/ES2022
+- Walk AST with `acorn-walk`, find all FunctionDeclaration/FunctionExpression/ArrowFunctionExpression
+- For each function: build DRAKON IR (action nodes for statements, question nodes for if/ternary, loop nodes for for/while)
+- Match the Python output format exactly (items dict with b0, end, action, question nodes)
+
+**lib/llm-client.ts** — LLM proxy client:
+```typescript
+const PROXY_URL = 'https://agy3.exodus.pp.ua/v1';
+export async function llmComplete(messages, model = 'gemini-2.5-flash', temperature = 0.0)
+```
+
+**analyze-code.ts** tool — full pipeline:
+```
+filename extension:
+  .js/.ts/.tsx/.jsx → ast-analyzer.ts (TypeScript AST)
+  .py and others → LLM analysis (prompt: "analyze this Python code, return DRAKON IR JSON")
+
+After getting raw IR:
+  → ir-validator.ts (validate structure)
+  → if refine=true: llm-client.ts (refine prompt from prompts.ts)
+  → ir-validator.ts (validate again)
+  → return AnalyzeResponse
+```
+
+**src/mcp-server.ts** — MCP server:
+The agent must expose an MCP-compatible endpoint so Claude Code and other MCP clients
+can use it as a tool server. Implement the MCP protocol:
+```typescript
+// GET /mcp → returns tools list (analyze_code, drakon_chat, analyze_folder)
+// POST /mcp → handles tool calls
+// The MCP protocol is JSON-RPC 2.0 over HTTP (streamable-http transport)
+
+// Tools to expose:
+// - analyze_code(code, filename, refine?) → AnalyzeResponse
+// - drakon_chat(message, context?) → { reply: string }
+// - analyze_folder(folder_path, max_files?, refine?) → folder results
+// - validate_ir(ir) → ValidationResult
+```
+
+MCP tool schema format (JSON-RPC 2.0):
+```json
+{"jsonrpc":"2.0","method":"tools/list","params":{}}
+{"jsonrpc":"2.0","method":"tools/call","params":{"name":"analyze_code","arguments":{...}}}
+```
+
+**src/index.ts** — main entry (Hono app):
+```typescript
+// REST backward-compatible routes:
+app.post('/analyze', ...)          // calls analyzeCode tool
+app.post('/chat', ...)             // calls drakonChat tool  
+app.post('/analyze_folder', ...)   // calls analyzeFolder tool
+app.post('/feedback', ...)         // stores feedback
+app.get('/health', ...)            // health check
+
+// MCP endpoint:
+app.all('/mcp', mcpHandler)        // MCP server for Claude Code integration
+```
+
+**agents/drakon.ts** — Flue agent:
+```typescript
+export default createAgent(() => ({
+  model: 'custom/gemini-2.5-flash',
+  instructions: `Ти — DRAKON-агент, спеціаліст з аналізу коду та генерації DRAKON-схем.
+Відповідай УКРАЇНСЬКОЮ мовою.
+[... full system prompt from Python chat.py DRAKON_CHAT_SYSTEM ...]`,
+  tools: [analyzeCode, drakonChat, analyzeFolder, feedback],
+}));
+```
+
+#### 5. Update wrangler.toml
+```toml
+name = "ai-drakon-flue"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+PROXY_URL = "https://agy3.exodus.pp.ua/v1"
+PROXY_MODEL = "gemini-2.5-flash"
+
+[[kv_namespaces]]
+binding = "KB_STORE"
+id = "placeholder_kv_id"
+
+[durable_objects]
+bindings = [
+  { name = "FLUE_DRAKON_AGENT", class_name = "FlueDrakonAgent" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["FlueDrakonAgent"]
+```
+
+#### 6. Update package.json dependencies:
+```json
+{
+  "dependencies": {
+    "@flue/runtime": "^0.9.0",
+    "hono": "^4.0.0",
+    "acorn": "^8.14.0",
+    "acorn-walk": "^8.3.4",
+    "valibot": "^0.42.0"
+  },
+  "devDependencies": {
+    "@flue/cli": "^0.9.0",
+    "typescript": "^5.4.0",
+    "@types/acorn": "^4.0.6",
+    "wrangler": "^4.0.0"
+  }
+}
+```
+
+### VERIFICATION
+```
+cd ~/workspace/ai-drakon-scaffolder/services/drakon-agent-flue
+
+# Count all TypeScript files
+find . -name "*.ts" | xargs wc -l | sort -rn | head -20
+
+# Verify key files exist
+ls src/ lib/ agents/tools/
+
+# Check MCP server exports tools
+grep -n "tools/list\|tools/call\|analyze_code\|drakon_chat" src/mcp-server.ts | head -10
+
+# Check AST analyzer handles JS
+grep -n "acorn\|FunctionDeclaration\|ArrowFunction" lib/ast-analyzer.ts | head -10
+
+# Check backward compat routes
+grep -n "app.post\|app.get" src/index.ts | head -10
+```
+
+### COMMIT
+```
+cd ~/workspace/ai-drakon-scaffolder
+git add services/drakon-agent-flue/
+git commit -m "feat(drakon-agent): full Flue migration — AST analyzer + MCP server + Hono REST API"
+git push origin main
+```
+
+### DIARY
+Agent: agt-ogy3
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-146:drakon-agent-flue|ast-ts+mcp-server+hono|commit:<hash>|★★★★"
+
+### NOTES
+- !!IMPORTANT!! Work locally on AGY3 Termux, NOT on dev server
+- Use SSH to READ Python files from 192.168.3.184 only
+- sshpass dev server password: 805235io.
+- The MCP server implementation is CRITICAL — it's what enables the agent platform vision
+- For Python AST: use LLM (CF Workers cannot run Python subprocess)
+- For JS/TS AST: use acorn (proper deterministic analysis, no LLM needed)
+- ir-validator.ts must be a direct port of Python ir_validator.py logic
+- System prompt in drakon.ts MUST include Ukrainian language instruction
+- The PoC tools (analyze-code.ts, drakon-chat.ts) should be REPLACED, not patched
