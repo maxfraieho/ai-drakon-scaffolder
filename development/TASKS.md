@@ -15600,3 +15600,372 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-146:drakon-agent-flue|ast-ts+mcp-server+h
 - ir-validator.ts must be a direct port of Python ir_validator.py logic
 - System prompt in drakon.ts MUST include Ukrainian language instruction
 - The PoC tools (analyze-code.ts, drakon-chat.ts) should be REPLACED, not patched
+
+## TASK-147: Migrate docs-agent to TypeScript/Flue (CF Workers + GitHub API + MCP server)
+[ ] TASK-147
+
+### GOAL
+Fully migrate `docs-agent` from Python/FastAPI to TypeScript/Flue on Cloudflare Workers.
+Critical architectural change: replace `subprocess git` + local filesystem with **GitHub REST API**.
+Expose MCP server endpoint so platform agents and Claude Code can call docs tools directly.
+
+### KEY ARCHITECTURAL CHANGE: git subprocess → GitHub API
+Python docs-agent stores notes in `docs/` folder, commits via `subprocess.run(['git', ...])`.
+CF Workers CANNOT run subprocesses or access local filesystem.
+Solution: **GitHub REST API** as the storage backend for all file operations.
+
+```
+Python: path.write_text(content) + subprocess.run(['git', 'commit', ...])
+TypeScript: fetch(`https://api.github.com/repos/${REPO}/contents/${path}`, PUT body)
+
+Python: subprocess.run(['git', 'add', 'docs/']) → git push
+TypeScript: GitHub API creates commit automatically on PUT/DELETE
+```
+
+### EXISTING PoC (drakon-agent-flue)
+Reuse these from `services/drakon-agent-flue/`:
+- `lib/llm-client.ts` → copy to docs-agent-flue/lib/
+- `lib/ir-types.ts` → copy to docs-agent-flue/lib/
+
+### FULL FILE STRUCTURE: `services/docs-agent-flue/`
+
+```
+services/docs-agent-flue/
+├── package.json
+├── tsconfig.json
+├── flue.config.ts
+├── wrangler.toml
+│
+├── src/
+│   ├── index.ts         (Hono app: REST routes + MCP endpoint)
+│   └── mcp-server.ts    (MCP JSON-RPC 2.0 server — same pattern as drakon-agent-flue)
+│
+├── agents/
+│   └── docs.ts          (Flue agent with DOCS_SYSTEM_PROMPT in Ukrainian)
+│
+├── tools/
+│   ├── docs-chat.ts     (port of ai_chat/docs_chat.py)
+│   ├── notes-crud.ts    (port of notes_route.py — GitHub API instead of git subprocess)
+│   ├── docs-fs.ts       (port of docs_route.py — GitHub API for listing/reading)
+│   ├── projects.ts      (port of projects_route.py — KV storage)
+│   ├── drakon-ir.ts     (port of drakon_ir_route.py — GitHub API)
+│   ├── gitnexus-docs.ts (port of gitnexus_route.py — calls gitnexus.exodus.pp.ua)
+│   └── dataview.ts      (port of dataview_route.py — pure TypeScript DQL subset)
+│
+└── lib/
+    ├── github-api.ts    (GitHub REST API client — core library)
+    ├── wikilinks.ts     (wikilink parser + Zettelkasten restructure logic)
+    ├── frontmatter.ts   (YAML frontmatter parse/build — no external deps)
+    ├── llm-client.ts    (copy from drakon-agent-flue/lib/llm-client.ts)
+    └── prompts.ts       (DOCS_SYSTEM_PROMPT from Python prompts.py)
+```
+
+### STEP 1 — Read Python source on dev server
+```
+HOST="192.168.3.184"
+S="sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@$HOST"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/docs-agent/dataview_route.py"
+$S "cat /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent-flue/lib/llm-client.ts"
+```
+
+### STEP 2 — Core library: lib/github-api.ts
+
+This is the most important file. Implement a typed GitHub REST API client:
+
+```typescript
+// Environment bindings (from wrangler.toml):
+// GITHUB_TOKEN — wrangler secret
+// GITHUB_REPO  — "maxfraieho/ai-drakon-scaffolder" (env var)
+// DOCS_PATH    — "docs" (env var, default "docs")
+
+interface GHFile {
+  name: string;
+  path: string;
+  sha: string;
+  size: number;
+  type: 'file' | 'dir';
+  content?: string;   // base64 if type=file, from /contents
+  download_url?: string;
+}
+
+interface GHCommitResult {
+  sha: string;
+  content: GHFile;
+}
+
+export class GitHubAPI {
+  constructor(private token: string, private repo: string) {}
+
+  // List directory contents
+  async listDir(path: string): Promise<GHFile[]>
+  
+  // Get file content (decodes base64)
+  async getFile(path: string): Promise<{ content: string; sha: string }>
+  
+  // Create or update file (returns commit sha)
+  // sha required for update, omit for create
+  async putFile(path: string, content: string, message: string, sha?: string): Promise<GHCommitResult>
+  
+  // Delete file
+  async deleteFile(path: string, message: string, sha: string): Promise<void>
+  
+  // Recursive list of all .md files under a path
+  async listAllMd(basePath: string): Promise<GHFile[]>
+}
+```
+
+Key GitHub API endpoints:
+- List dir: `GET /repos/{repo}/contents/{path}`
+- Get file: `GET /repos/{repo}/contents/{path}` (returns base64 content)
+- Create/update: `PUT /repos/{repo}/contents/{path}` body: `{message, content(base64), sha?}`
+- Delete: `DELETE /repos/{repo}/contents/{path}` body: `{message, sha}`
+
+All requests need header: `Authorization: Bearer ${GITHUB_TOKEN}`
+
+### STEP 3 — lib/wikilinks.ts
+Port the wikilink logic from Python notes_route.py:
+```typescript
+const WIKILINK_RE = /\[\[([^\]|]+?)(?:\|[^\]]+?)?\]\]/g;
+
+export function parseWikilinks(content: string): string[]
+// Strip code blocks before parsing (same as Python _parse_wikilinks)
+
+export function extractTitle(content: string): string | null
+// Check frontmatter title: first, then # heading
+
+export function stripFrontmatter(content: string): string
+
+export function buildFrontmatter(title: string, tags: string[]): string
+// Returns: `---\ntitle: "..."\ntags: [...]\nupdated: "YYYY-MM-DD"\n---\n\n`
+
+// Zettelkasten restructuring — same algorithm as Python restructure_wiki_graph()
+// Takes Map<slug, {content, sha}>, returns Map<slug, newContent>
+export function restructureWikiGraph(
+  notes: Map<string, { content: string; sha: string }>
+): Map<string, string>
+```
+
+### STEP 4 — lib/frontmatter.ts
+Simple YAML frontmatter parser (no external deps):
+```typescript
+export function parseFrontmatter(raw: string): Record<string, any> | null
+// Match ---\n...\n---\n at start of string
+// Parse key: value lines (support string, array [a, b], quoted)
+
+export function buildFrontmatter(fields: Record<string, any>): string
+```
+
+### STEP 5 — tools/notes-crud.ts
+Port notes_route.py. Replace ALL git/filesystem ops with GitHub API:
+
+```typescript
+// list_notes(flat?, project?) — GitHub API listAllMd(DOCS_PATH)
+// read_note(slug) — GitHub API getFile(`${DOCS_PATH}/${slug}.md`)
+// write_note(slug, title, content, tags[]) — GitHub API putFile(...)
+//   → include auto-restructure: call restructureWikiGraph, update changed files
+// delete_note(slug) — GitHub API deleteFile(...)
+// notes_graph(project?) — list all, parse wikilinks, build nodes+edges
+// restructure_notes() — get all notes, run restructureWikiGraph, batch PUT changed files
+```
+
+For write_note: first try getFile to get current SHA (for updates), then putFile.
+Commit message format: `docs: update ${slug}` or `docs: create ${slug}`
+
+### STEP 6 — tools/docs-fs.ts
+Port docs_route.py:
+```typescript
+// list_docs(path?) — GitHub API listDir(path)
+// read_doc(path, max_chars?) — GitHub API getFile(path), truncate to max_chars
+```
+
+### STEP 7 — tools/projects.ts
+Port projects_route.py. Replace projects.json with **Cloudflare KV**:
+```typescript
+// Binding: PROJECTS_KV (KV namespace in wrangler.toml)
+// list_projects() — KV.get("projects") → parse JSON
+// add_project(slug, name, path, ...) — KV.get + JSON.parse + push + KV.put
+// delete_project(slug) — KV.get + filter + KV.put
+
+// Default projects list (same as Python FALLBACK_PROJECTS):
+const DEFAULT_PROJECTS = [
+  { slug: "sharon-global", name: "Sharon Global", ... },
+  { slug: "uav-watcher", name: "UAV Watcher", ... },
+  { slug: "ai-drakon-setup", name: "AI-DRAKON Platform", ... },
+]
+```
+
+### STEP 8 — tools/drakon-ir.ts
+Port drakon_ir_route.py using GitHub API:
+```typescript
+// list_ir() — GitHub API listDir(`${DOCS_PATH}/drakon-ir`), filter *.json
+// get_ir(name) — GitHub API getFile(`${DOCS_PATH}/drakon-ir/${name}.json`)
+```
+
+### STEP 9 — tools/gitnexus-docs.ts
+Port gitnexus_route.py. Change URL:
+```typescript
+// Python: http://localhost:4747/api/mcp
+// TypeScript: https://gitnexus.exodus.pp.ua/api/mcp
+// Same MCP JSON-RPC 2.0 protocol (initialize → tools/call)
+
+// generate_docs(repo, concept, format?) → { documentation, flows_count }
+// api_docs(repo, route?) → { api_map }
+// what_changed(repo, symbol) → { documentation, affected_count }
+// list_repos() → repos list
+```
+
+### STEP 10 — tools/dataview.ts
+Port dataview_route.py. Implement subset of Obsidian DQL in TypeScript:
+```typescript
+// Supported syntax:
+//   LIST FROM "path"|#tag [WHERE field = "val"] [SORT field ASC|DESC] [LIMIT N]
+//   TABLE field1, field2 FROM "path"|#tag [WHERE ...] [SORT ...] [LIMIT N]
+//
+// execute_dql(query, env) — parse query, fetch notes via GitHub API, filter/sort/return
+// 
+// Use lib/frontmatter.ts to parse YAML frontmatter of each note
+// Fetch file list via GitHub API, then get frontmatter of each
+```
+
+### STEP 11 — tools/docs-chat.ts
+Port ai_chat/docs_chat.py:
+```typescript
+// docs_chat(message, current_doc?, file_tree?, memory_context?, kb_context?) → { reply, doc_suggestions }
+// Use DOCS_SYSTEM_PROMPT from lib/prompts.ts
+// Call llm-client.ts for LLM
+// Parse ```json [...] ``` blocks for doc_suggestions (same as Python)
+```
+
+### STEP 12 — agents/docs.ts
+```typescript
+import { createAgent } from '@flue/runtime';
+import { docsChatTool, listNotesTool, readNoteTool, writeNoteTool, ... } from '../tools/...';
+
+export default createAgent(() => ({
+  model: 'custom/gemini-2.5-flash',
+  instructions: DOCS_SYSTEM_PROMPT,  // Ukrainian, from lib/prompts.ts
+  tools: [docsChatTool, listNotesTool, readNoteTool, writeNoteTool, deleteNoteTool,
+          notesGraphTool, listProjectsTool, listIrTool, getIrTool,
+          gitnexusDocsTool, dataviewTool],
+}));
+```
+
+### STEP 13 — src/mcp-server.ts
+Same pattern as drakon-agent-flue/src/mcp-server.ts.
+Expose these MCP tools:
+- `docs_chat` — chat about documentation
+- `list_notes` — list all notes
+- `read_note` — read note content
+- `write_note` — create/update note (commits to GitHub)
+- `delete_note` — delete note
+- `notes_graph` — wikilink graph
+- `restructure_notes` — Zettelkasten restructure
+- `list_projects` — project registry
+- `add_project` — add project
+- `list_ir` — list DRAKON IR diagrams
+- `get_ir` — get specific diagram
+- `gitnexus_generate_docs` — generate docs from code
+- `gitnexus_what_changed` — impact analysis docs
+- `dataview_query` — DQL query on notes
+
+### STEP 14 — src/index.ts (Hono app)
+```typescript
+app.get('/health', ...)
+app.post('/mcp', handleMcp)
+// Backward-compatible REST:
+app.post('/chat', ...)           // docs_chat
+app.get('/notes/list', ...)      // list_notes
+app.get('/notes/read', ...)      // read_note
+app.post('/notes/write', ...)    // write_note
+app.delete('/notes/delete', ...) // delete_note
+app.get('/notes/graph', ...)     // notes_graph
+app.post('/notes/restructure', ...) // restructure_notes
+app.get('/docs/list', ...)       // docs-fs list
+app.get('/docs/read', ...)       // docs-fs read
+app.post('/docs/dataview', ...)  // DQL query
+app.get('/projects/list', ...)   // projects
+app.post('/projects/add', ...)
+app.get('/drakon-ir/list', ...)
+app.get('/drakon-ir/get', ...)
+app.post('/gitnexus/generate-docs', ...)
+app.post('/gitnexus/what-changed', ...)
+app.route('/', flue())
+```
+
+### STEP 15 — wrangler.toml
+```toml
+name = "docs-agent-flue"
+main = "src/index.ts"
+compatibility_date = "2026-04-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+PROXY_URL = "https://agy3.exodus.pp.ua/v1"
+PROXY_MODEL = "gemini-2.5-flash"
+GITHUB_REPO = "maxfraieho/ai-drakon-scaffolder"
+DOCS_PATH = "docs"
+GITNEXUS_URL = "https://gitnexus.exodus.pp.ua/api/mcp"
+
+[[kv_namespaces]]
+binding = "PROJECTS_KV"
+id = "placeholder_kv_id"
+
+[durable_objects]
+bindings = [
+  { name = "FLUE_DOCS_AGENT", class_name = "FlueDocsAgent" }
+]
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["FlueDocsAgent"]
+```
+
+Secrets (via `wrangler secret put`):
+- `GITHUB_TOKEN` — GitHub personal access token with repo write access
+- `CUSTOM_API_KEY` — LLM proxy API key
+
+### VERIFICATION
+```
+cd ~/workspace/ai-drakon-scaffolder/services/docs-agent-flue
+
+# All files present
+find . -name "*.ts" | sort
+find . -name "*.ts" | xargs wc -l | sort -rn | head -20
+
+# GitHub API client has put/get/delete/list
+grep -n "putFile\|getFile\|deleteFile\|listDir\|listAllMd" lib/github-api.ts | head -10
+
+# MCP server exposes docs tools
+grep -n "write_note\|read_note\|list_notes\|docs_chat" src/mcp-server.ts | head -10
+
+# Wikilink parser
+grep -n "parseWikilinks\|restructureWikiGraph\|buildFrontmatter" lib/wikilinks.ts | head -10
+
+# Hono routes
+grep -n "app.get\|app.post\|app.delete" src/index.ts | head -20
+```
+
+### COMMIT
+```
+cd ~/workspace/ai-drakon-scaffolder
+git add services/docs-agent-flue/
+git commit -m "feat(docs-agent): full Flue migration — GitHub API storage + MCP server + Hono REST"
+git push origin main
+```
+
+### DIARY
+Agent: agt-ogy3
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-147:docs-agent-flue|github-api+mcp+hono|commit:<hash>|★★★★"
+
+### NOTES
+- !!IMPORTANT!! Work locally on AGY3 Termux. SSH to 192.168.3.184 only to READ Python files.
+- sshpass dev server password: 805235io.
+- BIGGEST CHANGE: no local filesystem, no git subprocess → GitHub REST API
+- GitHub API content is base64 encoded — always decode on read, encode on write
+- For write_note: must first GET file to get current SHA (needed for updates)
+- Zettelkasten restructure can do 1 API call per changed file (batch where possible)
+- dataview_route.py uses `yaml` Python lib — implement minimal frontmatter parser in TS (no external deps)
+- GitNexus URL: https://gitnexus.exodus.pp.ua/api/mcp (NOT localhost:4747)
+- MCP server: same JSON-RPC 2.0 pattern as in drakon-agent-flue/src/mcp-server.ts
+- DOCS_SYSTEM_PROMPT must be copied EXACTLY from Python prompts.py (Ukrainian text)
+- Do NOT install yaml/js-yaml — implement minimal frontmatter parser from scratch
