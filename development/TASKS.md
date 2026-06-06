@@ -16416,3 +16416,275 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-148:architect-agent-flue|d1-kb+patterns+w
 - Durable Objects: ArchitectJobStore must be exported from src/index.ts
 - The Pipelines tab in frontend calls GET /graph-pipelines and POST /graph-pipelines/:name/execute
 - gitignore: node_modules/, dist/
+
+
+## TASK-149: Docs + Frontend Update Plan (architect-agent-flue + OpenDesign)
+[ ] TASK-149
+
+### GOAL
+Two deliverables after TASK-148 (architect-agent-flue) is complete:
+1. **Documentation** — detailed technical + user docs for the architect-agent Flue migration
+2. **Frontend update plan** — UI/UX changes needed to expose new features (suggest-patterns, KB,
+   pipeline SSE streaming) designed via OpenDesign at http://192.168.3.204:7460
+
+### PREREQUISITE
+TASK-148 must be committed. Verify:
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git fetch origin
+git log --oneline origin/main -3
+ls services/architect-agent-flue/
+```
+
+### DELIVERABLE 1: Documentation
+Write to: `services/architect-agent-flue/README.md`
+
+Structure:
+```markdown
+# architect-agent-flue
+
+## Overview
+Brief: what the agent does, tech stack (Flue + CF Workers + D1 + Hono + NotebookLM MCP)
+
+## Architecture
+Diagram (ASCII):
+  Hono Router → MCP Server → Flue Agent → Tools
+                           ↕
+  Workflows: Pipeline A (Code→IR) | Pipeline B (IR→Code)
+                           ↕
+  Storage: D1 (KB) | GitHub API (pipelines/.drakon.json)
+                           ↕
+  AI: agy3 LLM proxy | NotebookLM MCP (AwesomeArchitecture patterns)
+
+## API Reference
+Table: Method | Endpoint | Description | Body | Response
+Cover ALL routes from src/index.ts
+
+## MCP Tools Reference  
+Table: Tool name | Description | Arguments | Returns
+Cover ALL tools from src/mcp-server.ts
+
+## New Feature: AwesomeArchitecture Pattern Suggestions
+- POST /suggest-patterns { project_docs, requirements, chat_context }
+- Returns: [{ name, rationale, tradeoffs, examples }]
+- How it works: calls NotebookLM MCP → parse response → return ranked patterns
+
+## Pipeline A: Code → DRAKON IR
+Step-by-step walkthrough of runPipelineA() flow:
+1. CC calculation → classify complexity tier
+2. primitive → AST translate (acorn/LLM)
+3. complex → yaml_gen → ir_gen
+4. validate → retry loop (max 3)
+
+## Pipeline B: DRAKON IR → Code
+Step-by-step: code_gen → check_syntax → retry loop (max 3)
+
+## Knowledge Base (D1)
+- Schema, seeded patterns list
+- How to contribute: POST /kb/contribute
+- How to search: GET /kb?q=query
+
+## Configuration (wrangler.toml)
+Required vars + secrets table
+
+## Deployment
+wrangler deploy + d1 migrations commands
+```
+
+Also write to: `development/docs/architect-agent-flue-feature-spec.md`
+This is a USER-FACING spec (for the frontend team + OpenDesign):
+```markdown
+# Architect Agent — Feature Specification
+
+## Current State (before frontend update)
+- Pipelines tab: shows list of .drakon.json pipelines, can run them
+- Chat tab: architect chat
+- KB tab: knowledge base entries
+
+## New Features to Surface in UI
+
+### 1. Pattern Suggestion Panel
+Location: New sub-tab "Patterns" inside Architect section
+User flow:
+  a. User fills "Project Description" textarea
+  b. User fills "Requirements" textarea (optional)
+  c. Clicks "Suggest Patterns" button
+  d. Agent queries NotebookLM AwesomeArchitecture
+  e. Shows 3-5 pattern cards:
+     - Pattern name + icon
+     - Rationale (why this fits the project)
+     - Trade-offs (bullet list)
+     - "Use this pattern" button → creates pipeline from it
+
+### 2. Pipeline Execution: Real-time SSE Streaming
+Location: Pipelines tab → execute button
+Current: polling job status
+New: SSE stream showing each pipeline node as it executes:
+  - Node status indicator (pending / running / done / error)
+  - Node output preview (collapsible)
+  - Progress bar
+  - Final result display
+
+### 3. Knowledge Base Browser
+Location: KB tab (improve existing)
+Current: flat list of contributions
+New:
+  - Tabs: "Architecture Patterns" | "Code Contributions"
+  - Pattern cards with tags filter
+  - "Contribute" button → opens form
+
+### 4. Pattern → Pipeline Creation Flow
+New: after viewing pattern recommendations (feature #1),
+user selects patterns → agent creates a pipeline DRAKON diagram
+that represents the architectural decision tree.
+Pipeline is saved and appears in Pipelines tab.
+
+## API Endpoints Used
+(list from README.md + new endpoints)
+```
+
+### DELIVERABLE 2: OpenDesign UI Mockups + Frontend Plan
+
+OpenDesign server: http://192.168.3.204:7460 (no auth needed)
+pluginId: ai-drakon-mobile
+
+Read the OpenDesign API first:
+```bash
+curl -s http://192.168.3.204:7460/api/v1/projects | python3 -m json.tool | head -40
+```
+
+#### Step 2a — Create design mockups via OpenDesign REST API
+
+For each of the 4 new features, create a design via:
+```bash
+curl -X POST http://192.168.3.204:7460/api/v1/components \
+  -H "Content-Type: application/json" \
+  -d '{
+    "pluginId": "ai-drakon-mobile",
+    "name": "PatternSuggestionPanel",
+    "template": "card-list",
+    "props": {
+      "title": "Architecture Patterns",
+      "items": [
+        {"title": "CQRS", "subtitle": "Best for high-read workloads", "badge": "recommended"},
+        {"title": "Event-driven", "subtitle": "Decoupled async processing", "badge": ""},
+        {"title": "Modular Monolith", "subtitle": "Start simple, scale later", "badge": ""}
+      ],
+      "action": "Use Pattern"
+    }
+  }'
+```
+
+If OpenDesign API structure is different — first read the API docs:
+```bash
+curl -s http://192.168.3.204:7460/api/v1/ | python3 -m json.tool
+curl -s http://192.168.3.204:7460/api/v1/templates | python3 -m json.tool | head -60
+```
+
+#### Step 2b — Write frontend implementation plan
+
+Write to: `development/docs/frontend-architect-update-plan.md`
+
+Structure:
+```markdown
+# Frontend Update Plan — Architect Agent New Features
+
+## Files to Modify
+(based on current src/ structure — check src/components/ for existing Architect components)
+
+Find existing architect components:
+  find ~/workspace/ai-drakon-scaffolder/src -name "*rchitect*" -o -name "*pipeline*" | sort
+  find ~/workspace/ai-drakon-scaffolder/src -name "*Pipelines*" -o -name "*Pipeline*"
+
+## 1. PatternSuggestionPanel Component
+File: src/components/architect/PatternSuggestionPanel.tsx (NEW)
+  - Form: project_docs (Textarea), requirements (Textarea), submit button
+  - State: loading / patterns[] / error
+  - API: POST /suggest-patterns (architect-agent-flue endpoint)
+  - Display: PatternCard grid (name, rationale, tradeoffs, "Use Pattern" CTA)
+
+## 2. Pipeline SSE Execution
+File: src/components/architect/PipelineExecution.tsx (MODIFY or NEW)
+  - Replace polling with EventSource('/graph-pipelines/:name/execute')
+  - NodeStatus component: icon per status (clock/spinner/check/x)
+  - Progress visualization
+
+## 3. KB Browser Improvement  
+File: src/components/architect/KnowledgeBase.tsx (MODIFY if exists)
+  - Tab switcher: Patterns | Contributions
+  - Tag filter component
+  - PatternCard vs ContributionCard
+
+## 4. Pattern → Pipeline Flow
+File: src/components/architect/PatternPipelineCreator.tsx (NEW)
+  - Triggered from PatternSuggestionPanel "Use Pattern"
+  - Shows which patterns selected
+  - POST /suggest-patterns → create pipeline
+  - Redirects to Pipelines tab
+
+## Routing Changes
+(if tabs are routed) — check src/router or src/App.tsx
+
+## API Client Updates
+File: src/services/architect-api.ts (check if exists, create if not)
+  Add: suggestPatterns(projectDocs, requirements)
+  Add: executeWithSSE(pipelineName, onEvent)
+  Add: searchKB(query, type?)
+
+## OpenDesign Component Mockups
+(attach URLs or screenshots from OpenDesign)
+```
+
+### VERIFICATION
+```bash
+# Documentation files created
+ls services/architect-agent-flue/README.md
+ls development/docs/architect-agent-flue-feature-spec.md
+ls development/docs/frontend-architect-update-plan.md
+
+# README has all endpoints
+grep -c "app\." services/architect-agent-flue/src/index.ts || true
+grep -c "##" services/architect-agent-flue/README.md
+
+# Feature spec has 4 features
+grep "###" development/docs/architect-agent-flue-feature-spec.md
+
+# Frontend plan has component files
+grep "\.tsx" development/docs/frontend-architect-update-plan.md | head -5
+
+# OpenDesign was queried (if available)
+# curl -s http://192.168.3.204:7460/api/v1/projects | head -5
+```
+
+### COMMIT
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add services/architect-agent-flue/README.md \
+        development/docs/architect-agent-flue-feature-spec.md \
+        development/docs/frontend-architect-update-plan.md
+git commit -m "docs(architect-agent): API docs + frontend update plan with OpenDesign mockups"
+
+# Mark done
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-149','[x] TASK-149',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-149 done"
+git push origin main
+```
+
+### DIARY
+Agent: agt-ogy3
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-149:architect-docs+opendesign-plan|README+feature-spec+frontend-plan|commit:<hash>|★★★"
+
+### NOTES
+- !!IMPORTANT!! Work locally on AGY3 Termux
+- Run AFTER TASK-148 is committed — check git log first
+- OpenDesign at http://192.168.3.204:7460 — read API docs before calling
+- If OpenDesign API structure unknown, explore /api/v1/ first
+- Find existing frontend Architect components with find command before writing new file paths
+- The feature spec is for the frontend developer (and for OpenDesign context)
+- The frontend plan must reference ACTUAL existing files (check src/ first)
+- development/docs/ directory may not exist — create with mkdir -p
