@@ -1,0 +1,23 @@
+{
+  "name": "architect-agent-flue",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "flue dev --target cloudflare",
+    "build": "flue build --target cloudflare",
+    "deploy": "flue build --target cloudflare && wrangler deploy"
+  },
+  "dependencies": {
+    "@flue/runtime": "^0.9.0",
+    "acorn": "^8.12.0",
+    "acorn-walk": "^8.3.2",
+    "hono": "^4.0.0",
+    "valibot": "^0.42.0"
+  },
+  "devDependencies": {
+    "@flue/cli": "^0.9.0",
+    "@types/acorn": "^4.0.6",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.59.3"
+  }
+}
