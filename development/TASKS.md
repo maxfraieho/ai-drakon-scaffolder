@@ -16688,3 +16688,197 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-149:architect-docs+opendesign-plan|README
 - The feature spec is for the frontend developer (and for OpenDesign context)
 - The frontend plan must reference ACTUAL existing files (check src/ first)
 - development/docs/ directory may not exist — create with mkdir -p
+
+## TASK-150: Fundamental Frontend Redesign — AI-DRAKON Platform
+[ ] TASK-150
+
+### МЕТА
+Критично переосмислити весь фронтенд ai-drakon-scaffolder. Не інкрементальні зміни — ПОВНИЙ перегляд UX/навігації/архітектури компонентів. Результат: чіткий, сучасний інтерфейс для AI-агент платформи з 3 спеціалізованими агентами.
+
+### ПЕРЕДУМОВИ
+1. Спочатку виконай TASK-148 (architect-agent-flue) та TASK-149 (docs + spec) — вони дають feature spec для нових компонентів
+2. Прочитай: `cat ~/workspace/ai-drakon-scaffolder/development/docs/frontend-architect-update-plan.md` (якщо ще не існує — читай `development/TASKS.md` для контексту)
+
+### КРОК 1: Зрозуміти поточний стан
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+
+# Структура src/
+find src -name "*.tsx" | sort | head -40
+find src -name "*.tsx" | wc -l
+
+# Роутер (де визначені всі маршрути):
+cat src/routes/__root.tsx 2>/dev/null || find src -name "*router*" -o -name "*routes*" | head -5
+
+# Всі маршрути:
+grep -r "createRoute\|path:" src/routes/ 2>/dev/null | head -30
+
+# Хедер/навігація:
+find src -name "*Layout*" -o -name "*Nav*" -o -name "*Header*" | head -10
+
+# Поточні сторінки/tabs:
+ls src/pages/ 2>/dev/null || ls src/routes/ 2>/dev/null | head -20
+```
+
+**Використовуй GitNexus для аналізу:**
+```bash
+# Карта маршрутів:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"route_map","arguments":{"repo":"ai-drakon-scaffolder"}}}' \
+  | python3 -m json.tool 2>/dev/null | head -60
+
+# Контекст AppLayout:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"context","arguments":{"repo":"ai-drakon-scaffolder","path":"src/components/app/AppLayout.tsx"}}}' \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('content',[{}])[0].get('text','')[:3000])"
+```
+
+### КРОК 2: Аналіз і план редизайну
+
+Прочитай ключові файли:
+```bash
+cat src/components/app/AppLayout.tsx
+cat src/App.tsx 2>/dev/null || cat src/main.tsx
+ls src/components/
+```
+
+Проблеми поточного UX (на основі структури коду):
+- Навігація: адмін-панель (Proxies, Providers, Models, Credentials) змішана з основним функціоналом
+- Відсутній чіткий "user journey" — неясно з чого починати
+- Три агенти (drakon, docs, architect) не мають єдиного центру
+- Мобільний вигляд невідомий
+
+### КРОК 3: Запитати OpenDesign для мокапів
+
+**OpenDesign server**: http://192.168.3.204:7460 (без авторизації)
+
+```bash
+# Перевірити доступність:
+curl -s http://192.168.3.204:7460/api/v1/ | python3 -m json.tool | head -20
+curl -s http://192.168.3.204:7460/api/v1/projects | python3 -m json.tool | head -30
+
+# Якщо API інший — спочатку дослідж структуру:
+curl -s http://192.168.3.204:7460/ | head -20
+```
+
+Для кожного ключового екрану — створи мокап через OpenDesign API (якщо підтримує REST).
+Якщо REST не підтримує — задокументуй ASCII mockups в development/docs/frontend-redesign-mockups.md
+
+### КРОК 4: Нова архітектура навігації
+
+Запропонувати та реалізувати нову структуру:
+
+**Нова навігація (зверху або sidebar)**:
+```
+[🏠 Home]  [🔵 Drakon] [📚 Docs] [🏗️ Architect] [🔬 Pipelines] [👁 Observe] ⚙️
+```
+
+**Home/Dashboard** (нова сторінка або переробка Overview):
+- Статус 3 агентів (drakon/docs/architect) — health check
+- "Швидкий старт": кнопки Create Diagram / Create Note / Create Pipeline
+- Recent diagrams / Recent notes
+- Active jobs (SSE streaming)
+
+**Agentless admin panel** (відокремити від головного nav):
+- Settings / Providers / Models / Credentials → в субменю ⚙️ або окрема /admin роут
+
+**Кожен агент = своя вкладка**:
+- /drakon — редактор DRAKON-схем (поточний /diagrams + /editor)
+- /docs — нотатки + docs-agent chat + graph
+- /architect — KB + Pipelines + Pattern Suggestions (нові фічі з TASK-148)
+
+### КРОК 5: Реалізація
+
+**Файли для зміни:**
+```bash
+# Знайти AppLayout і навігацію:
+cat src/components/app/AppLayout.tsx
+
+# Знайти router:
+find src -name "router.ts" -o -name "__root.tsx" | xargs cat 2>/dev/null | head -50
+
+# Знайти основний Layout:
+find src -name "*Layout*" | head -5
+```
+
+**Мінімально необхідні зміни:**
+1. `src/components/app/AppLayout.tsx` — нова навігація (sidebar або topbar)
+2. Router — перегрупувати маршрути (admin окремо, агенти окремо)
+3. Нова Home сторінка з dashboard
+4. Мобільний responsive (перевірити та виправити)
+
+**Нові компоненти:**
+- `src/components/app/AgentStatusCard.tsx` — картка з health status агента
+- `src/components/app/QuickActions.tsx` — кнопки швидкого старту
+- `src/components/app/RecentActivity.tsx` — останні дії
+
+**НЕ ЛАМАТИ:**
+- Всю logic в pages (просто переструктурувати navigation)
+- API calls (лише UI layer змінюємо)
+- auth flow
+
+### КРОК 6: Мобільний вигляд
+
+```bash
+# Перевірити наявність mobile компонентів:
+ls src/components/mobile/ 2>/dev/null
+grep -r "md:" src/components/app/ | head -10  # Tailwind responsive
+```
+
+Якщо немає responsive — додати базовий mobile nav (hamburger menu).
+
+### ВЕРИФІКАЦІЯ
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+
+# TypeScript compile check:
+node node_modules/typescript/bin/tsc --noEmit 2>&1 | head -20
+
+# Нові компоненти:
+ls src/components/app/AgentStatusCard.tsx
+ls src/components/app/QuickActions.tsx
+
+# Нова навігація (перевірити що всі 3 агенти є):
+grep -E "drakon|docs|architect" src/components/app/AppLayout.tsx | head -10
+
+# Router — admin окремо:
+grep -E "admin|settings|providers" src/router* 2>/dev/null || grep -r "Providers\|Credentials" src/routes/ | head -5
+```
+
+### COMMIT
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add src/
+git commit -m "feat(frontend): full UX redesign — agent-centric nav + dashboard + mobile responsive"
+
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-150','[x] TASK-150',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+print('TASK-150 marked done')
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-150 done"
+git push origin main
+```
+
+### DIARY
+Agent: agt-ogy3
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-150:frontend-redesign|agent-centric-nav+dashboard+mobile|commit:<hash>|★★★★"
+
+### NOTES
+- !!IMPORTANT!! Основна робота локально на AGY3 Termux
+- SSH до dev server (192.168.3.184) тільки для читання конфігів якщо потрібно
+- Використовуй GitNexus ПЕРЕД зміною кожного компонента (context + impact)
+- GitNexus URL: https://gitnexus.exodus.pp.ua/api/mcp (MCP JSON-RPC 2.0)
+- OpenDesign: http://192.168.3.204:7460 — досліджуй API перед використанням
+- Редизайн = нова навігація + dashboard + відокремлення admin panel
+- НЕ переписуй логіку агентів — тільки UI layer
+- Перевір mobile responsive (Tailwind breakpoints: sm/md/lg)
+- Репо на AGY3: ~/workspace/ai-drakon-scaffolder (git pull origin main спочатку!)
+- Поточний сайт: https://ai-drakon-setup.pages.dev (Cloudflare Pages, будується з .lovable/)
+- ВАЖЛИВО після змін в src/: `cp -r src/ .lovable/src/` (Lovable sync rule!)
