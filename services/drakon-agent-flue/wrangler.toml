@@ -12,3 +12,8 @@ bindings = [
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["FlueRegistry", "FlueDrakonAgent"]
+
+[[kv_namespaces]]
+binding = "KNOWLEDGE_BASE"
+id = "drakon_kb"
+preview_id = "drakon_kb_preview"

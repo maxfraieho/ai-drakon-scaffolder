@@ -1,50 +1,61 @@
 import { Type, defineTool } from '@flue/runtime';
+import { llmComplete } from '../../lib/llm-client.js';
+
+export const DRAKON_CHAT_SYSTEM = `Ти — DRAKON-агент, спеціаліст з аналізу JS/TS та Python-коду та генерації DRAKON-схем.
+
+**Відповідай завжди УКРАЇНСЬКОЮ мовою.**
+
+Твої можливості:
+- Аналізую функції та генерую DRAKON IR (схеми потоку виконання)
+- Аналізую цілу папку файлів за командою
+- Вчуся на зворотному зв'язку — надсилай виправлення через кнопку "Зворотний зв'язок"
+- Зберігаю бази знань про DRAKON-правила та типові патерни
+
+Доступні папки проекту для аналізу:
+- services/drakon-agent/ — сам агент (Python)
+- services/architect-agent/ — архітектор (Python)
+- services/docs-agent/ — документознавець (Python)
+- cloudflare-worker/ — Cloudflare Worker (JavaScript)
+
+Як мене використовувати:
+1. Надішли функцію → отримаєш DRAKON-схему
+2. Напиши "аналізуй папку services/drakon-agent" → проаналізую всі файли в папці
+3. Постав питання про DRAKON або схеми → відповім
+
+Якщо питання про проект загалом — зверни до Архітектора. Якщо потрібна документація — до Документознавця.
+`;
 
 export const drakonChat = defineTool({
   name: 'drakon_chat',
-  description: 'Handle general chat and feedback conversations about DRAKON diagrams.',
+  description: 'Handle general chat conversations about DRAKON diagrams and rules in Ukrainian.',
   parameters: Type.Object({
     message: Type.String({ description: 'The user message' }),
     context: Type.String({ description: 'JSON stringified context of the active project or diagram' }),
   }),
-  execute: async ({ message, context }) => {
-    const proxyUrl = 'https://agy3.exodus.pp.ua/v1/chat/completions';
-    const apiKey = typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY || 'dummy' : 'dummy';
-
+  execute: async ({ message, context }, toolContext: any) => {
+    const apiKey = toolContext?.env?.CUSTOM_API_KEY || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
+    
     try {
       const parsedContext = JSON.parse(context || '{}');
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gemini-2.5-flash',
-          messages: [
-            {
-              role: 'system',
-              content: `You are the AI-DRAKON chat assistant. Context:\n${JSON.stringify(parsedContext, null, 2)}`
-            },
-            { role: 'user', content: message }
-          ],
-          temperature: 0.7,
-        })
-      });
+      const systemPrompt = `${DRAKON_CHAT_SYSTEM}\n\nContext:\n${JSON.stringify(parsedContext, null, 2)}`;
+      
+      const reply = await llmComplete(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
+        ],
+        'gemini-2.5-flash',
+        0.3,
+        apiKey
+      );
 
-      if (!response.ok) {
-        throw new Error(`LLM proxy returned status ${response.status}`);
-      }
-
-      const responseData: any = await response.json();
-      const reply = responseData.choices?.[0]?.message?.content || '';
       return JSON.stringify({
         reply,
         success: true,
       }, null, 2);
-    } catch (e) {
+    } catch (e: any) {
       return JSON.stringify({
-        reply: 'Sorry, I encountered an error: ' + (e as Error).message,
+        reply: 'Вибачте, виникла помилка: ' + e.message,
         success: false,
       }, null, 2);
     }

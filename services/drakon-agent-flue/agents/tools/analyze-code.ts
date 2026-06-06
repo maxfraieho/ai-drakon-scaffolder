@@ -1,4 +1,9 @@
 import { Type, defineTool } from '@flue/runtime';
+import { JSAnalyzer } from '../../lib/ast-analyzer.js';
+import { validateIr } from '../../lib/ir-validator.js';
+import { retrieveKB } from '../../lib/kb-retriever.js';
+import { llmComplete } from '../../lib/llm-client.js';
+import { SYSTEM_PROMPT, buildRefinePrompt } from '../../lib/prompts.js';
 
 export const analyzeCode = defineTool({
   name: 'analyze_code',
@@ -8,62 +13,127 @@ export const analyzeCode = defineTool({
     filename: Type.String({ description: 'Filename of the module' }),
     refine: Type.Boolean({ description: 'Enable LLM refinement' }),
   }),
-  execute: async ({ code, filename, refine }) => {
-    // Mock KB retrieval
-    const kbContext = `DRAKON IR guidelines: Diagrams must have a single start node (action: "header"), consecutive statement nodes, and a single end node. Only standard types (Action, Choice, LoopStart, LoopEnd) are supported.`;
+  execute: async ({ code, filename, refine }, context: any) => {
+    const ext = (filename || 'module.js').split('.').pop()?.toLowerCase();
+    const isJS = ext === 'js' || ext === 'jsx' || ext === 'ts' || ext === 'tsx' || ext === 'mjs' || ext === 'cjs';
+    const apiKey = context?.env?.CUSTOM_API_KEY || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
 
-    const proxyUrl = 'https://agy3.exodus.pp.ua/v1/chat/completions';
-    // Use wrangler secret / binding or fall back to env var
-    const apiKey = typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY || 'dummy' : 'dummy';
+    let rawDiagrams: any[] = [];
 
-    let diagrams = [];
-    try {
-      const prompt = `You are the DRAKON analyzer. Analyze this code from file "${filename}":\n\n\`\`\`\n${code}\n\`\`\`\n\nKB Context:\n${kbContext}\n\nConvert the code logic into DRAKON IR format. Return ONLY a JSON array of diagram objects. Each diagram object must have "name", "params", and "nodes" (with id, type, label, yes_node, no_node, next_node). Do not include any explanation or markdown formatting outside the JSON array.`;
+    if (isJS) {
+      // 1. JS/TS AST parsing using acorn
+      rawDiagrams = new JSAnalyzer().analyze(code, filename);
+    } else {
+      // 2. Python/other: LLM-only analysis (no real AST in worker)
+      try {
+        const prompt = `You are a DRAKON diagram expert. Analyze this Python code:
+\`\`\`python
+${code}
+\`\`\`
+Convert the code logic into DRAKON IR format.
+Return ONLY a JSON array of diagram objects. Each diagram object must match the DRAKON IR schema:
+{
+  "name": "<function_name>",
+  "params": "<parameter_list_string>",
+  "items": {
+    "b0": {"type": "branch", "branchId": 0, "one": "<first_node_id>"},
+    "end": {"type": "end"},
+    "<node_id>": {"type": "action", "content": "<action_description>", "one": "<next_node_id>"},
+    "<question_node_id>": {"type": "question", "content": "<condition_ends_with_question_mark>?", "one": "<yes_node_id>", "two": "<no_node_id>"}
+  }
+}
+Provide valid JSON without markdown formatting. Do not wrap in markdown fences.`;
 
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gemini-2.5-flash',
-          messages: [{ role: 'user', content: prompt }],
-          temperature: 0.1,
-        })
-      });
+        const res = await llmComplete(
+          [{ role: 'user', content: prompt }],
+          'gemini-2.5-flash',
+          0.1,
+          apiKey
+        );
 
-      if (!response.ok) {
-        throw new Error(`LLM proxy returned status ${response.status}`);
+        let cleanContent = res.trim();
+        if (cleanContent.startsWith('```')) {
+          const lines = cleanContent.split('\n');
+          cleanContent = lines.filter(l => !l.startsWith('```')).join('\n').trim();
+        }
+
+        rawDiagrams = JSON.parse(cleanContent);
+        if (!Array.isArray(rawDiagrams)) {
+          rawDiagrams = [rawDiagrams];
+        }
+      } catch (e: any) {
+        rawDiagrams = [{
+          name: 'error_diagram',
+          params: '',
+          items: {
+            b0: { type: 'branch', branchId: 0, one: 'n1' },
+            n1: { type: 'action', content: `LLM Parsing Error: ${e.message}`, one: 'end' },
+            end: { type: 'end' }
+          },
+          _valid: false,
+          _errors: [e.message]
+        }];
       }
-
-      const responseData: any = await response.json();
-      const content = responseData.choices?.[0]?.message?.content || '[]';
-      const cleanContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
-      diagrams = JSON.parse(cleanContent);
-    } catch (e) {
-      diagrams = [{
-        name: 'fallback_diagram',
-        params: '',
-        nodes: [
-          { id: 1, type: 'Action', label: 'Error analyzing code: ' + (e as Error).message }
-        ]
-      }];
     }
 
-    const results = diagrams.map((diag: any) => {
-      const errors: string[] = [];
-      const warnings: string[] = [];
-      if (!diag.name) errors.push('Diagram must have a name');
-      if (!diag.nodes || diag.nodes.length === 0) errors.push('Diagram must contain nodes');
+    const results: any[] = [];
+    for (const diagram of rawDiagrams) {
+      if (diagram._errors && diagram.name === 'error_diagram') {
+        results.push(diagram);
+        continue;
+      }
 
-      return {
-        ...diag,
-        _valid: errors.length === 0,
-        _errors: errors.length > 0 ? errors : undefined,
-        _warnings: warnings.length > 0 ? warnings : undefined,
-      };
-    });
+      // 3. Retrieve KB context
+      const query = `${diagram.name || ''} ${diagram.params || ''}`;
+      let kbCtx = '';
+      try {
+        kbCtx = await retrieveKB(query, context?.env);
+      } catch (e) {
+        console.error('KB retrieval failed:', e);
+      }
+
+      // 4. AI refinement
+      let refined = diagram;
+      if (refine) {
+        try {
+          const refinePrompt = buildRefinePrompt(diagram, kbCtx);
+          const llmRes = await llmComplete(
+            [
+              { role: 'system', content: SYSTEM_PROMPT },
+              { role: 'user', content: refinePrompt }
+            ],
+            'gemini-2.5-flash',
+            0.0,
+            apiKey
+          );
+
+          let cleanContent = llmRes.trim();
+          if (cleanContent.startsWith('```')) {
+            const lines = cleanContent.split('\n');
+            cleanContent = lines.filter(l => !l.startsWith('```')).join('\n').trim();
+          }
+
+          refined = JSON.parse(cleanContent);
+        } catch (e: any) {
+          refined = {
+            ...diagram,
+            _refine_error: e.message
+          };
+        }
+      }
+
+      // 5. Validation
+      const validation = validateIr(refined);
+      refined._valid = validation.valid;
+      if (validation.errors.length > 0) {
+        refined._errors = validation.errors;
+      }
+      if (validation.warnings.length > 0) {
+        refined._warnings = validation.warnings;
+      }
+
+      results.push(refined);
+    }
 
     return JSON.stringify({
       filename,
