@@ -3,7 +3,7 @@ import {
   ChevronRight, ChevronDown, Folder, FolderOpen, FileText,
   Plus, FolderPlus, FilePlus, Trash2, Edit, Save, Loader2,
   AlertCircle, RefreshCw, PanelLeftClose, PanelLeft, Tag, FileCode,
-  Check, Copy, Settings,
+  Check, Copy, Settings, Sparkles,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,9 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { listPipelines } from "@/lib/graph-pipeline-api";
+import type { PipelineInfo } from "@/lib/graph-pipeline-api";
 
 const EXT_TO_LANG: Record<string, string> = {
   py: "python", ts: "typescript", tsx: "typescript",
@@ -64,6 +67,7 @@ interface FileTreeItemProps {
   onAddFolder: (parentPath: string) => void;
   onTagFolder: (parentPath: string) => void;
   onDeleteNode: (node: FSNode) => void;
+  onAnalyze: (node: FSNode) => void;
   expandedPaths: Set<string>;
   searchQuery: string;
 }
@@ -78,6 +82,7 @@ function FileTreeItem({
   onAddFolder,
   onTagFolder,
   onDeleteNode,
+  onAnalyze,
   expandedPaths,
   searchQuery,
 }: FileTreeItemProps) {
@@ -110,6 +115,15 @@ function FileTreeItem({
           </button>
           
           <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 shrink-0 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors p-1"
+              title="Analyze"
+              onClick={(e) => { e.stopPropagation(); void onAnalyze(node); }}
+            >
+              <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+            </Button>
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onAddFile(node.path); }}
@@ -159,6 +173,7 @@ function FileTreeItem({
                 onAddFolder={onAddFolder}
                 onTagFolder={onTagFolder}
                 onDeleteNode={onDeleteNode}
+                onAnalyze={onAnalyze}
                 expandedPaths={expandedPaths}
                 searchQuery={searchQuery}
               />
@@ -193,6 +208,15 @@ function FileTreeItem({
       </button>
 
       <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 shrink-0 transition-opacity ml-auto">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors p-1"
+          title="Analyze"
+          onClick={(e) => { e.stopPropagation(); void onAnalyze(node); }}
+        >
+          <Sparkles className="h-3.5 w-3.5 text-amber-400" />
+        </Button>
         <button
           type="button"
           onClick={() => onSelectFile(node.path)}
@@ -263,6 +287,13 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
   const [newItemName, setNewItemName] = useState("");
   const [nodeToDelete, setNodeToDelete] = useState<FSNode | null>(null);
   const [taggingFolderPath, setTaggingFolderPath] = useState("");
+
+  // Analyze states
+  const [analyzeTarget, setAnalyzeTarget] = useState<FSNode | null>(null);
+  const [analyzeAgent, setAnalyzeAgent] = useState<"architect" | "docs" | "drakon">("architect");
+  const [analyzePipelines, setAnalyzePipelines] = useState<PipelineInfo[]>([]);
+  const [analyzeSelectedPipeline, setAnalyzeSelectedPipeline] = useState<string>("");
+  const [analyzeDialogOpen, setAnalyzeDialogOpen] = useState(false);
 
   const monacoTheme = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "vs-dark" : "vs-light";
 
@@ -698,6 +729,34 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
     return filterNodes(tree);
   }, [tree, searchQuery]);
 
+  // Analyze Target Logic
+  const openAnalyzeDialog = async (node: FSNode) => {
+    setAnalyzeTarget(node);
+    setAnalyzeDialogOpen(true);
+    try {
+      const pipelines = await listPipelines();
+      setAnalyzePipelines(pipelines);
+      if (pipelines.length > 0) setAnalyzeSelectedPipeline(pipelines[0].name);
+    } catch {
+      setAnalyzePipelines([]);
+    }
+  };
+
+  const runAnalyze = () => {
+    if (!analyzeTarget) return;
+    setAnalyzeDialogOpen(false);
+    void navigate({
+      to: "/diagrams",
+      search: {
+        autoAnalyze: "true",
+        analyzePath: analyzeTarget.path || "src",
+        analyzeRepo: `${owner}/${repo}`,
+        analyzeBranch: branch,
+      } as Record<string, string>,
+    });
+    toast.message("Analyze started", { description: `/${analyzeTarget.path} via ${analyzeAgent}` });
+  };
+
   // Sidebar Header text
   const sidebarHeader = isGitHub ? `${repo}` : "Vault";
 
@@ -840,6 +899,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
                   onAddFolder={handleAddFolder}
                   onTagFolder={handleTagFolder}
                   onDeleteNode={handleDeleteNode}
+                  onAnalyze={openAnalyzeDialog}
                   expandedPaths={expandedPaths}
                   searchQuery={searchQuery}
                 />
@@ -1059,6 +1119,50 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
         onClose={() => setShowZoneDialog(false)}
         initialFolders={[taggingFolderPath]}
       />
+
+      <Dialog open={analyzeDialogOpen} onOpenChange={setAnalyzeDialogOpen}>
+        <DialogContent className="bg-zinc-950 border border-zinc-800 text-zinc-100 max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-mono text-sm uppercase text-[var(--accent-amber)]">
+              <Sparkles className="h-4 w-4 text-amber-400" />
+              Analyze: /{analyzeTarget?.path || ""}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-zinc-400">Agent</Label>
+              <Select value={analyzeAgent} onValueChange={(v) => setAnalyzeAgent(v as "architect" | "docs" | "drakon")}>
+                <SelectTrigger className="h-8 text-xs bg-zinc-900 border-zinc-800 text-zinc-100 focus:ring-[var(--accent-amber)]/40"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-zinc-950 border border-zinc-800 text-zinc-100">
+                  <SelectItem value="architect">Architect (DRAKON diagrams)</SelectItem>
+                  <SelectItem value="docs">Docs (documentation)</SelectItem>
+                  <SelectItem value="drakon">Drakon (generation)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-zinc-400">Pipeline (results target)</Label>
+              <Select value={analyzeSelectedPipeline} onValueChange={setAnalyzeSelectedPipeline}>
+                <SelectTrigger className="h-8 text-xs bg-zinc-900 border-zinc-800 text-zinc-100 focus:ring-[var(--accent-amber)]/40"><SelectValue placeholder="New pipeline" /></SelectTrigger>
+                <SelectContent className="bg-zinc-950 border border-zinc-800 text-zinc-100">
+                  <SelectItem value="">New pipeline</SelectItem>
+                  {analyzePipelines.map((p) => (
+                    <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" size="sm" onClick={() => setAnalyzeDialogOpen(false)} className="text-xs text-zinc-400 border border-zinc-800 hover:bg-zinc-900">
+              Скасувати
+            </Button>
+            <Button onClick={runAnalyze} size="sm" className="text-xs bg-[var(--accent-amber)] hover:brightness-110 text-black">
+              <Sparkles className="mr-2 h-3 w-3" /> Analyze
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
