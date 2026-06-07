@@ -18561,3 +18561,115 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-167 done" && g
 - !!IMPORTANT!! Run locally on AGY3 Termux
 - LoginPage може бути вже нормальним — read first, edit only if needed
 - TASK-149/150/151 mark as [s] НЕ [x] — вони не виконані, а замінені
+
+---
+
+## [ ] TASK-168: Mobile QA via agent-workspace Browser — RPi 3B
+
+**GOAL:** Перевірити всі сторінки платформи в мобільному вигляді через agent-workspace браузер на RPi 3B. Знайти і виправити scroll проблеми, layout баги, broken UI.
+
+Deployed URL: `https://ai-drakon-setup.pages.dev`
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Use agent-workspace MCP for browser.
+
+### STEP 0 — Wait for CF deploy (3 хв після останнього push)
+```bash
+# Check if latest commit is deployed:
+LATEST=$(git log --oneline -1 | cut -d' ' -f1)
+echo "Latest commit: $LATEST"
+curl -s https://ai-drakon-setup.pages.dev/ | grep -c "AI-DRAKON\|drakon\|vite" || echo "checking..."
+# If site loads → proceed
+```
+
+### STEP 1 — Start agent-workspace session on RPi 3B
+
+AGY3 має доступ до agent-workspace MCP (налаштований). Запустити браузер:
+```
+workspace_browser_navigate(url="https://ai-drakon-setup.pages.dev/")
+```
+Потім встановити мобільний viewport (375x812 — iPhone):
+```
+workspace_browser_snapshot() → check current state
+```
+
+### STEP 2 — QA checklist: кожну сторінку перевірити
+
+Для кожної сторінки:
+1. `workspace_browser_navigate(url=PAGE_URL)`
+2. `workspace_browser_snapshot()` → зробити screenshot
+3. Перевірити: чи скролиться? чи видно весь контент? чи не обрізає MobileNav?
+
+**Сторінки для перевірки:**
+```
+/ (HomePage)            — AgentStatusCard grid, статуси агентів
+/observability          — metrics cards, logs panel
+/architect              — PatternSuggestionPanel form
+/settings               — API keys form, toggles
+/notebooks              — NotebookLM dark zinc header
+/pipelines              — PipelineCommandCenter
+/diagrams               — DiagramsPage
+/knowledge              — KnowledgePage
+/docs                   — DocsPage
+```
+
+### STEP 3 — Document issues
+
+Для кожної знайденої проблеми записати:
+```
+PAGE: /xxx
+ISSUE: опис проблеми
+FIX: що треба змінити (клас/файл/рядок)
+```
+
+### STEP 4 — Fix issues directly
+
+Типові проблеми і фікси:
+
+**Контент обрізається знизу MobileNav:**
+```bash
+# Додати pb-20 до сторінки або компонента
+sed -i 's/className="p-4 space-y/className="p-4 pb-20 space-y/' src/pages/PAGENAME.tsx
+```
+
+**Горизонтальний overflow (контент ширший за екран):**
+```bash
+# Знайти div без overflow-x-hidden
+grep -n "overflow" src/pages/PAGENAME.tsx
+```
+
+**Текст не читається (занадто малий):**
+```bash
+# Перевірити text-xs → text-sm на мобільному
+```
+
+**Сторінка не знайдена (404):**
+```bash
+# Перевірити чи є роут у src/routes/
+ls src/routes/
+```
+
+### STEP 5 — Commit всі фікси
+```bash
+git add src/ .lovable/src/
+git commit -m "fix(ui): mobile QA fixes — scroll, overflow, padding
+
+Found via agent-workspace browser QA on RPi 3B.
+[список виправлених сторінок]"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-168','[x] TASK-168',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-168 done" && git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-168:mobile-QA|agent-browser+fixes|commit:<hash>|★★★★"`
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- agent-workspace MCP: вже налаштований, використовувати workspace_browser_* tools
+- Deployed URL: https://ai-drakon-setup.pages.dev
+- Мобільний viewport: 375px ширина (iPhone SE/mini)
+- CF Pages deploy після push: ~2-3 хв
+- Scroll фікс вже є: pb-24 в AppLayout — але окремі сторінки можуть мати свої проблеми
+- Якщо сторінка недоступна → перевірити src/routes/ чи є файл роута
