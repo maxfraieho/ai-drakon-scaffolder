@@ -37,7 +37,7 @@ export function AppLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col md:flex-row">
+    <div className="h-[100dvh] bg-zinc-950 text-zinc-100 flex flex-col md:flex-row overflow-hidden">
       {/* Mobile Header */}
       <header className="md:hidden flex items-center justify-between px-4 py-3 bg-zinc-900/90 border-b border-zinc-800/80 backdrop-blur-md sticky top-0 z-40 w-full">
         <div className="flex items-center gap-3">
