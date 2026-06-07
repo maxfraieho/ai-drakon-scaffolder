@@ -17129,3 +17129,115 @@ git push origin main
 
 ### DIARY
 Entry: "SESSION:$(date +%Y-%m-%d)|TASK-152:AppLayout-sidebar|NavLink+Outlet+Lucide|commit:<hash>|★★★"
+
+---
+
+## TASK-153: Home Dashboard — Agent Status Overview Page
+[ ] TASK-153
+
+### GOAL
+Create `src/pages/HomePage.tsx` — головна сторінка з статусом усіх агентів.
+ONE new file + register in router.
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### STEP 1 — GitNexus context (MANDATORY first)
+
+```bash
+# Find existing agent API:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"agt-ogy3","version":"1.0"},"capabilities":{}}}' | python3 -m json.tool | head -5
+
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"query","arguments":{"repo":"ai-drakon-scaffolder","q":"agent health status worker-url"}}}' \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('content',[{}])[0].get('text','')[:2000])"
+
+# Find root route:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"context","arguments":{"repo":"ai-drakon-scaffolder","path":"src/routes/__root.tsx"}}}' \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('content',[{}])[0].get('text','')[:2000])"
+```
+
+If GitNexus returns "Server not initialized" — initialize first (send initialize call), then retry tools/call.
+
+### STEP 2 — Read only these 2 files (minimal context)
+
+```bash
+cat src/lib/worker-url.ts
+cat src/routes/index.tsx
+```
+
+### STEP 3 — Create HomePage.tsx
+
+File: `src/pages/HomePage.tsx`
+
+Component shows 3 agent status cards:
+- Drakon Agent (`/diagrams` link)
+- Docs Agent (`/docs` link)
+- Architect Agent (`/pipelines` link)
+
+Each card: agent name, colored status dot (fetch `/health` from worker URL), last route link, "Open" button.
+
+Worker URLs from `src/lib/worker-url.ts` — import the function.
+
+```tsx
+// Structure:
+export function HomePage() {
+  // fetch health for each agent on mount
+  // show AgentCard grid
+}
+
+function AgentCard({ name, healthUrl, route, icon }: Props) {
+  const [status, setStatus] = useState<'online'|'offline'|'checking'>('checking')
+  // useEffect → fetch healthUrl
+  // return card with dot + name + status + NavLink button
+}
+```
+
+Dark theme, Tailwind, Lucide icons (Bot, FileText, Building2).
+
+### STEP 4 — Register in router
+
+Find index route in `src/routes/index.tsx` or `src/routes/__root.tsx`.
+Replace current index content with `<HomePage />` import.
+
+### STEP 5 — Sync + check
+```bash
+cp src/pages/HomePage.tsx .lovable/src/pages/HomePage.tsx
+# Also copy updated route file
+cp src/routes/index.tsx .lovable/src/routes/index.tsx 2>/dev/null || true
+```
+
+### VERIFICATION
+```bash
+grep "HomePage" src/routes/index.tsx || grep "HomePage" src/routes/__root.tsx
+grep "AgentCard\|healthUrl\|worker" src/pages/HomePage.tsx | head -5
+diff src/pages/HomePage.tsx .lovable/src/pages/HomePage.tsx | head -3
+```
+
+### COMMIT
+```bash
+git add src/pages/HomePage.tsx .lovable/src/pages/HomePage.tsx
+git add src/routes/index.tsx .lovable/src/routes/index.tsx 2>/dev/null || true
+git commit -m "feat(ui): add HomePage with agent status dashboard"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-153','[x] TASK-153',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-153 done"
+git push origin main
+```
+
+### DIARY
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-153:HomePage-agent-dashboard|AgentCard+health-fetch|commit:<hash>|★★★"
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- Only 2 files to read manually (worker-url.ts + index.tsx) — use GitNexus for the rest
+- If index route doesn't exist, check __root.tsx for the "/" path
+- Do NOT install new packages
