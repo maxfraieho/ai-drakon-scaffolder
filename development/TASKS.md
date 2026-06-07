@@ -19688,7 +19688,7 @@ git push origin main
 
 ---
 
-## [ ] TASK-175: MCP API Key Management — Worker + Settings UI
+## [x] TASK-175: MCP API Key Management — Worker + Settings UI
 
 **META:** Add per-user MCP API key generation/management. Backend: Cloudflare Worker gets KV-based key auth + /v1/api-key endpoints. Frontend: Settings gets new "MCP Access" section.
 
@@ -20082,7 +20082,7 @@ Fix all type errors (cast `data as any` for fetch responses, check import list).
 
 ```python
 with open('development/TASKS.md') as f: c = f.read()
-c = c.replace('[ ] TASK-175', '[x] TASK-175', 1)
+c = c.replace('[x] TASK-175', '[x] TASK-175', 1)
 with open('development/TASKS.md', 'w') as f: f.write(c)
 ```
 
