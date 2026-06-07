@@ -20093,3 +20093,49 @@ git push origin main
 ```
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-175:mcp-key-management|Worker+KV+SettingsUI|commit:<hash>|★★★"`
+
+---
+
+## [ ] TASK-176: Mine exodus-infra into MemPalace
+
+**Goal:** Index exodus-infra markdown docs into MemPalace wing "exodus-infra" so Claude can search protocols/agents/services without reading files directly.
+
+**Run locally on AGY3 Termux (NOT on dev server).**
+
+**Steps:**
+
+1. Pull latest exodus-infra:
+```bash
+cd ~/workspace/exodus-infra
+git pull origin main
+```
+
+2. Check if wing already exists:
+```bash
+python3 -m mempalace list-wings 2>/dev/null || python3 -c "from mempalace import MemPalace; mp = MemPalace(); print(mp.list_wings())"
+```
+
+3. Mine exodus-infra into MemPalace:
+```bash
+cd ~/workspace/exodus-infra
+python3 -m mempalace mine . --wing exodus-infra
+```
+
+If `mine` subcommand not found, try:
+```bash
+python3 -c "
+from mempalace import MemPalace
+mp = MemPalace()
+mp.mine_directory(., wing=exodus-infra)
+print(Done)
+"
+```
+
+4. Verify wing was created:
+```bash
+python3 -m mempalace search --wing exodus-infra --query "notebooklm MCP" | head -20
+```
+
+5. Report: how many drawers created, sample search result.
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-176:mempalace-exodus-infra-mining|drawers:<N>|★★★"`
