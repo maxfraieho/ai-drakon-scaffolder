@@ -14,9 +14,11 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useProject } from "@/context/ProjectContext";
+import { useNavigate } from "@tanstack/react-router";
 
 export function ProjectSelector() {
 const { projects, activeProject, setActiveProject, loadProjects, loading } = useProject();
+const navigate = useNavigate();
 const [managerOpen, setManagerOpen] = useState(false);
 const [addOpen, setAddOpen] = useState(false);
 const [githubOpen, setGithubOpen] = useState(false);
@@ -68,26 +70,53 @@ setDeleting(null);
 
 return (
 <>
-<div className="h-14 px-2 py-1.5">
+<div className="px-2 py-1.5 flex flex-col gap-1">
 <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">ACTIVE PROJECT</p>
-<div className="mt-1 flex items-center gap-1.5">
+<div className="flex items-start gap-1.5">
 <div className="flex-1 min-w-0">
 {activeProject ? (
-<div className="flex h-8 items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2">
+<div className="flex flex-col justify-center min-h-[2rem] gap-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-1">
+<div className="flex items-center gap-2">
 <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)]" />
-<span className="flex-1 truncate font-mono text-[11px] text-[var(--accent-amber)]">
+<span className="flex-1 truncate font-mono text-[11px] text-[var(--accent-amber)] font-medium">
 {activeProject.name}
 </span>
+</div>
+{activeProject.github ? (
+<div className="font-mono text-[8px] text-[var(--text-muted)] pl-3.5 truncate" title={`${activeProject.github.owner}/${activeProject.github.repo} (${activeProject.github.branch})`}>
+{activeProject.github.owner}/{activeProject.github.repo}
+</div>
+) : (
+<div className="font-mono text-[8px] text-[var(--text-muted)] pl-3.5 flex items-center justify-between gap-1 mt-0.5">
+<span className="text-red-400/80">No GitHub config</span>
+<button
+type="button"
+onClick={() => navigate({ to: "/settings" })}
+className="font-mono text-[8px] text-[var(--accent-amber)] hover:underline"
+>
+Setup
+</button>
+</div>
+)}
 </div>
 ) : loading ? (
 <div className="flex h-8 items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2">
 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent-amber)]" />
-<span className="font-mono text-[11px] text-[var(--accent-amber)]">Loading...</span>
+<span className="font-mono text-[11px] text-[var(--accent-amber)] font-medium">Loading...</span>
 <Loader2 className="ml-auto h-3 w-3 animate-spin text-[var(--text-muted)]" />
 </div>
 ) : (
-<div className="flex h-8 items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2">
-<span className="font-mono text-[11px] text-[var(--text-muted)]">No project</span>
+<div className="flex flex-col gap-1.5 p-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-subtle)] bg-[var(--bg-base)]/50">
+<span className="font-mono text-[10px] text-[var(--text-muted)]">No active project</span>
+<Button
+type="button"
+size="sm"
+variant="outline"
+onClick={() => navigate({ to: "/settings" })}
+className="h-6 font-mono text-[8px] uppercase tracking-wider text-[var(--accent-amber)] hover:text-[var(--accent-amber)] border-[var(--border-subtle)] hover:bg-[var(--accent-dim)]/30 w-full"
+>
+Setup GitHub
+</Button>
 </div>
 )}
 </div>
@@ -97,7 +126,7 @@ type="button"
 size="icon"
 variant="outline"
 onClick={() => setManagerOpen(true)}
-className="h-8 w-8 border-[var(--border-subtle)] bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+className="h-8 w-8 border-[var(--border-subtle)] bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0"
 aria-label="Управління проектами"
 >
 <Settings2 className="h-3.5 w-3.5" />

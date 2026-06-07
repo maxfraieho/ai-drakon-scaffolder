@@ -25,6 +25,7 @@ import { api } from "@/lib/api";
 import { hasClientJwt } from "@/lib/route-auth";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 import type { AppSettings } from "@/types/settings";
+import { useProject } from "@/context/ProjectContext";
 
 export const Route = createFileRoute("/settings")({
 component: SettingsRoute,
@@ -63,6 +64,8 @@ return (
 
 function SettingsRoute() {
 const navigate = useNavigate();
+const { activeProject } = useProject();
+const activeProjectGithub = activeProject?.github;
 const [settings, setSettings] = useState<AppSettings>(() => readSettings());
 const [agentBaseUrl, setAgentBaseUrl] = useState(() =>
 typeof window !== "undefined"
@@ -399,6 +402,26 @@ disabled={isCheckingGithub}>
 <RefreshCw className="mr-2 h-4 w-4" />
 {isCheckingGithub ? "Перевірка..." : "Перевірити підключення"}
 </Button>
+{activeProjectGithub && (
+<Button
+type="button"
+variant="secondary"
+onClick={() => {
+  updateSettings((prev) => ({
+    ...prev,
+    github: {
+      ...prev.github,
+      owner: activeProjectGithub.owner,
+      repo: activeProjectGithub.repo,
+      branch: activeProjectGithub.branch || "main",
+    },
+  }));
+  toast.info("Заповнено дані з активного проекту");
+}}
+>
+Заповнити з проекту ({activeProject?.name})
+</Button>
+)}
 {statusBadge(githubStatus)}
 </div>
 </CardContent>
