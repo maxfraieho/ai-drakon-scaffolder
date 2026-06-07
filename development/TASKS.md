@@ -17317,3 +17317,123 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-154:MobileNav-redesign|NavLink+lucide+bot
 - !!IMPORTANT!! Run locally on AGY3 Termux
 - Only 1 file to read manually
 - No new packages
+
+---
+
+## TASK-155: AppLayout — Add Observability Nav Item + Fix Mobile Scroll (OpenDesign)
+[ ] TASK-155
+
+### GOAL
+1. Додати "Observability" до бокового меню (`/observability`, іконка `Activity` з lucide)
+2. Зафіксувати мобільний скрол — основний контент не скролиться
+3. Використати **OpenDesign** для генерації оновленого компонента
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### STEP 1 — GitNexus context (MANDATORY)
+
+```bash
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"agt-ogy3","version":"1.0"},"capabilities":{}}}' \
+  | python3 -c "import sys,json; print('GN OK:', json.load(sys.stdin).get('result',{}).get('serverInfo',{}).get('name','?'))"
+
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"context","arguments":{"repo":"ai-drakon-scaffolder","path":"src/components/app/AppLayout.tsx"}}}' \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('content',[{}])[0].get('text','')[:3000])"
+```
+
+### STEP 2 — OpenDesign (MANDATORY — використати для генерації)
+
+```bash
+# Запустити генерацію через OpenDesign:
+RUN=$(curl -s -X POST http://192.168.3.184:7460/api/runs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "message": "Update React TypeScript AppLayout sidebar component. Current nav items: Diagrams(/diagrams,Workflow), Agents(/agents,Bot), Pipelines(/pipelines,GitMerge), Docs(/docs,BookOpen), Knowledge(/knowledge,Brain), Notebooks(/notebooks,Notebook). ADD new item: Observability(/observability,Activity icon from lucide-react). FIX mobile scroll bug: main content area must have overflow-y-auto and flex-1 so it scrolls independently. Keep: NavLink active state indigo-400, dark zinc theme, hamburger drawer for mobile, Settings gear at bottom, LanguageSwitcher import. Output full updated AppLayout.tsx component.",
+    "pluginId": "ai-drakon-mobile",
+    "agentId": "antigravity"
+  }')
+echo "Run started: $RUN"
+RUN_ID=$(echo "$RUN" | python3 -c "import sys,json; print(json.load(sys.stdin).get('runId',''))")
+echo "Run ID: $RUN_ID"
+
+# Poll for result (max 10 attempts x 20s):
+for i in $(seq 1 10); do
+  sleep 20
+  RESULT=$(curl -s http://192.168.3.184:7460/api/runs/$RUN_ID)
+  STATUS=$(echo "$RESULT" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('status','?'))")
+  echo "Attempt $i: status=$STATUS"
+  if [ "$STATUS" = "completed" ]; then
+    echo "$RESULT" | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+# Try different result fields
+for key in ['result','output','content','artifacts','code']:
+    val = d.get(key)
+    if val:
+        print(f'=== {key} ===')
+        print(str(val)[:4000])
+        break
+" 
+    break
+  fi
+done
+```
+
+### STEP 3 — Застосувати результат OpenDesign
+
+Якщо OpenDesign повернув TSX код — зберегти в `src/components/app/AppLayout.tsx`.
+Якщо код неповний або не повернувся — реалізувати вручну на основі поточного файлу:
+
+```bash
+# Прочитати поточний файл:
+cat src/components/app/AppLayout.tsx
+
+# Зміни які треба внести вручну якщо OpenDesign не допоміг:
+# 1. Додати в navItems: { to: "/observability", label: "Observability", icon: Activity }
+# 2. Додати Activity до lucide-react import
+# 3. Знайти <main> або основний контентний div і додати: className="flex-1 overflow-y-auto"
+```
+
+### STEP 4 — Sync + TypeScript check
+
+```bash
+cp src/components/app/AppLayout.tsx .lovable/src/components/app/AppLayout.tsx
+
+# TS check на dev server (якщо tsc не працює локально):
+# Попроси Claude запустити: ssh vokov@192.168.3.184 'cd ~/workspace/ai-drakon-scaffolder/.lovable && ./node_modules/.bin/tsc --noEmit 2>&1 | grep error | head -10'
+```
+
+### VERIFICATION
+
+```bash
+grep "observability\|Observability\|Activity" src/components/app/AppLayout.tsx
+grep "overflow-y-auto\|overflow-auto" src/components/app/AppLayout.tsx
+diff src/components/app/AppLayout.tsx .lovable/src/components/app/AppLayout.tsx | wc -l
+```
+
+### COMMIT
+
+```bash
+git add src/components/app/AppLayout.tsx .lovable/src/components/app/AppLayout.tsx
+git commit -m "feat(ui): add Observability nav item + fix mobile scroll in AppLayout"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-155','[x] TASK-155',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-155 done"
+git push origin main
+```
+
+### DIARY
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-155:AppLayout-observability+scroll|OpenDesign+manual|commit:<hash>|★★★"
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- OpenDesign URL: http://192.168.3.184:7460 — field є "message" (не "prompt"!)
+- Якщо OpenDesign timeout — реалізуй вручну (це займе 2 хвилини)
+- Скрол фікс: головний контент має бути `flex-1 overflow-y-auto min-h-0`
