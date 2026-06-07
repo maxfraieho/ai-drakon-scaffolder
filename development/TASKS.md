@@ -18242,3 +18242,167 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-163 done" && g
 - AgentStatusCard може мати інші props ніж inline AgentCard — read first!
 - Якщо AgentStatusCard не має healthUrl prop — адаптуй або залиш inline AgentCard
 - PipelineProgress інтеграція: тільки якщо є pipelineId в PipelineCommandCenter — інакше пропусти STEP 3
+
+---
+
+## [ ] TASK-164: SettingsPage — Full Redesign via OpenDesign
+
+**GOAL:** Замінити placeholder `src/pages/SettingsPage.tsx` на повноцінну сторінку налаштувань.
+
+**File:** `src/pages/SettingsPage.tsx`
+
+!!IMPORTANT!! Run locally on AGY3 Termux.
+
+### STEP 1 — Generate via OpenDesign
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript SettingsPage for AI agent platform. Sections: 1) API Keys — form with inputs for OPENAI_API_KEY, ANTHROPIC_API_KEY, GEMINI_API_KEY, each with show/hide toggle (Eye/EyeOff lucide icons) and Save button per row. 2) Agent Config — two toggles: Enable auto-retry (Switch), Debug mode (Switch). Dropdown: Default model selector (gemini-2.5-flash, claude-3-5-sonnet, gpt-4o). 3) System Info — read-only cards showing: App Version, Build Date, GitNexus status (fetch /api/health), CloudFlare status. All changes save to localStorage. Page header Settings with Settings icon. Dark zinc theme. Export named SettingsPage. Full component.' /tmp/od-SettingsPage.tsx"
+```
+
+### STEP 2 — Copy and verify
+```bash
+scp vokov@192.168.3.184:/tmp/od-SettingsPage.tsx ~/workspace/ai-drakon-scaffolder/src/pages/SettingsPage.tsx
+wc -l src/pages/SettingsPage.tsx
+head -5 src/pages/SettingsPage.tsx
+```
+If < 30 lines, implement minimal version manually:
+```tsx
+import { useState } from "react";
+import { Settings, Eye, EyeOff, Save } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+
+export function SettingsPage() {
+  const [show, setShow] = useState<Record<string, boolean>>({});
+  const [keys, setKeys] = useState({
+    openai: localStorage.getItem("OPENAI_API_KEY") ?? "",
+    anthropic: localStorage.getItem("ANTHROPIC_API_KEY") ?? "",
+    gemini: localStorage.getItem("GEMINI_API_KEY") ?? "",
+  });
+  const save = (k: string, v: string) => { localStorage.setItem(k, v); };
+
+  return (
+    <div className="p-6 max-w-2xl space-y-8">
+      <h1 className="text-2xl font-semibold flex items-center gap-2">
+        <Settings className="w-6 h-6 text-indigo-400" /> Settings
+      </h1>
+      <section className="space-y-4">
+        <h2 className="text-lg font-medium text-zinc-300">API Keys</h2>
+        {[
+          { id: "openai", label: "OpenAI API Key", storeKey: "OPENAI_API_KEY" },
+          { id: "anthropic", label: "Anthropic API Key", storeKey: "ANTHROPIC_API_KEY" },
+          { id: "gemini", label: "Gemini API Key", storeKey: "GEMINI_API_KEY" },
+        ].map(({ id, label, storeKey }) => (
+          <div key={id} className="flex items-center gap-2">
+            <Label className="w-44 text-zinc-400 text-sm">{label}</Label>
+            <div className="relative flex-1">
+              <Input
+                type={show[id] ? "text" : "password"}
+                value={keys[id as keyof typeof keys]}
+                onChange={e => setKeys(p => ({ ...p, [id]: e.target.value }))}
+                className="bg-zinc-900 border-zinc-700 pr-10"
+              />
+              <button onClick={() => setShow(p => ({ ...p, [id]: !p[id] }))}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
+                {show[id] ? <EyeOff size={16}/> : <Eye size={16}/>}
+              </button>
+            </div>
+            <Button size="sm" variant="outline" onClick={() => save(storeKey, keys[id as keyof typeof keys])}>
+              <Save size={14} />
+            </Button>
+          </div>
+        ))}
+      </section>
+    </div>
+  );
+}
+```
+
+### STEP 3 — Sync + commit
+```bash
+cp src/pages/SettingsPage.tsx .lovable/src/pages/SettingsPage.tsx
+git add src/pages/SettingsPage.tsx .lovable/src/pages/SettingsPage.tsx
+git commit -m "feat(ui): SettingsPage — API keys + toggles + system info"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-164','[x] TASK-164',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-164 done" && git push origin main
+```
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-164:SettingsPage|API-keys+toggles|commit:<hash>|★★★"`
+
+---
+
+## [ ] TASK-165: NotebookLMPage — Dark Zinc Redesign + Remove PageHeader
+
+**GOAL:** Оновити `src/pages/NotebookLMPage.tsx` — прибрати `PageHeader` (старий компонент), перейти на dark zinc стиль консистентний з рештою платформи.
+
+**File:** `src/pages/NotebookLMPage.tsx`
+
+!!IMPORTANT!! Run locally on AGY3 Termux.
+
+### STEP 1 — Read current file
+```bash
+cat src/pages/NotebookLMPage.tsx
+```
+
+### STEP 2 — Generate redesign via OpenDesign
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript NotebookLMPage. Shows: page header with Notebook lucide icon and title NotebookLM, subtitle text Connect to knowledge zones. Info banner: blue-400 border, Info icon, text about Gateway connection. Main area: full-height NotebookLMChatPanel component (imported from @/components/notebooklm/NotebookLMChatPanel). Layout: flex flex-col h-full. Dark zinc-950 bg. No PageHeader import. Export named NotebookLMPage.' /tmp/od-NotebookLMPage.tsx"
+```
+
+### STEP 3 — Copy result (verify imports match existing component)
+```bash
+scp vokov@192.168.3.184:/tmp/od-NotebookLMPage.tsx /tmp/od-NotebookLMPage-check.tsx
+# Verify NotebookLMChatPanel import path is correct
+grep "NotebookLMChatPanel" /tmp/od-NotebookLMPage-check.tsx
+# If correct → copy
+cp /tmp/od-NotebookLMPage-check.tsx src/pages/NotebookLMPage.tsx
+```
+
+If OpenDesign result is bad, use this minimal fix:
+```tsx
+import { NotebookLMChatPanel } from "@/components/notebooklm/NotebookLMChatPanel";
+import { Notebook, Info } from "lucide-react";
+
+export function NotebookLMPage() {
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="px-4 pt-4 pb-2 shrink-0">
+        <h1 className="text-2xl font-semibold flex items-center gap-2">
+          <Notebook className="w-6 h-6 text-indigo-400" /> NotebookLM
+        </h1>
+        <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-zinc-900 border border-blue-500/20 text-blue-400 text-xs">
+          <Info className="w-4 h-4 shrink-0" />
+          <span>Connect to knowledge zones via Garden Gateway to access vector-indexed materials.</span>
+        </div>
+      </div>
+      <div className="flex-1 min-h-0 p-4">
+        <NotebookLMChatPanel />
+      </div>
+    </div>
+  );
+}
+```
+
+### STEP 4 — Sync + commit
+```bash
+cp src/pages/NotebookLMPage.tsx .lovable/src/pages/NotebookLMPage.tsx
+git add src/pages/NotebookLMPage.tsx .lovable/src/pages/NotebookLMPage.tsx
+git commit -m "feat(ui): NotebookLMPage — dark zinc redesign, remove PageHeader"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-165','[x] TASK-165',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-165 done" && git push origin main
+```
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-165:NotebookLMPage|dark-zinc-redesign|commit:<hash>|★★★"`
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- TASK-164 → TASK-165 виконувати послідовно
+- NotebookLMChatPanel вже існує — НЕ видаляти, лише обгортка змінюється
+- Якщо OpenDesign повертає порожній файл — використати мінімальний код з STEP 3
