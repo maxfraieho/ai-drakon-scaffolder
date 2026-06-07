@@ -17133,7 +17133,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-152:AppLayout-sidebar|NavLink+Outlet+Luci
 ---
 
 ## TASK-153: Home Dashboard — Agent Status Overview Page
-[ ] TASK-153
+[x] TASK-153
 
 ### GOAL
 Create `src/pages/HomePage.tsx` — головна сторінка з статусом усіх агентів.
