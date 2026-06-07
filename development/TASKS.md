@@ -18406,3 +18406,82 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-165 done" && g
 - TASK-164 → TASK-165 виконувати послідовно
 - NotebookLMChatPanel вже існує — НЕ видаляти, лише обгортка змінюється
 - Якщо OpenDesign повертає порожній файл — використати мінімальний код з STEP 3
+
+---
+
+## [ ] TASK-166: Visual QA + TypeScript Check — Full Platform
+
+**GOAL:** Перевірити всі нові компоненти і сторінки після редизайну. TypeScript check + agent-workspace браузер на RPi 3B.
+
+!!IMPORTANT!! Run locally on AGY3 Termux. SSH to dev server for tsc.
+
+### STEP 0 — GitNexus: check route map
+```bash
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"route_map","arguments":{"repo":"ai-drakon-scaffolder"}}}' \
+  | grep '^data:' | python3 -c "import sys,json; [print(json.loads(l[5:]).get('result',{}).get('content',[{}])[0].get('text','')[:3000]) for l in sys.stdin]"
+```
+
+### STEP 1 — TypeScript check (on dev server)
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && npx tsc --noEmit 2>&1 | tail -30"
+```
+
+Fix any TS errors before proceeding. Common issues:
+- Missing props types in AgentStatusCard usage
+- Import paths with wrong case
+- `export const` vs `export function` mismatch
+
+### STEP 2 — Visual QA via agent-workspace browser (RPi 3B)
+
+Connect to agent-workspace MCP (already configured on AGY3):
+```bash
+# Check deployed URL first:
+curl -s https://ai-drakon-setup.pages.dev/ | head -5
+```
+
+Pages to check in browser (navigate to each, take screenshot, verify):
+```
+1. https://ai-drakon-setup.pages.dev/           → HomePage: 3 agent cards, status dots
+2. https://ai-drakon-setup.pages.dev/observability → Observability: metrics + log panel
+3. https://ai-drakon-setup.pages.dev/architect   → Architect: PatternSuggestionPanel form
+4. https://ai-drakon-setup.pages.dev/settings    → Settings: API keys + toggles
+5. https://ai-drakon-setup.pages.dev/notebooks   → NotebookLM: dark zinc header
+6. https://ai-drakon-setup.pages.dev/pipelines   → Pipelines: PipelineCommandCenter
+```
+
+If Cloudflare deploy not updated yet (changes < 3 min ago):
+```bash
+# Wait 3 min then retry, or check:
+curl -I https://ai-drakon-setup.pages.dev/ | grep -i "cf-\|last-modified"
+```
+
+### STEP 3 — Report issues found
+
+For each broken page:
+- Note the issue
+- Fix immediately if < 5 lines change
+- Add as new TASK if complex
+
+### STEP 4 — Commit fixes (if any)
+```bash
+git add src/ .lovable/src/
+git commit -m "fix(ui): visual QA fixes from TASK-166"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-166','[x] TASK-166',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-166 done" && git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-166:visual-qa|pages-verified+ts-clean|commit:<hash>|★★★★"`
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- Виконувати ПІСЛЯ TASK-163, 164, 165 (щоб всі сторінки вже існували)
+- tsc: запускати через SSH до 192.168.3.184, НЕ локально
+- agent-workspace: MCP вже налаштований, використовувати workspace_browser_navigate + workspace_browser_snapshot
+- Очікувані проблеми: TS type errors в AgentStatusCard props, можливо missing imports
