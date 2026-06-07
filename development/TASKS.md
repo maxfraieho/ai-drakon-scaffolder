@@ -17321,7 +17321,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-154:MobileNav-redesign|NavLink+lucide+bot
 ---
 
 ## TASK-155: AppLayout — Add Observability Nav Item + Fix Mobile Scroll (OpenDesign)
-[ ] TASK-155
+[x] TASK-155
 
 ### GOAL
 1. Додати "Observability" до бокового меню (`/observability`, іконка `Activity` з lucide)
