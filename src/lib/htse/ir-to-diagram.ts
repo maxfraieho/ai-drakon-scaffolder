@@ -53,7 +53,7 @@ items[id] = mapIrItemToDrakonItem(item);
 return {
 name: ir.name,
 access: mapIrAccessToDiagramAccess(ir.access),
-params: ir.params.join(", "),
+params: (ir.params ?? []).join(", "),
 items,
 };
 }
