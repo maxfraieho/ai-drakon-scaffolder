@@ -16419,7 +16419,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-148:architect-agent-flue|d1-kb+patterns+w
 
 
 ## TASK-149: Docs + Frontend Update Plan (architect-agent-flue + OpenDesign)
-[ ] TASK-149
+[s] TASK-149 (superseded by TASK-152+)
 
 ### GOAL
 Two deliverables after TASK-148 (architect-agent-flue) is complete:
@@ -16690,7 +16690,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-149:architect-docs+opendesign-plan|README
 - development/docs/ directory may not exist — create with mkdir -p
 
 ## TASK-150: Fundamental Frontend Redesign — AI-DRAKON Platform
-[ ] TASK-150
+[s] TASK-150 (superseded by TASK-152..166)
 
 ### МЕТА
 Критично переосмислити весь фронтенд ai-drakon-scaffolder. Не інкрементальні зміни — ПОВНИЙ перегляд UX/навігації/архітектури компонентів. Результат: чіткий, сучасний інтерфейс для AI-агент платформи з 3 спеціалізованими агентами.
@@ -16887,7 +16887,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-150:frontend-redesign|agent-centric-nav+d
 ---
 
 ## TASK-151: Testing + Visual QA — AI-DRAKON Frontend
-[ ] TASK-151
+[s] TASK-151 (superseded by TASK-166)
 
 ### GOAL
 1. Run existing tests and verify pass
