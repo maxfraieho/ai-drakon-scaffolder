@@ -19307,3 +19307,381 @@ git push origin main
 ```
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-173:github-nav-remove+sparkles-analyze|WorkspaceShell+ProjectFileManager|commit:<hash>|★★★"`
+
+---
+
+## [ ] TASK-174: Fix KnowledgeZone folder tree + ProjectSelector UX + Settings cleanup
+
+**META:** Three UX fixes: (1) ZoneCreationDialog shows GitHub tree from active project (not hardcoded ai-drakon vault), (2) ProjectSelector closes modal on project click, (3) Settings GitHub tab shows only token (not repo fields).
+
+**!!IMPORTANT!!** Run ALL edits locally on AGY3 Termux. SSH to 192.168.3.184 ONLY for git pull/push. Git repo is at `~/workspace/ai-drakon-scaffolder/`.
+
+---
+
+### STEP 1 — Fix ZoneCreationDialog to use active project GitHub tree
+
+**File:** `src/components/knowledge/ZoneCreationDialog.tsx`
+
+**Root cause:** Uses `fetchNotesTree()` which fetches static local vault (always ai-drakon docs). Must use `api.githubListTree()` from active project's GitHub config.
+
+**A) Add/change imports at top:**
+
+```typescript
+// ADD these imports:
+import { useProject } from "@/context/ProjectContext";
+import { getGithubConfig } from "@/lib/settings-storage";
+
+// REMOVE this import (no longer needed):
+// import { fetchNotesTree, fetchNote, type TreeNode } from "@/lib/garden/notesApi";
+```
+
+**B) Replace TreeNode type with local GHFolderNode type (add near top of file, after imports):**
+
+```typescript
+interface GHFolderNode {
+  name: string;
+  path: string;
+  children?: GHFolderNode[];
+  isLoaded?: boolean;
+  isLoading?: boolean;
+}
+```
+
+**C) Inside `ZoneCreationDialog` component, replace the `useProject` + github config extraction:**
+
+Add right after the `const queryClient = useQueryClient();` line:
+```typescript
+const { activeProject } = useProject();
+const ghCfg = getGithubConfig();
+const owner = activeProject?.github?.owner || ghCfg.owner || "";
+const repo = activeProject?.github?.repo || ghCfg.repo || "";
+const branch = activeProject?.github?.branch || ghCfg.branch || "main";
+const token = ghCfg.token || "";
+```
+
+**D) Replace the entire folder tree state + useQuery with new state + useEffect:**
+
+REMOVE this block:
+```typescript
+const { data: notesTree = [] } = useQuery({
+  queryKey: ["notesTree"],
+  queryFn: () => fetchNotesTree(),
+  enabled: isOpen,
+});
+```
+
+ADD this instead:
+```typescript
+const [ghTree, setGhTree] = useState<GHFolderNode[]>([]);
+const [treeLoading, setTreeLoading] = useState(false);
+
+// Recursive helper to update a node in the tree
+const updateGHNode = useCallback(
+  (nodes: GHFolderNode[], path: string, updater: (n: GHFolderNode) => GHFolderNode): GHFolderNode[] =>
+    nodes.map(n =>
+      n.path === path
+        ? updater(n)
+        : { ...n, children: n.children ? updateGHNode(n.children, path, updater) : undefined }
+    ),
+  []
+);
+
+// Load children of a folder on expand
+const loadChildren = useCallback(async (node: GHFolderNode) => {
+  if (node.isLoaded || node.isLoading) return;
+  setGhTree(prev => updateGHNode(prev, node.path, n => ({ ...n, isLoading: true })));
+  try {
+    const res = await api.githubListTree(owner, repo, node.path, branch, token || undefined);
+    if (res.success) {
+      const children: GHFolderNode[] = res.entries
+        .filter((e: { type: string }) => e.type === "dir")
+        .map((e: { name: string; path: string }) => ({ name: e.name, path: e.path }));
+      setGhTree(prev => updateGHNode(prev, node.path, n => ({ ...n, children, isLoaded: true, isLoading: false })));
+    }
+  } catch {
+    setGhTree(prev => updateGHNode(prev, node.path, n => ({ ...n, isLoading: false })));
+  }
+}, [owner, repo, branch, token, updateGHNode]);
+```
+
+**E) Replace the `useEffect` that handles `isOpen`/`initialFolders`:**
+
+Keep the part that resets `selectedFolders` and `expandedFolders`, and ADD loading the root tree:
+
+```typescript
+useEffect(() => {
+  if (isOpen) {
+    if (initialFolders && initialFolders.length > 0) {
+      setSelectedFolders(new Set(initialFolders));
+      const expanded = new Set<string>();
+      for (const f of initialFolders) {
+        const parts = f.split("/");
+        let acc = "";
+        for (const p of parts) {
+          acc = acc ? `${acc}/${p}` : p;
+          expanded.add(acc);
+        }
+      }
+      setExpandedFolders(expanded);
+    } else {
+      setSelectedFolders(new Set());
+      setExpandedFolders(new Set());
+    }
+    // Load root GitHub tree
+    if (owner && repo) {
+      setTreeLoading(true);
+      setGhTree([]);
+      api.githubListTree(owner, repo, "", branch, token || undefined)
+        .then(res => {
+          if (res.success) {
+            setGhTree(
+              res.entries
+                .filter((e: { type: string }) => e.type === "dir")
+                .map((e: { name: string; path: string }) => ({ name: e.name, path: e.path }))
+            );
+          }
+        })
+        .finally(() => setTreeLoading(false));
+    }
+  }
+}, [isOpen, initialFolders, owner, repo, branch, token]);
+```
+
+**F) Remove `countNotesInFolders` function and `noteCount` useMemo entirely.**
+
+**G) Replace `renderFolders` function with new version that works with `GHFolderNode`:**
+
+```typescript
+const renderGHFolders = (items: GHFolderNode[], depth = 0): React.ReactNode[] =>
+  items.map(folder => {
+    const hasChildren = folder.children === undefined || folder.children.length > 0;
+    const isExpanded = expandedFolders.has(folder.path);
+    return (
+      <div key={folder.path}>
+        <FolderItem
+          name={folder.name}
+          path={folder.path}
+          isSelected={selectedFolders.has(folder.path)}
+          onToggle={toggleFolder}
+          depth={depth}
+          hasChildren={hasChildren}
+          isExpanded={isExpanded}
+          onExpandToggle={async () => {
+            toggleExpand(folder.path);
+            if (!folder.isLoaded) await loadChildren(folder);
+          }}
+        />
+        {hasChildren && isExpanded && folder.children && (
+          renderGHFolders(folder.children, depth + 1)
+        )}
+      </div>
+    );
+  });
+```
+
+**H) Replace `hasFolders` check:**
+
+REMOVE:
+```typescript
+const hasFolders = notesTree.some((node) => node.type === "folder");
+```
+
+ADD:
+```typescript
+const hasFolders = ghTree.length > 0;
+```
+
+**I) In JSX, replace the folder ScrollArea content:**
+
+Change:
+```tsx
+{hasFolders ? (
+  renderFolders(notesTree)
+) : (
+  <p className="text-xs text-muted-foreground text-center py-8">
+    No folders found in vault.
+  </p>
+)}
+```
+
+To:
+```tsx
+{treeLoading ? (
+  <p className="text-xs text-muted-foreground text-center py-4 flex items-center justify-center gap-2">
+    <span className="animate-spin">⟳</span> Loading...
+  </p>
+) : !owner || !repo ? (
+  <p className="text-xs text-muted-foreground text-center py-8">
+    No GitHub project configured. Select a project in the top-left corner.
+  </p>
+) : hasFolders ? (
+  renderGHFolders(ghTree)
+) : (
+  <p className="text-xs text-muted-foreground text-center py-8">
+    No folders found in repository.
+  </p>
+)}
+```
+
+**J) In the Summary right panel, replace `noteCount` with just folder count:**
+
+Change the "Notes Shared" metric box to show active project name:
+```tsx
+<div className="bg-background/50 border border-border/50 p-2 rounded flex flex-col">
+  <span className="text-[10px] text-muted-foreground">Repository</span>
+  <span className="text-sm font-bold font-mono tracking-tight text-foreground truncate">
+    {repo || "—"}
+  </span>
+</div>
+```
+
+**K) Simplify `handleSubmit` — remove `fetchAndSubmit`, submit directly:**
+
+Replace the entire `handleSubmit` function body after validation with:
+```typescript
+const data: CreateKnowledgeZoneRequest = {
+  name,
+  description: description.trim() || undefined,
+  ttlMinutes,
+  accessType,
+  createNotebookLm,
+  folders: Array.from(selectedFolders),
+  noteCount: selectedFolders.size,
+};
+if (createNotebookLm) {
+  data.notebookLmTitle = notebookLmTitle.trim() || undefined;
+  data.shareEmails = shareEmails.split(",").map((s) => s.trim()).filter(Boolean);
+}
+createZoneMutation.mutate(data);
+```
+
+Remove the entire `fetchAndSubmit` async function.
+
+**L) Remove unused imports:**
+- Remove `useMemo` from react imports if `noteCount` useMemo is removed
+- Remove `useQuery` from `@tanstack/react-query` if no longer used
+- Add `useCallback` to react imports
+
+**Sync:** `cp src/components/knowledge/ZoneCreationDialog.tsx .lovable/src/components/knowledge/ZoneCreationDialog.tsx`
+
+---
+
+### STEP 2 — ProjectSelector: close modal on project click
+
+**File:** `src/components/workspace/ProjectSelector.tsx`
+
+Find the project row click handler:
+```tsx
+onClick={() => setActiveProject(p)}
+```
+
+Replace with:
+```tsx
+onClick={() => { setActiveProject(p); setManagerOpen(false); }}
+```
+
+This closes the manager dialog immediately when user clicks a project. Simple and clean.
+
+**Sync:** `cp src/components/workspace/ProjectSelector.tsx .lovable/src/components/workspace/ProjectSelector.tsx`
+
+---
+
+### STEP 3 — Settings: hide repo/owner/branch fields from GitHub tab
+
+**File:** `src/routes/settings.tsx`
+
+In the GitHub tab `<TabsContent value="github">`, find and REMOVE these three sections entirely (just the JSX, keep state+functions):
+
+1. The `Repository Owner` div block:
+```tsx
+<div className="grid gap-2">
+  <Label htmlFor="gh-owner">Repository Owner</Label>
+  <Input id="gh-owner" .../>
+</div>
+```
+
+2. The `Repository Name` div block (including the autocomplete dropdown):
+```tsx
+<div className="grid gap-2">
+  <Label htmlFor="gh-repo">Repository Name</Label>
+  <div className="relative">
+    <Input id="gh-repo" .../>
+    {repoOpen && ...}
+  </div>
+</div>
+```
+
+3. The `Branch` div block:
+```tsx
+<div className="grid gap-2">
+  <Label htmlFor="gh-branch">Branch</Label>
+  <Input id="gh-branch" .../>
+</div>
+```
+
+ADD a note BEFORE the token field (after the CardDescription):
+```tsx
+<div className="rounded-md bg-muted/40 border border-border/50 px-3 py-2 text-xs text-muted-foreground mb-2">
+  Репозиторій та гілку налаштовуйте через <strong>селектор проекту</strong> у верхньому лівому куті.
+</div>
+```
+
+Also REMOVE the "Заповнити з проекту" button block:
+```tsx
+{activeProjectGithub && (
+  <Button ... onClick={...}>Заповнити з проекту ({activeProject?.name})</Button>
+)}
+```
+
+**Sync:** `cp src/routes/settings.tsx .lovable/src/routes/settings.tsx`
+
+---
+
+### STEP 4 — TypeScript check
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+npx --prefix . tsc --noEmit 2>&1 | head -40
+```
+
+Fix ALL type errors before committing.
+
+Common issues to watch for:
+- `api.githubListTree` return type — check actual type in `src/lib/api.ts`
+- `useCallback` missing from react imports
+- Unused imports after removals
+- `onExpandToggle` in FolderItem props is `() => void` but we're passing `async () => void` — that's fine, async is assignable to `() => void`
+
+---
+
+### STEP 5 — Commit and push
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add src/components/knowledge/ZoneCreationDialog.tsx
+git add .lovable/src/components/knowledge/ZoneCreationDialog.tsx
+git add src/components/workspace/ProjectSelector.tsx
+git add .lovable/src/components/workspace/ProjectSelector.tsx
+git add src/routes/settings.tsx
+git add .lovable/src/routes/settings.tsx
+git commit -m "fix(knowledge): folder tree uses active project GitHub, ProjectSelector closes on select, Settings simplified"
+git push origin main
+```
+
+---
+
+### STEP 6 — Mark done + diary
+
+```python
+with open('development/TASKS.md') as f: c = f.read()
+c = c.replace('[ ] TASK-174', '[x] TASK-174', 1)
+with open('development/TASKS.md', 'w') as f: f.write(c)
+```
+
+```bash
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-174 done"
+git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-174:zone-gh-tree+selector-ux+settings-clean|ZoneCreationDialog+ProjectSelector+settings|commit:<hash>|★★★"`
