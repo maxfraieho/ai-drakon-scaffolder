@@ -18117,7 +18117,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-162 done" && g
 
 ---
 
-## [ ] TASK-163: Integrate New Components — Connect AgentStatusCard + PipelineProgress + PatternSuggestionPanel
+## [x] TASK-163: Integrate New Components — Connect AgentStatusCard + PipelineProgress + PatternSuggestionPanel
 
 **GOAL:** Підключити 3 нових компоненти до реальних сторінок:
 1. `AgentStatusCard` → замінити inline `AgentCard` в `src/pages/HomePage.tsx`
