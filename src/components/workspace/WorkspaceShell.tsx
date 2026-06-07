@@ -17,6 +17,7 @@ import {
   Workflow,
   Brain, // Added Brain icon
   BookOpen,
+  Github,
 } from "lucide-react";
 import {
   Sheet,
@@ -62,6 +63,7 @@ const NAV_WORKSPACE: NavItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
   { to: "/knowledge", label: "Знання", icon: Brain }, // Added Knowledge item
   { to: "/notebooks", label: "NotebookLM", icon: BookOpen },
+  { to: "/github", label: "GitHub", icon: Github },
   { to: "/code", label: "Код", icon: FileCode },
   { to: "/docs", label: "Документація", icon: FileText },
 ];
