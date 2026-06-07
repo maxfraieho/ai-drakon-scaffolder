@@ -284,85 +284,8 @@ return (
 <CardDescription>Налаштування репозиторію для читання та комітів</CardDescription>
 </CardHeader>
 <CardContent className="space-y-4">
-<div className="grid gap-2">
-<Label htmlFor="gh-owner">Repository Owner</Label>
-<Input
-id="gh-owner"
-value={settings.github.owner}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-github: { ...prev.github, owner: event.target.value },
-}))
-}
-/>
-</div>
-
-<div className="grid gap-2">
-<Label htmlFor="gh-repo">Repository Name</Label>
-<div className="relative">
-<Input
-id="gh-repo"
-value={settings.github.repo}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-github: { ...prev.github, repo: event.target.value },
-}))
-}
-onFocus={() => setRepoOpen(true)}
-onBlur={() => setTimeout(() => setRepoOpen(false), 150)}
-/>
-{repoOpen && (
-<div className="absolute z-50 top-full mt-1 w-full max-h-48 overflow-y-auto bg-card border border-border rounded-md shadow-md">
-{reposLoading && (
-<div className="px-3 py-2 text-sm text-muted-foreground flex items-center">
-<Loader2 className="h-3 w-3 animate-spin inline mr-1" />
-Loading repos…
-</div>
-)}
-{!reposLoading && filteredRepos.length === 0 && (
-<div className="px-3 py-2 text-sm text-muted-foreground">
-No repos found — type to enter manually
-</div>
-)}
-{filteredRepos.map((r) => (
-<button
-key={r.full_name}
-type="button"
-onMouseDown={() => {
-updateSettings((prev) => ({
-...prev,
-github: { ...prev.github, repo: r.name, owner: r.owner },
-}));
-setRepoOpen(false);
-}}
-className="block w-full text-left px-3 py-1.5 text-sm hover:bg-accent"
->
-<span className="font-medium">{r.name}</span>
-{r.private && (
-<span className="ml-2 text-[10px] text-muted-foreground">private</span>
-)}
-<span className="ml-2 text-[10px] text-muted-foreground">{r.owner}</span>
-</button>
-))}
-</div>
-)}
-</div>
-</div>
-
-<div className="grid gap-2">
-<Label htmlFor="gh-branch">Branch</Label>
-<Input
-id="gh-branch"
-value={settings.github.branch}
-onChange={(event) =>
-updateSettings((prev) => ({
-...prev,
-github: { ...prev.github, branch: event.target.value },
-}))
-}
-/>
+<div className="rounded-md bg-muted/40 border border-border/50 px-3 py-2 text-xs text-muted-foreground mb-2">
+  Репозиторій та гілку налаштовуйте через <strong>селектор проекту</strong> у верхньому лівому куті.
 </div>
 
 <div className="grid gap-2">
@@ -408,26 +331,6 @@ disabled={isCheckingGithub}>
 <RefreshCw className="mr-2 h-4 w-4" />
 {isCheckingGithub ? "Перевірка..." : "Перевірити підключення"}
 </Button>
-{activeProjectGithub && (
-<Button
-type="button"
-variant="secondary"
-onClick={() => {
-  updateSettings((prev) => ({
-    ...prev,
-    github: {
-      ...prev.github,
-      owner: activeProjectGithub.owner,
-      repo: activeProjectGithub.repo,
-      branch: activeProjectGithub.branch || "main",
-    },
-  }));
-  toast.info("Заповнено дані з активного проекту");
-}}
->
-Заповнити з проекту ({activeProject?.name})
-</Button>
-)}
 {statusBadge(githubStatus)}
 </div>
 </CardContent>

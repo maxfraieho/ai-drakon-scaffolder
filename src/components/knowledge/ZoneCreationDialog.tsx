@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -23,9 +23,18 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Folder, ChevronRight, ChevronDown } from "lucide-react";
 import { api, type CreateKnowledgeZoneRequest, type KnowledgeZone } from "@/lib/api";
-import { fetchNotesTree, fetchNote, type TreeNode } from "@/lib/garden/notesApi";
 import { ZoneCreatedDialog } from "./ZoneCreatedDialog";
 import { cn } from "@/lib/utils";
+import { useProject } from "@/context/ProjectContext";
+import { getGithubConfig } from "@/lib/settings-storage";
+
+interface GHFolderNode {
+  name: string;
+  path: string;
+  children?: GHFolderNode[];
+  isLoaded?: boolean;
+  isLoading?: boolean;
+}
 
 interface FolderItemProps {
   name: string;
@@ -86,27 +95,6 @@ function FolderItem({
   );
 }
 
-const countNotesInFolders = (
-  nodes: TreeNode[],
-  selectedPaths: Set<string>,
-  parentIsSelected = false
-): number => {
-  let count = 0;
-  for (const node of nodes) {
-    if (node.type === "note") {
-      if (parentIsSelected) {
-        count++;
-      }
-    } else if (node.type === "folder") {
-      const isCurrentSelected = selectedPaths.has(node.path) || parentIsSelected;
-      if (node.children) {
-        count += countNotesInFolders(node.children, selectedPaths, isCurrentSelected);
-      }
-    }
-  }
-  return count;
-};
-
 interface ZoneCreationDialogProps {
   isOpen: boolean;
   onClose: () => void;
@@ -119,6 +107,12 @@ export function ZoneCreationDialog({
   initialFolders,
 }: ZoneCreationDialogProps) {
   const queryClient = useQueryClient();
+  const { activeProject } = useProject();
+  const ghCfg = getGithubConfig();
+  const owner = activeProject?.github?.owner || ghCfg.owner || "";
+  const repo = activeProject?.github?.repo || ghCfg.repo || "";
+  const branch = activeProject?.github?.branch || ghCfg.branch || "main";
+  const token = ghCfg.token || "";
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -135,6 +129,37 @@ export function ZoneCreationDialog({
 
   const [createdZone, setCreatedZone] = useState<KnowledgeZone | null>(null);
   const [showCreatedDialog, setShowCreatedDialog] = useState(false);
+
+  const [ghTree, setGhTree] = useState<GHFolderNode[]>([]);
+  const [treeLoading, setTreeLoading] = useState(false);
+
+  // Recursive helper to update a node in the tree
+  const updateGHNode = useCallback(
+    (nodes: GHFolderNode[], path: string, updater: (n: GHFolderNode) => GHFolderNode): GHFolderNode[] =>
+      nodes.map(n =>
+        n.path === path
+          ? updater(n)
+          : { ...n, children: n.children ? updateGHNode(n.children, path, updater) : undefined }
+      ),
+    []
+  );
+
+  // Load children of a folder on expand
+  const loadChildren = useCallback(async (node: GHFolderNode) => {
+    if (node.isLoaded || node.isLoading) return;
+    setGhTree(prev => updateGHNode(prev, node.path, n => ({ ...n, isLoading: true })));
+    try {
+      const res = await api.githubListTree(owner, repo, node.path, branch, token || undefined);
+      if (res.success) {
+        const children: GHFolderNode[] = res.entries
+          .filter((e: { type: string }) => e.type === "dir")
+          .map((e: { name: string; path: string }) => ({ name: e.name, path: e.path }));
+        setGhTree(prev => updateGHNode(prev, node.path, n => ({ ...n, children, isLoaded: true, isLoading: false })));
+      }
+    } catch {
+      setGhTree(prev => updateGHNode(prev, node.path, n => ({ ...n, isLoading: false })));
+    }
+  }, [owner, repo, branch, token, updateGHNode]);
 
   useEffect(() => {
     if (isOpen) {
@@ -154,18 +179,24 @@ export function ZoneCreationDialog({
         setSelectedFolders(new Set());
         setExpandedFolders(new Set());
       }
+      // Load root GitHub tree
+      if (owner && repo) {
+        setTreeLoading(true);
+        setGhTree([]);
+        api.githubListTree(owner, repo, "", branch, token || undefined)
+          .then(res => {
+            if (res.success) {
+              setGhTree(
+                res.entries
+                  .filter((e: { type: string }) => e.type === "dir")
+                  .map((e: { name: string; path: string }) => ({ name: e.name, path: e.path }))
+              );
+            }
+          })
+          .finally(() => setTreeLoading(false));
+      }
     }
-  }, [isOpen, initialFolders]);
-
-  const { data: notesTree = [] } = useQuery({
-    queryKey: ["notesTree"],
-    queryFn: () => fetchNotesTree(),
-    enabled: isOpen,
-  });
-
-  const noteCount = useMemo(() => {
-    return countNotesInFolders(notesTree, selectedFolders);
-  }, [notesTree, selectedFolders]);
+  }, [isOpen, initialFolders, owner, repo, branch, token]);
 
   const createZoneMutation = useMutation({
     mutationFn: (data: CreateKnowledgeZoneRequest) => api.createKnowledgeZone(data),
@@ -214,17 +245,15 @@ export function ZoneCreationDialog({
 
   const selectAll = () => {
     const allPaths = new Set<string>();
-    const collectPaths = (nodes: TreeNode[]) => {
+    const collectPaths = (nodes: GHFolderNode[]) => {
       for (const node of nodes) {
-        if (node.type === "folder") {
-          allPaths.add(node.path);
-          if (node.children) {
-            collectPaths(node.children);
-          }
+        allPaths.add(node.path);
+        if (node.children) {
+          collectPaths(node.children);
         }
       }
     };
-    collectPaths(notesTree);
+    collectPaths(ghTree);
     setSelectedFolders(allPaths);
   };
 
@@ -232,32 +261,31 @@ export function ZoneCreationDialog({
     setSelectedFolders(new Set());
   };
 
-  const renderFolders = (items: TreeNode[], depth = 0): React.ReactNode[] => {
-    return items
-      .filter((node) => node.type === "folder")
-      .map((folder) => {
-        const folderChildren = folder.children ?? [];
-        const hasSubfolders = folderChildren.some((child) => child.type === "folder");
-        const isExpanded = expandedFolders.has(folder.path);
-        return (
-          <div key={folder.path}>
-            <FolderItem
-              name={folder.name || folder.path.split("/").pop() || ""}
-              path={folder.path}
-              isSelected={selectedFolders.has(folder.path)}
-              onToggle={toggleFolder}
-              depth={depth}
-              hasChildren={hasSubfolders}
-              isExpanded={isExpanded}
-              onExpandToggle={() => toggleExpand(folder.path)}
-            />
-            {hasSubfolders && isExpanded && (
-              renderFolders(folderChildren, depth + 1)
-            )}
-          </div>
-        );
-      });
-  };
+  const renderGHFolders = (items: GHFolderNode[], depth = 0): React.ReactNode[] =>
+    items.map(folder => {
+      const hasChildren = folder.children === undefined || folder.children.length > 0;
+      const isExpanded = expandedFolders.has(folder.path);
+      return (
+        <div key={folder.path}>
+          <FolderItem
+            name={folder.name}
+            path={folder.path}
+            isSelected={selectedFolders.has(folder.path)}
+            onToggle={toggleFolder}
+            depth={depth}
+            hasChildren={hasChildren}
+            isExpanded={isExpanded}
+            onExpandToggle={async () => {
+              toggleExpand(folder.path);
+              if (!folder.isLoaded) await loadChildren(folder);
+            }}
+          />
+          {hasChildren && isExpanded && folder.children && (
+            renderGHFolders(folder.children, depth + 1)
+          )}
+        </div>
+      );
+    });
 
   const handleSubmit = () => {
     if (!name.trim()) {
@@ -277,7 +305,7 @@ export function ZoneCreationDialog({
       accessType,
       createNotebookLm,
       folders: Array.from(selectedFolders),
-      noteCount,
+      noteCount: selectedFolders.size,
     };
 
     if (createNotebookLm) {
@@ -285,34 +313,7 @@ export function ZoneCreationDialog({
       data.shareEmails = shareEmails.split(",").map((s) => s.trim()).filter(Boolean);
     }
 
-    // Fetch note content for selected folders
-    const fetchAndSubmit = async () => {
-      const treeData = notesTree;
-      const noteNodes: TreeNode[] = [];
-      const walk = (nodes: TreeNode[]) => {
-        for (const n of nodes) {
-          if (n.type === "note" && n.slug) {
-            const parts = n.slug.split("/");
-            const folder = parts.slice(0, -1).join("/");
-            if (selectedFolders.size === 0 || selectedFolders.has(folder) || selectedFolders.has(parts[0])) {
-              noteNodes.push(n);
-            }
-          }
-          if (n.children) walk(n.children);
-        }
-      };
-      walk(treeData);
-      const notes = await Promise.all(noteNodes.map(async (n) => {
-        try {
-          const nc = await fetchNote(n.slug!);
-          return { slug: n.slug!, title: n.title ?? n.slug!, content: nc?.content ?? "", tags: nc?.tags ?? [] };
-        } catch { return { slug: n.slug!, title: n.title ?? n.slug!, content: "", tags: [] }; }
-      }));
-      data.noteCount = notes.length;
-      (data as any).notes = notes;
-      createZoneMutation.mutate(data);
-    };
-    void fetchAndSubmit();
+    createZoneMutation.mutate(data);
   };
 
   const handleClose = () => {
@@ -330,7 +331,7 @@ export function ZoneCreationDialog({
     onClose();
   };
 
-  const hasFolders = notesTree.some((node) => node.type === "folder");
+  const hasFolders = ghTree.length > 0;
 
   return (
     <>
@@ -382,11 +383,19 @@ export function ZoneCreationDialog({
                       </div>
                     </div>
                     <ScrollArea className="h-44 bg-muted/5 rounded p-1">
-                      {hasFolders ? (
-                        renderFolders(notesTree)
+                      {treeLoading ? (
+                        <p className="text-xs text-muted-foreground text-center py-4 flex items-center justify-center gap-2">
+                          <span className="animate-spin">⟳</span> Loading...
+                        </p>
+                      ) : !owner || !repo ? (
+                        <p className="text-xs text-muted-foreground text-center py-8">
+                          No GitHub project configured. Select a project in the top-left corner.
+                        </p>
+                      ) : hasFolders ? (
+                        renderGHFolders(ghTree)
                       ) : (
                         <p className="text-xs text-muted-foreground text-center py-8">
-                          No folders found in vault.
+                          No folders found in repository.
                         </p>
                       )}
                     </ScrollArea>
@@ -404,9 +413,9 @@ export function ZoneCreationDialog({
                           </span>
                         </div>
                         <div className="bg-background/50 border border-border/50 p-2 rounded flex flex-col">
-                          <span className="text-[10px] text-muted-foreground">Notes Shared</span>
-                          <span className="text-lg font-bold font-mono tracking-tight text-foreground">
-                            {noteCount}
+                          <span className="text-[10px] text-muted-foreground">Repository</span>
+                          <span className="text-sm font-bold font-mono tracking-tight text-foreground truncate">
+                            {repo || "—"}
                           </span>
                         </div>
                       </div>

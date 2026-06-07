@@ -155,7 +155,7 @@ p.slug === activeProject?.slug
 ? "border-[var(--accent-amber)]/50 bg-[var(--accent-dim)]"
 : "border-[var(--border-subtle)] bg-[var(--bg-base)] hover:bg-white/5"
 )}
-onClick={() => setActiveProject(p)}
+onClick={() => { setActiveProject(p); setManagerOpen(false); }}
 >
 <div className="shrink-0 rounded-[var(--radius-sm)] border border-[var(--accent-amber)]/35 bg-[var(--accent-dim)] px-1.5 py-0.5 font-mono text-[10px] text-[var(--accent-amber)]">
 {p.slug}
