@@ -20233,3 +20233,88 @@ If NOT deployed → report only, do NOT deploy (need Q confirmation first).
 **Push:** `git push origin main`
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-177:flue-agents-investigation|findings:<summary>|★★★"`
+
+---
+
+## [ ] TASK-178: Fix Flue agents — create CF resources and connect frontend
+
+**Context (read first):**
+- Flue = `@flue/runtime` framework (Cloudflare Workers, TypeScript)
+- NotebookLM notebook "Flue": ID `83ab40c7-7ca6-4685-9eb8-cf72dfa25f19` — full docs
+- `architect-agent-flue` code is complete. Blocked by 2 issues:
+  1. `wrangler.toml` has `placeholder_kv_id` and `placeholder_d1_id`
+  2. Frontend `src/lib/graph-pipeline-api.ts` still points to old Python agent (port 8766)
+
+**Run on dev server 192.168.3.184.**
+
+**Step 1 — Check if already deployed:**
+```bash
+cd ~/workspace/ai-drakon-scaffolder/services/architect-agent-flue
+npx wrangler deployments list --name architect-agent-flue 2>&1 | head -10
+```
+If deployed, get the URL: `https://architect-agent-flue.<account>.workers.dev`
+
+**Step 2 — Check existing CF resources:**
+```bash
+npx wrangler kv namespace list 2>&1 | python3 -c "import sys,json; [print(x[title],x[id]) for x in json.load(sys.stdin)]" 2>/dev/null
+npx wrangler d1 list 2>&1
+```
+
+**Step 3 — If placeholders, create real resources:**
+```bash
+# Create KV namespace for pipelines
+npx wrangler kv namespace create "PIPELINES_KV" 2>&1
+# Create D1 database for KB
+npx wrangler d1 create architect-kb 2>&1
+```
+Then update wrangler.toml with real IDs:
+- Replace `placeholder_kv_id` with real KV ID
+- Replace `placeholder_d1_id` with real D1 database_id
+
+**Step 4 — Check frontend base URL:**
+```bash
+grep -n "getArchitectBase\|architect\|8766" ~/workspace/ai-drakon-scaffolder/src/lib/graph-pipeline-api.ts | head -10
+grep -n "getArchitectBase\|8766\|architect" ~/workspace/ai-drakon-scaffolder/src/lib/settings-storage.ts 2>/dev/null | head -10
+```
+
+**Step 5 — If Flue worker is deployed, update frontend to use it:**
+In `src/lib/graph-pipeline-api.ts` or `settings-storage.ts`:
+- Old: `http://192.168.3.184:8766`
+- New: `https://architect-agent-flue.<account>.workers.dev`
+
+Also update `.lovable/src/lib/...` (same file must be synced to .lovable).
+
+**Step 6 — Set required secrets on CF Worker:**
+```bash
+echo "your_proxy_token" | npx wrangler secret put PROXY_TOKEN --name architect-agent-flue
+echo "your_cf_token" | npx wrangler secret put CUSTOM_API_KEY --name architect-agent-flue
+```
+Check what secrets the worker expects:
+```bash
+grep -n "env\." ~/workspace/ai-drakon-scaffolder/services/architect-agent-flue/lib/llm-client.ts | head -10
+```
+
+**Step 7 — Deploy if not yet deployed:**
+```bash
+cd ~/workspace/ai-drakon-scaffolder/services/architect-agent-flue
+npm install
+npx flue build --target cloudflare 2>&1 | tail -10
+npx wrangler deploy 2>&1 | tail -10
+```
+
+**Step 8 — Verify:**
+```bash
+curl https://architect-agent-flue.<account>.workers.dev/health
+```
+
+**Commit changes:**
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add services/architect-agent-flue/wrangler.toml src/lib/graph-pipeline-api.ts .lovable/src/lib/graph-pipeline-api.ts
+git commit -m "feat(flue): connect frontend to architect-agent-flue CF worker, fix KV/D1 resource IDs"
+git push origin main
+```
+
+**Report:** Write URL of deployed worker and what was changed.
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-178:flue-deploy-connect|worker:<URL>|commit:<hash>|★★★★"`
