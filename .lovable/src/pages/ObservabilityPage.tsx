@@ -4,10 +4,10 @@ import { Activity, Terminal, Shield, RefreshCw, AlertCircle, Info, Zap, Settings
 export const ObservabilityPage = () => {
   const [metrics, setMetrics] = useState({ activeAgents: 0, pipelineRuns: 0, errors24h: 0, avgLatency: 0 });
   const [loadingMetrics, setLoadingMetrics] = useState(true);
-  const [logs, setLogs] = useState<{id: number; level: string; message: string; timestamp: string}[]>();
+  const [logs, setLogs] = useState<{id: number; level: string; message: string; timestamp: string}[]>([]);
   const [autoScroll, setAutoScroll] = useState(true);
   const [logFilter, setLogFilter] = useState('ALL');
-  const [agents, setAgents] = useState<{id: number; name: string; status: string; lastPing: string; requests: number}[]>();
+  const [agents, setAgents] = useState<{id: number; name: string; status: string; lastPing: string; requests: number}[]>([]);
   const logContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
