@@ -20318,3 +20318,162 @@ git push origin main
 **Report:** Write URL of deployed worker and what was changed.
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-178:flue-deploy-connect|worker:<URL>|commit:<hash>|★★★★"`
+
+---
+
+## [ ] TASK-179: Deploy all 3 Flue agents + switch domains from Python to CF Workers
+
+**Context:**
+- 3 Flue workers: architect-agent-flue, docs-agent-flue, drakon-agent-flue
+- Currently: *.exodus.pp.ua → cloudflared → old Python agents (8765/8766/8767)
+- Goal: deploy Flue Workers, assign custom domains, remove old cloudflared routes
+- Frontend settings-storage.ts already has correct default URLs — no frontend changes needed
+
+**Run on dev server 192.168.3.184 (has wrangler credentials).**
+**Work directory: ~/workspace/ai-drakon-scaffolder/services/**
+
+---
+
+### PHASE 1 — Create shared Cloudflare resources
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+
+# 1a. Create shared KV namespace (for docs + drakon agents)
+npx wrangler kv namespace create "drakon-kb" 2>&1
+# Save the returned ID — replace "drakon_kb" in wrangler.toml of docs-agent-flue and drakon-agent-flue
+
+# 1b. Create KV for architect pipelines
+npx wrangler kv namespace create "architect-pipelines" 2>&1
+# Save ID — replace "placeholder_kv_id" in architect-agent-flue/wrangler.toml
+
+# 1c. Create D1 for architect KB
+npx wrangler d1 create architect-kb 2>&1
+# Save database_id — replace "placeholder_d1_id" in architect-agent-flue/wrangler.toml
+```
+
+### PHASE 2 — Update wrangler.toml for each agent
+
+**architect-agent-flue/wrangler.toml** — replace placeholders:
+```toml
+[[kv_namespaces]]
+binding = "PIPELINES_KV"
+id = "<REAL_KV_ID_FROM_PHASE_1b>"
+
+[[d1_databases]]
+binding = "KB_DB"
+database_name = "architect-kb"
+database_id = "<REAL_D1_ID_FROM_PHASE_1c>"
+```
+
+**docs-agent-flue/wrangler.toml** — replace drakon_kb:
+```toml
+[[kv_namespaces]]
+binding = "KNOWLEDGE_BASE"
+id = "<REAL_KV_ID_FROM_PHASE_1a>"
+preview_id = "<REAL_KV_ID_FROM_PHASE_1a>"
+```
+
+**drakon-agent-flue/wrangler.toml** — replace drakon_kb:
+```toml
+[[kv_namespaces]]
+binding = "KNOWLEDGE_BASE"
+id = "<REAL_KV_ID_FROM_PHASE_1a>"
+preview_id = "<REAL_KV_ID_FROM_PHASE_1a>"
+```
+
+### PHASE 3 — Build and deploy all 3 workers
+
+```bash
+# architect-agent-flue
+cd ~/workspace/ai-drakon-scaffolder/services/architect-agent-flue
+npm install
+npx wrangler deploy 2>&1 | tail -5
+
+# docs-agent-flue
+cd ~/workspace/ai-drakon-scaffolder/services/docs-agent-flue
+npm install
+npx wrangler deploy 2>&1 | tail -5
+
+# drakon-agent-flue
+cd ~/workspace/ai-drakon-scaffolder/services/drakon-agent-flue
+npm install
+npx wrangler deploy 2>&1 | tail -5
+```
+
+### PHASE 4 — Set secrets for each worker
+
+```bash
+# Get PROXY_TOKEN value:
+grep "PROXY_TOKEN\|CUSTOM_API_KEY\|antigravi" ~/workspace/ai-drakon-scaffolder/services/architect-agent/.env 2>/dev/null || \
+grep -r "PROXY_TOKEN" ~/workspace/ai-drakon-scaffolder/services/architect-agent/ 2>/dev/null | head -3
+
+# Set secrets (use actual token from above):
+for worker in architect-agent-flue docs-agent-flue drakon-agent-flue; do
+  echo "<PROXY_TOKEN_VALUE>" | npx wrangler secret put PROXY_TOKEN --name $worker
+  echo "<GITHUB_TOKEN>" | npx wrangler secret put GITHUB_TOKEN --name $worker
+done
+```
+
+### PHASE 5 — Assign custom domains to CF Workers
+
+```bash
+# For each worker, add custom domain:
+npx wrangler deploy --name architect-agent-flue \
+  --route "architect-agent.exodus.pp.ua/*" 2>&1 || true
+
+# OR via CF API (if wrangler route fails):
+# Dashboard: Workers & Pages → architect-agent-flue → Settings → Domains & Routes → Add Custom Domain
+# Domain: architect-agent.exodus.pp.ua
+
+# Repeat for docs and drakon:
+# docs-agent.exodus.pp.ua → docs-agent-flue
+# drakon-agent.exodus.pp.ua → drakon-agent-flue
+```
+
+Verify domains work:
+```bash
+curl https://architect-agent.exodus.pp.ua/health
+curl https://docs-agent.exodus.pp.ua/health
+curl https://drakon-agent.exodus.pp.ua/health
+```
+
+### PHASE 6 — Remove old routes from cloudflared (OrangePi)
+
+**ONLY after Phase 5 verified working.**
+
+On OrangePi (192.168.3.161), edit /etc/cloudflared/config.yml:
+Remove these 3 blocks:
+```yaml
+  - hostname: architect-agent.exodus.pp.ua
+    service: http://192.168.3.184:8766
+  - hostname: docs-agent.exodus.pp.ua
+    service: http://192.168.3.184:8767
+  - hostname: drakon-agent.exodus.pp.ua
+    service: http://192.168.3.184:8765
+```
+
+Then restart cloudflared:
+```bash
+sshpass -p TermuxSsh2026! ssh -p 8022 u0_a410@192.168.3.161 \
+  "sudo rc-service cloudflared restart" 2>/dev/null || \
+ssh vokov@192.168.3.161 "sudo rc-service cloudflared restart"
+```
+
+### PHASE 7 — Commit updated wrangler.toml files
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add services/architect-agent-flue/wrangler.toml \
+        services/docs-agent-flue/wrangler.toml \
+        services/drakon-agent-flue/wrangler.toml
+git commit -m "feat(flue): deploy all 3 Flue agents with real CF KV/D1 resource IDs + custom domains"
+git push origin main
+```
+
+**Report:**
+- architect-agent-flue URL: https://architect-agent.exodus.pp.ua/health → ?
+- docs-agent-flue URL: https://docs-agent.exodus.pp.ua/health → ?
+- drakon-agent-flue URL: https://drakon-agent.exodus.pp.ua/health → ?
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-179:flue-all-3-agents-deploy|architect+docs+drakon|commit:<hash>|★★★★★"`
