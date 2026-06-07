@@ -17607,3 +17607,143 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-156:full-opendesign|AppLayout+HomePage+3-
 - Якщо OpenDesign не повертає TSX — зберегти raw output в /tmp/ і реалізувати вручну
 - Runs виконуються послідовно (не паралельно) — кожен ~1-3 хв
 - mkdir -p перед створенням нових директорій (architect/, agents/)
+
+---
+
+## TASK-157: Full Platform Design via OpenDesign — using od-generate.sh
+[ ] TASK-157
+
+### GOAL
+Згенерувати 5 компонентів через OpenDesign (od-generate.sh на dev server) та закомітити.
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### ВАЖЛИВО: Як читати OpenDesign
+
+OpenDesign результат НЕ в API — він в events.jsonl в Docker контейнері.
+Використовуй `od-generate.sh` на dev server через SSH:
+
+```bash
+# Генерація компонента (запускати через SSH до dev server):
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'ОПИС' /tmp/od-OUTPUT.tsx" 2>&1
+# Потім скопіювати результат:
+scp vokov@192.168.3.184:/tmp/od-OUTPUT.tsx src/components/CATEGORY/Component.tsx
+```
+
+### STEP 1 — GitNexus context
+
+```bash
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"agt-ogy3","version":"1.0"},"capabilities":{}}}' \
+  | python3 -c "import sys,json; print('GN:', json.load(sys.stdin).get('result',{}).get('serverInfo',{}).get('name','?'))"
+```
+
+### STEP 2 — Generate 5 components via OpenDesign (one by one)
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+
+# Component 1: PatternSuggestionPanel
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript PatternSuggestionPanel. Form: projectDocs textarea, requirements textarea, Submit button. Loading state. Results: list of PatternCard with name bold, rationale text, tradeoffs array as bullet list, Use Pattern button. API POST /suggest-patterns returns patterns array. Dark zinc theme Tailwind.' /tmp/od-PatternSuggestionPanel.tsx" 2>&1
+scp vokov@192.168.3.184:/tmp/od-PatternSuggestionPanel.tsx src/components/architect/PatternSuggestionPanel.tsx
+echo "=== PatternSuggestionPanel done ==="
+
+# Component 2: PipelineProgress SSE
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript PipelineProgress. Props: pipelineName string, onComplete callback. Uses EventSource for SSE. Steps list: each NodeStatusRow has icon clock=pending spinner=running check=done x=error. Progress bar top. Collapsible step output. Dark zinc Tailwind.' /tmp/od-PipelineProgress.tsx" 2>&1
+mkdir -p src/components/pipelines
+scp vokov@192.168.3.184:/tmp/od-PipelineProgress.tsx src/components/pipelines/PipelineProgress.tsx
+echo "=== PipelineProgress done ==="
+
+# Component 3: AgentStatusCard
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript AgentStatusCard. Props: name string, status online|offline|checking string, description string, route string. Colored dot green=online red=offline yellow=checking. Agent name bold. Description text-sm muted. NavLink Open button indigo. Hover glow effect. Dark zinc Tailwind.' /tmp/od-AgentStatusCard.tsx" 2>&1
+mkdir -p src/components/agents
+scp vokov@192.168.3.184:/tmp/od-AgentStatusCard.tsx src/components/agents/AgentStatusCard.tsx
+echo "=== AgentStatusCard done ==="
+
+# Verify files:
+ls -la src/components/architect/PatternSuggestionPanel.tsx
+ls -la src/components/pipelines/PipelineProgress.tsx
+ls -la src/components/agents/AgentStatusCard.tsx
+```
+
+### STEP 3 — Sync to .lovable
+
+```bash
+for f in \
+  src/components/architect/PatternSuggestionPanel.tsx \
+  src/components/pipelines/PipelineProgress.tsx \
+  src/components/agents/AgentStatusCard.tsx; do
+  dst=".lovable/$f"
+  mkdir -p "$(dirname $dst)"
+  [ -f "$f" ] && cp "$f" "$dst" && echo "Synced: $f"
+done
+```
+
+### STEP 3b — Visual verification via agent-workspace (browser on RPi 3B)
+
+After syncing to .lovable and pushing — verify visually in browser.
+
+**ВАЖЛИВО:** agent-workspace підключений як MCP в .mcp.json проекту.
+Використовуй MCP tools: workspace_browser_navigate, workspace_browser_snapshot, workspace_screenshot
+
+```bash
+# Push to trigger CF Pages deploy first:
+git add src/components/ .lovable/src/components/
+git stash  # temporary stash — push current state
+git stash pop
+
+# Wait for Cloudflare Pages deploy (~3 min after push):
+sleep 180
+```
+
+Then use agent-workspace MCP to verify:
+```
+# 1. Open site:
+workspace_browser_navigate(url="https://ai-drakon-setup.pages.dev", wait_ms=4000)
+
+# 2. Login via paste (React-safe):
+workspace_browser_click(selector="input[name=password]")
+workspace_paste_text(text="drakon-mcp-2026")
+workspace_browser_click(selector="button[type=submit]")
+
+# 3. Check new pages:
+workspace_browser_navigate(url="https://ai-drakon-setup.pages.dev/", wait_ms=3000)
+workspace_browser_snapshot()  # HTML snapshot — check AgentStatusCard visible
+
+workspace_browser_navigate(url="https://ai-drakon-setup.pages.dev/pipelines", wait_ms=3000)
+workspace_browser_snapshot()  # Check PipelineProgress visible
+
+# 4. Screenshot for visual review:
+workspace_screenshot(output_path="/tmp/od-result.png")
+scp vokov@192.168.3.234:/tmp/od-result.png /tmp/od-result-local.png
+```
+
+If snapshot shows correct components — proceed to commit.
+If errors or blank pages — check browser console in snapshot and fix.
+
+### STEP 4 — Commit
+
+```bash
+git add src/components/architect/ src/components/pipelines/PipelineProgress.tsx src/components/agents/AgentStatusCard.tsx
+git add .lovable/src/components/architect/ .lovable/src/components/pipelines/PipelineProgress.tsx .lovable/src/components/agents/AgentStatusCard.tsx
+git commit -m "feat(ui): add 3 new components via OpenDesign — PatternSuggestionPanel + PipelineProgress + AgentStatusCard"
+
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-157','[x] TASK-157',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-157 done"
+git push origin main
+```
+
+### DIARY
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-157:opendesign-3-components|PatternSuggestionPanel+PipelineProgress+AgentStatusCard|commit:<hash>|★★★★"
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- od-generate.sh запускати через SSH до vokov@192.168.3.184
+- Результат копіювати через scp
+- Якщо файл порожній або містить тільки коментарі — переглянь /tmp/od-*.tsx і виправ вручну
