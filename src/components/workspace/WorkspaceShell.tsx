@@ -363,7 +363,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           {navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
-        <main className="flex h-full min-h-0 flex-1 min-w-0 overflow-hidden pb-16 lg:pb-0">
+        <main className="flex h-full min-h-0 flex-1 min-w-0 overflow-y-auto pb-16 lg:pb-0">
           {children}
         </main>
       </div>
