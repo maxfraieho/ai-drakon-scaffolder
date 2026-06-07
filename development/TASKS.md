@@ -18485,3 +18485,79 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-166 done" && g
 - tsc: запускати через SSH до 192.168.3.184, НЕ локально
 - agent-workspace: MCP вже налаштований, використовувати workspace_browser_navigate + workspace_browser_snapshot
 - Очікувані проблеми: TS type errors в AgentStatusCard props, можливо missing imports
+
+---
+
+## [ ] TASK-167: LoginPage Polish + Mark TASK-149/150/151 Superseded
+
+**GOAL:**
+1. Перевірити `src/pages/LoginPage.tsx` — консистентний з dark zinc стилем?
+2. Оновити якщо потрібно
+3. Позначити застарілі TASK-149, TASK-150, TASK-151 як [s] (superseded)
+
+!!IMPORTANT!! Run locally on AGY3 Termux.
+
+### STEP 0 — GitNexus
+```bash
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query","arguments":{"query":"LoginPage authentication form","repo":"ai-drakon-scaffolder"}}}' \
+  | grep '^data:' | python3 -c "import sys,json; [print(json.loads(l[5:]).get('result',{}).get('content',[{}])[0].get('text','')[:2000]) for l in sys.stdin]"
+```
+
+### STEP 1 — Read LoginPage
+```bash
+cat src/pages/LoginPage.tsx | head -40
+```
+
+### STEP 2 — Check if it uses dark zinc or old styles
+Look for:
+- `bg-zinc-950` or `bg-background` (old)
+- `text-zinc-100` or `text-foreground` (old)
+- Inline `AgentCard` or other old patterns
+
+If it uses old `bg-background` / `text-foreground` CSS vars → update to explicit zinc colors for consistency.
+
+Generate update via OpenDesign if major redesign needed:
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript LoginPage for AI agent platform. Centered card on dark zinc-950 background. Card: zinc-900 bg, border zinc-800, rounded-xl, shadow-xl. Title: AI-DRAKON with Bot icon indigo-400. Form: email input, password input with show/hide toggle, Sign In button indigo-600 hover:indigo-500. Loading spinner on submit. Error message in red. Uses Appwrite auth (import from @/context/AuthContext or call appwrite client). On success: navigate to /. Dark theme. Export named LoginPage.' /tmp/od-LoginPage.tsx"
+```
+
+If LoginPage is already fine → skip to STEP 3.
+
+### STEP 3 — Mark superseded tasks
+
+```bash
+python3 << 'PYEOF'
+with open("development/TASKS.md", "r") as f:
+    c = f.read()
+# Mark as superseded (replaced by TASK-152..166)
+c = c.replace("[ ] TASK-149", "[s] TASK-149 (superseded by TASK-152+)", 1)
+c = c.replace("[ ] TASK-150", "[s] TASK-150 (superseded by TASK-152..166)", 1)
+c = c.replace("[ ] TASK-151", "[s] TASK-151 (superseded by TASK-166)", 1)
+with open("development/TASKS.md", "w") as f:
+    f.write(c)
+print("Marked superseded")
+PYEOF
+```
+
+### STEP 4 — Commit
+```bash
+git add src/pages/LoginPage.tsx .lovable/src/pages/LoginPage.tsx development/TASKS.md 2>/dev/null
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-149/150/151 superseded; LoginPage dark zinc polish"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-167','[x] TASK-167',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-167 done" && git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-167:login-polish+cleanup|TASK-149-151-superseded|commit:<hash>|★★"`
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- LoginPage може бути вже нормальним — read first, edit only if needed
+- TASK-149/150/151 mark as [s] НЕ [x] — вони не виконані, а замінені
