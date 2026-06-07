@@ -20236,7 +20236,7 @@ If NOT deployed → report only, do NOT deploy (need Q confirmation first).
 
 ---
 
-## [ ] TASK-178: Fix Flue agents — create CF resources and connect frontend
+## [x] TASK-178 (→ rolled into TASK-179): Fix Flue agents — create CF resources and connect frontend
 
 **Context (read first):**
 - Flue = `@flue/runtime` framework (Cloudflare Workers, TypeScript)
@@ -20477,3 +20477,175 @@ git push origin main
 - drakon-agent-flue URL: https://drakon-agent.exodus.pp.ua/health → ?
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-179:flue-all-3-agents-deploy|architect+docs+drakon|commit:<hash>|★★★★★"`
+
+---
+
+## [ ] TASK-180: Rewrite frontend to use Flue Workers instead of hardcoded Python agent ports
+
+**Goal:** Frontend has 3 files with hardcoded ports 8765/8766/8767 pointing to old Python agents.
+All 3 Flue Workers are live. Rewrite the URL resolution to use settings-storage values.
+
+**Agent:** AGY3
+**Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/**
+
+### Context (already done — do NOT redo)
+- architect-agent-flue → https://architect-agent-flue.maxfraieho.workers.dev ✓ LIVE
+- docs-agent-flue → https://docs-agent-flue.maxfraieho.workers.dev ✓ LIVE
+- drakon-agent-flue → https://drakon-agent-flue.maxfraieho.workers.dev ✓ LIVE
+- settings-storage.ts already has correct default URLs (architectUrl, docsUrl, drakonUrl)
+- Custom domains also work: architect-agent.exodus.pp.ua, docs-agent.exodus.pp.ua, drakon-agent.exodus.pp.ua
+
+### STEP 1 — GitNexus context (MANDATORY)
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+python3 ~/bin/gitnexus-query.py "agent URL port 8766 architectUrl drakonUrl getAgentUrlFor mcp-client settings" ai-drakon-scaffolder 2>/dev/null || \
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"query","arguments":{"query":"agent URL port 8766 architectUrl getAgentUrlFor mcp-client","repo":"ai-drakon-scaffolder"}}}' 2>/dev/null | grep "^data:" | head -1
+```
+
+### STEP 2 — Fix src/lib/mcp-client.ts
+
+File: `src/lib/mcp-client.ts`
+
+Replace hardcoded port map with settings-storage values:
+
+```typescript
+// REMOVE:
+const AGENT_PORTS: Record<AgentKind, string> = {
+  drakon: "8765",
+  architect: "8766",
+  docs: "8767",
+};
+
+// REMOVE this function body (getAgentBaseUrl uses localStorage drakon_agent_base_url):
+export function getAgentBaseUrl(): string { ... }
+
+// REPLACE mcpCall to use settings:
+import { readSettings } from "@/lib/settings-storage";
+
+export function getAgentBaseUrl(): string {
+  if (typeof window === "undefined") return "https://architect-agent-flue.maxfraieho.workers.dev";
+  const stored = localStorage.getItem(AGENT_BASE_URL_STORAGE_KEY);
+  if (stored?.trim()) return stored.trim();
+  // Use settings-storage Flue Worker URLs per agent
+  return readSettings().agents.architectUrl;
+}
+
+export function getAgentDirectUrl(agent: AgentKind): string {
+  const s = readSettings().agents;
+  if (agent === "drakon") return s.drakonUrl.replace(/\/+$/, "");
+  if (agent === "docs") return s.docsUrl.replace(/\/+$/, "");
+  return s.architectUrl.replace(/\/+$/, "");
+}
+```
+
+In `mcpCall`, replace:
+```typescript
+// OLD:
+const baseUrl = getAgentBaseUrl().replace(/\/$/, "");
+const port = AGENT_PORTS[agent];
+const path = AGENT_PATHS[agent];
+const url = `${baseUrl}:${port}${path}`;
+
+// NEW:
+const baseUrl = getAgentDirectUrl(agent);
+const path = AGENT_PATHS[agent];
+const url = `${baseUrl}${path}`;
+```
+
+### STEP 3 — Fix src/lib/agent-api.ts
+
+File: `src/lib/agent-api.ts`
+
+```typescript
+// REMOVE:
+const AGENT_PORTS: Record<AgentId, number> = {
+  drakon: 8766,
+  architect: 8766,
+  docs: 8766,
+  "sonate-solidaire": 8766,
+};
+
+function readAgentBaseUrl(): string { ... }
+
+function getAgentUrlFor(agentId: AgentId): string {
+  const fromBase = readAgentBaseUrl()...
+  // whole function
+}
+
+// REPLACE getAgentUrlFor with:
+function getAgentUrlFor(agentId: AgentId): string {
+  const a = readSettings().agents;
+  if (agentId === "drakon") return a.drakonUrl.replace(/\/+$/, "");
+  if (agentId === "docs") return a.docsUrl.replace(/\/+$/, "");
+  return a.architectUrl.replace(/\/+$/, "");
+}
+```
+
+Also remove `readAgentBaseUrl` function and `AGENT_PORTS` constant entirely — no longer needed.
+
+### STEP 4 — Fix src/lib/graph-pipeline-api.ts
+
+File: `src/lib/graph-pipeline-api.ts`
+
+Replace entire `getArchitectBase()` function:
+
+```typescript
+// OLD (lines ~25-45): complex logic with hardcoded :8766 appending
+function getArchitectBase(): string {
+  if (typeof window === "undefined") return "http://192.168.3.184:8766";
+  // ... localStorage lookup ... :8766 appending ...
+}
+
+// NEW: simple, uses settings
+function getArchitectBase(): string {
+  if (typeof window === "undefined") return "https://architect-agent-flue.maxfraieho.workers.dev";
+  return readSettings().agents.architectUrl.replace(/\/+$/, "");
+}
+```
+
+Make sure `import { readSettings } from "@/lib/settings-storage";` is at top of file.
+
+### STEP 5 — Verify TypeScript compiles
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+npx tsc --noEmit 2>&1 | head -30
+```
+
+Fix any type errors before continuing.
+
+### STEP 6 — Sync to .lovable and commit
+
+```bash
+cp src/lib/mcp-client.ts .lovable/src/lib/mcp-client.ts
+cp src/lib/agent-api.ts .lovable/src/lib/agent-api.ts
+cp src/lib/graph-pipeline-api.ts .lovable/src/lib/graph-pipeline-api.ts
+
+git add src/lib/mcp-client.ts src/lib/agent-api.ts src/lib/graph-pipeline-api.ts \
+        .lovable/src/lib/mcp-client.ts .lovable/src/lib/agent-api.ts .lovable/src/lib/graph-pipeline-api.ts
+git commit -m "feat(frontend): rewire agent URLs from hardcoded ports to Flue Worker settings
+
+- mcp-client.ts: use settings.agents.drakonUrl/docsUrl/architectUrl
+- agent-api.ts: remove AGENT_PORTS + readAgentBaseUrl, use settings directly
+- graph-pipeline-api.ts: getArchitectBase() → settings.agents.architectUrl
+
+Old Python agent ports 8765/8766/8767 no longer referenced."
+git push origin main
+```
+
+### STEP 7 — Mark tasks done
+
+```bash
+sed -i 's/^\[ \] TASK-177/[x] TASK-177/' development/TASKS.md
+sed -i 's/^\[ \] TASK-179/[x] TASK-179/' development/TASKS.md
+sed -i 's/^\[ \] TASK-180/[x] TASK-180/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-177, 179, 180 done — Flue agents fully connected"
+git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-180:frontend-flue-rewire|mcp-client+agent-api+graph-pipeline|commit:<hash>|★★★★★"`
