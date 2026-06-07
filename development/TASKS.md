@@ -17857,7 +17857,7 @@ docs(agents): add self-reflection loop protocol for all agents
 
 ---
 
-## [ ] TASK-159: ObservabilityPage — Redesign via OpenDesign
+## [x] TASK-159: ObservabilityPage — Redesign via OpenDesign
 
 **GOAL:** Замінити placeholder `src/pages/ObservabilityPage.tsx` на повноцінну сторінку спостереження за системою. Використати od-generate.sh на dev server.
 
