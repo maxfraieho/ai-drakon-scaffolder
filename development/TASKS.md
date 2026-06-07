@@ -17437,3 +17437,173 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-155:AppLayout-observability+scroll|OpenDe
 - OpenDesign URL: http://192.168.3.184:7460 — field є "message" (не "prompt"!)
 - Якщо OpenDesign timeout — реалізуй вручну (це займе 2 хвилини)
 - Скрол фікс: головний контент має бути `flex-1 overflow-y-auto min-h-0`
+
+---
+
+## TASK-156: Full Platform Design via OpenDesign — Complete UI System
+[ ] TASK-156
+
+### GOAL
+Використати OpenDesign для генерації **повного** дизайну платформи AI-DRAKON:
+- AppLayout (sidebar + mobile nav)
+- HomePage (agent dashboard)
+- PipelineCommandCenter (pipeline UI)
+- AgentStudioPage (agent studio)
+- PatternSuggestionPanel (architect patterns)
+
+OpenDesign генерує всі компоненти в єдиному стилі. AGY3 зберігає результати.
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### STEP 1 — GitNexus route map (MANDATORY)
+
+```bash
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"agt-ogy3","version":"1.0"},"capabilities":{}}}' \
+  | python3 -c "import sys,json; print('GN:', json.load(sys.stdin).get('result',{}).get('serverInfo',{}).get('name','?'))"
+
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"route_map","arguments":{"repo":"ai-drakon-scaffolder"}}}' \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('content',[{}])[0].get('text','')[:2000])"
+```
+
+### STEP 2 — OpenDesign: Complete Design System
+
+Запустити 5 дизайн-запитів послідовно (один за одним, poll кожен до completion):
+
+```bash
+OD_URL="http://192.168.3.184:7460/api/runs"
+
+od_run() {
+  local MSG="$1"
+  local RUN=$(curl -s -X POST "$OD_URL" \
+    -H "Content-Type: application/json" \
+    -d "{\"message\":\"$MSG\",\"pluginId\":\"ai-drakon-mobile\",\"agentId\":\"antigravity\"}")
+  local RID=$(echo "$RUN" | python3 -c "import sys,json; print(json.load(sys.stdin).get('runId',''))")
+  echo "Run $RID started..."
+  for i in $(seq 1 15); do
+    sleep 15
+    local R=$(curl -s "$OD_URL/$RID")
+    local S=$(echo "$R" | python3 -c "import sys,json; print(json.load(sys.stdin).get('status','?'))")
+    echo "  [$i] $S"
+    if [ "$S" = "completed" ]; then
+      echo "$R" | python3 -c "
+import sys,json,re
+d=json.load(sys.stdin)
+for k in ['result','output','content','code','artifacts']:
+    v=d.get(k)
+    if v:
+        s=str(v)
+        m=re.search(r'\x60{3}tsx?(.*?)\x60{3}',s,re.DOTALL)
+        if m: print(m.group(1).strip()); break
+        print(s[:5000]); break
+" 
+      break
+    fi
+  done
+}
+
+# Run 1 — AppLayout full redesign
+od_run "React TypeScript AppLayout sidebar for AI agent platform. Sidebar nav: Home(/,House), Diagrams(/diagrams,Workflow), Agents(/agents,Bot with online badge), Pipelines(/pipelines,GitMerge), Docs(/docs,BookOpen), Knowledge(/knowledge,Brain), Notebooks(/notebooks,Notebook), Observability(/observability,Activity). Mobile: hamburger + drawer. main content: flex-1 overflow-y-auto min-h-0 for scroll. Settings gear bottom. LanguageSwitcher in header. NavLink active=indigo-400. Dark zinc theme. TypeScript. Full component." 2>&1 | tee /tmp/od-run1.txt
+
+# Run 2 — HomePage dashboard
+od_run "React TypeScript HomePage dashboard for AI platform. Shows 3 AgentCard components: Drakon Agent, Docs Agent, Architect Agent. Each card: colored status dot (fetch /health), agent name, description, NavLink button to agent page. Cards in responsive grid 1/2/3 cols. Page title 'AI-DRAKON Platform'. Dark zinc theme. TypeScript. Full component file src/pages/HomePage.tsx." 2>&1 | tee /tmp/od-run2.txt
+
+# Run 3 — PatternSuggestionPanel (new architect feature)
+od_run "React TypeScript PatternSuggestionPanel component for architecture patterns. Form: projectDocs (Textarea), requirements (Textarea), Submit button. Loading spinner. Results: list of PatternCard with name, rationale text, tradeoffs list, Use Pattern button. API: POST to architect-agent worker /suggest-patterns. Dark zinc theme. Full component src/components/architect/PatternSuggestionPanel.tsx." 2>&1 | tee /tmp/od-run3.txt
+
+# Run 4 — PipelineProgress SSE
+od_run "React TypeScript PipelineProgress component for SSE pipeline execution. Props: pipelineName, onComplete. Uses EventSource to stream steps. Each step: NodeStatusRow with icon (clock=pending, spinner=running, check=done, x=error). Progress bar at top. Steps list with collapsible output text. Dark zinc theme. Full component src/components/pipelines/PipelineProgress.tsx." 2>&1 | tee /tmp/od-run4.txt
+
+# Run 5 — AgentStatusCard  
+od_run "React TypeScript AgentStatusCard component. Props: name, status (online/offline/checking), description, route, icon. Shows colored dot badge, agent name bold, status text, description, NavLink Open button. Hover glow effect. Used in HomePage grid. Dark zinc theme. Full component src/components/agents/AgentStatusCard.tsx." 2>&1 | tee /tmp/od-run5.txt
+
+echo "All OpenDesign runs complete"
+ls -la /tmp/od-run*.txt
+```
+
+### STEP 3 — Save generated code to files
+
+For each run result:
+```bash
+# Extract TSX code blocks from od-run*.txt and save to files:
+python3 << 'PYEOF'
+import re, os
+
+files = {
+    '/tmp/od-run1.txt': 'src/components/app/AppLayout.tsx',
+    '/tmp/od-run2.txt': 'src/pages/HomePage.tsx',
+    '/tmp/od-run3.txt': 'src/components/architect/PatternSuggestionPanel.tsx',
+    '/tmp/od-run4.txt': 'src/components/pipelines/PipelineProgress.tsx',
+    '/tmp/od-run5.txt': 'src/components/agents/AgentStatusCard.tsx',
+}
+
+base = os.path.expanduser('~/workspace/ai-drakon-scaffolder')
+for src, dst in files.items():
+    try:
+        text = open(src).read()
+        m = re.search(r'```tsx?\n(.*?)```', text, re.DOTALL)
+        if m:
+            code = m.group(1).strip()
+            full = os.path.join(base, dst)
+            os.makedirs(os.path.dirname(full), exist_ok=True)
+            open(full, 'w').write(code)
+            print(f'Saved: {dst} ({len(code)} chars)')
+        else:
+            print(f'No TSX found in {src} — manual review needed')
+    except Exception as e:
+        print(f'Error {src}: {e}')
+PYEOF
+```
+
+### STEP 4 — Sync to .lovable
+```bash
+for f in \
+  src/components/app/AppLayout.tsx \
+  src/pages/HomePage.tsx \
+  src/components/architect/PatternSuggestionPanel.tsx \
+  src/components/pipelines/PipelineProgress.tsx \
+  src/components/agents/AgentStatusCard.tsx; do
+  dst=".lovable/$f"
+  mkdir -p "$(dirname $dst)"
+  [ -f "$f" ] && cp "$f" "$dst" && echo "Synced: $f"
+done
+```
+
+### STEP 5 — Verify and commit
+```bash
+# Check files exist:
+find src/components/architect src/components/agents src/components/pipelines \
+  src/pages -name "*.tsx" -newer development/TASKS.md 2>/dev/null
+
+git add \
+  src/components/app/AppLayout.tsx \
+  src/pages/HomePage.tsx \
+  src/components/architect/PatternSuggestionPanel.tsx \
+  src/components/pipelines/PipelineProgress.tsx \
+  src/components/agents/AgentStatusCard.tsx \
+  .lovable/src/components/ \
+  .lovable/src/pages/ 2>/dev/null
+
+git commit -m "feat(ui): full platform redesign via OpenDesign — 5 components"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-156','[x] TASK-156',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-156 done"
+git push origin main
+```
+
+### DIARY
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-156:full-opendesign|AppLayout+HomePage+3-components|commit:<hash>|★★★★"
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- OpenDesign: POST http://192.168.3.184:7460/api/runs, field "message" (не "prompt"!)
+- Якщо OpenDesign не повертає TSX — зберегти raw output в /tmp/ і реалізувати вручну
+- Runs виконуються послідовно (не паралельно) — кожен ~1-3 хв
+- mkdir -p перед створенням нових директорій (architect/, agents/)
