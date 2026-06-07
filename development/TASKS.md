@@ -19116,7 +19116,7 @@ const gh = {
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-172:unified-file-manager|ProjectFileManager+Monaco+filters|commit:<hash>|★★★★"`
 
 
-## [ ] TASK-173: Remove /github nav + Sparkles analyze in ProjectFileManager
+## [x] TASK-173: Remove /github nav + Sparkles analyze in ProjectFileManager
 
 **META:** Remove duplicate /github menu. Move Sparkles analyze as hover inline action in ProjectFileManager. Dialog: agent + pipeline select before run.
 
