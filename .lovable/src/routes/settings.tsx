@@ -1,7 +1,6 @@
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, ShieldAlert, Trash2 } from
-"lucide-react";
-import { useMemo, useState } from "react";
+import { Check, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, ShieldAlert, Trash2, Copy, Key } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
 import { AgentLlmCard } from "@/components/agents/AgentLlmCard";
 import { useGithubRepos, mergeWithKnown } from "@/hooks/useGithubRepos";
 import { toast } from "sonner";
@@ -81,6 +80,68 @@ const [repoOpen, setRepoOpen] = useState(false);
 const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+
+const [mcpKey, setMcpKey] = useState<string | null>(null);
+const [mcpKeyMasked, setMcpKeyMasked] = useState<string | null>(null);
+const [isLoadingMcpKey, setIsLoadingMcpKey] = useState(false);
+const [isGeneratingMcpKey, setIsGeneratingMcpKey] = useState(false);
+
+useEffect(() => {
+  // Load current MCP key on mount
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) return;
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  setIsLoadingMcpKey(true);
+  fetch(`${workerUrl}/v1/api-key`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  })
+    .then(r => r.json())
+    .then((data: any) => {
+      if (data.success && data.hasKey) {
+        setMcpKey(data.apiKey);
+        setMcpKeyMasked(data.maskedKey);
+      }
+    })
+    .catch(() => {})
+    .finally(() => setIsLoadingMcpKey(false));
+}, [settings.app.workerUrl]);
+
+const generateMcpKey = async () => {
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) { toast.error("Потрібна авторизація"); return; }
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  setIsGeneratingMcpKey(true);
+  try {
+    const res = await fetch(`${workerUrl}/v1/api-key/generate`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    const data = await res.json() as any;
+    if (data.success) {
+      setMcpKey(data.apiKey);
+      setMcpKeyMasked(`${data.apiKey.slice(0, 14)}...${data.apiKey.slice(-6)}`);
+      toast.success("MCP ключ створено", { description: "Скопіюй ключ — він більше не буде показаний повністю" });
+    } else {
+      toast.error("Помилка генерації ключа");
+    }
+  } catch {
+    toast.error("Помилка підключення до Worker");
+  } finally {
+    setIsGeneratingMcpKey(false);
+  }
+};
+
+const revokeMcpKey = async () => {
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) return;
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  try {
+    await fetch(`${workerUrl}/v1/api-key`, { method: "DELETE", headers: { Authorization: `Bearer ${jwt}` } });
+    setMcpKey(null);
+    setMcpKeyMasked(null);
+    toast.success("MCP ключ відкликано");
+  } catch { toast.error("Помилка"); }
+};
 
 const [docsRepoPath, setDocsRepoPath] = useState(() =>
 typeof window !== "undefined" ? localStorage.getItem("docs_repo_path") || "" : "",
@@ -267,13 +328,14 @@ return (
 
 <Tabs defaultValue="github" className="space-y-4">
 <div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:grid md:grid-cols-6 md:gap-0 md:px-0">
+<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:grid md:grid-cols-7 md:gap-0 md:px-0">
 <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>
 <TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>
 <TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>
 <TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>
 <TabsTrigger value="minio" className="shrink-0 whitespace-nowrap">MinIO</TabsTrigger>
 <TabsTrigger value="app" className="shrink-0 whitespace-nowrap">Додаток</TabsTrigger>
+<TabsTrigger value="mcp" className="shrink-0 whitespace-nowrap">MCP Access</TabsTrigger>
 </TabsList>
 </div>
 
@@ -868,6 +930,102 @@ style={{ touchAction: "manipulation" }}
 </button>
 </CardContent>
 </Card>
+</TabsContent>
+
+<TabsContent value="mcp">
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Key className="h-4 w-4" />
+        MCP Access Key
+      </CardTitle>
+      <CardDescription>
+        Персональний ключ для підключення до DRAKON MCP сервера. Використовується в Antigravity, Claude Desktop та інших MCP-клієнтах.
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      {isLoadingMcpKey ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Завантаження...
+        </div>
+      ) : mcpKey ? (
+        <div className="space-y-3">
+          <div className="grid gap-2">
+            <Label>Поточний ключ</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                readOnly
+                value={mcpKeyMasked || mcpKey}
+                className="font-mono text-xs"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => { navigator.clipboard.writeText(mcpKey); toast.success("Ключ скопійовано"); }}
+                title="Копіювати повний ключ"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Натисни кнопку для копіювання повного ключа</p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>mcp_config.json для Antigravity / Claude Desktop</Label>
+            <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto cursor-pointer hover:bg-muted/70"
+              onClick={() => {
+                const cfg = JSON.stringify({
+                  mcpServers: {
+                    drakon: {
+                      type: "http",
+                      url: "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+                      serverUrl: "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+                      headers: { Authorization: `Bearer ${mcpKey}` }
+                    }
+                  }
+                }, null, 2);
+                navigator.clipboard.writeText(cfg);
+                toast.success("Config скопійовано");
+              }}
+            >
+{`{
+  "mcpServers": {
+    "drakon": {
+      "type": "http",
+      "url": "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+      "headers": { "Authorization": "Bearer ${mcpKey ? `${mcpKey.slice(0, 14)}...${mcpKey.slice(-6)}` : ""}" }
+    }
+  }
+}`}
+            </pre>
+            <p className="text-xs text-muted-foreground">Натисни на блок — скопіює повний config з реальним ключем</p>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => void generateMcpKey()} disabled={isGeneratingMcpKey}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {isGeneratingMcpKey ? "Генерую..." : "Перегенерувати ключ"}
+            </Button>
+            <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => void revokeMcpKey()}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Відкликати ключ
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">У тебе ще немає MCP ключа. Створи його щоб підключити MCP клієнти.</p>
+          <Button type="button" onClick={() => void generateMcpKey()} disabled={isGeneratingMcpKey}>
+            <Key className="mr-2 h-4 w-4" />
+            {isGeneratingMcpKey ? "Генерую..." : "Створити MCP ключ"}
+          </Button>
+        </div>
+      )}
+    </CardContent>
+  </Card>
 </TabsContent>
 </Tabs>
 
