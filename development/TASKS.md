@@ -19115,3 +19115,195 @@ const gh = {
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-172:unified-file-manager|ProjectFileManager+Monaco+filters|commit:<hash>|★★★★"`
 
+
+## [ ] TASK-173: Remove /github nav + Sparkles analyze in ProjectFileManager
+
+**META:** Remove duplicate /github menu. Move Sparkles analyze as hover inline action in ProjectFileManager. Dialog: agent + pipeline select before run.
+
+**!!IMPORTANT!!** Run locally on AGY3 Termux. SSH to 192.168.3.184 only for git pull/push.
+
+---
+
+### STEP 1 — Remove /github from navigation
+
+**File:** `src/components/workspace/WorkspaceShell.tsx`
+
+Remove this line from NAV_WORKSPACE array:
+```
+{ to: "/github", label: "GitHub", icon: Github },
+```
+
+Remove unused import `Github` from lucide-react if no longer used.
+
+Remove this block:
+```
+if (pathname.startsWith("/github")) return { section: "GitHub", sectionPath: "/github" };
+```
+
+**Sync:** `cp src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx`
+
+---
+
+### STEP 2 — Add Sparkles analyze action to ProjectFileManager
+
+**File:** `src/components/files/ProjectFileManager.tsx`
+
+**A) Add imports:**
+```typescript
+import { Sparkles } from "lucide-react";
+import { listGraphPipelines } from "@/lib/graph-pipeline-api";
+import type { IrDiagram } from "@/lib/graph-pipeline-api";
+```
+
+Also add to existing Dialog/Select imports if not present:
+```typescript
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+```
+
+**B) Add state (inside ProjectFileManager component):**
+```typescript
+const [analyzeTarget, setAnalyzeTarget] = useState<FSNode | null>(null);
+const [analyzeAgent, setAnalyzeAgent] = useState<"architect" | "docs" | "drakon">("architect");
+const [analyzePipelines, setAnalyzePipelines] = useState<IrDiagram[]>([]);
+const [analyzeSelectedPipeline, setAnalyzeSelectedPipeline] = useState<string>("");
+const [analyzeDialogOpen, setAnalyzeDialogOpen] = useState(false);
+```
+
+**C) Add openAnalyzeDialog function:**
+```typescript
+const openAnalyzeDialog = async (node: FSNode) => {
+  setAnalyzeTarget(node);
+  setAnalyzeDialogOpen(true);
+  try {
+    const pipelines = await listGraphPipelines();
+    setAnalyzePipelines(pipelines);
+    if (pipelines.length > 0) setAnalyzeSelectedPipeline(pipelines[0].name);
+  } catch {
+    setAnalyzePipelines([]);
+  }
+};
+```
+
+**D) Add runAnalyze function:**
+```typescript
+const runAnalyze = () => {
+  if (!analyzeTarget) return;
+  setAnalyzeDialogOpen(false);
+  void navigate({
+    to: "/diagrams",
+    search: {
+      autoAnalyze: "true",
+      analyzePath: analyzeTarget.path || "src",
+      analyzeRepo: `${gh.owner}/${gh.repo}`,
+      analyzeBranch: gh.branch,
+    } as Record<string, string>,
+  });
+  toast.message("Analyze started", { description: `/${analyzeTarget.path} via ${analyzeAgent}` });
+};
+```
+
+Note: `gh` is already defined in the component using `useProject` + `getGithubConfig`.
+
+**E) Add Sparkles button in FileTreeItem hover actions:**
+
+Find in FileTreeItem the div with hover action buttons (where FilePlus, FolderPlus, Tag etc. are).
+Add Sparkles button there:
+```tsx
+<Button
+  variant="ghost"
+  size="icon"
+  className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+  title="Analyze"
+  onClick={(e) => { e.stopPropagation(); void openAnalyzeDialog(node); }}
+>
+  <Sparkles className="h-3 w-3 text-amber-400" />
+</Button>
+```
+
+This button should appear on BOTH folder rows AND file rows.
+
+**F) Add AnalyzeDialog JSX (inside main component JSX, before final closing tag):**
+```tsx
+<Dialog open={analyzeDialogOpen} onOpenChange={setAnalyzeDialogOpen}>
+  <DialogContent className="sm:max-w-md">
+    <DialogHeader>
+      <DialogTitle className="flex items-center gap-2 text-sm">
+        <Sparkles className="h-4 w-4 text-amber-400" />
+        Analyze: /{analyzeTarget?.path || ""}
+      </DialogTitle>
+    </DialogHeader>
+    <div className="space-y-4 py-2">
+      <div className="space-y-1">
+        <Label className="text-xs text-zinc-400">Agent</Label>
+        <Select value={analyzeAgent} onValueChange={(v) => setAnalyzeAgent(v as "architect" | "docs" | "drakon")}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="architect">Architect (DRAKON diagrams)</SelectItem>
+            <SelectItem value="docs">Docs (documentation)</SelectItem>
+            <SelectItem value="drakon">Drakon (generation)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs text-zinc-400">Pipeline (results target)</Label>
+        <Select value={analyzeSelectedPipeline} onValueChange={setAnalyzeSelectedPipeline}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="New pipeline" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">New pipeline</SelectItem>
+            {analyzePipelines.map((p) => (
+              <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+    <DialogFooter>
+      <Button variant="ghost" size="sm" onClick={() => setAnalyzeDialogOpen(false)}>Cancel</Button>
+      <Button size="sm" className="bg-amber-500 hover:bg-amber-600 text-black" onClick={runAnalyze}>
+        <Sparkles className="mr-2 h-3 w-3" /> Analyze
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
+```
+
+**Sync:** `cp src/components/files/ProjectFileManager.tsx .lovable/src/components/files/ProjectFileManager.tsx`
+
+---
+
+### STEP 3 — TypeScript check
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+npx --prefix . tsc --noEmit 2>&1 | head -30
+```
+
+Fix all type errors before committing.
+
+---
+
+### STEP 4 — Commit + Push
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx
+git add src/components/files/ProjectFileManager.tsx .lovable/src/components/files/ProjectFileManager.tsx
+git commit -m "feat(files): remove /github nav, add Sparkles analyze action with agent+pipeline dialog"
+git push origin main
+```
+
+### STEP 5 — Mark done + Diary
+
+```python
+with open('development/TASKS.md') as f: c = f.read()
+c = c.replace('[ ] TASK-173', '[x] TASK-173', 1)
+with open('development/TASKS.md', 'w') as f: f.write(c)
+```
+
+```bash
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-173 done"
+git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-173:github-nav-remove+sparkles-analyze|WorkspaceShell+ProjectFileManager|commit:<hash>|★★★"`
