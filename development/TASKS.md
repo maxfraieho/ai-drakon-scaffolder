@@ -17245,7 +17245,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-153:HomePage-agent-dashboard|AgentCard+he
 ---
 
 ## TASK-154: Redesign MobileNavigationDock — Agent-Centric Bottom Nav
-[ ] TASK-154
+[x] TASK-154
 
 ### GOAL
 Replace `src/components/mobile/MobileNavigationDock.tsx` with agent-centric bottom navigation.
