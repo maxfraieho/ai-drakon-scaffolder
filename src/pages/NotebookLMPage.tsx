@@ -1,24 +1,22 @@
-import { PageHeader } from "@/components/workspace/PageHeader";
 import { NotebookLMChatPanel } from "@/components/notebooklm/NotebookLMChatPanel";
-import { Info } from "lucide-react";
+import { Notebook, Info } from "lucide-react";
 
 export function NotebookLMPage() {
   return (
-    <div className="flex flex-col h-full w-full min-h-0 bg-[var(--bg-base)]">
-      <PageHeader title="NotebookLM" />
-
-      {/* Info Banner */}
-      <div className="px-4 pt-3 shrink-0">
-        <div className="flex items-center gap-2.5 p-3 rounded bg-[var(--accent-dim)] border border-[var(--accent-amber)]/20 text-[var(--accent-amber)] font-mono text-[11px] leading-relaxed">
-          <Info className="h-4 w-4 shrink-0" />
+    <div className="flex flex-col h-full min-h-0 bg-zinc-950 text-zinc-100">
+      <div className="px-4 pt-4 pb-2 shrink-0">
+        <h1 className="text-2xl font-semibold flex items-center gap-2">
+          <Notebook className="w-6 h-6 text-indigo-400" /> NotebookLM
+        </h1>
+        <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-zinc-900 border border-blue-500/20 text-blue-400 text-xs">
+          <Info className="w-4 h-4 shrink-0" />
           <span>Connect to knowledge zones via Garden Gateway to access vector-indexed materials.</span>
         </div>
       </div>
-
-      {/* Chat Workspace */}
       <div className="flex-1 min-h-0 p-4">
         <NotebookLMChatPanel />
       </div>
     </div>
   );
 }
+
