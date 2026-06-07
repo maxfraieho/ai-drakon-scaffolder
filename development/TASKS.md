@@ -20096,7 +20096,7 @@ git push origin main
 
 ---
 
-## [ ] TASK-176: Mine exodus-infra into MemPalace
+## [x] TASK-176: Mine exodus-infra into MemPalace
 
 **Goal:** Index exodus-infra markdown docs into MemPalace wing "exodus-infra" so Claude can search protocols/agents/services without reading files directly.
 
