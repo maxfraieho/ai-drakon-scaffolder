@@ -18245,7 +18245,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-163 done" && g
 
 ---
 
-## [ ] TASK-164: SettingsPage — Full Redesign via OpenDesign
+## [x] TASK-164: SettingsPage — Full Redesign via OpenDesign
 
 **GOAL:** Замінити placeholder `src/pages/SettingsPage.tsx` на повноцінну сторінку налаштувань.
 
