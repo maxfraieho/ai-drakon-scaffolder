@@ -18488,7 +18488,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-166 done" && g
 
 ---
 
-## [ ] TASK-167: LoginPage Polish + Mark TASK-149/150/151 Superseded
+## [x] TASK-167: LoginPage Polish + Mark TASK-149/150/151 Superseded
 
 **GOAL:**
 1. Перевірити `src/pages/LoginPage.tsx` — консистентний з dark zinc стилем?
