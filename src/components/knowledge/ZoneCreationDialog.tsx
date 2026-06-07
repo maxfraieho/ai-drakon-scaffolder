@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -110,11 +110,13 @@ const countNotesInFolders = (
 interface ZoneCreationDialogProps {
   isOpen: boolean;
   onClose: () => void;
+  initialFolders?: string[];
 }
 
 export function ZoneCreationDialog({
   isOpen,
   onClose,
+  initialFolders,
 }: ZoneCreationDialogProps) {
   const queryClient = useQueryClient();
 
@@ -133,6 +135,27 @@ export function ZoneCreationDialog({
 
   const [createdZone, setCreatedZone] = useState<KnowledgeZone | null>(null);
   const [showCreatedDialog, setShowCreatedDialog] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (initialFolders && initialFolders.length > 0) {
+        setSelectedFolders(new Set(initialFolders));
+        const expanded = new Set<string>();
+        for (const f of initialFolders) {
+          const parts = f.split("/");
+          let acc = "";
+          for (const p of parts) {
+            acc = acc ? `${acc}/${p}` : p;
+            expanded.add(acc);
+          }
+        }
+        setExpandedFolders(expanded);
+      } else {
+        setSelectedFolders(new Set());
+        setExpandedFolders(new Set());
+      }
+    }
+  }, [isOpen, initialFolders]);
 
   const { data: notesTree = [] } = useQuery({
     queryKey: ["notesTree"],
