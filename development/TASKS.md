@@ -20652,7 +20652,7 @@ git push origin main
 
 ---
 
-## [ ] TASK-181: Investigate Flue agent logic definition — can /agents page work with Flue?
+## [x] TASK-181: Investigate Flue agent logic definition — can /agents page work with Flue?
 
 **Goal:** The /agents page previously defined agent behavior via old LangGraph Python framework.
 New framework is Flue (@flue/runtime, Cloudflare Workers). Investigate:
