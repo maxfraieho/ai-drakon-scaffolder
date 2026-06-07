@@ -18409,7 +18409,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-165 done" && g
 
 ---
 
-## [ ] TASK-166: Visual QA + TypeScript Check — Full Platform
+## [x] TASK-166: Visual QA + TypeScript Check — Full Platform
 
 **GOAL:** Перевірити всі нові компоненти і сторінки після редизайну. TypeScript check + agent-workspace браузер на RPi 3B.
 
