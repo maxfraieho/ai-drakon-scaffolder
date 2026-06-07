@@ -18747,7 +18747,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
 
 ---
 
-## [ ] TASK-170: GitHub Nav + ProjectSelector — Add /github to nav + fix "can't return"
+## [x] TASK-170: GitHub Nav + ProjectSelector — Add /github to nav + fix "can't return"
 
 **GOAL:** 
 1. Добавити `/github` до навігації WorkspaceShell (NAV_WORKSPACE або NAV_SYSTEM)
@@ -18792,7 +18792,7 @@ ssh vokov@192.168.3.184 "cp ~/workspace/ai-drakon-scaffolder/.lovable/src/compon
 ```bash
 ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
 with open('development/TASKS.md','r') as f: c=f.read()
-c=c.replace('[ ] TASK-170','[x] TASK-170',1)
+c=c.replace('[x] TASK-170','[x] TASK-170',1)
 with open('development/TASKS.md','w') as f: f.write(c)
 \" && git add development/TASKS.md && git commit -m 'chore(tasks): TASK-170 done' && git push origin main"
 ```
