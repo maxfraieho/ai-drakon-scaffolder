@@ -9,7 +9,8 @@ import {
   Notebook, 
   Settings, 
   Menu, 
-  X 
+  X,
+  Activity
 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/app/LanguageSwitcher";
 
@@ -30,6 +31,7 @@ export function AppLayout() {
     { to: "/docs", label: "Docs", icon: BookOpen },
     { to: "/knowledge", label: "Knowledge", icon: Brain },
     { to: "/notebooks", label: "Notebooks", icon: Notebook },
+    { to: "/observability", label: "Observability", icon: Activity },
   ];
 
   return (
@@ -141,8 +143,8 @@ export function AppLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 min-h-screen overflow-hidden bg-zinc-950">
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+      <main className="flex-1 overflow-y-auto min-h-0 bg-zinc-950">
+        <div className="p-4 md:p-8">
           <div className="max-w-7xl mx-auto w-full h-full">
             <Outlet />
           </div>
