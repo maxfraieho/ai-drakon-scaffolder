@@ -1,6 +1,6 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { hasClientJwt } from "@/lib/route-auth";
-import CodePage from "@/pages/CodePage";
+import { ProjectFileManager } from "@/components/files/ProjectFileManager";
 
 export const Route = createFileRoute("/code")({
   component: CodeRoute,
@@ -8,5 +8,5 @@ export const Route = createFileRoute("/code")({
 
 function CodeRoute() {
   if (!hasClientJwt()) return <Navigate to="/login" replace />;
-  return <CodePage />;
+  return <ProjectFileManager defaultMode="code" />;
 }
