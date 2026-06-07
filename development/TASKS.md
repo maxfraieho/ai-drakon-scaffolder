@@ -17854,3 +17854,263 @@ docs(agents): add self-reflection loop protocol for all agents
 - SSH до vokov@192.168.3.184 тільки для GitNexus реіндексації
 - Не чіпати ai-drakon-scaffolder src/ — тільки AGENTS.md і exodus-infra
 
+
+---
+
+## [ ] TASK-159: ObservabilityPage — Redesign via OpenDesign
+
+**GOAL:** Замінити placeholder `src/pages/ObservabilityPage.tsx` на повноцінну сторінку спостереження за системою. Використати od-generate.sh на dev server.
+
+**File:** `src/pages/ObservabilityPage.tsx`
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### STEP 1 — Generate via OpenDesign (on dev server)
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript ObservabilityPage for AI agent platform. Shows: 1) LogsViewer panel — SSE EventSource to /api/logs stream, shows colored log lines (error=red, warn=yellow, info=green), auto-scroll, clear button, level filter selector. 2) MetricsRow — 4 stat cards: Active Agents, Pipeline Runs today, Errors 24h, Avg response ms. Values fetched from /api/metrics endpoint on mount. 3) AgentHealthTable — table rows: agent name, status dot, last ping timestamp, request count. All fetched from /api/agents/status. Page title Observability with Activity icon. Dark zinc theme. TypeScript. Full page component.' /tmp/od-ObservabilityPage.tsx"
+```
+
+### STEP 2 — Copy to project
+```bash
+scp vokov@192.168.3.184:/tmp/od-ObservabilityPage.tsx ~/workspace/ai-drakon-scaffolder/src/pages/ObservabilityPage.tsx
+```
+
+### STEP 3 — Verify not empty
+```bash
+wc -l ~/workspace/ai-drakon-scaffolder/src/pages/ObservabilityPage.tsx
+head -5 ~/workspace/ai-drakon-scaffolder/src/pages/ObservabilityPage.tsx
+```
+If file < 30 lines or has no `export function ObservabilityPage` — implement manually:
+```tsx
+import { useState, useEffect, useRef } from "react";
+import { Activity } from "lucide-react";
+
+interface LogLine { level: string; message: string; ts: string; }
+interface Metric { label: string; value: string | number; }
+
+export function ObservabilityPage() {
+  const [logs, setLogs] = useState<LogLine[]>([]);
+  const [metrics] = useState<Metric[]>([
+    { label: "Active Agents", value: 3 },
+    { label: "Pipeline Runs Today", value: 12 },
+    { label: "Errors 24h", value: 0 },
+    { label: "Avg Response ms", value: 240 },
+  ]);
+  const bottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const es = new EventSource("/api/logs");
+    es.onmessage = (e) => {
+      try {
+        const line = JSON.parse(e.data) as LogLine;
+        setLogs(prev => [...prev.slice(-200), line]);
+      } catch {}
+    };
+    return () => es.close();
+  }, []);
+
+  useEffect(() => { bottomRef.current?.scrollIntoView(); }, [logs]);
+
+  const levelColor = (l: string) =>
+    l === "error" ? "text-red-400" : l === "warn" ? "text-yellow-400" : "text-green-400";
+
+  return (
+    <div className="p-4 space-y-6">
+      <h1 className="text-2xl font-semibold flex items-center gap-2">
+        <Activity className="w-6 h-6 text-indigo-400" /> Observability
+      </h1>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {metrics.map(m => (
+          <div key={m.label} className="bg-zinc-900 rounded-lg p-4 border border-zinc-800">
+            <p className="text-xs text-zinc-500">{m.label}</p>
+            <p className="text-2xl font-bold text-zinc-100">{m.value}</p>
+          </div>
+        ))}
+      </div>
+      <div className="bg-zinc-900 rounded-lg border border-zinc-800">
+        <div className="px-4 py-2 border-b border-zinc-800 text-sm text-zinc-400">Live Logs</div>
+        <div className="h-80 overflow-y-auto font-mono text-xs p-3 space-y-1">
+          {logs.length === 0 && <p className="text-zinc-600">Waiting for events…</p>}
+          {logs.map((l, i) => (
+            <div key={i} className="flex gap-2">
+              <span className="text-zinc-600">{l.ts}</span>
+              <span className={levelColor(l.level)}>[{l.level}]</span>
+              <span className="text-zinc-300">{l.message}</span>
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+### STEP 4 — Sync + commit
+```bash
+cp src/pages/ObservabilityPage.tsx .lovable/src/pages/ObservabilityPage.tsx
+git add src/pages/ObservabilityPage.tsx .lovable/src/pages/ObservabilityPage.tsx
+git commit -m "feat(ui): ObservabilityPage — logs SSE + metrics cards redesign"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-159','[x] TASK-159',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-159 done"
+git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-159:ObservabilityPage|SSE-logs+metrics|commit:<hash>|★★★"`
+
+---
+
+## [ ] TASK-160: AgentStatusCard Component — via OpenDesign
+
+**GOAL:** Створити `src/components/agents/AgentStatusCard.tsx` — standalone компонент статусу агента для використання в HomePage та інших місцях.
+
+**File:** `src/components/agents/AgentStatusCard.tsx`
+
+!!IMPORTANT!! Run locally on AGY3 Termux.
+
+### STEP 1 — Generate via OpenDesign
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript AgentStatusCard component. Props interface: name string, status online|offline|checking, description string, route string, icon React.ComponentType. Shows: colored status dot (online=green animate-pulse, offline=red, checking=yellow animate-spin), agent name bold text-lg, description text-sm text-zinc-400, NavLink button to route with arrow icon. Card has hover:border-indigo-500 transition. Dark zinc-900 bg border border-zinc-800 rounded-xl p-4. Export named AgentStatusCard.' /tmp/od-AgentStatusCard.tsx"
+```
+
+### STEP 2 — Copy and verify
+```bash
+scp vokov@192.168.3.184:/tmp/od-AgentStatusCard.tsx ~/workspace/ai-drakon-scaffolder/src/components/agents/AgentStatusCard.tsx
+wc -l src/components/agents/AgentStatusCard.tsx
+```
+If < 20 lines implement manually:
+```tsx
+import { NavLink } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface Props {
+  name: string;
+  status: "online" | "offline" | "checking";
+  description: string;
+  route: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+export function AgentStatusCard({ name, status, description, route, icon: Icon }: Props) {
+  const dot = status === "online"
+    ? "bg-green-400 animate-pulse"
+    : status === "checking"
+    ? "bg-yellow-400 animate-spin"
+    : "bg-red-400";
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 hover:border-indigo-500 transition-colors rounded-xl p-4 flex flex-col gap-3">
+      <div className="flex items-center gap-2">
+        <span className={cn("w-2 h-2 rounded-full", dot)} />
+        <Icon className="w-5 h-5 text-indigo-400" />
+        <span className="font-bold text-zinc-100">{name}</span>
+      </div>
+      <p className="text-sm text-zinc-400 flex-1">{description}</p>
+      <NavLink to={route} className="flex items-center gap-1 text-sm text-indigo-400 hover:text-indigo-300">
+        Open <ArrowRight className="w-3 h-3" />
+      </NavLink>
+    </div>
+  );
+}
+```
+
+### STEP 3 — Sync + commit
+```bash
+cp src/components/agents/AgentStatusCard.tsx .lovable/src/components/agents/AgentStatusCard.tsx
+git add src/components/agents/AgentStatusCard.tsx .lovable/src/components/agents/AgentStatusCard.tsx
+git commit -m "feat(ui): AgentStatusCard — standalone status component"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-160','[x] TASK-160',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-160 done" && git push origin main
+```
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-160:AgentStatusCard|standalone-component|commit:<hash>|★★★"`
+
+---
+
+## [ ] TASK-161: PatternSuggestionPanel — Architect Feature via OpenDesign
+
+**GOAL:** Створити `src/components/architect/PatternSuggestionPanel.tsx` — форма запиту архітектурних патернів до architect-agent.
+
+**File:** `src/components/architect/PatternSuggestionPanel.tsx`
+
+!!IMPORTANT!! Run locally on AGY3 Termux. mkdir -p src/components/architect/ before saving.
+
+### STEP 1 — Generate
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript PatternSuggestionPanel component. Form fields: projectDocs (Textarea placeholder=\"Paste project docs or describe codebase\"), requirements (Textarea placeholder=\"What do you need to build?\"). Submit button with Loader2 spinner when loading. On submit: POST to window.ENV_ARCHITECT_URL+\"/suggest-patterns\" with {projectDocs, requirements}. Response: array of {name, rationale, tradeoffs[]}. Show PatternCard for each: title name bold, rationale text, tradeoffs as bullet list, Use Pattern button that copies name to clipboard. Error state: red alert. Dark zinc theme full component.' /tmp/od-PatternSuggestionPanel.tsx"
+```
+
+### STEP 2 — Save
+```bash
+scp vokov@192.168.3.184:/tmp/od-PatternSuggestionPanel.tsx /tmp/od-PatternSuggestionPanel-check.tsx
+wc -l /tmp/od-PatternSuggestionPanel-check.tsx
+mkdir -p ~/workspace/ai-drakon-scaffolder/src/components/architect
+cp /tmp/od-PatternSuggestionPanel-check.tsx ~/workspace/ai-drakon-scaffolder/src/components/architect/PatternSuggestionPanel.tsx
+```
+
+### STEP 3 — Sync + commit
+```bash
+mkdir -p .lovable/src/components/architect
+cp src/components/architect/PatternSuggestionPanel.tsx .lovable/src/components/architect/PatternSuggestionPanel.tsx
+git add src/components/architect/ .lovable/src/components/architect/
+git commit -m "feat(ui): PatternSuggestionPanel — architect pattern query form"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-161','[x] TASK-161',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-161 done" && git push origin main
+```
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-161:PatternSuggestionPanel|architect-feature|commit:<hash>|★★★"`
+
+---
+
+## [ ] TASK-162: PipelineProgress SSE Component — via OpenDesign
+
+**GOAL:** Створити `src/components/pipelines/PipelineProgress.tsx` — SSE streaming компонент прогресу pipeline.
+
+**File:** `src/components/pipelines/PipelineProgress.tsx`
+
+!!IMPORTANT!! Run locally on AGY3 Termux.
+
+### STEP 1 — Generate
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'React TypeScript PipelineProgress component. Props: pipelineId string, onComplete callback. Uses EventSource to stream from /api/pipelines/{pipelineId}/run. Each SSE event: {step: string, status: pending|running|done|error, output?: string}. Shows: progress bar (count done/total), scrollable list of NodeStatusRow (icon by status: Clock=pending, Loader2 spin=running, CheckCircle green=done, XCircle red=error, step name, collapsible output text). Shows spinner while connecting. Done banner when all complete. Stop button that closes EventSource. Dark zinc theme. TypeScript. Full component.' /tmp/od-PipelineProgress.tsx"
+```
+
+### STEP 2 — Save
+```bash
+scp vokov@192.168.3.184:/tmp/od-PipelineProgress.tsx ~/workspace/ai-drakon-scaffolder/src/components/pipelines/PipelineProgress.tsx
+wc -l src/components/pipelines/PipelineProgress.tsx
+```
+
+### STEP 3 — Sync + commit
+```bash
+cp src/components/pipelines/PipelineProgress.tsx .lovable/src/components/pipelines/PipelineProgress.tsx
+git add src/components/pipelines/PipelineProgress.tsx .lovable/src/components/pipelines/PipelineProgress.tsx
+git commit -m "feat(ui): PipelineProgress — SSE streaming execution component"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-162','[x] TASK-162',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-162 done" && git push origin main
+```
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-162:PipelineProgress|SSE-streaming|commit:<hash>|★★★"`
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- od-generate.sh виконується через SSH до vokov@192.168.3.184
+- Якщо od-generate.sh повернув порожній файл — використовуй запасний код з STEP 2
+- TASK-159 → TASK-160 → TASK-161 → TASK-162 виконуй послідовно
+- mkdir -p перед cp для нових директорій (architect/)
+- Завжди sync до .lovable/ після зміни src/
