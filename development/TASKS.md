@@ -18335,7 +18335,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-164 done" && g
 
 ---
 
-## [ ] TASK-165: NotebookLMPage — Dark Zinc Redesign + Remove PageHeader
+## [x] TASK-165: NotebookLMPage — Dark Zinc Redesign + Remove PageHeader
 
 **GOAL:** Оновити `src/pages/NotebookLMPage.tsx` — прибрати `PageHeader` (старий компонент), перейти на dark zinc стиль консистентний з рештою платформи.
 
@@ -18394,7 +18394,7 @@ git add src/pages/NotebookLMPage.tsx .lovable/src/pages/NotebookLMPage.tsx
 git commit -m "feat(ui): NotebookLMPage — dark zinc redesign, remove PageHeader"
 python3 -c "
 with open('development/TASKS.md','r') as f: c=f.read()
-c=c.replace('[ ] TASK-165','[x] TASK-165',1)
+c=c.replace('[x] TASK-165','[x] TASK-165',1)
 with open('development/TASKS.md','w') as f: f.write(c)
 "
 git add development/TASKS.md && git commit -m "chore(tasks): TASK-165 done" && git push origin main
