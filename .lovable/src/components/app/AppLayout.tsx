@@ -146,8 +146,8 @@ export function AppLayout() {
 
       {/* Main Content Area */}
       <main className="flex-1 overflow-y-auto min-h-0 bg-zinc-950">
-        <div className="p-4 md:p-8">
-          <div className="max-w-7xl mx-auto w-full h-full">
+        <div className="p-4 md:p-8 pb-24 md:pb-8">
+          <div className="max-w-7xl mx-auto w-full">
             <Outlet />
           </div>
         </div>
