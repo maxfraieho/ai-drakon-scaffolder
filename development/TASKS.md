@@ -20649,3 +20649,154 @@ git push origin main
 ```
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-180:frontend-flue-rewire|mcp-client+agent-api+graph-pipeline|commit:<hash>|★★★★★"`
+
+---
+
+## [ ] TASK-181: Investigate Flue agent logic definition — can /agents page work with Flue?
+
+**Goal:** The /agents page previously defined agent behavior via old LangGraph Python framework.
+New framework is Flue (@flue/runtime, Cloudflare Workers). Investigate:
+1. What does /agents page currently show/do?
+2. How is agent logic currently defined in Flue Workers?
+3. Can we define/edit agent behavior from the frontend with Flue?
+4. If yes — implement. If no — propose what to change.
+
+**Agent:** AGY3
+**Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/**
+
+### STEP 1 — GitNexus: understand /agents page
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+
+# Pull latest first
+git pull origin main
+
+# Query GitNexus for agents page components
+curl -s "https://gitnexus.exodus.pp.ua/api/repos" | python3 -c "import sys,json; print('repos:', [r['name'] for r in json.load(sys.stdin)])"
+
+# Find agents page file
+find src -name "*gent*" -o -name "*Agent*" | grep -v node_modules | grep -E "\.(tsx|ts)$" | head -20
+
+# Check what the agents page renders
+grep -rn "AgentsPage\|/agents\|agent-studio" src/pages/ src/App.tsx 2>/dev/null | head -10
+```
+
+### STEP 2 — Read agents page + agent studio data
+
+```bash
+# Find and read the agents page
+cat src/pages/AgentsPage.tsx 2>/dev/null | head -100 || \
+find src -name "*.tsx" | xargs grep -l "agents\|AgentStudio" 2>/dev/null | head -5
+
+# Read agent studio data (old static agent definitions)
+cat src/lib/agent-studio-data.ts 2>/dev/null | head -80
+```
+
+### STEP 3 — NotebookLM: query Flue docs for agent behavior definition
+
+Use the Flue notebook (ID: 83ab40c7-7ca6-4685-9eb8-cf72dfa25f19) to understand
+how agent logic/workflows/behavior is defined in Flue:
+
+```bash
+python3 << 'PYEOF'
+import json, urllib.request
+
+NLM_BASE = "http://192.168.3.234:8002"
+NOTEBOOK_ID = "83ab40c7-7ca6-4685-9eb8-cf72dfa25f19"
+
+# Initialize
+req = urllib.request.Request(f"{NLM_BASE}/mcp",
+    data=json.dumps({"jsonrpc":"2.0","id":1,"method":"initialize",
+        "params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"agt-ogy3","version":"1.0"},"capabilities":{}}}).encode(),
+    headers={"Content-Type":"application/json","Accept":"application/json, text/event-stream"})
+with urllib.request.urlopen(req, timeout=10) as r:
+    session_id = r.headers.get("mcp-session-id","")
+print("session:", session_id)
+
+# Query Flue agent behavior
+payload = json.dumps({"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"chat_ask",
+    "arguments":{"notebook_id":NOTEBOOK_ID,
+        "question":"How do you define agent behavior and workflow logic in Flue? What is a Workflow, what is an Agent, how do you configure steps and tools? Can agent logic be defined at runtime or is it always code?",
+        "response_length":"medium"}}}).encode()
+req2 = urllib.request.Request(f"{NLM_BASE}/mcp",
+    data=payload,
+    headers={"Content-Type":"application/json","Accept":"application/json, text/event-stream",
+             "mcp-session-id": session_id})
+with urllib.request.urlopen(req2, timeout=60) as r:
+    resp = r.read().decode()
+for line in resp.split('\n'):
+    if line.startswith('data:'):
+        d = json.loads(line[5:])
+        content = d.get('result',{}).get('content',[])
+        for c in content:
+            if c.get('type') == 'text':
+                print(c['text'][:3000])
+PYEOF
+```
+
+### STEP 4 — Read current Flue agent implementations
+
+```bash
+# Check what workflows/agents exist in architect-agent-flue
+ls services/architect-agent-flue/workflows/ 2>/dev/null
+ls services/architect-agent-flue/agents/ 2>/dev/null
+cat services/architect-agent-flue/workflows/pipeline-a.ts 2>/dev/null | head -60
+
+# Check tools/graph-pipelines.ts — how pipeline logic is stored
+cat services/architect-agent-flue/tools/graph-pipelines.ts 2>/dev/null | head -80
+```
+
+### STEP 5 — Write investigation report
+
+```bash
+cat > development/investigations/flue-agent-logic-2026-06-08.md << 'REPORT'
+# Flue Agent Logic Investigation (TASK-181)
+Date: $(date +%Y-%m-%d)
+
+## /agents page — current state
+[describe what the page shows, what data it uses]
+
+## How agent logic was defined in OLD framework (LangGraph)
+[describe the old approach]
+
+## How agent logic is defined in NEW framework (Flue)
+[describe Flue Workflows, Agents, Tools based on NotebookLM answer]
+
+## Gap analysis
+- Can frontend define/edit agent behavior? YES/NO
+- What is missing?
+- Recommended approach:
+
+## Implementation plan
+[concrete steps to enable agent logic definition in /agents page with Flue]
+REPORT
+```
+
+### STEP 6 — Implement if straightforward, otherwise report only
+
+**IF** agent logic in Flue can be configured via KV/JSON (data-driven):
+- Update `/agents` page to load pipeline definitions from `GET /graph-pipelines`
+- Allow editing pipeline steps via the UI
+- Save changes via `PUT /graph-pipelines/:name`
+
+**IF** agent logic requires TypeScript code changes:
+- Document what needs to change
+- Write the new workflow/agent files for drakon, docs, architect agents
+- Deploy updated Workers
+
+### STEP 7 — Commit report + any changes
+
+```bash
+git add development/investigations/flue-agent-logic-2026-06-08.md
+git add services/ src/ -p  # only if changes made
+git commit -m "docs(investigation): TASK-181 Flue agent logic — /agents page gap analysis"
+git push origin main
+
+sed -i 's/^\[ \] TASK-181/[x] TASK-181/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-181 done — Flue agent logic investigation"
+git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-181:flue-agent-logic|agents-page-gap|findings:<1-line-summary>|★★★★"`
