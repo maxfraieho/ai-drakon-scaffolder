@@ -136,6 +136,11 @@ description: error instanceof Error ? error.message : "Невідома поми
 };
 
 const verifyGithub = async () => {
+if (!settings.github.token.trim()) {
+  setGithubStatus({ type: "error", text: "Введіть Personal Access Token" });
+  toast.error("GitHub: потрібен токен", { description: "Введіть PAT у поле токена вище" });
+  return;
+}
 setIsCheckingGithub(true);
 setGithubStatus({ type: "idle", text: "Перевіряю..." });
 
@@ -146,7 +151,8 @@ settings.github.repo.trim(),
 settings.github.token.trim() || undefined,
 );
 if (!response.success) {
-throw new Error("GitHub повернув помилку");
+const r = response as {error?: string; message?: string};
+throw new Error(r.error || r.message || "GitHub повернув помилку");
 }
 
 setGithubStatus({
