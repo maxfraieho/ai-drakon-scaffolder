@@ -74,3 +74,18 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
 ```
 
 Services restart: `echo '805235io.' | sudo -S rc-service SERVICE restart`
+
+---
+
+## Self-Reflection Rule
+AFTER completing any task where you:
+- Fixed a bug not documented in protocols
+- Found a better approach than the current protocol
+- Discovered a new tool/trick
+
+DO:
+1. Query GitNexus: "is {pattern} documented in exodus-infra?"
+2. If NO: run self-reflect script:
+   ```bash
+   bash ~/workspace/exodus-infra/agents/ogy3-tablet/self-reflect.sh "topic" "what learned"
+   ```
