@@ -26,9 +26,9 @@ export const DEFAULT_SETTINGS: AppSettings = {
     accessKey: "",
   },
   agents: {
-    drakonUrl: "https://drakon-agent.exodus.pp.ua",
-    architectUrl: "https://architect-agent.exodus.pp.ua",
-    docsUrl: "https://docs-agent.exodus.pp.ua",
+    drakonUrl: "https://drakon-agent-flue.maxfraieho.workers.dev",
+    architectUrl: "https://architect-agent-flue.maxfraieho.workers.dev",
+    docsUrl: "https://docs-agent-flue.maxfraieho.workers.dev",
   },
   cliAgents: [
     { id: "cli1", url: "https://claude.exodus.pp.ua", label: "RPi 3B", apiKey: "" },

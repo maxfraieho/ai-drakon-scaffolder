@@ -1,19 +1,13 @@
 name = "drakon-agent-flue"
-main = "dist/index.js"
+main = "src/index.ts"
 compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
-[durable_objects]
-bindings = [
-  { name = "FLUE_REGISTRY", class_name = "FlueRegistry" },
-  { name = "FLUE_DRAKON_AGENT", class_name = "FlueDrakonAgent" }
-]
-
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["FlueRegistry", "FlueDrakonAgent"]
+[vars]
+PROXY_URL = "https://agy3.exodus.pp.ua/v1"
+PROXY_MODEL = "gemini-2.5-flash"
 
 [[kv_namespaces]]
 binding = "KNOWLEDGE_BASE"
-id = "drakon_kb"
-preview_id = "drakon_kb_preview"
+id = "d4fdc6c83e994032a51be4542b245e27"
+preview_id = "d4fdc6c83e994032a51be4542b245e27"
