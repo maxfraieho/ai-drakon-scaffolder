@@ -18564,7 +18564,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-167 done" && g
 
 ---
 
-## [ ] TASK-168: Mobile QA via agent-workspace Browser — RPi 3B
+## [x] TASK-168: Mobile QA via agent-workspace Browser — RPi 3B
 
 **GOAL:** Перевірити всі сторінки платформи в мобільному вигляді через agent-workspace браузер на RPi 3B. Знайти і виправити scroll проблеми, layout баги, broken UI.
 
