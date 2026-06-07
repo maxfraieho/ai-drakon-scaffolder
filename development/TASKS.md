@@ -18908,3 +18908,210 @@ with open('development/TASKS.md','w') as f: f.write(c)
 - User must have valid PAT with `repo` scope for private repos
 - Repo `maxfraieho/sonate-solidsite` returns 404 unauthenticated (private or not created)
 - The actual error from Worker: {"success":false,"error":"Internal error: GitHub API 401: {\"message\":\"Bad credentials\"...}"}
+
+---
+
+## [ ] TASK-172: Unified ProjectFileManager — один файловий менеджер для /docs, /code, /knowledge
+
+**МЕТА:** Замінити три окремих файлових менеджери (`DocsFilesTab`, `NotesTab` у knowledge, `CodePage FileTree`) одним компонентом `ProjectFileManager` з режимами-фільтрами.
+
+**БАЗА КОДУ:** Bloom (`/home/vokov/projects/garden-seedling-stage/src`)
+- `src/pages/FilesPage.tsx` — файловий менеджер (дерево + пошук + hover-дії)
+- `src/components/garden/EditorFolderTree.tsx` — collapsible sidebar tree
+
+**РЕДАКТОР:** Monaco Editor з `CodePage.tsx` — єдиний редактор для ALL режимів.
+
+---
+
+### АРХІТЕКТУРА НОВОГО КОМПОНЕНТА
+
+**Файл:** `src/components/files/ProjectFileManager.tsx`
+
+```
+ProjectFileManager
+├── Left sidebar (w-56, collapsible)
+│   ├── Header: назва проекту + кнопка collapse
+│   ├── Filter pills: [All] [/docs] [Code]  ← amber active
+│   ├── Search input
+│   └── FileTree (lazy, GitHub API або local)
+│       ├── Folder row: chevron + icon + name
+│       │   └── hover: FilePlus, FolderPlus, Tag (assign zone)
+│       └── File row: icon + name + ext badge
+│           └── hover: Edit, Delete
+├── Center toolbar (h-10, border-b)
+│   ├── Breadcrumb (font-mono text-xs text-zinc-400)
+│   └── Right: Save btn (amber) + branch pill
+├── Editor panel (flex-1)
+│   └── Monaco Editor (auto-lang detect, vs-dark)
+│       └── Empty state: "Оберіть файл"
+└── Status bar (h-6, bg-zinc-900, font-mono text-xs)
+    ├── Left: назва файлу + мова
+    └── Right: рядок:колонка
+```
+
+**Props:**
+```typescript
+interface ProjectFileManagerProps {
+  defaultMode?: "all" | "docs" | "code";
+}
+```
+
+**Режими фільтрів:**
+- `all` — весь репозиторій
+- `docs` — тільки папка `docs/` (як колишній /docs)
+- `code` — весь репозиторій без `docs/` та `node_modules/`
+
+**Дерево файлів (адаптація з Bloom `FilesPage`):**
+- Lazy loading: `api.githubListTree(owner, repo, path, branch)` при кліку на папку
+- Якщо немає GitHub config → показати `fetchNotesTree()` тільки для docs-режиму
+- Розширення/згортання папок локальним state (Set\<string\>)
+- Пошук: фільтр по назві файлу/папки (як у Bloom)
+
+**Monaco Editor (перенести з `CodePage.tsx`):**
+- `import Editor from "@monaco-editor/react"`
+- `detectLang(path)` — вже є у `CodePage.tsx` (рядки 21-30), копіювати
+- theme: `vs-dark`
+- Для `.md` файлів — мова `markdown` (Monaco рендерить нормально)
+
+---
+
+### ЗМІНИ У МАРШРУТАХ
+
+#### `/docs` → `src/routes/docs.tsx`
+Замінити весь вміст на:
+```tsx
+import { ProjectFileManager } from "@/components/files/ProjectFileManager";
+// ...
+return <ProjectFileManager defaultMode="docs" />;
+```
+Видалити: tabs Generator/Документи/Граф з routes/docs.tsx (вони залишаться як окремі кнопки якщо треба — але не основний view).
+
+#### `/code` → `src/routes/code.tsx`  
+Замінити `CodePage` на:
+```tsx
+return <ProjectFileManager defaultMode="code" />;
+```
+`CodePage.tsx` можна залишити але маршрут перенаправляє на новий компонент.
+
+#### `/knowledge` → `src/pages/KnowledgePage.tsx`
+Видалити вкладку "Vault" повністю — `NotesTab` більше не потрібен в knowledge.
+Залишити ТІЛЬКИ: `KnowledgeZonesList` (Zones tab).
+
+---
+
+### КРОКИ ВИКОНАННЯ
+
+**STEP 0 — GitNexus контекст:**
+```bash
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query","arguments":{"query":"file manager tree folder hover actions bloom","repo":"garden-seedling-stage"}}}' \
+  | grep "^data:" | python3 -c "import sys,json; [print(json.loads(l[5:]).get('result',{}).get('content',[{}])[0].get('text','')[:1000]) for l in sys.stdin]"
+```
+
+**STEP 1 — Прочитати базові файли Bloom:**
+```bash
+ssh vokov@192.168.3.184 "cat /home/vokov/projects/garden-seedling-stage/src/pages/FilesPage.tsx"
+ssh vokov@192.168.3.184 "sed -n '1,60p' /home/vokov/projects/garden-seedling-stage/src/components/garden/EditorFolderTree.tsx"
+ssh vokov@192.168.3.184 "sed -n '1,80p' /home/vokov/workspace/ai-drakon-scaffolder/src/pages/CodePage.tsx"
+```
+
+**STEP 2 — Створити директорію і новий компонент:**
+```bash
+ssh vokov@192.168.3.184 "mkdir -p ~/workspace/ai-drakon-scaffolder/src/components/files"
+```
+
+Створити `src/components/files/ProjectFileManager.tsx`:
+- Адаптувати `FolderItem` з Bloom `FilesPage.tsx` (рядки 29-82)
+- Адаптувати lazy-loading з `CodePage.tsx` (рядки 50-100)
+- Monaco Editor з `CodePage.tsx` (рядки 360-420)
+- Filter pills: `[All]` `[/docs]` `[Code]` — amber active pill
+- Collapsible sidebar (state `sidebarOpen`, PanelLeftClose/PanelLeft icons)
+- Search filter (як у Bloom `FilesPage` рядки 108-125)
+- Breadcrumb (поточний шлях)
+- Status bar (назва файлу + detectLang + рядок:колонка з Monaco)
+
+**STEP 3 — Синхронізація src/ ↔ .lovable/src/:**
+```bash
+ssh vokov@192.168.3.184 "cp ~/workspace/ai-drakon-scaffolder/src/components/files/ProjectFileManager.tsx ~/workspace/ai-drakon-scaffolder/.lovable/src/components/files/ProjectFileManager.tsx"
+```
+
+**STEP 4 — Оновити `/docs` маршрут:**
+```bash
+ssh vokov@192.168.3.184 "cat ~/workspace/ai-drakon-scaffolder/src/routes/docs.tsx"
+```
+Замінити вміст маршруту docs.tsx на простий wrapper з `<ProjectFileManager defaultMode="docs" />`.
+Синхронізувати з .lovable/src/routes/docs.tsx.
+
+**STEP 5 — Оновити `/code` маршрут:**
+Замінити `<CodePage />` на `<ProjectFileManager defaultMode="code" />` в `src/routes/code.tsx`.
+
+**STEP 6 — Видалити Vault з KnowledgePage:**
+```bash
+ssh vokov@192.168.3.184 "cat ~/workspace/ai-drakon-scaffolder/src/pages/KnowledgePage.tsx"
+```
+Видалити: `activeTab === "vault"` стан, `vault` кнопку в sidebar, `NotesTab` import і рендер.
+Залишити: тільки `zones` view з `KnowledgeZonesList`.
+
+**STEP 7 — TypeScript check:**
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && npx tsc --noEmit --project .lovable/tsconfig.json 2>&1 | head -30"
+```
+
+**STEP 8 — Commit та push:**
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && git add src/ .lovable/src/ && git commit -m 'feat(files): unified ProjectFileManager — Monaco editor, filter modes All/Docs/Code, replaces CodePage+DocsFilesTab+NotesTab' && git push origin main"
+```
+
+**STEP 9 — Mark done + push TASKS.md:**
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-172','[x] TASK-172',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+\" && git add development/TASKS.md && git commit -m 'chore(tasks): TASK-172 done' && git push origin main"
+```
+
+---
+
+### КЛЮЧОВІ ДЕТАЛІ
+
+**detectLang (з CodePage.tsx, копіювати):**
+```typescript
+const EXT_TO_LANG: Record<string, string> = {
+  py: "python", ts: "typescript", tsx: "typescript",
+  js: "javascript", jsx: "javascript", json: "json",
+  yaml: "yaml", yml: "yaml", md: "markdown", sh: "shell",
+  html: "html", css: "css", toml: "ini", txt: "plaintext",
+};
+function detectLang(path: string): string {
+  const ext = path.split(".").pop()?.toLowerCase() ?? "";
+  return EXT_TO_LANG[ext] ?? "plaintext";
+}
+```
+
+**Фільтр дерева по режиму:**
+```typescript
+function shouldShowEntry(path: string, mode: "all" | "docs" | "code"): boolean {
+  if (mode === "docs") return path === "" || path.startsWith("docs");
+  if (mode === "code") return !path.startsWith("docs") && !path.startsWith("node_modules");
+  return !path.startsWith("node_modules");
+}
+```
+
+**GitHub config:**
+```typescript
+const { activeProject } = useProject();
+const gh = {
+  owner: activeProject?.github?.owner || getGithubConfig().owner || "",
+  repo: activeProject?.github?.repo || getGithubConfig().repo || "",
+  branch: activeProject?.github?.branch || getGithubConfig().branch || "main",
+  token: getGithubConfig().token || "",
+};
+```
+
+**!!IMPORTANT!!** SSH to 192.168.3.184 for all file operations. Run locally on AGY3 Termux for AGY CLI.
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-172:unified-file-manager|ProjectFileManager+Monaco+filters|commit:<hash>|★★★★"`
+
