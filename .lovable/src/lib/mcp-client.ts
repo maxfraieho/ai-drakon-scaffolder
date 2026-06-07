@@ -1,13 +1,9 @@
+import { readSettings } from "@/lib/settings-storage";
+
 export const AGENT_BASE_URL_STORAGE_KEY = "drakon_agent_base_url";
 export const DEFAULT_AGENT_BASE_URL = "http://192.168.3.184";
 
 export type AgentKind = "drakon" | "architect" | "docs";
-
-const AGENT_PORTS: Record<AgentKind, string> = {
-  drakon: "8765",
-  architect: "8766",
-  docs: "8767",
-};
 
 const AGENT_PATHS: Record<AgentKind, string> = {
   drakon: "/analyze",
@@ -16,19 +12,24 @@ const AGENT_PATHS: Record<AgentKind, string> = {
 };
 
 export function getAgentBaseUrl(): string {
-  if (typeof window === "undefined") {
-    return DEFAULT_AGENT_BASE_URL;
-  }
+  if (typeof window === "undefined") return "https://architect-agent-flue.maxfraieho.workers.dev";
+  const stored = localStorage.getItem(AGENT_BASE_URL_STORAGE_KEY);
+  if (stored?.trim()) return stored.trim();
+  // Use settings-storage Flue Worker URLs per agent
+  return readSettings().agents.architectUrl;
+}
 
-  return localStorage.getItem(AGENT_BASE_URL_STORAGE_KEY) || DEFAULT_AGENT_BASE_URL;
+export function getAgentDirectUrl(agent: AgentKind): string {
+  const s = readSettings().agents;
+  if (agent === "drakon") return s.drakonUrl.replace(/\/+$/, "");
+  if (agent === "docs") return s.docsUrl.replace(/\/+$/, "");
+  return s.architectUrl.replace(/\/+$/, "");
 }
 
 export async function mcpCall(agent: AgentKind, message: string): Promise<unknown> {
-  const baseUrl = getAgentBaseUrl().replace(/\/$/, "");
-  const port = AGENT_PORTS[agent];
+  const baseUrl = getAgentDirectUrl(agent);
   const path = AGENT_PATHS[agent];
-
-  const url = `${baseUrl}:${port}${path}`;
+  const url = `${baseUrl}${path}`;
   const body =
     agent === "drakon"
       ? { code: message, message }
