@@ -19685,3 +19685,411 @@ git push origin main
 ```
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-174:zone-gh-tree+selector-ux+settings-clean|ZoneCreationDialog+ProjectSelector+settings|commit:<hash>|★★★"`
+
+---
+
+## [ ] TASK-175: MCP API Key Management — Worker + Settings UI
+
+**META:** Add per-user MCP API key generation/management. Backend: Cloudflare Worker gets KV-based key auth + /v1/api-key endpoints. Frontend: Settings gets new "MCP Access" section.
+
+**!!IMPORTANT!!** 
+- ALL code edits: run locally on AGY3 Termux in `~/workspace/ai-drakon-scaffolder/` AND `~/workspace/ai-drakon-setup/`  
+- Deploy wrangler: SSH to 192.168.3.184 only for deploy step
+- Git push: SSH to 192.168.3.184 for both repos
+
+---
+
+### STEP 1 — Add KV binding to worker-wrangler.toml
+
+**File:** `~/workspace/ai-drakon-setup/cloudflare-worker/worker-wrangler.toml`
+
+Current content:
+```toml
+name = "drakon-mcp-worker"
+main = "worker-mcp-drakon.js"
+compatibility_date = "2024-01-01"
+account_id = "c354ea45a11a1e1c14f1f41fe780cb34"
+```
+
+Replace with:
+```toml
+name = "drakon-mcp-worker"
+main = "worker-mcp-drakon.js"
+compatibility_date = "2024-01-01"
+account_id = "c354ea45a11a1e1c14f1f41fe780cb34"
+
+[[kv_namespaces]]
+binding = "MCP_KEYS"
+id = "a23954fb430f4731a5c151e702eec2e6"
+```
+
+---
+
+### STEP 2 — Update verifyOwnerAuth in Worker to check KV keys
+
+**File:** `~/workspace/ai-drakon-setup/cloudflare-worker/worker-mcp-drakon.js`
+
+Find this block (around line 176-183):
+```javascript
+  // Статичний MCP API key (для Claude.ai Dashboard та інших MCP клієнтів)
+  if (env.MCP_API_KEY && token === env.MCP_API_KEY) {
+    return { role: 'owner', sub: 'mcp-agent' };
+  }
+
+  // JWT (для фронтенду)
+```
+
+Replace with:
+```javascript
+  // Статичний MCP API key (backward compat — owner level)
+  if (env.MCP_API_KEY && token === env.MCP_API_KEY) {
+    return { role: 'owner', sub: 'mcp-agent' };
+  }
+
+  // Per-user MCP key stored in KV
+  if (env.MCP_KEYS) {
+    const userInfoStr = await env.MCP_KEYS.get(`key:${token}`);
+    if (userInfoStr) {
+      const info = JSON.parse(userInfoStr);
+      return { role: 'owner', sub: info.userId, email: info.email || null };
+    }
+  }
+
+  // JWT (для фронтенду)
+```
+
+---
+
+### STEP 3 — Add /v1/api-key endpoints to Worker
+
+**File:** `~/workspace/ai-drakon-setup/cloudflare-worker/worker-mcp-drakon.js`
+
+Find line that reads (around line 2048):
+```javascript
+      if (method === 'POST' && path === '/auth/login') {
+```
+
+INSERT BEFORE that line (add this block above it):
+```javascript
+      // ─── MCP API Key management ─────────────────────────────────────────
+      if (method === 'POST' && path === '/v1/api-key/generate') {
+        const auth = await verifyOwnerAuth(request, env);
+        if (!auth) return errorResponse('Unauthorized', 401);
+        const userId = auth.email || auth.sub || 'owner';
+        // Generate new random key
+        const rawId = crypto.randomUUID().replace(/-/g, '');
+        const apiKey = `drakon-${rawId}`;
+        // Revoke previous key if exists
+        if (env.MCP_KEYS) {
+          const prevKey = await env.MCP_KEYS.get(`user:${userId}`);
+          if (prevKey) await env.MCP_KEYS.delete(`key:${prevKey}`);
+          // Store new key
+          await env.MCP_KEYS.put(`key:${apiKey}`, JSON.stringify({
+            userId,
+            email: auth.email || null,
+            createdAt: new Date().toISOString(),
+          }));
+          await env.MCP_KEYS.put(`user:${userId}`, apiKey);
+        }
+        return jsonResponse({
+          success: true,
+          apiKey,
+          mcpUrl: 'https://drakon-mcp-worker.maxfraieho.workers.dev/mcp',
+          config: {
+            type: 'http',
+            url: 'https://drakon-mcp-worker.maxfraieho.workers.dev/mcp',
+            serverUrl: 'https://drakon-mcp-worker.maxfraieho.workers.dev/mcp',
+            headers: { Authorization: `Bearer ${apiKey}` },
+          },
+        });
+      }
+
+      if (method === 'GET' && path === '/v1/api-key') {
+        const auth = await verifyOwnerAuth(request, env);
+        if (!auth) return errorResponse('Unauthorized', 401);
+        const userId = auth.email || auth.sub || 'owner';
+        let currentKey = null;
+        if (env.MCP_KEYS) {
+          currentKey = await env.MCP_KEYS.get(`user:${userId}`);
+        }
+        if (!currentKey) {
+          return jsonResponse({ success: true, apiKey: null, hasKey: false });
+        }
+        const masked = `${currentKey.slice(0, 14)}...${currentKey.slice(-6)}`;
+        return jsonResponse({ success: true, apiKey: currentKey, maskedKey: masked, hasKey: true });
+      }
+
+      if (method === 'DELETE' && path === '/v1/api-key') {
+        const auth = await verifyOwnerAuth(request, env);
+        if (!auth) return errorResponse('Unauthorized', 401);
+        const userId = auth.email || auth.sub || 'owner';
+        if (env.MCP_KEYS) {
+          const prevKey = await env.MCP_KEYS.get(`user:${userId}`);
+          if (prevKey) await env.MCP_KEYS.delete(`key:${prevKey}`);
+          await env.MCP_KEYS.delete(`user:${userId}`);
+        }
+        return jsonResponse({ success: true });
+      }
+      // ─── end MCP API Key management ──────────────────────────────────────
+
+```
+
+---
+
+### STEP 4 — Deploy Worker from dev server (SSH to 192.168.3.184)
+
+```bash
+# SSH to dev server and deploy:
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 '
+cd ~/workspace/ai-drakon-setup/cloudflare-worker
+CLOUDFLARE_API_TOKEN=<CF_WORKERS_TOKEN> \
+  npx wrangler deploy worker-mcp-drakon.js --config worker-wrangler.toml 2>&1 | tail -20
+'
+```
+
+Verify by testing:
+```bash
+curl -s https://drakon-mcp-worker.maxfraieho.workers.dev/health | head -c 200
+```
+
+---
+
+### STEP 5 — Add MCP Access section to Settings UI
+
+**File:** `src/routes/settings.tsx` in ai-drakon-scaffolder
+
+**A) Add imports at top of the file (after existing imports):**
+```typescript
+import { Copy, Key, RefreshCw as Regenerate } from "lucide-react";
+```
+(Note: `RefreshCw` is already imported, so just add `Copy` and `Key` to the existing import line)
+
+**B) Add state variables inside `SettingsRoute` function (after existing state):**
+```typescript
+const [mcpKey, setMcpKey] = useState<string | null>(null);
+const [mcpKeyMasked, setMcpKeyMasked] = useState<string | null>(null);
+const [isLoadingMcpKey, setIsLoadingMcpKey] = useState(false);
+const [isGeneratingMcpKey, setIsGeneratingMcpKey] = useState(false);
+
+useEffect(() => {
+  // Load current MCP key on mount
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) return;
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  setIsLoadingMcpKey(true);
+  fetch(`${workerUrl}/v1/api-key`, {
+    headers: { Authorization: `Bearer ${jwt}` },
+  })
+    .then(r => r.json())
+    .then((data: any) => {
+      if (data.success && data.hasKey) {
+        setMcpKey(data.apiKey);
+        setMcpKeyMasked(data.maskedKey);
+      }
+    })
+    .catch(() => {})
+    .finally(() => setIsLoadingMcpKey(false));
+}, [settings.app.workerUrl]);
+
+const generateMcpKey = async () => {
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) { toast.error("Потрібна авторизація"); return; }
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  setIsGeneratingMcpKey(true);
+  try {
+    const res = await fetch(`${workerUrl}/v1/api-key/generate`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${jwt}` },
+    });
+    const data = await res.json() as any;
+    if (data.success) {
+      setMcpKey(data.apiKey);
+      setMcpKeyMasked(`${data.apiKey.slice(0, 14)}...${data.apiKey.slice(-6)}`);
+      toast.success("MCP ключ створено", { description: "Скопіюй ключ — він більше не буде показаний повністю" });
+    } else {
+      toast.error("Помилка генерації ключа");
+    }
+  } catch {
+    toast.error("Помилка підключення до Worker");
+  } finally {
+    setIsGeneratingMcpKey(false);
+  }
+};
+
+const revokeMcpKey = async () => {
+  const jwt = localStorage.getItem("jwt");
+  if (!jwt) return;
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  try {
+    await fetch(`${workerUrl}/v1/api-key`, { method: "DELETE", headers: { Authorization: `Bearer ${jwt}` } });
+    setMcpKey(null);
+    setMcpKeyMasked(null);
+    toast.success("MCP ключ відкликано");
+  } catch { toast.error("Помилка"); }
+};
+```
+
+**C) Add new tab trigger in the TabsList** (after the existing "app" tab trigger):
+```tsx
+<TabsTrigger value="mcp" className="shrink-0 whitespace-nowrap">MCP Access</TabsTrigger>
+```
+
+Also update the `md:grid-cols-6` to `md:grid-cols-7` in the TabsList className.
+
+**D) Add new TabsContent (before the final `</Tabs>` closing tag):**
+```tsx
+<TabsContent value="mcp">
+  <Card>
+    <CardHeader>
+      <CardTitle className="flex items-center gap-2">
+        <Key className="h-4 w-4" />
+        MCP Access Key
+      </CardTitle>
+      <CardDescription>
+        Персональний ключ для підключення до DRAKON MCP сервера. Використовується в Antigravity, Claude Desktop та інших MCP-клієнтах.
+      </CardDescription>
+    </CardHeader>
+    <CardContent className="space-y-4">
+      {isLoadingMcpKey ? (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          Завантаження...
+        </div>
+      ) : mcpKey ? (
+        <div className="space-y-3">
+          <div className="grid gap-2">
+            <Label>Поточний ключ</Label>
+            <div className="flex items-center gap-2">
+              <Input
+                type="text"
+                readOnly
+                value={mcpKeyMasked || mcpKey}
+                className="font-mono text-xs"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => { navigator.clipboard.writeText(mcpKey); toast.success("Ключ скопійовано"); }}
+                title="Копіювати повний ключ"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Натисни кнопку для копіювання повного ключа</p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>mcp_config.json для Antigravity / Claude Desktop</Label>
+            <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto cursor-pointer hover:bg-muted/70"
+              onClick={() => {
+                const cfg = JSON.stringify({
+                  mcpServers: {
+                    drakon: {
+                      type: "http",
+                      url: "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+                      serverUrl: "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+                      headers: { Authorization: `Bearer ${mcpKey}` }
+                    }
+                  }
+                }, null, 2);
+                navigator.clipboard.writeText(cfg);
+                toast.success("Config скопійовано");
+              }}
+            >
+{`{
+  "mcpServers": {
+    "drakon": {
+      "type": "http",
+      "url": "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+      "headers": { "Authorization": "Bearer ${mcpKey.slice(0,14)}...${mcpKey.slice(-6)}" }
+    }
+  }
+}`}
+            </pre>
+            <p className="text-xs text-muted-foreground">Натисни на блок — скопіює повний config з реальним ключем</p>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button type="button" variant="outline" onClick={() => void generateMcpKey()} disabled={isGeneratingMcpKey}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              {isGeneratingMcpKey ? "Генерую..." : "Перегенерувати ключ"}
+            </Button>
+            <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => void revokeMcpKey()}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Відкликати ключ
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">У тебе ще немає MCP ключа. Створи його щоб підключити MCP клієнти.</p>
+          <Button type="button" onClick={() => void generateMcpKey()} disabled={isGeneratingMcpKey}>
+            <Key className="mr-2 h-4 w-4" />
+            {isGeneratingMcpKey ? "Генерую..." : "Створити MCP ключ"}
+          </Button>
+        </div>
+      )}
+    </CardContent>
+  </Card>
+</TabsContent>
+```
+
+**Sync all changed files:**
+```bash
+cp src/routes/settings.tsx .lovable/src/routes/settings.tsx
+```
+
+---
+
+### STEP 6 — Commit Worker changes (ai-drakon-setup)
+
+SSH to dev server and commit:
+```bash
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 '
+cd ~/workspace/ai-drakon-setup
+git add cloudflare-worker/worker-mcp-drakon.js cloudflare-worker/worker-wrangler.toml
+git commit -m "feat(worker): add per-user MCP key management with KV store"
+git push origin main
+'
+```
+
+---
+
+### STEP 7 — Commit Settings UI (ai-drakon-scaffolder)
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add src/routes/settings.tsx .lovable/src/routes/settings.tsx
+git commit -m "feat(settings): add MCP Access tab for API key generation and management"
+git push origin main
+```
+
+---
+
+### STEP 8 — TypeScript check
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+npx --prefix . tsc --noEmit 2>&1 | head -30
+```
+
+Fix all type errors (cast `data as any` for fetch responses, check import list).
+
+---
+
+### STEP 9 — Mark done + diary
+
+```python
+with open('development/TASKS.md') as f: c = f.read()
+c = c.replace('[ ] TASK-175', '[x] TASK-175', 1)
+with open('development/TASKS.md', 'w') as f: f.write(c)
+```
+
+```bash
+git add development/TASKS.md
+git commit -m "chore(tasks): mark TASK-175 done"
+git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-175:mcp-key-management|Worker+KV+SettingsUI|commit:<hash>|★★★"`
