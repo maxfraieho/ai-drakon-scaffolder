@@ -18807,7 +18807,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
 
 ---
 
-## [ ] TASK-171: GitHub API Error — Better UX + Worker env.GITHUB_TOKEN expired notice
+## [x] TASK-171: GitHub API Error — Better UX + Worker env.GITHUB_TOKEN expired notice
 
 **GOAL:**
 1. Покращити повідомлення про помилку GitHub в settings.tsx — розрізняти "немає токена" vs "поганий токен" vs "репо не знайдено"
