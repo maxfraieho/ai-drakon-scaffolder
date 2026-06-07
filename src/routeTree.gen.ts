@@ -14,7 +14,9 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PipelinesRouteImport } from './routes/pipelines'
 import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as NotebooksRouteImport } from './routes/notebooks'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as KnowledgeRouteImport } from './routes/knowledge'
 import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
@@ -25,11 +27,14 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
 import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
 import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
+import { Route as ApiNotebooklmNotebooksRouteImport } from './routes/api.notebooklm.notebooks'
 import { Route as ApiNotebooklmChatRouteImport } from './routes/api.notebooklm.chat'
 import { Route as ApiKnowledgeZonesRouteImport } from './routes/api.knowledge.zones'
 import { Route as ApiKnowledgeZonesZoneIdRouteImport } from './routes/api.knowledge.zones.$zoneId'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm.retry'
+import { Route as ArchitectRouteImport } from './routes/architect'
+import { Route as ObservabilityRouteImport } from './routes/observability'
 
 const SyncRoute = SyncRouteImport.update({
   id: '/sync',
@@ -56,9 +61,19 @@ const PipelineRoute = PipelineRouteImport.update({
   path: '/pipeline',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotebooksRoute = NotebooksRouteImport.update({
+  id: '/notebooks',
+  path: '/notebooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KnowledgeRoute = KnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GithubRoute = GithubRouteImport.update({
@@ -91,6 +106,16 @@ const AgentsRoute = AgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArchitectRoute = ArchitectRouteImport.update({
+  id: '/architect',
+  path: '/architect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObservabilityRoute = ObservabilityRouteImport.update({
+  id: '/observability',
+  path: '/observability',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -110,6 +135,11 @@ const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
   id: '/$pipelineId/edit',
   path: '/$pipelineId/edit',
   getParentRoute: () => PipelineRoute,
+} as any)
+const ApiNotebooklmNotebooksRoute = ApiNotebooklmNotebooksRouteImport.update({
+  id: '/api/notebooklm/notebooks',
+  path: '/api/notebooklm/notebooks',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNotebooklmChatRoute = ApiNotebooklmChatRouteImport.update({
   id: '/api/notebooklm/chat',
@@ -147,7 +177,9 @@ export interface FileRoutesByFullPath {
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
+  '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/notebooks': typeof NotebooksRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
@@ -157,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/editor/$id': typeof EditorIdRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
+  '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
@@ -170,7 +203,9 @@ export interface FileRoutesByTo {
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
+  '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/notebooks': typeof NotebooksRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
@@ -180,6 +215,7 @@ export interface FileRoutesByTo {
   '/editor/$id': typeof EditorIdRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
+  '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
@@ -194,7 +230,9 @@ export interface FileRoutesById {
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
   '/github': typeof GithubRoute
+  '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
+  '/notebooks': typeof NotebooksRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
@@ -204,6 +242,7 @@ export interface FileRoutesById {
   '/editor/$id': typeof EditorIdRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
+  '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
@@ -219,7 +258,9 @@ export interface FileRouteTypes {
     | '/diagrams'
     | '/docs'
     | '/github'
+    | '/knowledge'
     | '/login'
+    | '/notebooks'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
@@ -229,6 +270,7 @@ export interface FileRouteTypes {
     | '/editor/$id'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
+    | '/api/notebooklm/notebooks'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
@@ -242,7 +284,9 @@ export interface FileRouteTypes {
     | '/diagrams'
     | '/docs'
     | '/github'
+    | '/knowledge'
     | '/login'
+    | '/notebooks'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
@@ -252,6 +296,7 @@ export interface FileRouteTypes {
     | '/editor/$id'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
+    | '/api/notebooklm/notebooks'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
@@ -265,7 +310,9 @@ export interface FileRouteTypes {
     | '/diagrams'
     | '/docs'
     | '/github'
+    | '/knowledge'
     | '/login'
+    | '/notebooks'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
@@ -275,6 +322,7 @@ export interface FileRouteTypes {
     | '/editor/$id'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
+    | '/api/notebooklm/notebooks'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
@@ -283,13 +331,17 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ArchitectRoute: typeof ArchitectRoute
+  ObservabilityRoute: typeof ObservabilityRoute
   AgentsRoute: typeof AgentsRoute
   CodeRoute: typeof CodeRoute
   DevcycleRoute: typeof DevcycleRoute
   DiagramsRoute: typeof DiagramsRoute
   DocsRoute: typeof DocsRoute
   GithubRoute: typeof GithubRoute
+  KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
+  NotebooksRoute: typeof NotebooksRoute
   PipelineRoute: typeof PipelineRouteWithChildren
   PipelinesRoute: typeof PipelinesRoute
   SettingsRoute: typeof SettingsRoute
@@ -299,6 +351,7 @@ export interface RootRouteChildren {
   EditorIdRoute: typeof EditorIdRoute
   ApiKnowledgeZonesRoute: typeof ApiKnowledgeZonesRouteWithChildren
   ApiNotebooklmChatRoute: typeof ApiNotebooklmChatRoute
+  ApiNotebooklmNotebooksRoute: typeof ApiNotebooklmNotebooksRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -338,11 +391,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PipelineRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notebooks': {
+      id: '/notebooks'
+      path: '/notebooks'
+      fullPath: '/notebooks'
+      preLoaderRoute: typeof NotebooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/knowledge': {
+      id: '/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof KnowledgeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/github': {
@@ -380,6 +447,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/architect': {
+      id: '/architect'
+      path: '/architect'
+      fullPath: '/architect'
+      preLoaderRoute: typeof ArchitectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/observability': {
+      id: '/observability'
+      path: '/observability'
+      fullPath: '/observability'
+      preLoaderRoute: typeof ObservabilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agents': {
       id: '/agents'
       path: '/agents'
@@ -414,6 +495,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/pipeline/$pipelineId/edit'
       preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
       parentRoute: typeof PipelineRoute
+    }
+    '/api/notebooklm/notebooks': {
+      id: '/api/notebooklm/notebooks'
+      path: '/api/notebooklm/notebooks'
+      fullPath: '/api/notebooklm/notebooks'
+      preLoaderRoute: typeof ApiNotebooklmNotebooksRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/notebooklm/chat': {
       id: '/api/notebooklm/chat'
@@ -508,13 +596,17 @@ const ApiKnowledgeZonesRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ArchitectRoute: ArchitectRoute,
+  ObservabilityRoute: ObservabilityRoute,
   AgentsRoute: AgentsRoute,
   CodeRoute: CodeRoute,
   DevcycleRoute: DevcycleRoute,
   DiagramsRoute: DiagramsRoute,
   DocsRoute: DocsRoute,
   GithubRoute: GithubRoute,
+  KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
+  NotebooksRoute: NotebooksRoute,
   PipelineRoute: PipelineRouteWithChildren,
   PipelinesRoute: PipelinesRoute,
   SettingsRoute: SettingsRoute,
@@ -524,6 +616,7 @@ const rootRouteChildren: RootRouteChildren = {
   EditorIdRoute: EditorIdRoute,
   ApiKnowledgeZonesRoute: ApiKnowledgeZonesRouteWithChildren,
   ApiNotebooklmChatRoute: ApiNotebooklmChatRoute,
+  ApiNotebooklmNotebooksRoute: ApiNotebooklmNotebooksRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

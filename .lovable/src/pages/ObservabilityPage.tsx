@@ -4,11 +4,11 @@ import { Activity, Terminal, Shield, RefreshCw, AlertCircle, Info, Zap, Settings
 export const ObservabilityPage = () => {
   const [metrics, setMetrics] = useState({ activeAgents: 0, pipelineRuns: 0, errors24h: 0, avgLatency: 0 });
   const [loadingMetrics, setLoadingMetrics] = useState(true);
-  const [logs, setLogs] = useState([]);
+  const [logs, setLogs] = useState<{id: number; level: string; message: string; timestamp: string}[]>();
   const [autoScroll, setAutoScroll] = useState(true);
   const [logFilter, setLogFilter] = useState('ALL');
-  const [agents, setAgents] = useState([]);
-  const logContainerRef = useRef(null);
+  const [agents, setAgents] = useState<{id: number; name: string; status: string; lastPing: string; requests: number}[]>();
+  const logContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Mock Data Fetching
@@ -48,9 +48,9 @@ export const ObservabilityPage = () => {
     }
   }, [logs]);
 
-  const filteredLogs = logFilter === 'ALL' ? logs : logs.filter(l => l.level === logFilter);
+  const filteredLogs = logFilter === 'ALL' ? logs : logs.filter((l) => l.level === logFilter);
 
-  const getLogColor = (level) => ({
+  const getLogColor = (level: string) => ({
     ERROR: 'text-red-400',
     WARN: 'text-yellow-400',
     INFO: 'text-green-400',

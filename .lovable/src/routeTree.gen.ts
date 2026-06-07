@@ -33,6 +33,8 @@ import { Route as ApiKnowledgeZonesRouteImport } from './routes/api.knowledge.zo
 import { Route as ApiKnowledgeZonesZoneIdRouteImport } from './routes/api.knowledge.zones.$zoneId'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm.retry'
+import { Route as ArchitectRouteImport } from './routes/architect'
+import { Route as ObservabilityRouteImport } from './routes/observability'
 
 const SyncRoute = SyncRouteImport.update({
   id: '/sync',
@@ -102,6 +104,16 @@ const CodeRoute = CodeRouteImport.update({
 const AgentsRoute = AgentsRouteImport.update({
   id: '/agents',
   path: '/agents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ArchitectRoute = ArchitectRouteImport.update({
+  id: '/architect',
+  path: '/architect',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObservabilityRoute = ObservabilityRouteImport.update({
+  id: '/observability',
+  path: '/observability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -319,6 +331,8 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ArchitectRoute: typeof ArchitectRoute
+  ObservabilityRoute: typeof ObservabilityRoute
   AgentsRoute: typeof AgentsRoute
   CodeRoute: typeof CodeRoute
   DevcycleRoute: typeof DevcycleRoute
@@ -431,6 +445,20 @@ declare module '@tanstack/react-router' {
       path: '/code'
       fullPath: '/code'
       preLoaderRoute: typeof CodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/architect': {
+      id: '/architect'
+      path: '/architect'
+      fullPath: '/architect'
+      preLoaderRoute: typeof ArchitectRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/observability': {
+      id: '/observability'
+      path: '/observability'
+      fullPath: '/observability'
+      preLoaderRoute: typeof ObservabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents': {
@@ -568,6 +596,8 @@ const ApiKnowledgeZonesRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ArchitectRoute: ArchitectRoute,
+  ObservabilityRoute: ObservabilityRoute,
   AgentsRoute: AgentsRoute,
   CodeRoute: CodeRoute,
   DevcycleRoute: DevcycleRoute,

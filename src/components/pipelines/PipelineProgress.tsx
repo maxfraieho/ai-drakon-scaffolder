@@ -283,7 +283,7 @@ export const PipelineProgress: React.FC<PipelineProgressProps> = ({
           <Progress 
             value={progressPercent} 
             className="h-1.5 bg-zinc-900" 
-            indicatorClassName="bg-gradient-to-r from-indigo-500 to-indigo-400 transition-all duration-300"
+
           />
         </div>
       </CardHeader>
