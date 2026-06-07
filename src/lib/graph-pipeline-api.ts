@@ -23,26 +23,8 @@ export interface ExecutionEvent {
 }
 
 function getArchitectBase(): string {
-  if (typeof window === "undefined") return "http://192.168.3.184:8766";
-  
-  const settings = readSettings();
-  const settingsUrl = settings?.agents?.architectUrl;
-  const isHttpsPage = window.location.protocol === "https:";
-  
-  const base = localStorage.getItem("drakon_agent_base_url")?.trim();
-  
-  if (isHttpsPage) {
-    if (base && base.startsWith("https://")) {
-      return `${base.replace(/\/+$/, "")}:8766`;
-    }
-    if (settingsUrl && settingsUrl.startsWith("https://")) {
-      return settingsUrl;
-    }
-    return "https://architect-agent.exodus.pp.ua";
-  }
-
-  const resolvedBase = base || "http://192.168.3.184";
-  return `${resolvedBase.replace(/\/+$/, "")}:8766`;
+  if (typeof window === "undefined") return "https://architect-agent-flue.maxfraieho.workers.dev";
+  return readSettings().agents.architectUrl.replace(/\/+$/, "");
 }
 
 export async function listPipelines(): Promise<PipelineInfo[]> {
