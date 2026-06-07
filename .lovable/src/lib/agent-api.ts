@@ -17,25 +17,11 @@ function getWorkerUrl(): string {
 return readSettings().app.workerUrl.replace(/\/+$/, "");
 }
 
-const AGENT_PORTS: Record<AgentId, number> = {
-  drakon: 8766,
-  architect: 8766,
-  docs: 8766,
-  "sonate-solidaire": 8766,
-};
-
-function readAgentBaseUrl(): string {
-if (typeof window === "undefined") return "http://192.168.3.184";
-return localStorage.getItem("drakon_agent_base_url")?.trim() || "http://192.168.3.184";
-}
-
 function getAgentUrlFor(agentId: AgentId): string {
-const fromBase = readAgentBaseUrl().replace(/\/+$/, "");
-if (fromBase) {
-return  `${fromBase}:${AGENT_PORTS[agentId]}`;
-}
-const a = readSettings().agents;
-return agentId === "drakon" ? a.drakonUrl : agentId === "architect" ? a.architectUrl : a.docsUrl;
+  const a = readSettings().agents;
+  if (agentId === "drakon") return a.drakonUrl.replace(/\/+$/, "");
+  if (agentId === "docs") return a.docsUrl.replace(/\/+$/, "");
+  return a.architectUrl.replace(/\/+$/, "");
 }
 
 export async function checkAgentHealth(agentId: AgentId): Promise<boolean> {
