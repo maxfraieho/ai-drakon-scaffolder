@@ -18114,3 +18114,131 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-162 done" && g
 - TASK-159 → TASK-160 → TASK-161 → TASK-162 виконуй послідовно
 - mkdir -p перед cp для нових директорій (architect/)
 - Завжди sync до .lovable/ після зміни src/
+
+---
+
+## [ ] TASK-163: Integrate New Components — Connect AgentStatusCard + PipelineProgress + PatternSuggestionPanel
+
+**GOAL:** Підключити 3 нових компоненти до реальних сторінок:
+1. `AgentStatusCard` → замінити inline `AgentCard` в `src/pages/HomePage.tsx`
+2. `PipelineProgress` → додати як панель виконання в `src/components/pipelines/PipelineCommandCenter.tsx`
+3. `PatternSuggestionPanel` → створити нову сторінку `/architect` з цим компонентом + роут
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### STEP 0 — GitNexus query (MANDATORY)
+```bash
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query","arguments":{"query":"HomePage AgentCard component inline definition","repo":"ai-drakon-scaffolder"}}}' \
+  | grep '^data:' | python3 -c "import sys,json; [print(json.loads(l[5:]).get('result',{}).get('content',[{}])[0].get('text','')[:2000]) for l in sys.stdin]"
+```
+
+### STEP 1 — Replace AgentCard with AgentStatusCard in HomePage
+
+Edit `src/pages/HomePage.tsx`:
+- Remove inline `AgentCard` component and its `Props` interface
+- Import `AgentStatusCard` from `@/components/agents/AgentStatusCard`
+- Keep the same 3 agent data (Drakon Agent, Docs Agent, Architect Agent) but pass as `AgentStatusCard` props
+- Keep health fetch logic (move to parent or keep in AgentStatusCard if it has same logic)
+
+Check AgentStatusCard props first:
+```bash
+head -20 src/components/agents/AgentStatusCard.tsx
+```
+
+### STEP 2 — Add PatternSuggestionPanel as new /architect page
+
+Create `src/pages/ArchitectPage.tsx`:
+```tsx
+import { PatternSuggestionPanel } from "@/components/architect/PatternSuggestionPanel";
+import { Building2 } from "lucide-react";
+
+export function ArchitectPage() {
+  return (
+    <div className="p-4 space-y-4">
+      <h1 className="text-2xl font-semibold flex items-center gap-2">
+        <Building2 className="w-6 h-6 text-indigo-400" /> Architect
+      </h1>
+      <PatternSuggestionPanel />
+    </div>
+  );
+}
+```
+
+Create `src/routes/architect.tsx`:
+```tsx
+import { createFileRoute } from "@tanstack/react-router";
+import { ArchitectPage } from "@/pages/ArchitectPage";
+
+export const Route = createFileRoute("/architect")({
+  component: ArchitectPage,
+});
+```
+
+Add Architect to AppLayout nav:
+```bash
+# In src/components/app/AppLayout.tsx, find navItems array
+# Add after "Knowledge" entry:
+# { to: "/architect", label: "Architect", icon: Building2 }
+# Also import Building2 from lucide-react
+grep -n "Knowledge\|navItems" src/components/app/AppLayout.tsx | head -10
+```
+
+### STEP 3 — Add PipelineProgress to PipelineCommandCenter
+
+In `src/components/pipelines/PipelineCommandCenter.tsx`:
+- Import `PipelineProgress` from `@/components/pipelines/PipelineProgress`
+- Find where pipeline execution result is shown (after "Run Pipeline" button click)
+- Show `<PipelineProgress pipelineId={currentPipelineId} />` when execution starts
+- If no pipelineId available: add a state `runningPipelineId` that gets set when run button clicked
+
+Check current run button area:
+```bash
+grep -n "run\|Run\|execute\|Execute" src/components/pipelines/PipelineCommandCenter.tsx | head -15
+```
+
+### STEP 4 — Sync all changes to .lovable
+```bash
+cp src/pages/HomePage.tsx .lovable/src/pages/HomePage.tsx
+cp src/pages/ArchitectPage.tsx .lovable/src/pages/ArchitectPage.tsx || true
+mkdir -p .lovable/src/routes
+cp src/routes/architect.tsx .lovable/src/routes/architect.tsx
+cp src/components/app/AppLayout.tsx .lovable/src/components/app/AppLayout.tsx
+cp src/components/pipelines/PipelineCommandCenter.tsx .lovable/src/components/pipelines/PipelineCommandCenter.tsx
+```
+
+### STEP 5 — Commit
+```bash
+git add \
+  src/pages/HomePage.tsx \
+  src/pages/ArchitectPage.tsx \
+  src/routes/architect.tsx \
+  src/components/app/AppLayout.tsx \
+  src/components/pipelines/PipelineCommandCenter.tsx \
+  .lovable/src/pages/ \
+  .lovable/src/routes/ \
+  .lovable/src/components/
+git commit -m "feat(ui): integrate AgentStatusCard + PatternSuggestionPanel + PipelineProgress
+
+- HomePage: replace inline AgentCard with AgentStatusCard component
+- /architect: new page with PatternSuggestionPanel
+- AppLayout: add Architect nav item (Building2 icon)
+- PipelineCommandCenter: add PipelineProgress SSE panel"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-163','[x] TASK-163',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md && git commit -m "chore(tasks): TASK-163 done" && git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-163:component-integration|AgentStatusCard+ArchitectPage+PipelineProgress|commit:<hash>|★★★★"`
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- ПЕРЕД редагуванням — GitNexus query для кожного файлу
+- AgentStatusCard може мати інші props ніж inline AgentCard — read first!
+- Якщо AgentStatusCard не має healthUrl prop — адаптуй або залиш inline AgentCard
+- PipelineProgress інтеграція: тільки якщо є pipelineId в PipelineCommandCenter — інакше пропусти STEP 3
