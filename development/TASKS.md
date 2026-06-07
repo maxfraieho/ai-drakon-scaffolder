@@ -20800,3 +20800,162 @@ git push origin main
 ```
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-181:flue-agent-logic|agents-page-gap|findings:<1-line-summary>|★★★★"`
+
+---
+
+## [ ] TASK-182: Implement /tools endpoint + connect /agents UI to Flue dynamic actions
+
+**Goal:** Based on TASK-181 investigation — standardize on JSON-graph pipelines, expose available
+Flue tools via `/tools` API, update frontend to use dynamic tools list instead of static data.
+
+**Agent:** AGY3
+**Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/**
+
+### STEP 0 — Pull latest + GitNexus context
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git pull origin main
+
+# GitNexus: find tools registry, graph-pipelines, agent-studio-data
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"agt-ogy3","version":"1.0"},"capabilities":{}}}' > /dev/null 2>&1
+
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"query","arguments":{"query":"executePipelineGraph action nodes tools graph-pipelines drakon.json","repo":"ai-drakon-scaffolder"}}}' \
+  | grep "^data:" | python3 -c "import sys,json; [print(json.loads(l[5:]).get('result',{}).get('content',[{}])[0].get('text','')[:2000]) for l in sys.stdin if l.startswith('data:')]" 2>/dev/null
+```
+
+### STEP 1 — Read graph-pipelines.ts to extract available actions
+
+```bash
+cat services/architect-agent-flue/tools/graph-pipelines.ts | head -150
+```
+
+Find all action names in `executePipelineGraph` switch/if block.
+Expected: `measure_cc`, `classify`, `ast_translate`, `yaml_gen`, `ir_gen`, `ir_refine`,
+`ralph_check`, `code_gen`, `self_reflect`, `validate`, `check_syntax`, `llm_call`, etc.
+
+### STEP 2 — Add /tools endpoint to architect-agent-flue
+
+File: `services/architect-agent-flue/src/index.ts`
+
+Add after `/health` route:
+
+```typescript
+// Tools registry — available pipeline node actions
+app.get('/tools', (c) => c.json({
+  tools: [
+    { name: 'measure_cc', description: 'Measure cyclomatic complexity of code', inputs: ['code'], outputs: ['cc_score'] },
+    { name: 'classify', description: 'Classify code or text into categories', inputs: ['input'], outputs: ['category'] },
+    { name: 'ast_translate', description: 'Translate code to AST representation', inputs: ['code'], outputs: ['ast'] },
+    { name: 'yaml_gen', description: 'Generate YAML from structured input', inputs: ['input'], outputs: ['yaml'] },
+    { name: 'ir_gen', description: 'Generate DRAKON IR from description', inputs: ['description'], outputs: ['ir'] },
+    { name: 'ir_refine', description: 'Refine existing DRAKON IR', inputs: ['ir', 'feedback'], outputs: ['ir'] },
+    { name: 'ralph_check', description: 'Run RALPH compliance check', inputs: ['ir'], outputs: ['report'] },
+    { name: 'code_gen', description: 'Generate code from DRAKON IR', inputs: ['ir'], outputs: ['code'] },
+    { name: 'self_reflect', description: 'Agent self-reflection on output quality', inputs: ['output'], outputs: ['reflection'] },
+    { name: 'validate', description: 'Validate output against schema/rules', inputs: ['output'], outputs: ['valid', 'errors'] },
+    { name: 'check_syntax', description: 'Check code syntax', inputs: ['code'], outputs: ['valid', 'errors'] },
+    { name: 'llm_call', description: 'Generic LLM call with custom prompt', inputs: ['prompt', 'context'], outputs: ['response'] },
+    { name: 'suggest_patterns', description: 'Suggest architectural patterns', inputs: ['docs', 'requirements'], outputs: ['patterns'] },
+  ]
+}));
+```
+
+Read `graph-pipelines.ts` first and adjust the list to match actual implemented actions.
+
+### STEP 3 — Deploy updated architect-agent-flue
+
+```bash
+cd services/architect-agent-flue
+export CLOUDFLARE_API_TOKEN="<CF_API_TOKEN>"
+CI=true npx wrangler deploy --config wrangler.toml 2>&1 | tail -5
+
+# Verify:
+curl -s https://architect-agent-flue.maxfraieho.workers.dev/tools | python3 -m json.tool | head -20
+```
+
+### STEP 4 — Update frontend: replace static agent-studio-data with dynamic /tools fetch
+
+File: `src/lib/agent-studio-data.ts`
+
+Add a function to fetch tools dynamically:
+
+```typescript
+import { readSettings } from "@/lib/settings-storage";
+
+export async function fetchAvailableTools(): Promise<ToolDefinition[]> {
+  try {
+    const base = readSettings().agents.architectUrl.replace(/\/+$/, "");
+    const resp = await fetch(`${base}/tools`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    return data.tools ?? [];
+  } catch {
+    return STATIC_PIPELINE_NODES; // fallback to static
+  }
+}
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  inputs: string[];
+  outputs: string[];
+}
+```
+
+Keep existing static data as `STATIC_PIPELINE_NODES` for fallback.
+
+### STEP 5 — Find and update AgentStudioPage / PropertiesPanel
+
+```bash
+# Find where node types are used in UI
+grep -rn "agent-studio-data\|PIPELINE_NODES\|nodeTypes\|actionType" src/components/ src/pages/ | grep -v node_modules | head -20
+```
+
+In the component that renders the node action selector (PropertiesPanel or similar):
+- Replace static list with `useEffect(() => fetchAvailableTools().then(setTools), [])` 
+- Show loading state while fetching
+
+### STEP 6 — TypeScript check + sync to .lovable
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+npx tsc --noEmit 2>&1 | head -20
+
+# Sync changed files to .lovable
+for f in src/lib/agent-studio-data.ts; do
+  cp "$f" ".lovable/$f" 2>/dev/null && echo "synced $f"
+done
+# Also sync any changed component files
+```
+
+### STEP 7 — Commit and push all changes
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add services/architect-agent-flue/src/index.ts \
+        src/lib/agent-studio-data.ts \
+        .lovable/src/lib/agent-studio-data.ts
+# Add any component changes too
+git add src/components/ .lovable/src/components/ 2>/dev/null || true
+
+git commit -m "feat(flue): /tools endpoint + dynamic tool loading in /agents UI
+
+- architect-agent-flue: GET /tools exposes all available pipeline actions
+- agent-studio-data.ts: fetchAvailableTools() fetches from Worker, fallback to static
+- PropertiesPanel: loads tools dynamically from Flue Worker"
+git push origin main
+
+sed -i 's/^\[ \] TASK-182/[x] TASK-182/' development/TASKS.md
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-182 done — /tools endpoint + dynamic UI"
+git push origin main
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-182:flue-tools-endpoint|dynamic-ui|commit:<hash>|★★★★★"`
