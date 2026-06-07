@@ -20480,7 +20480,7 @@ git push origin main
 
 ---
 
-## [ ] TASK-180: Rewrite frontend to use Flue Workers instead of hardcoded Python agent ports
+## [x] TASK-180: Rewrite frontend to use Flue Workers instead of hardcoded Python agent ports
 
 **Goal:** Frontend has 3 files with hardcoded ports 8765/8766/8767 pointing to old Python agents.
 All 3 Flue Workers are live. Rewrite the URL resolution to use settings-storage values.
