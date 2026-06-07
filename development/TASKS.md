@@ -20139,3 +20139,97 @@ python3 -m mempalace search --wing exodus-infra --query "notebooklm MCP" | head 
 5. Report: how many drawers created, sample search result.
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-176:mempalace-exodus-infra-mining|drawers:<N>|★★★"`
+
+---
+
+## [ ] TASK-177: Investigate and fix Flue agents integration with /agents page
+
+**Goal:** The /agents page was built for old Python LangGraph agents (port 8766).
+New `architect-agent-flue` (Cloudflare Worker + @flue/runtime) has the same API but may not be deployed or connected.
+Investigate, fix, and ensure the /agents page works with the Flue agents.
+
+**Run on dev server 192.168.3.184 via SSH for git/wrangler commands.**
+
+**Step 1 — Check if Flue worker is deployed:**
+```bash
+cd ~/workspace/ai-drakon-scaffolder/services/architect-agent-flue
+npx wrangler deployments list --name architect-agent-flue 2>&1 | head -20
+# OR
+npx wrangler whoami 2>&1
+```
+
+Also check wrangler.toml for placeholder IDs:
+```bash
+grep -E "placeholder|database_id|id = " wrangler.toml
+```
+
+**Step 2 — Check what URL the frontend uses for architect-agent:**
+```bash
+grep -rn "getArchitectBase\|8766\|architect-agent" ~/workspace/ai-drakon-scaffolder/src/lib/ | head -20
+```
+
+**Step 3 — Check if KV/D1 resources exist in Cloudflare:**
+```bash
+npx wrangler kv namespace list 2>&1 | grep -i "architect\|pipeline"
+npx wrangler d1 list 2>&1 | grep -i "architect\|kb"
+```
+
+**Step 4 — Check docs-agent-flue and drakon-agent-flue:**
+```bash
+cat ~/workspace/ai-drakon-scaffolder/services/docs-agent-flue/wrangler.toml
+cat ~/workspace/ai-drakon-scaffolder/services/drakon-agent-flue/wrangler.toml
+ls ~/workspace/ai-drakon-scaffolder/services/docs-agent-flue/agents/
+ls ~/workspace/ai-drakon-scaffolder/services/drakon-agent-flue/agents/
+```
+
+**Step 5 — Compare agent prompts:**
+Compare prompts in old static data vs Flue agents:
+- Old: `src/lib/agent-studio-data.ts` → PIPELINES array with node prompts
+- New: `services/architect-agent-flue/lib/prompts.ts`, `tools/graph-pipelines.ts`
+
+Check if all node prompts from old PIPELINES are implemented in graph-pipelines.ts:
+```bash
+grep -n "yaml_gen\|ir_gen\|ir_refine\|ralph_check\|code_gen\|self_reflect" \
+  ~/workspace/ai-drakon-scaffolder/services/architect-agent-flue/tools/graph-pipelines.ts | head -20
+grep -n "yaml_gen\|ir_gen\|ir_refine\|ralph_check\|code_gen\|self_reflect" \
+  ~/workspace/ai-drakon-scaffolder/src/lib/agent-studio-data.ts | head -20
+```
+
+**Step 6 — Report findings:**
+
+Write findings to `development/investigations/flue-agents-status.md`:
+```markdown
+# Flue Agents Investigation (TASK-177)
+
+## architect-agent-flue
+- Deployed: YES/NO, URL: ...
+- KV ID: real/placeholder
+- D1 ID: real/placeholder
+
+## Frontend connection
+- Currently points to: old Python (8766) / Flue worker (URL)
+- File: src/lib/graph-pipeline-api.ts, line X
+
+## Prompts coverage
+- Nodes in old static data: [list]
+- Nodes in graph-pipelines.ts: [list]
+- Missing: [list]
+
+## docs-agent-flue
+- Status: ...
+
+## drakon-agent-flue
+- Status: ...
+
+## Recommended fixes
+1. ...
+```
+
+**Step 7 — Fix if straightforward:**
+If architect-agent-flue IS deployed and frontend just needs URL update → update `src/lib/settings-storage.ts` or wherever `getArchitectBase()` is defined.
+If NOT deployed → report only, do NOT deploy (need Q confirmation first).
+
+**Commit:** `git add development/investigations/flue-agents-status.md && git commit -m "docs(investigation): TASK-177 Flue agents status report"`
+**Push:** `git push origin main`
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-177:flue-agents-investigation|findings:<summary>|★★★"`
