@@ -1,12 +1,13 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "@tanstack/react-router";
-import { Wifi, WifiOff, Loader2, ExternalLink } from "lucide-react";
+import { Wifi, WifiOff, Loader2, ExternalLink, RefreshCw } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 interface AgentStatusCardProps {
   name: string;
-  status: "online" | "offline" | "checking";
+  status?: "online" | "offline" | "checking";
+  healthUrl?: string;
   description: string;
   route: string;
 }
@@ -20,10 +21,48 @@ const STATUS_CONFIG = {
 export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
   name,
   status,
+  healthUrl,
   description,
   route,
 }) => {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.checking;
+  const [currentStatus, setCurrentStatus] = useState<"online" | "offline" | "checking">(status || "checking");
+  const [retryCount, setRetryCount] = useState(0);
+
+  useEffect(() => {
+    if (status) {
+      setCurrentStatus(status);
+    }
+  }, [status]);
+
+  useEffect(() => {
+    if (!healthUrl) return;
+
+    let active = true;
+    setCurrentStatus("checking");
+
+    const checkHealth = async () => {
+      try {
+        const resp = await fetch(healthUrl, {
+          signal: AbortSignal.timeout(4000),
+        });
+        if (!active) return;
+        setCurrentStatus(resp.ok ? "online" : "offline");
+      } catch (err) {
+        if (!active) return;
+        setCurrentStatus("offline");
+      }
+    };
+
+    checkHealth();
+    const interval = setInterval(checkHealth, 20000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
+  }, [healthUrl, retryCount]);
+
+  const config = STATUS_CONFIG[currentStatus] || STATUS_CONFIG.checking;
 
   return (
     <Card className="group relative overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 transition-all duration-300 hover:border-zinc-700 hover:bg-zinc-900/60 hover:shadow-2xl hover:shadow-indigo-500/5">
@@ -35,15 +74,26 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
           <h3 className="font-bold text-base text-zinc-100 tracking-tight group-hover:text-white transition-colors">
             {name}
           </h3>
-          <div
-            className={`flex items-center space-x-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-zinc-950/60 ${config.ring}`}
-          >
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${config.color} ${
-                status === "checking" ? "animate-pulse" : ""
-              }`}
-            />
-            <span>{config.text}</span>
+          <div className="flex items-center gap-2">
+            {healthUrl && (
+              <button 
+                onClick={() => setRetryCount(p => p + 1)}
+                className="p-1 rounded-full hover:bg-zinc-850 text-zinc-400 hover:text-zinc-200 transition-colors"
+                title="Refresh status"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${currentStatus === "checking" ? "animate-spin text-amber-500" : ""}`} />
+              </button>
+            )}
+            <div
+              className={`flex items-center space-x-1.5 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-zinc-950/60 ${config.ring}`}
+            >
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${config.color} ${
+                  currentStatus === "checking" ? "animate-pulse" : ""
+                }`}
+              />
+              <span>{config.text}</span>
+            </div>
           </div>
         </div>
 
@@ -51,12 +101,21 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
           {description}
         </p>
 
+        {healthUrl && (
+          <div className="text-xs font-mono text-zinc-500 flex justify-between items-center bg-zinc-950/30 px-2 py-1 rounded border border-zinc-800/50">
+            <span className="text-zinc-600">Endpoint:</span>
+            <span className="truncate max-w-[180px]" title={healthUrl}>
+              {healthUrl.replace(/https?:\/\/[^\/]+/, "")}
+            </span>
+          </div>
+        )}
+
         <div className="pt-2">
           <Link to={route}>
             <Button
-              className="w-full bg-zinc-800 hover:bg-indigo-950/40 border border-zinc-700 hover:border-indigo-500/30 text-indigo-400 hover:text-indigo-300 font-semibold py-2 rounded-lg transition-all duration-300 flex items-center justify-center space-x-1.5 text-xs shadow-md"
+              className="w-full bg-zinc-850 hover:bg-indigo-950/40 border border-zinc-700 hover:border-indigo-500/30 text-indigo-400 hover:text-indigo-300 font-semibold py-2 rounded-lg transition-all duration-300 flex items-center justify-center space-x-1.5 text-xs shadow-md"
             >
-              <span>Open Configuration</span>
+              <span>Open Agent Console</span>
               <ExternalLink className="w-3 h-3" />
             </Button>
           </Link>

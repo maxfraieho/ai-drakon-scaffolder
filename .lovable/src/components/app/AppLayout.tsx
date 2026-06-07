@@ -10,7 +10,8 @@ import {
   Settings, 
   Menu, 
   X,
-  Activity
+  Activity,
+  Building2
 } from "lucide-react";
 import { LanguageSwitcher } from "@/components/app/LanguageSwitcher";
 
@@ -30,6 +31,7 @@ export function AppLayout() {
     { to: "/pipelines", label: "Pipelines", icon: GitMerge },
     { to: "/docs", label: "Docs", icon: BookOpen },
     { to: "/knowledge", label: "Knowledge", icon: Brain },
+    { to: "/architect", label: "Architect", icon: Building2 },
     { to: "/notebooks", label: "Notebooks", icon: Notebook },
     { to: "/observability", label: "Observability", icon: Activity },
   ];
