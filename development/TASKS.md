@@ -17965,7 +17965,7 @@ git push origin main
 
 ---
 
-## [ ] TASK-160: AgentStatusCard Component — via OpenDesign
+## [x] TASK-160: AgentStatusCard Component — via OpenDesign
 
 **GOAL:** Створити `src/components/agents/AgentStatusCard.tsx` — standalone компонент статусу агента для використання в HomePage та інших місцях.
 
@@ -18036,7 +18036,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-160 done" && g
 
 ---
 
-## [ ] TASK-161: PatternSuggestionPanel — Architect Feature via OpenDesign
+## [x] TASK-161: PatternSuggestionPanel — Architect Feature via OpenDesign
 
 **GOAL:** Створити `src/components/architect/PatternSuggestionPanel.tsx` — форма запиту архітектурних патернів до architect-agent.
 
@@ -18074,7 +18074,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-161 done" && g
 
 ---
 
-## [ ] TASK-162: PipelineProgress SSE Component — via OpenDesign
+## [x] TASK-162: PipelineProgress SSE Component — via OpenDesign
 
 **GOAL:** Створити `src/components/pipelines/PipelineProgress.tsx` — SSE streaming компонент прогресу pipeline.
 
