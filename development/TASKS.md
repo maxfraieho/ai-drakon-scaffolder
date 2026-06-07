@@ -18911,7 +18911,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
 
 ---
 
-## [ ] TASK-172: Unified ProjectFileManager — один файловий менеджер для /docs, /code, /knowledge
+## [x] TASK-172: Unified ProjectFileManager — один файловий менеджер для /docs, /code, /knowledge
 
 **МЕТА:** Замінити три окремих файлових менеджери (`DocsFilesTab`, `NotesTab` у knowledge, `CodePage FileTree`) одним компонентом `ProjectFileManager` з режимами-фільтрами.
 
@@ -19068,7 +19068,7 @@ ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && git add src/ .lo
 ```bash
 ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
 with open('development/TASKS.md','r') as f: c=f.read()
-c=c.replace('[ ] TASK-172','[x] TASK-172',1)
+c=c.replace('[x] TASK-172','[x] TASK-172',1)
 with open('development/TASKS.md','w') as f: f.write(c)
 \" && git add development/TASKS.md && git commit -m 'chore(tasks): TASK-172 done' && git push origin main"
 ```
