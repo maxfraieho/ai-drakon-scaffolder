@@ -17241,3 +17241,79 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-153:HomePage-agent-dashboard|AgentCard+he
 - Only 2 files to read manually (worker-url.ts + index.tsx) — use GitNexus for the rest
 - If index route doesn't exist, check __root.tsx for the "/" path
 - Do NOT install new packages
+
+---
+
+## TASK-154: Redesign MobileNavigationDock — Agent-Centric Bottom Nav
+[ ] TASK-154
+
+### GOAL
+Replace `src/components/mobile/MobileNavigationDock.tsx` with agent-centric bottom navigation.
+ONE file only.
+
+!!IMPORTANT!! Run locally on AGY3 Termux. Work in ~/workspace/ai-drakon-scaffolder/
+
+### STEP 1 — GitNexus (MANDATORY first)
+
+```bash
+# Initialize first:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","clientInfo":{"name":"agt-ogy3","version":"1.0"},"capabilities":{}}}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin).get('result',{}).get('serverInfo',{}))"
+
+# Get current component context:
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"context","arguments":{"repo":"ai-drakon-scaffolder","path":"src/components/mobile/MobileNavigationDock.tsx"}}}' \
+  | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('result',{}).get('content',[{}])[0].get('text','')[:2000])"
+```
+
+### STEP 2 — Read only this 1 file
+```bash
+cat src/components/mobile/MobileNavigationDock.tsx
+```
+
+### STEP 3 — Rewrite MobileNavigationDock.tsx
+
+5 nav items bottom bar: Diagrams, Agents, Pipelines, Docs, Home
+- NavLink with active highlight (accent color)
+- Icons: Workflow, Bot, GitMerge, BookOpen, Home (all from lucide-react)
+- Fixed bottom, full width, z-50
+- Dark bg: `bg-zinc-900/95 backdrop-blur border-t border-zinc-800`
+- Active: `text-indigo-400`, inactive: `text-zinc-500`
+- Show only on mobile (`md:hidden`)
+
+### STEP 4 — Sync
+```bash
+cp src/components/mobile/MobileNavigationDock.tsx .lovable/src/components/mobile/MobileNavigationDock.tsx
+```
+
+### VERIFICATION
+```bash
+grep "NavLink" src/components/mobile/MobileNavigationDock.tsx
+grep "md:hidden" src/components/mobile/MobileNavigationDock.tsx
+diff src/components/mobile/MobileNavigationDock.tsx .lovable/src/components/mobile/MobileNavigationDock.tsx | wc -l
+```
+
+### COMMIT
+```bash
+git add src/components/mobile/MobileNavigationDock.tsx .lovable/src/components/mobile/MobileNavigationDock.tsx
+git commit -m "feat(ui): redesign MobileNavigationDock with agent-centric bottom nav"
+python3 -c "
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-154','[x] TASK-154',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-154 done"
+git push origin main
+```
+
+### DIARY
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-154:MobileNav-redesign|NavLink+lucide+bottom-bar|commit:<hash>|★★★"
+
+### NOTES
+- !!IMPORTANT!! Run locally on AGY3 Termux
+- Only 1 file to read manually
+- No new packages
