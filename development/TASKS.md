@@ -17747,3 +17747,110 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-157:opendesign-3-components|PatternSugges
 - od-generate.sh запускати через SSH до vokov@192.168.3.184
 - Результат копіювати через scp
 - Якщо файл порожній або містить тільки коментарі — переглянь /tmp/od-*.tsx і виправ вручну
+
+---
+
+## [ ] TASK-158: Agent Self-Reflection Loop — Автооновлення протоколів через GitNexus
+
+**Концепція:**
+Кожен агент (AGY3, AGY Phone, AGY2, Claude) після сесії з новим досвідом оновлює свій протокол в `exodus-infra/agents/{agent-name}/`, комітить, GitNexus реіндексує. Наступна сесія — агент запитує GitNexus і бачить оновлені протоколи. Самозаряджаюча петля досвіду.
+
+**Архітектура:**
+```
+Агент виконує задачу
+    ↓ (знайдено новий патерн / виправлено помилку)
+Запит GitNexus: "чи вже задокументовано?"
+    ↓ ні
+Оновити exodus-infra/agents/{name}/*.md
+    ↓
+git commit && git push
+    ↓
+GitNexus реіндексує (auto або вручну)
+    ↓
+Наступна сесія: агент запитує GitNexus → бачить оновлений протокол
+```
+
+**Файли для створення/оновлення:**
+
+### 1. `exodus-infra/workflows/agent-self-reflection.md`
+Документ з описом протоколу для ВСІХ агентів:
+- Умови запуску рефлексії (тільки при новому досвіді, не кожну сесію)
+- Формат запису нового досвіду
+- GitNexus query для перевірки дублікатів
+- Коміт формат: `docs(agents): reflect {agent} learned {topic}`
+
+### 2. `exodus-infra/agents/ogy3-tablet/self-reflect.sh`
+Скрипт для AGY3 Termux:
+```bash
+#!/bin/bash
+# self-reflect.sh — Записати новий досвід у exodus-infra
+# Usage: bash ~/bin/self-reflect.sh "тема" "що навчилися" "файл-для-оновлення"
+TOPIC="$1"
+LEARNED="$2"
+TARGET_FILE="${3:-agents/ogy3-tablet/session-notes.md}"
+
+cd /data/data/com.termux/files/home/workspace/exodus-infra
+# Append to session-notes.md
+echo "## $(date +%Y-%m-%d): $TOPIC" >> "$TARGET_FILE"
+echo "$LEARNED" >> "$TARGET_FILE"
+echo "" >> "$TARGET_FILE"
+git add "$TARGET_FILE"
+git commit -m "docs(agents): reflect ogy3 learned $TOPIC"
+git push origin main
+echo "Reflected and pushed. Trigger GitNexus reindex next."
+```
+
+### 3. `exodus-infra/agents/ogy3-tablet/AGENTS.md` (оновити)
+Додати правило:
+```
+## Self-Reflection Rule
+AFTER completing any task where you:
+- Fixed a bug not documented in protocols
+- Found a better approach than the current protocol
+- Discovered a new tool/trick
+
+DO:
+1. Query GitNexus: "is {pattern} documented in exodus-infra?"
+2. If NO: update exodus-infra/agents/ogy3-tablet/session-notes.md
+3. git commit -m "docs(agents): reflect ogy3 learned {topic}"
+4. git push
+```
+
+### 4. `ai-drakon-scaffolder/AGENTS.md` (оновити)
+Додати правило з посиланням на `self-reflect.sh`.
+
+**Кроки:**
+
+1. SSH до dev server, git pull exodus-infra
+2. Створити `workflows/agent-self-reflection.md` з описом петлі
+3. Створити `agents/ogy3-tablet/self-reflect.sh`
+4. Оновити `agents/ogy3-tablet/AGENTS.md` + додати self-reflection правило
+5. Оновити `ai-drakon-scaffolder/AGENTS.md` — той що AGY3 читає
+6. Commit все до exodus-infra + push
+7. Перевірити GitNexus реіндексацію exodus-infra
+
+**Верифікація:**
+```bash
+# GitNexus має знайти новий workflow:
+# mcp__gitnexus__query(query="agent self reflection loop protocol", repo="exodus-infra")
+# → має повернути agent-self-reflection.md з описом
+```
+
+**Коміт після завершення:**
+```
+docs(agents): add self-reflection loop protocol for all agents
+
+Кожен агент після нового досвіду оновлює exodus-infra → GitNexus реіндексує → 
+наступна сесія стартує з оновленими протоколами.
+```
+
+**Diary:**
+`"SESSION:$(date +%Y-%m-%d)|TASK-158:self-reflection-loop|commit:<hash>|★★★★"`
+
+!!IMPORTANT!!
+- Це DESIGN задача, не код
+- Запускати локально на AGY3 Termux
+- exodus-infra клонований в ~/workspace/exodus-infra на AGY3
+- SSH до vokov@192.168.3.184 тільки для GitNexus реіндексації
+- Не чіпати ai-drakon-scaffolder src/ — тільки AGENTS.md і exodus-infra
+
