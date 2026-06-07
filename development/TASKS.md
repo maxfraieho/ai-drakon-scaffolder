@@ -18673,3 +18673,238 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-168 done" && g
 - CF Pages deploy після push: ~2-3 хв
 - Scroll фікс вже є: pb-24 в AppLayout — але окремі сторінки можуть мати свої проблеми
 - Якщо сторінка недоступна → перевірити src/routes/ чи є файл роута
+
+---
+
+## [ ] TASK-169: Mobile Scroll Fix — WorkspaceShell.tsx (реальний layout)
+
+**GOAL:** Виправити мобільний скрол. `AppLayout.tsx` НЕ використовується в app — реальний layout це `WorkspaceShell.tsx`. Головна сторінка не скролиться через `overflow-hidden` на `<main>`.
+
+!!IMPORTANT!! SSH to 192.168.3.184 for git operations. Run locally on AGY3 Termux for AGY CLI.
+
+### STEP 0 — GitNexus context
+```bash
+curl -s -X POST https://gitnexus.exodus.pp.ua/api/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query","arguments":{"query":"WorkspaceShell mobile scroll overflow layout","repo":"ai-drakon-scaffolder"}}}' \
+  | grep '^data:' | python3 -c "import sys,json; [print(json.loads(l[5:]).get('result',{}).get('content',[{}])[0].get('text','')[:2000]) for l in sys.stdin]"
+```
+
+### STEP 1 — Read current WorkspaceShell
+```bash
+ssh vokov@192.168.3.184 "grep -n 'overflow\|flex.*h-full\|pb-16\|pb-24\|min-h-0' ~/workspace/ai-drakon-scaffolder/.lovable/src/components/workspace/WorkspaceShell.tsx"
+```
+
+**Root cause confirmed:**
+```tsx
+// Line ~285 in WorkspaceShell.tsx:
+<main className="flex h-full min-h-0 flex-1 min-w-0 overflow-hidden pb-16 lg:pb-0">
+```
+`overflow-hidden` blocks ALL scrolling on mobile touch.
+
+### STEP 2 — Fix WorkspaceShell main element
+
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
+with open('.lovable/src/components/workspace/WorkspaceShell.tsx') as f: c=f.read()
+# Fix: overflow-hidden → overflow-y-auto (enables touch scroll)
+c = c.replace(
+    'flex h-full min-h-0 flex-1 min-w-0 overflow-hidden pb-16 lg:pb-0',
+    'flex h-full min-h-0 flex-1 min-w-0 overflow-y-auto pb-16 lg:pb-0'
+)
+with open('.lovable/src/components/workspace/WorkspaceShell.tsx', 'w') as f: f.write(c)
+print('done')
+\""
+```
+
+### STEP 3 — Sync src/ and verify
+```bash
+ssh vokov@192.168.3.184 "cp ~/workspace/ai-drakon-scaffolder/.lovable/src/components/workspace/WorkspaceShell.tsx ~/workspace/ai-drakon-scaffolder/src/components/workspace/WorkspaceShell.tsx && grep -n 'overflow-y-auto pb-16' ~/workspace/ai-drakon-scaffolder/.lovable/src/components/workspace/WorkspaceShell.tsx"
+```
+
+### STEP 4 — Commit and push
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && git add .lovable/src/components/workspace/WorkspaceShell.tsx src/components/workspace/WorkspaceShell.tsx && git commit -m 'fix(ui): mobile scroll — WorkspaceShell main overflow-hidden → overflow-y-auto' && git push origin main"
+```
+
+Also update TASKS.md to note AppLayout.tsx was wrong file:
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-169','[x] TASK-169',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+\" && git add development/TASKS.md && git commit -m 'chore(tasks): TASK-169 done' && git push origin main"
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-169:mobile-scroll-WorkspaceShell|overflow-hidden->overflow-y-auto|commit:<hash>|★★★★"`
+
+### NOTES
+- WorkspaceShell.tsx is the REAL layout (mounted from __root.tsx via WorkspaceShell)
+- AppLayout.tsx exists but is NOT used in routing — our previous fix was wrong file
+- `pb-16 lg:pb-0` is correct (padding for MobileNavigationDock at bottom)
+- After CF Pages deploy (~3 min), test on mobile
+
+---
+
+## [ ] TASK-170: GitHub Nav + ProjectSelector — Add /github to nav + fix "can't return"
+
+**GOAL:** 
+1. Добавити `/github` до навігації WorkspaceShell (NAV_WORKSPACE або NAV_SYSTEM)
+2. Перевірити чи ProjectSelector відображає GitHub налаштування після першого запуску
+3. Якщо налаштування GitHub не доступні після першого запуску — додати кнопку в Settings tab
+
+!!IMPORTANT!! SSH to 192.168.3.184. Run locally on AGY3 Termux.
+
+### STEP 0 — Read WorkspaceShell nav
+```bash
+ssh vokov@192.168.3.184 "grep -n 'NAV_WORKSPACE\|NAV_SYSTEM\|github\|GitHub' ~/workspace/ai-drakon-scaffolder/.lovable/src/components/workspace/WorkspaceShell.tsx | head -20"
+```
+
+### STEP 1 — Add GitHub to NAV_WORKSPACE via OpenDesign
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'Add Github icon (Github from lucide-react) to NAV_WORKSPACE array in WorkspaceShell.tsx. Add after /notebooks entry: { to: \"/github\", label: \"GitHub\", icon: Github }. Also add Github to the import from lucide-react. Return ONLY the modified imports + NAV_WORKSPACE const, TypeScript.' /tmp/od-github-nav.tsx"
+cat /tmp/od-github-nav.tsx
+```
+
+Apply the change manually:
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
+with open('.lovable/src/components/workspace/WorkspaceShell.tsx') as f: c=f.read()
+# Add Github to lucide import
+c = c.replace('  BookOpen,', '  BookOpen,\n  Github,')
+# Add /github to NAV_WORKSPACE after /notebooks
+c = c.replace(
+    '  { to: \"/notebooks\", label: \"NotebookLM\", icon: BookOpen },',
+    '  { to: \"/notebooks\", label: \"NotebookLM\", icon: BookOpen },\n  { to: \"/github\", label: \"GitHub\", icon: Github },'
+)
+with open('.lovable/src/components/workspace/WorkspaceShell.tsx', 'w') as f: f.write(c)
+print('done')
+\""
+```
+
+### STEP 2 — Sync + commit
+```bash
+ssh vokov@192.168.3.184 "cp ~/workspace/ai-drakon-scaffolder/.lovable/src/components/workspace/WorkspaceShell.tsx ~/workspace/ai-drakon-scaffolder/src/components/workspace/WorkspaceShell.tsx && cd ~/workspace/ai-drakon-scaffolder && git add .lovable/src/components/workspace/WorkspaceShell.tsx src/components/workspace/WorkspaceShell.tsx && git commit -m 'feat(nav): add /github to WorkspaceShell navigation' && git push origin main"
+```
+
+### STEP 3 — Mark done
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-170','[x] TASK-170',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+\" && git add development/TASKS.md && git commit -m 'chore(tasks): TASK-170 done' && git push origin main"
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-170:github-nav+fix-return|WorkspaceShell+/github|commit:<hash>|★★★"`
+
+### NOTES
+- WorkspaceShell.tsx: NAV_WORKSPACE has pipelines, diagrams, knowledge, notebooks, code, docs
+- GitHub is accessible at /github route but NOT in the nav
+- getBreadcrumb already handles /github → shows "GitHub" in breadcrumb
+- ProjectSelector shows project-level GitHub config in sidebar
+
+---
+
+## [ ] TASK-171: GitHub API Error — Better UX + Worker env.GITHUB_TOKEN expired notice
+
+**GOAL:**
+1. Покращити повідомлення про помилку GitHub в settings.tsx — розрізняти "немає токена" vs "поганий токен" vs "репо не знайдено"
+2. Додати підказку що `env.GITHUB_TOKEN` на Worker може бути протермінованим
+3. Перевірити чи правильно передається X-Github-Token через api.ts
+
+!!IMPORTANT!! SSH to 192.168.3.184. Run locally on AGY3 Termux.
+
+### STEP 0 — Root cause summary
+- `drakon-mcp-worker.maxfraieho.workers.dev` — Worker's `env.GITHUB_TOKEN` is expired (returns 401 even on public repos)
+- Frontend sends `X-Github-Token` header with user's PAT — if PAT is valid, Worker uses IT instead of env
+- Repo `maxfraieho/sonate-solidsite` returns 404 unauthenticated (private or doesn't exist)
+- Error "GitHub повернув помилку" is too generic
+
+### STEP 1 — Read verifyGithub function
+```bash
+ssh vokov@192.168.3.184 "sed -n '133,165p' ~/workspace/ai-drakon-scaffolder/.lovable/src/routes/settings.tsx"
+```
+
+### STEP 2 — Improve error handling in verifyGithub via OpenDesign
+```bash
+ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh 'Improve the verifyGithub function in settings.tsx. Current code calls api.githubListBranches and on failure shows generic \"GitHub повернув помилку\". Replace with: 1) check if token field is empty → show \"Введіть Personal Access Token\" 2) on success=false show the actual error from response (response.error or response.message) instead of hardcoded string 3) add a note below the test button: \"Якщо ваш токен правильний але помилка — можливо Worker env.GITHUB_TOKEN протермінований. Оновіть його в Cloudflare Dashboard → Workers → drakon-mcp-worker → Settings → Variables.\" Return ONLY the modified verifyGithub function and the JSX section near the test button. TypeScript React.' /tmp/od-github-error.tsx"
+cat /tmp/od-github-error.tsx | head -60
+```
+
+### STEP 3 — Apply the fix
+Read the generated code and apply to settings.tsx:
+
+**verifyGithub fix:**
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
+with open('.lovable/src/routes/settings.tsx') as f: c=f.read()
+
+# Fix 1: Add empty token check
+old_verify = '''const verifyGithub = async () => {
+setIsCheckingGithub(true);
+setGithubStatus({ type: \\\"idle\\\", text: \\\"Перевіряю...\\\" });
+
+try {
+const response = await api.githubListBranches('''
+
+new_verify = '''const verifyGithub = async () => {
+if (!settings.github.token.trim()) {
+  setGithubStatus({ type: \\\"error\\\", text: \\\"Введіть Personal Access Token\\\" });
+  return;
+}
+setIsCheckingGithub(true);
+setGithubStatus({ type: \\\"idle\\\", text: \\\"Перевіряю...\\\" });
+
+try {
+const response = await api.githubListBranches('''
+
+c = c.replace(old_verify, new_verify, 1)
+
+# Fix 2: Better error from response
+c = c.replace(
+  'throw new Error(\\\"GitHub повернув помилку\\\");',
+  'throw new Error((response as any).error || (response as any).message || \\\"GitHub повернув помилку\\\");'
+)
+
+with open('.lovable/src/routes/settings.tsx', 'w') as f: f.write(c)
+print('done')
+\""
+```
+
+**Add hint text below test button:**
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
+with open('.lovable/src/routes/settings.tsx') as f: c=f.read()
+c = c.replace(
+  '{statusBadge(githubStatus)}',
+  '{statusBadge(githubStatus)}\n{githubStatus.type === \\\"error\\\" && <p className=\\\"text-xs text-muted-foreground mt-2\\\">Якщо токен вірний але помилка — оновіть <code>env.GITHUB_TOKEN</code> в <a href=\\\"https://dash.cloudflare.com\\\" target=\\\"_blank\\\" className=\\\"text-primary underline\\\">Cloudflare Dashboard</a> → Workers → drakon-mcp-worker → Settings → Variables.</p>}'
+)
+with open('.lovable/src/routes/settings.tsx', 'w') as f: f.write(c)
+print('done')
+\""
+```
+
+### STEP 4 — Sync and commit
+```bash
+ssh vokov@192.168.3.184 "cp ~/workspace/ai-drakon-scaffolder/.lovable/src/routes/settings.tsx ~/workspace/ai-drakon-scaffolder/src/routes/settings.tsx && cd ~/workspace/ai-drakon-scaffolder && git add .lovable/src/routes/settings.tsx src/routes/settings.tsx && git commit -m 'fix(github): better error UX — empty token check, show actual error, Worker env hint' && git push origin main"
+```
+
+### STEP 5 — Mark done
+```bash
+ssh vokov@192.168.3.184 "cd ~/workspace/ai-drakon-scaffolder && python3 -c \"
+with open('development/TASKS.md','r') as f: c=f.read()
+c=c.replace('[ ] TASK-171','[x] TASK-171',1)
+with open('development/TASKS.md','w') as f: f.write(c)
+\" && git add development/TASKS.md && git commit -m 'chore(tasks): TASK-171 done' && git push origin main"
+```
+
+**Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-171:github-error-ux|token-check+real-error+cf-hint|commit:<hash>|★★★"`
+
+### NOTES
+- Worker env.GITHUB_TOKEN is expired — shows 401 Bad credentials
+- When user provides valid PAT via X-Github-Token header → Worker uses IT (not env)
+- User must have valid PAT with `repo` scope for private repos
+- Repo `maxfraieho/sonate-solidsite` returns 404 unauthenticated (private or not created)
+- The actual error from Worker: {"success":false,"error":"Internal error: GitHub API 401: {\"message\":\"Bad credentials\"...}"}
