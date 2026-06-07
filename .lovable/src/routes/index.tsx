@@ -1,15 +1,20 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 
+import { HomePage } from "@/pages/HomePage";
 import { hasClientJwt } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/")({
-component: Index,
+  component: Index,
 });
 
 function Index() {
-if (!hasClientJwt()) {
-return <Navigate to="/login" replace />;
-}
-return <Navigate to="/diagrams" replace />;
-}
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  if (!hydrated) return null;
 
+  if (!hasClientJwt()) {
+    return <Navigate to="/login" replace />;
+  }
+  return <HomePage />;
+}
