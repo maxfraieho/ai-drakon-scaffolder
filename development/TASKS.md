@@ -19310,7 +19310,7 @@ git push origin main
 
 ---
 
-## [ ] TASK-174: Fix KnowledgeZone folder tree + ProjectSelector UX + Settings cleanup
+## [x] TASK-174: Fix KnowledgeZone folder tree + ProjectSelector UX + Settings cleanup
 
 **META:** Three UX fixes: (1) ZoneCreationDialog shows GitHub tree from active project (not hardcoded ai-drakon vault), (2) ProjectSelector closes modal on project click, (3) Settings GitHub tab shows only token (not repo fields).
 
@@ -19674,7 +19674,7 @@ git push origin main
 
 ```python
 with open('development/TASKS.md') as f: c = f.read()
-c = c.replace('[ ] TASK-174', '[x] TASK-174', 1)
+c = c.replace('[x] TASK-174', '[x] TASK-174', 1)
 with open('development/TASKS.md', 'w') as f: f.write(c)
 ```
 
