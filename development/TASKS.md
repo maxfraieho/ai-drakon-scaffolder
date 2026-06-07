@@ -18676,7 +18676,7 @@ git add development/TASKS.md && git commit -m "chore(tasks): TASK-168 done" && g
 
 ---
 
-## [ ] TASK-169: Mobile Scroll Fix — WorkspaceShell.tsx (реальний layout)
+## [x] TASK-169: Mobile Scroll Fix — WorkspaceShell.tsx (реальний layout)
 
 **GOAL:** Виправити мобільний скрол. `AppLayout.tsx` НЕ використовується в app — реальний layout це `WorkspaceShell.tsx`. Головна сторінка не скролиться через `overflow-hidden` на `<main>`.
 
