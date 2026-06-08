@@ -6,7 +6,6 @@ const AGENT_LABELS: Record<AgentId, string> = {
 drakon: "DRAKON",
 architect: "Architect",
 docs: "Docs",
-"sonate-solidaire": "Sonate SS",
 };
 
 export function getAgentLabel(agentId: AgentId): string {

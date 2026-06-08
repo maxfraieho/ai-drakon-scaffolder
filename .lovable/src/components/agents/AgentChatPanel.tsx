@@ -27,13 +27,12 @@ import { useProject } from "@/context/ProjectContext";
 import type { AgentId, AgentMessage } from "@/types/agent-chat";
 import type { DrakonDiagram } from "@/types/drakon";
 
-const AGENTS: AgentId[] = ["drakon", "architect", "docs", "sonate-solidaire"];
+const AGENTS: AgentId[] = ["drakon", "architect", "docs"];
 
 const WELCOME: Record<AgentId, string> = {
   drakon: "Готово. Вставте Python-код — згенерую DRAKON-схему.",
   architect: "Готово. Запитайте про архітектуру проєкту.",
   docs: "Готово. Запитайте про документацію та контекст.",
-  "sonate-solidaire": "Bonjour ! Assistant Sonate Solidaire — posez vos questions sur l'association.",
 };
 
 interface SlotInfo {
@@ -106,13 +105,11 @@ export function AgentChatPanel({ className }: Props) {
     drakon: "drakon-assistant-proxy",
     architect: "architect-assistant-proxy",
     docs: "docs-assistant-proxy",
-    "sonate-solidaire": "sonate-solidaire-assistant-proxy",
   };
   const DEFAULT_MODEL: Record<AgentId, string> = {
     drakon: DEFAULT_SLOT.drakon,
     architect: "claude-3-haiku-20240307",
     docs: "claude-3-haiku-20240307",
-    "sonate-solidaire": "claude-3-haiku-20240307",
   };
   const savedProtocol =
     typeof window !== "undefined"
@@ -176,7 +173,7 @@ export function AgentChatPanel({ className }: Props) {
           value={activeAgent}
           onValueChange={(v) => setActiveAgent(v as AgentId)}
         >
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             {AGENTS.map((id) => (
               <TabsTrigger key={id} value={id} className="gap-2">
                 <span

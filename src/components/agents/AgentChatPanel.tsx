@@ -27,13 +27,12 @@ import { useProject } from "@/context/ProjectContext";
 import type { AgentId, AgentMessage } from "@/types/agent-chat";
 import type { DrakonDiagram } from "@/types/drakon";
 
-const AGENTS: AgentId[] = ["drakon", "architect", "docs", "sonate-solidaire"];
+const AGENTS: AgentId[] = ["drakon", "architect", "docs"];
 
 const WELCOME: Record<AgentId, string> = {
   drakon: "Готово. Вставте Python-код — згенерую DRAKON-схему.",
   architect: "Готово. Запитайте про архітектуру проєкту.",
   docs: "Готово. Запитайте про документацію та контекст.",
-  "sonate-solidaire": "Bonjour ! Assistant Sonate Solidaire — posez vos questions sur l'association.",
 };
 
 interface SlotInfo {

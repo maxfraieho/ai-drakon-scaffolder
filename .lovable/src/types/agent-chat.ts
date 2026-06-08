@@ -1,4 +1,4 @@
-export type AgentId = "drakon" | "architect" | "docs" | "sonate-solidaire";
+export type AgentId = "drakon" | "architect" | "docs";
 
 export interface AgentMessage {
 id: string;
