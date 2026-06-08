@@ -197,3 +197,48 @@ docs: { label: "Docs Agent", icon: "account_tree" },
 export const llmNodesCount = (pipeline: AgentPipeline) =>
 pipeline.nodes.filter((n) => n.hasPrompt).length;
 
+import { readSettings } from "@/lib/settings-storage";
+
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  inputs: string[];
+  outputs: string[];
+}
+
+export const STATIC_PIPELINE_NODES: ToolDefinition[] = [
+  { name: "measure_cc", description: "Measure cyclomatic complexity of code", inputs: ["source_code", "file_path"], outputs: ["cyclomatic_complexity"] },
+  { name: "classify", description: "Classify code or text into categories", inputs: ["cyclomatic_complexity"], outputs: ["tree_level", "drakon_type"] },
+  { name: "ast_translate", description: "Translate code to AST representation", inputs: ["source_code", "file_path"], outputs: ["drakon_ir"] },
+  { name: "yaml_gen", description: "Generate YAML from structured input", inputs: ["file_path", "tree_level", "cyclomatic_complexity", "source_code"], outputs: ["behavioral_yaml"] },
+  { name: "ir_gen", description: "Generate DRAKON IR from description", inputs: ["validation_errors", "behavioral_yaml", "source_code", "iteration_count"], outputs: ["drakon_ir", "iteration_count"] },
+  { name: "validate", description: "Validate output against schema/rules", inputs: ["drakon_ir"], outputs: ["validation_errors"] },
+  { name: "code_gen", description: "Generate code from DRAKON IR", inputs: ["syntax_errors", "drakon_ir", "language", "description", "iteration_count"], outputs: ["generated_code", "iteration_count"] },
+  { name: "check_syntax", description: "Check code syntax", inputs: ["language", "generated_code"], outputs: ["syntax_errors"] },
+  { name: "drakon_load_kb", description: "Load DRAKON knowledge base context", inputs: [], outputs: ["kb_context"] },
+  { name: "drakon_format_prompt", description: "Format prompt for DRAKON IR generation", inputs: ["source_code", "message", "kb_context"], outputs: ["llm_prompt"] },
+  { name: "drakon_parse_result", description: "Parse LLM response to DRAKON IR", inputs: ["llm_reply"], outputs: ["drakon_ir", "parse_ok"] },
+  { name: "docs_load_kb", description: "Load documentation knowledge base context", inputs: [], outputs: ["kb_context"] },
+  { name: "docs_format_prompt", description: "Format prompt for documentation query", inputs: ["message", "kb_context"], outputs: ["llm_prompt"] },
+  { name: "llm_call", description: "Generic LLM call with prompt", inputs: ["llm_prompt"], outputs: ["llm_reply"] },
+  { name: "llm_call_with_system", description: "LLM call with system prompt and user prompt", inputs: ["ss_system", "llm_prompt"], outputs: ["llm_reply"] },
+  { name: "ss_detect_audience", description: "Detect audience type from message keywords", inputs: ["message"], outputs: ["ss_audience"] },
+  { name: "ss_load_kb", description: "Load knowledge base for audience", inputs: ["ss_audience"], outputs: ["kb_context"] },
+  { name: "ss_format_prompt", description: "Format prompt and system message for Sonate Solidaire query", inputs: ["message", "kb_context", "ss_audience"], outputs: ["llm_prompt", "ss_system"] },
+  { name: "ss_format_response", description: "Add CTA based on detected audience to response", inputs: ["llm_reply", "ss_audience"], outputs: ["llm_reply"] },
+  { name: "ss_log_analytics", description: "Log analytics for Sonate Solidaire query", inputs: [], outputs: [] },
+];
+
+export async function fetchAvailableTools(): Promise<ToolDefinition[]> {
+  try {
+    const base = readSettings().agents.architectUrl.replace(/\/+$/, "");
+    const resp = await fetch(`${base}/tools`);
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    return data.tools ?? STATIC_PIPELINE_NODES;
+  } catch (e) {
+    console.warn("Failed to fetch available tools, using fallback:", e);
+    return STATIC_PIPELINE_NODES;
+  }
+}
+

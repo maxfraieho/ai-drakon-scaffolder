@@ -20803,7 +20803,7 @@ git push origin main
 
 ---
 
-## [ ] TASK-182: Implement /tools endpoint + connect /agents UI to Flue dynamic actions
+## [x] TASK-182: Implement /tools endpoint + connect /agents UI to Flue dynamic actions
 
 **Goal:** Based on TASK-181 investigation — standardize on JSON-graph pipelines, expose available
 Flue tools via `/tools` API, update frontend to use dynamic tools list instead of static data.
