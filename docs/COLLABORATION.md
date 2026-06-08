@@ -4,7 +4,7 @@ tags:
   - status:active
   - format:guide
 created: 2026-05-28
-updated: 2026-05-29
+updated: 2026-06-08
 tier: 1
 title: "Керівництво по спільній роботі Claude та AGY"
 lang: uk
@@ -31,7 +31,7 @@ lang: uk
 | **AGY CLI** | Termux (`192.168.3.195:8080`) | Середовище виконання Gemini |
 | **AGY Proxy** | `https://agy.exodus.pp.ua` | Публічний API-ендпоінт для моделей Gemini/Claude |
 | **Dev Server** | `192.168.3.184` | Хостинг Docker-контейнерів, фонових агентів, проксі-роутерів |
-| **ai-memory** | `192.168.3.184:8790` | Рівень синхронізації сесій між агентами |
+| **ai-memory** | `192.168.3.184:49374` | Рівень синхронізації сесій між агентами |
 | **MemPalace** | `192.168.3.184` (Python) | Семантична пам'ять, ведення щоденників та граф знань (KG) |
 | **NotebookLM** | `192.168.3.234:8002` | Довгострокова база знань проекту |
 | **cloudflared** | OrangePi native | Публічний безпечний тунель, що відкриває доступ до внутрішніх служб |
@@ -50,7 +50,7 @@ lang: uk
 - **Використання**: Запит контексту між активними сесіями, семантичний пошук коду та низькорівневе відстеження завдань.
 
 ### Рівень 2 — Синхронізація сесій між агентами (ai-memory)
-- **Технологія**: Фонова служба FastAPI, що працює на порту `8790` сервера розробки.
+- **Технологія**: Фонова служба FastAPI, що працює на порту `49374` сервера розробки.
 - **Механізм**:
   - Повністю записує вхідні та вихідні дані сесій (prompt/response/thinking) у файли JSONL.
   - Надає кінцеві точки для індексування та пошуку по минулих траєкторіях агентів.
@@ -159,9 +159,9 @@ lang: uk
 - `agy.exodus.pp.ua` ➔ Termux AGY проксі (`:8080`)
 - `claude.exodus.pp.ua` ➔ Raspberry Pi 3B Claude Code (`:3456`)
 - `claude2.exodus.pp.ua` ➔ OrangePi Claude Code (`:3456`)
-- `drakon-agent.exodus.pp.ua` ➔ Dev Server Drakon Agent (`:8765`)
-- `architect-agent.exodus.pp.ua` ➔ Dev Server Architect Agent (`:8766`)
-- `docs-agent.exodus.pp.ua` ➔ Dev Server Docs Agent (`:8767`)
+- `drakon-agent-flue.maxfraieho.workers.dev` ➔ Cloudflare воркер Drakon Logic Agent
+- `architect-agent-flue.maxfraieho.workers.dev` ➔ Cloudflare воркер Architect Agent
+- `docs-agent-flue.maxfraieho.workers.dev` ➔ Cloudflare воркер Docs Agent
 - `openai-proxy.exodus.pp.ua` ➔ Безкоштовний проксі Nvidia NIM (`:18880`)
 - `garden-mcp.exodus.pp.ua` ➔ Ендпоінт MCP-сервера (`:8081`)
 - `notebooklm.exodus.pp.ua` ➔ Сервер MCP NotebookLM (`:8002`)
@@ -170,17 +170,13 @@ lang: uk
 ---
 
 ## 11. Конфігурація агентів AI-DRAKON
-Фронтенд-додаток (`ai-drakon-scaffolder`) містить трьох спеціалізованих фонових агентів, конфігурацію моделей яких можна налаштовувати у панелі Settings:
+Фронтенд-додаток (`ai-drakon-scaffolder`) містить трьох спеціалізованих фонових агентів, які налаштовуються у вкладці **Налаштування** (Settings) фронтенду, де вказуються їхні Cloudflare Workers URL:
 
-- **Architect Agent** ➔ Налаштовано на **AGY (`gemini-2.5-pro`)** [АКТИВНИЙ ✅]
-- **DRAKON Logic Agent** ➔ Налаштовано на **openai-proxy (NIM)** [Потребує оновлення на AGY]
-- **Docs Agent** ➔ Налаштовано на **openai-proxy (NIM)** [Потребує оновлення на AGY]
+- **Architect Agent URL** ➔ `https://architect-agent-flue.maxfraieho.workers.dev`
+- **DRAKON Logic Agent URL** ➔ `https://drakon-agent-flue.maxfraieho.workers.dev`
+- **Docs Agent URL** ➔ `https://docs-agent-flue.maxfraieho.workers.dev`
 
-Щоб перевести агента на використання тандему AGY:
-1. Відкрийте панель Settings у інтерфейсі.
-2. Оберіть **LLM Provider** ➔ **Protocol**: `AGY`.
-3. Вкажіть **Base URL**: `https://agy.exodus.pp.ua`.
-4. Збережіть та перезапустіть робочу область агента.
+Всі воркери використовують Flue Runtime для виконання відповідних дій та інструментів.
 
 ---
 

@@ -4,7 +4,7 @@ tags:
   - status:active
   - format:guide
 created: 2026-05-26
-updated: 2026-06-01
+updated: 2026-06-08
 tier: 2
 title: "Мануал: Agent Studio — Редактор логіки агентів"
 lang: uk
@@ -20,89 +20,68 @@ lang: uk
 
 ## 2. Агенти в системі та їхні інтерфейси
 
-Всі агенти об'єднані в єдиний сервіс **architect-agent** (порт **8766**) через LangGraph.
+Усі агенти інтегровані на базі безсерверної архітектури **Flue** (@flue/runtime, Cloudflare Workers). Їхні базові URL налаштовуються у вкладці **Налаштування** фронтенду.
 
 | Agent ID | Роль та відповідальність |
 |----------|--------------------------|
-| `architect` | Головний архітектор — аналіз, планування, file tools, agent_mode |
-| `drakon` | Python/TypeScript → DRAKON IR JSON |
-| `docs` | Документознавець — wiki-links, читання та редагування файлів |
-| `sonate-solidaire` | Публічний асистент асоціації (без авторизації) |
+| `architect` | Головний архітектор — координація, аналіз, планування та управління завданнями |
+| `drakon` | DRAKON Generator — трансляція коду в DRAKON IR JSON |
+| `docs` | Docs Agent — робота з документацією та базою знань |
+| `sonate-solidaire` | Публічний асистент асоціації Sonate Solidaire |
 
 **API ендпоінти агентів:**
-```
-GET  /agents/{id}/health
-POST /agents/{id}/chat
-     body: { "message": "...", "context"?: {}, "agent_mode"?: true }
-```
-
-**Через Cloudflare Worker:**
-```
-POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/agents/{id}/chat
-     Authorization: Bearer <token>   (не потрібен для sonate-solidaire)
-```
-
-**File tools (для агентів з agent_mode):**
-```
-GET  /files/list?path=docs/
-GET  /files/read?path=docs/file.md
-POST /files/write  { "path": "...", "content": "..." }
-POST /files/patch  { "path": "...", "old_string": "...", "new_string": "..." }
-POST /files/delete { "path": "..." }
-```
+* **Chat API**: `POST /v1/agents/{id}/chat` (через відповідний воркер, наприклад `architect-agent-flue`)
+* **Tools Registry**: `GET /tools` (повертает перелік усіх зареєстрованих дій для конвеєрів)
+* **Execute Pipeline**: `GET /graph-pipelines/{name}/execute` (запуск виконання схеми ДРАКОН із SSE-стрімінгом логів)
 
 ---
 
 ## 3. Налаштування логіки через ДРАКОН-схеми
 
-Алгоритм поведінки агента описується через JSON-структуру DRAKON IR:
-1. **`b0` (branchId:0)** — обов'язкова точка входу.
-2. **`action`** — виконання дій (content: опис, one: наступний вузол).
-3. **`question`** — логічне розгалуження (content: умова?, one: ТАК, two: НІ).
-4. **`end`** — обов'язкова точка завершення.
+Алгоритм поведінки або робочого процесу описується через JSON-структуру DRAKON IR:
+1. **`b0` (branchId:0)** — обов'язкова точка входу (START).
+2. **`action`** — виконання дій. Завдяки динамічній інтеграції, у формі властивостей доступний випадаючий список із переліком актуальних інструментів Flue (наприклад, `measure_cc`, `classify`, `validate`, `code_gen`).
+3. **`question`** — логічне розгалуження (умова, що перенаправляє виконання по гілках ТАК/НІ).
+4. **`end`** — обов'язкова точка завершення (END).
 
 **Робочий процес:**
-* Використовуйте кнопку "Аналізувати" для запуску Pipeline API (`POST /pipeline/analyze`).
-* Після успішного аналізу система видає `toast.success` та посилання "Відкрити схему".
+* Виберіть пайплайни у лівій панелі Agent Studio.
+* Редагуйте схему візуально на полотні або безпосередньо через вкладку **JSON**.
+* Під час редагування властивостей вузлів типу `action` чи `question` виберіть дію зі списку зареєстрованих інструментів Flue або введіть власну назву вручну.
+* Натисніть кнопку **Зберегти** для локального збереження змін та їх автоматичного коміту у підключений GitHub-репозиторій як файлу `.drakon.json`.
 
 ---
 
 ## 4. MCP-інструменти та ресурси
 
-Для розширеної взаємодії з проектом доступні MCP-інструменти:
-* **`files.list`**: Огляд структури проекту.
-* **`files.read`**: Читання вмісту файлів для аналізу.
-* **`agent.chat`**: Пряма взаємодія з Architect Agent (`POST /chat` з тілом `{"message":"..."}`).
+Для взаємодії з проектом через Model Context Protocol (MCP) доступні наступні групи інструментів:
+* **`files.list` / `files.read`**: Огляд та аналіз файлової структури проекту.
+* **`github_write_file`**: Інструмент для запису коду, конфігів та документації безпосередньо у репозиторій GitHub.
+* **`agent.chat`**: Інтерактивна розмова з агентами для отримання пропозицій щодо коду або конфігурацій.
 
 ---
 
-## 5. LangGraph pipeline
+## 5. Динамічне виконання у Flue
 
-Кожен агент — це DRAKON IR pipeline що компілюється у LangGraph StateGraph:
+Замість статичних Python-графів, Flue використовує інтерпретатор `executePipelineGraph` для виконання інженерних конвеєрів:
 
 ```
 pipelines/*.drakon.json
-  ↓ load_graph_from_ir()   (pipeline/graph_loader.py)
-  ↓ NODE_REGISTRY[node_name](state)
-  ↓ відповідь через /agents/{id}/chat або SSE через /graph-pipelines/{name}/execute
+  ↓ executePipelineGraph()   (graph-pipelines.ts)
+  ↓ Динамічний виклик Flue Actions/Tools
+  ↓ Стрімінг прогресу виконання та логів по SSE у реальному часі
 ```
 
-**Доступні pipelines:**
-```
-GET /graph-pipelines
-→ ["drakon-agent", "docs-agent", "sonate-solidaire-agent", "pipeline_a", "pipeline_b", ...]
-```
+---
 
-## 6. Поточний стан (2026-06-01)
-
-> ✅ **BUG-6 виправлено** — чат на `/agents` працює через unified endpoint `/agents/{id}/chat`.
+## 6. Поточний стан (2026-06-08)
 
 | Функція | Статус |
 |---------|--------|
-| Chat на /agents | ✅ Працює |
-| LangGraph pipelines | ✅ Всі агенти уніфіковані |
-| File tools для агентів | ✅ `/files/write,patch,delete,read,list` |
-| Sonate Solidaire агент | ✅ Публічний, `sonate-solidaire.me/assistant` |
+| Чат у Agent Studio | ✅ Працює через unified `/agents/{id}/chat` |
+| Фреймворк конвеєрів | ✅ Повністю переведено на Cloudflare Workers / Flue |
+| Динамічний вибір інструментів | ✅ Інспектор властивостей завантажує інструменти через `GET /tools` |
+| Спільна робота з GitHub | ✅ Прямий коміт змінених `.drakon.json` схем з інтерфейсу |
 
 ---
 

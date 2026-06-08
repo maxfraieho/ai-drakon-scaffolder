@@ -4,7 +4,7 @@ tags:
   - status:active
   - format:reference
 created: 2026-05-26
-updated: 2026-05-28
+updated: 2026-06-08
 tier: 3
 title: "Довідник по сторінках інтерфейсу UI"
 lang: uk
@@ -230,28 +230,21 @@ type CodeDiagramDiff = {
 
 ---
 
-## `/docs` — Documentation Hub
+## `/docs` — Documentation Browser & Editor
 
 **Файл:** `src/routes/docs.tsx`
 
-3 вкладки:
+Відображає інтерактивний файловий менеджер та вбудований редактор для документації проекту:
 
-| Вкладка | Компонент | Опис |
-|---------|-----------|------|
-| Generator | inline в routes/docs.tsx | Запускає `docs-agent` job (POST /api/docs/generate), polling статусу |
-| Documents | `NotesTab` | CRUD Markdown-нотаток через `docs-api.ts` |
-| Graph | `NotesGraphTab` | Граф зв'язків між нотатками (wiki-links) |
+| Компонент | Роль |
+|-----------|------|
+| `ProjectFileManager` | Керує деревом файлів у папці `docs/` підключеного репозиторію та вбудованим редактором |
 
-### API-виклики (docs-agent)
+### Функціонал
+* **Перегляд дерева документів**: Читання структури папки `docs/` безпосередньо з GitHub (використовуючи параметри з Settings).
+* **Вбудований Markdown-редактор**: Відкриває обраний файл у полі редагування коду.
+* **Збереження та комміт**: Кнопка "Зберегти" створює новий комміт безпосередньо у репозиторій GitHub через GitHub REST API за допомогою налаштованого персонального токена доступу.
 
-```typescript
-// через docs-api.ts → Cloudflare Worker → docs-agent:8767
-docsApi.startJob(instructions)    // POST /api/docs/generate → job_id
-docsApi.pollJob(job_id)           // GET  /api/docs/status/:id
-docsApi.listNotes()               // GET  /api/docs/notes
-docsApi.getNote(slug)             // GET  /api/docs/notes/:slug
-docsApi.saveNote(slug, content)   // PUT  /api/docs/notes/:slug
-```
 
 ---
 

@@ -4,7 +4,7 @@ tags:
   - status:canonical
   - format:index
 created: 2026-05-28
-updated: 2026-05-28
+updated: 2026-06-08
 tier: 1
 title: "AI-DRAKON — Головний індекс документації"
 lang: uk
