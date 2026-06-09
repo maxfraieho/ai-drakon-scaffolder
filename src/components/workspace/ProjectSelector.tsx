@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronDown, Loader2, Plus, Settings2, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -7,12 +7,10 @@ Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { type Project, useProject } from "@/context/ProjectContext";
-import { useNavigate } from "@tanstack/react-router";
 import { readSettings } from "@/lib/settings-storage";
 
 interface GhRepo {
@@ -35,7 +33,6 @@ export function ProjectSelector() {
     addLocalProject,
     removeLocalProject,
   } = useProject();
-  const navigate = useNavigate();
   const [managerOpen, setManagerOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -142,68 +139,48 @@ export function ProjectSelector() {
 
 return (
 <>
-<div className="px-2 py-1.5 flex flex-col gap-1">
-<p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">ACTIVE PROJECT</p>
-<div className="flex items-start gap-1.5">
-<div className="flex-1 min-w-0">
-{activeProject ? (
-<div className="flex flex-col justify-center min-h-[2rem] gap-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-1">
-<div className="flex items-center gap-2">
-<span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)]" />
-<span className="flex-1 truncate font-mono text-[11px] text-[var(--accent-amber)] font-medium">
-{activeProject.name}
-</span>
-</div>
-{activeProject.github ? (
-<div className="font-mono text-[8px] text-[var(--text-muted)] pl-3.5 truncate" title={`${activeProject.github.owner}/${activeProject.github.repo} (${activeProject.github.branch})`}>
-{activeProject.github.owner}/{activeProject.github.repo}
-</div>
-) : (
-<div className="font-mono text-[8px] text-[var(--text-muted)] pl-3.5 flex items-center justify-between gap-1 mt-0.5">
-<span className="text-red-400/80">No GitHub config</span>
-<button
-type="button"
-onClick={() => navigate({ to: "/settings" })}
-className="font-mono text-[8px] text-[var(--accent-amber)] hover:underline"
->
-Setup
-</button>
-</div>
-)}
-</div>
-) : loading ? (
-<div className="flex h-8 items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2">
-<span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[var(--accent-amber)]" />
-<span className="font-mono text-[11px] text-[var(--accent-amber)] font-medium">Loading...</span>
-<Loader2 className="ml-auto h-3 w-3 animate-spin text-[var(--text-muted)]" />
-</div>
-) : (
-<div className="flex flex-col gap-1.5 p-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-subtle)] bg-[var(--bg-base)]/50">
-<span className="font-mono text-[10px] text-[var(--text-muted)]">No active project</span>
-<Button
-type="button"
-size="sm"
-variant="outline"
-onClick={() => navigate({ to: "/settings" })}
-className="h-6 font-mono text-[8px] uppercase tracking-wider text-[var(--accent-amber)] hover:text-[var(--accent-amber)] border-[var(--border-subtle)] hover:bg-[var(--accent-dim)]/30 w-full"
->
-Setup GitHub
-</Button>
-</div>
-)}
-</div>
-
-<Button
-type="button"
-size="icon"
-variant="outline"
-onClick={() => setManagerOpen(true)}
-className="h-8 w-8 border-[var(--border-subtle)] bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-primary)] shrink-0"
-aria-label="Управління проектами"
->
-<Settings2 className="h-3.5 w-3.5" />
-</Button>
-</div>
+<div className="px-2 py-1.5">
+  <div className="flex items-center justify-between mb-1">
+    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">Репозиторій</p>
+    <button
+      type="button"
+      onClick={() => document.dispatchEvent(new CustomEvent("open-add-repo"))}
+      title="Додати репозиторій"
+      className="h-4 w-4 flex items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--accent-amber)] transition-colors"
+    >
+      <Plus className="h-3 w-3" />
+    </button>
+  </div>
+  {activeProject ? (
+    <div
+      className="flex flex-col gap-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-1 cursor-pointer hover:bg-white/5 transition-colors"
+      onClick={() => document.dispatchEvent(new CustomEvent("open-project-manager"))}
+      title="Переключити репозиторій"
+    >
+      <div className="flex items-center gap-2">
+        <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)]" />
+        <span className="flex-1 truncate font-mono text-[11px] text-[var(--accent-amber)] font-medium">
+          {activeProject.github
+            ? `${activeProject.github.owner}/${activeProject.github.repo}`
+            : activeProject.name}
+        </span>
+      </div>
+    </div>
+  ) : loading ? (
+    <div className="flex h-7 items-center gap-2 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2">
+      <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)]" />
+      <span className="font-mono text-[10px] text-[var(--text-muted)]">Завантаження...</span>
+    </div>
+  ) : (
+    <button
+      type="button"
+      onClick={() => document.dispatchEvent(new CustomEvent("open-add-repo"))}
+      className="flex items-center gap-1.5 w-full h-7 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-subtle)] px-2 font-mono text-[10px] text-[var(--text-muted)] hover:border-[var(--accent-amber)]/40 hover:text-[var(--accent-amber)] transition-colors"
+    >
+      <Plus className="h-3 w-3" />
+      Додати репозиторій
+    </button>
+  )}
 </div>
 
 <Dialog open={managerOpen} onOpenChange={setManagerOpen}>
