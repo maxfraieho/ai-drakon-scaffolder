@@ -17,6 +17,9 @@ import {
   Workflow,
   Brain, // Added Brain icon
   BookOpen,
+  ChevronDown,
+  GitBranch,
+  Plus,
 } from "lucide-react";
 import {
   Sheet,
@@ -25,6 +28,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -138,7 +148,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { activeProject } = useProject();
+  const { activeProject, setActiveProject, projects } = useProject();
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("nav_collapsed") === "true"; } catch { return false; }
   });
@@ -213,17 +223,64 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
           AI-DRAKON
         </Link>
-        {navCollapsed && activeProject && (
-          <button
-            type="button"
-            onClick={() => { setNavCollapsed(false); try { localStorage.setItem("nav_collapsed", "false"); } catch {} }}
-            className="hidden lg:flex items-center gap-1.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-0.5 font-mono text-[10px] text-[var(--accent-amber)] hover:bg-[var(--accent-dim)] transition-colors"
-            title="Відкрити навігацію"
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className="hidden lg:flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)]/40 transition-colors max-w-[180px]"
+            >
+              <GitBranch className="h-3 w-3 shrink-0 text-[var(--accent-amber)]" />
+              <span className="truncate">
+                {activeProject
+                  ? (activeProject.github
+                      ? `${activeProject.github.owner}/${activeProject.github.repo}`
+                      : activeProject.name)
+                  : "Select repo"}
+              </span>
+              <ChevronDown className="h-3 w-3 shrink-0 ml-auto" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            className="min-w-[220px] bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)]" />
-            <span className="max-w-[100px] truncate">{activeProject.name}</span>
-          </button>
-        )}
+            {projects.length === 0 ? (
+              <DropdownMenuItem disabled className="text-[10px] text-[var(--text-muted)]">
+                No repositories configured
+              </DropdownMenuItem>
+            ) : (
+              projects.map((p) => (
+                <DropdownMenuItem
+                  key={p.slug}
+                  onClick={() => setActiveProject(p)}
+                  className={`text-[10px] cursor-pointer gap-2 ${
+                    p.slug === activeProject?.slug
+                      ? "text-[var(--accent-amber)] bg-[var(--accent-dim)]"
+                      : "text-[var(--text-secondary)]"
+                  }`}
+                >
+                  <span className="truncate">
+                    {p.github
+                      ? `${p.github.owner}/${p.github.repo}`
+                      : p.name}
+                  </span>
+                  {p.slug === activeProject?.slug && (
+                    <span className="ml-auto text-[8px] text-[var(--accent-amber)]">✓</span>
+                  )}
+                </DropdownMenuItem>
+              ))
+            )}
+            <DropdownMenuSeparator className="bg-[var(--border-subtle)]" />
+            <DropdownMenuItem
+              className="text-[10px] text-[var(--text-muted)] cursor-pointer gap-1.5"
+              onClick={() => navigate({ to: "/settings" })}
+            >
+              <Plus className="h-3 w-3" />
+              Manage repositories
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <span aria-hidden="true" className="hidden lg:block h-3 w-px bg-[var(--border-subtle)] mx-1" />
 
