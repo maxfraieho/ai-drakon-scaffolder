@@ -21024,3 +21024,137 @@ git push origin main
 ### TODO
 - Перевірити EditorPage чи docs-api.ts
 - Додати human-readable error + "Перейти в Settings" action
+
+
+---
+
+## TASK-196: GardenPage — docs tab з knowledge graph + WorkspaceShell + AgentChat LLM warning
+[ ] TASK-196
+
+### CONTEXT
+Claude вже написав GardenPage.tsx та оновив docs.tsx на dev server (192.168.3.184).
+Потрібно перевірити + дописати ще 2 виправлення + закомітити все.
+
+!!IMPORTANT!! Run ALL commands via SSH to 192.168.3.184:
+SSH: sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+Project: /home/vokov/projects/ai-drakon-scaffolder
+
+### STEP 1 — перевірити що є на dev server
+
+```bash
+# Переконатись що файли існують
+ls -la /home/vokov/projects/ai-drakon-scaffolder/src/pages/GardenPage.tsx
+cat /home/vokov/projects/ai-drakon-scaffolder/src/routes/docs.tsx
+```
+
+Expected:
+- GardenPage.tsx існує (файл написаний Claude)
+- docs.tsx містить `import { GardenPage }` замість `ProjectFileManager`
+
+### STEP 2 — TypeScript check + fix GardenPage.tsx
+
+```bash
+cd /home/vokov/projects/ai-drakon-scaffolder
+npm run build 2>&1 | head -50
+```
+
+Якщо є TypeScript помилки в GardenPage.tsx — виправ їх. Основні можливі помилки:
+- `NoteListItem` не знайдено: import з `@/lib/garden/graphTypes` АБО `@/lib/garden/notesApi`
+- `NoteRenderer` default vs named export: перевір `src/components/docs/garden/NoteRenderer.tsx`
+- `ExecutionGraph` default vs named export: перевір `src/components/docs/garden/ExecutionGraph.tsx`
+
+### STEP 3 — Fix WorkspaceShell.tsx: project badge when collapsed
+
+File: `src/components/workspace/WorkspaceShell.tsx`
+
+Знайди секцію header (рядок ~207-215) де є Link to="/pipelines" з "AI-DRAKON".
+ПІСЛЯ цього Link додай compact project badge що показується тільки коли `navCollapsed === true`:
+
+```tsx
+{navCollapsed && activeProject && (
+  <button
+    type="button"
+    onClick={() => setNavCollapsed(false)}
+    className="hidden lg:flex items-center gap-1.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-0.5 font-mono text-[10px] text-[var(--accent-amber)] hover:bg-[var(--accent-dim)] transition-colors"
+    title="Відкрити навігацію"
+  >
+    <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)]" />
+    <span className="truncate max-w-[100px]">{activeProject.name}</span>
+  </button>
+)}
+```
+
+Для цього потрібно: `const { activeProject } = useProject();` — перевір чи він вже є в компоненті.
+Якщо немає — додай `import { useProject } from "@/context/ProjectContext";` та деструктуризацію.
+
+### STEP 4 — Fix AgentChatPanel.tsx: LLM config warning
+
+File: `src/components/agents/AgentChatPanel.tsx`
+
+Знайди рядок де починається return JSX (приблизно після `const messages = sessions[activeAgent]`).
+Додай функцію перевірки LLM конфігурації та warning banner.
+
+Додай після існуючих imports:
+```tsx
+import { getLlmConfig } from "@/lib/agent-api";
+```
+
+Перевір чи `getLlmConfig` є exported з agent-api. Якщо ні (вона там private `function getLlmConfig`), то замість import — скопіюй логіку inline:
+
+```tsx
+function hasLlmConfig(agentId: string): boolean {
+  if (typeof window === "undefined") return true;
+  const protocol = localStorage.getItem(`${agentId}_llm_protocol`) || localStorage.getItem("agent_llm_protocol");
+  const apiKey = localStorage.getItem(`${agentId}_llm_api_key`) || localStorage.getItem("agent_llm_api_key");
+  return !!(protocol || apiKey);
+}
+```
+
+В JSX, ПЕРЕД messages area (після TabsList/Tabs), додай warning banner:
+```tsx
+{!hasLlmConfig(activeAgent) && (
+  <div className="flex items-center gap-2 border-b border-yellow-500/20 bg-yellow-500/10 px-3 py-2">
+    <AlertCircle className="h-3.5 w-3.5 text-yellow-400 shrink-0" />
+    <span className="font-mono text-[10px] text-yellow-300 flex-1">
+      LLM не налаштовано для цього агента
+    </span>
+    <a
+      href="/settings"
+      className="font-mono text-[10px] text-yellow-400 underline hover:text-yellow-300"
+    >
+      Налаштувати
+    </a>
+  </div>
+)}
+```
+
+AlertCircle вже є в imports AgentChatPanel.
+
+### STEP 5 — build check + commit
+
+```bash
+cd /home/vokov/projects/ai-drakon-scaffolder
+npm run build 2>&1 | tail -20
+
+# Якщо build OK:
+git add src/pages/GardenPage.tsx src/routes/docs.tsx src/components/workspace/WorkspaceShell.tsx src/components/agents/AgentChatPanel.tsx
+git status
+git commit -m "feat(docs): restore garden knowledge graph page, fix project selector, LLM warning
+
+- docs tab: GardenPage with ExecutionGraph + NoteRenderer (was: duplicate of code tab)
+- WorkspaceShell: show project badge in header when sidebar collapsed
+- AgentChatPanel: warn when LLM not configured (health check != LLM ready)
+
+Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
+git push origin main
+```
+
+### VERIFY
+
+```bash
+curl -s -o /dev/null -w "%{http_code}" https://aidrakon.tech/ 2>/dev/null
+# expected: 200 (after CF Pages build ~3 min)
+```
+
+### DIARY
+Entry: "SESSION:$(date +%Y-%m-%d)|TASK-196:garden-page+llm-warning|docs-restored|commit:$(cd /home/vokov/projects/ai-drakon-scaffolder && git rev-parse --short HEAD)|★★★"
