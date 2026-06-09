@@ -9,64 +9,122 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from
-"@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
-import { useProject } from "@/context/ProjectContext";
+import { type Project, useProject } from "@/context/ProjectContext";
 import { useNavigate } from "@tanstack/react-router";
+import { readSettings } from "@/lib/settings-storage";
+
+interface GhRepo {
+  full_name: string;
+  name: string;
+  owner: { login: string };
+  description: string | null;
+  default_branch: string;
+  private: boolean;
+  language: string | null;
+}
 
 export function ProjectSelector() {
-const { projects, activeProject, setActiveProject, loadProjects, loading } = useProject();
-const navigate = useNavigate();
-const [managerOpen, setManagerOpen] = useState(false);
-const [addOpen, setAddOpen] = useState(false);
-const [githubOpen, setGithubOpen] = useState(false);
-const [deleting, setDeleting] = useState<string | null>(null);
-const [adding, setAdding] = useState(false);
-const [form, setForm] = useState({
-slug: "", name: "", path: "", description: "",
-ghOwner: "", ghRepo: "", ghBranch: "main",
-});
+  const {
+    projects,
+    activeProject,
+    setActiveProject,
+    loadProjects,
+    loading,
+    addLocalProject,
+    removeLocalProject,
+  } = useProject();
+  const navigate = useNavigate();
+  const [managerOpen, setManagerOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
-const handleAdd = async () => {
-if (!form.slug || !form.name || !form.path) {
-toast.error("Заповніть slug, name та path");
-return;
-}
-setAdding(true);
-try {
-const github = form.ghOwner && form.ghRepo
-? { owner: form.ghOwner, repo: form.ghRepo, branch: form.ghBranch || "main" }
-: undefined;
-await api.addProject({ slug: form.slug, name: form.name, path: form.path, description:
-form.description, github });
-await loadProjects();
-setAddOpen(false);
-setManagerOpen(false);
-setGithubOpen(false);
-setForm({ slug: "", name: "", path: "", description: "", ghOwner: "", ghRepo: "", ghBranch: "main"
-});
-toast.success(`Проект ${form.name} додано`);
-} catch {
-toast.error("Помилка додавання проекту");
-} finally {
-setAdding(false);
-}
-};
+  const [repoInput, setRepoInput] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [searchResults, setSearchResults] = useState<GhRepo[]>([]);
+  const [searchError, setSearchError] = useState("");
 
-const handleDelete = async (slug: string) => {
-setDeleting(slug);
-try {
-await api.deleteProject(slug);
-await loadProjects();
-toast.success("Проект видалено");
-} catch {
-toast.error("Помилка видалення");
-} finally {
-setDeleting(null);
-}
-};
+  const loadUserRepos = async () => {
+    const token = readSettings().github?.token;
+    if (!token) return;
+    setSearching(true);
+    setSearchError("");
+    try {
+      const resp = await fetch(
+        "https://api.github.com/user/repos?sort=updated&per_page=30&affiliation=owner,collaborator",
+        { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } }
+      );
+      if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
+      setSearchResults(await resp.json() as GhRepo[]);
+    } catch (e) {
+      setSearchError(e instanceof Error ? e.message : "Помилка");
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const searchRepo = async () => {
+    const trimmed = repoInput.trim();
+    if (!trimmed) { await loadUserRepos(); return; }
+    setSearching(true);
+    setSearchError("");
+    try {
+      const token = readSettings().github?.token;
+      const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+      if (token) headers.Authorization = `Bearer ${token}`;
+      const resp = await fetch(`https://api.github.com/repos/${trimmed}`, { headers });
+      if (!resp.ok) throw new Error(resp.status === 404 ? "Репозиторій не знайдено" : `GitHub API ${resp.status}`);
+      setSearchResults([await resp.json() as GhRepo]);
+    } catch (e) {
+      setSearchError(e instanceof Error ? e.message : "Помилка");
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const pickRepo = (repo: GhRepo) => {
+    const slug = repo.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+    const project: Project = {
+      slug,
+      name: repo.full_name,
+      description: repo.description ?? "",
+      hasDrakonIr: false,
+      hasDocs: false,
+      exists: true,
+      github: {
+        owner: repo.owner.login,
+        repo: repo.name,
+        branch: repo.default_branch,
+      },
+    };
+    addLocalProject(project);
+    setActiveProject(project);
+    setAddOpen(false);
+    setManagerOpen(false);
+    setRepoInput("");
+    setSearchResults([]);
+    toast.success(`Проект ${repo.full_name} додано`);
+  };
+
+  const handleDelete = (slug: string) => {
+    const localList: Array<{slug: string}> = (() => {
+      try { return JSON.parse(localStorage.getItem("ai_drakon_local_projects") || "[]"); } catch { return []; }
+    })();
+    const isLocal = localList.some(lp => lp.slug === slug);
+    if (isLocal) {
+      removeLocalProject(slug);
+      toast.success("Проект видалено");
+    } else {
+      setDeleting(slug);
+      void api.deleteProject(slug)
+        .then(() => loadProjects())
+        .then(() => toast.success("Проект видалено"))
+        .catch(() => toast.error("Помилка видалення"))
+        .finally(() => setDeleting(null));
+    }
+  };
 
 return (
 <>
@@ -187,113 +245,70 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
 </DialogContent>
 </Dialog>
 
-<Dialog open={addOpen} onOpenChange={setAddOpen}>
-<DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-md font-mono">
-<DialogHeader>
-<DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
-Новий проект
-</DialogTitle>
-</DialogHeader>
+<Dialog open={addOpen} onOpenChange={(o) => {
+  setAddOpen(o);
+  if (o) { setSearchResults([]); setSearchError(""); void loadUserRepos(); }
+}}>
+  <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-md font-mono">
+    <DialogHeader>
+      <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
+        Додати репозиторій
+      </DialogTitle>
+      <DialogDescription className="text-[11px] text-[var(--text-muted)]">
+        Введіть owner/repo або оберіть з вашого списку
+      </DialogDescription>
+    </DialogHeader>
 
-<div className="flex flex-col gap-3">
-<div className="grid grid-cols-2 gap-2">
-<div>
-<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Slug *</Label>
-<Input
-value={form.slug}
-onChange={(e) => setForm(f => ({...f, slug: e.target.value}))}
-placeholder="my-project"
-className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)]"
-/>
-</div>
-<div>
-<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Назва *</Label>
-<Input
-value={form.name}
-onChange={(e) => setForm(f => ({...f, name: e.target.value}))}
-placeholder="My Project"
-className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)]"
-/>
-</div>
-</div>
+    <div className="flex gap-2">
+      <Input
+        value={repoInput}
+        onChange={(e) => setRepoInput(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") void searchRepo(); }}
+        placeholder="maxfraieho/uav-watcher"
+        className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)] flex-1"
+      />
+      <Button size="sm" variant="outline" onClick={() => void searchRepo()} disabled={searching}
+        className="h-7 font-mono text-[10px] uppercase shrink-0">
+        {searching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Знайти"}
+      </Button>
+    </div>
 
-<div>
-<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Шлях на сервері *</Label>
-<Input
-value={form.path}
-onChange={(e) => setForm(f => ({...f, path: e.target.value}))}
-placeholder="/home/vokov/workspace/my-project"
-className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)]"
-/>
-</div>
+    {searchError && <p className="text-[10px] text-red-400 font-mono">{searchError}</p>}
 
-<div>
-<Label className="text-[10px] uppercase tracking-wider text-[var(--text-muted)] mb-1 block">Опис</Label>
-<Input
-value={form.description}
-onChange={(e) => setForm(f => ({...f, description: e.target.value}))}
-placeholder="Короткий опис проекту"
-className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)]"
-/>
-</div>
-
-<Collapsible open={githubOpen} onOpenChange={setGithubOpen}>
-<div className="border-t border-[var(--border-subtle)] pt-2">
-<CollapsibleTrigger asChild>
-<button
-type="button"
-className="flex w-full items-center justify-between rounded-[var(--radius-sm)] px-1 py-1 text-[10px] uppercase tracking-wider text-[var(--text-muted)] hover:bg-[var(--bg-base)]"
->
-GitHub (необов'язково)
-<ChevronDown className={cn("h-3.5 w-3.5 transition-transform", githubOpen &&
-"rotate-180")} />
-</button>
-</CollapsibleTrigger>
-<CollapsibleContent className="mt-2 space-y-2">
-<div className="grid grid-cols-2 gap-2">
-<Input
-value={form.ghOwner}
-onChange={(e) => setForm(f => ({...f, ghOwner: e.target.value}))}
-placeholder="maxfraieho"
-className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)]"
-/>
-<Input
-value={form.ghRepo}
-onChange={(e) => setForm(f => ({...f, ghRepo: e.target.value}))}
-placeholder="Sharon"
-className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)]"
-/>
-</div>
-<Input
-value={form.ghBranch}
-onChange={(e) => setForm(f => ({...f, ghBranch: e.target.value}))}
-placeholder="main"
-className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)]"
-/>
-</CollapsibleContent>
-</div>
-</Collapsible>
-</div>
-
-<div className="flex justify-end gap-2 mt-2">
-<Button
-variant="outline"
-size="sm"
-onClick={() => setAddOpen(false)}
-className="font-mono text-[11px] uppercase tracking-wider"
->
-Скасувати
-</Button>
-<Button
-size="sm"
-disabled={adding}
-onClick={() => void handleAdd()}
-className="font-mono text-[11px] uppercase tracking-wider"
->
-{adding ? "Додаю…" : "Додати"}
-</Button>
-</div>
-</DialogContent>
+    <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto pr-1">
+      {searchResults.map((repo) => (
+        <button
+          key={repo.full_name}
+          type="button"
+          onClick={() => pickRepo(repo)}
+          className="flex flex-col gap-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2.5 py-2 text-left hover:bg-white/5 hover:border-[var(--accent-amber)]/40 transition-colors"
+        >
+          <span className="font-mono text-[11px] text-[var(--accent-amber)] font-medium">
+            {repo.full_name}
+          </span>
+          {repo.description && (
+            <span className="font-mono text-[9px] text-[var(--text-muted)] line-clamp-1">
+              {repo.description}
+            </span>
+          )}
+          <div className="flex gap-2 mt-0.5">
+            {repo.language && (
+              <span className="font-mono text-[8px] text-[var(--text-muted)]">{repo.language}</span>
+            )}
+            <span className="font-mono text-[8px] text-[var(--text-muted)]">{repo.default_branch}</span>
+            {repo.private && (
+              <span className="font-mono text-[8px] text-red-400/60">private</span>
+            )}
+          </div>
+        </button>
+      ))}
+      {!searching && searchResults.length === 0 && !searchError && (
+        <p className="text-[10px] text-[var(--text-muted)] font-mono text-center py-4">
+          Введіть репозиторій або зачекайте завантаження
+        </p>
+      )}
+    </div>
+  </DialogContent>
 </Dialog>
 </>
 );

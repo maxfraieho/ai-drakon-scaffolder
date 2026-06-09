@@ -21,14 +21,28 @@ github?: ProjectGithub;
 }
 
 interface ProjectContextValue {
-activeProject: Project | null;
-setActiveProject: (p: Project | null) => void;
-projects: Project[];
-loadProjects: () => Promise<void>;
-loading: boolean;
+  activeProject: Project | null;
+  setActiveProject: (p: Project | null) => void;
+  projects: Project[];
+  loadProjects: () => Promise<void>;
+  loading: boolean;
+  addLocalProject: (p: Project) => void;
+  removeLocalProject: (slug: string) => void;
 }
 
 const STORAGE_KEY = "ai_drakon_active_project";
+const LOCAL_PROJECTS_KEY = "ai_drakon_local_projects";
+
+function loadLocalProjects(): Project[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_PROJECTS_KEY);
+    return raw ? (JSON.parse(raw) as Project[]) : [];
+  } catch { return []; }
+}
+
+function saveLocalProjects(list: Project[]) {
+  try { localStorage.setItem(LOCAL_PROJECTS_KEY, JSON.stringify(list)); } catch {}
+}
 
 const ProjectContext = createContext<ProjectContextValue | null>(null);
 
@@ -106,11 +120,18 @@ const loadProjects = useCallback(async () => {
         github,
       };
     });
-    setProjects(parsed);
-    const savedSlug = localStorage.getItem(STORAGE_KEY);
-    const saved = savedSlug ? parsed.find((p) => p.slug === savedSlug) : null;
     
-    // Attempt fallback from serialized localStorage data if not found in parsed array
+    const localList = loadLocalProjects();
+    const merged = [
+      ...parsed,
+      ...localList.filter(lp => !parsed.find(wp => wp.slug === lp.slug))
+    ];
+    setProjects(merged);
+    
+    const savedSlug = localStorage.getItem(STORAGE_KEY);
+    const saved = savedSlug ? merged.find((p) => p.slug === savedSlug) : null;
+    
+    // Attempt fallback from serialized localStorage data if not found in merged array
     let fallbackActive: Project | null = null;
     if (savedSlug && !saved) {
       try {
@@ -126,14 +147,15 @@ const loadProjects = useCallback(async () => {
 
     setActiveProjectState((prev) => {
       if (prev) {
-        const updated = parsed.find((p) => p.slug === prev.slug);
+        const updated = merged.find((p) => p.slug === prev.slug);
         return updated ?? fallbackActive ?? null;
       }
       return saved ?? fallbackActive ?? null;
     });
   } catch (err) {
     console.error("Failed to load projects:", err);
-    setProjects([]);
+    const localList = loadLocalProjects();
+    setProjects(localList);
     // Load cached active project as a fallback on failure
     try {
       const cachedData = localStorage.getItem(STORAGE_KEY + "_data");
@@ -141,7 +163,9 @@ const loadProjects = useCallback(async () => {
         const parsedCached = JSON.parse(cachedData) as Project;
         if (parsedCached) {
           setActiveProjectState(parsedCached);
-          setProjects([parsedCached]);
+          if (!localList.find(p => p.slug === parsedCached.slug)) {
+            setProjects([...localList, parsedCached]);
+          }
         }
       }
     } catch {}
@@ -150,15 +174,39 @@ const loadProjects = useCallback(async () => {
   }
 }, []);
 
+const addLocalProject = useCallback((p: Project) => {
+  const list = loadLocalProjects();
+  if (!list.find(x => x.slug === p.slug)) {
+    saveLocalProjects([...list, p]);
+  }
+  setProjects(prev => prev.find(x => x.slug === p.slug) ? prev : [...prev, p]);
+}, []);
+
+const removeLocalProject = useCallback((slug: string) => {
+  const list = loadLocalProjects().filter(x => x.slug !== slug);
+  saveLocalProjects(list);
+  setProjects(prev => prev.filter(x => x.slug !== slug));
+  setActiveProjectState(prev => prev?.slug === slug ? null : prev);
+}, []);
+
 useEffect(() => {
-void loadProjects();
+  void loadProjects();
 }, [loadProjects]);
 
 return (
-<ProjectContext.Provider value={{ activeProject, setActiveProject, projects, loadProjects,
-loading }}>
-{children}
-</ProjectContext.Provider>
+  <ProjectContext.Provider
+    value={{
+      activeProject,
+      setActiveProject,
+      projects,
+      loadProjects,
+      loading,
+      addLocalProject,
+      removeLocalProject,
+    }}
+  >
+    {children}
+  </ProjectContext.Provider>
 );
 }
 
