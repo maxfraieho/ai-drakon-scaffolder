@@ -21654,3 +21654,149 @@ git push origin main
 
 ### DIARY
 Entry: "SESSION:2026-06-09|TASK-198:mcp-github-tools|gh_list_files+gh_read_file+gh_write_file+gh_search_code|commit:<hash>|★★★"
+
+---
+
+## [ ] TASK-199
+
+### GOAL
+Додати у хедер WorkspaceShell компактний dropdown для швидкого перемикання між репозиторіями. Клік на кнопку → випадний список всіх репо → вибір → всі вкладки перемикаються на обраний репо. Замість важкого модального вікна.
+
+### CONTEXT
+Файл: `src/components/workspace/WorkspaceShell.tsx` (і `.lovable/src/`)
+ProjectContext вже має: `projects`, `activeProject`, `setActiveProject`
+Sidebar `ProjectSelector` ЗАЛИШАЄТЬСЯ (для додавання/видалення репо), лише доповнюємо хедер.
+
+### WHAT TO ADD
+
+**Місце в хедері** — одразу після `<Link to="/pipelines">AI-DRAKON</Link>` (логотип), ПЕРЕД `<span aria-hidden="true" class="hidden lg:block h-3 w-px...">` (вертикальний роздільник).
+
+**Компонент-dropdown у хедері:**
+
+```tsx
+// Додати імпорти на початку файлу (якщо їх ще немає):
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, GitBranch, Plus } from "lucide-react";
+
+// В useProject() деструктурувати projects теж:
+const { activeProject, setActiveProject, projects } = useProject();
+
+// JSX після логотипу AI-DRAKON Link, перед вертикальним роздільником:
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <button
+      type="button"
+      className="hidden lg:flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)]/40 transition-colors max-w-[180px]"
+    >
+      <GitBranch className="h-3 w-3 shrink-0 text-[var(--accent-amber)]" />
+      <span className="truncate">
+        {activeProject
+          ? (activeProject.github
+              ? `${activeProject.github.owner}/${activeProject.github.repo}`
+              : activeProject.name)
+          : "Select repo"}
+      </span>
+      <ChevronDown className="h-3 w-3 shrink-0 ml-auto" />
+    </button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent
+    align="start"
+    className="min-w-[220px] bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono"
+  >
+    {projects.length === 0 ? (
+      <DropdownMenuItem disabled className="text-[10px] text-[var(--text-muted)]">
+        No repositories configured
+      </DropdownMenuItem>
+    ) : (
+      projects.map((p) => (
+        <DropdownMenuItem
+          key={p.slug}
+          onClick={() => setActiveProject(p)}
+          className={`text-[10px] cursor-pointer gap-2 ${
+            p.slug === activeProject?.slug
+              ? "text-[var(--accent-amber)] bg-[var(--accent-dim)]"
+              : "text-[var(--text-secondary)]"
+          }`}
+        >
+          <span className="truncate">
+            {p.github
+              ? `${p.github.owner}/${p.github.repo}`
+              : p.name}
+          </span>
+          {p.slug === activeProject?.slug && (
+            <span className="ml-auto text-[8px] text-[var(--accent-amber)]">✓</span>
+          )}
+        </DropdownMenuItem>
+      ))
+    )}
+    <DropdownMenuSeparator className="bg-[var(--border-subtle)]" />
+    <DropdownMenuItem
+      className="text-[10px] text-[var(--text-muted)] cursor-pointer gap-1.5"
+      onClick={() => navigate({ to: "/settings" })}
+    >
+      <Plus className="h-3 w-3" />
+      Manage repositories
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
+```
+
+**ВАЖЛИВО — де вставити:** в JSX хедера WorkspaceShell знайти блок:
+```tsx
+<Link to="/pipelines" className="...">
+  <Terminal ... />
+  AI-DRAKON
+</Link>
+<span aria-hidden="true" className="hidden lg:block h-3 w-px bg-[var(--border-subtle)] mx-1"></span>
+```
+
+Вставити новий `<DropdownMenu>...</DropdownMenu>` між `</Link>` і `<span aria-hidden...>`.
+
+**Видалити** з хедера рядок collapsed project badge якщо він є (був доданий в TASK-196):
+```tsx
+{navCollapsed && activeProject && (
+  <div className="...">
+    <GitBranch .../>
+    ...
+    <span>{activeProject.name}</span>
+  </div>
+)}
+```
+Він більше не потрібен — замінений dropdown-ом.
+
+### SYNC
+```bash
+cp src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx
+```
+
+### VERIFICATION
+```bash
+grep -n "DropdownMenu\|GitBranch\|Select repo\|activeProject.*github" src/components/workspace/WorkspaceShell.tsx | head -10
+diff src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx && echo "SYNCED"
+```
+
+### COMMIT
+```bash
+git add src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx
+git commit -m "feat(header): repo switcher dropdown in navbar"
+git push origin main
+```
+
+### NOTES
+- !!IMPORTANT!! Run LOCALLY on Termux (AGY3). Do NOT SSH anywhere.
+- Repo at ~/workspace/ai-drakon-scaffolder — git pull first
+- `DropdownMenu` is from `@/components/ui/dropdown-menu` — check it exists first with `ls src/components/ui/dropdown-menu*`
+- `navigate` is already imported via `useNavigate()` in WorkspaceShell
+- Keep existing `ProjectSelector` in sidebar unchanged
+- The `projects` field: add to the destructuring of `useProject()` on the existing line
+- Do NOT change any other part of WorkspaceShell
+- Keep `hidden lg:flex` class on the button — only show on desktop
+
+### DIARY
+Entry: "SESSION:2026-06-09|TASK-199:header-repo-dropdown|commit:<hash>|★★★"
