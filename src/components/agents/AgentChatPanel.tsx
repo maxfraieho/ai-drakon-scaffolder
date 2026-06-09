@@ -27,6 +27,14 @@ import { useProject } from "@/context/ProjectContext";
 import type { AgentId, AgentMessage } from "@/types/agent-chat";
 import type { DrakonDiagram } from "@/types/drakon";
 
+
+function hasLlmConfig(agentId: string): boolean {
+  if (typeof window === "undefined") return true;
+  const protocol = localStorage.getItem(`${agentId}_llm_protocol`) ?? localStorage.getItem("agent_llm_protocol");
+  const apiKey = localStorage.getItem(`${agentId}_llm_api_key`) ?? localStorage.getItem("agent_llm_api_key");
+  return !!(protocol || apiKey);
+}
+
 const AGENTS: AgentId[] = ["drakon", "architect", "docs"];
 
 const WELCOME: Record<AgentId, string> = {
@@ -187,6 +195,21 @@ export function AgentChatPanel({ className }: Props) {
               </TabsTrigger>
             ))}
           </TabsList>
+          {!hasLlmConfig(activeAgent) && (
+            <div className="flex items-center gap-2 border-b border-yellow-500/20 bg-yellow-500/10 px-3 py-2 shrink-0">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-yellow-400" />
+              <span className="flex-1 font-mono text-[10px] text-yellow-300">
+                LLM не налаштовано — агент може не відповідати
+              </span>
+              <a
+                href="/settings"
+                className="font-mono text-[10px] text-yellow-400 underline hover:text-yellow-300 shrink-0"
+              >
+                Налаштувати
+              </a>
+            </div>
+          )}
+
         </Tabs>
       </div>
 

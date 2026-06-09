@@ -1,5 +1,5 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
-import { ProjectFileManager } from "@/components/files/ProjectFileManager";
+import { GardenPage } from "@/pages/GardenPage";
 import { hasClientJwt } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/docs")({
@@ -10,5 +10,5 @@ function DocsRoute() {
   if (!hasClientJwt()) {
     return <Navigate to="/login" replace />;
   }
-  return <ProjectFileManager defaultMode="docs" />;
+  return <GardenPage />;
 }

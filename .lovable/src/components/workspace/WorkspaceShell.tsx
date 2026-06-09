@@ -45,6 +45,7 @@ import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { CommandPalette } from "@/components/workspace/CommandPalette";
 import { DevCyclePanel } from "@/components/workspace/DevCyclePanel";
 import { ProjectSelector } from "@/components/workspace/ProjectSelector";
+import { useProject } from "@/context/ProjectContext";
 import { AgentStatusBar } from "@/components/workspace/AgentStatusBar";
 import { cn } from "@/lib/utils";
 import { clearAccessToken } from "@/lib/auth";
@@ -137,6 +138,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [cmdOpen, setCmdOpen] = useState(false);
+  const { activeProject } = useProject();
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("nav_collapsed") === "true"; } catch { return false; }
   });
@@ -211,6 +213,17 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
           AI-DRAKON
         </Link>
+        {navCollapsed && activeProject && (
+          <button
+            type="button"
+            onClick={() => { setNavCollapsed(false); try { localStorage.setItem("nav_collapsed", "false"); } catch {} }}
+            className="hidden lg:flex items-center gap-1.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-0.5 font-mono text-[10px] text-[var(--accent-amber)] hover:bg-[var(--accent-dim)] transition-colors"
+            title="Відкрити навігацію"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent-amber)]" />
+            <span className="max-w-[100px] truncate">{activeProject.name}</span>
+          </button>
+        )}
 
         <span aria-hidden="true" className="hidden lg:block h-3 w-px bg-[var(--border-subtle)] mx-1" />
 
