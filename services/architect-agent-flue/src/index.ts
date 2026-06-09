@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { flue } from '@flue/runtime/routing';
 import { handleMcp } from './mcp-server.js';
 import { runPipelineA } from '../workflows/pipeline-a.js';
@@ -10,6 +11,8 @@ import { listProjects, createProject } from '../tools/project-pipelines.js';
 import { createJobDO, getJobDO, updateJobDO } from '../lib/job-store.js';
 
 const app = new Hono<{ Bindings: any }>();
+
+app.use('/*', cors());
 
 // Health Check
 app.get('/health', (c) => c.json({ status: 'ok', service: 'architect-agent-flue' }));
@@ -235,6 +238,14 @@ app.post('/projects/:slug', async (c) => {
   const body: any = await c.req.json().catch(() => ({}));
   const res = await createProject(slug, body, c.env);
   return c.json({ success: true, project: res });
+});
+
+// Delete Project
+app.delete('/projects/:slug', async (c) => {
+  const slug = c.req.param('slug');
+  const { deleteProject } = await import('../tools/project-pipelines.js');
+  const ok = await deleteProject(slug, c.env);
+  return c.json({ success: ok, deleted: slug });
 });
 
 // Project Agent Routes

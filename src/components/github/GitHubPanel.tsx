@@ -13,6 +13,7 @@ SelectValue,
 import { api } from "@/lib/api";
 import { useGithubRepos, mergeWithKnown } from "@/hooks/useGithubRepos";
 import { useProject } from "@/context/ProjectContext";
+import { getGithubConfig } from "@/lib/settings-storage";
 
 type GitHubPanelProps = {
 onSelectPath: (path: string, type: "file" | "dir") => void;
@@ -71,8 +72,7 @@ export function GitHubPanel({ onSelectPath, onAnalyzeFolder }: GitHubPanelProps)
 const [branches, setBranches] = useState<string[]>(["main"]);
 const [repoOpen, setRepoOpen] = useState(false);
 
-const token =
-typeof window !== "undefined" ? sessionStorage.getItem("drakon_gh_write_token") || "" : "";
+const token = getGithubConfig().token;
 const { repos, loading } = useGithubRepos(owner, token);
 const allRepos = mergeWithKnown(repos);
 const repoQuery = repo.toLowerCase().trim();

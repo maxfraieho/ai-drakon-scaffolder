@@ -259,3 +259,23 @@ export async function uploadProjectKBDoc(slug: string, agent: string, filename: 
   await api.putFile(path, content, `docs(kb): upload ${filename} for agent ${agent} in ${slug}`, sha);
   return { saved: path, size: content.length };
 }
+
+export async function deleteProject(slug: string, env: any): Promise<boolean> {
+  const ghToken = env.GITHUB_TOKEN || '';
+  const ghRepo = env.GITHUB_REPO || '';
+  const ghBranch = env.GITHUB_BRANCH || 'main';
+  const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
+  
+  const path = `projects/${slug}/config.json`;
+  let sha: string | undefined;
+  try {
+    const existing = await api.getFile(path);
+    sha = existing.sha;
+    if (sha) {
+      await api.deleteFile(path, `chore(projects): delete project ${slug}`, sha);
+      return true;
+    }
+  } catch (e) {}
+  return false;
+}
+

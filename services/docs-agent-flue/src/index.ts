@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { flue } from '@flue/runtime/routing';
 import { handleMcp } from './mcp-server.js';
 import { docsChat } from '../tools/docs-chat.js';
@@ -11,6 +12,8 @@ import { dataviewTool } from '../tools/dataview.js';
 import { GitHubAPI } from '../lib/github-api.js';
 
 const app = new Hono();
+
+app.use('/*', cors());
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok', service: 'docs-agent', port: 8767 }));

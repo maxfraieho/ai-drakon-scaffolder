@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Wifi, WifiOff, Loader2, ExternalLink, RefreshCw } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { getAccessToken } from "@/lib/auth";
 
 interface AgentStatusCardProps {
   name: string;
@@ -42,7 +43,13 @@ export const AgentStatusCard: React.FC<AgentStatusCardProps> = ({
 
     const checkHealth = async () => {
       try {
+        const token = getAccessToken();
+        const headers: HeadersInit = {};
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
         const resp = await fetch(healthUrl, {
+          headers,
           signal: AbortSignal.timeout(4000),
         });
         if (!active) return;

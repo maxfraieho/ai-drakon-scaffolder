@@ -132,6 +132,7 @@ export function ZoneCreationDialog({
 
   const [ghTree, setGhTree] = useState<GHFolderNode[]>([]);
   const [treeLoading, setTreeLoading] = useState(false);
+  const [isCrawling, setIsCrawling] = useState(false);
 
   // Recursive helper to update a node in the tree
   const updateGHNode = useCallback(
@@ -287,7 +288,7 @@ export function ZoneCreationDialog({
       );
     });
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name.trim()) {
       toast.error("Zone name is required.");
       return;
@@ -298,22 +299,81 @@ export function ZoneCreationDialog({
       return;
     }
 
-    const data: CreateKnowledgeZoneRequest = {
-      name,
-      description: description.trim() || undefined,
-      ttlMinutes,
-      accessType,
-      createNotebookLm,
-      folders: Array.from(selectedFolders),
-      noteCount: selectedFolders.size,
-    };
+    setIsCrawling(true);
+    const toastId = toast.loading("Fetching files from selected folders on GitHub...");
 
-    if (createNotebookLm) {
-      data.notebookLmTitle = notebookLmTitle.trim() || undefined;
-      data.shareEmails = shareEmails.split(",").map((s) => s.trim()).filter(Boolean);
+    try {
+      const notes: Array<{ slug: string; title: string; content: string; tags: string[] }> = [];
+
+      const fetchNotesFromFolder = async (folderPath: string) => {
+        const res = await api.githubListTree(owner, repo, folderPath, branch, token || undefined);
+        if (res.success) {
+          for (const entry of res.entries) {
+            if (entry.type === "dir") {
+              await fetchNotesFromFolder(entry.path);
+            } else if (entry.type === "file") {
+              if (/\.(md|txt|json|markdown|html)$/i.test(entry.name)) {
+                if (!notes.some((n) => n.slug === entry.path)) {
+                  const fileRes = await api.githubGetFile(owner, repo, entry.path, branch, token || undefined);
+                  if (fileRes.success) {
+                    const tags = entry.path.split("/").slice(0, -1);
+                    notes.push({
+                      slug: entry.path,
+                      title: entry.name,
+                      content: fileRes.content || "",
+                      tags,
+                    });
+                  }
+                }
+              }
+            }
+          }
+        }
+      };
+
+      for (const folder of selectedFolders) {
+        await fetchNotesFromFolder(folder);
+      }
+
+      if (notes.length === 0) {
+        toast.error("No text/markdown files found in the selected folders.", { id: toastId });
+        setIsCrawling(false);
+        return;
+      }
+
+      toast.loading(`Creating zone with ${notes.length} notes...`, { id: toastId });
+
+      const data: any = {
+        name,
+        description: description.trim() || undefined,
+        ttlMinutes,
+        accessType,
+        allowedPaths: Array.from(selectedFolders),
+        notes,
+      };
+
+      if (createNotebookLm) {
+        data.createNotebookLM = true;
+        data.notebookTitle = notebookLmTitle.trim() || undefined;
+        data.notebookShareEmails = shareEmails.split(",").map((s) => s.trim()).filter(Boolean);
+      }
+
+      createZoneMutation.mutate(data, {
+        onSuccess: (res) => {
+          toast.dismiss(toastId);
+          if (res.success) {
+            // Success toast is handled in mutation onSuccess, but we need to reset/close here if needed
+          }
+        },
+        onError: () => {
+          toast.dismiss(toastId);
+        }
+      });
+    } catch (err: any) {
+      toast.error(`Failed to load files from GitHub: ${err.message}`, { id: toastId });
+    } finally {
+      setIsCrawling(false);
     }
-
-    createZoneMutation.mutate(data);
   };
 
   const handleClose = () => {
@@ -336,7 +396,7 @@ export function ZoneCreationDialog({
   return (
     <>
       <Dialog open={isOpen && !showCreatedDialog} onOpenChange={(open) => !open && handleClose()}>
-        <DialogContent className="sm:max-w-[550px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Knowledge Zone</DialogTitle>
           </DialogHeader>
@@ -501,9 +561,9 @@ export function ZoneCreationDialog({
             <Button
               type="submit"
               onClick={handleSubmit}
-              disabled={createZoneMutation.isPending}
+              disabled={createZoneMutation.isPending || isCrawling}
             >
-              {createZoneMutation.isPending ? "Creating..." : "Create Zone"}
+              {isCrawling ? "Fetching files..." : createZoneMutation.isPending ? "Creating..." : "Create Zone"}
             </Button>
           </DialogFooter>
         </DialogContent>

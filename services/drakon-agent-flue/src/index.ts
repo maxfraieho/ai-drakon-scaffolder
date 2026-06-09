@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { cors } from 'hono/cors';
 import { flue } from '@flue/runtime/routing';
 import { handleMcp } from './mcp-server.js';
 import { analyzeCode } from '../agents/tools/analyze-code.js';
@@ -7,6 +8,8 @@ import { analyzeFolder } from '../agents/tools/analyze-folder.js';
 import { feedbackTool } from '../agents/tools/feedback.js';
 
 const app = new Hono();
+
+app.use('/*', cors());
 
 // Expose health check
 app.get('/health', (c) => c.json({ status: 'ok', service: 'drakon-agent-flue' }));
