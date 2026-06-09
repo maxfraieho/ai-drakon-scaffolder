@@ -21458,7 +21458,7 @@ Entry: "SESSION:2026-06-09|TASK-197:github-repo-picker+localStorage|commit:<hash
 
 ---
 
-## [ ] TASK-198
+## [x] TASK-198
 
 ### GOAL
 Додати до MCP сервера (architect-agent-flue) інструменти для роботи з будь-яким GitHub репозиторієм. Агент підключається через MCP, передає owner/repo/token — і може читати/писати файли, шукати код в будь-якому репо.
