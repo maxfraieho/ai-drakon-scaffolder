@@ -40,6 +40,16 @@ type Folder,
 import type { Diagram } from "@/types/drakon";
 import type { DrakonItem } from "@/types/drakon";
 import type { IrDiagram } from "@/lib/graph-pipeline-api";
+
+function sanitizeDiagramName(raw: string): string {
+  if (!raw) return raw;
+  try {
+    const bytes = new Uint8Array([...raw].map((c) => c.charCodeAt(0)));
+    const decoded = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
+    if (!decoded.includes("â") && !decoded.includes("�")) return decoded;
+  } catch {}
+  return raw;
+}
 export function DiagramsPage() {
 const navigate = useNavigate();
 const importInputRef = useRef<HTMLInputElement | null>(null);
@@ -415,7 +425,7 @@ isMobile ? (
                             : "text-[var(--text-secondary)]",
                         )}
                       >
-                        <span className="truncate">{d.name}</span>
+                        <span className="truncate">{sanitizeDiagramName(d.name)}</span>
                       </button>
                     ))
                   )}
