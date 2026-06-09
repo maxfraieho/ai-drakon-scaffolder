@@ -21158,3 +21158,300 @@ curl -s -o /dev/null -w "%{http_code}" https://aidrakon.tech/ 2>/dev/null
 
 ### DIARY
 Entry: "SESSION:$(date +%Y-%m-%d)|TASK-196:garden-page+llm-warning|docs-restored|commit:$(cd /home/vokov/projects/ai-drakon-scaffolder && git rev-parse --short HEAD)|★★★"
+
+---
+
+## [ ] TASK-197
+
+### GOAL
+Переробити ProjectSelector та ProjectContext для роботи з будь-яким GitHub репозиторієм без реєстрації в Worker. Користувач вводить GitHub токен в Settings один раз — і може додавати будь-яке доступне репо прямо в модалці.
+
+### APPROACH
+
+**1. ProjectContext.tsx** — додати localStorage-шар для локально доданих проектів
+
+Файл: `src/context/ProjectContext.tsx`
+
+Додати константу і хелпери (поза компонентом):
+```typescript
+const LOCAL_PROJECTS_KEY = "ai_drakon_local_projects";
+
+function loadLocalProjects(): Project[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_PROJECTS_KEY);
+    return raw ? (JSON.parse(raw) as Project[]) : [];
+  } catch { return []; }
+}
+
+function saveLocalProjects(list: Project[]) {
+  try { localStorage.setItem(LOCAL_PROJECTS_KEY, JSON.stringify(list)); } catch {}
+}
+```
+
+В `ProjectContextValue` інтерфейсі додати:
+```typescript
+addLocalProject: (p: Project) => void;
+removeLocalProject: (slug: string) => void;
+```
+
+В `loadProjects()` — після того як отримали `parsed` масив з Worker — merge з local:
+```typescript
+const localList = loadLocalProjects();
+const merged = [
+  ...parsed,
+  ...localList.filter(lp => !parsed.find(wp => wp.slug === lp.slug))
+];
+setProjects(merged);
+// далі замінити всі `parsed` на `merged` при setActiveProjectState логіці
+```
+
+Додати `addLocalProject` і `removeLocalProject` через `useCallback`:
+```typescript
+const addLocalProject = useCallback((p: Project) => {
+  const list = loadLocalProjects();
+  if (!list.find(x => x.slug === p.slug)) {
+    saveLocalProjects([...list, p]);
+  }
+  setProjects(prev => prev.find(x => x.slug === p.slug) ? prev : [...prev, p]);
+}, []);
+
+const removeLocalProject = useCallback((slug: string) => {
+  const list = loadLocalProjects().filter(x => x.slug !== slug);
+  saveLocalProjects(list);
+  setProjects(prev => prev.filter(x => x.slug !== slug));
+  setActiveProjectState(prev => prev?.slug === slug ? null : prev);
+}, []);
+```
+
+Передати в `<ProjectContext.Provider value={{ ..., addLocalProject, removeLocalProject }}>`.
+
+---
+
+**2. ProjectSelector.tsx** — новий UX: GitHub repo picker
+
+Файл: `src/components/workspace/ProjectSelector.tsx`
+
+Додати імпорт: `import { readSettings } from "@/lib/settings-storage";`
+
+Отримати з `useProject()`:
+```typescript
+const { projects, activeProject, setActiveProject, loadProjects, loading,
+        addLocalProject, removeLocalProject } = useProject();
+```
+
+Замінити стару форму (addOpen Dialog зі slug/name/path) на новий flow.
+
+**Новий state і тип:**
+```typescript
+interface GhRepo {
+  full_name: string;
+  name: string;
+  owner: { login: string };
+  description: string | null;
+  default_branch: string;
+  private: boolean;
+  language: string | null;
+}
+
+const [repoInput, setRepoInput] = useState("");
+const [searching, setSearching] = useState(false);
+const [searchResults, setSearchResults] = useState<GhRepo[]>([]);
+const [searchError, setSearchError] = useState("");
+```
+
+**Функції:**
+```typescript
+const loadUserRepos = async () => {
+  const token = readSettings().github.token;
+  if (!token) return;
+  setSearching(true);
+  setSearchError("");
+  try {
+    const resp = await fetch(
+      "https://api.github.com/user/repos?sort=updated&per_page=30&affiliation=owner,collaborator",
+      { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } }
+    );
+    if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
+    setSearchResults(await resp.json() as GhRepo[]);
+  } catch (e) {
+    setSearchError(e instanceof Error ? e.message : "Помилка");
+  } finally {
+    setSearching(false);
+  }
+};
+
+const searchRepo = async () => {
+  const trimmed = repoInput.trim();
+  if (!trimmed) { await loadUserRepos(); return; }
+  setSearching(true);
+  setSearchError("");
+  try {
+    const token = readSettings().github.token;
+    const headers: Record<string, string> = { Accept: "application/vnd.github+json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const resp = await fetch(`https://api.github.com/repos/${trimmed}`, { headers });
+    if (!resp.ok) throw new Error(resp.status === 404 ? "Репозиторій не знайдено" : `GitHub API ${resp.status}`);
+    setSearchResults([await resp.json() as GhRepo]);
+  } catch (e) {
+    setSearchError(e instanceof Error ? e.message : "Помилка");
+    setSearchResults([]);
+  } finally {
+    setSearching(false);
+  }
+};
+
+const pickRepo = (repo: GhRepo) => {
+  const slug = repo.name.toLowerCase().replace(/[^a-z0-9-]/g, "-");
+  const project: Project = {
+    slug,
+    name: repo.full_name,
+    description: repo.description ?? "",
+    hasDrakonIr: false,
+    hasDocs: false,
+    exists: true,
+    github: {
+      owner: repo.owner.login,
+      repo: repo.name,
+      branch: repo.default_branch,
+    },
+  };
+  addLocalProject(project);
+  setActiveProject(project);
+  setAddOpen(false);
+  setManagerOpen(false);
+  setRepoInput("");
+  setSearchResults([]);
+  toast.success(`Проект ${repo.full_name} додано`);
+};
+```
+
+**handleDelete — розрізняти local vs Worker:**
+```typescript
+const handleDelete = (slug: string) => {
+  const localList: Array<{slug: string}> = (() => {
+    try { return JSON.parse(localStorage.getItem("ai_drakon_local_projects") || "[]"); } catch { return []; }
+  })();
+  const isLocal = localList.some(lp => lp.slug === slug);
+  if (isLocal) {
+    removeLocalProject(slug);
+    toast.success("Проект видалено");
+  } else {
+    setDeleting(slug);
+    void api.deleteProject(slug)
+      .then(() => loadProjects())
+      .then(() => toast.success("Проект видалено"))
+      .catch(() => toast.error("Помилка видалення"))
+      .finally(() => setDeleting(null));
+  }
+};
+```
+
+**JSX для нового AddDialog** (замінити стару Dialog з addOpen):
+```tsx
+<Dialog open={addOpen} onOpenChange={(o) => {
+  setAddOpen(o);
+  if (o) { setSearchResults([]); setSearchError(""); void loadUserRepos(); }
+}}>
+  <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-md font-mono">
+    <DialogHeader>
+      <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
+        Додати репозиторій
+      </DialogTitle>
+      <DialogDescription className="text-[11px] text-[var(--text-muted)]">
+        Введіть owner/repo або оберіть з вашого списку
+      </DialogDescription>
+    </DialogHeader>
+
+    <div className="flex gap-2">
+      <Input
+        value={repoInput}
+        onChange={(e) => setRepoInput(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter") void searchRepo(); }}
+        placeholder="maxfraieho/uav-watcher"
+        className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)] flex-1"
+      />
+      <Button size="sm" variant="outline" onClick={() => void searchRepo()} disabled={searching}
+        className="h-7 font-mono text-[10px] uppercase shrink-0">
+        {searching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Знайти"}
+      </Button>
+    </div>
+
+    {searchError && <p className="text-[10px] text-red-400 font-mono">{searchError}</p>}
+
+    <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto pr-1">
+      {searchResults.map((repo) => (
+        <button
+          key={repo.full_name}
+          type="button"
+          onClick={() => pickRepo(repo)}
+          className="flex flex-col gap-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2.5 py-2 text-left hover:bg-white/5 hover:border-[var(--accent-amber)]/40 transition-colors"
+        >
+          <span className="font-mono text-[11px] text-[var(--accent-amber)] font-medium">
+            {repo.full_name}
+          </span>
+          {repo.description && (
+            <span className="font-mono text-[9px] text-[var(--text-muted)] line-clamp-1">
+              {repo.description}
+            </span>
+          )}
+          <div className="flex gap-2 mt-0.5">
+            {repo.language && (
+              <span className="font-mono text-[8px] text-[var(--text-muted)]">{repo.language}</span>
+            )}
+            <span className="font-mono text-[8px] text-[var(--text-muted)]">{repo.default_branch}</span>
+            {repo.private && (
+              <span className="font-mono text-[8px] text-red-400/60">private</span>
+            )}
+          </div>
+        </button>
+      ))}
+      {!searching && searchResults.length === 0 && !searchError && (
+        <p className="text-[10px] text-[var(--text-muted)] font-mono text-center py-4">
+          Введіть репозиторій або зачекайте завантаження
+        </p>
+      )}
+    </div>
+  </DialogContent>
+</Dialog>
+```
+
+**Видалити старі state** які більше не потрібні: `githubOpen`, `form` (всі 6 полів).
+**Видалити старий Collapsible** і старий JSX форми (slug/name/path inputs).
+
+---
+
+**3. Синхронізація src/ → .lovable/src/**
+
+```bash
+cp src/context/ProjectContext.tsx .lovable/src/context/ProjectContext.tsx
+cp src/components/workspace/ProjectSelector.tsx .lovable/src/components/workspace/ProjectSelector.tsx
+```
+
+### VERIFICATION
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+grep -n "addLocalProject\|removeLocalProject\|LOCAL_PROJECTS_KEY" src/context/ProjectContext.tsx
+grep -n "loadUserRepos\|searchRepo\|pickRepo\|GhRepo" src/components/workspace/ProjectSelector.tsx
+diff src/context/ProjectContext.tsx .lovable/src/context/ProjectContext.tsx && echo "CTX SYNCED"
+diff src/components/workspace/ProjectSelector.tsx .lovable/src/components/workspace/ProjectSelector.tsx && echo "SEL SYNCED"
+```
+
+### COMMIT
+```
+git add src/context/ProjectContext.tsx .lovable/src/context/ProjectContext.tsx \
+        src/components/workspace/ProjectSelector.tsx .lovable/src/components/workspace/ProjectSelector.tsx
+git commit -m "feat(projects): GitHub-token repo picker + localStorage local projects"
+git push origin main
+```
+
+### NOTES
+- !!IMPORTANT!! Run LOCALLY on Termux (AGY3). Do NOT SSH anywhere.
+- Repo at ~/workspace/ai-drakon-scaffolder — git pull first
+- Import `Project` type in ProjectSelector.tsx: `import { type Project, useProject } from "@/context/ProjectContext";`
+- `readSettings` import: `import { readSettings } from "@/lib/settings-storage";`
+- Do NOT remove Worker `listProjectsArch()` — it still loads pre-registered projects
+- Do NOT introduce TypeScript errors — check all types
+- The old `form` state object and `githubOpen` state can be removed entirely
+
+### DIARY
+Entry: "SESSION:2026-06-09|TASK-197:github-repo-picker+localStorage|commit:<hash>|★★★"
