@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown, Loader2, Plus, Settings2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,9 +45,23 @@ export function ProjectSelector() {
   const [searchResults, setSearchResults] = useState<GhRepo[]>([]);
   const [searchError, setSearchError] = useState("");
 
+  useEffect(() => {
+    const openManager = () => setManagerOpen(true);
+    const openAdd = () => { setManagerOpen(false); setAddOpen(true); };
+    document.addEventListener("open-project-manager", openManager);
+    document.addEventListener("open-add-repo", openAdd);
+    return () => {
+      document.removeEventListener("open-project-manager", openManager);
+      document.removeEventListener("open-add-repo", openAdd);
+    };
+  }, []);
+
   const loadUserRepos = async () => {
     const token = readSettings().github?.token;
-    if (!token) return;
+    if (!token) {
+      setSearchError("GitHub token не налаштовано. Введіть owner/repo вручну (напр. maxfraieho/uav-watcher) або додайте токен у Налаштуваннях.");
+      return;
+    }
     setSearching(true);
     setSearchError("");
     try {
@@ -302,9 +316,14 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
           </div>
         </button>
       ))}
+      {searching && (
+        <div className="flex items-center justify-center py-4 gap-2 text-[10px] text-[var(--text-muted)] font-mono">
+          <Loader2 className="h-3 w-3 animate-spin" /> Пошук...
+        </div>
+      )}
       {!searching && searchResults.length === 0 && !searchError && (
         <p className="text-[10px] text-[var(--text-muted)] font-mono text-center py-4">
-          Введіть репозиторій або зачекайте завантаження
+          Введіть owner/repo і натисніть Знайти
         </p>
       )}
     </div>

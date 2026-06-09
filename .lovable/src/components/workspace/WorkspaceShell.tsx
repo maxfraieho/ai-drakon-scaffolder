@@ -15,10 +15,11 @@ import {
   Sun,
   Terminal,
   Workflow,
-  Brain, // Added Brain icon
+  Brain,
   BookOpen,
   ChevronDown,
   GitBranch,
+  Loader2,
   Plus,
 } from "lucide-react";
 import {
@@ -148,7 +149,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [cmdOpen, setCmdOpen] = useState(false);
-  const { activeProject, setActiveProject, projects } = useProject();
+  const { activeProject, setActiveProject, projects, loading: projectsLoading } = useProject();
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("nav_collapsed") === "true"; } catch { return false; }
   });
@@ -228,27 +229,44 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              className="hidden lg:flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)]/40 transition-colors max-w-[180px]"
+              className="hidden lg:flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)]/40 transition-colors max-w-[200px]"
             >
               <GitBranch className="h-3 w-3 shrink-0 text-[var(--accent-amber)]" />
               <span className="truncate">
-                {activeProject
-                  ? (activeProject.github
-                      ? `${activeProject.github.owner}/${activeProject.github.repo}`
-                      : activeProject.name)
-                  : "Select repo"}
+                {projectsLoading
+                  ? "..."
+                  : activeProject
+                    ? (activeProject.github
+                        ? `${activeProject.github.owner}/${activeProject.github.repo}`
+                        : activeProject.name)
+                    : "Select repo"}
               </span>
               <ChevronDown className="h-3 w-3 shrink-0 ml-auto" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
-            className="min-w-[220px] bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono"
+            sideOffset={4}
+            className="min-w-[240px] bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono z-50"
           >
-            {projects.length === 0 ? (
-              <DropdownMenuItem disabled className="text-[10px] text-[var(--text-muted)]">
-                No repositories configured
+            {projectsLoading ? (
+              <DropdownMenuItem disabled className="text-[10px] text-[var(--text-muted)] gap-1.5">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Завантаження...
               </DropdownMenuItem>
+            ) : projects.length === 0 ? (
+              <>
+                <DropdownMenuItem disabled className="text-[10px] text-[var(--text-muted)]">
+                  Репозиторії не додані
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-[10px] text-[var(--accent-amber)] cursor-pointer gap-1.5"
+                  onClick={() => document.dispatchEvent(new CustomEvent("open-add-repo"))}
+                >
+                  <Plus className="h-3 w-3" />
+                  Додати репозиторій
+                </DropdownMenuItem>
+              </>
             ) : (
               projects.map((p) => (
                 <DropdownMenuItem
@@ -271,14 +289,18 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                 </DropdownMenuItem>
               ))
             )}
-            <DropdownMenuSeparator className="bg-[var(--border-subtle)]" />
-            <DropdownMenuItem
-              className="text-[10px] text-[var(--text-muted)] cursor-pointer gap-1.5"
-              onClick={() => navigate({ to: "/settings" })}
-            >
-              <Plus className="h-3 w-3" />
-              Manage repositories
-            </DropdownMenuItem>
+            {!projectsLoading && (
+              <>
+                <DropdownMenuSeparator className="bg-[var(--border-subtle)]" />
+                <DropdownMenuItem
+                  className="text-[10px] text-[var(--text-muted)] cursor-pointer gap-1.5"
+                  onClick={() => document.dispatchEvent(new CustomEvent("open-project-manager"))}
+                >
+                  <Plus className="h-3 w-3" />
+                  Управління репозиторіями
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
 
