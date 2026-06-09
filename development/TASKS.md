@@ -21029,7 +21029,7 @@ git push origin main
 ---
 
 ## TASK-196: GardenPage — docs tab з knowledge graph + WorkspaceShell + AgentChat LLM warning
-[ ] TASK-196
+[x] TASK-196
 
 ### CONTEXT
 Claude вже написав GardenPage.tsx та оновив docs.tsx на dev server (192.168.3.184).
