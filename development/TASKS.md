@@ -17441,7 +17441,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-155:AppLayout-observability+scroll|OpenDe
 ---
 
 ## TASK-156: Full Platform Design via OpenDesign — Complete UI System
-[ ] TASK-156
+[x] TASK-156
 
 ### GOAL
 Використати OpenDesign для генерації **повного** дизайну платформи AI-DRAKON:
@@ -17611,7 +17611,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-156:full-opendesign|AppLayout+HomePage+3-
 ---
 
 ## TASK-157: Full Platform Design via OpenDesign — using od-generate.sh
-[ ] TASK-157
+[x] TASK-157
 
 ### GOAL
 Згенерувати 5 компонентів через OpenDesign (od-generate.sh на dev server) та закомітити.
