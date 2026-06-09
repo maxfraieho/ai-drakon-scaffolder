@@ -18,8 +18,9 @@ const token = jwt();
 return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export async function fetchNotesList(): Promise<NoteListItem[]> {
-const res = await fetch( `${workerUrl()}/v1/notes/list`, { headers: authHeaders() });
+export async function fetchNotesList(project?: string): Promise<NoteListItem[]> {
+const projectQs = project ? `?project=${encodeURIComponent(project)}` : "";
+const res = await fetch( `${workerUrl()}/v1/notes/list${projectQs}`, { headers: authHeaders() });
 if (!res.ok) throw new Error(`notes/list HTTP ${res.status}`);
 const data = (await res.json()) as { notes?: NoteListItem[] };
 return data.notes ?? [];

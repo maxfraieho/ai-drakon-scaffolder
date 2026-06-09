@@ -6,6 +6,7 @@ import {
 import { ExecutionGraph } from "@/components/docs/garden/ExecutionGraph";
 import { NoteRenderer } from "@/components/docs/garden/NoteRenderer";
 import { fetchNotesList, fetchNote } from "@/lib/garden/notesApi";
+import { useProject } from "@/context/ProjectContext";
 import { getRootFolder } from "@/lib/garden/graphTypes";
 import type { GraphNode, GraphEdge, NoteListItem } from "@/lib/garden/graphTypes";
 import { Button } from "@/components/ui/button";
@@ -101,6 +102,9 @@ function groupByFolder(notes: NoteListItem[]): Map<string, NoteTreeItem[]> {
 }
 
 export function GardenPage() {
+  const { activeProject } = useProject();
+  const projectSlug = activeProject?.slug;
+
   const [viewMode, setViewMode] = useState<ViewMode>("split");
   const [notes, setNotes] = useState<NoteListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,8 +119,10 @@ export function GardenPage() {
   const loadNotes = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSelectedSlug(null);
+    setNoteContent("");
     try {
-      const list = await fetchNotesList();
+      const list = await fetchNotesList(projectSlug);
       setNotes(list);
       setGraph(buildBaseGraph(list));
       const folders = new Set(list.map((n) => getRootFolder(n.slug)));
@@ -128,7 +134,7 @@ export function GardenPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [projectSlug]);
 
   useEffect(() => { void loadNotes(); }, [loadNotes]);
 
@@ -136,7 +142,7 @@ export function GardenPage() {
     setSelectedSlug(slug);
     setNoteLoading(true);
     try {
-      const note = await fetchNote(slug);
+      const note = await fetchNote(slug, projectSlug);
       if (!note) { setNoteContent(""); return; }
       setNoteContent(note.content);
       // Enrich graph with wikilinks from this note
@@ -150,7 +156,7 @@ export function GardenPage() {
     } finally {
       setNoteLoading(false);
     }
-  }, [notes]);
+  }, [notes, projectSlug]);
 
   const allSlugs = useMemo(() => new Set(notes.map((n) => n.slug)), [notes]);
 
