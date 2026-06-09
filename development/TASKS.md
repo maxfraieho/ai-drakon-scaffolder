@@ -21455,3 +21455,202 @@ git push origin main
 
 ### DIARY
 Entry: "SESSION:2026-06-09|TASK-197:github-repo-picker+localStorage|commit:<hash>|★★★"
+
+---
+
+## [ ] TASK-198
+
+### GOAL
+Додати до MCP сервера (architect-agent-flue) інструменти для роботи з будь-яким GitHub репозиторієм. Агент підключається через MCP, передає owner/repo/token — і може читати/писати файли, шукати код в будь-якому репо.
+
+### CONTEXT
+MCP сервер: `services/architect-agent-flue/src/mcp-server.ts`
+GitHub API утиліта: `services/architect-agent-flue/lib/github-api.ts` (вже є, клас GitHubAPI)
+Worker env: `env.GITHUB_TOKEN` (CF secret, може бути порожнім)
+
+### WHAT TO ADD
+
+**4 нові MCP tools** в `mcp-server.ts`:
+
+**1. `gh_list_files`** — список файлів в директорії:
+```typescript
+{
+  name: 'gh_list_files',
+  description: 'List files and directories in a GitHub repository path.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      owner: { type: 'string', description: 'GitHub owner/org' },
+      repo:  { type: 'string', description: 'Repository name' },
+      path:  { type: 'string', description: 'Directory path (empty = root)', default: '' },
+      branch: { type: 'string', description: 'Branch name', default: 'main' },
+      token: { type: 'string', description: 'GitHub token (optional, uses env fallback)' }
+    },
+    required: ['owner', 'repo']
+  }
+}
+```
+
+**2. `gh_read_file`** — читання файлу:
+```typescript
+{
+  name: 'gh_read_file',
+  description: 'Read file content from any GitHub repository.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      owner:  { type: 'string' },
+      repo:   { type: 'string' },
+      path:   { type: 'string', description: 'File path in repository' },
+      branch: { type: 'string', default: 'main' },
+      token:  { type: 'string', description: 'GitHub token (optional)' }
+    },
+    required: ['owner', 'repo', 'path']
+  }
+}
+```
+
+**3. `gh_write_file`** — запис/оновлення файлу:
+```typescript
+{
+  name: 'gh_write_file',
+  description: 'Create or update a file in any GitHub repository (requires token with write access).',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      owner:   { type: 'string' },
+      repo:    { type: 'string' },
+      path:    { type: 'string', description: 'File path in repository' },
+      content: { type: 'string', description: 'New file content (UTF-8)' },
+      message: { type: 'string', description: 'Commit message' },
+      branch:  { type: 'string', default: 'main' },
+      token:   { type: 'string', description: 'GitHub token with write access' }
+    },
+    required: ['owner', 'repo', 'path', 'content', 'message']
+  }
+}
+```
+
+**4. `gh_search_code`** — пошук коду:
+```typescript
+{
+  name: 'gh_search_code',
+  description: 'Search code in a GitHub repository using GitHub code search.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      owner:  { type: 'string' },
+      repo:   { type: 'string' },
+      query:  { type: 'string', description: 'Search query (GitHub code search syntax)' },
+      token:  { type: 'string', description: 'GitHub token (required for code search API)' }
+    },
+    required: ['owner', 'repo', 'query']
+  }
+}
+```
+
+### IMPLEMENTATION
+
+В `mcp-server.ts` в `switch (name)` додати handlers:
+
+```typescript
+} else if (name === 'gh_list_files') {
+  const { owner, repo, path = '', branch = 'main', token } = args || {};
+  const ghToken = token || c.env.GITHUB_TOKEN || '';
+  const api = new GitHubAPI(ghToken, `${owner}/${repo}`, branch);
+  const items = await api.listDir(path);
+  result = items.map(i => ({ name: i.name, path: i.path, type: i.type, size: i.size }));
+
+} else if (name === 'gh_read_file') {
+  const { owner, repo, path, branch = 'main', token } = args || {};
+  const ghToken = token || c.env.GITHUB_TOKEN || '';
+  const api = new GitHubAPI(ghToken, `${owner}/${repo}`, branch);
+  const file = await api.getFile(path);
+  result = { path, content: file.content, sha: file.sha };
+
+} else if (name === 'gh_write_file') {
+  const { owner, repo, path, content, message, branch = 'main', token } = args || {};
+  const ghToken = token || c.env.GITHUB_TOKEN || '';
+  if (!ghToken) throw new Error('GitHub token required for write operations');
+  const api = new GitHubAPI(ghToken, `${owner}/${repo}`, branch);
+  // Get SHA if file exists (for update)
+  let sha: string | undefined;
+  try { const existing = await api.getFile(path); sha = existing.sha; } catch {}
+  const commitResult = await api.putFile(path, content, message, sha);
+  result = { path, sha: commitResult.sha, committed: true };
+
+} else if (name === 'gh_search_code') {
+  const { owner, repo, query, token } = args || {};
+  const ghToken = token || c.env.GITHUB_TOKEN || '';
+  const headers: Record<string, string> = { Accept: 'application/vnd.github+json' };
+  if (ghToken) headers.Authorization = `Bearer ${ghToken}`;
+  const q = encodeURIComponent(`${query} repo:${owner}/${repo}`);
+  const resp = await fetch(`https://api.github.com/search/code?q=${q}&per_page=20`, { headers });
+  if (!resp.ok) throw new Error(`GitHub search API ${resp.status}: ${await resp.text()}`);
+  const data: any = await resp.json();
+  result = (data.items || []).map((i: any) => ({
+    path: i.path,
+    url: i.html_url,
+    score: i.score
+  }));
+}
+```
+
+**ВАЖЛИВО:** Додати import GitHubAPI на початку файлу якщо його там ще немає:
+```typescript
+import { GitHubAPI } from '../lib/github-api.js';
+```
+
+### DEPLOY
+
+Worker деплоїться через Wrangler. Після змін в `mcp-server.ts`:
+```bash
+cd ~/workspace/ai-drakon-scaffolder/services/architect-agent-flue
+npx wrangler deploy 2>&1 | tail -10
+```
+Якщо wrangler не встановлений:
+```bash
+npm install -g wrangler
+```
+
+### VERIFICATION
+```bash
+# 1. Перевірити що нові tools є в MCP list
+curl -s -X POST https://architect-agent-flue.maxfraieho.workers.dev/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' | python3 -c "
+import sys,json
+data=json.load(sys.stdin)
+tools = data.get('result',{}).get('tools',[])
+for t in tools:
+    print(t['name'])
+"
+
+# 2. Перевірити gh_list_files на публічному репо (без токена)
+curl -s -X POST https://architect-agent-flue.maxfraieho.workers.dev/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"gh_list_files","arguments":{"owner":"maxfraieho","repo":"ai-drakon-scaffolder","path":""}}}' \
+  | python3 -m json.tool | head -20
+```
+
+### COMMIT
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add services/architect-agent-flue/src/mcp-server.ts
+git commit -m "feat(mcp): add gh_list_files, gh_read_file, gh_write_file, gh_search_code tools"
+git push origin main
+```
+
+### NOTES
+- !!IMPORTANT!! Run LOCALLY on Termux (AGY3). Do NOT SSH anywhere.
+- Repo at ~/workspace/ai-drakon-scaffolder — git pull first
+- The `putFile` method in GitHubAPI is already implemented (handles create + update with SHA)
+- `gh_write_file` needs token — throw clear error if missing
+- Keep existing MCP tools intact — only ADD new ones
+- MCP endpoint may be `/mcp` or `/api/mcp` — check index.ts for the route
+- After deploy, Worker URL is: https://architect-agent-flue.maxfraieho.workers.dev
+
+### DIARY
+Entry: "SESSION:2026-06-09|TASK-198:mcp-github-tools|gh_list_files+gh_read_file+gh_write_file+gh_search_code|commit:<hash>|★★★"
