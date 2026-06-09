@@ -20959,3 +20959,68 @@ git push origin main
 ```
 
 **Diary:** `"SESSION:$(date +%Y-%m-%d)|TASK-182:flue-tools-endpoint|dynamic-ui|commit:<hash>|★★★★★"`
+
+---
+
+## TASK-190: GitHub токен зникає після повторного логіну
+[x] TASK-190
+
+### GOAL
+`clearAccessToken()` в auth.ts при logout знищував всі localStorage ключі включно з drakon.settings.
+
+### FIX
+Зберігати ключі `drakon.settings`, API keys, nav_collapsed тощо перед `localStorage.clear()`, потім відновлювати.
+
+### DONE
+`e40c012` — auth.ts: clearAccessToken preserves settings
+
+---
+
+## TASK-191: Список проектів порожній
+[ ] TASK-191
+
+### GOAL
+`/agents` → "Управління проектами" показує порожній список. Не завантажує з Workers GET /projects.
+
+### TODO
+- Перевірити ProjectSelector / ZoneCreationDialog чи fetchProjects() реалізований
+- Якщо ні — додати fetchProjects() що викликає `architectUrl/projects`
+
+---
+
+## TASK-192: Агенти offline — діагностика
+[x] TASK-192
+
+### GOAL
+Всі агенти — червоні. AgentStatusCard не надсилав Authorization header.
+
+### FIX
+`e40c012` — AgentStatusCard: додано `Authorization: Bearer <token>` до health fetch.
+
+### TODO (partial)
+- Перевірити чи дефолтні URLs в settings-storage вже Flue Workers
+- Якщо ні — оновити DEFAULT_SETTINGS
+
+---
+
+## TASK-193: Encoding bug "SlotRouter â score_candidate"
+[ ] TASK-193
+
+### GOAL
+Назви діаграм з некоректним Latin-1→UTF-8 encoding.
+
+### TODO
+- Додати `sanitizeDiagramName()` в diagram-storage.ts
+- Застосувати в DiagramsPage при відображенні карток
+
+---
+
+## TASK-194: /docs "Не вдалося завантажити файл з GitHub"
+[ ] TASK-194
+
+### GOAL
+Помилка при відкритті файлів в /docs — наслідок TASK-190 або lazy-load race.
+
+### TODO
+- Перевірити EditorPage чи docs-api.ts
+- Додати human-readable error + "Перейти в Settings" action
