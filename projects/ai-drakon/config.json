@@ -1,0 +1,13 @@
+{
+  "slug": "ai-drakon",
+  "name": "AI-DRAKON",
+  "description": "AI agent orchestration platform",
+  "repo_url": "https://github.com/maxfraieho/ai-drakon-scaffolder",
+  "branch": "main",
+  "github": {
+    "owner": "maxfraieho",
+    "repo": "ai-drakon-scaffolder",
+    "branch": "main"
+  },
+  "created_at": "2026-06-09T00:00:00.000Z"
+}
