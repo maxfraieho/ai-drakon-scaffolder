@@ -7,6 +7,8 @@ import { contributeToKB, listKB, searchPatterns } from '../tools/kb-crud.js';
 import { listPipelines, getPipeline, updatePipeline, executePipelineGraph } from '../tools/graph-pipelines.js';
 import { listProjects, createProject } from '../tools/project-pipelines.js';
 import { createJobDO, getJobDO, updateJobDO } from '../lib/job-store.js';
+import { GitHubAPI } from '../lib/github-api.js';
+
 
 const MCP_TOOLS = [
   {
@@ -176,6 +178,67 @@ const MCP_TOOLS = [
       },
       required: ['slug']
     }
+  },
+  {
+    name: 'gh_list_files',
+    description: 'List files and directories in a GitHub repository path.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        owner: { type: 'string', description: 'GitHub owner/org' },
+        repo:  { type: 'string', description: 'Repository name' },
+        path:  { type: 'string', description: 'Directory path (empty = root)', default: '' },
+        branch: { type: 'string', description: 'Branch name', default: 'main' },
+        token: { type: 'string', description: 'GitHub token (optional, uses env fallback)' }
+      },
+      required: ['owner', 'repo']
+    }
+  },
+  {
+    name: 'gh_read_file',
+    description: 'Read file content from any GitHub repository.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        owner:  { type: 'string' },
+        repo:   { type: 'string' },
+        path:   { type: 'string', description: 'File path in repository' },
+        branch: { type: 'string', default: 'main' },
+        token:  { type: 'string', description: 'GitHub token (optional)' }
+      },
+      required: ['owner', 'repo', 'path']
+    }
+  },
+  {
+    name: 'gh_write_file',
+    description: 'Create or update a file in any GitHub repository (requires token with write access).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        owner:   { type: 'string' },
+        repo:    { type: 'string' },
+        path:    { type: 'string', description: 'File path in repository' },
+        content: { type: 'string', description: 'New file content (UTF-8)' },
+        message: { type: 'string', description: 'Commit message' },
+        branch:  { type: 'string', default: 'main' },
+        token:   { type: 'string', description: 'GitHub token with write access' }
+      },
+      required: ['owner', 'repo', 'path', 'content', 'message']
+    }
+  },
+  {
+    name: 'gh_search_code',
+    description: 'Search code in a GitHub repository using GitHub code search.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        owner:  { type: 'string' },
+        repo:   { type: 'string' },
+        query:  { type: 'string', description: 'Search query (GitHub code search syntax)' },
+        token:  { type: 'string', description: 'GitHub token (required for code search API)' }
+      },
+      required: ['owner', 'repo', 'query']
+    }
   }
 ];
 
@@ -292,6 +355,42 @@ export async function handleMcp(c: Context) {
         } else if (name === 'create_project') {
           const { slug, payload } = args || {};
           result = await createProject(slug, payload, c.env);
+        } else if (name === 'gh_list_files') {
+          const { owner, repo, path = '', branch = 'main', token } = args || {};
+          const ghToken = token || c.env.GITHUB_TOKEN || '';
+          const api = new GitHubAPI(ghToken, `${owner}/${repo}`, branch);
+          const items = await api.listDir(path);
+          result = items.map(i => ({ name: i.name, path: i.path, type: i.type, size: i.size }));
+        } else if (name === 'gh_read_file') {
+          const { owner, repo, path, branch = 'main', token } = args || {};
+          const ghToken = token || c.env.GITHUB_TOKEN || '';
+          const api = new GitHubAPI(ghToken, `${owner}/${repo}`, branch);
+          const file = await api.getFile(path);
+          result = { path, content: file.content, sha: file.sha };
+        } else if (name === 'gh_write_file') {
+          const { owner, repo, path, content, message, branch = 'main', token } = args || {};
+          const ghToken = token || c.env.GITHUB_TOKEN || '';
+          if (!ghToken) throw new Error('GitHub token required for write operations');
+          const api = new GitHubAPI(ghToken, `${owner}/${repo}`, branch);
+          // Get SHA if file exists (for update)
+          let sha: string | undefined;
+          try { const existing = await api.getFile(path); sha = existing.sha; } catch {}
+          const commitResult = await api.putFile(path, content, message, sha);
+          result = { path, sha: commitResult.sha, committed: true };
+        } else if (name === 'gh_search_code') {
+          const { owner, repo, query, token } = args || {};
+          const ghToken = token || c.env.GITHUB_TOKEN || '';
+          const headers: Record<string, string> = { Accept: 'application/vnd.github+json' };
+          if (ghToken) headers.Authorization = `Bearer ${ghToken}`;
+          const q = encodeURIComponent(`${query} repo:${owner}/${repo}`);
+          const resp = await fetch(`https://api.github.com/search/code?q=${q}&per_page=20`, { headers });
+          if (!resp.ok) throw new Error(`GitHub search API ${resp.status}: ${await resp.text()}`);
+          const data: any = await resp.json();
+          result = (data.items || []).map((i: any) => ({
+            path: i.path,
+            url: i.html_url,
+            score: i.score
+          }));
         } else {
           return c.json({
             jsonrpc: '2.0',
