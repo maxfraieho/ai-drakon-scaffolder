@@ -21161,7 +21161,7 @@ Entry: "SESSION:$(date +%Y-%m-%d)|TASK-196:garden-page+llm-warning|docs-restored
 
 ---
 
-## [ ] TASK-197
+## [x] TASK-197
 
 ### GOAL
 Переробити ProjectSelector та ProjectContext для роботи з будь-яким GitHub репозиторієм без реєстрації в Worker. Користувач вводить GitHub токен в Settings один раз — і може додавати будь-яке доступне репо прямо в модалці.
