@@ -20977,7 +20977,7 @@ git push origin main
 ---
 
 ## TASK-191: Список проектів порожній
-[ ] TASK-191
+[x] TASK-191
 
 ### GOAL
 `/agents` → "Управління проектами" показує порожній список. Не завантажує з Workers GET /projects.
@@ -21004,7 +21004,7 @@ git push origin main
 ---
 
 ## TASK-193: Encoding bug "SlotRouter â score_candidate"
-[ ] TASK-193
+[x] TASK-193
 
 ### GOAL
 Назви діаграм з некоректним Latin-1→UTF-8 encoding.
