@@ -22222,3 +22222,160 @@ git push origin main
 
 ### DIARY
 Entry: "SESSION:2026-06-10|TASK-201:github-token-persistence|commit:<hash>|★★★"
+
+---
+
+## [ ] TASK-202: unified WorkspacePage
+
+**De zapuskaty:** !!IMPORTANT!! Run locally on AGY3 Termux. Edit files in `~/workspace/ai-drakon-scaffolder/src/`. Then commit + push + scp to .lovable/.
+
+### Shcho zrobyty
+
+Stvoryt unifikovanu WorkspacePage yaka obednuye ProjectFileManager (/code) i GardenPage (/docs) v odnu storinku z tab-peremiknachem.
+
+---
+
+### KROK 1: Stvoryt `src/pages/WorkspacePage.tsx`
+
+```tsx
+import { useState } from "react";
+import { FileCode, FileText } from "lucide-react";
+import { ProjectFileManager } from "@/components/files/ProjectFileManager";
+import { GardenPage } from "@/pages/GardenPage";
+import { cn } from "@/lib/utils";
+
+type WorkspaceMode = "code" | "docs";
+
+export function WorkspacePage() {
+  const [mode, setMode] = useState<WorkspaceMode>("code");
+
+  return (
+    <div className="flex flex-col h-full w-full bg-[var(--bg-base)] text-[var(--text-primary)]">
+      <div className="flex items-center px-2 h-8 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+        {(
+          [
+            { m: "code" as WorkspaceMode, label: "Kod", Icon: FileCode },
+            { m: "docs" as WorkspaceMode, label: "Dokumentatsiia", Icon: FileText },
+          ]
+        ).map(({ m, label, Icon }) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={cn(
+              "inline-flex items-center gap-1.5 h-full px-3 border-b-2 font-mono text-[10px] uppercase tracking-[0.16em] transition-colors",
+              mode === m
+                ? "border-[var(--accent-amber)] text-[var(--accent-amber)]"
+                : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]",
+            )}
+          >
+            <Icon className="h-3 w-3" />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <div className={cn("h-full", mode !== "code" && "hidden")}>
+          <ProjectFileManager defaultMode="code" />
+        </div>
+        <div className={cn("h-full", mode !== "docs" && "hidden")}>
+          <GardenPage />
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+Note: use REAL Ukrainian text for labels:
+- "Kod" => "Код"
+- "Dokumentatsiia" => "Документація"
+
+---
+
+### KROK 2: Stvoryt `src/routes/workspace.tsx`
+
+```tsx
+import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { hasClientJwt } from "@/lib/route-auth";
+import { WorkspacePage } from "@/pages/WorkspacePage";
+
+export const Route = createFileRoute("/workspace")({
+  component: WorkspaceRoute,
+});
+
+function WorkspaceRoute() {
+  if (!hasClientJwt()) return <Navigate to="/login" replace />;
+  return <WorkspacePage />;
+}
+```
+
+---
+
+### KROK 3: Zminyt `src/components/workspace/WorkspaceShell.tsx`
+
+Znaydy blok NAV_WORKSPACE (pryblyzno ryadky 52-62):
+```ts
+const NAV_WORKSPACE: NavItem[] = [
+  { to: "/pipelines", label: "Pipeline", icon: Workflow },
+  { to: "/diagrams", label: "Skhemy", icon: LayoutDashboard },
+  { to: "/knowledge", label: "Znannia", icon: Brain },
+  { to: "/notebooks", label: "NotebookLM", icon: BookOpen },
+  { to: "/code", label: "Kod", icon: FileCode },
+  { to: "/docs", label: "Dokumentatsiia", icon: FileText },
+];
+```
+
+Zaminy ostanni 2 items `/code` i `/docs` na 1 item `/workspace`:
+```ts
+  { to: "/workspace", label: "Workspace", icon: Layers },
+```
+
+Add `Layers` to lucide-react imports at top of file (it is already imported other icons there).
+
+Takozh znaydy funktsiu `getBreadcrumb` i dodai case:
+```ts
+  if (pathname.startsWith("/workspace")) return { section: "Workspace", sectionPath: "/workspace" };
+```
+
+Add it BEFORE the final `return { section: "Workspace" ... }` line.
+
+---
+
+### KROK 4: Sync do .lovable
+
+```bash
+cp src/pages/WorkspacePage.tsx .lovable/src/pages/WorkspacePage.tsx
+cp src/routes/workspace.tsx .lovable/src/routes/workspace.tsx
+cp src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx
+```
+
+---
+
+### VERIFICATION
+
+```bash
+# TypeScript check
+npx tsc --noEmit 2>&1 | head -20
+
+# Check files exist
+ls src/pages/WorkspacePage.tsx src/routes/workspace.tsx
+
+# Check WorkspaceShell has Workspace nav item
+grep -n "workspace\|Layers" src/components/workspace/WorkspaceShell.tsx
+```
+
+---
+
+### COMMIT
+
+```bash
+git add src/pages/WorkspacePage.tsx src/routes/workspace.tsx src/components/workspace/WorkspaceShell.tsx .lovable/src/pages/WorkspacePage.tsx .lovable/src/routes/workspace.tsx .lovable/src/components/workspace/WorkspaceShell.tsx
+git commit -m "feat(workspace): unified WorkspacePage combining Kod + Dokumentatsiia tabs"
+git push origin main
+```
+
+### DIARY
+
+Entry: "SESSION:2026-06-10|TASK-202:unified-WorkspacePage|WorkspacePage+route+nav|commit:<hash>|kod+docs tabs|lazy mount|Layers icon|sshpass OK|[OK]|★★★"
