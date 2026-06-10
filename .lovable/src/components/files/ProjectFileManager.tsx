@@ -92,19 +92,19 @@ function FileTreeItem({
   if (node.type === "dir") {
     return (
       <div className="w-full">
-        <div className="group flex items-center hover:bg-zinc-800/40 rounded transition-colors pr-2">
+        <div className="group flex items-center hover:bg-white/5/40 rounded transition-colors pr-2">
           <button
             type="button"
             onClick={() => onToggleFolder(node)}
-            className="flex-1 flex items-center gap-1.5 py-1 text-left text-xs text-zinc-300 min-w-0"
+            className="flex-1 flex items-center gap-1.5 py-1 text-left text-xs text-[var(--text-primary)] min-w-0"
             style={{ paddingLeft: `${8 + level * 12}px` }}
           >
             {node.isLoading ? (
-              <Loader2 className="h-3 w-3 animate-spin text-zinc-500 shrink-0" />
+              <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)] shrink-0" />
             ) : isExpanded ? (
-              <ChevronDown className="h-3 w-3 text-zinc-500 shrink-0" />
+              <ChevronDown className="h-3 w-3 text-[var(--text-muted)] shrink-0" />
             ) : (
-              <ChevronRight className="h-3 w-3 text-zinc-500 shrink-0" />
+              <ChevronRight className="h-3 w-3 text-[var(--text-muted)] shrink-0" />
             )}
             {isExpanded ? (
               <FolderOpen className="h-3.5 w-3.5 text-[var(--accent-amber)] shrink-0" />
@@ -118,7 +118,7 @@ function FileTreeItem({
             <Button
               variant="ghost"
               size="icon"
-              className="h-5 w-5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors p-1"
+              className="h-5 w-5 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors p-1"
               title="Analyze"
               onClick={(e) => { e.stopPropagation(); void onAnalyze(node); }}
             >
@@ -127,7 +127,7 @@ function FileTreeItem({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onAddFile(node.path); }}
-              className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
               title="Новий файл"
             >
               <FilePlus className="h-3 w-3" />
@@ -135,7 +135,7 @@ function FileTreeItem({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onAddFolder(node.path); }}
-              className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
               title="Нова папка"
             >
               <FolderPlus className="h-3 w-3" />
@@ -143,7 +143,7 @@ function FileTreeItem({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onTagFolder(node.path); }}
-              className="p-1 text-zinc-400 hover:text-[var(--accent-amber)] hover:bg-zinc-800 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-[var(--accent-amber)] hover:bg-white/5 rounded transition-colors"
               title="Прив'язати до зони"
             >
               <Tag className="h-3 w-3" />
@@ -151,7 +151,7 @@ function FileTreeItem({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onDeleteNode(node); }}
-              className="p-1 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-red-400 hover:bg-white/5 rounded transition-colors"
               title="Видалити папку"
             >
               <Trash2 className="h-3 w-3" />
@@ -186,7 +186,7 @@ function FileTreeItem({
 
   const ext = node.name.split(".").pop() ?? "";
   return (
-    <div className="group flex items-center hover:bg-zinc-800/40 rounded transition-colors pr-2">
+    <div className="group flex items-center hover:bg-white/5/40 rounded transition-colors pr-2">
       <button
         type="button"
         onClick={() => onSelectFile(node.path)}
@@ -194,14 +194,14 @@ function FileTreeItem({
           "flex-1 flex items-center gap-1.5 py-1.5 text-left text-xs min-w-0",
           isSelected
             ? "bg-[var(--accent-dim)] text-[var(--accent-amber)] font-medium rounded-sm"
-            : "text-zinc-400 hover:text-zinc-200"
+            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
         )}
         style={{ paddingLeft: `${20 + level * 12}px` }}
       >
         <FileText className="h-3.5 w-3.5 shrink-0" />
         <span className="truncate">{node.name}</span>
         {ext && (
-          <span className="text-[8px] px-1 py-0.2 bg-zinc-800 rounded text-zinc-500 uppercase font-mono shrink-0 ml-auto mr-1 group-hover:hidden">
+          <span className="text-[8px] px-1 py-0.2 bg-[var(--bg-elevated)] rounded text-[var(--text-muted)] uppercase font-mono shrink-0 ml-auto mr-1 group-hover:hidden">
             {ext}
           </span>
         )}
@@ -211,7 +211,7 @@ function FileTreeItem({
         <Button
           variant="ghost"
           size="icon"
-          className="h-5 w-5 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors p-1"
+          className="h-5 w-5 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors p-1"
           title="Analyze"
           onClick={(e) => { e.stopPropagation(); void onAnalyze(node); }}
         >
@@ -220,7 +220,7 @@ function FileTreeItem({
         <button
           type="button"
           onClick={() => onSelectFile(node.path)}
-          className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+          className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
           title="Редагувати"
         >
           <Edit className="h-3 w-3" />
@@ -228,7 +228,7 @@ function FileTreeItem({
         <button
           type="button"
           onClick={() => onDeleteNode(node)}
-          className="p-1 text-zinc-400 hover:text-red-400 hover:bg-zinc-800 rounded transition-colors"
+          className="p-1 text-[var(--text-secondary)] hover:text-red-400 hover:bg-white/5 rounded transition-colors"
           title="Видалити файл"
         >
           <Trash2 className="h-3 w-3" />
@@ -763,7 +763,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
   if (!isGitHub && mode !== "docs") {
     return (
       <div className="flex h-full items-center justify-center bg-[var(--bg-base)] text-[var(--text-primary)]">
-        <div className="flex flex-col items-center gap-4 text-center max-w-sm p-6 bg-zinc-900/40 border border-zinc-800/80 rounded-lg backdrop-blur">
+        <div className="flex flex-col items-center gap-4 text-center max-w-sm p-6 bg-[var(--bg-surface)]/40 border border-[var(--border-subtle)]/80 rounded-lg backdrop-blur">
           <FileCode className="h-10 w-10 text-[var(--accent-amber)] animate-pulse" />
           <div>
             <h3 className="font-mono text-sm font-semibold text-[var(--text-primary)]">
@@ -790,19 +790,19 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
     <div className="flex h-full w-full overflow-hidden bg-[var(--bg-base)]">
       {/* Collapsible Sidebar */}
       <aside className={cn(
-        "shrink-0 flex flex-col border-r border-zinc-800 bg-zinc-950/60 backdrop-blur-md transition-[width] duration-200 overflow-hidden",
+        "shrink-0 flex flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-base)]/60 backdrop-blur-md transition-[width] duration-200 overflow-hidden",
         sidebarOpen ? "w-56" : "w-0 border-r-0"
       )}>
         {/* Header */}
-        <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800 shrink-0">
-          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 truncate flex-1 mr-2">
+        <div className="flex items-center justify-between px-3 py-2.5 border-b border-[var(--border-subtle)] shrink-0">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] truncate flex-1 mr-2">
             {sidebarHeader}
           </span>
           <div className="flex gap-1 shrink-0">
             <button
               type="button"
               onClick={() => handleAddFile("")}
-              className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
               title="Новий файл в коліні"
             >
               <FilePlus className="h-3.5 w-3.5" />
@@ -810,7 +810,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
             <button
               type="button"
               onClick={() => handleAddFolder("")}
-              className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
               title="Нова папка в коліні"
             >
               <FolderPlus className="h-3.5 w-3.5" />
@@ -818,7 +818,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
             <button
               type="button"
               onClick={() => setSidebarOpen(false)}
-              className="p-1 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
               title="Сховати бічну панель"
             >
               <PanelLeftClose className="h-3.5 w-3.5" />
@@ -827,7 +827,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
         </div>
 
         {/* Filter Pills */}
-        <div className="px-2.5 py-2 shrink-0 flex gap-1 border-b border-zinc-900">
+        <div className="px-2.5 py-2 shrink-0 flex gap-1 border-b border-[var(--border-subtle)]">
           <button
             onClick={() => setMode("all")}
             disabled={!isGitHub}
@@ -835,7 +835,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
               "flex-1 px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase border font-mono transition-all",
               mode === "all"
                 ? "bg-[var(--accent-dim)] border-[var(--accent-amber)]/30 text-[var(--accent-amber)]"
-                : "border-transparent text-zinc-500 hover:text-zinc-300 disabled:opacity-30"
+                : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-30"
             )}
           >
             All
@@ -846,7 +846,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
               "flex-1 px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase border font-mono transition-all",
               mode === "docs"
                 ? "bg-[var(--accent-dim)] border-[var(--accent-amber)]/30 text-[var(--accent-amber)]"
-                : "border-transparent text-zinc-500 hover:text-zinc-300"
+                : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             )}
           >
             /docs
@@ -858,7 +858,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
               "flex-1 px-1.5 py-0.5 rounded text-[10px] font-semibold tracking-wide uppercase border font-mono transition-all",
               mode === "code"
                 ? "bg-[var(--accent-dim)] border-[var(--accent-amber)]/30 text-[var(--accent-amber)]"
-                : "border-transparent text-zinc-500 hover:text-zinc-300 disabled:opacity-30"
+                : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-30"
             )}
           >
             Code
@@ -866,12 +866,12 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
         </div>
 
         {/* Search */}
-        <div className="px-2 py-1.5 shrink-0 border-b border-zinc-900">
+        <div className="px-2 py-1.5 shrink-0 border-b border-[var(--border-subtle)]">
           <Input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Пошук..."
-            className="h-7 text-xs bg-zinc-900/60 border-zinc-800 text-zinc-200 placeholder:text-zinc-600 focus-visible:ring-[var(--accent-amber)]/40"
+            className="h-7 text-xs bg-[var(--bg-surface)]/60 border-[var(--border-subtle)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus-visible:ring-[var(--accent-amber)]/40"
           />
         </div>
 
@@ -879,10 +879,10 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
         <ScrollArea className="flex-1 p-2">
           {loadingTree ? (
             <div className="flex items-center justify-center p-8">
-              <Loader2 className="h-4 w-4 animate-spin text-zinc-600" />
+              <Loader2 className="h-4 w-4 animate-spin text-[var(--text-muted)]" />
             </div>
           ) : filteredTree.length === 0 ? (
-            <div className="p-4 text-center text-xs text-zinc-600 font-mono">
+            <div className="p-4 text-center text-xs text-[var(--text-muted)] font-mono">
               Файлів не знайдено
             </div>
           ) : (
@@ -914,7 +914,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
         <button
           type="button"
           onClick={() => setSidebarOpen(true)}
-          className="h-full w-6 shrink-0 flex items-center justify-center border-r border-zinc-800 bg-zinc-950/20 text-zinc-500 hover:text-zinc-200 transition-colors"
+          className="h-full w-6 shrink-0 flex items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-base)]/20 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
           title="Показати бічну панель"
         >
           <PanelLeft className="h-4 w-4" />
@@ -922,17 +922,17 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 bg-zinc-950">
+      <div className="flex-1 flex flex-col min-w-0 bg-[var(--bg-base)]">
         {/* Center Toolbar */}
-        <div className="h-10 px-3 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur shrink-0 flex items-center justify-between">
+        <div className="h-10 px-3 border-b border-[var(--border-subtle)] bg-[var(--bg-base)]/80 backdrop-blur shrink-0 flex items-center justify-between">
           {/* Breadcrumbs */}
-          <div className="font-mono text-[10px] text-zinc-500 truncate flex items-center gap-1.5">
-            <span className="text-zinc-600 font-bold">PROJECT:</span>
+          <div className="font-mono text-[10px] text-[var(--text-muted)] truncate flex items-center gap-1.5">
+            <span className="text-[var(--text-muted)] font-bold">PROJECT:</span>
             <span>{sidebarHeader}</span>
             {filePath && (
               <>
-                <span className="text-zinc-700">/</span>
-                <span className="text-zinc-300 font-bold">{filePath}</span>
+                <span className="text-[var(--border-subtle)]">/</span>
+                <span className="text-[var(--text-primary)] font-bold">{filePath}</span>
               </>
             )}
           </div>
@@ -940,7 +940,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           {/* Right Actions */}
           <div className="flex items-center gap-2 shrink-0">
             {isGitHub && (
-              <span className="font-mono text-[9px] px-1.5 py-0.5 rounded border border-zinc-800 bg-zinc-900 text-zinc-400">
+              <span className="font-mono text-[9px] px-1.5 py-0.5 rounded border border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-secondary)]">
                 branch: {branch}
               </span>
             )}
@@ -950,7 +950,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 text-zinc-500 hover:text-zinc-200"
+                  className="h-7 w-7 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
                   onClick={copyCode}
                   title="Копіювати код"
                 >
@@ -980,8 +980,8 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           {filePath ? (
             <div className="w-full h-full flex flex-col">
               {loadingFile && (
-                <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                  <div className="flex flex-col items-center gap-2 font-mono text-xs text-zinc-400">
+                <div className="absolute inset-0 bg-[var(--bg-base)]/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                  <div className="flex flex-col items-center gap-2 font-mono text-xs text-[var(--text-secondary)]">
                     <Loader2 className="h-5 w-5 animate-spin text-[var(--accent-amber)]" />
                     Завантаження файлу...
                   </div>
@@ -1010,7 +1010,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
               />
             </div>
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-zinc-500 font-mono">
+            <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-[var(--text-muted)] font-mono">
               <FileCode className="h-12 w-12 opacity-20 text-[var(--accent-amber)]" />
               <p className="text-xs">Оберіть файл для перегляду та редагування</p>
             </div>
@@ -1018,13 +1018,13 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
         </div>
 
         {/* Status Bar */}
-        <div className="h-6 px-3 bg-zinc-900 border-t border-zinc-800 font-mono text-[10px] text-zinc-500 shrink-0 flex items-center justify-between">
+        <div className="h-6 px-3 bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] shrink-0 flex items-center justify-between">
           <div className="flex items-center gap-3 truncate">
             {filePath ? (
               <>
-                <span className="text-zinc-400 font-bold truncate">{filePath.split("/").pop()}</span>
-                <span className="text-zinc-700">|</span>
-                <span className="text-zinc-500 uppercase">{detectLang(filePath)}</span>
+                <span className="text-[var(--text-secondary)] font-bold truncate">{filePath.split("/").pop()}</span>
+                <span className="text-[var(--border-subtle)]">|</span>
+                <span className="text-[var(--text-muted)] uppercase">{detectLang(filePath)}</span>
               </>
             ) : (
               <span>Немає активного файлу</span>
@@ -1040,23 +1040,23 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
 
       {/* Dialogs */}
       <Dialog open={showCreateFileDialog} onOpenChange={setShowCreateFileDialog}>
-        <DialogContent className="bg-zinc-950 border border-zinc-800 text-zinc-100 max-w-sm">
+        <DialogContent className="bg-[var(--bg-base)] border border-[var(--border-subtle)] text-[var(--text-primary)] max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-mono text-sm uppercase text-[var(--accent-amber)]">Новий файл</DialogTitle>
           </DialogHeader>
           <div className="py-3">
-            <Label htmlFor="file-name" className="text-xs text-zinc-400">Назва файлу з розширенням</Label>
+            <Label htmlFor="file-name" className="text-xs text-[var(--text-secondary)]">Назва файлу з розширенням</Label>
             <Input
               id="file-name"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
               placeholder="index.ts або readme.md"
-              className="mt-2 text-xs bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-[var(--accent-amber)]/40"
+              className="mt-2 text-xs bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-primary)] focus-visible:ring-[var(--accent-amber)]/40"
               onKeyDown={(e) => e.key === "Enter" && confirmCreateFile()}
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setShowCreateFileDialog(false)} className="text-xs text-zinc-400 border border-zinc-800 hover:bg-zinc-900">
+            <Button variant="ghost" size="sm" onClick={() => setShowCreateFileDialog(false)} className="text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-surface)]">
               Скасувати
             </Button>
             <Button onClick={confirmCreateFile} size="sm" className="text-xs bg-[var(--accent-amber)] hover:brightness-110 text-black">
@@ -1067,23 +1067,23 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
       </Dialog>
 
       <Dialog open={showCreateFolderDialog} onOpenChange={setShowCreateFolderDialog}>
-        <DialogContent className="bg-zinc-950 border border-zinc-800 text-zinc-100 max-w-sm">
+        <DialogContent className="bg-[var(--bg-base)] border border-[var(--border-subtle)] text-[var(--text-primary)] max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-mono text-sm uppercase text-[var(--accent-amber)]">Нова папка</DialogTitle>
           </DialogHeader>
           <div className="py-3">
-            <Label htmlFor="folder-name" className="text-xs text-zinc-400">Назва папки</Label>
+            <Label htmlFor="folder-name" className="text-xs text-[var(--text-secondary)]">Назва папки</Label>
             <Input
               id="folder-name"
               value={newItemName}
               onChange={(e) => setNewItemName(e.target.value)}
               placeholder="docs або utils"
-              className="mt-2 text-xs bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-[var(--accent-amber)]/40"
+              className="mt-2 text-xs bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-primary)] focus-visible:ring-[var(--accent-amber)]/40"
               onKeyDown={(e) => e.key === "Enter" && confirmCreateFolder()}
             />
           </div>
           <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setShowCreateFolderDialog(false)} className="text-xs text-zinc-400 border border-zinc-800 hover:bg-zinc-900">
+            <Button variant="ghost" size="sm" onClick={() => setShowCreateFolderDialog(false)} className="text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-surface)]">
               Скасувати
             </Button>
             <Button onClick={confirmCreateFolder} size="sm" className="text-xs bg-[var(--accent-amber)] hover:brightness-110 text-black">
@@ -1094,17 +1094,17 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
       </Dialog>
 
       <Dialog open={showDeleteConfirmDialog} onOpenChange={setShowDeleteConfirmDialog}>
-        <DialogContent className="bg-zinc-950 border border-zinc-800 text-zinc-100 max-w-sm">
+        <DialogContent className="bg-[var(--bg-base)] border border-[var(--border-subtle)] text-[var(--text-primary)] max-w-sm">
           <DialogHeader>
             <DialogTitle className="font-mono text-sm uppercase text-red-500">Видалити елемент?</DialogTitle>
           </DialogHeader>
-          <div className="py-2 text-xs text-zinc-400 leading-relaxed">
-            Ви впевнені, що хочете видалити <span className="text-zinc-200 font-bold">{nodeToDelete?.name}</span>?
+          <div className="py-2 text-xs text-[var(--text-secondary)] leading-relaxed">
+            Ви впевнені, що хочете видалити <span className="text-[var(--text-primary)] font-bold">{nodeToDelete?.name}</span>?
             {nodeToDelete?.type === "dir" && " Ця дія рекурсивно видалить ВСІ вкладені файли та папки!"}
             <p className="mt-2 text-red-400/80 font-bold">Ця дія є незворотною.</p>
           </div>
           <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirmDialog(false)} className="text-xs text-zinc-400 border border-zinc-800 hover:bg-zinc-900">
+            <Button variant="ghost" size="sm" onClick={() => setShowDeleteConfirmDialog(false)} className="text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-surface)]">
               Скасувати
             </Button>
             <Button onClick={confirmDeleteNode} size="sm" className="text-xs bg-red-600 hover:bg-red-700 text-white">
@@ -1121,7 +1121,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
       />
 
       <Dialog open={analyzeDialogOpen} onOpenChange={setAnalyzeDialogOpen}>
-        <DialogContent className="bg-zinc-950 border border-zinc-800 text-zinc-100 max-w-sm">
+        <DialogContent className="bg-[var(--bg-base)] border border-[var(--border-subtle)] text-[var(--text-primary)] max-w-sm">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 font-mono text-sm uppercase text-[var(--accent-amber)]">
               <Sparkles className="h-4 w-4 text-amber-400" />
@@ -1130,10 +1130,10 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1">
-              <Label className="text-xs text-zinc-400">Agent</Label>
+              <Label className="text-xs text-[var(--text-secondary)]">Agent</Label>
               <Select value={analyzeAgent} onValueChange={(v) => setAnalyzeAgent(v as "architect" | "docs" | "drakon")}>
-                <SelectTrigger className="h-8 text-xs bg-zinc-900 border-zinc-800 text-zinc-100 focus:ring-[var(--accent-amber)]/40"><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-zinc-950 border border-zinc-800 text-zinc-100">
+                <SelectTrigger className="h-8 text-xs bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-primary)] focus:ring-[var(--accent-amber)]/40"><SelectValue /></SelectTrigger>
+                <SelectContent className="bg-[var(--bg-base)] border border-[var(--border-subtle)] text-[var(--text-primary)]">
                   <SelectItem value="architect">Architect (DRAKON diagrams)</SelectItem>
                   <SelectItem value="docs">Docs (documentation)</SelectItem>
                   <SelectItem value="drakon">Drakon (generation)</SelectItem>
@@ -1141,10 +1141,10 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
               </Select>
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-zinc-400">Pipeline (results target)</Label>
+              <Label className="text-xs text-[var(--text-secondary)]">Pipeline (results target)</Label>
               <Select value={analyzeSelectedPipeline} onValueChange={setAnalyzeSelectedPipeline}>
-                <SelectTrigger className="h-8 text-xs bg-zinc-900 border-zinc-800 text-zinc-100 focus:ring-[var(--accent-amber)]/40"><SelectValue placeholder="New pipeline" /></SelectTrigger>
-                <SelectContent className="bg-zinc-950 border border-zinc-800 text-zinc-100">
+                <SelectTrigger className="h-8 text-xs bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-primary)] focus:ring-[var(--accent-amber)]/40"><SelectValue placeholder="New pipeline" /></SelectTrigger>
+                <SelectContent className="bg-[var(--bg-base)] border border-[var(--border-subtle)] text-[var(--text-primary)]">
                   <SelectItem value="">New pipeline</SelectItem>
                   {analyzePipelines.map((p) => (
                     <SelectItem key={p.name} value={p.name}>{p.name}</SelectItem>
@@ -1154,7 +1154,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
             </div>
           </div>
           <DialogFooter>
-            <Button variant="ghost" size="sm" onClick={() => setAnalyzeDialogOpen(false)} className="text-xs text-zinc-400 border border-zinc-800 hover:bg-zinc-900">
+            <Button variant="ghost" size="sm" onClick={() => setAnalyzeDialogOpen(false)} className="text-xs text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--bg-surface)]">
               Скасувати
             </Button>
             <Button onClick={runAnalyze} size="sm" className="text-xs bg-[var(--accent-amber)] hover:brightness-110 text-black">
