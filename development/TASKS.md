@@ -21803,7 +21803,7 @@ Entry: "SESSION:2026-06-09|TASK-199:header-repo-dropdown|commit:<hash>|★★★
 
 ---
 
-## [ ] TASK-200
+## [x] TASK-200
 
 ### GOAL
 Два незалежних баги:
