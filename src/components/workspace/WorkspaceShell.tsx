@@ -8,6 +8,7 @@ import {
   Cpu,
   FileCode,
   FileText,
+  Layers,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -74,8 +75,7 @@ const NAV_WORKSPACE: NavItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
   { to: "/knowledge", label: "Знання", icon: Brain }, // Added Knowledge item
   { to: "/notebooks", label: "NotebookLM", icon: BookOpen },
-  { to: "/code", label: "Код", icon: FileCode },
-  { to: "/docs", label: "Документація", icon: FileText },
+  { to: "/workspace", label: "Workspace", icon: Layers },
 ];
 
 const NAV_SYSTEM: NavItem[] = [
@@ -94,6 +94,7 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/knowledge")) return { section: "Знання", sectionPath: "/knowledge" };
   if (pathname.startsWith("/notebooks")) return { section: "NotebookLM", sectionPath: "/notebooks" };
   if (pathname.startsWith("/code")) return { section: "Код", sectionPath: "/code" };
+  if (pathname.startsWith("/workspace")) return { section: "Workspace", sectionPath: "/workspace" };
   return { section: "Workspace", sectionPath: "/" };
 }
 
