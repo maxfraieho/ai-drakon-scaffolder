@@ -22170,3 +22170,55 @@ git push origin main
 
 ### DIARY
 Entry: "SESSION:2026-06-09|TASK-200:theme-fix+github-docs|commit:<hash>|★★★★"
+
+---
+
+## [ ] TASK-201
+
+### GOAL
+**A) GitHubDocsPage — token persistence across sessions (incognito)** — GitHub токен живе лише в localStorage. При новій сесії incognito — втрачається. Треба зберігати токен у Worker KV прив'язаним до JWT.
+
+**Note:** TASK-201 Part C (модель Opus) і Part A (loading state в DocsSwitch) — вже виконано Claude. TASK-201 Part A залишається лише server-side token persistence.
+
+---
+
+### PART B — Persist GitHub token in Worker KV
+
+**!!IMPORTANT!! Run LOCALLY on Termux (AGY3). Repo at ~/workspace/ai-drakon-scaffolder — git pull first**
+
+**Крок 1:** Перевір Worker source:
+```bash
+find ~/workspace/ai-drakon-scaffolder/workers/ ~/workspace/ai-drakon-scaffolder/src/workers/ -name "*.ts" 2>/dev/null | head -10
+# або
+ls ~/workspace/ai-drakon-scaffolder/functions/ 2>/dev/null
+```
+
+**Крок 2:** Знайди де зберігається JWT і як Worker авторизує запити. Перевір:
+```bash
+grep -r "JWT\|Authorization\|Bearer\|github.*token\|token.*github" \
+  ~/workspace/ai-drakon-scaffolder/src/lib/ \
+  ~/workspace/ai-drakon-scaffolder/src/hooks/ 2>/dev/null | grep -v node_modules | head -20
+```
+
+**Крок 3:** Додай до відповідного Worker:
+- `GET /api/user/github-token` → повертає токен з KV (`user:{userId}:github_token`)
+- `PUT /api/user/github-token` → зберігає токен в KV
+
+**Крок 4:** Оновити `src/lib/settings-storage.ts`:
+- При завантаженні налаштувань → `GET /api/user/github-token` → merge в localStorage
+- При збереженні GitHub токену → одночасно `PUT /api/user/github-token`
+
+**Якщо Part B занадто складна (> 30 хв пошуку) — пропусти, відмітити TASK-201 як SKIPPED-PARTIAL.**
+
+---
+
+### VERIFY
+```bash
+npx tsc --noEmit 2>&1 | grep "error" | head -5
+git add -p
+git commit -m "feat(settings): persist GitHub token server-side via Worker KV"
+git push origin main
+```
+
+### DIARY
+Entry: "SESSION:2026-06-10|TASK-201:github-token-persistence|commit:<hash>|★★★"
