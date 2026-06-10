@@ -2,12 +2,10 @@ import { useEffect, useState } from "react";
 import type { AgentId } from "@/types/agent-chat";
 import { checkAgentHealth } from "@/lib/agent-api";
 
-type ExtendedAgentId = AgentId | "sonate-solidaire";
-
-const AGENTS: ExtendedAgentId[] = ["drakon", "architect", "docs", "sonate-solidaire"];
+const AGENTS: AgentId[] = ["drakon", "architect", "docs", "sonate-solidaire"];
 
 export function useAgentHealth() {
-const [status, setStatus] = useState<Record<ExtendedAgentId, boolean>>({
+const [status, setStatus] = useState<Record<AgentId, boolean>>({
 drakon: false,
 architect: false,
 docs: false,
@@ -17,7 +15,7 @@ docs: false,
 useEffect(() => {
 let cancelled = false;
 const check = async () => {
-const results = await Promise.allSettled(AGENTS.map(id => checkAgentHealth(id as AgentId)));
+const results = await Promise.allSettled(AGENTS.map(checkAgentHealth));
 if (cancelled) return;
 setStatus({
 drakon: results[0].status === "fulfilled" && results[0].value === true,
