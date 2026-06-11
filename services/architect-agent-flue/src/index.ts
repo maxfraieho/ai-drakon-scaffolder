@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { flue } from '@flue/runtime/routing';
 import { handleMcp } from './mcp-server.js';
+import { authMiddleware } from './middleware/auth.js';
 import { runPipelineA } from '../workflows/pipeline-a.js';
 import { runPipelineB } from '../workflows/pipeline-b.js';
 import { suggestPatterns } from '../tools/suggest-patterns.js';
@@ -16,6 +17,7 @@ app.use('/*', cors());
 
 // Health Check
 app.get('/health', (c) => c.json({ status: 'ok', service: 'architect-agent-flue' }));
+app.get('/me', authMiddleware, (c) => c.json(c.get('tenant')));
 
 // Tools registry — available pipeline node actions
 app.get('/tools', (c) => c.json({

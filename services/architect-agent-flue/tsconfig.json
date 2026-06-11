@@ -11,5 +11,6 @@
     "outDir": "./dist",
     "rootDir": "."
   },
-  "include": ["src/**/*", "agents/**/*", "lib/**/*", "workflows/**/*", "tools/**/*", "flue.config.ts"]
+  "include": ["src/**/*", "agents/**/*", "lib/**/*", "workflows/**/*", "tools/**/*", "flue.config.ts"],
+  "exclude": ["src/workflows", "src/agents"]
 }

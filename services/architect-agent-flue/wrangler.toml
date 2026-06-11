@@ -9,6 +9,8 @@ PROXY_MODEL = "gemini-2.5-flash"
 GITHUB_REPO = "maxfraieho/ai-drakon-scaffolder"
 NOTEBOOKLM_MCP = "https://notebooklm.exodus.pp.ua/mcp"
 AWESOME_ARCH_NOTEBOOK_ID = "c21dd88b-79cd-47db-bb72-a52730218eb9"
+APPWRITE_ENDPOINT = "https://fra.cloud.appwrite.io/v1"
+APPWRITE_PROJECT_ID = "6a23420a003a04b4997b"
 
 [[kv_namespaces]]
 binding = "PIPELINES_KV"
@@ -22,3 +24,12 @@ bindings = [
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["ArchitectJobStore"]
+
+[[kv_namespaces]]
+binding = "SESSION_KV"
+id = "11ed74326f2c431496c2b3dc38ef0208"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-drakon-saas"
+database_id = "743d5bb0-d09d-4dcc-8329-8ebae8d533f4"
