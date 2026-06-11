@@ -56,8 +56,10 @@ if (!workerFileName) {
 
 // FIX: Також копіюємо server.js у dist/ щоб працювали відносні імпорти типу ../server.js
 const mainServerEntry = path.join(serverDir, "server.js");
+let hasServerWrapper = false;
 if (fs.existsSync(mainServerEntry)) {
   fs.copyFileSync(mainServerEntry, path.join(distDir, "server.js"));
+  hasServerWrapper = true;
   console.log("Copied server.js to dist/ to resolve relative imports");
 }
 
@@ -68,7 +70,8 @@ const STATIC_EXT_RE = /\.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot
 // worker-entry експортує handler як named export (напр. `w`),
 // а index.js re-експортує його як default. Імпортуємо ВСІ named exports
 // і шукаємо той, у якого є .fetch().
-const workerCode = `import * as entry from "./assets/${workerFileName}";
+const importPath = hasServerWrapper ? "./server.js" : `./assets/${workerFileName}`;
+const workerCode = `import * as entry from "${importPath}";
 
 const STATIC_PATH_RE = /^\\/assets\\//;
 const STATIC_EXT_RE = /\\.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webmanifest|map|txt|xml)$/i;
