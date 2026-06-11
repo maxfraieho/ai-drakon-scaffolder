@@ -34,7 +34,10 @@ def _ensure_docs_root():
 
 def _resolve_root(project: Optional[str] = None) -> Path:
     """Return the scoped root for docs."""
-    return (DOCS_ROOT / project) if project else DOCS_ROOT
+    if project:
+        from projects_route import resolve_project_root
+        return resolve_project_root(project) / "docs"
+    return DOCS_ROOT
 
 
 def _slug_from_path(path: Path, project: Optional[str] = None) -> str:
@@ -132,26 +135,32 @@ def _extract_title(content: str) -> Optional[str]:
 
 
 def _git_commit_push(slug: str, action: str, project: Optional[str] = None) -> tuple[bool, str]:
-    """Run git add/commit/push in REPO_ROOT. Returns (ok, error_msg)."""
-    base = f"docs/{project}/" if project else "docs/"
+    """Run git add/commit/push. Returns (ok, error_msg)."""
+    if project:
+        from projects_route import resolve_project_root
+        repo_root = resolve_project_root(project)
+        base = "docs/"
+    else:
+        repo_root = REPO_ROOT
+        base = "docs/"
     rel_path = f"{base}{slug}.md" if not slug.endswith(".md") else f"{base}{slug}"
     try:
         subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "pull", "--rebase", "--autostash", "-q"],
+            ["git", "-C", str(repo_root), "pull", "--rebase", "--autostash", "-q"],
             check=True, capture_output=True, timeout=30
         )
         subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "add", rel_path],
+            ["git", "-C", str(repo_root), "add", rel_path],
             check=True, capture_output=True, timeout=10
         )
         result = subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "commit", "-m", f"docs: {action} {slug}"],
+            ["git", "-C", str(repo_root), "commit", "-m", f"docs: {action} {slug}"],
             capture_output=True, timeout=10
         )
         if result.returncode not in (0, 1):  # 1 = nothing to commit
             return False, result.stderr.decode()
         subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "push", "-q"],
+            ["git", "-C", str(repo_root), "push", "-q"],
             check=True, capture_output=True, timeout=30
         )
         return True, ""
@@ -401,18 +410,24 @@ def restructure_notes(project: Optional[str] = Query(default=None, description="
     try:
         restructure_wiki_graph(root, project)
         # Commit the changes made by the restructure
-        doc_path = f"docs/{project}/" if project else "docs/"
+        if project:
+            from projects_route import resolve_project_root
+            repo_root = resolve_project_root(project)
+            doc_path = "docs/"
+        else:
+            repo_root = REPO_ROOT
+            doc_path = "docs/"
         subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "add", doc_path],
+            ["git", "-C", str(repo_root), "add", doc_path],
             check=True, capture_output=True, timeout=30
         )
         r = subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "commit", "-m", f"chore(graph): self-balancing Zettelkasten restructuring for {project or 'root'}"],
+            ["git", "-C", str(repo_root), "commit", "-m", f"chore(graph): self-balancing Zettelkasten restructuring for {project or 'root'}"],
             capture_output=True, timeout=10
         )
         if r.returncode == 0:
             subprocess.run(
-                ["git", "-C", str(REPO_ROOT), "push", "-q"],
+                ["git", "-C", str(repo_root), "push", "-q"],
                 check=True, capture_output=True, timeout=30
             )
             git_status = "pushed changes"
