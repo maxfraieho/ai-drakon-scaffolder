@@ -232,7 +232,8 @@ app.get('/notes/list', async (c) => {
 
 app.get('/notes/read', async (c) => {
   const slug = c.req.query('slug') || '';
-  const res = await notesCrud.execute({ operation: 'read', slug }, { env: c.env } as any);
+  const project = c.req.query('project');
+  const res = await notesCrud.execute({ operation: 'read', slug, project }, { env: c.env } as any);
   return c.json(JSON.parse(res));
 });
 
@@ -243,7 +244,8 @@ app.post('/notes/write', async (c) => {
     slug: body.slug,
     title: body.title,
     content: body.content,
-    tags: body.tags
+    tags: body.tags,
+    project: body.project
   }, { env: c.env } as any);
   return c.json(JSON.parse(res));
 });
@@ -252,7 +254,8 @@ app.delete('/notes/delete', async (c) => {
   const body: any = await c.req.json().catch(() => ({}));
   const res = await notesCrud.execute({
     operation: 'delete',
-    slug: body.slug
+    slug: body.slug,
+    project: body.project
   }, { env: c.env } as any);
   return c.json(JSON.parse(res));
 });

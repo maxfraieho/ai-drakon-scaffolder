@@ -1,12 +1,13 @@
-import { createAgent, type AgentRouteHandler } from '@flue/runtime';
-import { docsChat } from '../tools/docs-chat.js';
-import { notesCrud } from '../tools/notes-crud.js';
-import { docsFs } from '../tools/docs-fs.js';
-import { projectsTool } from '../tools/projects.js';
-import { drakonIr } from '../tools/drakon-ir.js';
-import { gitnexusDocs } from '../tools/gitnexus-docs.js';
-import { dataviewTool } from '../tools/dataview.js';
-import { DOCS_SYSTEM_PROMPT } from '../lib/prompts.js';
+import { createAgent } from '@flue/runtime';
+import type { AgentRouteHandler } from '@flue/runtime';
+import { docsChat } from '../../tools/docs-chat.js';
+import { notesCrud } from '../../tools/notes-crud.js';
+import { docsFs } from '../../tools/docs-fs.js';
+import { projectsTool } from '../../tools/projects.js';
+import { drakonIr } from '../../tools/drakon-ir.js';
+import { gitnexusDocs } from '../../tools/gitnexus-docs.js';
+import { dataviewTool } from '../../tools/dataview.js';
+import { DOCS_SYSTEM_PROMPT } from '../../lib/prompts.js';
 
 export const route: AgentRouteHandler = async (c, next) => {
   const method = c.req.method;

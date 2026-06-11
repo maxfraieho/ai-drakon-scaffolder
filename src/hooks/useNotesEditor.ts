@@ -134,6 +134,7 @@ title: title.trim(),
 content,
 tags,
 sha,
+project,
 });
 if (res.sha) setSha(res.sha);
 setIsDirty(false);

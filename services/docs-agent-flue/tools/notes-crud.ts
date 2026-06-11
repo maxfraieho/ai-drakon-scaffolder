@@ -77,6 +77,35 @@ function buildFolderTree(notes: { path: string; slug: string; title: string; siz
   return rootItems;
 }
 
+function resolvePath(slug: string, docsPath: string, project?: string): string {
+  if (project) {
+    const projectPrefix = `${project}/`;
+    let relativeSlug = slug;
+    if (slug.startsWith(projectPrefix)) {
+      relativeSlug = slug.slice(projectPrefix.length);
+    } else if (slug === project) {
+      relativeSlug = 'INDEX';
+    }
+    
+    if (slug !== project && !slug.startsWith(projectPrefix)) {
+      throw new Error(`Access denied: note ${slug} does not belong to project ${project}`);
+    }
+
+    if (relativeSlug.includes('..')) {
+      throw new Error('Invalid slug path');
+    }
+    
+    const basePath = `${docsPath}/${project}`;
+    return pathFromSlug(relativeSlug, basePath);
+  } else {
+    if (slug.includes('..')) {
+      throw new Error('Invalid slug path');
+    }
+    return pathFromSlug(slug, docsPath);
+  }
+}
+
+
 export const notesCrud = defineTool({
   name: 'notes_crud',
   description: 'Manage markdown notes (CRUD + graph + Zettelkasten restructuring) using the GitHub API.',
@@ -93,7 +122,7 @@ export const notesCrud = defineTool({
     title: Type.Optional(Type.String({ description: 'Title of the note (for write)' })),
     content: Type.Optional(Type.String({ description: 'Content of the note (for write)' })),
     tags: Type.Optional(Type.Array(Type.String(), { description: 'Tags for the note (for write)' })),
-    project: Type.Optional(Type.String({ description: 'Project slug (for list/graph)' })),
+    project: Type.Optional(Type.String({ description: 'Project slug (for list/graph/read/write/delete)' })),
     flat: Type.Optional(Type.Boolean({ description: 'Flat list instead of folder tree (default true, for list)' }))
   }),
   execute: async ({ operation, slug, title, content, tags = [], project, flat = true }, toolContext: any) => {
@@ -165,7 +194,7 @@ export const notesCrud = defineTool({
       
       if (operation === 'read') {
         if (!slug) throw new Error('slug is required for read operation');
-        const filePath = pathFromSlug(slug, docsPath);
+        const filePath = resolvePath(slug, docsPath, project);
         const { content: fileContent, sha } = await gh.getFile(filePath);
         return JSON.stringify({
           success: true,
@@ -188,10 +217,10 @@ export const notesCrud = defineTool({
           updated: dateStr
         };
         const newRawContent = buildFrontmatter(fm) + content;
-        const targetPath = pathFromSlug(slug, docsPath);
+        const targetPath = resolvePath(slug, docsPath, project);
         
-        // 1. Fetch all existing md files under docs/ to restructure
-        const mdFiles = await gh.listAllMd(docsPath);
+        // 1. Fetch all existing md files under project basePath to restructure
+        const mdFiles = await gh.listAllMd(basePath);
         
         // 2. Fetch contents
         const filesWithContent = await Promise.all(
@@ -252,10 +281,10 @@ export const notesCrud = defineTool({
       
       if (operation === 'delete') {
         if (!slug) throw new Error('slug is required for delete operation');
-        const targetPath = pathFromSlug(slug, docsPath);
+        const targetPath = resolvePath(slug, docsPath, project);
         
         // Find existing file to get its sha
-        const mdFiles = await gh.listAllMd(docsPath);
+        const mdFiles = await gh.listAllMd(basePath);
         const file = mdFiles.find(f => f.path === targetPath);
         if (!file) {
           throw new Error(`Note not found: ${slug}`);
@@ -271,7 +300,7 @@ export const notesCrud = defineTool({
       
       if (operation === 'restructure') {
         // Fetch all files
-        const mdFiles = await gh.listAllMd(docsPath);
+        const mdFiles = await gh.listAllMd(basePath);
         const filesWithContent = await Promise.all(
           mdFiles.map(async file => {
             const { content: fileContent } = await gh.getFile(file.path);

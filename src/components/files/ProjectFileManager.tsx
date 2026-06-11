@@ -480,6 +480,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           content: code,
           tags,
           sha: fileSha || undefined,
+          project: activeProject?.slug || undefined,
         });
         if (res.success) {
           toast.success("Збережено локально");
@@ -561,6 +562,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           title,
           content: "",
           tags: [],
+          project: activeProject?.slug || undefined,
         });
         if (res.success) {
           toast.success("Локальний документ створено");
@@ -605,6 +607,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           title: ".placeholder",
           content: "",
           tags: [],
+          project: activeProject?.slug || undefined,
         });
         if (res.success) {
           toast.success("Локальну папку створено");

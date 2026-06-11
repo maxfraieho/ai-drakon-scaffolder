@@ -1,2 +1,4 @@
 node_modules/
 dist/
+.flue-vite/
+.flue-vite.wrangler.jsonc

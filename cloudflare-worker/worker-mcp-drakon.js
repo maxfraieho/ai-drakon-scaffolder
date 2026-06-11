@@ -2443,13 +2443,14 @@ async function handleNotesCommit(request, env) {
   let body;
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
 
-  // Lovable sends: { slug, path, content (full markdown with FM), sha, message }
-  // Our format: { slug, title, content (body only), tags }
+  // Lovable sends: { slug, path, content (full markdown with FM), sha, message, project }
+  // Our format: { slug, title, content (body only), tags, project }
   // Handle both formats
   let slug = body.slug || '';
   let title = body.title;
   let bodyContent = body.content || '';
   let tags = body.tags || [];
+  let project = body.project || '';
 
   if (!title && bodyContent.startsWith('---')) {
     // Parse frontmatter from content
@@ -2474,7 +2475,7 @@ async function handleNotesCommit(request, env) {
   const res = await fetch(`${DOCS_AGENT_URL}/notes/write`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slug, title, content: bodyContent, tags }),
+    body: JSON.stringify({ slug, title, content: bodyContent, tags, project }),
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
@@ -2497,12 +2498,13 @@ async function handleNotesDelete(request, env) {
   let body;
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
   const slug = body.slug || '';
+  const project = body.project || '';
   if (!slug) return errorResponse('slug required', 400);
 
   const res = await fetch(`${DOCS_AGENT_URL}/notes/delete`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slug }),
+    body: JSON.stringify({ slug, project }),
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return errorResponse(`docs-agent /notes/delete ${res.status}`, 502);

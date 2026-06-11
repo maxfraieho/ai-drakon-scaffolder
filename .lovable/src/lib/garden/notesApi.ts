@@ -59,6 +59,7 @@ title: string;
 content: string;
 tags: string[];
 sha?: string;
+project?: string;
 }
 
 export async function commitNote(payload: CommitNotePayload): Promise<{ success: boolean;
@@ -71,6 +72,7 @@ path: `docs/${payload.slug}.md`,
 content: buildMarkdown(payload),
 sha: payload.sha,
 message: `notes: update ${payload.slug}`,
+project: payload.project,
 };
 const res = await fetch( `${workerUrl()}/v1/notes/commit`, {
 method: "POST",
