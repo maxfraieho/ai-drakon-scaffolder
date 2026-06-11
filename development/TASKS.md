@@ -22419,7 +22419,7 @@ Diary: SESSION:2026-06-12|TASK-204:settings-url-migration|commit:<hash>|★★�
 
 [x] TASK-205: authMiddleware + KV session cache в architect-agent-flue
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
-Специфікація: docs/architecture/ARCHITECTURE-SAAS.md §2. Код нижче — ГОТОВИЙ, копіювати як є, не переписувати.
+Специфікація: docs/ARCHITECTURE-SAAS.md §2. Код нижче — ГОТОВИЙ, копіювати як є, не переписувати.
 Що зробити:
 1. cd services/architect-agent-flue && npm install node-appwrite — додати залежність. Якщо @cloudflare/workers-types відсутній у devDependencies — npm install -D @cloudflare/workers-types.
 2. Створити файл services/architect-agent-flue/src/middleware/auth.ts з ТОЧНО таким вмістом:

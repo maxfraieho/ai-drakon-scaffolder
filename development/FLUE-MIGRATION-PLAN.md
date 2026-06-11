@@ -182,7 +182,7 @@ export default createAgent(() => ({
 
 ## Phase 2: SaaS Multi-tenancy (Sprint 2–6, додано 2026-06-12)
 
-> Повна специфікація: `docs/architecture/ARCHITECTURE-SAAS.md`.
+> Повна специфікація: `docs/ARCHITECTURE-SAAS.md`.
 > Схеми: `infrastructure/d1/schema.sql`, `infrastructure/appwrite/schema.ts`.
 
 ### Ключові рішення (верифіковані 2026-06-12)
