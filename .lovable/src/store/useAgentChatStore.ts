@@ -21,10 +21,10 @@ clearHistory: (agentId: AgentId) => void;
 export const useAgentChatStore = create<AgentChatState>()(
 persist(
 (set) => ({
-sessions: { drakon: [], architect: [], docs: [], "sonate-solidaire": [] },
+sessions: { drakon: [], architect: [], docs: [] },
 activeAgent: "drakon",
-loading: { drakon: false, architect: false, docs: false, "sonate-solidaire": false },
-error: { drakon: null, architect: null, docs: null, "sonate-solidaire": null },
+loading: { drakon: false, architect: false, docs: false },
+error: { drakon: null, architect: null, docs: null },
 
 setActiveAgent: (id) => set({ activeAgent: id }),
 

@@ -711,7 +711,7 @@ onChange={(e) => {
 setDiagramName(e.target.value);
 setHasChanges(true);
 }}
-className="w-48 h-8 text-sm"
+className="w-32 md:w-48 h-8 text-sm"
 placeholder={t.drakonEditor.diagramName}
 />
 </div>
@@ -722,13 +722,14 @@ variant="default"
 size="sm"
 onClick={handleSave}
 disabled={!hasChanges || isLoading || isSaving}
+title={t.editor?.save || 'Зберегти'}
 >
 {isSaving ? (
-<Loader2 className="h-4 w-4 animate-spin mr-1" />
+<Loader2 className="h-4 w-4 animate-spin md:mr-1" />
 ):(
-<Save className="h-4 w-4 mr-1" />
+<Save className="h-4 w-4 md:mr-1" />
 )}
-{t.editor?.save || 'Зберегти'}
+<span className="hidden md:inline">{t.editor?.save || 'Зберегти'}</span>
 </Button>
 
 <Button variant="ghost" size="sm" onClick={handleUndo} disabled={isLoading}>
@@ -834,28 +835,27 @@ disabled={isLoading}
 <div className="flex items-center gap-1">
 <Tooltip>
 <TooltipTrigger asChild>
-<Button variant="outline" size="sm" onClick={handleExportPseudocode}
-disabled={isLoading}>
-<FileText className="h-4 w-4 mr-1" />
-{t.drakonEditor.pseudocode || 'Псевдокод'}
+<Button variant="outline" size="sm" onClick={handleExportPseudocode} disabled={isLoading} title={t.drakonEditor.pseudocode || 'Псевдокод'}>
+<FileText className="h-4 w-4 md:mr-1" />
+<span className="hidden md:inline">{t.drakonEditor.pseudocode || 'Псевдокод'}</span>
 </Button>
 </TooltipTrigger>
 <TooltipContent>{t.drakonEditor.exportPseudocode}</TooltipContent>
 </Tooltip>
-<Button variant="outline" size="sm" onClick={handleExportJson} disabled={isLoading}>
-<Download className="h-4 w-4 mr-1" />
-Експорт JSON
+<Button variant="outline" size="sm" onClick={handleExportJson} disabled={isLoading} title="Експорт JSON">
+<Download className="h-4 w-4 md:mr-1" />
+<span className="hidden md:inline">Експорт JSON</span>
 </Button>
-<Button variant="outline" size="sm" onClick={handleExportPng} disabled={isLoading}>
-<Download className="h-4 w-4 mr-1" />
-Зберегти як PNG
+<Button variant="outline" size="sm" onClick={handleExportPng} disabled={isLoading} title="Зберегти як PNG">
+<Download className="h-4 w-4 md:mr-1" />
+<span className="hidden md:inline">Зберегти як PNG</span>
 </Button>
 </div>
 </div>
 
 {/* Conversion/validation issues */}
 {conversionIssues.length > 0 && (
-<div className="shrink-0 flex flex-wrap gap-1 px-2 py-1 border-b">
+<div className="shrink-0 flex items-center gap-1.5 overflow-x-auto flex-nowrap px-2 py-1.5 border-b no-scrollbar">
 {conversionIssues.map((issue, i) => (
 <Tooltip key={i}>
 <TooltipTrigger asChild>

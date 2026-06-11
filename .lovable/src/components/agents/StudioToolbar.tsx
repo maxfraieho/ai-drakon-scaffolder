@@ -50,30 +50,33 @@ export function StudioToolbar({
           <Button
             size="sm"
             onClick={onRun}
-            className="flex items-center gap-1.5 h-7 px-2.5 bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="flex items-center gap-1.5 h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            title="Запустити пайплайн"
           >
             <Play className="h-3.5 w-3.5" />
-            <span>Запустити</span>
+            <span className="hidden md:inline">Запустити</span>
           </Button>
         ) : hasBreakpoint ? (
           <div className="flex items-center gap-2">
             <Button
               size="sm"
               onClick={onResume}
-              className="flex items-center gap-1.5 h-7 px-2.5 text-white"
+              className="flex items-center gap-1.5 h-7 px-2 text-white"
               style={{ backgroundColor: "var(--accent-amber)", color: "#111827" }}
+              title="Продовжити"
             >
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-              <span>Продовжити</span>
+              <span className="hidden md:inline">Продовжити</span>
             </Button>
             <Button
               size="sm"
               variant="destructive"
               onClick={onStop}
-              className="flex items-center gap-1.5 h-7 px-2.5"
+              className="flex items-center gap-1.5 h-7 px-2"
+              title="Зупинити"
             >
               <Square className="h-3.5 w-3.5" />
-              <span>Зупинити</span>
+              <span className="hidden md:inline">Зупинити</span>
             </Button>
           </div>
         ) : (
@@ -81,10 +84,11 @@ export function StudioToolbar({
             size="sm"
             variant="destructive"
             onClick={onStop}
-            className="flex items-center gap-1.5 h-7 px-2.5"
+            className="flex items-center gap-1.5 h-7 px-2"
+            title="Зупинити"
           >
             <Square className="h-3.5 w-3.5" />
-            <span>Зупинити</span>
+            <span className="hidden md:inline">Зупинити</span>
           </Button>
         )}
       </div>
@@ -102,13 +106,13 @@ export function StudioToolbar({
         </div>
 
         <div className="flex md:hidden items-center gap-1">
-          <Button size="sm" variant="outline" onClick={onOpenLeftMobile} className="h-7 px-2">
+          <Button size="sm" variant="outline" onClick={onOpenLeftMobile} className="h-7 px-2" title="Панель пайплайнів">
             <PanelLeft className="h-3.5 w-3.5" />
-            <span>Пайплайни</span>
+            <span className="hidden sm:inline">Пайплайни</span>
           </Button>
-          <Button size="sm" variant="outline" onClick={onOpenRightMobile} className="h-7 px-2">
+          <Button size="sm" variant="outline" onClick={onOpenRightMobile} className="h-7 px-2" title="Панелі праворуч">
             <PanelRight className="h-3.5 w-3.5" />
-            <span>Агенти</span>
+            <span className="hidden sm:inline">Агенти</span>
           </Button>
         </div>
 
@@ -117,15 +121,16 @@ export function StudioToolbar({
           variant="outline"
           onClick={onSave}
           disabled={isSaving}
-          className="flex items-center gap-1.5 h-7 px-2.5 relative border"
+          className="flex items-center gap-1.5 h-7 px-2 relative border"
           style={{
             borderColor: "var(--border-subtle)",
             backgroundColor: "var(--bg-base)",
             color: "var(--text-primary)",
           }}
+          title="Зберегти пайплайн"
         >
           <Save className="h-3.5 w-3.5" />
-          <span>Зберегти</span>
+          <span className="hidden md:inline">Зберегти</span>
           {isDirty && (
             <span
               className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full"
@@ -138,15 +143,16 @@ export function StudioToolbar({
           size="sm"
           variant="outline"
           onClick={onExport}
-          className="flex items-center gap-1.5 h-7 px-2.5 border"
+          className="flex items-center gap-1.5 h-7 px-2 border"
           style={{
             borderColor: "var(--border-subtle)",
             backgroundColor: "var(--bg-base)",
             color: "var(--text-primary)",
           }}
+          title="Експортувати конфігурацію JSON"
         >
           <Download className="h-3.5 w-3.5" />
-          <span>Експорт</span>
+          <span className="hidden md:inline">Експорт</span>
         </Button>
       </div>
     </div>

@@ -32,18 +32,25 @@ def _ensure_docs_root():
     DOCS_ROOT.mkdir(parents=True, exist_ok=True)
 
 
-def _slug_from_path(path: Path) -> str:
+def _resolve_root(project: Optional[str] = None) -> Path:
+    """Return the scoped root for docs."""
+    return (DOCS_ROOT / project) if project else DOCS_ROOT
+
+
+def _slug_from_path(path: Path, project: Optional[str] = None) -> str:
     """Convert docs-relative path to slug (no .md suffix)."""
-    rel = path.relative_to(DOCS_ROOT)
+    root = _resolve_root(project)
+    rel = path.relative_to(root)
     return str(rel).replace("\\", "/").removesuffix(".md")
 
 
-def _path_from_slug(slug: str) -> Path:
-    """Convert slug to absolute path."""
+def _path_from_slug(slug: str, project: Optional[str] = None) -> Path:
+    """Convert slug to absolute path within project root."""
+    root = _resolve_root(project)
     clean = slug.lstrip("/").replace("..", "").replace("\\", "/")
     if not clean.endswith(".md"):
         clean += ".md"
-    return DOCS_ROOT / clean
+    return root / clean
 
 
 def _strip_frontmatter(content: str) -> str:
@@ -57,24 +64,25 @@ def _parse_wikilinks(content: str) -> list[str]:
     return [t.strip() for t in _WIKILINK_RE.findall(no_inline) if t.strip()]
 
 
-def _build_folder_tree(root: Path) -> list[dict]:
+def _build_folder_tree(root: Path, project: Optional[str] = None) -> list[dict]:
     """Recursively build folder-aware note list."""
     items = []
     if not root.exists():
         return items
+    docs_scoped_root = _resolve_root(project)
     for entry in sorted(root.iterdir()):
         if entry.name.startswith("."):
             continue
         if entry.is_dir():
-            children = _build_folder_tree(entry)
+            children = _build_folder_tree(entry, project)
             items.append({
                 "type": "folder",
                 "name": entry.name,
-                "path": str(entry.relative_to(DOCS_ROOT)).replace("\\", "/"),
+                "path": str(entry.relative_to(docs_scoped_root)).replace("\\", "/"),
                 "children": children,
             })
         elif entry.is_file() and entry.suffix == ".md":
-            slug = _slug_from_path(entry)
+            slug = _slug_from_path(entry, project)
             # Extract title from frontmatter if present
             raw = entry.read_text(encoding="utf-8")
             title = _extract_title(raw) or entry.stem
@@ -82,30 +90,31 @@ def _build_folder_tree(root: Path) -> list[dict]:
                 "type": "note",
                 "slug": slug,
                 "title": title,
-                "path": str(entry.relative_to(DOCS_ROOT)).replace("\\", "/"),
+                "path": str(entry.relative_to(docs_scoped_root)).replace("\\", "/"),
                 "size": entry.stat().st_size,
             })
     return items
 
 
-def _flat_notes(root: Path) -> list[dict]:
+def _flat_notes(root: Path, project: Optional[str] = None) -> list[dict]:
     """Flat list of all notes for API compatibility."""
     notes = []
     if not root.exists():
         return notes
+    docs_scoped_root = _resolve_root(project)
     for entry in sorted(root.rglob("*.md")):
         if any(p.startswith(".") for p in entry.parts):
             continue
-        slug = _slug_from_path(entry)
+        slug = _slug_from_path(entry, project)
         raw = entry.read_text(encoding="utf-8")
         title = _extract_title(raw) or entry.stem
-        folder = str(entry.parent.relative_to(DOCS_ROOT)).replace("\\", "/")
+        folder = str(entry.parent.relative_to(docs_scoped_root)).replace("\\", "/")
         if folder == ".":
             folder = ""
         notes.append({
             "slug": slug,
             "title": title,
-            "path": str(entry.relative_to(DOCS_ROOT)).replace("\\", "/"),
+            "path": str(entry.relative_to(docs_scoped_root)).replace("\\", "/"),
             "folder": folder,
             "sha": None,
         })
@@ -122,9 +131,10 @@ def _extract_title(content: str) -> Optional[str]:
     return None
 
 
-def _git_commit_push(slug: str, action: str) -> tuple[bool, str]:
+def _git_commit_push(slug: str, action: str, project: Optional[str] = None) -> tuple[bool, str]:
     """Run git add/commit/push in REPO_ROOT. Returns (ok, error_msg)."""
-    rel_path = f"docs/{slug}.md" if not slug.endswith(".md") else f"docs/{slug}"
+    base = f"docs/{project}/" if project else "docs/"
+    rel_path = f"{base}{slug}.md" if not slug.endswith(".md") else f"{base}{slug}"
     try:
         subprocess.run(
             ["git", "-C", str(REPO_ROOT), "pull", "--rebase", "--autostash", "-q"],
@@ -151,7 +161,7 @@ def _git_commit_push(slug: str, action: str) -> tuple[bool, str]:
         return False, "git operation timed out"
 
 
-def restructure_wiki_graph(docs_root: Path):
+def restructure_wiki_graph(docs_root: Path, project: Optional[str] = None):
     import re
     from collections import defaultdict
     
@@ -291,10 +301,12 @@ class WriteNoteRequest(BaseModel):
     title: str
     content: str
     tags: list[str] = []
+    project: Optional[str] = None
 
 
 class DeleteNoteRequest(BaseModel):
     slug: str
+    project: Optional[str] = None
 
 
 # ── Endpoints ────────────────────────────────────────────────────────────────
@@ -304,27 +316,30 @@ def list_notes(flat: bool = Query(default=True, description="Flat list (true) or
                project: Optional[str] = Query(default=None, description="Project slug for scoped docs")):
     """List all notes. flat=true returns [{slug,title,path,folder}], flat=false returns folder tree."""
     _ensure_docs_root()
-    root = (DOCS_ROOT / project) if project else DOCS_ROOT
+    root = _resolve_root(project)
     if not root.exists():
         return {"success": True, "notes": [], "tree": []}
     if flat:
-        return {"success": True, "notes": _flat_notes(root)}
+        return {"success": True, "notes": _flat_notes(root, project)}
     else:
-        return {"success": True, "tree": _build_folder_tree(root)}
+        return {"success": True, "tree": _build_folder_tree(root, project)}
 
 
 @router.get("/read")
-def read_note(slug: str = Query(..., description="Note slug")):
+def read_note(slug: str = Query(..., description="Note slug"),
+              project: Optional[str] = Query(default=None, description="Project slug")):
     """Read raw markdown content of a note (without frontmatter)."""
-    path = _path_from_slug(slug)
-    if not str(path).startswith(str(DOCS_ROOT)):
+    path = _path_from_slug(slug, project)
+    docs_scoped_root = _resolve_root(project)
+    if not str(path).startswith(str(docs_scoped_root)):
         raise HTTPException(status_code=403, detail="Path outside docs root")
     if not path.exists():
-        raise HTTPException(status_code=404, detail=f"Note not found: {slug}")
+        raise HTTPException(status_code=404, detail=f"Note not found: {slug} (project: {project})")
     raw = path.read_text(encoding="utf-8")
     return {
         "success": True,
         "slug": slug,
+        "project": project,
         "content": _strip_frontmatter(raw),
         "raw": raw,
     }
@@ -334,8 +349,9 @@ def read_note(slug: str = Query(..., description="Note slug")):
 def write_note(req: WriteNoteRequest):
     """Create or update a note. Commits + pushes to GitHub."""
     _ensure_docs_root()
-    path = _path_from_slug(req.slug)
-    if not str(path).startswith(str(DOCS_ROOT)):
+    path = _path_from_slug(req.slug, req.project)
+    docs_scoped_root = _resolve_root(req.project)
+    if not str(path).startswith(str(docs_scoped_root)):
         raise HTTPException(status_code=403, detail="Path outside docs root")
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -350,45 +366,48 @@ def write_note(req: WriteNoteRequest):
 
     # Run auto-restructuring to enforce clean tree structure
     try:
-        restructure_wiki_graph(DOCS_ROOT)
+        restructure_wiki_graph(docs_scoped_root, req.project)
     except Exception as e:
         print(f"[warn] wiki auto-restructuring failed: {e}")
 
-    ok, err = _git_commit_push(req.slug, "update" if path.exists() else "create")
+    ok, err = _git_commit_push(req.slug, "update" if path.exists() else "create", req.project)
     if not ok:
         # File is written but push failed — still return success with warning
         return {"success": True, "slug": req.slug, "warning": f"git push failed: {err}"}
 
-    return {"success": True, "slug": req.slug, "path": f"docs/{req.slug}.md"}
+    return {"success": True, "slug": req.slug, "path": f"docs/{req.project}/{req.slug}.md" if req.project else f"docs/{req.slug}.md"}
 
 
 @router.delete("/delete")
 def delete_note(req: DeleteNoteRequest):
     """Delete a note and commit the deletion."""
-    path = _path_from_slug(req.slug)
-    if not str(path).startswith(str(DOCS_ROOT)):
+    path = _path_from_slug(req.slug, req.project)
+    docs_scoped_root = _resolve_root(req.project)
+    if not str(path).startswith(str(docs_scoped_root)):
         raise HTTPException(status_code=403, detail="Path outside docs root")
     if not path.exists():
-        raise HTTPException(status_code=404, detail=f"Note not found: {req.slug}")
+        raise HTTPException(status_code=404, detail=f"Note not found: {req.slug} (project: {req.project})")
 
     path.unlink()
-    ok, err = _git_commit_push(req.slug, "delete")
+    ok, err = _git_commit_push(req.slug, "delete", req.project)
     return {"success": True, "slug": req.slug, "git_ok": ok}
 
 
 @router.post("/restructure")
-def restructure_notes():
+def restructure_notes(project: Optional[str] = Query(default=None, description="Project slug")):
     """Manually trigger self-balancing Zettelkasten restructuring of all wiki links."""
     _ensure_docs_root()
+    root = _resolve_root(project)
     try:
-        restructure_wiki_graph(DOCS_ROOT)
+        restructure_wiki_graph(root, project)
         # Commit the changes made by the restructure
+        doc_path = f"docs/{project}/" if project else "docs/"
         subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "add", "docs/"],
+            ["git", "-C", str(REPO_ROOT), "add", doc_path],
             check=True, capture_output=True, timeout=30
         )
         r = subprocess.run(
-            ["git", "-C", str(REPO_ROOT), "commit", "-m", "chore(graph): self-balancing Zettelkasten restructuring"],
+            ["git", "-C", str(REPO_ROOT), "commit", "-m", f"chore(graph): self-balancing Zettelkasten restructuring for {project or 'root'}"],
             capture_output=True, timeout=10
         )
         if r.returncode == 0:
@@ -408,8 +427,8 @@ def restructure_notes():
 def notes_graph(project: Optional[str] = Query(default=None, description="Project slug for scoped docs")):
     """Build graph data: nodes (all notes) + edges (wikilinks between notes)."""
     _ensure_docs_root()
-    root = (DOCS_ROOT / project) if project else DOCS_ROOT
-    notes = _flat_notes(root) if root.exists() else []
+    root = _resolve_root(project)
+    notes = _flat_notes(root, project) if root.exists() else []
     slug_set = {n["slug"] for n in notes}
 
     nodes = [
@@ -419,7 +438,7 @@ def notes_graph(project: Optional[str] = Query(default=None, description="Projec
 
     edges = []
     for note in notes:
-        path = _path_from_slug(note["slug"])
+        path = _path_from_slug(note["slug"], project)
         if not path.exists():
             continue
         try:
