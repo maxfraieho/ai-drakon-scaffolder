@@ -177,3 +177,47 @@ export default createAgent(() => ({
 | **drakon-agent** | 2-3 Days | Replicating Python/JS AST parser in TypeScript. |
 | **docs-agent** | 2-3 Days | Implementing file system hooks and Git/GitHub API calls on Cloudflare. |
 | **architect-agent** | 4-5 Days | Rewriting LangGraph state machines into TS workflows; verifying loop corrections. |
+
+---
+
+## Phase 2: SaaS Multi-tenancy (Sprint 2–6, додано 2026-06-12)
+
+> Повна специфікація: `docs/architecture/ARCHITECTURE-SAAS.md`.
+> Схеми: `infrastructure/d1/schema.sql`, `infrastructure/appwrite/schema.ts`.
+
+### Ключові рішення (верифіковані 2026-06-12)
+
+1. **Flue interceptors НЕ існують** (перевірено flueframework.com/docs/api/agent-api) —
+   квоти LLM реалізуються через Hono `quotaMiddleware` + `ctx.waitUntil()`, НЕ через
+   beforeLLM/afterLLM хуки зі стратегічного плану.
+2. **connectMcpServer** сигнатура: `(name, {url, transport?, headers?}) →
+   {name, tools, close()}` — динамічні Зони Знань підключаються у workflows.
+3. **Subagents**: `defineAgentProfile()` → `subagents: [...]` у createAgent;
+   делегування через `session.task(text, {agent, result: valibotSchema})`.
+4. **dispatch()**: `dispatch({id, session?, input})` → DispatchReceipt (async).
+5. Всі 3 поточні flue-workers живі (health 200, перевірено) — консолідація
+   у єдиний `ai-drakon-flue` відкладена до Sprint 5, спершу SaaS-шари.
+
+### Кроки (по спринтах)
+
+- **Sprint 2:** D1 база `ai-drakon-saas` (`wrangler d1 create`), застосувати
+  `infrastructure/d1/schema.sql`; KV namespace `SESSION_KV`; колекції Appwrite за
+  `infrastructure/appwrite/schema.ts`; `middleware/auth.ts` в architect-agent-flue;
+  Teams onboarding (персональна команда при реєстрації).
+  Верифікація: `curl -H "Cookie: a_session_..." /projects` → 200; без cookie → 401.
+- **Sprint 3:** таблиця knowledge_zones (D1) + zone_secrets (Appwrite, encrypted);
+  CRUD маршрути `/zones`; `connectMcpServer` у workflows/analyze; UI ZoneCreationDialog
+  → реальний бекенд. Верифікація: створити зону GitNexus → агент бачить mcp__* tools.
+- **Sprint 4:** billing_profiles + quotaMiddleware (402) + Stripe webhook + Cron
+  reset; Usage dashboard у /settings.
+- **Sprint 5:** консолідація 3 workers → ai-drakon-flue (структура у §7
+  ARCHITECTURE-SAAS.md); subagents/dispatch; видалення Python-агентів ПІСЛЯ
+  production smoke tests.
+- **Sprint 6:** remote sandbox PoC (Daytona/CF Sandbox), onboarding, security audit.
+
+### Інваріанти (без змін)
+
+- `drakonwidget.js`, `src/lib/drakon/adapter.ts` — недоторкані.
+- IR без X/Y; `params` — STRING; b0: type="branch", branchId=0 (число).
+- `npx tsc --noEmit` чистий після кожного етапу; `cp -r src/ .lovable/src/`.
+- Python-агенти (8765-8767) — fallback до кінця Sprint 5.
