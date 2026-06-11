@@ -39,6 +39,18 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 const LEGACY_GITHUB_STORAGE_KEY = "github.lastRepo";
 
+const STALE_AGENT_HOSTS = [
+  "architect-agent.exodus.pp.ua",
+  "drakon-agent.exodus.pp.ua",
+  "docs-agent.exodus.pp.ua",
+  "192.168.3.184",
+];
+
+function isStaleAgentUrl(url: string): boolean {
+  if (!url) return false;
+  return STALE_AGENT_HOSTS.some(host => url.includes(host));
+}
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -160,15 +172,21 @@ export function readSettings(): AppSettings {
       },
       agents: {
         drakonUrl:
-          typeof agents.drakonUrl === "string" && agents.drakonUrl.startsWith("https://")
+          typeof agents.drakonUrl === "string" &&
+          agents.drakonUrl.startsWith("https://") &&
+          !isStaleAgentUrl(agents.drakonUrl)
             ? agents.drakonUrl
             : DEFAULT_SETTINGS.agents.drakonUrl,
         architectUrl:
-          typeof agents.architectUrl === "string" && agents.architectUrl.startsWith("https://")
+          typeof agents.architectUrl === "string" &&
+          agents.architectUrl.startsWith("https://") &&
+          !isStaleAgentUrl(agents.architectUrl)
             ? agents.architectUrl
             : DEFAULT_SETTINGS.agents.architectUrl,
         docsUrl:
-          typeof agents.docsUrl === "string" && agents.docsUrl.startsWith("https://")
+          typeof agents.docsUrl === "string" &&
+          agents.docsUrl.startsWith("https://") &&
+          !isStaleAgentUrl(agents.docsUrl)
             ? agents.docsUrl
             : DEFAULT_SETTINGS.agents.docsUrl,
       },
