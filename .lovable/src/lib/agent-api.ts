@@ -6,6 +6,7 @@ const AGENT_LABELS: Record<AgentId, string> = {
 drakon: "DRAKON",
 architect: "Architect",
 docs: "Docs",
+"sonate-solidaire": "Sonate Solidaire",
 };
 
 export function getAgentLabel(agentId: AgentId): string {
@@ -20,6 +21,7 @@ function getAgentUrlFor(agentId: AgentId): string {
   const a = readSettings().agents;
   if (agentId === "drakon") return a.drakonUrl.replace(/\/+$/, "");
   if (agentId === "docs") return a.docsUrl.replace(/\/+$/, "");
+  if (agentId === "sonate-solidaire") return "";
   return a.architectUrl.replace(/\/+$/, "");
 }
 

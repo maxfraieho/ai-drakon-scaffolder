@@ -41,6 +41,7 @@ const WELCOME: Record<AgentId, string> = {
   drakon: "Готово. Вставте Python-код — згенерую DRAKON-схему.",
   architect: "Готово. Запитайте про архітектуру проєкту.",
   docs: "Готово. Запитайте про документацію та контекст.",
+  "sonate-solidaire": "Готово. Запитайте про Sonate Solidaire.",
 };
 
 interface SlotInfo {
@@ -113,11 +114,13 @@ export function AgentChatPanel({ className }: Props) {
     drakon: "drakon-assistant-proxy",
     architect: "architect-assistant-proxy",
     docs: "docs-assistant-proxy",
+    "sonate-solidaire": "sonate-solidaire-assistant-proxy",
   };
   const DEFAULT_MODEL: Record<AgentId, string> = {
     drakon: DEFAULT_SLOT.drakon,
     architect: "claude-3-haiku-20240307",
     docs: "claude-3-haiku-20240307",
+    "sonate-solidaire": "claude-3-haiku-20240307",
   };
   const savedProtocol =
     typeof window !== "undefined"

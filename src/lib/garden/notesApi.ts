@@ -275,10 +275,10 @@ export async function commitNote(payload: CommitNotePayload): Promise<{ success:
           title: payload.title,
           content: payload.content,
           tags: payload.tags,
-          sha: res.sha || payload.sha,
+          sha: res.commitSha || payload.sha,
         };
         githubNoteCache.set(payload.slug, updatedNote);
-        return { success: true, path: filePath, sha: res.sha };
+        return { success: true, path: filePath, sha: res.commitSha };
       }
     } catch (e) {
       console.error("Error committing note to GitHub:", payload.slug, e);
