@@ -54,6 +54,13 @@ if (!workerFileName) {
   );
 }
 
+// FIX: Також копіюємо server.js у dist/ щоб працювали відносні імпорти типу ../server.js
+const mainServerEntry = path.join(serverDir, "server.js");
+if (fs.existsSync(mainServerEntry)) {
+  fs.copyFileSync(mainServerEntry, path.join(distDir, "server.js"));
+  console.log("Copied server.js to dist/ to resolve relative imports");
+}
+
 // Статичні розширення які має обслуговувати env.ASSETS
 const STATIC_EXT_RE = /\.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webmanifest|map|txt|xml)$/i;
 
