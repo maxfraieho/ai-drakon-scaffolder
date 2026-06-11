@@ -22526,3 +22526,21 @@ database_id = "743d5bb0-d09d-4dcc-8329-8ebae8d533f4"
 Коміт: feat(auth): authMiddleware with Appwrite JWT + KV session cache (TASK-205)
 Push: git push origin main
 Diary: SESSION:2026-06-12|TASK-205:auth-middleware|commit:<hash>|★★★
+
+[ ] TASK-206: Ревізія та апгрейд документації під поточний стан системи
+Виконавець: Claude Sonnet (оркестратор, нова сесія) — самостійно або з делегуванням частин AGY3.
+Мета: вся документація має відповідати РЕАЛЬНОМУ поточному стану системи (стан на 2026-06-12, комміт be4598d+).
+Що зробити:
+1. Інвентаризація: docs/INDEX.md, README.md, docs/appwrite-migration-research.md, docs/ui-pages-reference.md, docs/COLLABORATION.md, development/SESSION_STATE.md (застарілий — травень), development/FLUE-MIGRATION-PLAN.md.
+2. Звірити з реальністю і виправити:
+   - Python-агенти (8765-8767) — тепер fallback, основні: drakon/architect/docs-agent-flue на *.workers.dev (всі живі)
+   - Appwrite: проект 6a23420a003a04b4997b, база ai-drakon, 4 колекції СТВОРЕНІ (infrastructure/appwrite/schema.ts)
+   - D1 ai-drakon-saas + KV SESSION_KV СТВОРЕНІ (infrastructure/cloudflare-resources.md)
+   - AuthContext тепер на Appwrite-сесії (TASK-203), authMiddleware існує (TASK-205, ще не задеплоєний)
+   - Продакшн-домен: aidrakon.tech; цільова топологія у docs/ARCHITECTURE-SAAS.md §2.4
+   - Застарілі URL-и тунелів (architect-agent.exodus.pp.ua тощо) позначити як deprecated
+3. docs/INDEX.md: додати посилання на docs/ARCHITECTURE-SAAS.md та infrastructure/cloudflare-resources.md.
+4. docs/appwrite-migration-research.md: звірити з ARCHITECTURE-SAAS.md; якщо суперечить — додати банер "(застаріло, див. ARCHITECTURE-SAAS.md)".
+5. development/SESSION_STATE.md: додати секцію "2026-06-12 — SaaS Sprint 1-2" зі станом (TASK-203/204/205 done, інфраструктура створена).
+Верифікація: кожне твердження в оновлених доках підтверджене реальним файлом/ендпоінтом; жодних згадок MinIO/Python-агентів як основних компонентів без позначки fallback/deprecated.
+Коміт: docs: revise documentation to match current SaaS state (TASK-206)
