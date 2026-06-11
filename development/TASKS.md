@@ -22379,3 +22379,40 @@ git push origin main
 ### DIARY
 
 Entry: "SESSION:2026-06-10|TASK-202:unified-WorkspacePage|WorkspacePage+route+nav|commit:<hash>|kod+docs tabs|lazy mount|Layers icon|sshpass OK|[OK]|★★★"
+
+---
+
+## Sprint 1 — SaaS Стабілізація (2026-06-12, Claude оркестратор)
+
+[ ] TASK-203: Appwrite auth у AuthContext
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH.
+Файли: src/context/AuthContext.tsx (переписати), src/lib/appwrite.ts (вже існує — використовувати як є, НЕ ЗМІНЮВАТИ).
+Що зробити:
+1. Переписати src/context/AuthContext.tsx — замінити фіктивний boolean-стан на реальну Appwrite-сесію:
+   - import { account } from "@/lib/appwrite"; import type { Models } from "appwrite";
+   - стан: user: Models.User<Models.Preferences> | null; isLoading: boolean (початково true)
+   - useEffect на mount: account.get().then(u => setUser(u)).catch(() => setUser(null)).finally(() => setIsLoading(false))
+   - login: async (email: string, password: string) => { await account.createEmailPasswordSession(email, password); setUser(await account.get()); }
+   - logout: async () => { await account.deleteSession("current"); setUser(null); }
+   - value контексту: { user, isAuthenticated: !!user, isLoading, login, logout }
+2. ЗАБОРОНЕНО: будь-який localStorage.clear() або зміни ключа drakon.settings у цьому файлі. Налаштування користувача (GitHub token) НЕ повинні зникати при login/logout.
+3. Знайти всі виклики useAuth(): grep -rn "useAuth(" src/ --include="*.tsx" --include="*.ts" | grep -v node_modules. Якщо десь викликається login() без аргументів — оновити виклик під нову сигнатуру login(email, password) або передати тестові значення з форми.
+4. Синхронізація Lovable: cp src/context/AuthContext.tsx .lovable/src/context/AuthContext.tsx (і кожен інший змінений файл так само).
+Верифікація: npx tsc --noEmit — БЕЗ помилок. Якщо є помилки — виправити до коміту.
+Коміт: feat(auth): wire Appwrite session into AuthContext (TASK-203)
+Push: git push origin main
+Diary: SESSION:2026-06-12|TASK-203:appwrite-authcontext|commit:<hash>|★★★
+
+[ ] TASK-204: Міграція застарілих agent URLs у settings-storage
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH.
+Файл: src/lib/settings-storage.ts
+Проблема: у користувачів зі старим localStorage поля agents.architectUrl/drakonUrl/docsUrl вказують на мертві тунелі Python-агентів — через це fetch /projects падає і список проектів у Settings UI порожній, хоча Worker повертає дані.
+Що зробити:
+1. Додати константу: const STALE_AGENT_HOSTS = ["architect-agent.exodus.pp.ua", "drakon-agent.exodus.pp.ua", "docs-agent.exodus.pp.ua", "192.168.3.184"];
+2. Додати helper: function isStaleAgentUrl(url: string): boolean — повертає true якщо url містить будь-який з STALE_AGENT_HOSTS.
+3. У readSettings() у блоці розбору agents: якщо збережений URL isStaleAgentUrl() → ігнорувати його і підставити відповідний DEFAULT_SETTINGS.agents.* (drakonUrl/architectUrl/docsUrl → *-flue.maxfraieho.workers.dev).
+4. Синхронізація Lovable: cp src/lib/settings-storage.ts .lovable/src/lib/settings-storage.ts
+Верифікація: npx tsc --noEmit — БЕЗ помилок.
+Коміт: fix(settings): migrate stale agent tunnel URLs to flue worker defaults (TASK-204)
+Push: git push origin main
+Diary: SESSION:2026-06-12|TASK-204:settings-url-migration|commit:<hash>|★★★
