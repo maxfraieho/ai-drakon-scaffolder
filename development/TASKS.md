@@ -22403,7 +22403,7 @@ Entry: "SESSION:2026-06-10|TASK-202:unified-WorkspacePage|WorkspacePage+route+na
 Push: git push origin main
 Diary: SESSION:2026-06-12|TASK-203:appwrite-authcontext|commit:<hash>|★★★
 
-[ ] TASK-204: Міграція застарілих agent URLs у settings-storage
+[x] TASK-204: Міграція застарілих agent URLs у settings-storage
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH.
 Файл: src/lib/settings-storage.ts
 Проблема: у користувачів зі старим localStorage поля agents.architectUrl/drakonUrl/docsUrl вказують на мертві тунелі Python-агентів — через це fetch /projects падає і список проектів у Settings UI порожній, хоча Worker повертає дані.
