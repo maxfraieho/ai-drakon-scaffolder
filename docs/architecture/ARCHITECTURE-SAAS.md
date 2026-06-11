@@ -244,3 +244,28 @@ services/ai-drakon-flue/
 | 4 | 7–8 | Білінг: billing_profiles, quotaMiddleware, Stripe webhook, Usage dashboard | план |
 | 5 | 9–10 | Консолідація у ai-drakon-flue; subagents + dispatch; virtual sandbox всюди | план |
 | 6 | 11–12 | Remote sandbox PoC, onboarding flow, security audit (tenant isolation pen-test) | план |
+
+### 2.4 Корекція (2026-06-12): JWT замість cookie між доменами
+
+Фронтенд (`*.pages.dev`) і Worker (`*.workers.dev`) — різні домени, тому
+cookie `a_session_*` (домен Appwrite) до Worker-а НЕ доходить. Робочий механізм:
+
+1. Фронтенд після логіну викликає `account.createJWT()` (TTL 15 хв) і додає
+   `Authorization: Bearer <jwt>` до кожного запиту Worker-а (кешувати JWT
+   і оновлювати при 401).
+2. `authMiddleware` приймає ОБИДВА: Bearer JWT (основний) та cookie (фолбек).
+3. KV-кеш однаковий: `session:<sha256(token)>`, TTL 8 хв (< 15 хв життя JWT).
+
+**Продакшн-домен: `aidrakon.tech`.** Цільова топологія доменів:
+
+| Сервіс | Домен |
+|---|---|
+| Фронтенд (CF Pages) | `aidrakon.tech` |
+| ai-drakon-flue Worker | `api.aidrakon.tech` (Worker route) |
+| Appwrite custom domain | `auth.aidrakon.tech` (CNAME → fra.cloud.appwrite.io) |
+
+Після налаштування custom domain Appwrite cookie стає first-party для
+`*.aidrakon.tech` — cookie-фолбек у authMiddleware запрацює нативно,
+JWT залишиться для API-клієнтів та CLI.
+
+Реалізація: `services/architect-agent-flue/src/middleware/auth.ts` (TASK-205).
