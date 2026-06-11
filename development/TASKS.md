@@ -22384,7 +22384,7 @@ Entry: "SESSION:2026-06-10|TASK-202:unified-WorkspacePage|WorkspacePage+route+na
 
 ## Sprint 1 — SaaS Стабілізація (2026-06-12, Claude оркестратор)
 
-[ ] TASK-203: Appwrite auth у AuthContext
+[x] TASK-203: Appwrite auth у AuthContext
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH.
 Файли: src/context/AuthContext.tsx (переписати), src/lib/appwrite.ts (вже існує — використовувати як є, НЕ ЗМІНЮВАТИ).
 Що зробити:
