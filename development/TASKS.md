@@ -22544,3 +22544,28 @@ Diary: SESSION:2026-06-12|TASK-205:auth-middleware|commit:<hash>|★★★
 5. development/SESSION_STATE.md: додати секцію "2026-06-12 — SaaS Sprint 1-2" зі станом (TASK-203/204/205 done, інфраструктура створена).
 Верифікація: кожне твердження в оновлених доках підтверджене реальним файлом/ендпоінтом; жодних згадок MinIO/Python-агентів як основних компонентів без позначки fallback/deprecated.
 Коміт: docs: revise documentation to match current SaaS state (TASK-206)
+
+[ ] TASK-207: Frontend JWT — Authorization header для Worker-запитів
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+Специфікація: docs/ARCHITECTURE-SAAS.md §2.4.
+Що зробити:
+1. Створити src/lib/appwrite-jwt.ts: функція getAppwriteJwt() — викликає account.createJWT() з src/lib/appwrite.ts, кешує jwt у пам'яті модуля з timestamp, оновлює якщо старший за 10 хв; повертає null якщо користувач не залогінений (catch).
+2. У src/lib/graph-pipeline-api.ts: додати helper authHeaders(): Promise<HeadersInit> — {Authorization: `Bearer ${jwt}`} якщо jwt є, інакше {}. Додати ці headers до fetch у listProjectsArch (для початку ТІЛЬКИ там — інші маршрути Worker-а ще без auth).
+3. Тест-функція: на сторінці Settings (або в консолі) виклик fetch(`${architectUrl}/me`, {headers: await authHeaders()}) має повертати tenant JSON після логіну.
+4. Синхронізація: cp змінених файлів у .lovable/src/... (дзеркально).
+Верифікація: npx tsc --noEmit — БЕЗ помилок.
+Коміт: feat(auth): Appwrite JWT authorization header for worker requests (TASK-207)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-207:frontend-jwt|commit:<hash>|★★★
+
+[ ] TASK-208: quotaMiddleware — ліміти LLM з D1 billing_profiles
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+Специфікація: docs/ARCHITECTURE-SAAS.md §3 — код quotaMiddleware там ГОТОВИЙ, копіювати як є.
+Що зробити:
+1. Створити services/architect-agent-flue/src/middleware/quota.ts з кодом із §3 (createMiddleware, SELECT llm_quota_monthly/llm_consumed WHERE tenant_id, 402 при перевищенні, c.executionCtx.waitUntil інкремент після next()).
+2. Підключити: у src/index.ts ЗМІНИТИ маршрут /me на app.get('/me', authMiddleware, quotaMiddleware, ...) — поки що ТІЛЬКИ там (тестовий ланцюжок auth→quota). Існуючі маршрути НЕ чіпати.
+3. НЕ деплоїти — деплой робить оркестратор з dev-сервера.
+Верифікація: cd services/architect-agent-flue && npx tsc --noEmit — БЕЗ помилок.
+Коміт: feat(billing): quotaMiddleware with D1 llm quota check (TASK-208)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-208:quota-middleware|commit:<hash>|★★★
