@@ -32,12 +32,29 @@ def _ensure_docs_root():
     DOCS_ROOT.mkdir(parents=True, exist_ok=True)
 
 
+def _is_main_project(project: Optional[str]) -> bool:
+    return not project or project in ("ai-drakon", "ai-drakon-scaffolder", "ai-drakon-setup")
+
+
 def _resolve_root(project: Optional[str] = None) -> Path:
     """Return the scoped root for docs."""
-    if project:
+    if _is_main_project(project):
+        return DOCS_ROOT
+        
+    local_path = DOCS_ROOT / project
+    if local_path.exists():
+        return local_path
+        
+    try:
         from projects_route import resolve_project_root
-        return resolve_project_root(project) / "docs"
-    return DOCS_ROOT
+        proj_root = resolve_project_root(project)
+        proj_docs = proj_root / "docs"
+        if proj_docs.exists() and proj_docs.is_dir():
+            return proj_docs
+    except Exception:
+        pass
+        
+    return local_path
 
 
 def _slug_from_path(path: Path, project: Optional[str] = None) -> str:
@@ -134,16 +151,27 @@ def _extract_title(content: str) -> Optional[str]:
     return None
 
 
+def _git_repo_for_path(path: Path) -> Path:
+    """Find the git repository root for a given path."""
+    curr = path.resolve().parent
+    while curr != curr.parent:
+        if (curr / ".git").exists():
+            return curr
+        curr = curr.parent
+    return REPO_ROOT
+
+
 def _git_commit_push(slug: str, action: str, project: Optional[str] = None) -> tuple[bool, str]:
     """Run git add/commit/push. Returns (ok, error_msg)."""
-    if project:
-        from projects_route import resolve_project_root
-        repo_root = resolve_project_root(project)
+    path = _path_from_slug(slug, project)
+    repo_root = _git_repo_for_path(path)
+    
+    try:
+        rel_path = str(path.resolve().relative_to(repo_root.resolve())).replace("\\", "/")
+    except ValueError:
         base = "docs/"
-    else:
-        repo_root = REPO_ROOT
-        base = "docs/"
-    rel_path = f"{base}{slug}.md" if not slug.endswith(".md") else f"{base}{slug}"
+        rel_path = f"{base}{slug}.md" if not slug.endswith(".md") else f"{base}{slug}"
+        
     try:
         subprocess.run(
             ["git", "-C", str(repo_root), "pull", "--rebase", "--autostash", "-q"],
@@ -410,15 +438,13 @@ def restructure_notes(project: Optional[str] = Query(default=None, description="
     try:
         restructure_wiki_graph(root, project)
         # Commit the changes made by the restructure
-        if project:
-            from projects_route import resolve_project_root
-            repo_root = resolve_project_root(project)
-            doc_path = "docs/"
-        else:
-            repo_root = REPO_ROOT
-            doc_path = "docs/"
+        repo_root = _git_repo_for_path(root)
+        try:
+            rel_doc_path = str(root.resolve().relative_to(repo_root.resolve())).replace("\\", "/")
+        except ValueError:
+            rel_doc_path = "docs/"
         subprocess.run(
-            ["git", "-C", str(repo_root), "add", doc_path],
+            ["git", "-C", str(repo_root), "add", rel_doc_path],
             check=True, capture_output=True, timeout=30
         )
         r = subprocess.run(

@@ -77,6 +77,13 @@ def resolve_project_root(project: Optional[str] = None) -> Path:
             if root.exists():
                 return root
             raise HTTPException(status_code=404, detail=f"Project path not found: {root}")
+    
+    # Dynamic search for project directories
+    for base in [Path.home() / "projects", Path.home() / "workspace"]:
+        cand = base / project
+        if cand.exists() and cand.is_dir():
+            return cand
+            
     raise HTTPException(status_code=404, detail=f"Unknown project: {project}")
 
 
