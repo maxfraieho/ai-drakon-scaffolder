@@ -28,9 +28,14 @@ lang: uk
 | Компонент | Адреса | Призначення |
 |-----------|---------|-------------|
 | **Claude Code** | OrangePi (`192.168.3.161:3456`) | Головний агент-оркестратор |
-| **AGY CLI** | Termux (`192.168.3.195:8080`) | Середовище виконання Gemini |
+| **AGY CLI (phone)** | Termux (динамічний IP, ~192.168.3.25) | Прості задачі (Python, docs) |
+| **AGY3 (tablet)** | Termux (`192.168.3.204:8022`) | **Основний виконавець**: складні TypeScript/SSH задачі |
 | **AGY Proxy** | `https://agy.exodus.pp.ua` | Публічний API-ендпоінт для моделей Gemini/Claude |
+| **architect-agent-flue** | `architect-agent-flue.maxfraieho.workers.dev` | CF Worker: архітектор (authMiddleware, live) |
+| **drakon-agent-flue** | `drakon-agent-flue.maxfraieho.workers.dev` | CF Worker: DRAKON IR аналіз (live) |
+| **docs-agent-flue** | `docs-agent-flue.maxfraieho.workers.dev` | CF Worker: документація (live) |
 | **Dev Server** | `192.168.3.184` | Хостинг Docker-контейнерів, фонових агентів, проксі-роутерів |
+| **Python agents** (:8765-8767) | `192.168.3.184` | **fallback** (drakon/architect/docs-agent) — до Sprint 5 |
 | **ai-memory** | `192.168.3.184:49374` | Рівень синхронізації сесій між агентами |
 | **MemPalace** | `192.168.3.184` (Python) | Семантична пам'ять, ведення щоденників та граф знань (KG) |
 | **NotebookLM** | `192.168.3.234:8002` | Довгострокова база знань проекту |

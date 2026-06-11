@@ -25,6 +25,7 @@ lang: uk
 | **META** | [[META/_INDEX]] | Стандарти форматування та ведення документації | canonical | 1 |
 | **Concept** | [[concept/_INDEX]] | Філософія, візія та ключові когнітивні ідеї платформи | canonical | 1 |
 | **Architecture** | [[architecture/_INDEX]] | Архітектура системи, протоколи live-трейсингу та мапінг | canonical | 1 |
+| **SaaS Architecture** | [[ARCHITECTURE-SAAS]] | SaaS: Auth, Billing, Knowledge Zones, CF D1/KV, Appwrite | active | 1 |
 | **Knowledge Base** | [[kb/_INDEX]] | Специфікація DRAKON IR та базові промпти для ШІ | canonical | 1 |
 | **Manuals** | [[manuals/_INDEX]] | Практичні посібники та інструкції користувача | active | 2 |
 | **Plans** | [[plans/_INDEX]] | Плани реалізації, технічні пропозиції та спринти | active | 3 |
@@ -52,6 +53,7 @@ lang: uk
 2. [[architecture/02_drakon_to_langgraph_mapping]] — Як візуальні схеми компілюються в ШІ-графи.
 3. [[kb/01-drakon-ir-spec]] — Стандарт проміжного представлення DRAKON IR.
 4. [[COLLABORATION]] — Опис та інфраструктура спільної роботи тандему Claude + AGY.
+5. [[ARCHITECTURE-SAAS]] — SaaS-архітектура: мультиоренда, auth, billing (актуальна специфікація).
 
 ### 💻 Для розробників (Developer Path)
 > Практична робота з пайплайнами, автоматизацією тестування та інтеграцією.
@@ -83,3 +85,5 @@ lang: uk
 - [[META/STANDARD]] — Стандарт форматування документації Garden Bloom
 - [[COLLABORATION]] — Керівництво по спільній роботі Claude та AGY
 - [[ui-pages-reference]] — Довідник по сторінках інтерфейсу UI
+- [[ARCHITECTURE-SAAS]] — Архітектура SaaS-шару (мультиоренда, Appwrite + CF D1)
+- [[../infrastructure/cloudflare-resources]] — CF D1/KV ресурси (створені 2026-06-12)

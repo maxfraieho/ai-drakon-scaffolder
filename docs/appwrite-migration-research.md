@@ -1,3 +1,9 @@
+> **Статус (2026-06-12): РЕАЛІЗОВАНО.** Hybrid Architecture (Option B) повністю
+> впроваджена: Appwrite проект `6a23420a003a04b4997b` + 4 колекції, D1 `ai-drakon-saas`,
+> KV `SESSION_KV`, `authMiddleware` у `architect-agent-flue`.
+> Актуальна специфікація: [`docs/ARCHITECTURE-SAAS.md`](ARCHITECTURE-SAAS.md).
+> Цей документ зберігається як довідкове дослідження, але описує стан ДО реалізації.
+
 # Appwrite Migration Research — AI-DRAKON Scaffolder
 
 ## Executive Summary

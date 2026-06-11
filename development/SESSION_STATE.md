@@ -201,3 +201,71 @@ c4acb04  code review fixes (6 fixes applied)
 
 - Перевірити CF Pages build статус після останніх комітів
 - Продовжити prompt-список (56+) або новий sprint
+
+
+---
+
+# SESSION STATE UPDATE — 2026-06-12 (SaaS Sprint 1–2)
+
+## Загальний стан після Sprint 1–2 SaaS
+
+| TASK | Опис | Стан |
+|------|------|------|
+| TASK-203 | AuthContext.tsx → Appwrite sessions | ✅ DONE |
+| TASK-204 | settings-storage.ts — сталі URL-и агентів очищуються | ✅ DONE |
+| TASK-205 | authMiddleware + KV session cache в architect-agent-flue | ✅ DONE |
+| TASK-206 | Ревізія документації | ✅ DONE |
+| TASK-207 | Frontend JWT — authHeaders() в graph-pipeline-api | ◻ pending AGY3 |
+| TASK-208 | quotaMiddleware в architect-agent-flue | ◻ pending AGY3 |
+
+## Cloudflare ресурси (створені 2026-06-12)
+
+- D1: `ai-drakon-saas` / `743d5bb0-d09d-4dcc-8329-8ebae8d533f4` (EEUR)
+- KV: `SESSION_KV` / `11ed74326f2c431496c2b3dc38ef0208`
+- Account: `c354ea45a11a1e1c14f1f41fe780cb34`
+- Деталі: `infrastructure/cloudflare-resources.md`
+
+## Appwrite (проект 6a23420a003a04b4997b, fra.cloud.appwrite.io)
+
+- База: `ai-drakon`
+- Колекції: user_profiles, team_settings, zone_secrets (encrypted), audit_log
+- Схема: `infrastructure/appwrite/schema.ts`
+
+## Агенти (актуально 2026-06-12)
+
+| Агент | Тип | URL | Стан |
+|-------|-----|-----|------|
+| architect-agent-flue | CF Worker | architect-agent-flue.maxfraieho.workers.dev | live + authMiddleware (не задеплоєний) |
+| drakon-agent-flue | CF Worker | drakon-agent-flue.maxfraieho.workers.dev | live |
+| docs-agent-flue | CF Worker | docs-agent-flue.maxfraieho.workers.dev | live |
+| drakon-agent (Python) | FastAPI :8765 | https://drakon-agent.exodus.pp.ua | **fallback** |
+| architect-agent (Python) | FastAPI :8766 | https://architect-agent.exodus.pp.ua | **fallback** |
+| docs-agent (Python) | FastAPI :8767 | https://docs-agent.exodus.pp.ua | **fallback** |
+
+Python-агенти (8765–8767) залишаються як fallback до завершення Sprint 5 (консолідація в `ai-drakon-flue`).
+
+## Продакшн-домен
+
+`aidrakon.tech` — цільова топологія: `docs/ARCHITECTURE-SAAS.md §2.4`.
+
+## Застарілі URL-и тунелів (**deprecated**)
+
+- `architect-agent.exodus.pp.ua` → замінено *.workers.dev
+- `drakon-agent.exodus.pp.ua` → deprecated
+- `docs-agent.exodus.pp.ua` → deprecated
+- MinIO збереження — deprecated (замінено Appwrite Storage в архітектурі)
+
+## Git log (2026-06-12, топ коміти)
+
+```
+87ac654  chore(tasks): add TASK-207/208 Sprint 2-4 backlog
+be4598d  docs: move ARCHITECTURE-SAAS.md to docs/ root
+8c2b658  feat(auth): authMiddleware with Appwrite JWT + KV session cache (TASK-205)
+```
+
+## Наступні кроки
+
+- TASK-207: Frontend JWT (AGY3) — `src/lib/appwrite-jwt.ts` + `authHeaders()`
+- TASK-208: quotaMiddleware (AGY3) — `services/architect-agent-flue/src/middleware/quota.ts`
+- Redeploy `architect-agent-flue` після додавання `Workers Scripts:Edit` до CF токена
+- Sprint 3: Knowledge Zones CRUD + `connectMcpServer`
