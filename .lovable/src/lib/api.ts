@@ -418,6 +418,22 @@ export const api = {
     return response.json();
   },
 
+  githubDeleteFile: async (
+    owner: string,
+    repo: string,
+    path: string,
+    branch = "main",
+    token?: string,
+  ): Promise<ApiResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/github/delete`, {
+      method: "DELETE",
+      headers: githubRequestHeaders(owner, token),
+      body: JSON.stringify({ owner, repo, path, branch }),
+    });
+
+    return response.json();
+  },
+
   githubListBranches: (owner: string, repo: string, token?: string):
   Promise<GithubBranchesResponse> =>
     fetch(

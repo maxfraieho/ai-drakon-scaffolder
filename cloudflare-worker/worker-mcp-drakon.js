@@ -1151,6 +1151,48 @@ async function handleGithubCommitFile(args, env, requestToken = '') {
   };
 }
 
+async function handleGithubDeleteFile(args, env, requestToken = '') {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const path = String(args?.path || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo || !path) {
+    return { success: false, error: 'owner, repo, path required' };
+  }
+
+  let sha;
+  try {
+    const existing = await githubFetch(
+      env,
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+      {},
+      requestToken,
+    );
+    sha = existing.sha;
+  } catch (err) {
+    return { success: false, error: 'File not found on GitHub: ' + err.message };
+  }
+
+  const body = {
+    message: `delete(${path.split('/').pop()}): delete via Garden`,
+    branch,
+    sha,
+  };
+
+  const result = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
+    { method: 'DELETE', body: JSON.stringify(body) },
+    requestToken,
+  );
+
+  return {
+    success: true,
+    commitSha: result.commit?.sha,
+  };
+}
+
 async function handleGithubListBranches(args, env, requestToken = '') {
   const owner = String(args?.owner || '').trim();
   const repo = String(args?.repo || '').trim();
@@ -2206,6 +2248,17 @@ export default {
           return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
         }
         return jsonResponse(await handleGithubCommitFile(body, env, requestToken));
+      }
+
+      if (method === 'DELETE' && path === '/v1/github/delete') {
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
+        }
+        return jsonResponse(await handleGithubDeleteFile(body, env, requestToken));
       }
 
       if (method === 'GET' && path === '/v1/github/branches') {
