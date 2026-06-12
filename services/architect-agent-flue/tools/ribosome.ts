@@ -41,7 +41,7 @@ const RIBOSOME_SYSTEM = `Ти — рибосома-компілятор DRAKON-�
 
 Функція runNode — заглушка для детермінованих кроків (якщо немає конкретного інструменту):
   async function runNode(name: string, state: Record<string, any>, env: any): Promise<Record<string, any>> {
-    // TODO: implement tool "${name}"
+    // TODO: implement tool "\${name}"
     return state;
   }
 
