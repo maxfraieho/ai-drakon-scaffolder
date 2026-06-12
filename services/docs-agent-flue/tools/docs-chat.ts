@@ -38,9 +38,11 @@ export const docsChat = defineTool({
           { role: 'system', content: DOCS_SYSTEM_PROMPT },
           { role: 'user', content: userContent }
         ],
-        'gemini-2.5-flash',
+        toolContext?.env?.PROXY_MODEL || 'gemini-2.5-flash',
         0.2,
-        apiKey
+        apiKey,
+        toolContext?.env?.PROXY_URL,
+        toolContext?.env
       );
 
       let docSuggestions: any = null;

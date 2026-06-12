@@ -44,9 +44,11 @@ export const drakonChat = defineTool({
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
-        'gemini-2.5-flash',
+        toolContext?.env?.PROXY_MODEL || 'gemini-2.5-flash',
         0.3,
-        apiKey
+        apiKey,
+        toolContext?.env?.PROXY_URL,
+        toolContext?.env
       );
 
       return JSON.stringify({

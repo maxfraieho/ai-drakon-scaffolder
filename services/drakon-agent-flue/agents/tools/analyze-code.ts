@@ -46,9 +46,11 @@ Provide valid JSON without markdown formatting. Do not wrap in markdown fences.`
 
         const res = await llmComplete(
           [{ role: 'user', content: prompt }],
-          'gemini-2.5-flash',
+          context?.env?.PROXY_MODEL || 'gemini-2.5-flash',
           0.1,
-          apiKey
+          apiKey,
+          context?.env?.PROXY_URL,
+          context?.env
         );
 
         let cleanContent = res.trim();
@@ -102,9 +104,11 @@ Provide valid JSON without markdown formatting. Do not wrap in markdown fences.`
               { role: 'system', content: SYSTEM_PROMPT },
               { role: 'user', content: refinePrompt }
             ],
-            'gemini-2.5-flash',
+            context?.env?.PROXY_MODEL || 'gemini-2.5-flash',
             0.0,
-            apiKey
+            apiKey,
+            context?.env?.PROXY_URL,
+            context?.env
           );
 
           let cleanContent = llmRes.trim();
