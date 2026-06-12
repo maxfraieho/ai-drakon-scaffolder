@@ -11,7 +11,7 @@ import { gitnexusDocs } from '../tools/gitnexus-docs.js';
 import { dataviewTool } from '../tools/dataview.js';
 import { GitHubAPI } from '../lib/github-api.js';
 
-const app = new Hono();
+const app = new Hono<{ Bindings: any }>();
 
 app.use('/*', cors());
 
@@ -58,7 +58,7 @@ app.post('/chat', async (c) => {
     currentDoc: typeof currentDoc === 'string' ? currentDoc : JSON.stringify(currentDoc),
     fileTree: typeof fileTree === 'string' ? fileTree : JSON.stringify(fileTree),
     memoryContext
-  }, { env: c.env } as any);
+  }, { env: c.env, llmConfig: body.llmConfig || null } as any);
   
   return c.json(JSON.parse(result));
 });
@@ -70,7 +70,7 @@ app.post('/document', async (c) => {
   const code = req.code || '';
   const slug = req.slug || `modules/${moduleName}`;
   const project = req.project || 'uav-watcher';
-  const tagList = req.tags || ['module', project];
+  const tagList: string[] = req.tags || ['module', project];
   
   const dateStr = new Date().toISOString().split('T')[0];
   
@@ -117,7 +117,7 @@ ${code.slice(0, 5000)}
   const chatRes = await docsChat.execute({
     message,
     memoryContext
-  }, { env: c.env } as any);
+  }, { env: c.env, llmConfig: req.llmConfig || null } as any);
   
   const chatJson = JSON.parse(chatRes);
   const reply = chatJson.reply || '';
@@ -359,4 +359,4 @@ app.get('/gitnexus/repos', async (c) => {
 app.route('/', flue());
 
 export default app;
-export { FlueRegistry, FlueDocsAgent } from '@flue/runtime';
+

@@ -13,7 +13,8 @@ export const docsChat = defineTool({
     kbContext: Type.Optional(Type.String({ description: 'DRAKON rules context' })),
   }),
   execute: async ({ message, currentDoc, fileTree, memoryContext, kbContext }, toolContext: any) => {
-    const apiKey = toolContext?.env?.CUSTOM_API_KEY || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
+    const llmCfg = (toolContext?.llmConfig && (!toolContext.llmConfig.protocol || toolContext.llmConfig.protocol === "openai")) ? toolContext.llmConfig : null;
+    const apiKey = llmCfg?.apiKey || toolContext?.env?.CUSTOM_API_KEY || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
     
     const parts: string[] = [];
     if (memoryContext) {
@@ -38,10 +39,10 @@ export const docsChat = defineTool({
           { role: 'system', content: DOCS_SYSTEM_PROMPT },
           { role: 'user', content: userContent }
         ],
-        toolContext?.env?.PROXY_MODEL || 'gemini-2.5-flash',
+        llmCfg?.model || toolContext?.env?.PROXY_MODEL || 'gemini-2.5-flash',
         0.2,
         apiKey,
-        toolContext?.env?.PROXY_URL,
+        llmCfg?.baseUrl || toolContext?.env?.PROXY_URL,
         toolContext?.env
       );
 

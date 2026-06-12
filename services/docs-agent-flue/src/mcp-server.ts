@@ -180,19 +180,19 @@ export async function handleMcp(c: Context) {
         let resultString = '';
 
         if (name === 'docs_chat') {
-          resultString = await docsChat.execute(args, toolContext);
+          resultString = await docsChat.execute(args, toolContext as any);
         } else if (name === 'notes_crud') {
-          resultString = await notesCrud.execute(args, toolContext);
+          resultString = await notesCrud.execute(args, toolContext as any);
         } else if (name === 'docs_fs') {
-          resultString = await docsFs.execute(args, toolContext);
+          resultString = await docsFs.execute(args, toolContext as any);
         } else if (name === 'projects') {
-          resultString = await projectsTool.execute(args, toolContext);
+          resultString = await projectsTool.execute(args, toolContext as any);
         } else if (name === 'drakon_ir') {
-          resultString = await drakonIr.execute(args, toolContext);
+          resultString = await drakonIr.execute(args, toolContext as any);
         } else if (name === 'gitnexus_docs') {
-          resultString = await gitnexusDocs.execute(args, toolContext);
+          resultString = await gitnexusDocs.execute(args, toolContext as any);
         } else if (name === 'dataview') {
-          resultString = await dataviewTool.execute(args, toolContext);
+          resultString = await dataviewTool.execute(args, toolContext as any);
         } else {
           return c.json({
             jsonrpc: '2.0',
