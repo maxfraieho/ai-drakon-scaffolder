@@ -22736,3 +22736,36 @@ Diary: SESSION:DATE|TASK-214:compiler-toolbar|commit:<hash>|★★★
 Коміт: feat(compiler): wire existing drakongen pseudocode export to CompilerToolbar Export mRNA (TASK-215)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-215:export-mrna-wiring|commit:<hash>|★★★
+
+[ ] TASK-216: Рибосома v1 — POST /compile у architect-agent-flue (псевдокод+семантика → код)
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+Специфікація: docs/ARCHITECTURE-CORE.md §1.3 (правила трансляції рибосоми). Це ДРУГА половина компілятора (перша — Export mRNA, TASK-215 ✅).
+КОНТЕКСТ (перевірено): NodeConfig у src/lib/pipeline-config-api.ts має is_llm, is_deterministic, description — це ДНК-мітки. drakongen-псевдокод їх ВТРАЧАЄ (pipelineToIR кладе лише label). Тому /compile приймає ОБИДВА: псевдокод + nodes-семантику.
+Що зробити (ТІЛЬКИ services/architect-agent-flue):
+1. Створити services/architect-agent-flue/tools/ribosome.ts:
+   export async function compilePseudocode(input: {
+     pseudocode: string;
+     nodes?: Array<{ label: string; type: string; is_llm?: boolean; is_deterministic?: boolean; description?: string }>;
+     pipelineName: string;
+     target?: string;           // v1: тільки "flue"
+   }, env: any, llmConfig?: any): Promise<{ code: string; target: string }>
+   Логіка:
+   - Побудувати таблицю семантики: для кожного node — рядок "label → :: llm ::" (is_llm) або ":: tool ::" + description.
+   - Системний промпт (ARCHITECTURE-CORE §1.3, скопіювати правила):
+     "Ти — рибосома-компілятор DRAKON-псевдокоду у TypeScript Cloudflare Worker workflow.
+      Правила: вузол :: tool :: → await runNode(name, state, env) (детермінований крок);
+      вузол :: llm :: → await llmComplete([...], model, temp, apiKey, proxyUrl, env);
+      QUESTION/розгалуження ТАК(one)/НІ(two) → if/else;
+      Згенеруй ПОВНИЙ файл workflows/{name}.ts: export async function run{Name}(initialState, env) з імпортом llmComplete з '../lib/llm-client.js'. БЕЗ вигаданих залежностей. Відповідь — ТІЛЬКИ TypeScript код у ```typescript блоці."
+   - User-промпт: псевдокод + таблиця семантики вузлів.
+   - Виклик: llmComplete(messages, llmCfg?.model || env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, llmCfg?.apiKey, llmCfg?.baseUrl, env) — той самий резолв що TASK-212 (llmCfg застосовувати лише якщо protocol відсутній/openai).
+   - Витягти код з ```typescript блоку (якщо нема — повернути сирий текст).
+2. У services/architect-agent-flue/src/index.ts додати маршрут:
+   app.post('/compile', async (c) => { body: { pseudocode, nodes?, pipelineName, target?, llmConfig? } → 400 якщо нема pseudocode/pipelineName → compilePseudocode(...) → c.json({ code, target, pipelineName }) }
+   Існуючі маршрути НЕ чіпати. authMiddleware НЕ вішати (як інші маршрути; auth-шар — окремий спринт).
+3. apiKey НЕ логувати ніде.
+4. НЕ деплоїти (деплой — оркестратор).
+Верифікація: cd services/architect-agent-flue && npx tsc --noEmit → 0 помилок (якщо node_modules нема — npm install --ignore-scripts і node node_modules/typescript/bin/tsc --noEmit).
+Коміт: feat(compiler): ribosome v1 — POST /compile pseudocode+node semantics to TS workflow (TASK-216)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-216:ribosome-v1|commit:<hash>|★★★
