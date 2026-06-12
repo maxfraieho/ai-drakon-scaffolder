@@ -22770,7 +22770,7 @@ Diary: SESSION:DATE|TASK-215:export-mrna-wiring|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-216:ribosome-v1|commit:<hash>|★★★
 
-[ ] TASK-217: UI Compile — кнопка компіляції викликає рибосому POST /compile (Фаза C wiring)
+[x] TASK-217: UI Compile — кнопка компіляції викликає рибосому POST /compile (Фаза C wiring)
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 КОНТЕКСТ (все вже працює, перевірено curl-ом): POST https://architect-agent.exodus.pp.ua/compile
   body: { pipelineName, pseudocode, nodes: [{label,type,is_llm,is_deterministic,description}], llmConfig? }
