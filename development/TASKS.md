@@ -22569,3 +22569,28 @@ Diary: SESSION:DATE|TASK-207:frontend-jwt|commit:<hash>|★★★
 Коміт: feat(billing): quotaMiddleware with D1 llm quota check (TASK-208)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-208:quota-middleware|commit:<hash>|★★★
+
+[ ] TASK-209: llm-client.ts — читати PROXY_URL/PROXY_TOKEN з env замість хардкоду
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+Мета: прибрати hardcoded URL з llm-client.ts в усіх трьох Flue workers. URL і токен мають читатись з env (wrangler.toml [vars] або CF Secrets).
+Що зробити:
+1. services/architect-agent-flue/lib/llm-client.ts:
+   - Змінити сигнатуру: додати параметр `proxyUrl?: string` (або читати з глобального env якщо доступно).
+   - Функція llmComplete: URL = proxyUrl || env?.PROXY_URL || 'https://agy3.exodus.pp.ua/v1/chat/completions'
+   - apiKey: apiKey || env?.PROXY_TOKEN || env?.CUSTOM_API_KEY || 'dummy'
+   - Де env недоступний напряму (Cloudflare Workers не мають глобального process.env) — передавати через параметр або toolContext.
+2. Те саме в services/drakon-agent-flue/lib/llm-client.ts.
+3. Те саме в services/docs-agent-flue/lib/llm-client.ts (якщо існує; якщо ні — пропустити).
+4. У всіх місцях де викликається llmComplete і є доступ до env (toolContext?.env) — передавати env.PROXY_URL як proxyUrl.
+   Приклад: llmComplete(messages, model, temp, apiKey, env?.PROXY_URL)
+5. Переконатись що wrangler.toml кожного worker містить PROXY_URL і PROXY_MODEL у [vars].
+   architect-agent-flue: вже є ✅
+   drakon-agent-flue: вже є ✅
+   docs-agent-flue: перевірити і додати якщо немає.
+НЕ деплоїти — деплой робить оркестратор.
+Верифікація:
+  cd services/architect-agent-flue && npx tsc --noEmit
+  cd services/drakon-agent-flue && npx tsc --noEmit
+Коміт: refactor(llm): read PROXY_URL and PROXY_TOKEN from env in llm-client (TASK-209)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-209:llm-env-config|commit:<hash>|★★★
