@@ -22636,3 +22636,35 @@ Diary: SESSION:DATE|TASK-210:tsc-cleanup|commit:<hash>|★★★
 Коміт: fix(agents): revert agent defaults to tunnel URLs — CF 1042 blocks worker-to-worker workers.dev fetch (TASK-211)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-211:agents-alive|commit:<hash>|★★★
+
+[ ] TASK-212: llmConfig з налаштувань UI наскрізно до llmComplete (без хардкоду)
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+КОНТЕКСТ: UI вже надсилає llmConfig {protocol, baseUrl, apiKey, model, maxTokens} у тілі POST до drakon-mcp-worker (src/lib/agent-api.ts sendToAgent). Проксі його ВИКИДАЄ, а flue-агенти беруть LLM лише з env. Треба прокинути llmConfig по всьому ланцюжку. llmComplete ВЖЕ приймає (messages, model, temperature, apiKey, proxyUrl, env) після TASK-209 — нічого в ній не міняти.
+ПРАВИЛО РЕЗОЛВУ (однакове всюди): llmConfig застосовується ТІЛЬКИ якщо protocol відсутній або "openai" (llmComplete говорить OpenAI-форматом; anthropic — майбутнє, ігнорувати baseUrl):
+  model    = llmConfig?.model   || env.PROXY_MODEL || 'gemini-2.5-flash'
+  proxyUrl = llmConfig?.baseUrl || undefined        (llmComplete сама зробить env.PROXY_URL fallback)
+  apiKey   = llmConfig?.apiKey  || undefined        (llmComplete сама зробить env fallback)
+Що зробити:
+1. cloudflare-worker/worker-mcp-drakon.js, handleAgentChat (~рядок 1985):
+   - const { message, context, agentUrl, llmConfig } = body;
+   - у agentBody для НЕ-analyze гілки: JSON.stringify({ message, context: context || null, llmConfig: llmConfig || null })
+   - для /analyze гілки: JSON.stringify({ code: message, refine: true, llmConfig: llmConfig || null })
+2. services/drakon-agent-flue/src/index.ts:
+   - /chat: drakonChat.execute({ message, context }, { env: c.env, llmConfig: body.llmConfig || null } as any)
+   - /analyze, /analyze_folder, /feedback: так само додати llmConfig у toolContext.
+3. services/drakon-agent-flue/agents/tools/drakon-chat.ts та analyze-code.ts:
+   - const llmCfg = (toolContext?.llmConfig && (!toolContext.llmConfig.protocol || toolContext.llmConfig.protocol === "openai")) ? toolContext.llmConfig : null;
+   - у виклику llmComplete: model = llmCfg?.model || 'gemini-2.5-flash'; apiKey = llmCfg?.apiKey || <існуючий вираз>; proxyUrl (5-й аргумент) = llmCfg?.baseUrl || env?.PROXY_URL (як зараз); env останнім.
+4. services/docs-agent-flue/src/index.ts /chat: docsChat.execute(..., { env: c.env, llmConfig: body.llmConfig || null } as any); у tools/docs-chat.ts — той самий резолв що у п.3.
+5. services/architect-agent-flue/src/index.ts: у маршруті /agents/:agent_id/chat прокинути body.llmConfig у виклик executePipelineGraph / execute (тим самим патерном через контекст або додатковий параметр).
+   services/architect-agent-flue/tools/graph-pipelines.ts: додати необов'язковий параметр llmConfig до executePipelineGraph (або через options-об'єкт), і у case-ах де викликається llmComplete (ir_gen, code_gen, llm_call, llm_call_with_system, classify тощо): model = llmCfg?.model || env.PROXY_MODEL || 'gemini-2.5-flash'; apiKey = llmCfg?.apiKey || env.CUSTOM_API_KEY || env.PROXY_TOKEN; proxyUrl = llmCfg?.baseUrl || env.PROXY_URL.
+6. БЕЗПЕКА: apiKey НІКОЛИ не логувати (console.log/saveLogToMinio — перевірити що llmConfig не потрапляє в логи; у saveLogToMinio логувати лише факт naявності: llmCfg: !!llmConfig).
+7. НЕ деплоїти. Дзеркала .lovable НЕ потрібні (services/ і cloudflare-worker/ не дзеркалюються).
+Верифікація:
+  cd services/drakon-agent-flue && node node_modules/typescript/bin/tsc --noEmit → 0
+  cd ../docs-agent-flue && node node_modules/typescript/bin/tsc --noEmit → 0 (якщо node_modules нема — npm install --ignore-scripts)
+  cd ../architect-agent-flue && node node_modules/typescript/bin/tsc --noEmit → 0
+  worker-mcp-drakon.js — node --check cloudflare-worker/worker-mcp-drakon.js → синтаксис ок.
+Коміт: feat(llm): pass UI llmConfig through proxy worker and flue agents to llmComplete (TASK-212)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-212:llm-config-passthrough|commit:<hash>|★★★
