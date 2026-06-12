@@ -5,11 +5,12 @@ import { toast } from "sonner";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 import type { DrakonDiagram } from "@/types/drakonwidget";
 import {
-fetchPipeline, savePipeline, validatePipeline,
-type PipelineConfig,
+  fetchPipeline, savePipeline, validatePipeline,
+  type PipelineConfig,
 } from "@/lib/pipeline-config-api";
 import { pipelineToIR, irToPipeline } from "@/lib/pipeline-to-drakon";
 import { CompilerToolbar } from "@/components/pipeline/CompilerToolbar";
+import { diagramToPseudocode, pseudocodeToMarkdown } from "@/lib/drakon/pseudocode";
 
 export default function PipelineEditorPage() {
 const { pipelineId } = useParams({ from: "/pipeline/$pipelineId/edit" });
@@ -50,6 +51,26 @@ toast.error("Помилка валідації");
 }
 };
 
+const handleExportMrna = async () => {
+    if (!config) return;
+    try {
+      const ir = pipelineToIR(config);
+      const pseudo = await diagramToPseudocode(ir, config.name);
+      const md = pseudocodeToMarkdown(pseudo, config.name);
+      const blob = new Blob([md], { type: "text/markdown" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${config.name}.pseudo.md`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success("Псевдокод експортовано");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Помилка експорту";
+      toast.error(msg);
+    }
+  };
+
 if (!config) {
 return (
 <div className="flex h-screen items-center justify-center bg-[var(--bg-base)] font-mono text-sm text-[var(--text-secondary)]">
@@ -61,6 +82,7 @@ return (
 <div className="flex h-screen flex-col bg-[var(--bg-base)] antialiased">
 <CompilerToolbar
   onAnalyze={handleValidate}
+  onExportMrna={handleExportMrna}
   onCompile={undefined}
 />
 <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">

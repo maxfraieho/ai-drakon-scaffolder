@@ -2,6 +2,7 @@ import { Search, FileCode2, Play, CheckCircle2, Rocket } from "lucide-react";
 
 interface CompilerToolbarProps {
   onAnalyze?: () => void;
+  onExportMrna?: () => void;
   onCompile?: () => void;
   disabled?: boolean;
 }
@@ -15,6 +16,7 @@ interface ToolbarButton {
 
 export function CompilerToolbar({
   onAnalyze,
+  onExportMrna,
   onCompile,
   disabled = false,
 }: CompilerToolbarProps) {
@@ -27,7 +29,7 @@ export function CompilerToolbar({
     {
       label: "Export mRNA",
       Icon: FileCode2,
-      sprint: "Sprint 3",
+      handler: onExportMrna,
     },
     {
       label: "Compile",
