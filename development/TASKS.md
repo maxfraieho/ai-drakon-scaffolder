@@ -22545,7 +22545,7 @@ Diary: SESSION:2026-06-12|TASK-205:auth-middleware|commit:<hash>|★★★
 Верифікація: кожне твердження в оновлених доках підтверджене реальним файлом/ендпоінтом; жодних згадок MinIO/Python-агентів як основних компонентів без позначки fallback/deprecated.
 Коміт: docs: revise documentation to match current SaaS state (TASK-206)
 
-[ ] TASK-207: Frontend JWT — Authorization header для Worker-запитів
+[x] TASK-207: Frontend JWT — Authorization header для Worker-запитів
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 Специфікація: docs/ARCHITECTURE-SAAS.md §2.4.
 Що зробити:
