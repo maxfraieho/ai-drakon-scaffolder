@@ -22713,3 +22713,26 @@ Diary: SESSION:DATE|TASK-213:ui-phase-a|commit:<hash>|★★★
 Коміт: feat(ui): phase B-1 CompilerToolbar component wired into PipelineEditorPage (TASK-214)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-214:compiler-toolbar|commit:<hash>|★★★
+
+[ ] TASK-215: Export mRNA — підключити ІСНУЮЧИЙ генератор псевдокоду (wiring, НЕ розробка)
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+КОНТЕКСТ (знайдено через GitNexus, все ВЖЕ ІСНУЄ):
+- src/lib/drakon/pseudocode.ts — ГОТОВА обгортка: diagramToPseudocode(diagramJson, name, language='en') → Promise<string>; pseudocodeToMarkdown(pseudocode, diagramName) → string з frontmatter. Зараз модуль НІКИМ не імпортується.
+- public/libs/drakongen.js — генератор (toPseudocode, рядок 652), обгортка сама його lazy-load-ить з /libs/drakongen.js.
+- src/components/pipeline/CompilerToolbar.tsx — кнопка "Export mRNA" зараз disabled (TASK-214).
+ЗАБОРОНЕНО: міняти pseudocode.ts, drakongen.js, drakonwidget.js. Це задача ПІДКЛЮЧЕННЯ.
+Що зробити:
+1. CompilerToolbar.tsx: додати prop onExportMrna?: () => void; кнопку "Export mRNA" (FileCode2) підключити до нього (без handler-а — disabled як зараз). Існуючі props не ламати.
+2. src/pages/PipelineEditorPage.tsx: реалізувати handleExportMrna:
+   - взяти ПОТОЧНИЙ pipeline IR зі стану сторінки (об'єкт з items — подивись як сторінка вже тримає/зберігає IR);
+   - const pseudo = await diagramToPseudocode(ir, pipelineName) (import з "@/lib/drakon/pseudocode");
+   - const md = pseudocodeToMarkdown(pseudo, pipelineName);
+   - скачати як файл `${pipelineName}.pseudo.md` (Blob + URL.createObjectURL + a.click() — той самий патерн, що в існуючому handleExport на AgentStudioPage.tsx:210, подивись його);
+   - toast.success("Псевдокод експортовано") / toast.error при падінні (sonner вже в проекті).
+   - Передати onExportMrna={handleExportMrna} у <CompilerToolbar>.
+3. ПЕРЕВІРИТИ РУКАМИ через node НЕ вийде (browser-only window.drakongen) — тому верифікація типів: npx tsc --noEmit → 0 НОВИХ помилок у src/.
+4. Дзеркало: cp обох змінених файлів у .lovable/src/... (ті самі шляхи).
+5. НІЧОГО більше не чіпати.
+Коміт: feat(compiler): wire existing drakongen pseudocode export to CompilerToolbar Export mRNA (TASK-215)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-215:export-mrna-wiring|commit:<hash>|★★★
