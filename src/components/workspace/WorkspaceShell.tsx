@@ -22,6 +22,10 @@ import {
   GitBranch,
   Loader2,
   Plus,
+  FileCode2,
+  Braces,
+  Activity,
+  ChevronUp,
 } from "lucide-react";
 import {
   Sheet,
@@ -154,6 +158,18 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("nav_collapsed") === "true"; } catch { return false; }
   });
+  const [evidenceCollapsed, setEvidenceCollapsed] = useState(() => {
+    try { return localStorage.getItem("evidence_collapsed") === "true"; } catch { return true; }
+  });
+
+  const iconRailItems = [
+    { id: "logic", to: "/diagrams", label: "Logic", icon: GitBranch, enabled: true },
+    { id: "mrna", to: "#", label: "mRNA", icon: FileCode2, enabled: false, tooltip: "Sprint 3" },
+    { id: "ribosome", to: "/agents", label: "Ribosome", icon: Cpu, enabled: true },
+    { id: "protein", to: "/pipelines", label: "Protein", icon: Braces, enabled: true },
+    { id: "knowledge", to: "/knowledge", label: "Knowledge", icon: BookOpen, enabled: true },
+    { id: "runtime", to: "/observability", label: "Runtime", icon: Activity, enabled: true },
+  ];
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -422,6 +438,55 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
       {/* WORKSPACE BODY */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
+        {/* Left IconRail */}
+        <div className="hidden lg:flex w-10 h-full shrink-0 flex-col items-center py-4 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] select-none">
+          <div className="flex flex-col items-center gap-5 w-full">
+            {iconRailItems.map((item) => {
+              const Icon = item.icon;
+              const active = item.enabled && isActive(item.to);
+              
+              if (!item.enabled) {
+                return (
+                  <Tooltip key={item.id} delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <div
+                        title={item.tooltip}
+                        className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-muted)] opacity-40"
+                      >
+                        <Icon className="h-4 w-4" />
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent side="right" className="font-mono text-[11px]">
+                      {item.label} ({item.tooltip})
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              }
+
+              return (
+                <Tooltip key={item.id} delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      to={item.to}
+                      className={cn(
+                        "flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] transition-colors",
+                        active
+                          ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
+                          : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="font-mono text-[11px]">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        </div>
+
         <aside className={cn(
           "hidden lg:flex h-full shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
           navCollapsed ? "w-0 border-r-0" : "w-60",
@@ -455,9 +520,46 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           {navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
-        <main className="flex h-full min-h-0 flex-1 min-w-0 overflow-y-auto pb-16 lg:pb-0">
-          {children}
-        </main>
+        <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
+          <main className="flex-1 min-h-0 overflow-y-auto pb-16 lg:pb-0">
+            {children}
+          </main>
+
+          {/* Evidence Drawer Collapse Toggle Strip */}
+          <button
+            type="button"
+            onClick={() => {
+              const next = !evidenceCollapsed;
+              setEvidenceCollapsed(next);
+              try { localStorage.setItem("evidence_collapsed", String(next)); } catch {}
+              setTimeout(() => window.dispatchEvent(new Event("resize")), 210);
+            }}
+            title={evidenceCollapsed ? "Показати EVIDENCE" : "Сховати EVIDENCE"}
+            className="flex w-full h-2 shrink-0 items-center justify-center border-t border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
+          >
+            {evidenceCollapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </button>
+
+          {/* Evidence Drawer Content Panel */}
+          <div
+            className={cn(
+              "w-full bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] transition-[height] duration-200 overflow-hidden flex flex-col shrink-0",
+              evidenceCollapsed ? "h-0 border-t-0" : "h-64",
+            )}
+          >
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-3 py-1 bg-[var(--bg-surface)] shrink-0">
+              <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-semibold">
+                EVIDENCE
+              </span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-3 font-mono text-[11px] text-[var(--text-secondary)]">
+              {/* Slot for children/future wiring in Phase C */}
+              <div className="flex items-center justify-center h-full text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)]">
+                Waiting for Phase C compiler trace data...
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <MobileNavigationDock />

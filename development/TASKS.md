@@ -22669,7 +22669,7 @@ Diary: SESSION:DATE|TASK-211:agents-alive|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-212:llm-config-passthrough|commit:<hash>|★★★
 
-[ ] TASK-213: UI Redesign Фаза A — палітра (CSS vars) + WorkspaceShell compiler-first
+[x] TASK-213: UI Redesign Фаза A — палітра (CSS vars) + WorkspaceShell compiler-first
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH (SSH тільки для od-generate.sh). Спочатку git pull origin main.
 Специфікація: docs/DESIGN.md (v1.1, compiler-first). ПРОЧИТАТИ §4 (токени), §12 (Reality Map), §14 (протокол OpenDesign) ПЕРЕД роботою.
 Що зробити:

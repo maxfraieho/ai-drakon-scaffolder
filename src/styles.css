@@ -118,10 +118,10 @@ regardless of theme-class plumbing elsewhere in the app. */
 .dark {
 --radius: 0.5rem;
 /* Precision Dark — backgrounds */
---bg-base: #0a0b0e;
---bg-surface: #111318;
---bg-elevated: #191c23;
---bg-overlay: #1e2229;
+--bg-base: #111318;
+--bg-surface: #1a1b21;
+--bg-elevated: #282a2f;
+--bg-overlay: #33353a;
 
 /* Borders */
 --border-subtle: rgba(255, 255, 255, 0.06);
@@ -133,15 +133,20 @@ regardless of theme-class plumbing elsewhere in the app. */
 --accent-dim: rgba(245, 158, 11, 0.15);
 --accent-glow: 0 0 12px rgba(245, 158, 11, 0.35);
 
+/* Accent — Semantic Additions */
+--accent-info: #8fd5ff;
+--accent-success: #51e77b;
+--accent-error: #ff6b6b;
+
 /* Semantic */
---color-error: #ef4444;
+--color-error: var(--accent-error);
 --color-warning: #f59e0b;
---color-success: #22c55e;
---color-info: #3b82f6;
+--color-success: var(--accent-success);
+--color-info: var(--accent-info);
 
 /* Text */
---text-primary: rgba(255, 255, 255, 0.92);
---text-secondary: rgba(255, 255, 255, 0.55);
+--text-primary: #e2e2e9;
+--text-secondary: #9aa0aa;
 --text-muted: rgba(255, 255, 255, 0.30);
 
 /* shadcn semantic tokens mapped onto Precision Dark */
