@@ -11,6 +11,7 @@ import { contributeToKB, listKB } from '../tools/kb-crud.js';
 import { listPipelines, getPipeline, updatePipeline } from '../tools/graph-pipelines.js';
 import { listProjects, createProject } from '../tools/project-pipelines.js';
 import { createJobDO, getJobDO, updateJobDO } from '../lib/job-store.js';
+import { compilePseudocode } from '../tools/ribosome.js';
 
 const app = new Hono<{ Bindings: any }>();
 
@@ -234,6 +235,30 @@ app.post('/suggest-patterns', async (c) => {
   const body: any = await c.req.json().catch(() => ({}));
   const patterns = await suggestPatterns(body.project_docs || '', body.chat_context || '', body.requirements || '', c.env);
   return c.json(patterns);
+});
+
+// Ribosome v1 — compile DRAKON pseudocode + node semantics to TypeScript workflow
+app.post('/compile', async (c) => {
+  const body: any = await c.req.json().catch(() => ({}));
+  const { pseudocode, nodes, pipelineName, target, llmConfig } = body;
+
+  if (!pseudocode) {
+    return c.json({ error: 'pseudocode is required' }, 400);
+  }
+  if (!pipelineName) {
+    return c.json({ error: 'pipelineName is required' }, 400);
+  }
+
+  try {
+    const result = await compilePseudocode(
+      { pseudocode, nodes, pipelineName, target, llmConfig },
+      c.env,
+      llmConfig || undefined
+    );
+    return c.json(result);
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
 });
 
 // List Projects
