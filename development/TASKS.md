@@ -22695,7 +22695,7 @@ Diary: SESSION:DATE|TASK-212:llm-config-passthrough|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-213:ui-phase-a|commit:<hash>|★★★
 
-[ ] TASK-214: UI Фаза B-1 — компонент CompilerToolbar (compiler-first)
+[x] TASK-214: UI Фаза B-1 — компонент CompilerToolbar (compiler-first)
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH для коду (SSH ТІЛЬКИ для od-generate.sh). Спочатку git pull origin main.
 Специфікація: docs/DESIGN.md §5.1 (CompilerToolbar), §4 (токени), §12 (Reality Map), §14 (протокол real-code). ПРОЧИТАТИ перед роботою.
 Що зробити:
