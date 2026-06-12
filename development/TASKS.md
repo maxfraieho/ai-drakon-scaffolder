@@ -22637,7 +22637,7 @@ Diary: SESSION:DATE|TASK-210:tsc-cleanup|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-211:agents-alive|commit:<hash>|★★★
 
-[ ] TASK-212: llmConfig з налаштувань UI наскрізно до llmComplete (без хардкоду)
+[x] TASK-212: llmConfig з налаштувань UI наскрізно до llmComplete (без хардкоду)
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 КОНТЕКСТ: UI вже надсилає llmConfig {protocol, baseUrl, apiKey, model, maxTokens} у тілі POST до drakon-mcp-worker (src/lib/agent-api.ts sendToAgent). Проксі його ВИКИДАЄ, а flue-агенти беруть LLM лише з env. Треба прокинути llmConfig по всьому ланцюжку. llmComplete ВЖЕ приймає (messages, model, temperature, apiKey, proxyUrl, env) після TASK-209 — нічого в ній не міняти.
 ПРАВИЛО РЕЗОЛВУ (однакове всюди): llmConfig застосовується ТІЛЬКИ якщо protocol відсутній або "openai" (llmComplete говорить OpenAI-форматом; anthropic — майбутнє, ігнорувати baseUrl):
