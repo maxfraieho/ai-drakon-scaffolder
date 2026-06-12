@@ -7,6 +7,7 @@
 
 import type { IrDiagram } from "@/lib/htse/ir-types";
 import { readSettings } from "@/lib/settings-storage";
+import { getAppwriteJwt } from "./appwrite-jwt";
 
 export interface PipelineInfo {
   name: string;
@@ -167,8 +168,14 @@ export interface ProjectInfo {
   github?: { owner: string; repo: string; branch: string };
 }
 
+export async function authHeaders(): Promise<HeadersInit> {
+  const jwt = await getAppwriteJwt();
+  return jwt ? { Authorization: `Bearer ${jwt}` } : {};
+}
+
 export async function listProjectsArch(): Promise<ProjectInfo[]> {
-  const r = await fetch(`${getArchitectBase()}/projects`);
+  const headers = await authHeaders();
+  const r = await fetch(`${getArchitectBase()}/projects`, { headers });
   if (!r.ok) throw new Error(`listProjectsArch: ${r.status}`);
   return ((await r.json()).projects ?? []);
 }
