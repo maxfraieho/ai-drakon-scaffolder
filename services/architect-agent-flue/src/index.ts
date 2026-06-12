@@ -65,7 +65,7 @@ app.post('/agents/:agent_id/chat', async (c) => {
         if (ev.state && ev.state.llm_reply) {
           reply = ev.state.llm_reply;
         }
-      });
+      }, reqBody.llmConfig || null);
       return c.json({ reply, suggested_mutations: null });
     } catch (e: any) {
       return c.json({ reply: `Error: ${e.message}`, suggested_mutations: null });
@@ -172,6 +172,9 @@ app.post('/graph-pipelines/:name/execute', async (c) => {
   
   const initialState = body.initial_state || { ...body };
   delete initialState.breakpoints;
+  if (body.llmConfig) {
+    initialState.llmConfig = body.llmConfig;
+  }
   await updateJobDO(c.env, jobId, 'pending', initialState);
   
   // Trigger async execution
@@ -180,7 +183,7 @@ app.post('/graph-pipelines/:name/execute', async (c) => {
     try {
       const ir = await getPipe(name, c.env);
       await updateJobDO(c.env, jobId, 'running');
-      const finalState = await executePipelineGraph(ir, initialState, c.env, () => {});
+      const finalState = await executePipelineGraph(ir, initialState, c.env, () => {}, body.llmConfig || null);
       await updateJobDO(c.env, jobId, 'done', finalState);
     } catch (err: any) {
       await updateJobDO(c.env, jobId, 'error', null, err.message);

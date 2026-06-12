@@ -3,7 +3,11 @@ import { GitHubAPI } from '../lib/github-api.js';
 import { llmComplete } from '../lib/llm-client.js';
 import { getJobDO, updateJobDO } from '../lib/job-store.js';
 
-async function runNode(nodeName: string, state: any, env: any): Promise<any> {
+async function runNode(nodeName: string, state: any, env: any, llmConfig?: any): Promise<any> {
+  const llmCfg = (llmConfig && (!llmConfig.protocol || llmConfig.protocol === "openai")) ? llmConfig : null;
+  const model = llmCfg?.model || env.PROXY_MODEL || 'gemini-2.5-flash';
+  const apiKey = llmCfg?.apiKey || env.CUSTOM_API_KEY || env.PROXY_TOKEN;
+  const proxyUrl = llmCfg?.baseUrl || env.PROXY_URL;
   switch (nodeName) {
     case 'measure_cc': {
       const { calculateCC } = await import('../lib/cc-calculator.js');
@@ -36,7 +40,7 @@ ${(state.source_code || '').substring(0, 4000)}
       const content = await llmComplete([
         { role: 'system', content: 'You are a software architect. Produce concise C4-Behavioral YAML.' },
         { role: 'user', content: prompt }
-      ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
+      ], model, 0.1, apiKey, proxyUrl, env);
       return { behavioral_yaml: content };
     }
     case 'ir_gen': {
@@ -64,7 +68,7 @@ ${(state.source_code || '').substring(0, 3000)}
       const reply = await llmComplete([
         { role: 'system', content: 'You are a DRAKON diagram expert. Output valid DRAKON IR JSON only.' },
         { role: 'user', content: prompt }
-      ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
+      ], model, 0.1, apiKey, proxyUrl, env);
       
       const match = reply.match(/```json\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*```/);
       if (match) {
@@ -109,7 +113,7 @@ ${irStr.substring(0, 3000)}
       const content = await llmComplete([
         { role: 'system', content: `You are a ${state.language || 'javascript'} expert. Convert DRAKON IR to clean code.` },
         { role: 'user', content: prompt }
-      ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
+      ], model, 0.1, apiKey, proxyUrl, env);
 
       const match = content.match(/```(?:\w+)?\s*([\s\S]*?)```/);
       const code = match ? match[1].trim() : content.trim();
@@ -145,7 +149,7 @@ ${code}
         const reply = await llmComplete([
           { role: 'system', content: 'You are a Python compiler syntax check helper.' },
           { role: 'user', content: prompt }
-        ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.0, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
+        ], model, 0.0, apiKey, proxyUrl, env);
 
         if (reply.trim().toUpperCase() === 'VALID') {
           return { syntax_errors: [] };
@@ -193,7 +197,7 @@ ${code}
     }
     case 'llm_call': {
       const prompt = state.llm_prompt || '';
-      const reply = await llmComplete([{ role: 'user', content: prompt }], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
+      const reply = await llmComplete([{ role: 'user', content: prompt }], model, 0.1, apiKey, proxyUrl, env);
       return { llm_reply: reply };
     }
     case 'llm_call_with_system': {
@@ -202,7 +206,7 @@ ${code}
       const messages = [];
       if (system) messages.push({ role: 'system', content: system });
       messages.push({ role: 'user', content: prompt });
-      const reply = await llmComplete(messages, env.PROXY_MODEL || 'gemini-2.5-flash', 0.2, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
+      const reply = await llmComplete(messages, model, 0.2, apiKey, proxyUrl, env);
       return { llm_reply: reply };
     }
     
@@ -275,7 +279,7 @@ ${code}
   }
 }
 
-export async function executePipelineGraph(ir: any, initialState: any, env: any, onStep: (event: any) => void): Promise<any> {
+export async function executePipelineGraph(ir: any, initialState: any, env: any, onStep: (event: any) => void, llmConfig?: any): Promise<any> {
   const items = ir.items;
   if (!items) throw new Error("Invalid pipeline: items missing");
 
@@ -317,7 +321,8 @@ export async function executePipelineGraph(ir: any, initialState: any, env: any,
       const nodeName = node.content;
       onStep({ event: 'node_start', node: nodeName, state: { ...state } });
       
-      const updates = await runNode(nodeName, state, env);
+      const resolvedLlmConfig = llmConfig || state.llmConfig || null;
+      const updates = await runNode(nodeName, state, env, resolvedLlmConfig);
       Object.assign(state, updates);
       
       onStep({ event: 'node_done', node: nodeName, state: { ...state } });
@@ -454,7 +459,7 @@ export async function executePipelineSSE(name: string, jobId: string, env: any):
         await writer.write(encoder.encode(`data: ${JSON.stringify(event)}\n\n`));
       };
 
-      const finalState = await executePipelineGraph(ir, job.result || {}, env, onStep);
+      const finalState = await executePipelineGraph(ir, job.result || {}, env, onStep, job.result?.llmConfig || null);
       await updateJobDO(env, jobId, 'done', finalState);
     } catch (e: any) {
       await updateJobDO(env, jobId, 'error', null, e.message);
