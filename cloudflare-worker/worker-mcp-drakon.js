@@ -1981,7 +1981,7 @@ async function handleAgentChat(agentId, request, env, ctx) {
     return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
   }
 
-  const { message, context, agentUrl } = body;
+  const { message, context, agentUrl, llmConfig } = body;
   if (!message || typeof message !== 'string') {
     return errorResponse('message is required', 400, undefined, 'MISSING_FIELD');
   }
@@ -2003,8 +2003,8 @@ async function handleAgentChat(agentId, request, env, ctx) {
   const usesAgentRoute = ['sonate-solidaire'].includes(agentId);
   const endpoint = usesAnalyze ? '/analyze' : usesAgentRoute ? `/agents/${agentId}/chat` : '/chat';
   const agentBody = usesAnalyze
-    ? JSON.stringify({ code: message, refine: true })
-    : JSON.stringify({ message, context: context || null });
+    ? JSON.stringify({ code: message, refine: true, llmConfig: llmConfig || null })
+    : JSON.stringify({ message, context: context || null, llmConfig: llmConfig || null });
 
   const t0 = Date.now();
   let agentResp;
