@@ -22737,7 +22737,7 @@ Diary: SESSION:DATE|TASK-214:compiler-toolbar|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-215:export-mrna-wiring|commit:<hash>|★★★
 
-[ ] TASK-216: Рибосома v1 — POST /compile у architect-agent-flue (псевдокод+семантика → код)
+[x] TASK-216: Рибосома v1 — POST /compile у architect-agent-flue (псевдокод+семантика → код)
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 Специфікація: docs/ARCHITECTURE-CORE.md §1.3 (правила трансляції рибосоми). Це ДРУГА половина компілятора (перша — Export mRNA, TASK-215 ✅).
 КОНТЕКСТ (перевірено): NodeConfig у src/lib/pipeline-config-api.ts має is_llm, is_deterministic, description — це ДНК-мітки. drakongen-псевдокод їх ВТРАЧАЄ (pipelineToIR кладе лише label). Тому /compile приймає ОБИДВА: псевдокод + nodes-семантику.
