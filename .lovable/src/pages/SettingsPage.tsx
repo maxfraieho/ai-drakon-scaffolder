@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { resolveWorkerUrl } from "@/lib/worker-url";
+import { authHeaders } from "@/lib/graph-pipeline-api";
+import { readSettings } from "@/lib/settings-storage";
 
 export function SettingsPage() {
   // --- API Keys State ---
@@ -65,6 +67,8 @@ export function SettingsPage() {
   const [gitNexusDetail, setGitNexusDetail] = useState<string>("Checking endpoint...");
   const [cfStatus, setCfStatus] = useState<"checking" | "online" | "offline">("checking");
   const [cfDetail, setCfDetail] = useState<string>("Checking worker...");
+  const [authStatus, setAuthStatus] = useState<"checking" | "online" | "offline" | "idle">("idle");
+  const [authDetail, setAuthDetail] = useState<string>("Click to verify Appwrite JWT & /me connection");
 
   // --- Handlers ---
   const saveApiKey = (keyName: string, value: string, displayName: string) => {
@@ -133,9 +137,35 @@ export function SettingsPage() {
     }
   };
 
+  const checkAuthStatus = async () => {
+    setAuthStatus("checking");
+    setAuthDetail("Fetching JWT & verifying /me...");
+    try {
+      const architectUrl = readSettings().agents.architectUrl.replace(/\/+$/, "");
+      const headers = await authHeaders();
+      const resp = await fetch(`${architectUrl}/me`, { 
+        method: "GET",
+        headers
+      });
+      if (resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        setAuthStatus("online");
+        setAuthDetail(JSON.stringify(data));
+      } else {
+        setAuthStatus("offline");
+        const errText = await resp.text().catch(() => "Unknown error");
+        setAuthDetail(`HTTP Error: ${resp.status} - ${errText}`);
+      }
+    } catch (e: any) {
+      setAuthStatus("offline");
+      setAuthDetail(e.message || "Failed to verify JWT / /me endpoint");
+    }
+  };
+
   const runAllChecks = () => {
     checkGitNexusHealth();
     checkCfHealth();
+    checkAuthStatus();
   };
 
   useEffect(() => {
@@ -400,6 +430,38 @@ export function SettingsPage() {
                       </div>
                       <div className="text-xs text-zinc-500 truncate font-mono">
                         {cfDetail}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
+                      <ShieldAlert className="w-3.5 h-3.5 text-zinc-500" />
+                      JWT Auth Status (/me)
+                    </span>
+                    <button 
+                      onClick={checkAuthStatus}
+                      className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                      title="Перевірити знову"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${authStatus === "checking" ? "animate-spin text-amber-500" : ""}`} />
+                    </button>
+                  </div>
+                  <div className="p-3 bg-zinc-950/80 rounded-lg border border-zinc-850 flex items-center gap-3">
+                    <div className="shrink-0">
+                      {authStatus === "online" && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
+                      {authStatus === "offline" && <ShieldAlert className="w-5 h-5 text-red-500" />}
+                      {authStatus === "checking" && <RefreshCw className="w-5 h-5 text-amber-500 animate-spin" />}
+                      {authStatus === "idle" && <HelpCircle className="w-5 h-5 text-zinc-500" />}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium text-zinc-200 capitalize">
+                        {authStatus === "online" ? "Авторизовано" : authStatus === "offline" ? "Помилка" : authStatus === "checking" ? "Перевірка..." : "Не перевірено"}
+                      </div>
+                      <div className="text-xs text-zinc-500 truncate font-mono" title={authDetail}>
+                        {authDetail}
                       </div>
                     </div>
                   </div>
