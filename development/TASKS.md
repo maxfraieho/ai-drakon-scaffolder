@@ -22668,3 +22668,29 @@ Diary: SESSION:DATE|TASK-211:agents-alive|commit:<hash>|★★★
 Коміт: feat(llm): pass UI llmConfig through proxy worker and flue agents to llmComplete (TASK-212)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-212:llm-config-passthrough|commit:<hash>|★★★
+
+[ ] TASK-213: UI Redesign Фаза A — палітра (CSS vars) + WorkspaceShell compiler-first
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH (SSH тільки для od-generate.sh). Спочатку git pull origin main.
+Специфікація: docs/DESIGN.md (v1.1, compiler-first). ПРОЧИТАТИ §4 (токени), §12 (Reality Map), §14 (протокол OpenDesign) ПЕРЕД роботою.
+Що зробити:
+1. ПАЛІТРА: у src/styles.css (або де визначені CSS-змінні теми) оновити значення під DESIGN.md §4:
+   --background → #111318; surface/card → #1a1b21; elevated → #282a2f;
+   --foreground → #e2e2e9; --muted-foreground → #9aa0aa;
+   --border → rgba(255,255,255,0.10); accent-amber #f59e0b НЕ ЧІПАТИ.
+   Додати (якщо нема): --accent-info: #8fd5ff; --accent-success: #51e77b; --accent-error: #ff6b6b.
+   ТІЛЬКИ значення змінних — жодних нових hex у компонентах.
+2. WORKSPACESHELL через OpenDesign за протоколом DESIGN.md §14:
+   a. Прочитати ПОВНИЙ поточний src/components/workspace/WorkspaceShell.tsx.
+   b. Викликати з AGY3: ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh '<промпт>' /tmp/od-shell.tsx"
+      Промпт ОБОВ'ЯЗКОВО містить: (1) повний поточний код WorkspaceShell.tsx у тегах <code>...</code>;
+      (2) вимогу: додати лівий IconRail 40px з 6 іконками lucide (Logic=GitBranch, mRNA=FileCode2, Ribosome=Cpu, Protein=Braces, Knowledge=BookOpen, Runtime=Activity) і нижній collapsible Evidence Drawer (висота 200-320px, toggle-стріпом як існуючі панелі);
+      (3) ЗБЕРЕГТИ всі існуючі props, children-слоти, collapsible-механіку та імпорти; нічого з існуючої функціональності не видаляти;
+      (4) дотриматись токенів DESIGN.md §4 через CSS-змінні (bg-background, border-border...), НЕ hex.
+   c. ПРИЙМАННЯ (§14.3): перевірити що згенерований код зберіг реальні імпорти/props/слоти оригіналу і НЕ вигадав неіснуючі модулі. Якщо вигадав — уточнити промпт і повторити od-generate (до 2 повторів). Якщо все одно сміття — інтегрувати зміни ВРУЧНУ мінімальним diff-ом на основі ідей генерації.
+   d. Інтегрувати у src/components/workspace/WorkspaceShell.tsx. IconRail поки що навігаційно: клік = navigate на існуючі маршрути (/diagrams, /pipelines, /agents, /knowledge, /observability; mRNA-іконка disabled з title "Sprint 3").
+3. Дзеркало: cp src/styles.css .lovable/src/styles.css; cp src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx
+4. НІЧОГО більше не чіпати (інші сторінки/компоненти — наступні задачі).
+Верифікація: npx tsc --noEmit → 0 помилок.
+Коміт: feat(ui): phase A compiler-first — semantic palette + WorkspaceShell IconRail/Evidence Drawer (TASK-213)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-213:ui-phase-a|commit:<hash>|★★★
