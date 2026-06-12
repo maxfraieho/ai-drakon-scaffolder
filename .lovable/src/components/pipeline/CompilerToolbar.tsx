@@ -5,6 +5,7 @@ interface CompilerToolbarProps {
   onExportMrna?: () => void;
   onCompile?: () => void;
   disabled?: boolean;
+  compiling?: boolean;
 }
 
 interface ToolbarButton {
@@ -19,6 +20,7 @@ export function CompilerToolbar({
   onExportMrna,
   onCompile,
   disabled = false,
+  compiling = false,
 }: CompilerToolbarProps) {
   const buttons: ToolbarButton[] = [
     {
@@ -55,14 +57,19 @@ export function CompilerToolbar({
       </span>
       <div className="h-4 w-px bg-[var(--border-subtle)]" />
       {buttons.map(({ label, Icon, handler, sprint }) => {
-        const isDisabled = disabled || !handler;
+        const isCompileBtn = label === "Compile";
+        const isBtnCompiling = isCompileBtn && compiling;
+        const isDisabled = disabled || !handler || isBtnCompiling;
+        const buttonTitle = isBtnCompiling
+          ? "Компіляція..."
+          : (sprint ? `${label} — ${sprint}` : label);
         return (
           <button
             key={label}
             type="button"
             onClick={!isDisabled ? handler : undefined}
             disabled={isDisabled}
-            title={sprint ? `${label} — ${sprint}` : label}
+            title={buttonTitle}
             className={[
               "inline-flex h-7 items-center gap-1.5 rounded-[var(--radius-sm)] px-2.5",
               "font-mono text-[11px] uppercase tracking-wider",

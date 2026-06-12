@@ -11,11 +11,13 @@ import {
 import { pipelineToIR, irToPipeline } from "@/lib/pipeline-to-drakon";
 import { CompilerToolbar } from "@/components/pipeline/CompilerToolbar";
 import { diagramToPseudocode, pseudocodeToMarkdown } from "@/lib/drakon/pseudocode";
+import { readSettings } from "@/lib/settings-storage";
 
 export default function PipelineEditorPage() {
 const { pipelineId } = useParams({ from: "/pipeline/$pipelineId/edit" });
 const [config, setConfig] = useState<PipelineConfig | null>(null);
 const [errors, setErrors] = useState<string[]>([]);
+const [compiling, setCompiling] = useState(false);
 
 useEffect(() => {
 fetchPipeline(pipelineId)
@@ -71,6 +73,72 @@ const handleExportMrna = async () => {
     }
   };
 
+  const handleCompile = async () => {
+    if (!config) return;
+    setCompiling(true);
+    try {
+      const ir = pipelineToIR(config);
+      const pseudo = await diagramToPseudocode(ir, config.name);
+      const nodes = config.nodes.map(n => ({
+        label: n.label,
+        type: n.type,
+        is_llm: n.is_llm,
+        is_deterministic: n.is_deterministic,
+        description: n.description
+      }));
+      
+      const settings = readSettings();
+      const architectUrl = settings?.agents?.architectUrl || "https://architect-agent.exodus.pp.ua";
+      const compileUrl = `${architectUrl.replace(/\/$/, "")}/compile`;
+
+      const response = await fetch(compileUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pipelineName: config.name,
+          pseudocode: pseudo,
+          nodes,
+        }),
+        signal: AbortSignal.timeout(120000),
+      });
+
+      if (!response.ok) {
+        throw new Error(`сервер повернув статус ${response.status}`);
+      }
+
+      const data = await response.json();
+      if (!data || typeof data.code !== "string") {
+        throw new Error("Некоректна відповідь від сервера компіляції");
+      }
+
+      const blob = new Blob([data.code], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${config.name}.workflow.ts`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast.success("Скомпільовано: " + config.name + ".workflow.ts");
+    } catch (e) {
+      let msg = "Компіляція не вдалась: ";
+      if (e instanceof Error) {
+        if (e.name === "AbortError") {
+          msg += "перевищено ліміт часу (timeout 120с)";
+        } else {
+          msg += e.message;
+        }
+      } else {
+        msg += String(e);
+      }
+      toast.error(msg);
+    } finally {
+      setCompiling(false);
+    }
+  };
+
 if (!config) {
 return (
 <div className="flex h-screen items-center justify-center bg-[var(--bg-base)] font-mono text-sm text-[var(--text-secondary)]">
@@ -83,7 +151,8 @@ return (
 <CompilerToolbar
   onAnalyze={handleValidate}
   onExportMrna={handleExportMrna}
-  onCompile={undefined}
+  onCompile={handleCompile}
+  compiling={compiling}
 />
 <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
 <Link
