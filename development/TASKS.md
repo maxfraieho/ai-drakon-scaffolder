@@ -22558,7 +22558,7 @@ Diary: SESSION:2026-06-12|TASK-205:auth-middleware|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-207:frontend-jwt|commit:<hash>|★★★
 
-[ ] TASK-208: quotaMiddleware — ліміти LLM з D1 billing_profiles
+[x] TASK-208: quotaMiddleware — ліміти LLM з D1 billing_profiles
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 Специфікація: docs/ARCHITECTURE-SAAS.md §3 — код quotaMiddleware там ГОТОВИЙ, копіювати як є.
 Що зробити:
