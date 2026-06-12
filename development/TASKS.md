@@ -22595,7 +22595,7 @@ Diary: SESSION:DATE|TASK-208:quota-middleware|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-209:llm-env-config|commit:<hash>|★★★
 
-[ ] TASK-210: drakon-agent-flue — виправити 6 застарілих tsc-помилок (техборг з a39b96d)
+[x] TASK-210: drakon-agent-flue — виправити 6 застарілих tsc-помилок (техборг з a39b96d)
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 Контекст: помилки існували ДО TASK-209 (з оригінальної Flue-міграції). Worker live, бо wrangler збирає esbuild-ом без type-check. Треба зробити tsc чистим.
 Що зробити:
