@@ -16,7 +16,8 @@ export const analyzeCode = defineTool({
   execute: async ({ code, filename, refine }, context: any) => {
     const ext = (filename || 'module.js').split('.').pop()?.toLowerCase();
     const isJS = ext === 'js' || ext === 'jsx' || ext === 'ts' || ext === 'tsx' || ext === 'mjs' || ext === 'cjs';
-    const apiKey = context?.env?.CUSTOM_API_KEY || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
+    const llmCfg = (context?.llmConfig && (!context.llmConfig.protocol || context.llmConfig.protocol === "openai")) ? context.llmConfig : null;
+    const apiKey = llmCfg?.apiKey || context?.env?.CUSTOM_API_KEY || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
 
     let rawDiagrams: any[] = [];
 
@@ -46,10 +47,10 @@ Provide valid JSON without markdown formatting. Do not wrap in markdown fences.`
 
         const res = await llmComplete(
           [{ role: 'user', content: prompt }],
-          context?.env?.PROXY_MODEL || 'gemini-2.5-flash',
+          llmCfg?.model || context?.env?.PROXY_MODEL || 'gemini-2.5-flash',
           0.1,
           apiKey,
-          context?.env?.PROXY_URL,
+          llmCfg?.baseUrl || context?.env?.PROXY_URL,
           context?.env
         );
 
@@ -104,10 +105,10 @@ Provide valid JSON without markdown formatting. Do not wrap in markdown fences.`
               { role: 'system', content: SYSTEM_PROMPT },
               { role: 'user', content: refinePrompt }
             ],
-            context?.env?.PROXY_MODEL || 'gemini-2.5-flash',
+            llmCfg?.model || context?.env?.PROXY_MODEL || 'gemini-2.5-flash',
             0.0,
             apiKey,
-            context?.env?.PROXY_URL,
+            llmCfg?.baseUrl || context?.env?.PROXY_URL,
             context?.env
           );
 

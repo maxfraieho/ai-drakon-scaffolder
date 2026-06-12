@@ -33,7 +33,8 @@ export const drakonChat = defineTool({
     context: Type.String({ description: 'JSON stringified context of the active project or diagram' }),
   }),
   execute: async ({ message, context }, toolContext: any) => {
-    const apiKey = toolContext?.env?.CUSTOM_API_KEY || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
+    const llmCfg = (toolContext?.llmConfig && (!toolContext.llmConfig.protocol || toolContext.llmConfig.protocol === "openai")) ? toolContext.llmConfig : null;
+    const apiKey = llmCfg?.apiKey || toolContext?.env?.CUSTOM_API_KEY || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
     
     try {
       const parsedContext = JSON.parse(context || '{}');
@@ -44,10 +45,10 @@ export const drakonChat = defineTool({
           { role: 'system', content: systemPrompt },
           { role: 'user', content: message }
         ],
-        toolContext?.env?.PROXY_MODEL || 'gemini-2.5-flash',
+        llmCfg?.model || toolContext?.env?.PROXY_MODEL || 'gemini-2.5-flash',
         0.3,
         apiKey,
-        toolContext?.env?.PROXY_URL,
+        llmCfg?.baseUrl || toolContext?.env?.PROXY_URL,
         toolContext?.env
       );
 
