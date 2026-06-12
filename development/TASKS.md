@@ -22769,3 +22769,25 @@ Diary: SESSION:DATE|TASK-215:export-mrna-wiring|commit:<hash>|★★★
 Коміт: feat(compiler): ribosome v1 — POST /compile pseudocode+node semantics to TS workflow (TASK-216)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-216:ribosome-v1|commit:<hash>|★★★
+
+[ ] TASK-217: UI Compile — кнопка компіляції викликає рибосому POST /compile (Фаза C wiring)
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+КОНТЕКСТ (все вже працює, перевірено curl-ом): POST https://architect-agent.exodus.pp.ua/compile
+  body: { pipelineName, pseudocode, nodes: [{label,type,is_llm,is_deterministic,description}], llmConfig? }
+  → { code, target, pipelineName }. LLM-виклик триває 20-90с.
+Що зробити (ТІЛЬКИ 2 файли + дзеркала):
+1. src/pages/PipelineEditorPage.tsx — реалізувати handleCompile:
+   a. const ir = pipelineToIR(config); const pseudo = await diagramToPseudocode(ir, config.name);  // як у handleExportMrna
+   b. nodes = config.nodes.map(n => ({ label: n.label, type: n.type, is_llm: n.is_llm, is_deterministic: n.is_deterministic, description: n.description }));
+   c. URL: з налаштувань — readSettings().agents.architectUrl (import { readSettings } from "@/lib/settings-storage") + '/compile'.
+   d. fetch POST з AbortSignal.timeout(120000); тіло: { pipelineName: config.name, pseudocode: pseudo, nodes }.
+   e. Результат: скачати data.code як файл `${config.name}.workflow.ts` (той самий Blob-патерн, що у handleExportMrna) + toast.success("Скомпільовано: " + config.name + ".workflow.ts").
+   f. Стан виконання: const [compiling, setCompiling] = useState(false); toast.error при падінні/timeout ("Компіляція не вдалась: ..."); setCompiling(false) у finally.
+   g. Передати у <CompilerToolbar> onCompile={handleCompile} і disabled={compiling} (prop disabled вже існує) — АБО якщо disabled глушить весь toolbar, додати окремий prop compiling?: boolean який дизейблить лише кнопку Compile і показує їй title="Компіляція...". Обери мінімальний варіант.
+2. src/components/pipeline/CompilerToolbar.tsx — тільки якщо потрібен prop compiling з п.1g; інакше НЕ чіпати.
+3. Дзеркала: cp обох змінених файлів у .lovable/src/... (ті самі шляхи).
+4. НІЧОГО більше не чіпати. pseudocode.ts, ribosome.ts, drakongen.js — недоторкані.
+Верифікація: npx tsc --noEmit → 0 НОВИХ помилок у src/.
+Коміт: feat(compiler): wire Compile button to ribosome /compile endpoint (TASK-217)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-217:compile-wiring|commit:<hash>|★★★
