@@ -55,7 +55,7 @@ ${code.substring(0, 3000)}
   const reply = await llmComplete([
     { role: 'system', content: 'You are the AI-DRAKON agent. Translate code to DRAKON IR JSON.' },
     { role: 'user', content: prompt }
-  ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN);
+  ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
   
   const match = reply.match(/```json\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*```/);
   if (match) {
@@ -82,7 +82,7 @@ ${code.substring(0, 4000)}
   return await llmComplete([
     { role: 'system', content: 'You are a software architect. Produce concise C4-Behavioral YAML.' },
     { role: 'user', content: prompt }
-  ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN);
+  ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
 }
 
 async function llmIrGen(yaml: string | null, code: string, env: any, previousErrors?: string[]): Promise<DrakonDiagram[]> {
@@ -108,7 +108,7 @@ ${errorHint}
   const reply = await llmComplete([
     { role: 'system', content: 'You are a DRAKON diagram expert. Output valid DRAKON IR JSON only.' },
     { role: 'user', content: prompt }
-  ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN);
+  ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
 
   const match = reply.match(/```json\s*(\[[\s\S]*?\]|\{[\s\S]*?\})\s*```/);
   if (match) {

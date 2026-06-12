@@ -42,7 +42,7 @@ ${code}
     const reply = await llmComplete([
       { role: 'system', content: 'You are a Python compiler syntax check helper.' },
       { role: 'user', content: prompt }
-    ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.0, env.CUSTOM_API_KEY || env.PROXY_TOKEN);
+    ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.0, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
 
     if (reply.trim().toUpperCase() === 'VALID') {
       return [];
@@ -80,7 +80,7 @@ ${irStr.substring(0, 3000)}
   const content = await llmComplete([
     { role: 'system', content: `You are a ${language} expert. Convert DRAKON IR to clean code.` },
     { role: 'user', content: prompt }
-  ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN);
+  ], env.PROXY_MODEL || 'gemini-2.5-flash', 0.1, env.CUSTOM_API_KEY || env.PROXY_TOKEN, env.PROXY_URL, env);
 
   const match = content.match(/```(?:\w+)?\s*([\s\S]*?)```/);
   return match ? match[1].trim() : content.trim();

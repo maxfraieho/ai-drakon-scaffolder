@@ -47,9 +47,11 @@ export async function architectChat(
 
   const content = await llmComplete(
     messages,
-    env.PROXY_MODEL || 'gemini-2.5-flash',
+    env?.PROXY_MODEL || 'gemini-2.5-flash',
     0.2,
-    env.CUSTOM_API_KEY || env.PROXY_TOKEN
+    env?.CUSTOM_API_KEY || env?.PROXY_TOKEN,
+    env?.PROXY_URL,
+    env
   );
 
   let mutations = null;
@@ -89,9 +91,11 @@ export async function architectChatWithSystem(
 
   const content = await llmComplete(
     messages,
-    env.PROXY_MODEL || 'gemini-2.5-flash',
+    env?.PROXY_MODEL || 'gemini-2.5-flash',
     0.1,
-    env.CUSTOM_API_KEY || env.PROXY_TOKEN
+    env?.CUSTOM_API_KEY || env?.PROXY_TOKEN,
+    env?.PROXY_URL,
+    env
   );
 
   return {
