@@ -173,7 +173,11 @@ app.post('/graph-pipelines/:name/execute', async (c) => {
   const initialState = body.initial_state || { ...body };
   delete initialState.breakpoints;
   if (body.llmConfig) {
-    initialState.llmConfig = body.llmConfig;
+    // apiKey НЕ персистимо: job-status (GET /jobs/:id) віддає стан клієнту,
+    // а DO зберігає його довго. Resume-шлях впаде на env.PROXY_TOKEN.
+    initialState.llmConfig = { ...body.llmConfig, apiKey: undefined };
+  } else {
+    delete initialState.llmConfig;
   }
   await updateJobDO(c.env, jobId, 'pending', initialState);
   

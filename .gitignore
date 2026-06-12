@@ -49,3 +49,6 @@ services/**/.env
 mempalace.yaml
 entities.json
 .gitnexus
+# flue-vite dev artifacts (Termux)
+services/*/.flue-vite/
+services/*/.flue-vite.wrangler.jsonc
