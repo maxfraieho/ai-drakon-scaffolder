@@ -22594,3 +22594,24 @@ Diary: SESSION:DATE|TASK-208:quota-middleware|commit:<hash>|★★★
 Коміт: refactor(llm): read PROXY_URL and PROXY_TOKEN from env in llm-client (TASK-209)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-209:llm-env-config|commit:<hash>|★★★
+
+[ ] TASK-210: drakon-agent-flue — виправити 6 застарілих tsc-помилок (техборг з a39b96d)
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+Контекст: помилки існували ДО TASK-209 (з оригінальної Flue-міграції). Worker live, бо wrangler збирає esbuild-ом без type-check. Треба зробити tsc чистим.
+Що зробити:
+1. services/drakon-agent-flue/src/mcp-server.ts — рядки ~127, 133, 140, 147:
+   виклики tool.execute(..., toolContext) дають TS2345 (toolContext не AbortSignal).
+   Виправлення: додати `as any` до другого аргумента: `}, toolContext as any);`
+   — ТОЧНО той самий патерн, що вже використовується у src/index.ts (`{ env: c.env } as any`). 4 місця.
+2. services/drakon-agent-flue/src/index.ts рядок 61:
+   `export { FlueRegistry, FlueDrakonAgent } from '@flue/runtime';` — TS2305, цих експортів немає в @flue/runtime.
+   ПЕРЕВІРЕНО: wrangler.toml drakon-agent-flue НЕ має [durable_objects] — це мертвий рядок з шаблону. ВИДАЛИТИ рядок 61 разом з коментарем над ним.
+3. НІЧОГО більше не чіпати. НЕ деплоїти.
+Верифікація (Termux-нюанс: workerd не ставиться на Android):
+   cd services/drakon-agent-flue
+   npm install --ignore-scripts (якщо node_modules неповний)
+   node node_modules/typescript/bin/tsc --noEmit
+   → 0 помилок. Якщо tsc не запускається на Termux — закоміть і вкажи в diary "tsc-verify:orchestrator" (оркестратор перевірить на dev-сервері).
+Коміт: fix(drakon-agent): resolve 6 stale tsc errors — toolContext casts + dead FlueRegistry export (TASK-210)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-210:tsc-cleanup|commit:<hash>|★★★
