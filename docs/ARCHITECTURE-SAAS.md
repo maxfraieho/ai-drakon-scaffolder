@@ -1,5 +1,11 @@
 # AI-DRAKON SaaS — Архітектура мультитенантної платформи
 
+> **Переосмислення (2026-06-12):** цей документ описує SaaS-ОБГОРТКУ
+> (auth, billing, tenancy). Ядро продукту — компілятор DRAKON → агентний код:
+> див. [`ARCHITECTURE-CORE.md`](ARCHITECTURE-CORE.md). Roadmap §9 тут
+> ЗАСТАРІВ — чинний roadmap у ARCHITECTURE-CORE.md §3. §4 (connectMcpServer
+> напряму з Worker) скоригований на MCP-proxy pattern — див. CORE §2.
+
 > **Статус:** проєкт (ФАЗ 2), 2026-06-12. Ґрунтується на Gap Analysis реального коду
 > (commit `bceae3e`) та верифікованих сигнатурах Flue API (flueframework.com).
 > **Стратегічний план:** «План розвитку SaaS для мультиагентних систем.md»
