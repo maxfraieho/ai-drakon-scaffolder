@@ -269,3 +269,56 @@ be4598d  docs: move ARCHITECTURE-SAAS.md to docs/ root
 - TASK-208: quotaMiddleware (AGY3) — `services/architect-agent-flue/src/middleware/quota.ts`
 - Redeploy `architect-agent-flue` після додавання `Workers Scripts:Edit` до CF токена
 - Sprint 3: Knowledge Zones CRUD + `connectMcpServer`
+
+
+---
+
+# SESSION STATE UPDATE — 2026-06-12 ВЕЧІР (компілятор у продукті)
+
+## 🧬 ГОЛОВНЕ: compile loop ПРАЦЮЄ наскрізно
+
+DRAKON-схема → pipelineToIR → **Export mRNA** (drakongen) → `.pseudo.md`
+→ **Compile** (рибосома POST /compile) → `{name}.workflow.ts` скачується з UI.
+Live-тест: ThreatClassifier → коректний TS (tool→runNode, llm→llmComplete, ТАК/НІ→if/else).
+
+## Задачі вечора (всі верифіковані рев'ю + tsc)
+
+| TASK | Що | Виконавець | Коміт |
+|------|----|-----------|-------|
+| 209 | llm-client: PROXY_URL/TOKEN з env | AGY3 | f621ac1 |
+| 210 | drakon-agent-flue: 6 tsc-помилок | AGY3 | dfa5692 |
+| 211 | Агенти воскрешені: тунельні URL (CF error 1042: worker→worker fetch через workers.dev заборонений) | AGY3 | f002935 |
+| 212 | llmConfig UI→proxy→агенти→llmComplete | AGY3 | f64b85e..4e84e80 (+ security fix d205ccc: apiKey НЕ персиститься в DO) |
+| 213 | UI Фаза A: палітра + IconRail + Evidence Drawer | AGY2 (промпт у development/prompts/) | 5f034f2 |
+| 214 | CompilerToolbar | AGY phone | c5515d2 |
+| 215 | Export mRNA: wiring готового drakongen | AGY phone | 249749c |
+| 216 | Рибосома v1: POST /compile | AGY phone (+фікс \${name} 5ddc057) | a8563aa |
+| 217 | Кнопка Compile → /compile | AGY3 | a1be12c |
+
+## Деплої (CF token з Workers Scripts:Edit у ~/.env на .184)
+
+Всі 4 worker-и: architect (494b10d4 — з рибосомою), drakon, docs, drakon-mcp-worker.
+`/me` → 401 без JWT (authMiddleware+quotaMiddleware живі).
+Деплой: `cd services/X && . ~/.env && npx wrangler deploy --config wrangler.toml`.
+УВАГА: esbuild "service was stopped" = паралельний важкий процес на .184 (реіндекс) — дочекатись.
+
+## Інфраструктура
+
+- GitNexus: ПОЛАГОДЖЕНИЙ (FTS/BM25 працює), процедура: exodus-infra/services/gitnexus/README.md. embeddings=0 (опційний overnight).
+- OpenDesign LLM: ланцюг agy3→agy2(.30)→phone→local; патчений agy у exodus-infra/services/opendesign/agy.
+- cloudflared: agy3.exodus.pp.ua → 192.168.3.204:8080 (LAN, Tailscale AGY3 мертвий rx=0).
+- Windows firewall AGY2: правило AGY-proxy-8080 (inbound 8080).
+
+## Флот: уроки дня
+
+- Планшети: ЗАВЖДИ `termux-wake-lock` першим рядком делегування (AGY4 впав без нього).
+- AGY4 = 192.168.3.213, u0_a83/805235io, gemini-cli (НЕ antigravity — без LSE).
+- AGY phone: клон може застрягти (stash старих змін) — перевіряти git log перед делегуванням.
+- AGY2: маршрут промптів через development/prompts/*.md (git pull на ноуті).
+
+## Наступні кроки
+
+1. Шліф промпту рибосоми: модель з env.PROXY_MODEL (не 'gpt-4o').
+2. Фаза B-2..B-5: PipelineTimeline, ArtifactTabs, KnowledgeZoneBadge, NodeSemanticsPanel.
+3. Sprint 4: Knowledge Zones → рибосома читає KB користувача (MCP-proxy pattern!).
+4. Браузер-тест compile loop руками (window.drakongen — browser-only).

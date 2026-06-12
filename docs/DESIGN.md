@@ -200,7 +200,8 @@ diff-режимі (перформанс, складність, tool-calls).
 | KnowledgeZoneBadge | NotebookLM інтеграція | `src/pages/NotebookLMPage.tsx`, `src/components/notebooklm/` |
 | Runtime (jobs/logs) | Observability | `src/pages/ObservabilityPage.tsx` |
 | TopBar Target selector | налаштування агентів | `src/lib/settings-storage.ts` (agents.*Url, llm config) |
-| Export mRNA (кнопка) | НОВЕ — Sprint 3 | `src/lib/drakon/pseudocode-export.ts` (ARCHITECTURE-CORE §1.2) |
+| Export mRNA (кнопка) | ✅ TASK-215 (готовий drakongen) | `src/lib/drakon/pseudocode.ts` + `public/libs/drakongen.js` |
+| Compile (кнопка) | ✅ TASK-216/217 (рибосома) | `services/architect-agent-flue/tools/ribosome.ts` + `POST /compile` |
 
 ### Незмінні інваріанти коду
 
@@ -214,6 +215,11 @@ diff-режимі (перформанс, складність, tool-calls).
 ---
 
 ## 13) Фази міграції UI
+
+> Статус 2026-06-12: Фаза A ✅ (TASK-213, AGY2); Фаза B-1 CompilerToolbar ✅
+> (TASK-214); з Фази C достроково: Export mRNA ✅ (215) і Compile ✅ (217).
+> Лишилось: B-2 PipelineTimeline, B-3 ArtifactTabs, B-4 KnowledgeZoneBadge,
+> B-5 NodeSemanticsPanel; C: Evidence Drawer ← SSE jobs.
 
 - **Фаза A — токени + shell:** оновити CSS-змінні палітри; WorkspaceShell
   розширити до IconRail + Evidence Drawer (collapsible, без зламу існуючих маршрутів).

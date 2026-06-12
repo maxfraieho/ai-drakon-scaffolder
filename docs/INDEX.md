@@ -26,6 +26,7 @@ lang: uk
 | **Concept** | [[concept/_INDEX]] | Філософія, візія та ключові когнітивні ідеї платформи | canonical | 1 |
 | **Architecture** | [[architecture/_INDEX]] | Архітектура системи, протоколи live-трейсингу та мапінг | canonical | 1 |
 | **Core: Компілятор** | [[ARCHITECTURE-CORE]] | ЯДРО ПРОДУКТУ: DRAKON → псевдокод → рибосома → агентний код | canonical | 1 |
+| **Design: Compiler-First UI** | [[DESIGN]] | Інтерфейс операційної панелі компілятора: токени, Reality Map, фази | canonical | 1 |
 | **SaaS Architecture** | [[ARCHITECTURE-SAAS]] | SaaS: Auth, Billing, Knowledge Zones, CF D1/KV, Appwrite | active | 1 |
 | **Knowledge Base** | [[kb/_INDEX]] | Специфікація DRAKON IR та базові промпти для ШІ | canonical | 1 |
 | **Manuals** | [[manuals/_INDEX]] | Практичні посібники та інструкції користувача | active | 2 |

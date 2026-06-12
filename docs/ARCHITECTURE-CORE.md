@@ -79,17 +79,27 @@ END
 - Стрілки `(one)` / `(two)` — зберігають семантику гілок DRAKON.
 - Жодних X/Y координат (як і в IR).
 
-### 1.2 Експортер (перший крок, ~50–70 рядків)
+### 1.2 Експортер — РЕАЛІЗОВАНО 2026-06-12 (TASK-215)
 
-```
-src/lib/drakon/pseudocode-export.ts
-  export function irToPseudocode(ir: IrDiagram): string
-```
+План написати власний `pseudocode-export.ts` СКАСОВАНО: у репо вже існував
+готовий генератор — `public/libs/drakongen.js` (Міткін) з обгорткою
+`src/lib/drakon/pseudocode.ts` (`diagramToPseudocode`, `pseudocodeToMarkdown`).
+TASK-215 лише підключив його до кнопки **Export mRNA** у CompilerToolbar.
 
-Обхід IR від `b0`, генерація рядків, збереження міток і гілок.
-Чистий TypeScript, без LLM — детермінований крок (транскрипція).
+ВАЖЛИВА КОРЕКЦІЯ ФОРМАТУ: drakongen-псевдокод НЕ містить міток
+`:: tool :: / :: llm ::` (pipelineToIR кладе лише label). Семантика вузлів
+передається рибосомі ОКРЕМИМ полем `nodes[]` — `NodeConfig` уже має
+`is_llm`, `is_deterministic`, `description`. Формат §1.1 лишається
+концептуальним описом; фактичний контракт — `POST /compile`.
 
-### 1.3 Рибосома-агент
+### 1.3 Рибосома-агент — v1 РЕАЛІЗОВАНО 2026-06-12 (TASK-216/217)
+
+Жива реалізація: `services/architect-agent-flue/tools/ribosome.ts`
+(`compilePseudocode`) + маршрут `POST /compile` + кнопка **Compile** в UI
+(скачує `{name}.workflow.ts`). KB-зони поки НЕ підключені (Sprint 4);
+llmConfig з налаштувань UI прокидається (TASK-212).
+Відомий шлiф: системний промпт ще не велить брати модель з env.PROXY_MODEL —
+рибосома може вигадати 'gpt-4o' у згенерованому коді.
 
 ```
 Вхід:
@@ -149,7 +159,7 @@ Multi-target: одна схема → Flue-worker для продакшну + Py
 Принцип: **спершу цінність (компілятор), потім обгортка (SaaS)**.
 Sprint 1–2 (auth, D1/KV/Appwrite, middleware) — закриті 2026-06-12 ✅.
 
-### Sprint 3 — Компілятор MVP (ядро!)
+### Sprint 3 — Компілятор MVP (ядро!) — ✅ ЗАКРИТО 2026-06-12 (за один день: TASK-213..217)
 - `src/lib/drakon/pseudocode-export.ts` — IR → псевдокод (детермінований).
 - Кнопка "Експорт псевдокоду" в редакторі (DiagramsPage/PipelinesPage).
 - Рибосома v1 (target: Flue) — workflow в architect-agent-flue,
