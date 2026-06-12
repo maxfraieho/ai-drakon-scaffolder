@@ -22694,3 +22694,22 @@ Diary: SESSION:DATE|TASK-212:llm-config-passthrough|commit:<hash>|★★★
 Коміт: feat(ui): phase A compiler-first — semantic palette + WorkspaceShell IconRail/Evidence Drawer (TASK-213)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-213:ui-phase-a|commit:<hash>|★★★
+
+[ ] TASK-214: UI Фаза B-1 — компонент CompilerToolbar (compiler-first)
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH для коду (SSH ТІЛЬКИ для od-generate.sh). Спочатку git pull origin main.
+Специфікація: docs/DESIGN.md §5.1 (CompilerToolbar), §4 (токени), §12 (Reality Map), §14 (протокол real-code). ПРОЧИТАТИ перед роботою.
+Що зробити:
+1. Прочитати ПОВНІСТЮ src/pages/PipelineEditorPage.tsx — це предок (Reality Map §12). Зрозуміти існуючий toolbar: які кнопки/handlers там зараз є.
+2. Згенерувати компонент через OpenDesign (DESIGN.md §14):
+   ssh vokov@192.168.3.184 "bash ~/bin/od-generate.sh '<промпт>' /tmp/od-compiler-toolbar.tsx"
+   Промпт МУСИТЬ містити: (а) реальний фрагмент toolbar-коду з PipelineEditorPage.tsx у <code>...</code>; (б) вимогу: створити ОКРЕМИЙ компонент CompilerToolbar з кнопками Analyze · Export mRNA · Compile · Validate · Deploy; props: { onAnalyze?: () => void; onCompile?: () => void; disabled?: boolean }; кнопки без handler-а — disabled з title="Sprint 3"; (в) стиль: токени через Tailwind-класи (bg-background, border-border, text-muted-foreground, амбер-акцент), щільний IDE-стиль 12-13px, іконки lucide-react (Search, FileCode2, Play, CheckCircle2, Rocket); (г) ЗАБОРОНА вигадувати неіснуючі модулі.
+   ЯКЩО ssh/od-generate недоступний або 2 спроби дали сміття — написати компонент САМОСТІЙНО за тією ж спекою.
+3. Зберегти як src/components/pipeline/CompilerToolbar.tsx.
+4. Прийняти (§14.3): перевірити що imports реальні (react, lucide-react, @/components/ui/* якщо треба — ТІЛЬКИ існуючі шляхи).
+5. Інтегрувати у src/pages/PipelineEditorPage.tsx: відрендерити CompilerToolbar НАД існуючим toolbar-ом; onAnalyze/onCompile підключити до ІСНУЮЧИХ handlers сторінки якщо є відповідні дії (запуск пайплайна тощо), інакше лишити undefined (=disabled). ІСНУЮЧІ кнопки сторінки НЕ видаляти — це паралельне додавання, видалимо старе у Фазі C.
+6. Дзеркало: cp src/components/pipeline/CompilerToolbar.tsx .lovable/src/components/pipeline/CompilerToolbar.tsx; cp src/pages/PipelineEditorPage.tsx .lovable/src/pages/PipelineEditorPage.tsx
+7. НІЧОГО більше не чіпати.
+Верифікація: npx tsc --noEmit → 0 помилок.
+Коміт: feat(ui): phase B-1 CompilerToolbar component wired into PipelineEditorPage (TASK-214)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-214:compiler-toolbar|commit:<hash>|★★★
