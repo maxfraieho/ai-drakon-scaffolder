@@ -9,6 +9,7 @@ fetchPipeline, savePipeline, validatePipeline,
 type PipelineConfig,
 } from "@/lib/pipeline-config-api";
 import { pipelineToIR, irToPipeline } from "@/lib/pipeline-to-drakon";
+import { CompilerToolbar } from "@/components/pipeline/CompilerToolbar";
 
 export default function PipelineEditorPage() {
 const { pipelineId } = useParams({ from: "/pipeline/$pipelineId/edit" });
@@ -58,6 +59,10 @@ return (
 }
 return (
 <div className="flex h-screen flex-col bg-[var(--bg-base)] antialiased">
+<CompilerToolbar
+  onAnalyze={handleValidate}
+  onCompile={undefined}
+/>
 <div className="flex h-11 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3">
 <Link
 to="/agents"
