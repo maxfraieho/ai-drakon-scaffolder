@@ -22714,7 +22714,7 @@ Diary: SESSION:DATE|TASK-213:ui-phase-a|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-214:compiler-toolbar|commit:<hash>|★★★
 
-[ ] TASK-215: Export mRNA — підключити ІСНУЮЧИЙ генератор псевдокоду (wiring, НЕ розробка)
+[x] TASK-215: Export mRNA — підключити ІСНУЮЧИЙ генератор псевдокоду (wiring, НЕ розробка)
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 КОНТЕКСТ (знайдено через GitNexus, все ВЖЕ ІСНУЄ):
 - src/lib/drakon/pseudocode.ts — ГОТОВА обгортка: diagramToPseudocode(diagramJson, name, language='en') → Promise<string>; pseudocodeToMarkdown(pseudocode, diagramName) → string з frontmatter. Зараз модуль НІКИМ не імпортується.
