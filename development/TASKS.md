@@ -22616,7 +22616,7 @@ Diary: SESSION:DATE|TASK-209:llm-env-config|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-210:tsc-cleanup|commit:<hash>|★★★
 
-[ ] TASK-211: ОЖИВИТИ агентів — повернути тунельні URL як дефолтні (CF 1042 fix)
+[x] TASK-211: ОЖИВИТИ агентів — повернути тунельні URL як дефолтні (CF 1042 fix)
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 КОРІНЬ ПРОБЛЕМИ (верифіковано curl-ом): drakon-mcp-worker проксіює чат на agentUrl з налаштувань. Cloudflare ЗАБОРОНЯЄ worker→worker fetch через *.workers.dev в межах одного акаунта (error 1042). TASK-204 зробив дефолтами workers.dev і позначив тунельні URL як stale — це зламало ВСІХ агентів у UI. Тунелі (drakon-agent.exodus.pp.ua тощо) живі — cloudflared мапить їх на ті самі flue workers.
 Що зробити (ТІЛЬКИ src/lib/settings-storage.ts + дзеркало):
