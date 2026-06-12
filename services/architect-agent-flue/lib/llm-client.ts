@@ -2,10 +2,19 @@ export async function llmComplete(
   messages: Array<{ role: string; content: string }>,
   model: string = 'gemini-2.5-flash',
   temperature: number = 0.0,
-  apiKey?: string
+  apiKey?: string,
+  proxyUrl?: string,
+  env?: any
 ): Promise<string> {
-  const url = 'https://agy3.exodus.pp.ua/v1/chat/completions';
-  const key = apiKey || (typeof process !== 'undefined' ? process.env.CUSTOM_API_KEY : '') || 'dummy';
+  const resolvedEnv = env || (typeof process !== 'undefined' ? process.env : undefined);
+
+  let baseUrl = proxyUrl || resolvedEnv?.PROXY_URL || 'https://agy3.exodus.pp.ua/v1/chat/completions';
+  let url = baseUrl;
+  if (url && !url.endsWith('/chat/completions')) {
+    url = url.endsWith('/') ? url + 'chat/completions' : url + '/chat/completions';
+  }
+
+  const key = apiKey || resolvedEnv?.PROXY_TOKEN || resolvedEnv?.CUSTOM_API_KEY || 'dummy';
   
   const res = await fetch(url, {
     method: 'POST',
