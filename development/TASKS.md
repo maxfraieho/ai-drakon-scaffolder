@@ -22615,3 +22615,24 @@ Diary: SESSION:DATE|TASK-209:llm-env-config|commit:<hash>|★★★
 Коміт: fix(drakon-agent): resolve 6 stale tsc errors — toolContext casts + dead FlueRegistry export (TASK-210)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-210:tsc-cleanup|commit:<hash>|★★★
+
+[ ] TASK-211: ОЖИВИТИ агентів — повернути тунельні URL як дефолтні (CF 1042 fix)
+!!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
+КОРІНЬ ПРОБЛЕМИ (верифіковано curl-ом): drakon-mcp-worker проксіює чат на agentUrl з налаштувань. Cloudflare ЗАБОРОНЯЄ worker→worker fetch через *.workers.dev в межах одного акаунта (error 1042). TASK-204 зробив дефолтами workers.dev і позначив тунельні URL як stale — це зламало ВСІХ агентів у UI. Тунелі (drakon-agent.exodus.pp.ua тощо) живі — cloudflared мапить їх на ті самі flue workers.
+Що зробити (ТІЛЬКИ src/lib/settings-storage.ts + дзеркало):
+1. DEFAULT_SETTINGS.agents змінити на тунельні URL:
+   drakonUrl: "https://drakon-agent.exodus.pp.ua"
+   architectUrl: "https://architect-agent.exodus.pp.ua"
+   docsUrl: "https://docs-agent.exodus.pp.ua"
+2. STALE_AGENT_HOSTS переписати: ВИДАЛИТИ звідти "architect-agent.exodus.pp.ua", "drakon-agent.exodus.pp.ua", "docs-agent.exodus.pp.ua"; ЗАЛИШИТИ "192.168.3.184"; ДОДАТИ:
+   "drakon-agent-flue.maxfraieho.workers.dev",
+   "architect-agent-flue.maxfraieho.workers.dev",
+   "docs-agent-flue.maxfraieho.workers.dev"
+   (щоб збережені в localStorage workers.dev URL-и авто-мігрували назад на тунелі при наступному readSettings).
+3. Додати короткий коментар над STALE_AGENT_HOSTS: workers.dev у agentUrl ламає proxy-чат — CF блокує worker-to-worker fetch через workers.dev (error 1042); тунелі exodus.pp.ua мапляться на ті ж flue workers через cloudflared.
+4. Дзеркало: cp src/lib/settings-storage.ts .lovable/src/lib/settings-storage.ts
+5. НІЧОГО більше не чіпати (agent-api.ts, graph-pipeline-api.ts — НЕ чіпати).
+Верифікація: npx tsc --noEmit (корінь репо) — БЕЗ помилок.
+Коміт: fix(agents): revert agent defaults to tunnel URLs — CF 1042 blocks worker-to-worker workers.dev fetch (TASK-211)
+Push: git push origin main
+Diary: SESSION:DATE|TASK-211:agents-alive|commit:<hash>|★★★
