@@ -57,5 +57,3 @@ app.post('/analyze_folder', async (c) => {
 app.route('/', flue());
 
 export default app;
-// Export durable objects bindings for wrangler/worker integration
-export { FlueRegistry, FlueDrakonAgent } from '@flue/runtime';

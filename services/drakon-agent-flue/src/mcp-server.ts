@@ -124,27 +124,27 @@ export async function handleMcp(c: Context) {
             code: code || '',
             filename: filename || 'module.js',
             refine: refine !== false,
-          }, toolContext);
+          }, toolContext as any);
         } else if (name === 'drakon_chat') {
           const { message, context: chatCtx } = args || {};
           resultString = await drakonChat.execute({
             message: message || '',
             context: chatCtx || '{}',
-          }, toolContext);
+          }, toolContext as any);
         } else if (name === 'analyze_folder') {
           const { folderPath, maxFiles, refine } = args || {};
           resultString = await analyzeFolder.execute({
             folderPath: folderPath || '',
             maxFiles: maxFiles || 20,
             refine: refine !== false,
-          }, toolContext);
+          }, toolContext as any);
         } else if (name === 'feedback') {
           const { diagramName, feedback: fbText, correctedIr } = args || {};
           resultString = await feedbackTool.execute({
             diagramName: diagramName || '',
             feedback: fbText || '',
             correctedIr: correctedIr,
-          }, toolContext);
+          }, toolContext as any);
         } else {
           return c.json({
             jsonrpc: '2.0',
