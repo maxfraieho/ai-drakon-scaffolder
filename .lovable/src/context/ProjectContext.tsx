@@ -216,6 +216,20 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     setProjects([]);
     setActiveProjectState(null);
+
+    if (userId !== "anon") {
+      // Clear legacy unscoped keys (pre-TASK-222) and anonymous session
+      [
+        "ai_drakon_active_project",
+        "ai_drakon_active_project_data",
+        "ai_drakon_local_projects",
+        "ai_drakon_active_project_anon",
+        "ai_drakon_active_project_anon_data",
+        "ai_drakon_local_projects_anon",
+        "aegisroute.access_token",
+        "jwt",
+      ].forEach(k => localStorage.removeItem(k));
+    }
   }, [userId]);
 
   return (
