@@ -23514,3 +23514,31 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 **!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder`**
 **ПОВНА СПЕЦИФІКАЦІЯ: `development/EXECUTION-PROMPTS.md` → секція TASK-234b. Прочитай її ПЕРШОЮ.**
 Коротко: wrangler.toml `[triggers] crons=["0 0 1 * *"]`; index.ts `scheduled()` handler ітерує billing_profiles → llmConsumed=0, periodStart=now. Поза src/ — БЕЗ sync. `npx tsc --noEmit` чистий. Коміт: `feat(billing): monthly quota reset via Cron`. Diary запис. Залежить від TASK-234a.
+
+---
+
+## ХВИЛЯ 2 — Suite-міст + гартування (виконувати ПІСЛЯ A+B)
+
+> Усі — локально на AGY3. Повні специфікації: `development/EXECUTION-PROMPTS.md`
+> (секція "ХВИЛЯ 2"). Виконавець читає відповідну секцію ПЕРШОЮ. Після кожного:
+> `npx tsc --noEmit` чистий, src/ → `.lovable/`, git push, diary.
+
+[ ] TASK-237: Лендинг — наратив "два сервіси — один Suite" (spec: EXECUTION-PROMPTS.md → TASK-237; src/pages/LandingPage.tsx +.lovable)
+
+[ ] TASK-227: GitHub App + OAuth, encrypted token (spec: EXECUTION-PROMPTS.md → TASK-227; передумова Q: реєстрація GitHub App)
+
+[ ] TASK-228: DRAKON→Bloom deep-link з zone-токеном (spec: EXECUTION-PROMPTS.md → TASK-228)
+
+[ ] TASK-229: Індикатор здоров'я Зони (Archivist ready/failed) (spec: EXECUTION-PROMPTS.md → TASK-229)
+
+[ ] TASK-232: Multi-target компіляція flue+langgraph-js (spec: EXECUTION-PROMPTS.md → TASK-232; залежить TASK-225)
+
+[ ] TASK-233: Async-компіляція через ArchitectJobStore DO (spec: EXECUTION-PROMPTS.md → TASK-233; залежить TASK-225)
+
+[ ] TASK-230: (Garden репо) ролі агентів у UI — за згодою Q (spec: EXECUTION-PROMPTS.md → БЛОК C)
+
+[ ] TASK-235: Bloom→DRAKON "Створити агента з Зони" (spec: EXECUTION-PROMPTS.md → TASK-235; залежить 225,228)
+
+[ ] TASK-236: Єдиний обмін токенами SSO Suite (spec: EXECUTION-PROMPTS.md → TASK-236; залежить 227,228)
+
+[ ] TASK-234c: Stripe webhook — ТІЛЬКИ за наявності платних користувачів (spec: EXECUTION-PROMPTS.md → TASK-234c; залежить 234a/b)
