@@ -240,7 +240,7 @@ app.post('/suggest-patterns', async (c) => {
 // Ribosome v1 — compile DRAKON pseudocode + node semantics to TypeScript workflow
 app.post('/compile', async (c) => {
   const body: any = await c.req.json().catch(() => ({}));
-  const { pseudocode, nodes, pipelineName, target, llmConfig } = body;
+  const { pseudocode, nodes, pipelineName, target, llmConfig, zoneId } = body;
 
   if (!pseudocode) {
     return c.json({ error: 'pseudocode is required' }, 400);
@@ -249,9 +249,20 @@ app.post('/compile', async (c) => {
     return c.json({ error: 'pipelineName is required' }, 400);
   }
 
+  let kbContext: string | undefined;
+  if (zoneId) {
+    try {
+      const { fetchZoneContext } = await import('../tools/mcp-proxy.js');
+      const query = `Framework design patterns, architecture rules, guidelines, and syntax requirements. Опис, правила розробки та кращі практики.`;
+      kbContext = await fetchZoneContext(c.env, zoneId, query);
+    } catch (e: any) {
+      console.error('Failed to fetch zone context:', e);
+    }
+  }
+
   try {
     const result = await compilePseudocode(
-      { pseudocode, nodes, pipelineName, target, llmConfig },
+      { pseudocode, nodes, pipelineName, target, llmConfig, kbContext },
       c.env,
       llmConfig || undefined
     );

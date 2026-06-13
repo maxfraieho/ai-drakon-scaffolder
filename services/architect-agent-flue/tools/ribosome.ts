@@ -17,6 +17,7 @@ export interface RibosomeInput {
     baseUrl?: string;
     protocol?: string;
   };
+  kbContext?: string;
 }
 
 export interface RibosomeOutput {
@@ -103,10 +104,14 @@ export async function compilePseudocode(
 
   const semanticsTable = buildSemanticsTable(nodes);
 
-  const userPrompt =
+  let userPrompt =
     `Назва пайплайну: ${pipelineName}\n\n` +
     `Псевдокод:\n${pseudocode}` +
     semanticsTable;
+
+  if (input.kbContext) {
+    userPrompt += `\n\nЗнання цільового фреймворку (використовуй для точності):\n${input.kbContext}`;
+  }
 
   // Resolve LLM params — only apply apiKey/baseUrl when protocol is openai-compatible or absent
   const useCustom =
