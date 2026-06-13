@@ -433,7 +433,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={logout}
-                  className="font-mono text-[11px] uppercase tracking-wider bg-[var(--color-primary-container,#f59e0b)] text-[#2a1700] hover:brightness-110"
+                  className="font-mono text-[11px] uppercase tracking-wider bg-[var(--color-primary-container,#2dd4bf)] text-[#003d38] hover:brightness-110"
                 >
                   Вийти
                 </AlertDialogAction>

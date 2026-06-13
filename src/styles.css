@@ -66,8 +66,8 @@
 --color-surface-container-highest: #33353a;
 --color-on-surface: #e2e2e9;
 --color-on-surface-variant: #d8c3ad;
---color-primary-container: #f59e0b;
---color-on-primary-container: #613b00;
+--color-primary-container: #2dd4bf;
+--color-on-primary-container: #003d38;
 --color-outline: #a08e7a;
 --color-outline-variant: #534434;
 --color-tertiary: #51e77b;
@@ -109,7 +109,7 @@ Roboto, sans-serif;
 
 --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 2px 8px rgba(0, 0, 0, 0.4);
 --shadow-elevated: 0 0 0 1px rgba(255, 255, 255, 0.10), 0 4px 16px rgba(0, 0, 0, 0.6);
---shadow-accent-glow: 0 0 12px rgba(245, 158, 11, 0.35);
+--shadow-accent-glow: 0 0 12px rgba(45, 212, 191, 0.35);
 }
 
 /* Precision Dark applies to both :root and .dark so the palette is consistent
@@ -128,10 +128,10 @@ regardless of theme-class plumbing elsewhere in the app. */
 --border-default: rgba(255, 255, 255, 0.10);
 --border-strong: rgba(255, 255, 255, 0.18);
 
-/* Accent — Amber */
---accent-amber: #f59e0b;
---accent-dim: rgba(245, 158, 11, 0.15);
---accent-glow: 0 0 12px rgba(245, 158, 11, 0.35);
+/* Accent — Teal (DRAKON Suite) */
+--accent-amber: #2dd4bf;
+--accent-dim: rgba(45, 212, 191, 0.15);
+--accent-glow: 0 0 12px rgba(45, 212, 191, 0.35);
 
 /* Accent — Semantic Additions */
 --accent-info: #8fd5ff;
