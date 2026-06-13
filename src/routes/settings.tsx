@@ -90,7 +90,7 @@ useEffect(() => {
   // Load current MCP key on mount
   const jwt = localStorage.getItem("jwt");
   if (!jwt) return;
-  const workerUrl = (settings.app.workerUrl || "https://garden-mcp.aidrakon.tech").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp.aidrakon.tech").replace(/\/$/, "");
   setIsLoadingMcpKey(true);
   fetch(`${workerUrl}/v1/api-key`, {
     headers: { Authorization: `Bearer ${jwt}` },
@@ -109,7 +109,7 @@ useEffect(() => {
 const generateMcpKey = async () => {
   const jwt = localStorage.getItem("jwt");
   if (!jwt) { toast.error("Потрібна авторизація"); return; }
-  const workerUrl = (settings.app.workerUrl || "https://garden-mcp.aidrakon.tech").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp.aidrakon.tech").replace(/\/$/, "");
   setIsGeneratingMcpKey(true);
   try {
     const res = await fetch(`${workerUrl}/v1/api-key/generate`, {
@@ -134,7 +134,7 @@ const generateMcpKey = async () => {
 const revokeMcpKey = async () => {
   const jwt = localStorage.getItem("jwt");
   if (!jwt) return;
-  const workerUrl = (settings.app.workerUrl || "https://garden-mcp.aidrakon.tech").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp.aidrakon.tech").replace(/\/$/, "");
   try {
     await fetch(`${workerUrl}/v1/api-key`, { method: "DELETE", headers: { Authorization: `Bearer ${jwt}` } });
     setMcpKey(null);
@@ -981,8 +981,8 @@ style={{ touchAction: "manipulation" }}
                   mcpServers: {
                     drakon: {
                       type: "http",
-                      url: `${(settings.app.workerUrl || "https://garden-mcp.aidrakon.tech").replace(/\/$/, "")}/mcp`,
-                      serverUrl: `${(settings.app.workerUrl || "https://garden-mcp.aidrakon.tech").replace(/\/$/, "")}/mcp`,
+                      url: `${(settings.app.workerUrl || "https://drakon-mcp.aidrakon.tech").replace(/\/$/, "")}/mcp`,
+                      serverUrl: `${(settings.app.workerUrl || "https://drakon-mcp.aidrakon.tech").replace(/\/$/, "")}/mcp`,
                       headers: { Authorization: `Bearer ${mcpKey}` }
                     }
                   }
@@ -995,7 +995,7 @@ style={{ touchAction: "manipulation" }}
   "mcpServers": {
     "drakon": {
       "type": "http",
-      "url": "${(settings.app.workerUrl || 'https://garden-mcp.aidrakon.tech').replace(/\/$/,'')}/mcp",
+      "url": "${(settings.app.workerUrl || 'https://drakon-mcp.aidrakon.tech').replace(/\/$/,'')}/mcp",
       "headers": { "Authorization": "Bearer ${mcpKey ? `${mcpKey.slice(0, 14)}...${mcpKey.slice(-6)}` : ""}" }
     }
   }

@@ -1,6 +1,6 @@
 import { readSettings } from "@/lib/settings-storage";
 
-const DEFAULT_WORKER_URL = "https://drakon-mcp-worker.maxfraieho.workers.dev";
+const DEFAULT_WORKER_URL = "https://drakon-mcp.aidrakon.tech";
 
 export function resolveWorkerUrl(): string {
 if (typeof window !== "undefined") {
