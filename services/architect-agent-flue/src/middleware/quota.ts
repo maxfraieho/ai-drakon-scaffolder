@@ -51,6 +51,6 @@ export const quotaMiddleware = createMiddleware<QuotaEnv>(async (c, next) => {
     db.updateDocument(DB_ID, BILLING_COL, t.userId, {
       llmConsumed: profile.llmConsumed + (c.get("llmCalls") ?? 1),
       updatedAt: new Date().toISOString(),
-    })
+    } as any)
   );
 });

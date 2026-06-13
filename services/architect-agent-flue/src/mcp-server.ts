@@ -351,10 +351,14 @@ export async function handleMcp(c: Context) {
           const { job_id } = args || {};
           result = await getJobDO(c.env, job_id);
         } else if (name === 'list_projects') {
-          result = await listProjects(c.env);
+          const tenant = c.get('tenant');
+          const userId = tenant?.userId ?? 'owner';
+          result = await listProjects(c.env, userId);
         } else if (name === 'create_project') {
+          const tenant = c.get('tenant');
+          const userId = tenant?.userId ?? 'owner';
           const { slug, payload } = args || {};
-          result = await createProject(slug, payload, c.env);
+          result = await createProject(slug, payload, userId, c.env);
         } else if (name === 'gh_list_files') {
           const { owner, repo, path = '', branch = 'main', token } = args || {};
           const ghToken = token || c.env.GITHUB_TOKEN || '';
