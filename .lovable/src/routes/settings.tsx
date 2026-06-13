@@ -64,7 +64,7 @@ return (
 function SettingsRoute() {
 const navigate = useNavigate();
 const { user, isLoading: authLoading } = useAuth();
-const isAdmin = user?.email === 'claude.1@pmusic.com.ua';
+const isAdmin = user?.email === 'tukroschu@gmail.com';
 const { activeProject } = useProject();
 const activeProjectGithub = activeProject?.github;
 const [settings, setSettings] = useState<AppSettings>(() => readSettings());
