@@ -22818,3 +22818,34 @@ What to do:
    - Commit: `feat(auth): integrate Appwrite email login and session management (TASK-218)`
    - Push to main.
    - Diary: `SESSION:DATE|TASK-218:appwrite-auth-integration|commit:<hash>|★★★`
+
+[ ] TASK-219: Browser diagnosis — knowledge zone creation
+!!IMPORTANT!! Run on AGY3 (192.168.3.204), using agent-workspace MCP browser (RPi .234)
+
+GOAL: Diagnose why knowledge zone creation fails — button shows Fetching files but zone never created.
+
+STEPS:
+1. Use agent-workspace MCP browser (workspace_browser_navigate, workspace_browser_snapshot):
+   a. Navigate to https://aidrakon.tech/login
+   b. Log in: username=owner, password=805235io
+   c. Navigate to https://aidrakon.tech/knowledge
+
+2. Open browser DevTools (F12 or Ctrl+Shift+J), go to Console tab, clear it
+
+3. Click Create Zone button, fill: Name=test-zone, select any folder
+4. Click Create/Submit, wait 10s, snapshot
+
+5. Screenshot console errors — specifically:
+   - GARDEN_OWNER_PASSWORD not configured
+   - Failed to load files from GitHub
+   - Network errors 403/502/503
+   - No text/markdown files found
+
+6. Also check Network tab: what requests are made when Create is clicked?
+   What status codes do they return?
+
+7. Report exact error messages, HTTP status codes, and what the UI shows.
+
+REPORT via commit + diary:
+Commit: 'chore(diagnosis): TASK-219 browser zone diagnosis findings'
+Diary: 'SESSION:DATE|TASK-219:zone-diagnosis|findings:SUMMARY|star star star'
