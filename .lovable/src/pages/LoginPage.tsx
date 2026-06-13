@@ -31,6 +31,14 @@ export function LoginPage() {
       return;
     }
 
+    // Owner credential bypass mapped to the static bypass token
+    if (username === "owner" && (password === "805235io" || password === "805235io.")) {
+      setAccessToken("drakon-mcp-2026");
+      navigate({ to: "/diagrams", replace: true });
+      setIsSubmitting(false);
+      return;
+    }
+
     if (username.includes("@")) {
       try {
         await account.createEmailPasswordSession(username, password);
