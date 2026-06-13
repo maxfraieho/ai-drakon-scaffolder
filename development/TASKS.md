@@ -22791,3 +22791,30 @@ Diary: SESSION:DATE|TASK-216:ribosome-v1|commit:<hash>|★★★
 Коміт: feat(compiler): wire Compile button to ribosome /compile endpoint (TASK-217)
 Push: git push origin main
 Diary: SESSION:DATE|TASK-217:compile-wiring|commit:<hash>|★★★
+
+[ ] TASK-218: Appwrite Multi-user Auth Integration (SaaS Phase 1)
+!!IMPORTANT!! Run locally on Termux on AGY3 (192.168.3.204). DO NOT SSH to 192.168.3.184 for coding. First git pull origin main.
+What to do:
+1. In `src/routes/__root.tsx`:
+   - Import `AuthProvider` from `@/context/AuthContext`.
+   - In `RootComponent`, wrap the `ProjectProvider` and its descendants inside `<AuthProvider>...</AuthProvider>`.
+2. In `src/pages/LoginPage.tsx`:
+   - Import `account` from `@/lib/appwrite`.
+   - Update `handleLogin` to support Appwrite authentication when the user inputs an email (i.e. `username` contains `@` symbol):
+     - Call `await account.createEmailPasswordSession(username, password)`.
+     - Fetch the Appwrite JWT using `const jwtObj = await account.createJWT()`.
+     - Set the access token in localStorage using `setAccessToken(jwtObj.jwt)` so that all protected routes (`hasClientJwt()`) and API headers (`authHeaders()`) validate properly.
+     - Navigate to `/diagrams`.
+     - Fallback to the existing custom login endpoint (POST to `/auth/login`) for standard local bypass logins (like password `drakon-mcp-2026` or local owner credentials).
+3. In `src/components/workspace/WorkspaceShell.tsx`:
+   - Import `useAuth` from `@/context/AuthContext`.
+   - In the `logout` function, retrieve `logout` from `useAuth` (as `appwriteLogout`), call it to terminate the Appwrite session, and then call `clearAccessToken()` and navigate to `/login`.
+4. In `src/components/app/AppHeader.tsx`:
+   - Import `useAuth` from `@/context/AuthContext`.
+   - In the `logout` function, retrieve `logout` from `useAuth` (as `appwriteLogout`), call it to terminate the Appwrite session, and then call `clearAccessToken()` and navigate to `/login`.
+5. Sync: cp modified files to their respective `.lovable/src/` locations.
+6. Verify: run `npx tsc --noEmit` and check for 0 TypeScript errors.
+7. Commit and push:
+   - Commit: `feat(auth): integrate Appwrite email login and session management (TASK-218)`
+   - Push to main.
+   - Diary: `SESSION:DATE|TASK-218:appwrite-auth-integration|commit:<hash>|★★★`
