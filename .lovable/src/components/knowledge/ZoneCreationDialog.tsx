@@ -520,7 +520,7 @@ export function ZoneCreationDialog({
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="createNotebookLm" className="text-right">
-                Create NotebookLM
+                Create Archivist AI
               </Label>
               <Checkbox
                 id="createNotebookLm"
@@ -533,7 +533,7 @@ export function ZoneCreationDialog({
               <>
                 <div className="grid grid-cols-4 items-center gap-4">
                   <Label htmlFor="notebookLmTitle" className="text-right">
-                    NotebookLM Title
+                    Archivist Title
                   </Label>
                   <Input
                     id="notebookLmTitle"

@@ -111,7 +111,7 @@ export function NotebookLMChatPanel() {
           },
         ]);
       } else {
-        const errorMsg = response.message || response.error || "Failed to get answer from NotebookLM.";
+        const errorMsg = response.message || response.error || "Failed to get answer from Archivist.";
         setError(errorMsg);
         toast.error(errorMsg);
       }
@@ -218,7 +218,7 @@ export function NotebookLMChatPanel() {
                 ) : (
                   <>
                     <Send className="h-3 w-3 mr-1.5" />
-                    Ask NotebookLM
+                    Ask Archivist
                   </>
                 )}
               </Button>
@@ -244,7 +244,7 @@ export function NotebookLMChatPanel() {
           <div className="flex items-center gap-2">
             <MessageSquare className="h-4 w-4 text-[var(--accent-amber)]" />
             <span className="font-mono text-xs font-semibold text-[var(--text-primary)]">
-              NotebookLM Session
+              Archivist Session
             </span>
           </div>
           {notebookId && notebooks.find(n => n.id === notebookId) && (
@@ -275,7 +275,7 @@ export function NotebookLMChatPanel() {
                 Semantically Query Your Project
               </h3>
               <p className="font-mono text-[11px] text-[var(--text-secondary)] max-w-sm">
-                Enter your NotebookLM URL, type your question in the left panel, and click Ask. 
+                Enter your Archivist ID, type your question in the left panel, and click Ask. 
                 The RAG engine will synthesize answers based on your vector-indexed documents.
               </p>
             </div>
@@ -297,7 +297,7 @@ export function NotebookLMChatPanel() {
                   >
                     {/* Role Tag */}
                     <div className="font-mono text-[9px] uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-                      {m.role === "user" ? "You" : "NotebookLM"}
+                      {m.role === "user" ? "You" : "Archivist"}
                     </div>
 
                     {/* Content */}
@@ -360,7 +360,7 @@ export function NotebookLMChatPanel() {
             <div className="flex items-start gap-2.5">
               <div className="max-w-[85%] rounded-md p-3.5 bg-[var(--bg-elevated)] border border-[var(--border-subtle)]">
                 <div className="font-mono text-[9px] uppercase tracking-wider text-[var(--text-secondary)] mb-1.5">
-                  NotebookLM
+                  Archivist
                 </div>
                 <div className="flex items-center gap-2 text-xs font-mono text-[var(--text-secondary)]">
                   <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent-amber)]" />
