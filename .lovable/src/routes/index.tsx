@@ -1,7 +1,8 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
 import { HomePage } from "@/pages/HomePage";
+import LandingPage from "@/pages/LandingPage";
 import { hasClientJwt } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/")({
@@ -14,7 +15,7 @@ function Index() {
   if (!hydrated) return null;
 
   if (!hasClientJwt()) {
-    return <Navigate to="/login" replace />;
+    return <LandingPage />;
   }
   return <HomePage />;
 }
