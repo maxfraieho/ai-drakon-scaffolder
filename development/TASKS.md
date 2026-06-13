@@ -22173,7 +22173,7 @@ Entry: "SESSION:2026-06-09|TASK-200:theme-fix+github-docs|commit:<hash>|★★�
 
 ---
 
-## [ ] TASK-201
+## [x] TASK-201 (SKIPPED-PARTIAL: superseded by Appwrite)
 
 ### GOAL
 **A) GitHubDocsPage — token persistence across sessions (incognito)** — GitHub токен живе лише в localStorage. При новій сесії incognito — втрачається. Треба зберігати токен у Worker KV прив'язаним до JWT.
