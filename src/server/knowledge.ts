@@ -1,4 +1,4 @@
-const GATEWAY_URL = "https://garden-mcp.exodus.pp.ua";
+const GATEWAY_URL = "https://garden-mcp.aidrakon.tech";
 
 let _cachedToken: string | null = null;
 let _tokenExpiry = 0;
