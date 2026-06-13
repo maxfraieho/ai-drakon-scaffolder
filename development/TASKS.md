@@ -22849,3 +22849,5 @@ STEPS:
 REPORT via commit + diary:
 Commit: 'chore(diagnosis): TASK-219 browser zone diagnosis findings'
 Diary: 'SESSION:DATE|TASK-219:zone-diagnosis|findings:SUMMARY|star star star'
+
+[ ] TASK-220: Auth UI Unification — port NetworkBackground from Bloom to DRAKON LoginPage + fix registration
