@@ -1,15 +1,131 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Bot, Eye, EyeOff, Loader2, KeyRound, UserPlus } from "lucide-react";
+import { Bot, Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 import { ID } from "appwrite";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { readSettings } from "@/lib/settings-storage";
 import { setAccessToken } from "@/lib/auth";
 import { account } from "@/lib/appwrite";
+
+function NetworkBackground() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    const NODE_COUNT = 90;
+    const CONNECT_DIST = 200;
+    const EXCLUSION_RADIUS = 170;
+
+    interface Node {
+      x: number; y: number; vx: number; vy: number;
+      r: number; opacity: number; hub: boolean;
+    }
+    const nodes: Node[] = [];
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    const spawnNode = (): Node => {
+      const isHub = Math.random() < 0.15;
+      let x: number, y: number;
+      do {
+        x = Math.random() * canvas.width;
+        y = Math.random() * canvas.height;
+      } while (
+        Math.sqrt((x - canvas.width / 2) ** 2 + (y - canvas.height / 2) ** 2) < EXCLUSION_RADIUS
+      );
+      return {
+        x, y,
+        vx: (Math.random() - 0.5) * (isHub ? 0.12 : 0.35),
+        vy: (Math.random() - 0.5) * (isHub ? 0.12 : 0.35),
+        r: isHub ? Math.random() * 3.5 + 3.5 : Math.random() * 2 + 1,
+        opacity: isHub ? Math.random() * 0.3 + 0.5 : Math.random() * 0.25 + 0.2,
+        hub: isHub,
+      };
+    };
+
+    for (let i = 0; i < NODE_COUNT; i++) nodes.push(spawnNode());
+
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const cx = canvas.width / 2;
+      const cy = canvas.height / 2;
+
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const dx = nodes[i].x - nodes[j].x;
+          const dy = nodes[i].y - nodes[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < CONNECT_DIST) {
+            const bothHub = nodes[i].hub && nodes[j].hub;
+            const anyHub = nodes[i].hub || nodes[j].hub;
+            const alpha = (1 - dist / CONNECT_DIST) * (bothHub ? 0.4 : anyHub ? 0.25 : 0.12);
+            ctx.beginPath();
+            ctx.moveTo(nodes[i].x, nodes[i].y);
+            ctx.lineTo(nodes[j].x, nodes[j].y);
+            ctx.strokeStyle = `rgba(45, 212, 191, ${alpha})`;
+            ctx.lineWidth = bothHub ? 1.5 : anyHub ? 0.8 : 0.4;
+            ctx.stroke();
+          }
+        }
+      }
+
+      for (const n of nodes) {
+        if (n.hub) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(45, 212, 191, ${n.opacity * 0.15})`;
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(45, 212, 191, ${n.opacity})`;
+        ctx.fill();
+
+        n.x += n.vx;
+        n.y += n.vy;
+        if (n.x < 0 || n.x > canvas.width) n.vx *= -1;
+        if (n.y < 0 || n.y > canvas.height) n.vy *= -1;
+
+        const distToCenter = Math.sqrt((n.x - cx) ** 2 + (n.y - cy) ** 2);
+        if (distToCenter < EXCLUSION_RADIUS) {
+          const angle = Math.atan2(n.y - cy, n.x - cx);
+          n.x = cx + Math.cos(angle) * EXCLUSION_RADIUS;
+          n.y = cy + Math.sin(angle) * EXCLUSION_RADIUS;
+          n.vx = Math.cos(angle) * Math.abs(n.vx) * 1.2;
+          n.vy = Math.sin(angle) * Math.abs(n.vy) * 1.2;
+        }
+      }
+
+      animId = requestAnimationFrame(draw);
+    };
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none"
+      style={{ zIndex: 0 }}
+    />
+  );
+}
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -99,166 +215,176 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-zinc-950 px-4 overflow-hidden">
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
+    <div className="relative flex min-h-screen items-center justify-center bg-gray-950 px-4 overflow-hidden">
+      <NetworkBackground />
 
-      <Card className="relative w-full max-w-sm border-zinc-800 bg-zinc-900/60 backdrop-blur-md shadow-2xl rounded-xl">
-        <CardHeader className="space-y-1 text-center pb-4">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400">
-            <Bot className="h-6 w-6" />
-          </div>
-          <CardTitle className="text-2xl font-bold tracking-tight text-zinc-100">AI-DRAKON</CardTitle>
-          <CardDescription className="text-zinc-400 text-sm">
-            Платформа розробки та візуалізації алгоритмів
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
-            <button
-              type="button"
-              onClick={() => { setMode("login"); setErrorMsg(null); }}
-              className={`flex-1 py-1.5 text-sm font-medium transition-colors ${mode === "login" ? "bg-indigo-600 text-white" : "text-zinc-400 hover:text-zinc-200"}`}
-            >
-              Увійти
-            </button>
-            <button
-              type="button"
-              onClick={() => { setMode("register"); setErrorMsg(null); }}
-              className={`flex-1 py-1.5 text-sm font-medium transition-colors ${mode === "register" ? "bg-indigo-600 text-white" : "text-zinc-400 hover:text-zinc-200"}`}
-            >
-              <UserPlus className="h-3.5 w-3.5 inline mr-1" />
-              Реєстрація
-            </button>
-          </div>
+      {/* Radial center glow */}
+      <div
+        className="fixed inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse at center, rgba(45,212,191,0.04) 0%, transparent 65%)",
+          zIndex: 1,
+        }}
+      />
 
+      {/* Card */}
+      <div
+        className="relative w-full max-w-sm"
+        style={{ zIndex: 2 }}
+      >
+        {/* Logo */}
+        <div className="text-center mb-8">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-400/10 border border-teal-400/20">
+            <Bot className="h-7 w-7 text-teal-400" />
+          </div>
+          <h1 className="text-3xl font-bold tracking-tight text-white">AI-DRAKON</h1>
+          <p className="text-gray-400 text-sm mt-1">Платформа розробки та візуалізації алгоритмів</p>
+        </div>
+
+        {/* Mode tabs */}
+        <div className="flex rounded-xl border border-white/10 overflow-hidden mb-6 bg-white/5 backdrop-blur-sm">
+          <button
+            type="button"
+            onClick={() => { setMode("login"); setErrorMsg(null); }}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              mode === "login"
+                ? "bg-teal-500 text-black"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            Увійти
+          </button>
+          <button
+            type="button"
+            onClick={() => { setMode("register"); setErrorMsg(null); }}
+            className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
+              mode === "register"
+                ? "bg-teal-500 text-black"
+                : "text-gray-400 hover:text-white"
+            }`}
+          >
+            <UserPlus className="h-3.5 w-3.5 inline mr-1" />
+            Реєстрація
+          </button>
+        </div>
+
+        {/* Form container */}
+        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4">
           {mode === "register" ? (
             <form className="space-y-4" onSubmit={handleRegister}>
               <div className="space-y-2">
-                <Label htmlFor="reg-name" className="text-zinc-300 font-medium">Ім'я (необов'язково)</Label>
+                <label className="text-sm text-gray-300 font-medium font-sans">Ім'я (необов'язково)</label>
                 <Input
-                  id="reg-name"
                   type="text"
                   placeholder="Ваше ім'я"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
+                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-email" className="text-zinc-300 font-medium">Email</Label>
+                <label className="text-sm text-gray-300 font-medium font-sans">Email</label>
                 <Input
-                  id="reg-email"
                   type="email"
                   autoComplete="email"
                   placeholder="email@example.com"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
+                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reg-password" className="text-zinc-300 font-medium">Пароль</Label>
+                <label className="text-sm text-gray-300 font-medium font-sans">Пароль</label>
                 <div className="relative">
                   <Input
-                    id="reg-password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
                     placeholder="Мінімум 8 символів"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 pr-10"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11 pr-10"
                     required
                     minLength={8}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
-              {errorMsg ? (
-                <p role="alert" className="text-sm text-red-500 font-medium bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
+              {errorMsg && (
+                <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
                   {errorMsg}
                 </p>
-              ) : null}
+              )}
               <Button
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/10 transition-all duration-200"
+                className="w-full h-11 bg-teal-500 hover:bg-teal-400 text-black font-semibold transition-all"
                 type="submit"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Реєстрація...</>
-                ) : "Зареєструватися"}
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Реєстрація...</> : "Зареєструватися"}
               </Button>
             </form>
           ) : (
             <form className="space-y-4" onSubmit={handleLogin}>
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-zinc-300 font-medium">Логін</Label>
+                <label className="text-sm text-gray-300 font-medium font-sans">Логін або Email</label>
                 <Input
-                  id="username"
                   type="text"
                   autoComplete="username"
-                  placeholder="Логін або Email"
+                  placeholder="email@example.com"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
+                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-zinc-300 font-medium">Пароль</Label>
+                <label className="text-sm text-gray-300 font-medium font-sans">Пароль</label>
                 <div className="relative">
                   <Input
-                    id="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="current-password"
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 pr-10"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11 pr-10"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>
               </div>
-              {errorMsg ? (
-                <p role="alert" className="text-sm text-red-500 font-medium bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
+              {errorMsg && (
+                <p className="text-sm text-red-400 bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
                   {errorMsg}
                 </p>
-              ) : null}
+              )}
               <Button
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/10 transition-all duration-200"
+                className="w-full h-11 bg-teal-500 hover:bg-teal-400 text-black font-semibold transition-all"
                 type="submit"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Вхід...</>
-                ) : "Увійти"}
+                {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Вхід...</> : "Увійти"}
               </Button>
-              <div className="mt-4 pt-4 border-t border-zinc-800/60">
-                <div className="flex gap-2.5 p-3 rounded-lg bg-zinc-950/40 border border-zinc-850 text-xs text-zinc-400">
-                  <KeyRound className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-semibold text-zinc-300">Bearer Token:</span> Використовуйте <code className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-200 font-mono">drakon-mcp-2026</code> у полі Пароль для прямого входу.
-                  </div>
-                </div>
-              </div>
             </form>
           )}
-        </CardContent>
-      </Card>
+        </div>
+
+        {/* Footer */}
+        <p className="text-center text-gray-600 text-xs mt-6 tracking-wider uppercase">
+          DRAKON Suite · Knowledge Platform
+        </p>
+      </div>
     </div>
   );
 }
