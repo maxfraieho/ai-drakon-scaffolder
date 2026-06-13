@@ -25,10 +25,10 @@ export const Route = createFileRoute("/api/knowledge/zones")({
             notebookLmStatus: (z.notebookLmStatus ?? "none") as "none",
             accessCode: z.accessCode,
             webUrl: (z.accessType !== "mcp" && z.accessCode)
-              ? "https://garden-mcp.exodus.pp.ua/zone/" + (z.id ?? z.zoneId) + "?code=" + z.accessCode
+              ? "https://garden-mcp.aidrakon.tech/zone/" + (z.id ?? z.zoneId) + "?code=" + z.accessCode
               : (z.webUrl ?? z.zoneUrl ?? undefined),
             mcpUrl: (z.accessType !== "web" && (z.id ?? z.zoneId))
-              ? "https://garden-mcp.exodus.pp.ua/mcp/" + (z.id ?? z.zoneId)
+              ? "https://garden-mcp.aidrakon.tech/mcp/" + (z.id ?? z.zoneId)
               : z.mcpUrl ?? undefined,
             folders: z.folders ?? [],
           }));
@@ -56,10 +56,10 @@ export const Route = createFileRoute("/api/knowledge/zones")({
               description: body.description,
               accessCode: body.accessCode,
               webUrl: (body.accessType !== "mcp" && body.accessCode)
-                ? "https://garden-mcp.exodus.pp.ua/zone/" + (body.zoneId ?? body.id) + "?code=" + body.accessCode
+                ? "https://garden-mcp.aidrakon.tech/zone/" + (body.zoneId ?? body.id) + "?code=" + body.accessCode
                 : (body.webUrl ?? body.zoneUrl ?? undefined),
               mcpUrl: (body.accessType !== "web" && (body.zoneId ?? body.id))
-                ? "https://garden-mcp.exodus.pp.ua/mcp/" + (body.zoneId ?? body.id)
+                ? "https://garden-mcp.aidrakon.tech/mcp/" + (body.zoneId ?? body.id)
                 : body.mcpUrl ?? undefined,
               expiresAt: body.expiresAt,
               noteCount: body.noteCount ?? 0,
