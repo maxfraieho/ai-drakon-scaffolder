@@ -50,7 +50,7 @@ export default function LandingPage() {
               Try Garden Bloom →
             </a>
             <a
-              href="https://aidrakon.tech"
+              href="/login"
               className="border border-teal-400 text-teal-400 hover:bg-teal-400/10 px-8 py-4 rounded-xl transition text-lg"
             >
               Open AI-DRAKON →
@@ -124,7 +124,7 @@ export default function LandingPage() {
               ))}
             </div>
             <a
-              href="https://aidrakon.tech"
+              href="/login"
               className="block text-center bg-teal-500 hover:bg-teal-400 text-black py-3 rounded-xl transition font-semibold"
             >
               Open DRAKON →
@@ -247,7 +247,7 @@ export default function LandingPage() {
             </h4>
             <ul className="space-y-2 text-sm text-gray-400">
               {["Agents", "Pipelines", "GitHub", "Notebooks"].map((l) => (
-                <li key={l}><a href="https://aidrakon.tech" className="hover:text-white transition">{l}</a></li>
+                <li key={l}><a href="/login" className="hover:text-white transition">{l}</a></li>
               ))}
             </ul>
           </div>
