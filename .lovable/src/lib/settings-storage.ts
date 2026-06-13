@@ -4,8 +4,8 @@ export const SETTINGS_STORAGE_KEY = "drakon.settings";
 
 export const DEFAULT_SETTINGS: AppSettings = {
   github: {
-    owner: "maxfraieho",
-    repo: "drakon-setup-hub",
+    owner: "",
+    repo: "",
     branch: "main",
     token: "",
   },

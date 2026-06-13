@@ -21,7 +21,7 @@ SelectValue,
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/lib/api";
-import { hasClientJwt } from "@/lib/route-auth";
+import { useAuth } from "@/context/AuthContext";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 import type { AppSettings } from "@/types/settings";
 import { useProject } from "@/context/ProjectContext";
@@ -85,6 +85,16 @@ const [mcpKey, setMcpKey] = useState<string | null>(null);
 const [mcpKeyMasked, setMcpKeyMasked] = useState<string | null>(null);
 const [isLoadingMcpKey, setIsLoadingMcpKey] = useState(false);
 const [isGeneratingMcpKey, setIsGeneratingMcpKey] = useState(false);
+
+const { user, isLoading: authLoading } = useAuth();
+const isAdmin = user?.email === 'claude.1@pmusic.com.ua';
+
+if (authLoading) {
+  return <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+}
+if (!user) {
+  return <Navigate to="/login" replace />;
+}
 
 useEffect(() => {
   // Load current MCP key on mount
@@ -315,10 +325,6 @@ localStorage.removeItem("drakon.diagrams");
 toast.success("Локальний кеш діаграм очищено");
 };
 
-if (!hasClientJwt()) {
-return <Navigate to="/login" replace />;
-}
-
 return (
 <div className="h-full overflow-y-auto bg-background">
 <div className="mx-auto w-full max-w-4xl px-3 pb-28 pt-4 md:px-6 md:pb-6">
@@ -326,19 +332,87 @@ return (
 <h1 className="text-lg font-semibold md:text-2xl">Налаштування</h1>
 </header>
 
-<Tabs defaultValue="github" className="space-y-4">
+<Tabs defaultValue="profile" className="space-y-4">
 <div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:grid md:grid-cols-7 md:gap-0 md:px-0">
-<TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>
-<TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>
-<TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>
-<TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>
-<TabsTrigger value="minio" className="shrink-0 whitespace-nowrap">MinIO</TabsTrigger>
-<TabsTrigger value="app" className="shrink-0 whitespace-nowrap">Додаток</TabsTrigger>
-<TabsTrigger value="mcp" className="shrink-0 whitespace-nowrap">MCP Access</TabsTrigger>
+<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:w-auto md:px-0">
+  <TabsTrigger value="profile" className="shrink-0 whitespace-nowrap">Профіль</TabsTrigger>
+  <TabsTrigger value="mcp" className="shrink-0 whitespace-nowrap">MCP Access</TabsTrigger>
+  {isAdmin && <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="minio" className="shrink-0 whitespace-nowrap">MinIO</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="app" className="shrink-0 whitespace-nowrap">Додаток</TabsTrigger>}
 </TabsList>
 </div>
 
+<TabsContent value="profile" className="pb-20 md:pb-0">
+  <div className="space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>Акаунт</CardTitle>
+        <CardDescription>Інформація про ваш обліковий запис</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-1">
+          <Label className="text-xs text-muted-foreground">Ім'я</Label>
+          <p className="text-sm font-medium">{user?.name || "—"}</p>
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs text-muted-foreground">Email</Label>
+          <p className="text-sm font-medium">{user?.email || "—"}</p>
+        </div>
+        {isAdmin && (
+          <div className="rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+            Адміністратор платформи — додаткові вкладки доступні у меню вище.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>GitHub</CardTitle>
+        <CardDescription>Підключення до GitHub для роботи з проектами</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground space-y-1">
+          <p className="font-medium text-foreground">GitHub OAuth — незабаром</p>
+          <p>Підключення особистих репозиторіїв через GitHub OAuth буде доступно у наступному оновленні.</p>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Інтерфейс</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2">
+          <Label htmlFor="profile-theme">Тема</Label>
+          <Select
+            value={settings.app.theme}
+            onValueChange={(value: AppSettings["app"]["theme"]) =>
+              updateSettings((prev) => ({ ...prev, app: { ...prev.app, theme: value } }))
+            }
+          >
+            <SelectTrigger id="profile-theme">
+              <SelectValue placeholder="Оберіть тему" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="system">Системна</SelectItem>
+              <SelectItem value="light">Світла</SelectItem>
+              <SelectItem value="dark">Темна</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={saveSettings} size="sm">Зберегти</Button>
+      </CardContent>
+    </Card>
+  </div>
+</TabsContent>
+
+{isAdmin && (
 <TabsContent value="github" className="pb-20 md:pb-0">
 <Card>
 <CardHeader>
@@ -398,7 +472,9 @@ disabled={isCheckingGithub}>
 </CardContent>
 </Card>
 </TabsContent>
+)}
 
+{isAdmin && (
 <TabsContent value="agents">
 <div className="space-y-4">
 {/* Section 1: Agent URLs (compact) */}
@@ -633,7 +709,9 @@ agentDescription="Генерація документації. Long-context."
 </div>
 </div>
 </TabsContent>
+)}
 
+{isAdmin && (
 <TabsContent value="docs">
 <Card>
 <CardHeader>
@@ -675,7 +753,9 @@ placeholder="ai-drakon-setup"
 </CardContent>
 </Card>
 </TabsContent>
+)}
 
+{isAdmin && (
 <TabsContent value="n8n">
 <Card>
 <CardHeader>
@@ -767,7 +847,9 @@ placeholder="https://n8n.yourhost.com/webhook/..."
 </CardContent>
 </Card>
 </TabsContent>
+)}
 
+{isAdmin && (
 <TabsContent value="minio">
 <Card>
 <CardHeader>
@@ -848,7 +930,9 @@ disabled={isLoadingMinio}
 </CardContent>
 </Card>
 </TabsContent>
+)}
 
+{isAdmin && (
 <TabsContent value="app">
 <Card>
 <CardHeader>
@@ -931,6 +1015,7 @@ style={{ touchAction: "manipulation" }}
 </CardContent>
 </Card>
 </TabsContent>
+)}
 
 <TabsContent value="mcp">
   <Card>
@@ -944,85 +1029,94 @@ style={{ touchAction: "manipulation" }}
       </CardDescription>
     </CardHeader>
     <CardContent className="space-y-4">
-      {isLoadingMcpKey ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Завантаження...
+      {!isAdmin && (
+        <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground">
+          <p>MCP Access Key — доступно після підключення GitHub OAuth.</p>
         </div>
-      ) : mcpKey ? (
-        <div className="space-y-3">
-          <div className="grid gap-2">
-            <Label>Поточний ключ</Label>
-            <div className="flex items-center gap-2">
-              <Input
-                type="text"
-                readOnly
-                value={mcpKeyMasked || mcpKey}
-                className="font-mono text-xs"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => { navigator.clipboard.writeText(mcpKey); toast.success("Ключ скопійовано"); }}
-                title="Копіювати повний ключ"
-              >
-                <Copy className="h-4 w-4" />
+      )}
+      {isAdmin && (
+        <>
+          {isLoadingMcpKey ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Завантаження...
+            </div>
+          ) : mcpKey ? (
+            <div className="space-y-3">
+              <div className="grid gap-2">
+                <Label>Поточний ключ</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    readOnly
+                    value={mcpKeyMasked || mcpKey}
+                    className="font-mono text-xs"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => { navigator.clipboard.writeText(mcpKey); toast.success("Ключ скопійовано"); }}
+                    title="Копіювати повний ключ"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Натисни кнопку для копіювання повного ключа</p>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>mcp_config.json для Antigravity / Claude Desktop</Label>
+                <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto cursor-pointer hover:bg-muted/70"
+                  onClick={() => {
+                    const cfg = JSON.stringify({
+                      mcpServers: {
+                        drakon: {
+                          type: "http",
+                          url: `${(settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "")}/mcp`,
+                          serverUrl: `${(settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "")}/mcp`,
+                          headers: { Authorization: `Bearer ${mcpKey}` }
+                        }
+                      }
+                    }, null, 2);
+                    navigator.clipboard.writeText(cfg);
+                    toast.success("Config скопійовано");
+                  }}
+                >
+    {`{
+      "mcpServers": {
+        "drakon": {
+          "type": "http",
+          "url": "${(settings.app.workerUrl || 'https://drakon-mcp-worker.maxfraieho.workers.dev').replace(/\/$/,'')}/mcp",
+          "headers": { "Authorization": "Bearer ${mcpKey ? `${mcpKey.slice(0, 14)}...${mcpKey.slice(-6)}` : ""}" }
+        }
+      }
+    }`}
+                </pre>
+                <p className="text-xs text-muted-foreground">Натисни на блок — скопіює повний config з реальним ключем</p>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={() => void generateMcpKey()} disabled={isGeneratingMcpKey}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  {isGeneratingMcpKey ? "Генерую..." : "Перегенерувати ключ"}
+                </Button>
+                <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => void revokeMcpKey()}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Відкликати ключ
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">У тебе ще немає MCP ключа. Створи його щоб підключити MCP клієнти.</p>
+              <Button type="button" onClick={() => void generateMcpKey()} disabled={isGeneratingMcpKey}>
+                <Key className="mr-2 h-4 w-4" />
+                {isGeneratingMcpKey ? "Генерую..." : "Створити MCP ключ"}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground">Натисни кнопку для копіювання повного ключа</p>
-          </div>
-
-          <div className="grid gap-2">
-            <Label>mcp_config.json для Antigravity / Claude Desktop</Label>
-            <pre className="rounded-md bg-muted p-3 text-xs overflow-x-auto cursor-pointer hover:bg-muted/70"
-              onClick={() => {
-                const cfg = JSON.stringify({
-                  mcpServers: {
-                    drakon: {
-                      type: "http",
-                      url: `${(settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "")}/mcp`,
-                      serverUrl: `${(settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "")}/mcp`,
-                      headers: { Authorization: `Bearer ${mcpKey}` }
-                    }
-                  }
-                }, null, 2);
-                navigator.clipboard.writeText(cfg);
-                toast.success("Config скопійовано");
-              }}
-            >
-{`{
-  "mcpServers": {
-    "drakon": {
-      "type": "http",
-      "url": "${(settings.app.workerUrl || 'https://drakon-mcp-worker.maxfraieho.workers.dev').replace(/\/$/,'')}/mcp",
-      "headers": { "Authorization": "Bearer ${mcpKey ? `${mcpKey.slice(0, 14)}...${mcpKey.slice(-6)}` : ""}" }
-    }
-  }
-}`}
-            </pre>
-            <p className="text-xs text-muted-foreground">Натисни на блок — скопіює повний config з реальним ключем</p>
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => void generateMcpKey()} disabled={isGeneratingMcpKey}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              {isGeneratingMcpKey ? "Генерую..." : "Перегенерувати ключ"}
-            </Button>
-            <Button type="button" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => void revokeMcpKey()}>
-              <Trash2 className="mr-2 h-4 w-4" />
-              Відкликати ключ
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          <p className="text-sm text-muted-foreground">У тебе ще немає MCP ключа. Створи його щоб підключити MCP клієнти.</p>
-          <Button type="button" onClick={() => void generateMcpKey()} disabled={isGeneratingMcpKey}>
-            <Key className="mr-2 h-4 w-4" />
-            {isGeneratingMcpKey ? "Генерую..." : "Створити MCP ключ"}
-          </Button>
-        </div>
+          )}
+        </>
       )}
     </CardContent>
   </Card>
