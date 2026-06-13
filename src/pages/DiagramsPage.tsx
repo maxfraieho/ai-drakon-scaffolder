@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ChangeEvent, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, FileCode2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, FileCode2, LayoutDashboard } from "lucide-react";
 
 import { CodeAnalysisPanel } from "@/components/pipeline/CodeAnalysisPanel";
 import { CodeGenerationPanel } from "@/components/pipeline/CodeGenerationPanel";
@@ -314,7 +314,17 @@ const itemCount = selectedDiagram?.diagram.items
 const level = selectedDiagram?.diagram.metadata?.diagramLevel;
 
 return (
-<div className="flex h-full w-full flex-col overflow-hidden md:flex-row">
+<div className="flex h-full w-full flex-col overflow-hidden">
+  {/* Page Header */}
+  <div className="border-b border-white/5 px-6 py-5 shrink-0">
+    <div className="flex items-center gap-3 mb-1">
+      <LayoutDashboard className="h-5 w-5 text-teal-400" />
+      <h1 className="text-lg font-semibold text-white">Схеми</h1>
+    </div>
+    <p className="text-sm text-gray-400">DRAKON-схеми та алгоритмічні потоки вашого проекту</p>
+  </div>
+
+  <div className="flex flex-1 min-h-0 w-full flex-col md:flex-row overflow-hidden">
 <div className="flex shrink-0 border-b border-[var(--border-subtle)] md:hidden">
 <button
 className={cn(
@@ -658,6 +668,7 @@ autoFocus
 </DialogFooter>
 </DialogContent>
 </Dialog>
+  </div>
 </div>
 );
 }
