@@ -1,4 +1,4 @@
-import { CheckCircle, Sprout, Diamond } from "lucide-react";
+import { CheckCircle, Sprout, Diamond, ArrowRight, BookOpen, Cpu, Zap } from "lucide-react";
 
 export default function LandingPage() {
   return (
@@ -13,9 +13,10 @@ export default function LandingPage() {
             DRAKON Suite
           </div>
           <div className="hidden md:flex items-center gap-8 text-gray-400">
-            {["Garden Bloom", "AI-DRAKON", "Pricing", "Docs"].map((item) => (
-              <a key={item} href="#" className="hover:text-white transition">{item}</a>
-            ))}
+            <a href="#services" className="hover:text-white transition">Garden Bloom</a>
+            <a href="#services" className="hover:text-white transition">AI-DRAKON</a>
+            <a href="#pricing" className="hover:text-white transition">Pricing</a>
+            <a href="https://bloom.aidrakon.tech" className="hover:text-white transition">Try Bloom</a>
           </div>
           <div className="flex items-center gap-4">
             <a href="/login" className="border border-teal-400 text-teal-400 hover:bg-teal-400/10 px-6 py-2 rounded-xl transition text-sm">
@@ -60,7 +61,7 @@ export default function LandingPage() {
       </section>
 
       {/* SERVICES */}
-      <section className="py-20 px-6">
+      <section id="services" className="py-20 px-6">
         <h2 className="text-3xl font-bold text-center mb-12 text-gray-100">Choose your toolkit</h2>
         <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Garden Bloom */}
@@ -133,18 +134,95 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* HOW IT CONNECTS */}
+      <section className="py-20 px-6 bg-gray-900/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="bg-teal-400/10 border border-teal-400/20 text-teal-400 text-sm px-4 py-2 rounded-full">Suite Integration</span>
+            <h2 className="text-3xl font-bold mt-6 mb-4">Better together</h2>
+            <p className="text-gray-400 max-w-xl mx-auto">
+              Use each service independently or connect them — your Bloom knowledge becomes the brain behind DRAKON agents.
+            </p>
+          </div>
+          <div className="flex flex-col md:flex-row items-center gap-4 justify-center">
+            {[
+              {
+                icon: <BookOpen size={28} className="text-teal-400" />,
+                title: "Garden Bloom",
+                desc: "Write notes. Organize with tags and graph. Create a knowledge zone.",
+                step: "1",
+              },
+              {
+                icon: <ArrowRight size={24} className="text-teal-400/60" />,
+                title: null,
+                desc: null,
+                step: null,
+                arrow: true,
+              },
+              {
+                icon: <Zap size={28} className="text-teal-400" />,
+                title: "Connect Zone",
+                desc: "Link your Bloom zone to DRAKON. Archivist AI becomes the knowledge source.",
+                step: "2",
+              },
+              {
+                icon: <ArrowRight size={24} className="text-teal-400/60" />,
+                title: null,
+                desc: null,
+                step: null,
+                arrow: true,
+              },
+              {
+                icon: <Cpu size={28} className="text-teal-400" />,
+                title: "AI-DRAKON",
+                desc: "Build an agent. It answers questions using your curated Bloom knowledge via MCP.",
+                step: "3",
+              },
+            ].map((item, i) =>
+              item.arrow ? (
+                <div key={i} className="hidden md:flex items-center">{item.icon}</div>
+              ) : (
+                <div key={i} className="flex-1 bg-white/5 border border-white/10 rounded-2xl p-6 text-center max-w-xs">
+                  <div className="w-10 h-10 bg-teal-400/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+                    {item.icon}
+                  </div>
+                  <div className="text-xs text-teal-400 font-semibold mb-2">STEP {item.step}</div>
+                  <h3 className="font-bold mb-2">{item.title}</h3>
+                  <p className="text-gray-400 text-sm">{item.desc}</p>
+                </div>
+              )
+            )}
+          </div>
+          <div className="text-center mt-10">
+            <a href="/login" className="bg-teal-500 hover:bg-teal-400 text-black font-semibold px-8 py-3 rounded-xl transition inline-block">
+              Get the Suite →
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* PRICING */}
-      <section className="py-20 px-6">
+      <section id="pricing" className="py-20 px-6">
         <h2 className="text-3xl font-bold text-center mb-4">Simple pricing</h2>
         <p className="text-gray-400 text-center mb-12">Pay for what you need. Upgrade or downgrade anytime.</p>
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-4 gap-5 max-w-6xl mx-auto">
           {[
+            {
+              name: "Free",
+              price: "$0",
+              period: "",
+              desc: "Try both services",
+              features: ["3 knowledge zones", "100 notes in Bloom", "1 AI agent in DRAKON", "10 pipeline runs/mo"],
+              cta: "Start Free",
+              href: "https://bloom.aidrakon.tech",
+              highlight: false,
+            },
             {
               name: "Bloom",
               price: "$9",
               period: "/mo",
               desc: "For knowledge workers",
-              features: ["Unlimited knowledge zones", "Unlimited notes", "Archivist AI chat", "Access zone sharing", "DRAKON diagrams"],
+              features: ["Unlimited zones + notes", "Archivist AI chat", "Zone sharing + QR", "DRAKON diagrams", "5 languages"],
               cta: "Start with Bloom",
               href: "https://bloom.aidrakon.tech",
               highlight: false,
@@ -154,20 +232,20 @@ export default function LandingPage() {
               price: "$19",
               period: "/mo",
               desc: "For AI developers",
-              features: ["Unlimited AI agents", "GitHub integration", "Pipeline editor", "Knowledge zones (read)", "Multi-user access"],
+              features: ["Unlimited AI agents", "GitHub integration", "Visual pipeline editor", "5 zone connections", "MCP endpoints"],
               cta: "Start Building",
-              href: "https://aidrakon.tech",
+              href: "/login",
               highlight: true,
               badge: "Most Popular",
             },
             {
               name: "Suite",
-              price: "$24",
+              price: "$29",
               period: "/mo",
               desc: "Everything combined",
-              features: ["All Bloom features", "All Builder features", "Priority support", "SSO between services", "Early access to features"],
+              features: ["All Bloom features", "All Builder features", "Unlimited zone connections", "SSO between services", "Priority support"],
               cta: "Get Suite",
-              href: "https://aidrakon.tech",
+              href: "/login",
               highlight: false,
               badge: "Best Value",
             },
@@ -215,7 +293,7 @@ export default function LandingPage() {
           ))}
         </div>
         <p className="text-center text-gray-500 text-sm mt-8">
-          Bloom Free tier available: 3 zones, 100 notes — forever free. No credit card required.
+          No credit card required for Free tier. Upgrade or downgrade anytime.
         </p>
       </section>
 
