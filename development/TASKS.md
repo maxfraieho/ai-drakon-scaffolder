@@ -22853,3 +22853,420 @@ Diary: 'SESSION:DATE|TASK-219:zone-diagnosis|findings:SUMMARY|star star star'
 [x] TASK-220: Auth UI Unification — port NetworkBackground from Bloom to DRAKON LoginPage + fix registration
 
 [x] TASK-221: UI Polish — привести DRAKON workspace до Bloom-стилю (типографіка, sidebar, сторінки)
+
+[ ] TASK-222: Data isolation + remove D1 from architect-agent-flue → Appwrite
+
+**Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/`**
+
+---
+
+## Контекст
+
+Новий користувач після реєстрації бачить проекти власника (`drakon-setup-hub`, `maxfraieho/uav-watcher`).
+Два джерела витоку:
+1. `localStorage` ключі НЕ прив'язані до userId — глобальні для всього браузера
+2. `GET /projects` в architect-agent-flue — без auth, читає з GitHub, повертає ВСЕ
+
+Паралельно: D1 database (`billing_profiles`) в architect-agent-flue — виносимо в Appwrite Databases.
+architect-agent-flue має займатися ТІЛЬКИ архітектурою (GitHub pipelines), не billing storage.
+
+---
+
+## Частина 1: Frontend — `src/context/ProjectContext.tsx`
+
+Прочитай файл спочатку.
+
+### 1a. Додати `useAuth` import та отримати `userId`
+
+Додати до imports на початку файлу:
+```typescript
+import { useAuth } from "@/context/AuthContext";
+```
+
+### 1b. В `ProjectProvider` component — додати userId
+
+Одразу після `const [loading, setLoading] = useState(false);` додати:
+```typescript
+const { user } = useAuth();
+const userId = user?.$id ?? "anon";
+```
+
+Видалити константи з верхнього рівня модуля:
+```typescript
+const STORAGE_KEY = "ai_drakon_active_project";
+const LOCAL_PROJECTS_KEY = "ai_drakon_local_projects";
+```
+
+### 1c. Оновити `loadLocalProjects` і `saveLocalProjects` — вони повинні бути всередині компонента або приймати ключ
+
+Замінити функції `loadLocalProjects` і `saveLocalProjects` на версії всередині компонента, що використовують `userId`:
+
+```typescript
+function loadLocalProjectsFor(uid: string): Project[] {
+  try {
+    const raw = localStorage.getItem(`ai_drakon_local_projects_${uid}`);
+    return raw ? (JSON.parse(raw) as Project[]) : [];
+  } catch { return []; }
+}
+
+function saveLocalProjectsFor(uid: string, list: Project[]) {
+  try { localStorage.setItem(`ai_drakon_local_projects_${uid}`, JSON.stringify(list)); } catch {}
+}
+```
+
+Ці функції мають бути ЗОВНІ компонента але приймати `uid` параметр.
+
+### 1d. Оновити `loadProjects` useCallback — залежить від `userId`
+
+`loadProjects` має використовувати userId-скоуповані ключі. Змінити:
+- `localStorage.getItem(STORAGE_KEY)` → `localStorage.getItem(\`ai_drakon_active_project_${userId}\`)`
+- `loadLocalProjects()` → `loadLocalProjectsFor(userId)`
+- `saveLocalProjects(...)` → `saveLocalProjectsFor(userId, ...)`
+- В `deps` array: додати `userId`
+
+### 1e. Оновити `setActiveProject` — скоупований ключ
+
+В `setActiveProject` useCallback замінити:
+- `localStorage.setItem(STORAGE_KEY, p.slug)` → `localStorage.setItem(\`ai_drakon_active_project_${userId}\`, p.slug)`
+- `localStorage.setItem(STORAGE_KEY + "_data", ...)` → `localStorage.setItem(\`ai_drakon_active_project_${userId}_data\`, ...)`
+- `localStorage.removeItem(STORAGE_KEY)` → `localStorage.removeItem(\`ai_drakon_active_project_${userId}\`)`
+- `localStorage.removeItem(STORAGE_KEY + "_data")` → `localStorage.removeItem(\`ai_drakon_active_project_${userId}_data\`)`
+- В `deps` array: додати `userId`
+
+### 1f. Додати useEffect для очистки при зміні користувача
+
+Після існуючого `useEffect(() => { void loadProjects(); }, [loadProjects]);` додати:
+```typescript
+useEffect(() => {
+  setProjects([]);
+  setActiveProjectState(null);
+}, [userId]);
+```
+
+### 1g. Оновити `addLocalProject` і `removeLocalProject`
+
+В `addLocalProject`:
+- `loadLocalProjects()` → `loadLocalProjectsFor(userId)`
+- `saveLocalProjects(updated)` → `saveLocalProjectsFor(userId, updated)`
+- В `deps` array: додати `userId`
+
+В `removeLocalProject`:
+- `loadLocalProjects()` → `loadLocalProjectsFor(userId)`
+- `saveLocalProjects(list)` → `saveLocalProjectsFor(userId, list)`
+- В `deps` array: додати `userId`
+
+---
+
+## Частина 2: architect-agent-flue — прибрати D1, додати Appwrite billing
+
+### 2a. `services/architect-agent-flue/src/middleware/auth.ts`
+
+Прочитай файл спочатку.
+
+Замінити `resolvePlan(db: D1Database, teamId: string)` на Appwrite-версію:
+
+```typescript
+import { Client, Account, Databases } from 'node-appwrite';
+
+const DB_ID = "ai-drakon";
+const BILLING_COL = "billing_profiles";
+
+async function resolvePlan(env: any, userId: string): Promise<Tenant["plan"]> {
+  try {
+    const client = new Client()
+      .setEndpoint(env.APPWRITE_ENDPOINT)
+      .setProject(env.APPWRITE_PROJECT_ID)
+      .setKey(env.APPWRITE_API_KEY);
+    const doc = await new Databases(client).getDocument(DB_ID, BILLING_COL, userId);
+    return (doc.planType ?? "free") as Tenant["plan"];
+  } catch {
+    return "free";
+  }
+}
+```
+
+Оновити тип `AuthEnv.Bindings` — видалити `DB: D1Database`, додати `APPWRITE_API_KEY: string`:
+```typescript
+type AuthEnv = {
+  Bindings: {
+    SESSION_KV: KVNamespace;
+    APPWRITE_ENDPOINT: string;
+    APPWRITE_PROJECT_ID: string;
+    APPWRITE_API_KEY: string;
+  };
+  Variables: { tenant: Tenant };
+};
+```
+
+В `authMiddleware`, замінити виклик `resolvePlan`:
+```typescript
+// БУЛО:
+plan: await resolvePlan(c.env.DB, teamId),
+// СТАЛО:
+plan: await resolvePlan(c.env, user.$id),
+```
+
+Також спростити teamId (поки без Teams):
+```typescript
+const teamId = user.$id; // teams — потім
+const tenant: Tenant = {
+  userId: user.$id,
+  teamId,
+  plan: await resolvePlan(c.env, user.$id),
+};
+```
+
+### 2b. `services/architect-agent-flue/src/middleware/quota.ts`
+
+Прочитай файл спочатку. Замінити весь файл:
+
+```typescript
+/// <reference types="@cloudflare/workers-types" />
+import { createMiddleware } from "hono/factory";
+import { Client, Databases } from "node-appwrite";
+import { Tenant } from "./auth.js";
+
+const DB_ID = "ai-drakon";
+const BILLING_COL = "billing_profiles";
+
+type QuotaEnv = {
+  Bindings: {
+    APPWRITE_ENDPOINT: string;
+    APPWRITE_PROJECT_ID: string;
+    APPWRITE_API_KEY: string;
+  };
+  Variables: {
+    tenant: Tenant;
+    llmCalls?: number;
+  };
+};
+
+export const quotaMiddleware = createMiddleware<QuotaEnv>(async (c, next) => {
+  const t = c.get("tenant");
+  const client = new Client()
+    .setEndpoint(c.env.APPWRITE_ENDPOINT)
+    .setProject(c.env.APPWRITE_PROJECT_ID)
+    .setKey(c.env.APPWRITE_API_KEY);
+  const db = new Databases(client);
+
+  let profile: any;
+  try {
+    profile = await db.getDocument(DB_ID, BILLING_COL, t.userId);
+  } catch {
+    // Auto-provision free profile при першому зверненні
+    profile = await db.createDocument(DB_ID, BILLING_COL, t.userId, {
+      userId: t.userId,
+      planType: "free",
+      llmQuotaMonthly: 100,
+      llmConsumed: 0,
+      updatedAt: new Date().toISOString(),
+    }, []);
+  }
+
+  if (profile.llmConsumed >= profile.llmQuotaMonthly) {
+    return c.json({ error: "Квоту LLM на місяць вичерпано", upgrade: "/settings/billing" }, 402);
+  }
+
+  await next();
+
+  // Інкремент у фоні — не блокує відповідь
+  c.executionCtx.waitUntil(
+    db.updateDocument(DB_ID, BILLING_COL, t.userId, {
+      llmConsumed: profile.llmConsumed + (c.get("llmCalls") ?? 1),
+      updatedAt: new Date().toISOString(),
+    })
+  );
+});
+```
+
+### 2c. `services/architect-agent-flue/tools/project-pipelines.ts`
+
+Прочитай файл спочатку.
+
+Всі функції змінюють шлях GitHub з `projects/${slug}/` на `projects/u/${userId}/${slug}/`.
+
+Оновити сигнатури:
+- `listProjects(env: any)` → `listProjects(env: any, userId: string)`
+- `createProject(slug, payload, env)` → `createProject(slug, payload, userId: string, env: any)`
+- `listAgents(slug, env)` → `listAgents(slug, userId: string, env: any)`
+- `getProjectPipeline(slug, agent, env)` → `getProjectPipeline(slug, agent, userId: string, env: any)`
+- `saveProjectPipeline(slug, agent, ir, env)` → `saveProjectPipeline(slug, agent, ir, userId: string, env: any)`
+- `getProjectPipelineStatus(slug, agent, env)` → `getProjectPipelineStatus(slug, agent, userId: string, env: any)`
+- `searchProjectKB(slug, agent, q, env)` → `searchProjectKB(slug, agent, q, userId: string, env: any)`
+- `uploadProjectKBDoc(slug, agent, filename, content, env)` → `uploadProjectKBDoc(slug, agent, filename, content, userId: string, env: any)`
+- `deleteProject(slug, env)` → `deleteProject(slug, userId: string, env: any)`
+
+У `listProjects(env, userId)` — тепер читає з `projects/u/${userId}`:
+```typescript
+const items = await api.listDir(`projects/u/${userId}`);
+```
+
+У всіх інших функціях замінити `projects/${slug}/` на `projects/u/${userId}/${slug}/`.
+
+### 2d. `services/architect-agent-flue/src/index.ts`
+
+Прочитай весь файл.
+
+Змінити маршрути проектів — додати `authMiddleware` і передати `tenant.userId`:
+
+```typescript
+// БУЛО:
+app.get('/projects', async (c) => {
+  const projects = await listProjects(c.env);
+  return c.json({ projects });
+});
+
+// СТАЛО:
+app.get('/projects', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
+  const projects = await listProjects(c.env, userId);
+  return c.json({ projects });
+});
+```
+
+Аналогічно для `/projects/:slug` (POST, DELETE) — додати `authMiddleware` і `userId`:
+```typescript
+app.post('/projects/:slug', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
+  const slug = c.req.param('slug');
+  const body = await c.req.json().catch(() => ({}));
+  const res = await createProject(slug, body, userId, c.env);
+  return c.json({ project: res });
+});
+
+app.delete('/projects/:slug', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
+  const slug = c.req.param('slug');
+  const ok = await deleteProject(slug, userId, c.env);
+  return c.json({ deleted: ok });
+});
+```
+
+Для всіх маршрутів `/projects/:slug/agents/...` — додати `authMiddleware` і `userId`:
+- `/projects/:slug/agents` → `listAgents(slug, userId, c.env)`
+- `/projects/:slug/agents/:agent/pipeline` GET → `getProjectPipeline(slug, agent, userId, c.env)`
+- `/projects/:slug/agents/:agent/pipeline` PUT → `saveProjectPipeline(slug, agent, body, userId, c.env)`
+- `/projects/:slug/agents/:agent/status` → `getProjectPipelineStatus(slug, agent, userId, c.env)`
+- `/projects/:slug/agents/:agent/execute` → add userId param where relevant
+- `/projects/:slug/agents/:agent/kb/search` → `searchProjectKB(slug, agent, q, userId, c.env)`
+- `/projects/:slug/agents/:agent/kb/upload` → `uploadProjectKBDoc(slug, agent, filename, content, userId, c.env)`
+
+### 2e. `services/architect-agent-flue/wrangler.toml`
+
+Прочитай файл спочатку. Видалити блок `[[d1_databases]]`:
+
+```toml
+# ВИДАЛИТИ ці рядки:
+[[d1_databases]]
+binding = "DB"
+database_name = "ai-drakon-saas"
+database_id = "743d5bb0-d09d-4dcc-8329-8ebae8d533f4"
+```
+
+`APPWRITE_API_KEY` буде secret (не в wrangler.toml) — вже налаштовано через `wrangler secret put`.
+
+---
+
+## Частина 3: Appwrite schema — `billing_profiles` collection
+
+### 3a. `infrastructure/appwrite/setup.mjs`
+
+Прочитай файл спочатку. Додати `int` helper і `billing_profiles` колекцію.
+
+Після рядка `const dt = ...` додати:
+```javascript
+const int = (key, required = true, opts = {}) =>
+  ({ kind: "integer", body: { key, required, ...opts } });
+```
+
+Після `await createCollection("audit_log", ...)` додати:
+```javascript
+// billing_profiles: server-only (documentSecurity=false), доступ лише через Admin API key
+await createCollection("billing_profiles", "Billing Profiles", false, [
+  str("userId", 36),
+  { kind: "enum", body: { key: "planType", elements: ["free", "pro", "enterprise"], required: true } },
+  int("llmQuotaMonthly"),
+  int("llmConsumed"),
+  dt("updatedAt", false),
+]);
+```
+
+### 3b. `infrastructure/appwrite/schema.ts`
+
+Додати `BillingProfile` interface після `AuditLogEntry`:
+```typescript
+export interface BillingProfile {
+  userId: string;          // = Appwrite account $id (також є document $id)
+  planType: "free" | "pro" | "enterprise";
+  llmQuotaMonthly: number;
+  llmConsumed: number;
+  updatedAt?: string;
+}
+```
+
+Додати `BILLING_PROFILES: "billing_profiles"` до `COLLECTIONS`.
+
+---
+
+## Частина 4: Sync до .lovable/
+
+```bash
+cp src/context/ProjectContext.tsx .lovable/src/context/ProjectContext.tsx
+cp infrastructure/appwrite/setup.mjs .lovable/infrastructure/appwrite/setup.mjs 2>/dev/null || true
+cp infrastructure/appwrite/schema.ts .lovable/infrastructure/appwrite/schema.ts 2>/dev/null || true
+```
+
+---
+
+## TypeScript check
+
+```bash
+cd /data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/.lovable
+npx tsc --noEmit 2>&1 | head -30
+
+# також перевірити architect-agent-flue окремо:
+cd /data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/services/architect-agent-flue
+npx tsc --noEmit 2>&1 | head -30
+```
+
+Виправити всі TypeScript помилки.
+
+---
+
+## Commit + Push
+
+```bash
+cd /data/data/com.termux/files/home/workspace/ai-drakon-scaffolder
+
+git add \
+  src/context/ProjectContext.tsx \
+  .lovable/src/context/ProjectContext.tsx \
+  services/architect-agent-flue/src/middleware/auth.ts \
+  services/architect-agent-flue/src/middleware/quota.ts \
+  services/architect-agent-flue/tools/project-pipelines.ts \
+  services/architect-agent-flue/src/index.ts \
+  services/architect-agent-flue/wrangler.toml \
+  infrastructure/appwrite/setup.mjs \
+  infrastructure/appwrite/schema.ts \
+  development/TASKS.md
+
+git commit -m "feat(auth): user-scoped localStorage + architect-flue → Appwrite billing, project isolation"
+git push origin main
+```
+
+---
+
+## Diary
+
+```
+SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+D1-removed|commit:<hash>|★★★
+```
+
+---
+
+## ВАЖЛИВО після merge (Claude виконає вручну)
+
+Після push Claude запустить:
+1. `APPWRITE_API_KEY=... node infrastructure/appwrite/setup.mjs` — створити billing_profiles колекцію
+2. `cd services/architect-agent-flue && wrangler secret put APPWRITE_API_KEY` — встановити ключ у Worker
+3. `cd services/architect-agent-flue && wrangler deploy` — деплой Worker без D1
