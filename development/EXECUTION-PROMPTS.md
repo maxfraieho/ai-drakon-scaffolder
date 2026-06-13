@@ -262,17 +262,138 @@ grep -rn "Suite\|Garden Bloom\|AI-DRAKON" src/pages/LandingPage.tsx .lovable/src
 
 ---
 
+# ХВИЛЯ 2 — Suite-міст + гартування
+
+> Виконувати ПІСЛЯ блоків A+B. Кожен промпт — самодостатній; виконавець
+> спершу `grep`/`read` згаданих файлів (індекс GitNexus свіжий, можна
+> `mcp__gitnexus__query`). Усі src/ → `.lovable/src/` sync; поза src/ — без.
+
+## TASK-227 — GitHub App + OAuth (заміна PAT для користувачів)
+
+**Контекст:** зараз юзер вставляє PAT (завеликі права, довгоживучий). Ціль
+(дослідження §3): GitHub App + user-to-server токен → Appwrite encrypted.
+
+**Передумова (робить Q вручну, НЕ AGY3):** зареєструвати GitHub App
+(права Contents R/W), отримати Client ID + Client Secret, callback
+`https://aidrakon.tech/auth/github/callback`. Секрети → CF Worker secrets.
+
+**Файли:**
+- `services/architect-agent-flue/src/routes/github-oauth.ts` (новий): маршрути
+  `GET /auth/github/start` (redirect на github.com/login/oauth/authorize з Client ID)
+  та `GET /auth/github/callback` (обмін code→token через Client Secret, запис у
+  Appwrite encrypted attribute `user_profiles.githubToken`).
+- `src/routes/settings.tsx` (+.lovable): у вкладці "Профіль" → секція GitHub:
+  замінити "незабаром" на кнопку "Підключити GitHub" (→ /auth/github/start),
+  показувати статус ✅ Connected (булеве is_configured, НЕ plaintext токен).
+- `infrastructure/appwrite/schema.ts` + `setup.mjs`: поле `githubToken`
+  (encrypted string) у `user_profiles`.
+
+**Кроки:** 1) `mcp__gitnexus__query("user_profiles schema appwrite", repo="ai-drakon-scaffolder")` — знайти схему. 2) Додати encrypted поле. 3) OAuth-маршрути в Worker. 4) UI-кнопка + статус. 5) Усі читачі GitHub-токена (grep `github.token`) перевести на читання з user_profiles, fallback на PAT-поле.
+**Верифікація:** `npx tsc --noEmit`; OAuth-флоу вручну → токен у Appwrite, у відповіді API лише `is_configured`.
+**Коміт:** `feat(github): GitHub App OAuth flow, encrypted token storage (replace PAT)`
+
+## TASK-228 — DRAKON→Bloom deep-link з передачею zone-токена
+
+**Контекст:** з `/knowledge` (ai-drakon) має бути кнопка "Відкрити в Bloom",
+що веде у bloom.aidrakon.tech з токеном доступу до зони.
+
+**Файли:**
+- `src/components/knowledge/KnowledgeZonesList.tsx` (+.lovable): кнопка "Відкрити в Bloom" на картці зони → `https://bloom.aidrakon.tech/zone/{accessCode}` (або з токеном у hash).
+- `src/lib/api.ts` (+.lovable): хелпер `buildBloomZoneUrl(zone)`.
+- (garden, окремо) перевірити що `bloom.aidrakon.tech/zone/{code}` приймає вхід — `grep -rn "zone/" src/` у garden.
+
+**Кроки:** 1) `grep -n "accessCode\|KnowledgeZone" src/lib/api.ts` — структура зони. 2) Додати кнопку + хелпер. 3) Перевірити garden-приймач.
+**Верифікація:** `npx tsc --noEmit`; клік → відкривається зона в Bloom.
+**Коміт:** `feat(suite): DRAKON→Bloom deep-link with zone access`
+
+## TASK-229 — Індикатор здоров'я Зони (Archivist ready/failed/none)
+
+**Файли:**
+- `src/lib/api.ts` (+.lovable): `checkZoneHealth(zoneId): Promise<"ready"|"pending"|"failed">` — HTTP до garden-mcp endpoint зони (health/ping Archivist).
+- `src/components/knowledge/KnowledgeZonesList.tsx` (+.lovable): бейдж стану на картці (зелений ready / жовтий pending / червоний failed), полінг кожні 30с через TanStack Query.
+
+**Верифікація:** `npx tsc --noEmit`; картки зон показують бейдж.
+**Коміт:** `feat(suite): zone health indicator (Archivist status) in /knowledge`
+
+## TASK-232 — Multi-target компіляція (Flue + LangGraph.js)
+
+**Контекст:** `ribosome.ts` має `target` (зараз тільки 'flue'). Додати другий
+target з власним системним промптом.
+
+**Файли:**
+- `services/architect-agent-flue/tools/ribosome.ts`: винести `RIBOSOME_SYSTEM` у мапу `SYSTEM_BY_TARGET: Record<string,string>` (flue + langgraph-js); у `compilePseudocode` обирати промпт за `target`.
+- `src/components/.../CompilerToolbar` (+.lovable, grep знайти): дропдаун вибору target перед Compile.
+- маршрут `/compile`: приймати `target`, передавати в рибосому.
+
+**Верифікація:** `npx tsc --noEmit`; компіляція однієї схеми у 2 таргети дає різний коректний код.
+**Коміт:** `feat(ribosome): multi-target compilation (flue + langgraph-js)`
+**Залежить від:** TASK-225.
+
+## TASK-233 — Цикл авто-перекомпіляції + довгі job через DO
+
+**Контекст:** довгі компіляції впираються в CPU-ліміт Worker (30с). Є
+`ArchitectJobStore` DO. Винести компіляцію в job-чергу з полінгом статусу.
+
+**Файли:**
+- `services/architect-agent-flue/src/index.ts`: `POST /compile/async` → створює job у `ArchitectJobStore` DO, повертає jobId; `GET /compile/status/:jobId` → статус+результат.
+- `src/lib/graph-pipeline-api.ts` (+.lovable): `compileAsync` + полінг статусу.
+- (опц.) авто-цикл: зміна схеми → debounce → re-export → /compile/async → preview.
+
+**Верифікація:** `npx tsc --noEmit`; довга компіляція не падає по таймауту.
+**Коміт:** `feat(compiler): async compile via ArchitectJobStore DO + status polling`
+**Залежить від:** TASK-225.
+
+## TASK-230 — (Garden) ролі агентів у UI — див. БЛОК C вище
+
+## TASK-235 — Bloom→DRAKON "Створити агента з Зони"
+
+**Файли (garden репо):**
+- кнопка у налаштуваннях зони "Створити агента" → `https://aidrakon.tech/pipelines/new?zoneId={id}&zoneToken={…}`.
+- (ai-drakon) `src/routes/pipelines.tsx` (+.lovable): приймати `zoneId` з query, передвибрати зону як джерело знань рибосоми.
+
+**Верифікація:** `npx tsc --noEmit` обидва репо; флоу зона→агент працює.
+**Коміт:** `feat(suite): Bloom→DRAKON create-agent-from-zone`
+**Залежить від:** TASK-225, TASK-228.
+
+## TASK-236 — Єдиний обмін токенами (SSO Suite)
+
+**Контекст:** owner-token Bloom ↔ zone-secret DRAKON. Єдина точка обміну,
+щоб не передавати токени в URL.
+
+**Файли:**
+- `services/architect-agent-flue/src/routes/token-exchange.ts` (новий): `POST /suite/token-exchange` — приймає сесію Appwrite, повертає короткоживучий zone-токен (HMAC-JWT, як `generateJWT` у worker-mcp-drakon.js).
+- garden Worker: приймати цей токен для доступу до зони.
+
+**Верифікація:** `npx tsc --noEmit`; токен не світиться в URL/UI.
+**Коміт:** `feat(suite): unified token exchange (SSO between Bloom and DRAKON)`
+**Залежить від:** TASK-227, TASK-228.
+
+## TASK-234c — Stripe webhook (вмикати КОЛИ є платні користувачі)
+
+**Файли:**
+- `services/architect-agent-flue/src/routes/stripe-webhook.ts` (новий): `POST /billing/stripe-webhook` — перевірка підпису Stripe → оновлення `planType` у `billing_profiles` через Appwrite Admin client.
+- `src/routes/settings.tsx` (+.lovable): сторінка `/settings/billing` з вибором плану + Stripe Checkout.
+
+**Передумова Q:** Stripe акаунт, ключі → CF secrets.
+**Верифікація:** `npx tsc --noEmit`; test webhook → planType оновлюється.
+**Коміт:** `feat(billing): Stripe webhook → plan upgrade`
+**Залежить від:** TASK-234a/b. **НЕ робити, доки немає попиту.**
+
+---
+
 ## Зведена черговість
 
 ```
-A (P0): TASK-224 → TASK-225 → TASK-226        ← компілятор тримає обіцянку
-B (P0-гігієна): TASK-234a → TASK-234b          ← білінг-ґрунт (без Stripe)
-C (P1, за згодою Q): TASK-230                   ← ролі Garden-агентів
-D (P1-P3): TASK-237                             ← лендинг (після A)
+A (P0): TASK-224 ✅ → TASK-225 → TASK-226        ← компілятор тримає обіцянку
+B (P0-гігієна): TASK-234a → TASK-234b            ← білінг-ґрунт (без Stripe)
+C (P1, за згодою Q): TASK-230                     ← ролі Garden-агентів
+D (P1-P3): TASK-237                               ← лендинг (після A)
+Хвиля 2 (Suite+гартування): TASK-227 → 228 → 229 → 232 → 233 → 235 → 236
+Останнє (за попитом): TASK-234c (Stripe)
 ```
 
-Stripe (TASK-234c) і Suite-міст (TASK-228/229/235/236 зі стратегії) —
-наступна хвиля, коли A+B живі та з'являться користувачі.
+Принцип: спершу A+B (цінність окремих сервісів), потім Хвиля 2 (міст Suite),
+Stripe — лише коли з'являться платні користувачі.
 
 ## Семантичні зв'язки
 
