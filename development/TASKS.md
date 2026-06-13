@@ -22225,7 +22225,7 @@ Entry: "SESSION:2026-06-10|TASK-201:github-token-persistence|commit:<hash>|★�
 
 ---
 
-## [ ] TASK-202: unified WorkspacePage
+## [x] TASK-202: unified WorkspacePage
 
 **De zapuskaty:** !!IMPORTANT!! Run locally on AGY3 Termux. Edit files in `~/workspace/ai-drakon-scaffolder/src/`. Then commit + push + scp to .lovable/.
 
@@ -22570,7 +22570,7 @@ Diary: SESSION:DATE|TASK-207:frontend-jwt|commit:<hash>|★★★
 Push: git push origin main
 Diary: SESSION:DATE|TASK-208:quota-middleware|commit:<hash>|★★★
 
-[ ] TASK-209: llm-client.ts — читати PROXY_URL/PROXY_TOKEN з env замість хардкоду
+[x] TASK-209: llm-client.ts — читати PROXY_URL/PROXY_TOKEN з env замість хардкоду
 !!IMPORTANT!! Run locally on Termux у ~/workspace/ai-drakon-scaffolder, NO SSH. Спочатку git pull origin main.
 Мета: прибрати hardcoded URL з llm-client.ts в усіх трьох Flue workers. URL і токен мають читатись з env (wrangler.toml [vars] або CF Secrets).
 Що зробити:
