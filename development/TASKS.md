@@ -23486,3 +23486,31 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 1. `APPWRITE_API_KEY=... node infrastructure/appwrite/setup.mjs` — створити billing_profiles колекцію
 2. `cd services/architect-agent-flue && wrangler secret put APPWRITE_API_KEY` — встановити ключ у Worker
 3. `cd services/architect-agent-flue && wrangler deploy` — деплой Worker без D1
+
+---
+
+[x] TASK-224: Рибосома — заборонити хардкод моделі у згенерованому коді (зроблено Claude)
+
+[ ] TASK-225: Зони Знань як паливо рибосоми (MCP-proxy → kbContext у compilePseudocode)
+
+**!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder`**
+**ПОВНА СПЕЦИФІКАЦІЯ: `development/EXECUTION-PROMPTS.md` → секція TASK-225. Прочитай її ПЕРШОЮ.**
+Коротко: додати `kbContext?: string` у RibosomeInput (services/architect-agent-flue/tools/ribosome.ts), вставляти в userPrompt; новий `tools/mcp-proxy.ts` з `fetchZoneContext(env, zoneId, query)`; маршрут /compile приймає zoneId. Файли поза src/ — БЕЗ .lovable sync. `npx tsc --noEmit` чистий. Коміт: `feat(ribosome): wire knowledge zone as compilation fuel via MCP-proxy`. Diary: `SESSION:$(date +%Y-%m-%d)|TASK-225:done|commit:$(git rev-parse --short HEAD)`.
+
+[ ] TASK-226: Onboarding 3 кроки + пісочниця з демо-схемою
+
+**!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder`**
+**ПОВНА СПЕЦИФІКАЦІЯ: `development/EXECUTION-PROMPTS.md` → секція TASK-226. Прочитай її ПЕРШОЮ.**
+Коротко: OnboardingWizard.tsx (3 кроки), onboarding.ts (isOnboarded/markOnboarded), onboarding-demo.ts (демо ThreatClassifier), інтеграція у ProjectContext порожній стан. ВСІ src/ → `cp src/X .lovable/src/X`. `npx tsc --noEmit` чистий. Коміт: `feat(onboarding): 3-step wizard + sandbox demo project`. Diary запис.
+
+[ ] TASK-234a: Білінг — мапа лімітів планів + поле periodStart
+
+**!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder`**
+**ПОВНА СПЕЦИФІКАЦІЯ: `development/EXECUTION-PROMPTS.md` → секція TASK-234a. Прочитай її ПЕРШОЮ.**
+Коротко: новий `services/architect-agent-flue/src/lib/plans.ts` (PLAN_LIMITS free/pro/enterprise); quota.ts бере ліміт з PLAN_LIMITS; setup.mjs+schema.ts додати periodStart. Поза src/ — БЕЗ sync. `npx tsc --noEmit` чистий. Коміт: `feat(billing): plan limits map + periodStart field`. Diary запис.
+
+[ ] TASK-234b: Білінг — Cron місячного скидання квоти
+
+**!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder`**
+**ПОВНА СПЕЦИФІКАЦІЯ: `development/EXECUTION-PROMPTS.md` → секція TASK-234b. Прочитай її ПЕРШОЮ.**
+Коротко: wrangler.toml `[triggers] crons=["0 0 1 * *"]`; index.ts `scheduled()` handler ітерує billing_profiles → llmConsumed=0, periodStart=now. Поза src/ — БЕЗ sync. `npx tsc --noEmit` чистий. Коміт: `feat(billing): monthly quota reset via Cron`. Diary запис. Залежить від TASK-234a.
