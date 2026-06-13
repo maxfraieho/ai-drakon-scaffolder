@@ -118,10 +118,10 @@ regardless of theme-class plumbing elsewhere in the app. */
 .dark {
 --radius: 0.5rem;
 /* Precision Dark — backgrounds */
---bg-base: #111318;
---bg-surface: #1a1b21;
---bg-elevated: #282a2f;
---bg-overlay: #33353a;
+--bg-base: #0f1419;
+--bg-surface: #161e23;
+--bg-elevated: #1e282d;
+--bg-overlay: #263036;
 
 /* Borders */
 --border-subtle: rgba(255, 255, 255, 0.06);
