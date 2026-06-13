@@ -44,6 +44,8 @@ const str = (key, size, required = true, opts = {}) =>
 const en = (key, elements, required = true) =>
   ({ kind: "enum", body: { key, elements, required } });
 const dt = (key, required = true) => ({ kind: "datetime", body: { key, required } });
+const int = (key, required = true, opts = {}) =>
+  ({ kind: "integer", body: { key, required, ...opts } });
 
 async function createCollection(id, name, documentSecurity, attrs) {
   console.log(`Колекція ${id}:`);
@@ -83,6 +85,15 @@ await createCollection("zone_secrets", "Zone Secrets", false, [
 await createCollection("audit_log", "Audit Log", true, [
   str("teamId", 36), str("userId", 36), str("action", 64),
   str("details", 4096, false), dt("ts"),
+]);
+
+// billing_profiles: server-only (documentSecurity=false), доступ лише через Admin API key
+await createCollection("billing_profiles", "Billing Profiles", false, [
+  str("userId", 36),
+  { kind: "enum", body: { key: "planType", elements: ["free", "pro", "enterprise"], required: true } },
+  int("llmQuotaMonthly"),
+  int("llmConsumed"),
+  dt("updatedAt", false),
 ]);
 
 console.log("✅ Міграцію Appwrite завершено");

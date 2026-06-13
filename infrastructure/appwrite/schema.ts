@@ -16,6 +16,7 @@ export const COLLECTIONS = {
   TEAM_SETTINGS: "team_settings",
   ZONE_SECRETS: "zone_secrets",
   AUDIT_LOG: "audit_log",
+  BILLING_PROFILES: "billing_profiles",
 } as const;
 
 /**
@@ -66,6 +67,18 @@ export interface AuditLogEntry {
   action: string;          // "zone.created" | "pipeline.run" | "billing.upgraded" | ...
   details: string;         // JSON-рядок
   ts: string;              // ISO 8601
+}
+
+/**
+ * billing_profiles — білінг профілі користувачів.
+ * Permissions: ЖОДНИХ клієнтських ролей. Доступ ТІЛЬКИ через Admin API key.
+ */
+export interface BillingProfile {
+  userId: string;          // Appwrite account $id (також є document $id)
+  planType: "free" | "pro" | "enterprise";
+  llmQuotaMonthly: number;
+  llmConsumed: number;
+  updatedAt?: string;
 }
 
 /** Ліміти тарифних планів (seed-дані для billing_profiles у D1) */
