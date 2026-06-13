@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Bot, Eye, EyeOff, Loader2, KeyRound } from "lucide-react";
+import { Bot, Eye, EyeOff, Loader2, KeyRound, UserPlus } from "lucide-react";
+import { ID } from "appwrite";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,11 +13,31 @@ import { account } from "@/lib/appwrite";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setErrorMsg(null);
+    try {
+      await account.create(ID.unique(), username, password, name || undefined);
+      await account.createEmailPasswordSession(username, password);
+      const jwtObj = await account.createJWT();
+      setAccessToken(jwtObj.jwt);
+      navigate({ to: "/diagrams", replace: true });
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Помилка реєстрації");
+      setPassword("");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +100,6 @@ export function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-zinc-950 px-4 overflow-hidden">
-      {/* Background ambient light effects */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-1/4 left-1/3 w-72 h-72 bg-amber-500/5 rounded-full blur-3xl pointer-events-none" />
 
@@ -94,72 +114,149 @@ export function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <form className="space-y-4" onSubmit={handleLogin}>
-            <div className="space-y-2">
-              <Label htmlFor="username" className="text-zinc-300 font-medium">Логін</Label>
-              <Input
-                id="username"
-                type="text"
-                autoComplete="username"
-                placeholder="Логін або Email"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
-                required
-              />
-            </div>
+          <div className="flex rounded-lg border border-zinc-800 overflow-hidden">
+            <button
+              type="button"
+              onClick={() => { setMode("login"); setErrorMsg(null); }}
+              className={`flex-1 py-1.5 text-sm font-medium transition-colors ${mode === "login" ? "bg-indigo-600 text-white" : "text-zinc-400 hover:text-zinc-200"}`}
+            >
+              Увійти
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode("register"); setErrorMsg(null); }}
+              className={`flex-1 py-1.5 text-sm font-medium transition-colors ${mode === "register" ? "bg-indigo-600 text-white" : "text-zinc-400 hover:text-zinc-200"}`}
+            >
+              <UserPlus className="h-3.5 w-3.5 inline mr-1" />
+              Реєстрація
+            </button>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-zinc-300 font-medium">Пароль</Label>
-              <div className="relative">
+          {mode === "register" ? (
+            <form className="space-y-4" onSubmit={handleRegister}>
+              <div className="space-y-2">
+                <Label htmlFor="reg-name" className="text-zinc-300 font-medium">Ім'я (необов'язково)</Label>
                 <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 pr-10"
+                  id="reg-name"
+                  type="text"
+                  placeholder="Ваше ім'я"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="reg-email" className="text-zinc-300 font-medium">Email</Label>
+                <Input
+                  id="reg-email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="email@example.com"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
                   required
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
               </div>
-            </div>
-
-            {errorMsg ? (
-              <p role="alert" className="text-sm text-red-500 font-medium bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
-                {errorMsg}
-              </p>
-            ) : null}
-
-            <Button 
-              className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/10 transition-all duration-200" 
-              type="submit" 
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Вхід...
-                </>
-              ) : "Увійти"}
-            </Button>
-          </form>
-
-          <div className="mt-4 pt-4 border-t border-zinc-800/60">
-            <div className="flex gap-2.5 p-3 rounded-lg bg-zinc-950/40 border border-zinc-850 text-xs text-zinc-400">
-              <KeyRound className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-semibold text-zinc-300">Bearer Token:</span> Використовуйте <code className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-200 font-mono">drakon-mcp-2026</code> у полі Пароль для прямого входу.
+              <div className="space-y-2">
+                <Label htmlFor="reg-password" className="text-zinc-300 font-medium">Пароль</Label>
+                <div className="relative">
+                  <Input
+                    id="reg-password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="new-password"
+                    placeholder="Мінімум 8 символів"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 pr-10"
+                    required
+                    minLength={8}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
               </div>
-            </div>
-          </div>
+              {errorMsg ? (
+                <p role="alert" className="text-sm text-red-500 font-medium bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
+                  {errorMsg}
+                </p>
+              ) : null}
+              <Button
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/10 transition-all duration-200"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Реєстрація...</>
+                ) : "Зареєструватися"}
+              </Button>
+            </form>
+          ) : (
+            <form className="space-y-4" onSubmit={handleLogin}>
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-zinc-300 font-medium">Логін</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  autoComplete="username"
+                  placeholder="Логін або Email"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-zinc-300 font-medium">Пароль</Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-zinc-950/80 border-zinc-800 text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-indigo-500/30 focus-visible:border-indigo-500 pr-10"
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+              {errorMsg ? (
+                <p role="alert" className="text-sm text-red-500 font-medium bg-red-500/10 border border-red-500/20 px-3 py-2 rounded-lg">
+                  {errorMsg}
+                </p>
+              ) : null}
+              <Button
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-md shadow-indigo-600/10 transition-all duration-200"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Вхід...</>
+                ) : "Увійти"}
+              </Button>
+              <div className="mt-4 pt-4 border-t border-zinc-800/60">
+                <div className="flex gap-2.5 p-3 rounded-lg bg-zinc-950/40 border border-zinc-850 text-xs text-zinc-400">
+                  <KeyRound className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-semibold text-zinc-300">Bearer Token:</span> Використовуйте <code className="px-1 py-0.5 rounded bg-zinc-800 text-zinc-200 font-mono">drakon-mcp-2026</code> у полі Пароль для прямого входу.
+                  </div>
+                </div>
+              </div>
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>

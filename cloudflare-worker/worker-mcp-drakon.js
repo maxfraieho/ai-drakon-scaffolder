@@ -168,6 +168,24 @@ async function verifyJWT(token, secret) {
   }
 }
 
+async function verifyAppwriteJwt(token) {
+  try {
+    const resp = await fetch('https://fra.cloud.appwrite.io/v1/account', {
+      headers: {
+        'X-Appwrite-Project': '6a23420a003a04b4997b',
+        'X-Appwrite-JWT': token,
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) return null;
+    const user = await resp.json();
+    return user && user.$id ? user : null;
+  } catch {
+    return null;
+  }
+}
+
 async function verifyOwnerAuth(request, env) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
@@ -179,11 +197,19 @@ async function verifyOwnerAuth(request, env) {
     return { role: 'owner', sub: 'mcp-agent' };
   }
 
-  // JWT (для фронтенду)
-  const payload = await verifyJWT(token, env.JWT_SECRET);
-  if (!payload || payload.role !== 'owner') return null;
+  // Worker JWT (для owner login через /auth/login)
+  try {
+    const payload = await verifyJWT(token, env.JWT_SECRET);
+    if (payload && payload.role === 'owner') return payload;
+  } catch (_) {}
 
-  return payload;
+  // Appwrite JWT (для email-авторизованих користувачів)
+  const appwriteUser = await verifyAppwriteJwt(token);
+  if (appwriteUser) {
+    return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
+  }
+
+  return null;
 }
 
 function s3UriEncode(str) {
