@@ -1,17 +1,16 @@
 import { NotebookLMChatPanel } from "@/components/notebooklm/NotebookLMChatPanel";
-import { Notebook, Info } from "lucide-react";
+import { Notebook, Info, BookOpen } from "lucide-react";
 
 export function NotebookLMPage() {
   return (
     <div className="flex flex-col h-full min-h-0 bg-background text-foreground">
-      <div className="px-4 pt-4 pb-2 shrink-0">
-        <h1 className="text-2xl font-semibold flex items-center gap-2">
-          <Notebook className="w-6 h-6 text-indigo-400" /> Knowledge Agents
-        </h1>
-        <div className="mt-3 flex items-center gap-2 p-3 rounded-lg bg-muted border border-blue-500/20 text-blue-400 text-xs">
-          <Info className="w-4 h-4 shrink-0" />
-          <span>Connect to knowledge zones via Garden Gateway to access vector-indexed materials.</span>
+      {/* Page Header */}
+      <div className="border-b border-white/5 px-6 py-5 shrink-0">
+        <div className="flex items-center gap-3 mb-1">
+          <BookOpen className="h-5 w-5 text-teal-400" />
+          <h1 className="text-lg font-semibold text-white">Knowledge Agents</h1>
         </div>
+        <p className="text-sm text-gray-400">Archivist AI агенти — чат з базами знань ваших зон</p>
       </div>
       <div className="flex-1 min-h-0 p-4">
         <NotebookLMChatPanel />
