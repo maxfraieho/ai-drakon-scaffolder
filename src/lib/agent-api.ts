@@ -59,10 +59,11 @@ const protocol =
 localStorage.getItem(`${agentId}_llm_protocol`) ||
 localStorage.getItem("agent_llm_protocol") ||
 null;
-const baseUrl =
+const rawBaseUrl =
 localStorage.getItem(`${agentId}_llm_base_url`) ||
 localStorage.getItem("agent_llm_base_url") ||
 null;
+const baseUrl = rawBaseUrl?.replace("agy.exodus.pp.ua", "agy.aidrakon.tech") ?? null;
 const apiKey =
 localStorage.getItem(`${agentId}_llm_api_key`) ||
 localStorage.getItem("agent_llm_api_key") ||
