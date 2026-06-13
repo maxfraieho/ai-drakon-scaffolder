@@ -63,6 +63,8 @@ return (
 
 function SettingsRoute() {
 const navigate = useNavigate();
+const { user, isLoading: authLoading } = useAuth();
+const isAdmin = user?.email === 'claude.1@pmusic.com.ua';
 const { activeProject } = useProject();
 const activeProjectGithub = activeProject?.github;
 const [settings, setSettings] = useState<AppSettings>(() => readSettings());
@@ -85,16 +87,6 @@ const [mcpKey, setMcpKey] = useState<string | null>(null);
 const [mcpKeyMasked, setMcpKeyMasked] = useState<string | null>(null);
 const [isLoadingMcpKey, setIsLoadingMcpKey] = useState(false);
 const [isGeneratingMcpKey, setIsGeneratingMcpKey] = useState(false);
-
-const { user, isLoading: authLoading } = useAuth();
-const isAdmin = user?.email === 'claude.1@pmusic.com.ua';
-
-if (authLoading) {
-  return <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
-}
-if (!user) {
-  return <Navigate to="/login" replace />;
-}
 
 useEffect(() => {
   // Load current MCP key on mount
@@ -324,6 +316,13 @@ if (!ok) return;
 localStorage.removeItem("drakon.diagrams");
 toast.success("Локальний кеш діаграм очищено");
 };
+
+if (authLoading) {
+  return <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+}
+if (!user) {
+  return <Navigate to="/login" replace />;
+}
 
 return (
 <div className="h-full overflow-y-auto bg-background">
