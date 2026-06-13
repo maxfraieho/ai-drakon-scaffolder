@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { readSettings } from "@/lib/settings-storage";
 import { setAccessToken } from "@/lib/auth";
+import { account } from "@/lib/appwrite";
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -28,6 +29,22 @@ export function LoginPage() {
       navigate({ to: "/diagrams", replace: true });
       setIsSubmitting(false);
       return;
+    }
+
+    if (username.includes("@")) {
+      try {
+        await account.createEmailPasswordSession(username, password);
+        const jwtObj = await account.createJWT();
+        setAccessToken(jwtObj.jwt);
+        navigate({ to: "/diagrams", replace: true });
+        return;
+      } catch (err) {
+        setErrorMsg(err instanceof Error ? err.message : "Невірний логін або пароль");
+        setPassword("");
+        return;
+      } finally {
+        setIsSubmitting(false);
+      }
     }
 
     try {

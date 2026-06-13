@@ -61,6 +61,7 @@ import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { CommandPalette } from "@/components/workspace/CommandPalette";
 import { DevCyclePanel } from "@/components/workspace/DevCyclePanel";
 import { ProjectSelector } from "@/components/workspace/ProjectSelector";
+import { useAuth } from "@/context/AuthContext";
 import { useProject } from "@/context/ProjectContext";
 import { AgentStatusBar } from "@/components/workspace/AgentStatusBar";
 import { cn } from "@/lib/utils";
@@ -150,6 +151,7 @@ interface WorkspaceShellProps {
 export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout: appwriteLogout } = useAuth();
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -186,7 +188,12 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await appwriteLogout();
+    } catch (e) {
+      console.error("Appwrite logout failed:", e);
+    }
     clearAccessToken();
     navigate({ to: "/login", replace: true });
   };

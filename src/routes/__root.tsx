@@ -130,35 +130,39 @@ href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wg
 );
 }
 
+import { AuthProvider } from "@/context/AuthContext";
+
 function RootComponent() {
-const { queryClient } = Route.useRouteContext();
+  const { queryClient } = Route.useRouteContext();
 
-useEffect(() => { client.ping(); }, []);
+  useEffect(() => { client.ping(); }, []);
 
 
-const location = useLocation();
-const hideChrome =
-location.pathname === "/login" || location.pathname.startsWith("/pipeline/");
+  const location = useLocation();
+  const hideChrome =
+    location.pathname === "/login" || location.pathname.startsWith("/pipeline/");
 
-return (
-<ThemeProvider>
-<QueryClientProvider client={queryClient}>
-<ProjectProvider>
-<TooltipProvider delayDuration={200}>
-{hideChrome ? (
-<div className="min-h-screen bg-[var(--bg-base)]">
-<Outlet />
-</div>
-):(
-<WorkspaceShell>
-<Outlet />
-</WorkspaceShell>
-)}
-<Toaster position="top-center" richColors closeButton />
-</TooltipProvider>
-</ProjectProvider>
-</QueryClientProvider>
-</ThemeProvider>
-);
+  return (
+    <ThemeProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <ProjectProvider>
+            <TooltipProvider delayDuration={200}>
+              {hideChrome ? (
+                <div className="min-h-screen bg-[var(--bg-base)]">
+                  <Outlet />
+                </div>
+              ) : (
+                <WorkspaceShell>
+                  <Outlet />
+                </WorkspaceShell>
+              )}
+              <Toaster position="top-center" richColors closeButton />
+            </TooltipProvider>
+          </ProjectProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
+  );
 }
 

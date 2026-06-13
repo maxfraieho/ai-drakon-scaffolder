@@ -31,6 +31,7 @@ import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/theme-provider";
 import { clearAccessToken } from "@/lib/auth";
+import { useAuth } from "@/context/AuthContext";
 
 type NavItem = {
 to: "/diagrams" | "/github" | "/docs" | "/settings";
@@ -49,6 +50,7 @@ const NAV: NavItem[] = [
 export function AppHeader() {
 const location = useLocation();
 const navigate = useNavigate();
+const { logout: appwriteLogout } = useAuth();
 const [mobileOpen, setMobileOpen] = useState(false);
 const [agentsOpen, setAgentsOpen] = useState(false);
 const { theme, setTheme } = useTheme();
@@ -57,7 +59,12 @@ const toggleTheme = () => {
 setTheme(theme === "dark" ? "light" : "dark");
 };
 
-const logout = () => {
+const logout = async () => {
+try {
+await appwriteLogout();
+} catch (e) {
+console.error("Appwrite logout failed:", e);
+}
 clearAccessToken();
 navigate({ to: "/login", replace: true });
 };
