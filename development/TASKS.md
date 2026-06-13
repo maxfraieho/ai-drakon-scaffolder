@@ -22858,7 +22858,7 @@ Diary: 'SESSION:DATE|TASK-219:zone-diagnosis|findings:SUMMARY|star star star'
 
 ---
 
-## [ ] TASK-223: Settings architecture — admin/user split + Appwrite auth fix
+## [x] TASK-223: Settings architecture — admin/user split + Appwrite auth fix
 
 **!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/`**
 **After every file change: cp src/X .lovable/src/X**
