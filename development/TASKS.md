@@ -22856,7 +22856,223 @@ Diary: 'SESSION:DATE|TASK-219:zone-diagnosis|findings:SUMMARY|star star star'
 
 [x] TASK-222: Data isolation + remove D1 from architect-agent-flue → Appwrite
 
-**Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/`**
+---
+
+## [ ] TASK-223: Settings architecture — admin/user split + Appwrite auth fix
+
+**!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/`**
+**After every file change: cp src/X .lovable/src/X**
+
+### Проблема
+1. `settings.tsx` використовує `hasClientJwt()` — стара auth система, BROKEN після Appwrite (TASK-218)
+2. GitHub PAT, agent URLs, n8n API key видно ВСІМ юзерам — немає розподілу admin/user
+3. `DEFAULT_SETTINGS.github.owner = "maxfraieho"` і `repo = "drakon-setup-hub"` — нові юзери бачать репо власника
+4. MCP секція використовує `localStorage.getItem("jwt")` → BROKEN (цей ключ очищається при логіні з TASK-222)
+
+### Файли для змін
+- `src/routes/settings.tsx` + `.lovable/src/routes/settings.tsx`
+- `src/lib/settings-storage.ts` + `.lovable/src/lib/settings-storage.ts`
+
+---
+
+### Зміна 1: settings-storage.ts — прибрати дефолти власника
+
+У `DEFAULT_SETTINGS` замінити:
+```ts
+github: {
+  owner: "",          // було: "maxfraieho"
+  repo: "",           // було: "drakon-setup-hub"
+  branch: "main",
+  token: "",
+},
+```
+
+---
+
+### Зміна 2: settings.tsx — замінити auth check
+
+**Видалити:**
+```tsx
+import { hasClientJwt } from "@/lib/route-auth";
+// ...
+if (!hasClientJwt()) {
+  return <Navigate to="/login" replace />;
+}
+```
+
+**Замінити на (на початку функції `SettingsRoute`, після існуючих useState):**
+```tsx
+const { user, isLoading: authLoading } = useAuth();
+const isAdmin = user?.email === 'claude.1@pmusic.com.ua';
+
+if (authLoading) {
+  return <div className="flex h-full items-center justify-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+}
+if (!user) {
+  return <Navigate to="/login" replace />;
+}
+```
+
+---
+
+### Зміна 3: settings.tsx — нова вкладка "Профіль" + скривання admin-вкладок
+
+**3а. TabsList** — замінити повністю (зараз `md:grid-cols-7`):
+```tsx
+<TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:w-auto md:px-0">
+  <TabsTrigger value="profile" className="shrink-0 whitespace-nowrap">Профіль</TabsTrigger>
+  <TabsTrigger value="mcp" className="shrink-0 whitespace-nowrap">MCP Access</TabsTrigger>
+  {isAdmin && <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="minio" className="shrink-0 whitespace-nowrap">MinIO</TabsTrigger>}
+  {isAdmin && <TabsTrigger value="app" className="shrink-0 whitespace-nowrap">Додаток</TabsTrigger>}
+</TabsList>
+```
+
+**3б. Додати defaultValue="profile" до `<Tabs>`:**
+```tsx
+<Tabs defaultValue="profile" className="space-y-4">
+```
+
+**3в. TabsContent для "profile"** — вставити ПЕРЕД існуючим `<TabsContent value="github">`:
+```tsx
+<TabsContent value="profile" className="pb-20 md:pb-0">
+  <div className="space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>Акаунт</CardTitle>
+        <CardDescription>Інформація про ваш обліковий запис</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="grid gap-1">
+          <Label className="text-xs text-muted-foreground">Ім'я</Label>
+          <p className="text-sm font-medium">{user?.name || "—"}</p>
+        </div>
+        <div className="grid gap-1">
+          <Label className="text-xs text-muted-foreground">Email</Label>
+          <p className="text-sm font-medium">{user?.email || "—"}</p>
+        </div>
+        {isAdmin && (
+          <div className="rounded-md bg-amber-500/10 border border-amber-500/20 px-3 py-2 text-xs text-amber-600 dark:text-amber-400">
+            Адміністратор платформи — додаткові вкладки доступні у меню вище.
+          </div>
+        )}
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>GitHub</CardTitle>
+        <CardDescription>Підключення до GitHub для роботи з проектами</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground space-y-1">
+          <p className="font-medium text-foreground">GitHub OAuth — незабаром</p>
+          <p>Підключення особистих репозиторіїв через GitHub OAuth буде доступно у наступному оновленні.</p>
+        </div>
+      </CardContent>
+    </Card>
+
+    <Card>
+      <CardHeader>
+        <CardTitle>Інтерфейс</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-2">
+          <Label htmlFor="profile-theme">Тема</Label>
+          <Select
+            value={settings.app.theme}
+            onValueChange={(value: AppSettings["app"]["theme"]) =>
+              updateSettings((prev) => ({ ...prev, app: { ...prev.app, theme: value } }))
+            }
+          >
+            <SelectTrigger id="profile-theme">
+              <SelectValue placeholder="Оберіть тему" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="system">Системна</SelectItem>
+              <SelectItem value="light">Світла</SelectItem>
+              <SelectItem value="dark">Темна</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <Button onClick={saveSettings} size="sm">Зберегти</Button>
+      </CardContent>
+    </Card>
+  </div>
+</TabsContent>
+```
+
+**3г. Обгорнути існуючі admin TabsContent в `{isAdmin && (...)}`:
+
+Кожен з цих `<TabsContent>` обгорнути в `{isAdmin && ( ... )}`:
+- `<TabsContent value="github" ...>`
+- `<TabsContent value="agents">`
+- `<TabsContent value="docs">`
+- `<TabsContent value="n8n">`
+- `<TabsContent value="minio">`
+- `<TabsContent value="app">`
+
+`<TabsContent value="mcp">` — НЕ обгортати (залишається для всіх).
+
+---
+
+### Зміна 4: settings.tsx — MCP секція (зробити admin-only)
+
+MCP Access key використовує старий `localStorage.getItem("jwt")` який очищається при логіні.
+Тимчасово: зробити MCP секцію видимою тільки для адмін (вона вже за вкладкою "MCP Access" — залишити для всіх, але додати примітку якщо не admin):
+
+Всередині `<TabsContent value="mcp">`, одразу після `<CardContent className="space-y-4">` додати:
+```tsx
+{!isAdmin && (
+  <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground">
+    <p>MCP Access Key — доступно після підключення GitHub OAuth.</p>
+  </div>
+)}
+{isAdmin && (
+  // весь існуючий контент MCP секції (isLoadingMcpKey ? ... : mcpKey ? ... : ...)
+)}
+```
+
+**Примітка для AGY3:** Повний існуючий вміст MCP секції (рядки 947-1028 settings.tsx) перемістити всередину `{isAdmin && ( ... )}`.
+
+---
+
+### Зміна 5: settings.tsx — прибрати `<Navigate>` та `hasClientJwt` з кінця функції
+
+Рядок `if (!hasClientJwt()) { return <Navigate to="/login" replace />; }` знаходиться приблизно на рядку 318 — видалити його (auth тепер перевіряється на початку через useAuth).
+
+---
+
+### Верифікація
+```bash
+cd /data/data/com.termux/files/home/workspace/ai-drakon-scaffolder
+grep -n "hasClientJwt" src/routes/settings.tsx   # має бути 0 рядків
+grep -n "isAdmin" src/routes/settings.tsx         # має бути 5+ рядків
+grep -n '"maxfraieho"' src/lib/settings-storage.ts  # має бути 0 рядків
+
+# Синхронізація
+cp src/routes/settings.tsx .lovable/src/routes/settings.tsx
+cp src/lib/settings-storage.ts .lovable/src/lib/settings-storage.ts
+```
+
+### TypeScript перевірка
+```bash
+npx tsc --noEmit 2>&1 | head -30
+```
+
+### Git commit
+```bash
+git add src/routes/settings.tsx src/lib/settings-storage.ts \
+        .lovable/src/routes/settings.tsx .lovable/src/lib/settings-storage.ts
+git commit -m "feat(settings): admin/user split + fix Appwrite auth check + profile tab"
+git push origin main
+```
+
+### Diary
+`SESSION:TASK-223|settings-admin-split|commit:<hash>|hasClientJwt→useAuth|isAdmin-tabs|profile-tab|owner-defaults-removed|★★★`
 
 ---
 
