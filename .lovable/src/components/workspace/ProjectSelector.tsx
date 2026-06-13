@@ -184,7 +184,7 @@ return (
 </div>
 
 <Dialog open={managerOpen} onOpenChange={setManagerOpen}>
-<DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-lg font-mono">
+<DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-lg font-mono rounded-2xl">
 <DialogHeader>
 <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
 Управління проектами
@@ -240,7 +240,7 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
   setAddOpen(o);
   if (o) { setSearchResults([]); setSearchError(""); void loadUserRepos(); }
 }}>
-  <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-md font-mono">
+  <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-md font-mono rounded-2xl">
     <DialogHeader>
       <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
         Додати репозиторій
@@ -250,16 +250,16 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
       </DialogDescription>
     </DialogHeader>
 
-    <div className="flex gap-2">
+    <div className="flex gap-2 items-center">
       <Input
         value={repoInput}
         onChange={(e) => setRepoInput(e.target.value)}
         onKeyDown={(e) => { if (e.key === "Enter") void searchRepo(); }}
         placeholder="maxfraieho/uav-watcher"
-        className="h-7 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)] flex-1"
+        className="border-white/10 bg-white/5 focus:border-teal-400/50 focus:ring-teal-400/20 rounded-xl h-11 flex-1 text-[11px] font-mono"
       />
-      <Button size="sm" variant="outline" onClick={() => void searchRepo()} disabled={searching}
-        className="h-7 font-mono text-[10px] uppercase shrink-0">
+      <Button onClick={() => void searchRepo()} disabled={searching}
+        className="bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded-xl h-11 px-4 text-xs shrink-0">
         {searching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Знайти"}
       </Button>
     </div>
