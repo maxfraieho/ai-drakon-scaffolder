@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from
 "react";
 import { api } from "@/lib/api";
+import { loadUserConfig, saveUserConfig } from "@/lib/user-config-api";
 import { listProjectsArch } from '@/lib/graph-pipeline-api';
 
 export interface ProjectGithub {
@@ -122,10 +123,22 @@ const loadProjects = useCallback(async () => {
     });
     
     const localList = loadLocalProjects();
-    const merged = [
+    let merged = [
       ...parsed,
       ...localList.filter(lp => !parsed.find(wp => wp.slug === lp.slug))
     ];
+    // Load user config from MinIO and merge local projects
+    const remoteConfig = await loadUserConfig().catch(() => null);
+    if (remoteConfig?.localProjects?.length) {
+      const remoteProjects = remoteConfig.localProjects.filter(
+        rp => !merged.find(mp => mp.slug === rp.slug)
+      );
+      if (remoteProjects.length > 0) {
+        const mergedWithRemote = [...merged, ...remoteProjects];
+        saveLocalProjects(mergedWithRemote.filter(p => !parsed.find(wp => wp.slug === p.slug)));
+        merged = mergedWithRemote;
+      }
+    }
     setProjects(merged);
     
     const savedSlug = localStorage.getItem(STORAGE_KEY);
@@ -176,16 +189,25 @@ const loadProjects = useCallback(async () => {
 
 const addLocalProject = useCallback((p: Project) => {
   const list = loadLocalProjects();
+  const updated = list.find(x => x.slug === p.slug) ? list : [...list, p];
   if (!list.find(x => x.slug === p.slug)) {
-    saveLocalProjects([...list, p]);
+    saveLocalProjects(updated);
   }
-  setProjects(prev => prev.find(x => x.slug === p.slug) ? prev : [...prev, p]);
+  setProjects(prev => {
+    const next = prev.find(x => x.slug === p.slug) ? prev : [...prev, p];
+    saveUserConfig({ localProjects: next.filter(x => !x.exists || x.github) });
+    return next;
+  });
 }, []);
 
 const removeLocalProject = useCallback((slug: string) => {
   const list = loadLocalProjects().filter(x => x.slug !== slug);
   saveLocalProjects(list);
-  setProjects(prev => prev.filter(x => x.slug !== slug));
+  setProjects(prev => {
+    const next = prev.filter(x => x.slug !== slug);
+    saveUserConfig({ localProjects: next.filter(x => !x.exists || x.github) });
+    return next;
+  });
   setActiveProjectState(prev => prev?.slug === slug ? null : prev);
 }, []);
 

@@ -2108,6 +2108,33 @@ async function handleAgentHealth(agentId, env) {
 }
 
 
+
+// User config handlers
+async function handleUserConfigGet(request, env) {
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+  const userId = (payload.sub || payload.email || 'default').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const key = `users/${userId}/config.json`;
+  try {
+    const data = await getFromMinIO(env, key);
+    if (!data) return jsonResponse({ success: true, config: null });
+    return jsonResponse({ success: true, config: JSON.parse(data) });
+  } catch (_) {
+    return jsonResponse({ success: true, config: null });
+  }
+}
+
+async function handleUserConfigPut(request, env) {
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+  const userId = (payload.sub || payload.email || 'default').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const key = `users/${userId}/config.json`;
+  let body;
+  try { body = await request.json(); } catch (_) { return errorResponse('Invalid JSON', 400); }
+  await uploadToMinIO(env, key, JSON.stringify(body));
+  return jsonResponse({ success: true });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -2229,6 +2256,11 @@ export default {
         return await handleAgentChat(ssChatMatch[1], request, env, ctx);
       }
       // ─────────────────────────────────────────────────────────────────────
+
+      if (path === '/v1/user/config') {
+        if (method === 'GET') return await handleUserConfigGet(request, env);
+        if (method === 'PUT') return await handleUserConfigPut(request, env);
+      }
 
       const ownerPayload = await verifyOwnerAuth(request, env);
       if (!ownerPayload) {
