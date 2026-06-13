@@ -1,168 +1,448 @@
-# DRAKON Suite — Product Strategy 2026
+---
+tags:
+  - domain:product
+  - status:canonical
+  - format:strategy
+created: 2026-06-13
+updated: 2026-06-13
+tier: 1
+title: "DRAKON Suite — Продуктова стратегія 2026"
+lang: uk
+---
 
-> Verified against codebase via GitNexus 2026-06-13.
+# DRAKON Suite — Продуктова стратегія 2026
+
+> Звірено з кодом через GitNexus 2026-06-13 (свіжі індекси `ai-drakon-scaffolder`
+> @ab51f2c та `garden-seedling-stage` @5526639). Документ задає пріоритети
+> продукту. Технічні специфікації: [[ARCHITECTURE-CORE]] (ядро ai-drakon),
+> [[ARCHITECTURE-SAAS]] (SaaS-обгортка), `docs/КАРТА_СИСТЕМИ.md` (garden).
 
 ---
 
-## Two Services, One Ecosystem
+## 0. Суть за 30 секунд
 
-### Garden Bloom — Knowledge Platform
-**URL:** bloom.aidrakon.tech  
-**Auth:** Single-owner password (OwnerAuthProvider + KV hash). No multi-user — intentional.  
-**Core loop:** Notes → Tags → Graph → Access Zones → Archivist AI chat
+Ми будуємо **дві самостійні цінності, які підсилюють одна одну**:
 
-What it does today (verified):
-- Note editor (EditorPage) + knowledge graph (buildGraphFromNotes/buildStemMap)
-- Access Zones with time-limited tokens (useZoneValidation, checkExpiration, revokeZone)
-- Guest access via zone URL/QR — no auth required for guests (chatNotebookLMGuest)
-- Archivist AI = NotebookLM proxy per zone (handleZoneNotebookLMChat)
-- Chat history per zone (getZoneChats, handleZoneChats)
-- DRAKON diagram editor (DrakonPage, EditorPage)
-- Runtime overview (RuntimeOverview, BloomRuntimeHeader)
-- Admin settings + owner password change (AdminSettingsPage, OwnerSettingsDialog)
-- i18n: EN/UK/FR/DE/IT
+| | **AI-DRAKON** | **Garden Bloom** |
+|---|---|---|
+| Одним рядком | Компілятор візуальних схем у код агентів | Платформа знань + AI-консультант по них |
+| Домен | `aidrakon.tech` | `bloom.aidrakon.tech` |
+| Хто платить | AI-розробник, технічна команда | Дослідник, консультант, викладач, solo-dev |
+| Головна дія | Намалював схему → отримав робочий код агента | Зібрав знання → поділився зоною → AI відповідає по них |
+| Auth | Appwrite (мультикористувацький) | Single-owner пароль + гостьовий доступ по зонах |
 
-**Target user:** Knowledge worker, researcher, consultant, solo dev, teacher.  
-**Standalone value:** PKM + AI Q&A + shareable knowledge portals. No AI coding needed.
+**Ключова теза:** кожен сервіс **повноцінний окремо**. Об'єднання — це не
+залежність, а **підсилення**: знання з Garden Bloom стають "паливом" для
+компілятора AI-DRAKON через спільний механізм **Зон Знань**.
 
----
-
-### AI-DRAKON — Agent Builder
-**URL:** aidrakon.tech  
-**Auth:** Multi-user Appwrite (fra.cloud.appwrite.io, PROJECT_ID: 6a23420a003a04b4997b)  
-**Plan system:** `resolvePlan` (auth.ts) + `quotaMiddleware` (quota.ts)  
-**Core loop:** GitHub repo → Agent → Pipeline → Deploy → MCP endpoint
-
-What it does today (verified):
-- Workspace with sidebar nav (WorkspaceShell)
-- GitHub integration (GitHubAPI, githubHeaders)
-- Agent creation and management (listAgents, getProjectPipeline, saveProjectPipeline)
-- Pipeline editor with SSE execution (ExecutePipelineSSE, ExecuteProjectPipelineSSE)
-- MCP server (handleMcp) — expose agents as MCP tools
-- Knowledge zones (listKnowledgeZones, deleteKnowledgeZone) — gateway to Bloom
-- Knowledge base CRUD (listKB, searchPatterns) — kb-crud.ts
-- Architect agent: Python (architect-agent) + CF Worker (architect-agent-flue)
-- Docs agent with DQL queries (dataview_route.py)
-- Audit log (AuditLogEntry in Appwrite schema)
-- Notes commit handler (HandleNotesCommit)
-
-**Target user:** AI developer, SaaS builder, technical team.  
-**Standalone value:** Build and deploy AI agents from GitHub + external data sources.
+Стратегічний захист бізнесу: **незалежність від фреймворку**. Логіка агента
+живе у DRAKON-схемі (framework-agnostic), код — лише артефакт компіляції. Якщо
+цільовий фреймворк помре — перекомпілюємо в інший, схеми клієнтів не чіпаємо.
 
 ---
 
-## Integration Bridge (Suite)
+## 1. Що ми насправді продаємо
 
-How the two services connect:
-1. Bloom creates an Access Zone → generates zone token (ZoneSecret)
-2. DRAKON stores ZoneSecret in Appwrite schema
-3. DRAKON agent calls `GATEWAY_URL=https://garden-mcp.aidrakon.tech` with zone token
-4. Archivist AI answers queries from the zone's notes
+### 1.1 AI-DRAKON — компілятор, а не редактор діаграм
 
-**The Suite user flow:**
+Редакторів діаграм сотні. Наша цінність — **компіляція візуальної мови DRAKON
+в робочий агентний код**, точність якої забезпечує база знань.
+
+Аналогія ДНК → білок (канонічна, див. [[ARCHITECTURE-CORE]]):
+
 ```
-Bloom: Create notes → Organize in zone → Enable Archivist
-                                     ↓
-DRAKON: Connect zone → Build agent → Pipeline uses zone as knowledge source
-                                     ↓
-         Deploy: MCP endpoint that answers from curated Bloom knowledge
+DRAKON-схема       = ДНК       (єдине джерело істини, не залежить від фреймворку)
+    ↓ export
+Псевдокод          = мРНК      (людино-читаний проміжний формат)
+    ↓ + Зона Знань цільового фреймворку (через MCP)
+Агент-рибосома     = Рибосома  (LLM-агент, що знає цільовий фреймворк)
+    ↓
+Код агента         = Білок     (робочий TypeScript / Python)
 ```
 
----
+Реально працює сьогодні (звірено):
+- **Export mRNA** — кнопка в `CompilerToolbar`, генератор `drakongen.js` +
+  обгортка `src/lib/drakon/pseudocode.ts` (TASK-215).
+- **Рибосома v1** — `services/architect-agent-flue/tools/ribosome.ts`
+  (`compilePseudocode`) + маршрут `POST /compile`; UI-кнопка **Compile**
+  качає `{name}.workflow.ts` (TASK-216/217).
+- **Мультитенантність** — Appwrite auth, per-user шляхи
+  `projects/u/{userId}/{slug}/` у GitHub, білінг у Appwrite (D1 видалено,
+  TASK-222), розподіл admin/user у налаштуваннях (TASK-223).
 
-## UX Design — Standalone vs. Integrated
+Ще НЕ працює (пріоритети нижче): Зони Знань як реальне паливо рибосоми
+(зараз KB хардкод), multi-target компіляція, цикл авто-перекомпіляції.
 
-### Standalone Bloom UX
-- Enter at bloom.aidrakon.tech → owner login or guest zone URL
-- Full PKM: write notes, tag, build graph, navigate with cycles
-- Create zones → share QR → guests chat with Archivist
-- No knowledge of DRAKON required
-- DRAKON diagrams work as embedded flow editors (DrakonPage)
+### 1.2 Garden Bloom — знання + AI-консультант по них
 
-**Friction points to fix (Q3):**
-- Zone dashboard needs overview page (currently per-zone navigation only)
-- Zone analytics missing (chat count, popular notes, last access)
-- "Connect to DRAKON" CTA missing from zone settings
+Garden Bloom — це **персональна база знань (PKM), яку можна перетворити на
+поділювані AI-портали знань**. Користувач збирає нотатки, будує граф зв'язків,
+виділяє частину знань у **Зону** і дає гостям доступ до AI-консультанта
+(**Archivist**), який відповідає тільки по цих знаннях.
 
-### Standalone DRAKON UX
-- Enter at aidrakon.tech → Appwrite login
-- Connect GitHub repo → describe agent → run pipeline
-- MCP endpoint auto-generated per agent
-- Knowledge zones optional (can skip Bloom entirely)
-- Quota enforced per plan tier
+Реально працює сьогодні (звірено через свіжий індекс):
+- **Редактор нотаток + граф знань** — `EditorPage`, `GardenHeader`
+  з cycle-навігацією по графу (`getCycleNavigation`).
+- **Single-owner auth** — `useOwnerAuth` (`OwnerAuthProvider`, `setupPassword`,
+  `login`); пароль-хеш у KV. Мультикористувацькості немає **навмисно**.
+- **Зони доступу** — обмежені в часі (`useZoneValidation.checkExpiration`,
+  `revokeZone`), банер стану `ZoneAccessBanner`.
+- **Archivist AI** — проксі до NotebookLM на зону (`chatNotebookLMGuest`,
+  `getZoneChats`), гостьовий доступ без авторизації по URL/QR.
+- **Colleague chat** — спільна робота людина + AI (`useColleagueChat`).
+- **i18n** — EN/UK/FR/DE/IT. **Runtime overview** — `BloomRuntimeHeader`.
+- **Заготовка n8n** — `_collab/infrastructure/n8n-migration/adapter/` (є
+  фундамент для автоматизацій, поки не в продукті).
 
-**Friction points to fix (Q3):**
-- Zone connection UX (ZoneCreationDialog) is complex — needs guided setup
-- No pipeline templates for first-time users
-- Billing not wired (resolvePlan + quotaMiddleware exist but no Stripe integration)
+> **Візія vs реальність.** Канонічні доки garden (`PROJECT_DESCRIPTION_CANONICAL`,
+> `КАРТА_СИСТЕМИ`) описують амбітну "ОС для агентів" (storage-centric, MinIO як
+> істина, Proposal-модель, Mastra runtime). Це **північна зірка**, а не поточний
+> стан. Продаємо те, що працює: PKM + Зони + Archivist. Proposal-модель і
+> агентний рантайм — це Roadmap, а не обіцянка сьогодні.
 
-### Integrated Suite UX
-- SSO vision: DRAKON JWT carries Bloom owner token → auto-login to Bloom from DRAKON
-- "Open in Bloom" button in /knowledge page → authenticated Bloom session
-- "Build Agent from Zone" button in Bloom zone settings → opens DRAKON with zone pre-wired
-- Zone health indicator in DRAKON (Archivist ready/pending/failed badge)
+### 1.3 Бренд-правило (compliance)
 
-**What needs to be built for Suite UX:**
-1. DRAKON → Bloom deep link with token passthrough
-2. Bloom → DRAKON "Create Agent" button
-3. Zone health polling in DRAKON /knowledge page
-4. Shared session cookie or token exchange endpoint
-
----
-
-## Pricing Strategy
-
-### Recommended Tiers
-
-| Tier | Price | What's Included | Target |
-|------|-------|-----------------|--------|
-| **Free** | $0 | Bloom: 3 zones, 100 notes, no Archivist AI. DRAKON: 1 agent, 10 pipeline runs/mo | Try before buy |
-| **Bloom** | $9/mo | All Bloom: unlimited zones, unlimited notes, Archivist AI, DRAKON diagrams, zone sharing | Knowledge workers |
-| **Builder** | $19/mo | All DRAKON: unlimited agents, GitHub, pipelines, 5 zone connections, MCP endpoints | AI developers |
-| **Suite** | $29/mo | Bloom + Builder + unlimited zone connections + SSO + priority support | Teams building AI products |
-
-### Pricing Rationale
-- Free → Bloom funnel: users discover value in PKM, convert to $9. Clear.
-- Free → DRAKON: 1 agent is useful enough to demo, not enough to build on. Converts to $19.
-- Suite at $29 (was $24): Bloom=$9 + DRAKON=$19 = $28 standalone. Suite at $29 = barely better math but adds SSO + unlimited zones — sells on the integration story, not just price.
-- "Best Value" badge stays on Suite — it's true for teams.
-
-### What NOT to do:
-- Don't make Suite $24 — it signals Bloom is worth only $5, which undervalues the knowledge platform.
-- Don't require Suite for basic zone connections — that blocks trial. Allow 1-2 connections on Builder.
+"NotebookLM" **ніколи** не з'являється в публічному UI. Завжди **Archivist AI** /
+**Knowledge Agent**. Це технічна деталь реалізації, а не назва для користувача.
 
 ---
 
-## Roadmap Q3-Q4 2026
+## 2. Три сценарії використання
 
-### Garden Bloom
-- [ ] Zone dashboard page (all zones overview, stats, last Archivist activity)
-- [ ] Zone analytics (chat count, popular notes, guest sessions)
-- [ ] Zone templates (Research, Product Spec, Meeting Notes)
-- [ ] "Create Agent from Zone" deep link to DRAKON
-- [ ] Public zone pages (SEO-friendly, no auth needed, Archivist limited)
-- [ ] Zone expiry notifications (email when zone expires)
+Чітке розмежування — щоб користувач не платив за те, що йому не потрібно,
+і щоб ми не блокували пробу.
 
-### AI-DRAKON
-- [ ] Pipeline templates (Starter Agent, GitHub Code Q&A, Knowledge Agent)
-- [ ] Zone connection guided setup (replace ZoneCreationDialog with wizard)
-- [ ] Zone health indicator in /knowledge (Archivist ready/failed/none)
-- [ ] Billing integration (Stripe → resolvePlan → quota enforcement)
-- [ ] Usage dashboard (API calls, pipeline runs, zone queries per agent)
-- [ ] DRAKON → Bloom SSO link (token passthrough)
+### Сценарій А — тільки Garden Bloom (знання)
 
-### Cross-Service
-- [ ] Shared token exchange endpoint (Bloom owner token ↔ DRAKON ZoneSecret)
-- [ ] "Open in Bloom" from DRAKON /knowledge
-- [ ] Unified billing portal (one subscription → both services)
-- [ ] Suite onboarding flow (connect Bloom account to DRAKON workspace)
+**Хто:** консультант, дослідник, викладач, аналітик. Не пише код, не потребує AI-агентів.
+
+**Що отримує:**
+- Веде нотатки, будує граф знань, навігує циклами.
+- Виділяє Зони, ділиться QR/URL — клієнти/студенти питають Archivist.
+- Бачить, що питали (історія чатів зони).
+
+**Не бачить:** GitHub, пайплайни, компілятор, агентів. Жодного технічного шуму.
+
+### Сценарій Б — тільки AI-DRAKON (код агентів)
+
+**Хто:** AI-розробник, SaaS-білдер, технічна команда.
+
+**Що отримує:**
+- Малює логіку агента у DRAKON.
+- Компілює у робочий код (`POST /compile`).
+- Отримує MCP-endpoint, підключає агента до своїх інструментів.
+- Може взагалі не торкатись Garden Bloom — використати дефолтні Зони Знань
+  (GitNexus, документація фреймворку) як паливо.
+
+**Не потребує:** ведення власної бази знань. Знання може брати із зовнішніх MCP.
+
+### Сценарій В — Suite (об'єднано)
+
+**Хто:** команда, що будує AI-продукт **на основі власної експертизи**.
+
+**Що отримує:** усе з А + Б, плюс **міст**: власні знання з Garden Bloom стають
+паливом рибосоми AI-DRAKON. Експерт описує знання у Garden → розробник будує
+агента, який відповідає саме з цієї курованої бази, а не з "усього інтернету".
+
+### Таблиця розмежування можливостей
+
+| Можливість | Garden окремо | DRAKON окремо | Suite |
+|---|:---:|:---:|:---:|
+| Нотатки + граф знань | ✅ | — | ✅ |
+| Зони доступу + Archivist | ✅ | — | ✅ |
+| Гостьовий доступ QR/URL | ✅ | — | ✅ |
+| DRAKON-схеми | діаграми | ✅ компіляція | ✅ |
+| Компілятор → код агента | — | ✅ | ✅ |
+| MCP-endpoint агента | — | ✅ | ✅ |
+| Зовнішні Зони Знань (GitNexus, docs) | — | ✅ | ✅ |
+| **Власні знання як паливо агента** | — | — | ✅ **тільки тут** |
+| Мультикористувацькість | — (1 власник) | ✅ Appwrite | ✅ |
 
 ---
 
-## Tech Constraints
+## 3. Користувацькі флоу (крок за кроком)
 
-- Bloom is single-owner by design (OwnerAuthProvider) — NOT changing this. Multi-user via zones (guests).
-- DRAKON is multi-user (Appwrite) — plan enforcement via `resolvePlan` + `quotaMiddleware` already in place, needs Stripe webhook.
-- Both on Cloudflare Pages + Workers — no server infra to manage.
-- Bloom worker handles auth + zone token validation inline.
-- NotebookLM = internal implementation detail. NEVER surface in UI. Archivist is the brand.
+### 3.1 Onboarding нового користувача AI-DRAKON (макс. 3 кроки)
+
+Дослідження активації SaaS: майстри >7 кроків втрачають до 50% користувачів.
+Тому — жорстко 3 кроки, кожен крок дає миттєву цінність.
+
+```
+Реєстрація (Appwrite) 
+   ↓
+[Пісочниця] Одразу потрапляє в демо-проект з готовою схемою.
+            LLM працює на платформній квоті (без власного ключа!).
+            Натискає Compile → бачить згенерований код за секунди.
+   ↓
+Крок 1 (обов'язково): Назва робочого простору + вибір шаблону.
+Крок 2 (обов'язково): "Підключити GitHub" (OAuth, одна кнопка).
+Крок 3 (опційно): Вибір LLM-провайдера + ключ. Кнопка "Пропустити" —
+            працює далі на платформній квоті.
+```
+
+Принцип: **цінність ДО конфігурації**. Користувач бачить роботу компілятора
+ще до того, як щось налаштував. Це прибирає головний бар'єр — "спочатку дай
+ключі, потім покажу користь".
+
+При вході обов'язково чистимо застарілі ключі localStorage (зроблено,
+commit a45d0f0) — щоб дані попередньої сесії/демо не текли в новий контекст.
+
+### 3.2 Garden Bloom standalone (консультант ділиться знаннями)
+
+```
+Власник логіниться (пароль) 
+   → пише нотатки, тегує, будує граф
+   → виділяє папку знань у Зону, ставить TTL (напр. 24 год)
+   → отримує URL + QR
+   → клієнт відкриває URL без логіну → питає Archivist → отримує відповіді
+      строго з цих нотаток
+   → власник бачить історію питань зони (що цікавить аудиторію)
+```
+
+**Метрика цінності:** кількість питань до Archivist на зону за тиждень.
+
+### 3.3 AI-DRAKON standalone (розробник будує агента)
+
+```
+Логін (Appwrite) 
+   → підключає GitHub-репо
+   → малює DRAKON-схему логіки агента (або імпортує з коду)
+   → Export mRNA (псевдокод) → Compile (рибосома → код)
+   → tsc --noEmit чистий → deploy → MCP-endpoint
+   → підключає endpoint у свій застосунок/Claude Desktop/Antigravity
+```
+
+**Метрика цінності:** успішні компіляції (код, що проходить `tsc --noEmit`).
+
+### 3.4 Suite (експертиза → агент)
+
+```
+[Garden] Експерт збирає знання → виділяє Зону "Framework X best practices"
+   ↓ (міст: zone token)
+[DRAKON] Розробник у пайплайні підключає цю Зону як джерело знань рибосоми
+   → компілює агента, що відповідає з курованої бази
+   → deploy: MCP-endpoint, який знає саме цей домен
+```
+
+---
+
+## 4. Архітектура інтеграції — як технічно поєднано
+
+### 4.1 Зони Знань — єдиний міст
+
+Інтеграція **не** монолітна. Сервіси спілкуються через один контракт — **Зону
+Знань**, що дозволяє розгортати/масштабувати/міняти їх незалежно.
+
+```
+AI-DRAKON (aidrakon.tech)                Garden Bloom (bloom.aidrakon.tech)
+─────────────────────────                ──────────────────────────────────
+KnowledgePage                            Зона з нотатками + Archivist
+  → ZoneCreationDialog (створює зону)
+  → src/server/knowledge.ts
+       getOwnerToken                     
+       handleProxyRequest  ──HMAC-JWT──►  garden-mcp.aidrakon.tech
+                                            → віддає контент зони / Archivist
+```
+
+Механіка токенів (звірено, `cloudflare-worker/worker-mcp-drakon.js`):
+- `generateJWT` / `verifyJWT` — HS256, HMAC-SHA256, TTL за замовч. 7 діб.
+- Токен зони ніколи не світиться в UI; зберігається як секрет
+  (Appwrite encrypted attribute / CF Secret).
+
+### 4.2 Що спільне, що окреме
+
+| Шар | Спільне | Окреме |
+|---|---|---|
+| Концепт Зони Знань | ✅ єдиний контракт | — |
+| Методологія KB (Garden Bloom wiki) | ✅ обидва репо документовані нею | — |
+| Auth | — | Appwrite (DRAKON) vs owner-пароль (Garden) |
+| Деплой | — | дві CF Pages, окремі домени |
+| Сховище проєктів | — | GitHub (DRAKON) vs нотатки/KV (Garden) |
+
+### 4.3 Що треба добудувати для повного Suite
+
+1. **DRAKON → Bloom deep-link** з передачею токена ("Відкрити в Bloom" з `/knowledge`).
+2. **Bloom → DRAKON** кнопка "Створити агента з Зони".
+3. **Індикатор здоров'я Зони** в DRAKON (Archivist ready / pending / failed).
+4. **Єдиний обмін токенами** (owner-token Bloom ↔ zone-secret DRAKON).
+
+---
+
+## 5. Пайплайни — вдосконалення
+
+### 5.1 Пайплайн компіляції DRAKON (ядро)
+
+Поточний: `схема → Export mRNA → POST /compile (рибосома) → код`.
+
+Вдосконалення (за пріоритетом):
+1. **Зони Знань як паливо** (зараз KB хардкод). Рибосома має читати KB з
+   реальної зони користувача через MCP-proxy, не з хардкоду. → Sprint 4.
+2. **Системний промпт рибосоми бере модель з `env.PROXY_MODEL`** — зараз
+   може вигадати `gpt-4o` у згенерованому коді. Дрібний, але псує довіру. → швидкий фікс.
+3. **Multi-target** — один псевдокод → кілька цільових фреймворків
+   (Flue / LangGraph.js / Python). "Три білки з однієї ДНК". → Sprint 5.
+4. **Цикл авто-перекомпіляції** — зміна схеми → re-export → re-compile →
+   `tsc --noEmit` → preview. CI/CD на рівні алгоритмів. → Sprint 5.
+5. **Довгі компіляції через Durable Objects** (`ArchitectJobStore` вже є) —
+   job-черга з полінгом, щоб не впертись у CPU-ліміт CF Worker (30с). → Sprint 5.
+
+### 5.2 Пайплайн агентів Garden (Archivist та інші ролі)
+
+Garden має заготовку багатоагентного сервісу (`GARDEN_AGENT_INTEGRATION.md`):
+ролі **Archivist** (summarize/digest/essay), **Tech Writer** (docs/API/README),
+**Architect** (taxonomy/review), через `POST /tasks/` з контекстом зони.
+
+Вдосконалення:
+1. Вивести ці ролі в UI Garden як кнопки дій над нотатками/зонами
+   ("Зробити дайджест", "Згенерувати README").
+2. Поєднати з DRAKON: роль "Architect" Garden може віддавати таксономію
+   знань як вхід для Зони Знань рибосоми.
+
+### 5.3 n8n як headless-движок автоматизацій
+
+Дослідження (`AI Platform Settings Architecture Research.md`) однозначне:
+**не** давати кожному користувачу окремий n8n-проєкт (REST API n8n не вміє
+програмно створювати проєкти; внутрішні API нестабільні).
+
+Правильний патерн — **headless n8n + динамічна ін'єкція облікових даних**:
+- Платформа тримає майстер-шаблони workflow в одному адмін-проєкті.
+- При тригері CF Worker дістає розшифровані токени користувача з Appwrite
+  і кладе їх у payload вебхука.
+- Workflow використовує **generic HTTP Request nodes** з посиланням на
+  payload (`Bearer {{ $json.user_token }}`), а не нативні ноди з прив'язкою
+  ключа на дизайн-тайм ("Golden Rule of Absolute Referencing").
+- Користувач **ніколи не бачить** n8n URL чи шаблони — лише високорівневі
+  тригери в нашому UI.
+
+Garden вже має `n8n-migration/adapter` — це фундамент для цього.
+
+---
+
+## 6. Налаштування платформи (admin / user)
+
+База: дослідження `AI Platform Settings Architecture Research.md` + реалізація
+TASK-223 (розподіл вкладок admin/user у `src/routes/settings.tsx`).
+
+### 6.1 Таксономія налаштувань (хто бачить що)
+
+| Налаштування | Власник | Сховище | Видимість |
+|---|---|---|---|
+| GitHub PAT (спільне репо-шаблонів) | Платформа | CF Worker Secret | **прихована** |
+| URL агентів (architect/drakon/docs) | Платформа | CF env / Appwrite | **прихована** |
+| MCP endpoints (Archivist/GitNexus) | Платформа | CF env | **прихована** |
+| MinIO/R2 креди | Платформа | CF Worker Secret | **прихована** |
+| n8n admin API key | Платформа | CF Worker Secret | **прихована** |
+| GitHub OAuth токен (репо юзера) | Користувач | Appwrite encrypted | редагує (статус ✅, не plaintext) |
+| LLM провайдер + ключ | Користувач | Appwrite encrypted | редагує (write-only) |
+| UI (мова, тема) | Користувач | Appwrite / localStorage | редагує |
+| Дефолтний проєкт | Користувач | Appwrite | редагує |
+| n8n персональний токен | Користувач | Appwrite encrypted | прихована (керується платформою) |
+
+Реалізовано (TASK-223): звичайний користувач бачить лише **Профіль** + **MCP
+Access**; вкладки GitHub/Агенти/Docs/n8n/MinIO/Додаток — тільки для admin
+(`isAdmin = user.email === власник`). Дефолти `owner`/`repo` прибрано (порожні),
+щоб нові юзери не бачили репо власника.
+
+### 6.2 GitHub — токени
+
+Дослідження рекомендує **GitHub App (user-to-server токени)** як цільове
+рішення: точкові права (Contents R/W), короткоживучі токени, ізоляція по
+користувачах нативно через GitHub API.
+
+| Етап | Рішення |
+|---|---|
+| Зараз (тимчасово) | PAT у налаштуваннях (швидко, але юзер може дати завеликі права) |
+| Ціль | GitHub App + OAuth web flow → user-to-server токен → Appwrite encrypted |
+
+Перехід — окремий TASK (нижче). Зараз UI чесно показує "GitHub OAuth — незабаром".
+
+### 6.3 Межі безпеки (антипатерни, яких уникаємо)
+
+1. Ніколи не зберігати ключі plaintext → тільки Appwrite encrypted attributes.
+2. Не повертати токен клієнту навіть для префілу форми → лише булеве
+   `is_configured` + статус ✅.
+3. Усі виклики до зовнішніх провайдерів (LLM, GitHub, n8n) — **тільки** з CF
+   Worker (worker-proxy pattern), ключ не доходить до браузера.
+4. Внутрішні URL агентів — за єдиним gateway, не світити клієнту.
+5. Чистити localStorage при логіні/логауті (зроблено).
+6. Вебхуки (GitHub push → n8n) — валідувати HMAC-підпис у Worker до роутингу.
+
+---
+
+## 7. Тарифи
+
+| Тариф | Ціна | Що входить | Для кого |
+|---|---|---|---|
+| **Free** | $0 | Garden: 3 зони, 100 нотаток, без Archivist. DRAKON: 1 агент, 10 компіляцій/міс (платформна квота) | Спробувати |
+| **Bloom** | $9/міс | Усе Garden: безліміт зон/нотаток, Archivist, DRAKON-діаграми, поділ зон | Працівники знань |
+| **Builder** | $19/міс | Усе DRAKON: безліміт агентів, GitHub, компіляції, 5 під'єднань зон, MCP-endpoints | AI-розробники |
+| **Suite** | $29/міс | Bloom + Builder + безліміт під'єднань зон + SSO + пріоритетна підтримка | Команди, що будують AI на власній експертизі |
+
+Логіка: Free→Bloom (юзер бачить цінність PKM, конвертиться в $9); Free→DRAKON
+(1 агент демонструє, але мало для продакшну → $19); Suite $29 продається
+**історією інтеграції** (власні знання як паливо агента), а не лише ціною.
+Не робити Suite $24 — це знецінює Bloom до $5. Дозволити 1-2 під'єднання зон
+на Builder, щоб не блокувати пробу інтеграції.
+
+---
+
+## 8. Метрики успіху (що означає "працює")
+
+| Сервіс | Activation (перша цінність) | Retention (повертається) | Revenue-сигнал |
+|---|---|---|---|
+| Garden | Створив 1 зону + поділився | ≥1 зона активна (питання за тиждень) | Free→Bloom конверсія |
+| DRAKON | 1 успішна компіляція (`tsc` чистий) | ≥1 агент-deploy на тиждень | Free→Builder конверсія |
+| Suite | Підключив Зону Garden як паливо агента | агент з власною Зоною в продакшні | Builder/Bloom→Suite |
+
+Технічні health-метрики (інакше "працює" — ілюзія):
+- % компіляцій, що проходять `tsc --noEmit` без правок (ціль: >80%).
+- Latency Archivist-відповіді на зону (p95).
+- Помилки 401/402 (auth/квота) — мають бути з людським повідомленням укр.
+- 0 інцидентів витоку даних між тенантами (`WHERE tenant_id` / DLS / scoped localStorage).
+
+---
+
+## 9. Roadmap з TASK-номерами
+
+Зроблено цієї лінії робіт:
+- ✅ TASK-218 Appwrite auth, TASK-220/221 UI, TASK-222 ізоляція даних + білінг
+  у Appwrite (D1 прибрано), TASK-223 розподіл налаштувань admin/user.
+- ✅ Sprint 3 — компілятор MVP (TASK-215 export, TASK-216/217 рибосома).
+- ✅ GitNexus CLI fix + reindex обох репо (цей сеанс).
+
+### Найближче (розблоковує цінність)
+
+| TASK | Зміст | Сервіс | Пріоритет |
+|---|---|---|---|
+| TASK-224 | Рибосома бере модель з `env.PROXY_MODEL` (фікс хардкоду gpt-4o) | DRAKON | P0 швидкий |
+| TASK-225 | Зони Знань як реальне паливо рибосоми (MCP-proxy, не хардкод) | DRAKON | P0 |
+| TASK-226 | Onboarding 3 кроки + пісочниця з платформною квотою | DRAKON | P0 |
+| TASK-227 | GitHub App + OAuth web flow (заміна PAT для юзерів) | DRAKON | P1 |
+| TASK-228 | DRAKON→Bloom deep-link з передачею zone-токена | Suite | P1 |
+| TASK-229 | Індикатор здоров'я Зони (Archivist ready/failed) у `/knowledge` | Suite | P1 |
+| TASK-230 | Ролі Garden-агентів (Archivist/TechWriter/Architect) у UI Garden | Garden | P1 |
+| TASK-231 | n8n headless + динамічна ін'єкція кредів (generic HTTP nodes) | Suite | P2 |
+| TASK-232 | Multi-target компіляція (Flue + LangGraph.js) | DRAKON | P2 |
+| TASK-233 | Цикл авто-перекомпіляції + довгі job через ArchitectJobStore DO | DRAKON | P2 |
+| TASK-234 | Stripe webhook → Appwrite billing → quota reset (Cron) | обидва | P2 |
+| TASK-235 | Bloom→DRAKON "Створити агента з Зони" | Suite | P3 |
+| TASK-236 | Єдиний обмін токенами owner-token ↔ zone-secret (SSO Suite) | Suite | P3 |
+
+### Принцип черговості
+
+1. **Спершу цінність окремих сервісів** (компілятор з реальним паливом +
+   onboarding), потім **міст Suite**. Інтеграція без працюючих половинок — марна.
+2. P0 — те, без чого "компілятор" не тримає обіцянку (паливо + onboarding).
+3. Suite-фічі (P1–P3) добудовуються паралельно AGY-флотом.
+
+---
+
+## Семантичні зв'язки
+
+**Цей документ пов'язаний з:**
+- [[ARCHITECTURE-CORE]] — ядро ai-drakon (компілятор DRAKON→код)
+- [[ARCHITECTURE-SAAS]] — SaaS-обгортка (auth, billing, tenancy); частково
+  застаріла (D1→Appwrite вже зроблено в TASK-222)
+- [[krytyka]] — критичний аудит, джерело корекцій ядра
+- `docs/КАРТА_СИСТЕМИ.md` (garden) — карта системи Garden Bloom
+- `AI Platform Settings Architecture Research.md` — джерело §6 (налаштування)
