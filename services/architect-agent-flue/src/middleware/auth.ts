@@ -1,7 +1,7 @@
 /// <reference types="@cloudflare/workers-types" />
 import { createMiddleware } from "hono/factory";
 import { getCookie } from "hono/cookie";
-import { Client, Account } from "node-appwrite";
+import { Client, Account, Databases } from "node-appwrite";
 
 export type Tenant = {
   userId: string;
@@ -12,26 +12,33 @@ export type Tenant = {
 type AuthEnv = {
   Bindings: {
     SESSION_KV: KVNamespace;
-    DB: D1Database;
     APPWRITE_ENDPOINT: string;
     APPWRITE_PROJECT_ID: string;
+    APPWRITE_API_KEY: string;
   };
   Variables: { tenant: Tenant };
 };
 
 const SESSION_TTL = 480; // 8 хв — Appwrite JWT живе 15 хв, кеш коротший
+const DB_ID = "ai-drakon";
+const BILLING_COL = "billing_profiles";
 
 async function sha256Hex(message: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(message));
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-async function resolvePlan(db: D1Database, teamId: string): Promise<Tenant["plan"]> {
-  const row = await db
-    .prepare("SELECT plan_type FROM billing_profiles WHERE tenant_id = ?")
-    .bind(teamId)
-    .first<{ plan_type: Tenant["plan"] }>();
-  return row?.plan_type ?? "free";
+async function resolvePlan(env: AuthEnv["Bindings"], userId: string): Promise<Tenant["plan"]> {
+  try {
+    const client = new Client()
+      .setEndpoint(env.APPWRITE_ENDPOINT)
+      .setProject(env.APPWRITE_PROJECT_ID)
+      .setKey(env.APPWRITE_API_KEY);
+    const doc = await new Databases(client).getDocument(DB_ID, BILLING_COL, userId);
+    return (doc.planType ?? "free") as Tenant["plan"];
+  } catch {
+    return "free";
+  }
 }
 
 export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
@@ -59,11 +66,11 @@ export const authMiddleware = createMiddleware<AuthEnv>(async (c, next) => {
 
   try {
     const user = await new Account(client).get();
-    const teamId = (user.prefs?.teamId as string | undefined) ?? user.$id;
+    const teamId = user.$id; // teams — потім
     const tenant: Tenant = {
       userId: user.$id,
       teamId,
-      plan: await resolvePlan(c.env.DB, teamId),
+      plan: await resolvePlan(c.env, user.$id),
     };
     await c.env.SESSION_KV.put(cacheKey, JSON.stringify(tenant), { expirationTtl: SESSION_TTL });
     c.set("tenant", tenant);

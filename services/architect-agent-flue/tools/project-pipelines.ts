@@ -2,27 +2,27 @@ import { GitHubAPI } from '../lib/github-api.js';
 import { executePipelineGraph } from './graph-pipelines.js';
 import { getJobDO, updateJobDO, createJobDO } from '../lib/job-store.js';
 
-export async function listProjects(env: any): Promise<any[]> {
+export async function listProjects(env: any, userId: string): Promise<any[]> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
   const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
 
   try {
-    const items = await api.listDir('projects');
+    const items = await api.listDir(`projects/u/${userId}`);
     const projects: any[] = [];
     for (const item of items) {
       if (item.type === 'dir') {
         const slug = item.name;
         let config: any = {};
         try {
-          const confFile = await api.getFile(`projects/${slug}/config.json`);
+          const confFile = await api.getFile(`projects/u/${userId}/${slug}/config.json`);
           config = JSON.parse(confFile.content);
         } catch (e) {}
 
         let agents: string[] = [];
         try {
-          const agentDirs = await api.listDir(`projects/${slug}/agents`);
+          const agentDirs = await api.listDir(`projects/u/${userId}/${slug}/agents`);
           agents = agentDirs.filter(d => d.type === 'dir').map(d => d.name);
         } catch (e) {}
 
@@ -44,7 +44,7 @@ export async function listProjects(env: any): Promise<any[]> {
   }
 }
 
-export async function createProject(slug: string, payload: any, env: any): Promise<any> {
+export async function createProject(slug: string, payload: any, userId: string, env: any): Promise<any> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
@@ -60,7 +60,7 @@ export async function createProject(slug: string, payload: any, env: any): Promi
     created_at: new Date().toISOString()
   };
 
-  const path = `projects/${slug}/config.json`;
+  const path = `projects/u/${userId}/${slug}/config.json`;
   let sha: string | undefined;
   try {
     const existing = await api.getFile(path);
@@ -70,31 +70,31 @@ export async function createProject(slug: string, payload: any, env: any): Promi
   await api.putFile(path, JSON.stringify(config, null, 2), `feat(projects): create project ${slug}`, sha);
   
   // Create agents dir placeholder by writing a readme
-  await api.putFile(`projects/${slug}/agents/README.md`, `# Agents for ${slug}`, `init agents dir`, undefined);
+  await api.putFile(`projects/u/${userId}/${slug}/agents/README.md`, `# Agents for ${slug}`, `init agents dir`, undefined);
 
   return config;
 }
 
-export async function listAgents(slug: string, env: any): Promise<any[]> {
+export async function listAgents(slug: string, userId: string, env: any): Promise<any[]> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
   const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
 
   try {
-    const items = await api.listDir(`projects/${slug}/agents`);
+    const items = await api.listDir(`projects/u/${userId}/${slug}/agents`);
     const agents: any[] = [];
     for (const item of items) {
       if (item.type === 'dir') {
         let hasPipeline = false;
         try {
-          await api.getFile(`projects/${slug}/agents/${item.name}/pipeline.drakon.json`);
+          await api.getFile(`projects/u/${userId}/${slug}/agents/${item.name}/pipeline.drakon.json`);
           hasPipeline = true;
         } catch (e) {}
 
         let kbDocs = 0;
         try {
-          const kbFiles = await api.listDir(`projects/${slug}/agents/${item.name}/kb`);
+          const kbFiles = await api.listDir(`projects/u/${userId}/${slug}/agents/${item.name}/kb`);
           kbDocs = kbFiles.filter(f => f.name.endsWith('.md')).length;
         } catch (e) {}
 
@@ -111,23 +111,23 @@ export async function listAgents(slug: string, env: any): Promise<any[]> {
   }
 }
 
-export async function getProjectPipeline(slug: string, agent: string, env: any): Promise<any> {
+export async function getProjectPipeline(slug: string, agent: string, userId: string, env: any): Promise<any> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
   const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
 
-  const file = await api.getFile(`projects/${slug}/agents/${agent}/pipeline.drakon.json`);
+  const file = await api.getFile(`projects/u/${userId}/${slug}/agents/${agent}/pipeline.drakon.json`);
   return JSON.parse(file.content);
 }
 
-export async function saveProjectPipeline(slug: string, agent: string, ir: any, env: any): Promise<boolean> {
+export async function saveProjectPipeline(slug: string, agent: string, ir: any, userId: string, env: any): Promise<boolean> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
   const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
 
-  const path = `projects/${slug}/agents/${agent}/pipeline.drakon.json`;
+  const path = `projects/u/${userId}/${slug}/agents/${agent}/pipeline.drakon.json`;
   const content = JSON.stringify(ir, null, 2);
 
   let sha: string | undefined;
@@ -140,21 +140,21 @@ export async function saveProjectPipeline(slug: string, agent: string, ir: any, 
   return true;
 }
 
-export async function getProjectPipelineStatus(slug: string, agent: string, env: any): Promise<any> {
+export async function getProjectPipelineStatus(slug: string, agent: string, userId: string, env: any): Promise<any> {
   try {
-    const ir = await getProjectPipeline(slug, agent, env);
+    const ir = await getProjectPipeline(slug, agent, userId, env);
     return { status: 'ok', nodes: Object.keys(ir.items || {}).length };
   } catch (e: any) {
     return { status: 'error', error: e.message };
   }
 }
 
-export async function executeProjectPipelineSSE(slug: string, agent: string, inputData: any, jobId: string, env: any): Promise<Response> {
+export async function executeProjectPipelineSSE(slug: string, agent: string, inputData: any, jobId: string, userId: string, env: any): Promise<Response> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
   const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
-  const path = `projects/${slug}/agents/${agent}/pipeline.drakon.json`;
+  const path = `projects/u/${userId}/${slug}/agents/${agent}/pipeline.drakon.json`;
 
   let ir: any;
   try {
@@ -209,14 +209,14 @@ export async function executeProjectPipelineSSE(slug: string, agent: string, inp
   });
 }
 
-export async function searchProjectKB(slug: string, agent: string, q: string, env: any): Promise<any[]> {
+export async function searchProjectKB(slug: string, agent: string, q: string, userId: string, env: any): Promise<any[]> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
   const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
 
   try {
-    const files = await api.listDir(`projects/${slug}/agents/${agent}/kb`);
+    const files = await api.listDir(`projects/u/${userId}/${slug}/agents/${agent}/kb`);
     const results: any[] = [];
     
     for (const f of files) {
@@ -242,13 +242,13 @@ export async function searchProjectKB(slug: string, agent: string, q: string, en
   }
 }
 
-export async function uploadProjectKBDoc(slug: string, agent: string, filename: string, content: string, env: any): Promise<any> {
+export async function uploadProjectKBDoc(slug: string, agent: string, filename: string, content: string, userId: string, env: any): Promise<any> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
   const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
 
-  const path = `projects/${slug}/agents/${agent}/kb/${filename}`;
+  const path = `projects/u/${userId}/${slug}/agents/${agent}/kb/${filename}`;
   
   let sha: string | undefined;
   try {
@@ -260,13 +260,13 @@ export async function uploadProjectKBDoc(slug: string, agent: string, filename: 
   return { saved: path, size: content.length };
 }
 
-export async function deleteProject(slug: string, env: any): Promise<boolean> {
+export async function deleteProject(slug: string, userId: string, env: any): Promise<boolean> {
   const ghToken = env.GITHUB_TOKEN || '';
   const ghRepo = env.GITHUB_REPO || '';
   const ghBranch = env.GITHUB_BRANCH || 'main';
   const api = new GitHubAPI(ghToken, ghRepo, ghBranch);
   
-  const path = `projects/${slug}/config.json`;
+  const path = `projects/u/${userId}/${slug}/config.json`;
   let sha: string | undefined;
   try {
     const existing = await api.getFile(path);
@@ -278,4 +278,3 @@ export async function deleteProject(slug: string, env: any): Promise<boolean> {
   } catch (e) {}
   return false;
 }
-

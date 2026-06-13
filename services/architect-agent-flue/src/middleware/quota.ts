@@ -1,10 +1,16 @@
 /// <reference types="@cloudflare/workers-types" />
 import { createMiddleware } from "hono/factory";
+import { Client, Databases } from "node-appwrite";
 import { Tenant } from "./auth.js";
+
+const DB_ID = "ai-drakon";
+const BILLING_COL = "billing_profiles";
 
 type QuotaEnv = {
   Bindings: {
-    DB: D1Database;
+    APPWRITE_ENDPOINT: string;
+    APPWRITE_PROJECT_ID: string;
+    APPWRITE_API_KEY: string;
   };
   Variables: {
     tenant: Tenant;
@@ -14,18 +20,37 @@ type QuotaEnv = {
 
 export const quotaMiddleware = createMiddleware<QuotaEnv>(async (c, next) => {
   const t = c.get("tenant");
-  const row = await c.env.DB.prepare(
-    "SELECT llm_quota_monthly, llm_consumed FROM billing_profiles WHERE tenant_id = ?"
-  ).bind(t.teamId).first<{ llm_quota_monthly: number; llm_consumed: number }>();
+  const client = new Client()
+    .setEndpoint(c.env.APPWRITE_ENDPOINT)
+    .setProject(c.env.APPWRITE_PROJECT_ID)
+    .setKey(c.env.APPWRITE_API_KEY);
+  const db = new Databases(client);
 
-  if (row && row.llm_consumed >= row.llm_quota_monthly) {
+  let profile: any;
+  try {
+    profile = await db.getDocument(DB_ID, BILLING_COL, t.userId);
+  } catch {
+    // Auto-provision free profile при першому зверненні
+    profile = await db.createDocument(DB_ID, BILLING_COL, t.userId, {
+      userId: t.userId,
+      planType: "free",
+      llmQuotaMonthly: 100,
+      llmConsumed: 0,
+      updatedAt: new Date().toISOString(),
+    }, []);
+  }
+
+  if (profile.llmConsumed >= profile.llmQuotaMonthly) {
     return c.json({ error: "Квоту LLM на місяць вичерпано", upgrade: "/settings/billing" }, 402);
   }
+
   await next();
-  // інкремент у фоні — не блокує відповідь
+
+  // Інкремент у фоні — не блокує відповідь
   c.executionCtx.waitUntil(
-    c.env.DB.prepare(
-      "UPDATE billing_profiles SET llm_consumed = llm_consumed + ?, updated_at = datetime('now') WHERE tenant_id = ?"
-    ).bind(c.get("llmCalls") ?? 1, t.teamId).run()
+    db.updateDocument(DB_ID, BILLING_COL, t.userId, {
+      llmConsumed: profile.llmConsumed + (c.get("llmCalls") ?? 1),
+      updatedAt: new Date().toISOString(),
+    })
   );
 });

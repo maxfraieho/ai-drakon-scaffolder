@@ -29,7 +29,3 @@ new_sqlite_classes = ["ArchitectJobStore"]
 binding = "SESSION_KV"
 id = "11ed74326f2c431496c2b3dc38ef0208"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "ai-drakon-saas"
-database_id = "743d5bb0-d09d-4dcc-8329-8ebae8d533f4"

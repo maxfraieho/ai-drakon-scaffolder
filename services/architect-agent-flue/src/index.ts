@@ -262,65 +262,73 @@ app.post('/compile', async (c) => {
 });
 
 // List Projects
-app.get('/projects', async (c) => {
-  const projects = await listProjects(c.env);
+app.get('/projects', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
+  const projects = await listProjects(c.env, userId);
   return c.json({ projects });
 });
 
 // Create Project
-app.post('/projects/:slug', async (c) => {
+app.post('/projects/:slug', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const body: any = await c.req.json().catch(() => ({}));
-  const res = await createProject(slug, body, c.env);
+  const res = await createProject(slug, body, userId, c.env);
   return c.json({ success: true, project: res });
 });
 
 // Delete Project
-app.delete('/projects/:slug', async (c) => {
+app.delete('/projects/:slug', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const { deleteProject } = await import('../tools/project-pipelines.js');
-  const ok = await deleteProject(slug, c.env);
+  const ok = await deleteProject(slug, userId, c.env);
   return c.json({ success: ok, deleted: slug });
 });
 
 // Project Agent Routes
-app.get('/projects/:slug/agents', async (c) => {
+app.get('/projects/:slug/agents', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const { listAgents } = await import('../tools/project-pipelines.js');
-  const agents = await listAgents(slug, c.env);
+  const agents = await listAgents(slug, userId, c.env);
   return c.json({ slug, agents });
 });
 
-app.get('/projects/:slug/agents/:agent/pipeline', async (c) => {
+app.get('/projects/:slug/agents/:agent/pipeline', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const agent = c.req.param('agent');
   const { getProjectPipeline } = await import('../tools/project-pipelines.js');
   try {
-    const pipeline = await getProjectPipeline(slug, agent, c.env);
+    const pipeline = await getProjectPipeline(slug, agent, userId, c.env);
     return c.json(pipeline);
   } catch (e: any) {
     return c.json({ error: e.message }, 404);
   }
 });
 
-app.put('/projects/:slug/agents/:agent/pipeline', async (c) => {
+app.put('/projects/:slug/agents/:agent/pipeline', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const agent = c.req.param('agent');
   const body: any = await c.req.json().catch(() => ({}));
   const { saveProjectPipeline } = await import('../tools/project-pipelines.js');
-  await saveProjectPipeline(slug, agent, body.ir || body, c.env);
-  return c.json({ saved: `projects/${slug}/agents/${agent}/pipeline.drakon.json`, valid: true });
+  await saveProjectPipeline(slug, agent, body.ir || body, userId, c.env);
+  return c.json({ saved: `projects/u/${userId}/${slug}/agents/${agent}/pipeline.drakon.json`, valid: true });
 });
 
-app.get('/projects/:slug/agents/:agent/status', async (c) => {
+app.get('/projects/:slug/agents/:agent/status', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const agent = c.req.param('agent');
   const { getProjectPipelineStatus } = await import('../tools/project-pipelines.js');
-  const res = await getProjectPipelineStatus(slug, agent, c.env);
+  const res = await getProjectPipelineStatus(slug, agent, userId, c.env);
   return c.json(res);
 });
 
-app.post('/projects/:slug/agents/:agent/execute', async (c) => {
+app.post('/projects/:slug/agents/:agent/execute', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const agent = c.req.param('agent');
   const body: any = await c.req.json().catch(() => ({}));
@@ -336,10 +344,11 @@ app.post('/projects/:slug/agents/:agent/execute', async (c) => {
   await updateJobDO(c.env, jobId, 'pending', initialState);
 
   const { executeProjectPipelineSSE } = await import('../tools/project-pipelines.js');
-  return await executeProjectPipelineSSE(slug, agent, body, jobId, c.env);
+  return await executeProjectPipelineSSE(slug, agent, body, jobId, userId, c.env);
 });
 
-app.get('/projects/:slug/agents/:agent/execute', async (c) => {
+app.get('/projects/:slug/agents/:agent/execute', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const agent = c.req.param('agent');
   const input = c.req.query('input') || '';
@@ -356,25 +365,27 @@ app.get('/projects/:slug/agents/:agent/execute', async (c) => {
   await updateJobDO(c.env, jobId, 'pending', initialState);
 
   const { executeProjectPipelineSSE } = await import('../tools/project-pipelines.js');
-  return await executeProjectPipelineSSE(slug, agent, { input, query }, jobId, c.env);
+  return await executeProjectPipelineSSE(slug, agent, { input, query }, jobId, userId, c.env);
 });
 
-app.get('/projects/:slug/agents/:agent/kb/search', async (c) => {
+app.get('/projects/:slug/agents/:agent/kb/search', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const agent = c.req.param('agent');
   const q = c.req.query('q') || '';
   const { searchProjectKB } = await import('../tools/project-pipelines.js');
-  const results = await searchProjectKB(slug, agent, q, c.env);
+  const results = await searchProjectKB(slug, agent, q, userId, c.env);
   return c.json({ results, count: results.length });
 });
 
-app.post('/projects/:slug/agents/:agent/kb/upload', async (c) => {
+app.post('/projects/:slug/agents/:agent/kb/upload', authMiddleware, async (c) => {
+  const { userId } = c.get('tenant');
   const slug = c.req.param('slug');
   const agent = c.req.param('agent');
   const filename = c.req.query('filename') || '';
   const body: any = await c.req.json().catch(() => ({}));
   const { uploadProjectKBDoc } = await import('../tools/project-pipelines.js');
-  const res = await uploadProjectKBDoc(slug, agent, filename, body.content || '', c.env);
+  const res = await uploadProjectKBDoc(slug, agent, filename, body.content || '', userId, c.env);
   return c.json(res);
 });
 
