@@ -22854,7 +22854,7 @@ Diary: 'SESSION:DATE|TASK-219:zone-diagnosis|findings:SUMMARY|star star star'
 
 [x] TASK-221: UI Polish — привести DRAKON workspace до Bloom-стилю (типографіка, sidebar, сторінки)
 
-[ ] TASK-222: Data isolation + remove D1 from architect-agent-flue → Appwrite
+[x] TASK-222: Data isolation + remove D1 from architect-agent-flue → Appwrite
 
 **Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/`**
 
