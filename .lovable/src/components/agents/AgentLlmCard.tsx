@@ -44,7 +44,7 @@ authHeader: (key: string): Record<string, string> => ({
 }),
 },
 agy: {
-baseUrl: "https://agy.exodus.pp.ua",
+baseUrl: "https://agy.aidrakon.tech",
 apiKey: "",
 hint: "AGY Proxy — Gemini 2.5 Pro + Claude на Android/Termux",
 modelsPath: "/v1/models",
@@ -119,7 +119,7 @@ function readFromStorage(agentId: string) {
     (localStorage.getItem(`${agentId}_llm_protocol`) as "openai" | "anthropic" | "agy" | null) || (isAgyAgent ? "agy" : "openai");
   return {
     protocol,
-    baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || (isAgyAgent ? "https://agy.exodus.pp.ua" : ""),
+    baseUrl: localStorage.getItem(`${agentId}_llm_base_url`) || (isAgyAgent ? "https://agy.aidrakon.tech" : ""),
     apiKey: localStorage.getItem(`${agentId}_llm_api_key`) || "freecc",
     model: localStorage.getItem(`${agentId}_llm_model`) || "",
     maxTokens: localStorage.getItem(`${agentId}_llm_max_tokens`) || "",
