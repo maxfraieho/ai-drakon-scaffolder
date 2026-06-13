@@ -119,7 +119,7 @@ function NavSection({ items, isActive, onClick }: {
             to={item.to}
             onClick={onClick}
             className={cn(
-              "flex items-center gap-2 rounded-[var(--radius-sm)] px-2 py-1.5 font-mono text-[11px] transition-colors",
+              "flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors",
               active
                 ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
                 : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
@@ -137,7 +137,7 @@ function NavSection({ items, isActive, onClick }: {
 function NavDivider({ label }: { label: string }) {
   return (
     <div className="px-2 pt-3 pb-1">
-      <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-60">
+      <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] opacity-50 font-medium">
         {label}
       </span>
     </div>
@@ -206,7 +206,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
       {/* TOP BAR */}
-      <header className="flex h-8 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
+      <header className="flex h-10 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetTrigger asChild>
             <button
@@ -243,7 +243,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
         <Link
           to="/pipelines"
-          className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--text-primary)]"
+          className="flex items-center gap-2 font-semibold text-[13px] text-[var(--text-primary)] tracking-wide"
         >
           <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
           AI-DRAKON
@@ -418,22 +418,22 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
               </TooltipTrigger>
               <TooltipContent side="bottom" className="font-mono text-[11px]">Вийти</TooltipContent>
             </Tooltip>
-            <AlertDialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono">
+            <AlertDialogContent className="bg-[var(--bg-surface)] border border-white/10 rounded-2xl font-sans shadow-2xl">
               <AlertDialogHeader>
-                <AlertDialogTitle className="text-[var(--text-primary)] font-mono text-[13px] font-semibold uppercase tracking-wider">
+                <AlertDialogTitle className="text-[var(--text-primary)] text-base font-semibold">
                   Вийти з системи?
                 </AlertDialogTitle>
-                <AlertDialogDescription className="text-[var(--text-muted)] text-[12px]">
+                <AlertDialogDescription className="text-[var(--text-muted)] text-sm">
                   JWT-токен буде видалено. Потрібно буде увійти знову.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="font-mono text-[11px] uppercase tracking-wider bg-transparent border-[var(--border-subtle)] text-[var(--text-secondary)] hover:bg-white/5">
+                <AlertDialogCancel className="text-sm bg-transparent border border-white/10 text-[var(--text-secondary)] hover:bg-white/5 rounded-xl">
                   Скасувати
                 </AlertDialogCancel>
                 <AlertDialogAction
                   onClick={logout}
-                  className="font-mono text-[11px] uppercase tracking-wider bg-[var(--color-primary-container,#2dd4bf)] text-[#003d38] hover:brightness-110"
+                  className="text-sm bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded-xl"
                 >
                   Вийти
                 </AlertDialogAction>
@@ -496,7 +496,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
         <aside className={cn(
           "hidden lg:flex h-full shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
-          navCollapsed ? "w-0 border-r-0" : "w-60",
+          navCollapsed ? "w-0 border-r-0" : "w-64",
         )}>
           <div className="border-b border-[var(--border-subtle)]">
             <ProjectSelector />
