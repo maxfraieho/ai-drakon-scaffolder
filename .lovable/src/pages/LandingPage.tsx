@@ -73,13 +73,13 @@ export default function LandingPage() {
             </div>
             <h3 className="text-2xl font-bold mb-4">Garden Bloom</h3>
             <p className="text-gray-400 mb-6">
-              Create and organize knowledge bases. Share via time-limited access zones with QR codes and MCP URLs. AI search with NotebookLM integration.
+              Create and organize knowledge bases. Share via time-limited access zones with QR codes and MCP URLs. Each zone gets an AI Archivist agent that answers questions from your notes.
             </p>
             <div className="space-y-3 mb-8">
               {[
                 "Notes, tags and graph visualization",
                 "Access zones with QR and MCP URL",
-                "NotebookLM AI chat on your content",
+                "Archivist AI — chat with your knowledge base",
                 "DRAKON flow diagrams editor",
                 "Colleagues chat + proposals inbox",
               ].map((f) => (
@@ -114,7 +114,7 @@ export default function LandingPage() {
                 "AI agent creation and management",
                 "GitHub repository integration",
                 "Visual pipeline editor",
-                "Notebook management (NotebookLM)",
+                "Knowledge Agent (Archivist) management",
                 "Multi-user with Appwrite auth",
               ].map((f) => (
                 <div key={f} className="flex items-center gap-2 text-sm">
@@ -144,7 +144,7 @@ export default function LandingPage() {
               price: "$9",
               period: "/mo",
               desc: "For knowledge workers",
-              features: ["Unlimited knowledge zones", "Unlimited notes", "NotebookLM chat", "Access zone sharing", "DRAKON diagrams"],
+              features: ["Unlimited knowledge zones", "Unlimited notes", "Archivist AI chat", "Access zone sharing", "DRAKON diagrams"],
               cta: "Start with Bloom",
               href: "https://bloom.aidrakon.tech",
               highlight: false,
