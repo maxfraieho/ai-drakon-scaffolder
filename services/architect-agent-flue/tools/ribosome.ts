@@ -29,7 +29,8 @@ const RIBOSOME_SYSTEM = `Ти — рибосома-компілятор DRAKON-�
 
 Правила трансляції (ARCHITECTURE-CORE §1.3):
 - вузол :: tool :: → await runNode(name, state, env)  (детермінований крок)
-- вузол :: llm ::  → await llmComplete([...], model, temp, apiKey, proxyUrl, env)
+- вузол :: llm ::  → await llmComplete([...messages], env.PROXY_MODEL || 'gemini-2.5-flash', 0.2, undefined, undefined, env)
+  МОДЕЛЬ ЗАВЖДИ env.PROXY_MODEL — НІКОЛИ не хардкодь назву моделі ('gpt-4o', 'claude-*', тощо).
 - QUESTION/розгалуження ТАК(one)/НІ(two) → if/else
 - (one) → наступна гілка; (two) → else-гілка
 
@@ -50,6 +51,7 @@ const RIBOSOME_SYSTEM = `Ти — рибосома-компілятор DRAKON-�
 - Для кожного :: tool :: вузла — окремий виклик runNode або конкретної функції якщо ім'я відомо
 - Для кожного :: llm :: вузла — виклик llmComplete з відповідним промптом
 - state передається між кроками і оновлюється через spread: state = { ...state, key: value }
+- Згенерований код НЕ містить хардкод-назв моделей. Модель — ТІЛЬКИ env.PROXY_MODEL.
 - Відповідь — ТІЛЬКИ TypeScript код у \`\`\`typescript блоці. Нічого більше.`;
 
 /**
