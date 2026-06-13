@@ -16,7 +16,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
     enabled: false,
   },
   app: {
-    workerUrl: "https://drakon-mcp.aidrakon.tech",
+    workerUrl: "https://drakon-mcp-worker.maxfraieho.workers.dev",
     defaultFolder: "general",
     theme: "system",
   },
@@ -158,7 +158,7 @@ export function readSettings(): AppSettings {
       },
       app: {
         workerUrl:
-          typeof app.workerUrl === "string" && app.workerUrl.trim() && !app.workerUrl.includes("drakon-mcp-worker") && !app.workerUrl.includes("garden-mcp.aidrakon.tech") ? app.workerUrl : DEFAULT_SETTINGS.app.workerUrl,
+          typeof app.workerUrl === "string" && app.workerUrl.trim() && !app.workerUrl.includes("drakon-mcp-worker") && !app.workerUrl.includes("garden-mcp.aidrakon.tech") && !app.workerUrl.includes("drakon-mcp.aidrakon.tech") ? app.workerUrl : DEFAULT_SETTINGS.app.workerUrl,
         defaultFolder:
           typeof app.defaultFolder === "string" ? app.defaultFolder : DEFAULT_SETTINGS.app.defaultFolder,
         theme:

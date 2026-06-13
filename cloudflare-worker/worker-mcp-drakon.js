@@ -902,12 +902,21 @@ async function handleAuthLogin(request, env) {
 
   const ownerUsername = String(env.OWNER_USERNAME || 'owner');
   const ownerPasswordHash = String(env.OWNER_PASSWORD_HASH || '');
-  if (!ownerPasswordHash) {
-    return errorResponse('OWNER_PASSWORD_HASH is not configured', 500, undefined, 'SERVER_CONFIG_ERROR');
+  const adminPassword = String(env.ADMIN_PASSWORD || '');
+
+  let authenticated = false;
+  if (adminPassword && password === adminPassword) {
+    authenticated = true;
+  } else if (ownerPasswordHash) {
+    const hashHex = await hashPassword(password, env.JWT_SECRET);
+    if (hashHex === ownerPasswordHash) {
+      authenticated = true;
+    }
+  } else {
+    return errorResponse('Authentication is not configured (neither OWNER_PASSWORD_HASH nor ADMIN_PASSWORD set)', 500, undefined, 'SERVER_CONFIG_ERROR');
   }
 
-  const hashHex = await hashPassword(password, env.JWT_SECRET);
-  if (username !== ownerUsername || hashHex !== ownerPasswordHash) {
+  if (username !== ownerUsername || !authenticated) {
     return errorResponse('Invalid credentials', 401, undefined, 'INVALID_CREDENTIALS');
   }
 
