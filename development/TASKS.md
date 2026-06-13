@@ -23491,7 +23491,7 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 
 [x] TASK-224: Рибосома — заборонити хардкод моделі у згенерованому коді (зроблено Claude)
 
-[ ] TASK-225: Зони Знань як паливо рибосоми (MCP-proxy → kbContext у compilePseudocode)
+[x] TASK-225: Зони Знань як паливо рибосоми (MCP-proxy → kbContext у compilePseudocode)
 
 **!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder`**
 **ПОВНА СПЕЦИФІКАЦІЯ: `development/EXECUTION-PROMPTS.md` → секція TASK-225. Прочитай її ПЕРШОЮ.**
