@@ -23525,6 +23525,8 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 
 [ ] TASK-237: Лендинг — наратив "два сервіси — один Suite" (spec: EXECUTION-PROMPTS.md → TASK-237; src/pages/LandingPage.tsx +.lovable)
 
+[x] TASK-AGY3-GITHUB-LOGIN: GitHub App OAuth Login Integration (wizard connect + login page bypass/OAuth)
+
 [x] TASK-227: GitHub App OAuth flow — OAuth routes у worker-mcp-drakon.js + Appwrite schema + Settings UI (spec: EXECUTION-PROMPTS.md → TASK-227; ✅ App registered, secrets set in drakon-antigravity-worker)
 
 [x] TASK-228: DRAKON→Bloom deep-link з zone-токеном (spec: EXECUTION-PROMPTS.md → TASK-228) ✅
