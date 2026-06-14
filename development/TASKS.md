@@ -23546,7 +23546,7 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 
 ---
 
-## [ ] TASK-226: Fix settings access for bypass-login (owner/805235io.)
+## [x] TASK-226: Fix settings access for bypass-login (owner/805235io.)
 
 **!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/`**
 **After every file change: `cp src/X .lovable/src/X`**

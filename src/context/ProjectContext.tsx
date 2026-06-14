@@ -226,8 +226,6 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         "ai_drakon_active_project_anon",
         "ai_drakon_active_project_anon_data",
         "ai_drakon_local_projects_anon",
-        "aegisroute.access_token",
-        "jwt",
       ].forEach(k => localStorage.removeItem(k));
     }
   }, [userId]);
