@@ -27,6 +27,7 @@ import type { AppSettings } from "@/types/settings";
 import { useProject } from "@/context/ProjectContext";
 import { databases } from "@/lib/appwrite";
 import { getAppwriteJwt } from "@/lib/appwrite-jwt";
+import { saveUserConfig, syncUserConfigToCloud } from "@/lib/user-config-api";
 
 export const Route = createFileRoute("/settings")({
 component: SettingsRoute,
@@ -233,8 +234,12 @@ const saveSettings = () => {
 try {
 writeSettings(settings);
 localStorage.setItem("drakon_agent_base_url", agentBaseUrl.trim() || "http://192.168.3.184");
+
+// Synchronize to MinIO
+void syncUserConfigToCloud();
+
 toast.success("Налаштування збережено", {
-description: "Конфігурацію оновлено локально.",
+description: "Конфігурацію оновлено локально та синхронізовано з хмарою.",
 });
 } catch (error) {
 toast.error("Не вдалося зберегти налаштування", {
@@ -647,7 +652,11 @@ return;
 }
 try {
 writeSettings(settings);
-toast.success("Адреси агентів збережено");
+
+// Synchronize to MinIO
+void syncUserConfigToCloud();
+
+toast.success("Адреси агентів збережено та синхронізовано з хмарою");
 } catch (error) {
 toast.error("Не вдалося зберегти", {
 description: error instanceof Error ? error.message : "Невідома помилка",

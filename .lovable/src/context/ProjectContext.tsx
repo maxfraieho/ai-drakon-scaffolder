@@ -1,11 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { api } from "@/lib/api";
-import { loadUserConfig, saveUserConfig } from "@/lib/user-config-api";
+import { loadUserConfig, saveUserConfig, writeExtraSettings } from "@/lib/user-config-api";
 import { listProjectsArch } from '@/lib/graph-pipeline-api';
 import { useAuth } from "@/context/AuthContext";
 import { isOnboarded } from "@/lib/onboarding";
 import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
 import { DEMO_PROJECT } from "@/lib/onboarding-demo";
+import { readSettings, writeSettings } from "@/lib/settings-storage";
 
 export interface ProjectGithub {
   owner: string;
@@ -93,6 +94,16 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         localStorage.removeItem(`ai_drakon_active_project_${userId}_data`);
       } catch {}
     }
+
+    // Synchronize active project and settings to MinIO
+    try {
+      const localList = loadLocalProjectsFor(userId);
+      saveUserConfig({
+        localProjects: localList.filter(x => !x.exists || x.github),
+        activeProjectSlug: p ? p.slug : null,
+        settings: readSettings()
+      });
+    } catch {}
   }, [userId]);
 
   const loadProjects = useCallback(async () => {
@@ -132,6 +143,24 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       ];
       // Load user config from MinIO and merge local projects
       const remoteConfig = await loadUserConfig().catch(() => null);
+      
+      // Load remote settings if available
+      if (remoteConfig?.settings) {
+        try {
+          const localSettings = readSettings();
+          if (JSON.stringify(localSettings) !== JSON.stringify(remoteConfig.settings)) {
+            writeSettings(remoteConfig.settings);
+          }
+        } catch {}
+      }
+
+      // Load remote extraSettings if available
+      if (remoteConfig?.extraSettings) {
+        try {
+          writeExtraSettings(remoteConfig.extraSettings);
+        } catch {}
+      }
+
       if (remoteConfig?.localProjects?.length) {
         const remoteProjects = remoteConfig.localProjects.filter(
           rp => !merged.find(mp => mp.slug === rp.slug)
@@ -147,7 +176,7 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         setShowOnboarding(true);
       }
       
-      const savedSlug = localStorage.getItem(`ai_drakon_active_project_${userId}`);
+      const savedSlug = localStorage.getItem(`ai_drakon_active_project_${userId}`) || remoteConfig?.activeProjectSlug || null;
       const saved = savedSlug ? merged.find((p) => p.slug === savedSlug) : null;
       
       // Attempt fallback from serialized localStorage data if not found in merged array
@@ -201,21 +230,29 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     }
     setProjects(prev => {
       const next = prev.find(x => x.slug === p.slug) ? prev : [...prev, p];
-      saveUserConfig({ localProjects: next.filter(x => !x.exists || x.github) });
+      saveUserConfig({
+        localProjects: next.filter(x => !x.exists || x.github),
+        activeProjectSlug: activeProject?.slug || null,
+        settings: readSettings()
+      });
       return next;
     });
-  }, [userId]);
+  }, [userId, activeProject]);
 
   const removeLocalProject = useCallback((slug: string) => {
     const list = loadLocalProjectsFor(userId).filter(x => x.slug !== slug);
     saveLocalProjectsFor(userId, list);
     setProjects(prev => {
       const next = prev.filter(x => x.slug !== slug);
-      saveUserConfig({ localProjects: next.filter(x => !x.exists || x.github) });
+      saveUserConfig({
+        localProjects: next.filter(x => !x.exists || x.github),
+        activeProjectSlug: activeProject?.slug === slug ? null : (activeProject?.slug || null),
+        settings: readSettings()
+      });
       return next;
     });
     setActiveProjectState(prev => prev?.slug === slug ? null : prev);
-  }, [userId]);
+  }, [userId, activeProject]);
 
   useEffect(() => {
     void loadProjects();

@@ -2156,7 +2156,7 @@ async function handleGithubAuthStart(request, env) {
   if (referer) {
     try {
       const refUrl = new URL(referer);
-      if (refUrl.hostname === 'localhost' || refUrl.hostname.endsWith('aidrakon.tech')) {
+      if (refUrl.hostname === 'localhost' || refUrl.hostname.endsWith('aidrakon.tech') || refUrl.hostname.endsWith('pages.dev')) {
         refUrl.pathname = '/settings';
         refUrl.search = '';
         redirectUrl = refUrl.toString();

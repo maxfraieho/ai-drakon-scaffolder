@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { checkAgentHealth } from "@/lib/agent-api";
+import { syncUserConfigToCloud } from "@/lib/user-config-api";
 import { ChevronDown, ChevronRight, Eye, EyeOff, Plug, RefreshCw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -205,6 +206,8 @@ localStorage.setItem(`${agentId}_llm_api_key`, apiKey);
 localStorage.setItem(`${agentId}_llm_model`, model);
 if (maxTokens) localStorage.setItem(`${agentId}_llm_max_tokens`, maxTokens);
 else localStorage.removeItem(`${agentId}_llm_max_tokens`);
+
+void syncUserConfigToCloud();
 toast.success(`${agentLabel}: налаштування збережено`);
 };
 
