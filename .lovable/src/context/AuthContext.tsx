@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { account } from "@/lib/appwrite";
 import type { Models } from "appwrite";
+import { hasClientJwt } from "@/lib/route-auth";
+import { setAccessToken } from "@/lib/auth";
 
 type AuthContextValue = {
   user: Models.User<Models.Preferences> | null;
@@ -19,7 +21,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     account
       .get()
-      .then((u) => setUser(u))
+      .then(async (u) => {
+        setUser(u);
+        if (u && !hasClientJwt()) {
+          try {
+            const jwtObj = await account.createJWT();
+            setAccessToken(jwtObj.jwt);
+          } catch (err) {
+            console.error("Failed to generate JWT on auth mount:", err);
+          }
+        }
+      })
       .catch(() => setUser(null))
       .finally(() => setIsLoading(false));
   }, []);

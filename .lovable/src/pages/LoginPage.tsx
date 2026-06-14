@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Bot, Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
+import { Bot, Eye, EyeOff, Loader2, UserPlus, Github } from "lucide-react";
 import { ID } from "appwrite";
 
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,14 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleGithubLogin = () => {
+    account.createOAuth2Session(
+      "github",
+      window.location.origin + "/diagrams",
+      window.location.origin + "/login"
+    );
+  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -378,6 +386,22 @@ export function LoginPage() {
               </Button>
             </form>
           )}
+
+          <div className="relative flex py-2 items-center">
+            <div className="flex-grow border-t border-white/10"></div>
+            <span className="flex-shrink mx-4 text-gray-400 text-xs font-sans">або</span>
+            <div className="flex-grow border-t border-white/10"></div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white transition-all font-semibold"
+            onClick={handleGithubLogin}
+          >
+            <Github className="mr-2 h-4 w-4 text-white" />
+            Увійти через GitHub
+          </Button>
         </div>
 
         {/* Footer */}
