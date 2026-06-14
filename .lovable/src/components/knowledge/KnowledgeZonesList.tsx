@@ -4,7 +4,7 @@ import { formatDistanceToNow } from "date-fns";
 import { BookOpen, Brain, Folder, PlusCircle } from "lucide-react";
 import { useState } from "react";
 
-import { api, type KnowledgeZone } from "@/lib/api";
+import { api, type KnowledgeZone, type ZoneHealth } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -17,6 +17,32 @@ function getExpiryClass(expiresAt?: number | string): string {
   if (diff < 3_600_000) return "text-destructive";
   if (diff < 86_400_000) return "text-yellow-500";
   return "text-emerald-500";
+}
+
+function ZoneHealthBadge({ zoneId }: { zoneId: string }) {
+  const { data: health } = useQuery<ZoneHealth>({
+    queryKey: ["zone-health", zoneId],
+    queryFn: () => api.checkZoneHealth(zoneId),
+    refetchInterval: 30_000,
+    staleTime: 25_000,
+    retry: false,
+  });
+
+  if (!health) return null;
+
+  const cfg: Record<ZoneHealth, { label: string; dot: string; text: string }> = {
+    ready:   { label: "Archivist ready",   dot: "bg-emerald-500",  text: "text-emerald-700" },
+    pending: { label: "Archivist pending", dot: "bg-yellow-400 animate-pulse", text: "text-yellow-700" },
+    failed:  { label: "Archivist failed",  dot: "bg-red-500",      text: "text-red-700" },
+  };
+  const { label, dot, text } = cfg[health];
+
+  return (
+    <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full border border-current/20 ${text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+      {label}
+    </span>
+  );
 }
 
 export function KnowledgeZonesList() {
@@ -95,6 +121,7 @@ export function KnowledgeZonesList() {
                 {zone.name}
               </CardTitle>
               <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                <ZoneHealthBadge zoneId={zone.id} />
                 {(zone.accessType === "web" || zone.accessType === "both") && (
                   <span title="Web Access">
                     <BookOpen className="h-3.5 w-3.5 text-muted-foreground" />

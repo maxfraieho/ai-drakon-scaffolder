@@ -140,6 +140,8 @@ export type DeleteKnowledgeZoneResponse = {
   message?: string;
 };
 
+export type ZoneHealth = "ready" | "pending" | "failed";
+
 const headers = (): HeadersInit => ({
   Authorization: `Bearer ${getAccessToken() ?? ""}`,
   "Content-Type": "application/json",
@@ -347,6 +349,25 @@ export const api = {
       headers: headers(),
     });
     return parseResponse<DeleteKnowledgeZoneResponse>(response);
+  },
+
+  checkZoneHealth: async (zoneId: string): Promise<"ready" | "pending" | "failed"> => {
+    try {
+      const response = await fetch(`/api/knowledge/zones/${zoneId}/health`, {
+        headers: headers(),
+        signal: AbortSignal.timeout(8000),
+      });
+      if (response.ok) {
+        const data: { status?: string } = await response.json().catch(() => ({}));
+        const status = (data?.status ?? "").toLowerCase();
+        if (status === "pending" || status === "warming") return "pending";
+        return "ready";
+      }
+      if (response.status === 503 || response.status === 202) return "pending";
+      return "failed";
+    } catch {
+      return "failed";
+    }
   },
 
   notebooklmChat: async (data: {

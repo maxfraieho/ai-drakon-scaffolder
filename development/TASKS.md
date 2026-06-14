@@ -23529,7 +23529,7 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 
 [ ] TASK-228: DRAKON→Bloom deep-link з zone-токеном (spec: EXECUTION-PROMPTS.md → TASK-228)
 
-[ ] TASK-229: Індикатор здоров'я Зони (Archivist ready/failed) (spec: EXECUTION-PROMPTS.md → TASK-229)
+[x] TASK-229: Індикатор здоров'я Зони (Archivist ready/failed) (spec: EXECUTION-PROMPTS.md → TASK-229) ✅
 
 [ ] TASK-232: Multi-target компіляція flue+langgraph-js (spec: EXECUTION-PROMPTS.md → TASK-232; залежить TASK-225)
 
