@@ -23497,7 +23497,7 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 **ПОВНА СПЕЦИФІКАЦІЯ: `development/EXECUTION-PROMPTS.md` → секція TASK-225. Прочитай її ПЕРШОЮ.**
 Коротко: додати `kbContext?: string` у RibosomeInput (services/architect-agent-flue/tools/ribosome.ts), вставляти в userPrompt; новий `tools/mcp-proxy.ts` з `fetchZoneContext(env, zoneId, query)`; маршрут /compile приймає zoneId. Файли поза src/ — БЕЗ .lovable sync. `npx tsc --noEmit` чистий. Коміт: `feat(ribosome): wire knowledge zone as compilation fuel via MCP-proxy`. Diary: `SESSION:$(date +%Y-%m-%d)|TASK-225:done|commit:$(git rev-parse --short HEAD)`.
 
-[ ] TASK-226: Onboarding 3 кроки + пісочниця з демо-схемою
+[x] TASK-226: Onboarding 3 кроки + пісочниця з демо-схемою ✅
 
 **!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder`**
 **ПОВНА СПЕЦИФІКАЦІЯ: `development/EXECUTION-PROMPTS.md` → секція TASK-226. Прочитай її ПЕРШОЮ.**
