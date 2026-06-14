@@ -102,6 +102,14 @@ const loadGithubProfile = (userId: string) => {
       if (doc.githubToken) {
         setGithubConnected(true);
         setGithubUserLogin(doc.githubLogin || null);
+        // Auto-populate token so GitHub operations work without manual PAT
+        setSettings(prev => {
+          const updated = { ...prev, github: { ...prev.github, token: doc.githubToken } };
+          if (typeof window !== "undefined") {
+            localStorage.setItem("ai_drakon_settings", JSON.stringify(updated));
+          }
+          return updated;
+        });
       } else {
         setGithubConnected(false);
       }
@@ -402,7 +410,7 @@ return (
 <TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:w-auto md:px-0">
   <TabsTrigger value="profile" className="shrink-0 whitespace-nowrap">Профіль</TabsTrigger>
   <TabsTrigger value="mcp" className="shrink-0 whitespace-nowrap">MCP Access</TabsTrigger>
-  {isAdmin && <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>}
+  <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>
   {isAdmin && <TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>}
   {isAdmin && <TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>}
   {isAdmin && <TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>}
@@ -518,7 +526,6 @@ return (
   </div>
 </TabsContent>
 
-{isAdmin && (
 <TabsContent value="github" className="pb-20 md:pb-0">
 <Card>
 <CardHeader>
@@ -578,7 +585,6 @@ disabled={isCheckingGithub}>
 </CardContent>
 </Card>
 </TabsContent>
-)}
 
 {isAdmin && (
 <TabsContent value="agents">
