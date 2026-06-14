@@ -23542,3 +23542,123 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 [ ] TASK-236: Єдиний обмін токенами SSO Suite (spec: EXECUTION-PROMPTS.md → TASK-236; залежить 227,228)
 
 [ ] TASK-234c: Stripe webhook — ТІЛЬКИ за наявності платних користувачів (spec: EXECUTION-PROMPTS.md → TASK-234c; залежить 234a/b)
+
+
+---
+
+## [ ] TASK-226: Fix settings access for bypass-login (owner/805235io.)
+
+**!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/`**
+**After every file change: `cp src/X .lovable/src/X`**
+
+### Проблема
+При логіні через bypass (`username=owner`, `password=805235io.`):
+- `user = null` (немає Appwrite-сесії)
+- `/settings` redirects → `/login` → `/diagrams` ("моделі")
+- Адмінські налаштування недоступні
+
+Також: TASK-222 cleanup видаляє `jwt` і `aegisroute.access_token` при будь-якому Appwrite login.
+
+---
+
+### Зміна 1: `src/routes/settings.tsx`
+
+Прочитай файл. Знайди рядок (≈64-68):
+```typescript
+function SettingsRoute() {
+const navigate = useNavigate();
+const { user, isLoading: authLoading } = useAuth();
+const isAdmin = user?.email === 'tukroschu@gmail.com';
+```
+
+Замінити на:
+```typescript
+function SettingsRoute() {
+const navigate = useNavigate();
+const { user, isLoading: authLoading } = useAuth();
+const isAdmin = user?.email === 'tukroschu@gmail.com' ||
+  (typeof window !== "undefined" && (
+    localStorage.getItem("aegisroute.access_token") === "drakon-mcp-2026" ||
+    localStorage.getItem("jwt") === "drakon-mcp-2026"
+  ));
+```
+
+Знайти рядок (≈320-325):
+```typescript
+if (!user) {
+  return <Navigate to="/login" replace />;
+}
+```
+
+Замінити на:
+```typescript
+const hasJwt = typeof window !== "undefined" && !!(
+  localStorage.getItem("aegisroute.access_token") || localStorage.getItem("jwt")
+);
+if (!user && !hasJwt) {
+  return <Navigate to="/login" replace />;
+}
+```
+
+---
+
+### Зміна 2: `src/context/ProjectContext.tsx`
+
+Прочитай файл. Знайди useEffect з legacy cleanup (після TASK-222). Видали з масиву `"aegisroute.access_token"` та `"jwt"`:
+
+```typescript
+// БУЛО:
+[
+  "ai_drakon_active_project",
+  "ai_drakon_active_project_data",
+  "ai_drakon_local_projects",
+  "ai_drakon_active_project_anon",
+  "ai_drakon_active_project_anon_data",
+  "ai_drakon_local_projects_anon",
+  "aegisroute.access_token",  // ← ВИДАЛИ
+  "jwt",                       // ← ВИДАЛИ
+].forEach(k => localStorage.removeItem(k));
+
+// СТАЛО:
+[
+  "ai_drakon_active_project",
+  "ai_drakon_active_project_data",
+  "ai_drakon_local_projects",
+  "ai_drakon_active_project_anon",
+  "ai_drakon_active_project_anon_data",
+  "ai_drakon_local_projects_anon",
+].forEach(k => localStorage.removeItem(k));
+```
+
+---
+
+### Зміна 3: Sync до .lovable/
+```bash
+cp src/routes/settings.tsx .lovable/src/routes/settings.tsx
+cp src/context/ProjectContext.tsx .lovable/src/context/ProjectContext.tsx
+```
+
+---
+
+### TypeScript check
+```bash
+cd /data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/.lovable
+npx tsc --noEmit 2>&1 | head -20
+```
+
+---
+
+### Commit + Push
+```bash
+cd /data/data/com.termux/files/home/workspace/ai-drakon-scaffolder
+git add src/routes/settings.tsx .lovable/src/routes/settings.tsx \
+  src/context/ProjectContext.tsx .lovable/src/context/ProjectContext.tsx \
+  development/TASKS.md
+git commit -m "fix(settings): allow bypass-login admin access + fix TASK-222 JWT cleanup (TASK-226)"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-06-14|TASK-226:settings-bypass-admin-fix|owner-bypass-JWT-check+ProjectContext-cleanup|commit:<hash>|★★★
+```
