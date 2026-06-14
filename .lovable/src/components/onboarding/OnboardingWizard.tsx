@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { markOnboarded } from "@/lib/onboarding";
+import { Github, Loader2 } from "lucide-react";
+import { getAppwriteJwt } from "@/lib/appwrite-jwt";
+import { readSettings } from "@/lib/settings-storage";
+import { toast } from "sonner";
 
 interface OnboardingWizardProps {
   userId: string;
@@ -31,6 +35,25 @@ export function OnboardingWizard({ userId, onComplete, onSandbox }: OnboardingWi
   const [spaceName, setSpaceName] = useState("");
   const [pat, setPat] = useState("");
   const [llmKey, setLlmKey] = useState("");
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  const handleConnectGithub = async () => {
+    setIsConnecting(true);
+    try {
+      const jwt = await getAppwriteJwt();
+      if (!jwt) {
+        toast.error("Не вдалося отримати токен авторизації");
+        return;
+      }
+      const settings = readSettings();
+      const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+      window.location.href = `${workerUrl}/auth/github/start?token=${encodeURIComponent(jwt)}`;
+    } catch (error) {
+      toast.error("Помилка підключення GitHub");
+    } finally {
+      setIsConnecting(false);
+    }
+  };
 
   function handleNext() {
     if (step < STEPS.length - 1) {
@@ -104,17 +127,46 @@ export function OnboardingWizard({ userId, onComplete, onSandbox }: OnboardingWi
           )}
 
           {step === 1 && (
-            <div className="space-y-1">
-              <Label>GitHub Personal Access Token</Label>
-              <Input
-                type="password"
-                placeholder="ghp_..."
-                value={pat}
-                onChange={(e) => setPat(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                OAuth-інтеграція GitHub буде доступна незабаром. Поки що можна вказати PAT або пропустити.
-              </p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>GitHub App OAuth (рекомендовано)</Label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full flex items-center justify-center gap-2 border-teal-500/30 hover:border-teal-500/50 hover:bg-teal-500/10 text-xs font-semibold"
+                  onClick={handleConnectGithub}
+                  disabled={isConnecting}
+                >
+                  {isConnecting ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Github className="h-4 w-4 text-teal-400" />
+                  )}
+                  Підключити GitHub
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Авторизуйтеся через GitHub, щоб надати системі доступ до репозиторіїв та комітів.
+                </p>
+              </div>
+
+              <div className="relative flex py-1 items-center">
+                <div className="flex-grow border-t border-border/40"></div>
+                <span className="flex-shrink mx-4 text-muted-foreground text-[10px] uppercase tracking-wider font-semibold">Або вкажіть PAT</span>
+                <div className="flex-grow border-t border-border/40"></div>
+              </div>
+
+              <div className="space-y-1">
+                <Label>GitHub Personal Access Token</Label>
+                <Input
+                  type="password"
+                  placeholder="ghp_..."
+                  value={pat}
+                  onChange={(e) => setPat(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Можна використовувати Personal Access Token, якщо ви віддаєте перевагу ручному налаштуванню.
+                </p>
+              </div>
             </div>
           )}
 
