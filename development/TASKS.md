@@ -23527,7 +23527,7 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 
 [x] TASK-227: GitHub App OAuth flow — OAuth routes у worker-mcp-drakon.js + Appwrite schema + Settings UI (spec: EXECUTION-PROMPTS.md → TASK-227; ✅ App registered, secrets set in drakon-antigravity-worker)
 
-[ ] TASK-228: DRAKON→Bloom deep-link з zone-токеном (spec: EXECUTION-PROMPTS.md → TASK-228)
+[x] TASK-228: DRAKON→Bloom deep-link з zone-токеном (spec: EXECUTION-PROMPTS.md → TASK-228) ✅
 
 [x] TASK-229: Індикатор здоров'я Зони (Archivist ready/failed) (spec: EXECUTION-PROMPTS.md → TASK-229) ✅
 
