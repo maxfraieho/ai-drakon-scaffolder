@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Bot, Eye, EyeOff, Loader2, UserPlus, Github } from "lucide-react";
-import { ID } from "appwrite";
+import { ID, OAuthProvider } from "appwrite";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -139,7 +139,7 @@ export function LoginPage() {
 
   const handleGithubLogin = () => {
     account.createOAuth2Session(
-      "github",
+      OAuthProvider.Github,
       window.location.origin + "/diagrams",
       window.location.origin + "/login"
     );
