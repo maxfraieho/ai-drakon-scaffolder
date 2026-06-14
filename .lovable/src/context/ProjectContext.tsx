@@ -3,6 +3,9 @@ import { api } from "@/lib/api";
 import { loadUserConfig, saveUserConfig } from "@/lib/user-config-api";
 import { listProjectsArch } from '@/lib/graph-pipeline-api';
 import { useAuth } from "@/context/AuthContext";
+import { isOnboarded } from "@/lib/onboarding";
+import { OnboardingWizard } from "@/components/onboarding/OnboardingWizard";
+import { DEMO_PROJECT } from "@/lib/onboarding-demo";
 
 export interface ProjectGithub {
   owner: string;
@@ -72,6 +75,8 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProjectState] = useState<Project | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [useSandbox, setUseSandbox] = useState(false);
   const { user } = useAuth();
   const userId = user?.$id ?? "anon";
 
@@ -138,6 +143,9 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
         }
       }
       setProjects(merged);
+      if (merged.length === 0 && !isOnboarded(userId)) {
+        setShowOnboarding(true);
+      }
       
       const savedSlug = localStorage.getItem(`ai_drakon_active_project_${userId}`);
       const saved = savedSlug ? merged.find((p) => p.slug === savedSlug) : null;
@@ -243,6 +251,18 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
+      {showOnboarding && (
+        <OnboardingWizard
+          userId={userId}
+          onComplete={() => setShowOnboarding(false)}
+          onSandbox={() => {
+            setShowOnboarding(false);
+            setUseSandbox(true);
+            addLocalProject(DEMO_PROJECT);
+            setActiveProject(DEMO_PROJECT);
+          }}
+        />
+      )}
     </ProjectContext.Provider>
   );
 }
