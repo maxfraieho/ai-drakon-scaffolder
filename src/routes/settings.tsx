@@ -96,7 +96,7 @@ useEffect(() => {
   // Load current MCP key on mount
   const jwt = localStorage.getItem("jwt");
   if (!jwt) return;
-  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
   setIsLoadingMcpKey(true);
   fetch(`${workerUrl}/v1/api-key`, {
     headers: { Authorization: `Bearer ${jwt}` },
@@ -115,7 +115,7 @@ useEffect(() => {
 const generateMcpKey = async () => {
   const jwt = localStorage.getItem("jwt");
   if (!jwt) { toast.error("Потрібна авторизація"); return; }
-  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
   setIsGeneratingMcpKey(true);
   try {
     const res = await fetch(`${workerUrl}/v1/api-key/generate`, {
@@ -140,7 +140,7 @@ const generateMcpKey = async () => {
 const revokeMcpKey = async () => {
   const jwt = localStorage.getItem("jwt");
   if (!jwt) return;
-  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
   try {
     await fetch(`${workerUrl}/v1/api-key`, { method: "DELETE", headers: { Authorization: `Bearer ${jwt}` } });
     setMcpKey(null);
@@ -284,7 +284,7 @@ setIsLoadingMinio(true);
 setMinioStatus({ type: "idle", text: "Завантажую..." });
 try {
 const workerUrl = (settings.app.workerUrl ||
-"https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+"https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
 const resp = await fetch(`${workerUrl}/health`);
 const data = (await resp.json()) as { storage?: { endpoint?: string; bucket?: string } };
 if (data.storage?.endpoint && data.storage.endpoint !== "not configured") {
@@ -1079,8 +1079,8 @@ style={{ touchAction: "manipulation" }}
                       mcpServers: {
                         drakon: {
                           type: "http",
-                          url: `${(settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "")}/mcp`,
-                          serverUrl: `${(settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "")}/mcp`,
+                          url: `${(settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "")}/mcp`,
+                          serverUrl: `${(settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "")}/mcp`,
                           headers: { Authorization: `Bearer ${mcpKey}` }
                         }
                       }
@@ -1093,7 +1093,7 @@ style={{ touchAction: "manipulation" }}
       "mcpServers": {
         "drakon": {
           "type": "http",
-          "url": "${(settings.app.workerUrl || 'https://drakon-mcp-worker.maxfraieho.workers.dev').replace(/\/$/,'')}/mcp",
+          "url": "${(settings.app.workerUrl || 'https://drakon-antigravity-worker.maxfraieho.workers.dev').replace(/\/$/,'')}/mcp",
           "headers": { "Authorization": "Bearer ${mcpKey ? `${mcpKey.slice(0, 14)}...${mcpKey.slice(-6)}` : ""}" }
         }
       }

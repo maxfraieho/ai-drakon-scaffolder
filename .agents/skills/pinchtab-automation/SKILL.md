@@ -22,7 +22,7 @@ description: >-
 * **Токен авторизації PinchTab**: `0117419fcfb5de5d82220c1f9da8de97`
 * **Туннелі та Ворк-адреси**:
   - UI: `https://ai-drakon-scaffolder.pages.dev/` або локальний порт розробки.
-  - Worker: `https://drakon-mcp-worker.maxfraieho.workers.dev`
+  - Worker: `https://drakon-antigravity-worker.maxfraieho.workers.dev`
   - Токен Worker: `drakon-mcp-2026`
 * **Файлова структура сесії**:
   - Скріншоти тестів зберігаються в `/tmp/pinchtab-tests/` на dev-сервері або завантажуються локально.

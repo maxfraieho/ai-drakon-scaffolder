@@ -287,27 +287,58 @@ grep -rn "Suite\|Garden Bloom\|AI-DRAKON" src/pages/LandingPage.tsx .lovable/src
 
 ## TASK-227 — GitHub App + OAuth (заміна PAT для користувачів)
 
-**Контекст:** зараз юзер вставляє PAT (завеликі права, довгоживучий). Ціль
-(дослідження §3): GitHub App + user-to-server токен → Appwrite encrypted.
+**Контекст:** зараз юзер вставляє PAT (завеликі права, довгоживучий). Ціль:
+GitHub App + user-to-server токен → Appwrite encrypted.
 
-**Передумова (робить Q вручну, НЕ AGY3):** зареєструвати GitHub App
-(права Contents R/W), отримати Client ID + Client Secret, callback
-`https://aidrakon.tech/auth/github/callback`. Секрети → CF Worker secrets.
+**Передумова:** ✅ ВИКОНАНО Q — GitHub App `aidrakon-oauth` зареєстровано (App ID: 4048947).
+Secrets `GITHUB_APP_CLIENT_ID`, `GITHUB_APP_CLIENT_SECRET`, `GITHUB_APP_ID`, `GITHUB_PRIVATE_KEY`
+вже виставлені у CF Worker `drakon-antigravity-worker`.
+Callback URL: `https://drakon-antigravity-worker.maxfraieho.workers.dev/auth/github/callback`
+
+**!!ВАЖЛИВО!! Системний воркер — `cloudflare-worker/worker-mcp-drakon.js`**
+(deployed as `drakon-antigravity-worker`, НЕ `architect-agent-flue`)
+
+**!!IMPORTANT!! Run locally on AGY3 (Termux). Repo: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder/`**
 
 **Файли:**
-- `services/architect-agent-flue/src/routes/github-oauth.ts` (новий): маршрути
-  `GET /auth/github/start` (redirect на github.com/login/oauth/authorize з Client ID)
-  та `GET /auth/github/callback` (обмін code→token через Client Secret, запис у
-  Appwrite encrypted attribute `user_profiles.githubToken`).
+- `cloudflare-worker/worker-mcp-drakon.js` (існуючий системний воркер):
+  додати маршрути `GET /auth/github/start` та `GET /auth/github/callback`.
+  `/auth/github/start` → redirect на `https://github.com/login/oauth/authorize?client_id=...`
+  `/auth/github/callback` → обмін `code` → user token через GitHub API,
+  зберегти в Appwrite user_profiles.githubToken (encrypted), redirect назад на `/settings`.
+  Деплой: `npx wrangler deploy --config wrangler-antigravity.jsonc` (без tsc!).
 - `src/routes/settings.tsx` (+.lovable): у вкладці "Профіль" → секція GitHub:
-  замінити "незабаром" на кнопку "Підключити GitHub" (→ /auth/github/start),
+  замінити "незабаром" на кнопку "Підключити GitHub"
+  (href=`https://drakon-antigravity-worker.maxfraieho.workers.dev/auth/github/start`),
   показувати статус ✅ Connected (булеве is_configured, НЕ plaintext токен).
-- `infrastructure/appwrite/schema.ts` + `setup.mjs`: поле `githubToken`
-  (encrypted string) у `user_profiles`.
+- `infrastructure/appwrite/schema.ts` + `infrastructure/appwrite/setup.mjs`:
+  додати поле `githubToken` (encrypted string, type: "string") у `user_profiles`.
 
-**Кроки:** 1) `mcp__gitnexus__query("user_profiles schema appwrite", repo="ai-drakon-scaffolder")` — знайти схему. 2) Додати encrypted поле. 3) OAuth-маршрути в Worker. 4) UI-кнопка + статус. 5) Усі читачі GitHub-токена (grep `github.token`) перевести на читання з user_profiles, fallback на PAT-поле.
-**Верифікація:** `npx tsc --noEmit`; OAuth-флоу вручну → токен у Appwrite, у відповіді API лише `is_configured`.
-**Коміт:** `feat(github): GitHub App OAuth flow, encrypted token storage (replace PAT)`
+**Кроки:**
+1. Прочитай `cloudflare-worker/worker-mcp-drakon.js` рядки 1-100 і 2138-2200 — зрозумій routing pattern (fetch handler, маршрути).
+2. Знайди `verifyOwnerAuth` (~рядок 188) — для розуміння auth flow.
+3. Знайди `githubHeaders` (~рядок 66) — там `env.GITHUB_TOKEN`; залиш як fallback.
+4. Додай в кінці fetch handler (перед default 404) маршрути `/auth/github/start` і `/auth/github/callback`.
+5. В `user_profiles` (infrastructure/appwrite/schema.ts) додай поле `githubToken`.
+6. UI: settings.tsx вкладка "Профіль" — кнопка + статус.
+7. Деплой воркера: `cd /data/data/com.termux/files/home/workspace/ai-drakon-scaffolder && npx wrangler deploy --config wrangler-antigravity.jsonc`
+8. Sync: `cp src/routes/settings.tsx .lovable/src/routes/settings.tsx`
+
+**Верифікація:**
+```bash
+curl -s https://drakon-antigravity-worker.maxfraieho.workers.dev/auth/github/start
+# має бути redirect 302 → github.com
+```
+
+**Коміт:**
+```
+feat(github): GitHub App OAuth flow + encrypted token storage (TASK-227)
+```
+
+**Diary:**
+```
+SESSION:$(date +%Y-%m-%d)|TASK-227:github-oauth|worker-mcp-drakon+appwrite-schema+settings-ui|commit:<hash>|★★★
+```
 
 ## TASK-228 — DRAKON→Bloom deep-link з передачею zone-токена
 

@@ -120,7 +120,7 @@ IF NO: [обхідний шлях]
 **Активний проект:** `ai-drakon-scaffolder`
 - Репозиторій: `~/workspace/ai-drakon-scaffolder/` (на сервері 192.168.3.184)
 - CF Pages: `https://ai-drakon-scaffolder.pages.dev/`
-- Воркер: `https://drakon-mcp-worker.maxfraieho.workers.dev`
+- Воркер: `https://drakon-antigravity-worker.maxfraieho.workers.dev`
 - Авторизація: Bearer `drakon-mcp-2026`
 
 **Стек агентів (192.168.3.184):**

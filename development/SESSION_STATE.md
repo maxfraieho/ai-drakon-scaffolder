@@ -25,7 +25,7 @@ Mirror: drakon-flow-designer → ai-drakon-setup via GitHub Action (MIRROR_TOKEN
 
 ## Live URLs
 - UI: https://ai-drakon-setup.pages.dev/ (login: `owner` / `805235io`)
-- Worker: https://drakon-mcp-worker.maxfraieho.workers.dev
+- Worker: https://drakon-antigravity-worker.maxfraieho.workers.dev
 - Architect tunnel: https://architect-agent.exodus.pp.ua
 - Drakon tunnel: https://drakon-agent.exodus.pp.ua
 - Docs tunnel: https://docs-agent.exodus.pp.ua

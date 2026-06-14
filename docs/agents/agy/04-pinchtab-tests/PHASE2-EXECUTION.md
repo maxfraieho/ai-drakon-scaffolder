@@ -24,7 +24,7 @@ lang: uk
 |----------|---------|
 | Target URL | `https://ai-drakon-scaffolder.pages.dev/` |
 | Login | `owner` / `805235io` |
-| Worker URL | `https://drakon-mcp-worker.maxfraieho.workers.dev` |
+| Worker URL | `https://drakon-antigravity-worker.maxfraieho.workers.dev` |
 | PinchTab host | `192.168.3.184` |
 | Скріншоти | `/tmp/pinchtab-tests/` на 192.168.3.184 |
 
@@ -304,7 +304,7 @@ pinchtab_wait_for_load()
 pinchtab_snapshot()
 
 # Знайти та заповнити Worker URL (з фактичним селектором після recon)
-pinchtab_fill("[WORKER_URL_INPUT_SELECTOR]", "https://drakon-mcp-worker.maxfraieho.workers.dev")
+pinchtab_fill("[WORKER_URL_INPUT_SELECTOR]", "https://drakon-antigravity-worker.maxfraieho.workers.dev")
 
 # Зберегти
 pinchtab_click("[SAVE_BUTTON_SELECTOR]")
@@ -316,7 +316,7 @@ pinchtab_wait_for_load()
 
 # Перевірити що значення збереглося
 pinchtab_eval("document.querySelector('[WORKER_URL_INPUT_SELECTOR]')?.value")
-# Очікується: "https://drakon-mcp-worker.maxfraieho.workers.dev"
+# Очікується: "https://drakon-antigravity-worker.maxfraieho.workers.dev"
 
 # Перевірити localStorage
 pinchtab_eval("localStorage.getItem('settings.workerUrl') || localStorage.getItem('workerUrl')")
@@ -525,7 +525,7 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "
 3. **JWT persist**: після AUTH-03 не очищати localStorage до завершення всіх DIAG/SETT/PIPE тестів.
 4. **PIPE-A-01 timeout**: LLM-агент може відповідати до 30 сек. Встановити `timeout=30000` для `wait_for_text`.
 5. **Якщо тест FAIL**: зробити screenshot, записати фактичний vs очікуваний результат, продовжити з наступним тестом.
-6. **Worker URL**: якщо `https://drakon-mcp-worker.maxfraieho.workers.dev` не відповідає — перевірити в `/settings` поточне значення або запитати Q.
+6. **Worker URL**: якщо `https://drakon-antigravity-worker.maxfraieho.workers.dev` не відповідає — перевірити в `/settings` поточне значення або запитати Q.
 
 ---
 

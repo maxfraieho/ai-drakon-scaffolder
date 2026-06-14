@@ -35,7 +35,7 @@ lang: uk
 
 ## 3. Запуск через розробницький MCP-інтерфейс (API)
 
-Для програмного виклику використовується інструмент `pipeline.generate` через **Cloudflare Worker** (`https://drakon-mcp-worker.maxfraieho.workers.dev/v1/`).
+Для програмного виклику використовується інструмент `pipeline.generate` через **Cloudflare Worker** (`https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/`).
 
 ### Робочий процес:
 1. **POST** `/pipeline/analyze` з тілом `{"source_code": "..."}` повертає `job_id`.

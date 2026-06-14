@@ -125,7 +125,7 @@ async function handleRequest(request, env) {
    ```bash
    npx wrangler deploy
    ```
-   Воркер буде розгорнутий за адресою `https://drakon-mcp-worker.maxfraieho.workers.dev`.
+   Воркер буде розгорнутий за адресою `https://drakon-antigravity-worker.maxfraieho.workers.dev`.
 
 Завдяки поєднанню **авторизації через JWT**, **захищених тунелів проксі** та **serverless архітектури Cloudflare**, наша система забезпечує максимальний рівень безпеки промислового класу при нульових витратах на інфраструктуру!
 

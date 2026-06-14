@@ -2,7 +2,7 @@
 // Test runner for drakon-mcp-worker
 // Usage: node scripts/test-mcp.mjs [--worker-url URL] [--token TOKEN]
 
-const WORKER_URL = process.env.WORKER_URL || 'https://drakon-mcp-worker.maxfraieho.workers.dev';
+const WORKER_URL = process.env.WORKER_URL || 'https://drakon-antigravity-worker.maxfraieho.workers.dev';
 const MCP_TOKEN = process.env.MCP_TOKEN || 'drakon-mcp-2026';
 const GH_TOKEN = process.env.GH_TOKEN || '';
 

@@ -131,7 +131,7 @@ function workerUrl(): string {
     const v = localStorage.getItem("app_worker_url");
     if (v) return v.replace(/\/+$/, "");
   }
-  return "https://drakon-mcp-worker.maxfraieho.workers.dev";
+  return "https://drakon-antigravity-worker.maxfraieho.workers.dev";
 }
 
 function jwt(): string | null {

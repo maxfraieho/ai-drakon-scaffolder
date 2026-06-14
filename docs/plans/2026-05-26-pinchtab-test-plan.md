@@ -23,7 +23,7 @@ lang: uk
 
 Для успішного виконання тестування PinchTab має бути налаштований з наступними параметрами та оточенням:
 1. **Базовий шлях (Base URL):** `https://ai-drakon-scaffolder.pages.dev/`
-2. **Адреса Cloudflare Worker (API Proxy):** Налаштовується в локальному сховищі або через сторінку `/settings`. Поточний робочий проксі: `https://drakon-mcp-worker.maxfraieho.workers.dev`
+2. **Адреса Cloudflare Worker (API Proxy):** Налаштовується в локальному сховищі або через сторінку `/settings`. Поточний робочий проксі: `https://drakon-antigravity-worker.maxfraieho.workers.dev`
 3. **Локальні збереження (Local Storage):**
    - Токен авторизації: `clientJwt` (значення JWT, згенероване при успішній авторизації).
    - Налаштування підключення: `settings.workerUrl` (значення URL проксі-воркера).

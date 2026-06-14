@@ -77,7 +77,7 @@ const fetchWorkerHealth = async () => {
   setIsLoadingMinio(true);
   setMinioStatus({ type: "idle", text: "Завантажую..." });
   try {
-    const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+    const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
     const resp = await fetch(`${workerUrl}/health`);
     const data = await resp.json() as { storage?: { endpoint?: string; bucket?: string } };
     if (data.storage?.endpoint && data.storage.endpoint !== "not configured") {

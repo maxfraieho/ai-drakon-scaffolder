@@ -77,7 +77,7 @@ On the **Diagrams page**:
 
 ## Technical Notes
 
-- `VITE_WORKER_URL` = `https://drakon-mcp-worker.maxfraieho.workers.dev`
+- `VITE_WORKER_URL` = `https://drakon-antigravity-worker.maxfraieho.workers.dev`
 - MCP calls: POST to `{VITE_WORKER_URL}/mcp` with `Authorization: Bearer {MCP_TOKEN}`
 - For git writes: add `X-Github-Token: {gitWriteToken}` header
 - `drakon.listdiagrams` with empty `folderSlug` returns all keys — split on `/`, collect unique first segments

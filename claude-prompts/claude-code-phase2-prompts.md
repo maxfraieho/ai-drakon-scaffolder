@@ -245,7 +245,7 @@ export async function notifyDiagramChanged(payload: DiagramChangedPayload): Prom
 {
   "mcpServers": {
     "drakon": {
-      "url": "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+      "url": "https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp",
       "headers": {
         "Authorization": "Bearer ${DRAKON_MCP_API_KEY}"
       }
@@ -255,7 +255,7 @@ export async function notifyDiagramChanged(payload: DiagramChangedPayload): Prom
 
 2. Додай в .env.example:
 DRAKON_MCP_API_KEY=your-mcp-api-key-here
-VITE_WORKER_URL=https://drakon-mcp-worker.maxfraieho.workers.dev
+VITE_WORKER_URL=https://drakon-antigravity-worker.maxfraieho.workers.dev
 
 3. Оновити README.md (або створити якщо немає) з секцією:
 

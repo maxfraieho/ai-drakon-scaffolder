@@ -43,7 +43,7 @@
 | GET | /docs/read?path=X | Читання doc-файлу |
 | GET | /memory/list | Список пам'яті |
 
-## Cloudflare Worker (https://drakon-mcp-worker.maxfraieho.workers.dev)
+## Cloudflare Worker (https://drakon-antigravity-worker.maxfraieho.workers.dev)
 
 MCP endpoints:
 - drakon.saveDiagram, drakon.listDiagrams, drakon.getDiagram

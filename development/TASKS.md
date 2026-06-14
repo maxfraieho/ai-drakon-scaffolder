@@ -56,7 +56,7 @@ BOT_TOKEN=YOUR_TOKEN_HERE
   async def ask_agent(text: str) -> str:
       async with httpx.AsyncClient() as client:
           r = await client.post(
-              "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/agents/sonate-solidaire/chat",
+              "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/agents/sonate-solidaire/chat",
               json={"message": text}, timeout=30
           )
           return r.json().get("reply", "...")
@@ -631,7 +631,7 @@ npx wrangler whoami
 npx wrangler deploy --config worker-wrangler.toml
 
 # 5. Перевірити що deploy успішний:
-curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/notes/list?flat=false&project=uav-watcher" \
+curl -s "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/notes/list?flat=false&project=uav-watcher" \
   -H "Authorization: Bearer drakon-mcp-2026" | python3 -c "
 import json,sys; d=json.load(sys.stdin)
 tree = d.get('tree', [])
@@ -676,10 +676,10 @@ python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-56:wo
 **1. Отримай код модулів через GitHub Worker:**
 ```bash
 # sharon consultant (main файл)
-curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=consultant/consultant.py&branch=master" > /tmp/consultant_resp.json
+curl -s "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=consultant/consultant.py&branch=master" > /tmp/consultant_resp.json
 python3 -c "import json; d=json.load(open('/tmp/consultant_resp.json')); open('/tmp/consultant.txt','w').write(d['content']); print('LEN:', len(d['content']))"
 
-curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=auth.py&branch=master" > /tmp/auth_resp.json
+curl -s "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=auth.py&branch=master" > /tmp/auth_resp.json
 python3 -c "import json; d=json.load(open('/tmp/auth_resp.json')); open('/tmp/auth.txt','w').write(d['content']); print('LEN:', len(d['content']))"
 ```
 
@@ -707,7 +707,7 @@ for name, path, tags in modules:
 
 **3. Верифікація:**
 ```bash
-curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/notes/list?flat=true&project=uav-watcher" \
+curl -s "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/notes/list?flat=true&project=uav-watcher" \
   -H "Authorization: Bearer drakon-mcp-2026" | python3 -c "
 import json,sys; d=json.load(sys.stdin)
 notes = d.get('notes', [])
@@ -6082,7 +6082,7 @@ Files:
 Investigation steps:
 1. Знайди в CodePage.tsx catch block де показується "Не вдалося завантажити" — яка точна помилка?
 2. Протестуй GitHub API напряму:
-   curl "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" -H "Authorization: Bearer <JWT_TOKEN>"
+   curl "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" -H "Authorization: Bearer <JWT_TOKEN>"
 3. Якщо помилка 404/403: проблема з token або repo visibility
 4. Якщо 200: проблема в frontend обробці відповіді
 
@@ -6167,8 +6167,8 @@ Run: locally on AGY3 Termux — всі HTTP виклики до 192.168.3.184 (d
 !!IMPORTANT!! AUTH та ENDPOINTS:
 - Agents (прямий доступ, БЕЗ JWT): http://192.168.3.184:8765/chat (drakon), :8766/chat (architect), :8767/chat (docs)
 - DRAKON MCP Worker auth: Bearer drakon-mcp-2026
-- Worker URL: https://drakon-mcp-worker.maxfraieho.workers.dev
-- JWT (для Worker): curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/auth/login -H 'Content-Type: application/json' -d '{"username":"owner","password":"805235io."}' | python3 -c 'import sys,json; print(json.load(sys.stdin).get("token",""))'
+- Worker URL: https://drakon-antigravity-worker.maxfraieho.workers.dev
+- JWT (для Worker): curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/auth/login -H 'Content-Type: application/json' -d '{"username":"owner","password":"805235io."}' | python3 -c 'import sys,json; print(json.load(sys.stdin).get("token",""))'
 - НЕ потрібен JWT для прямих agent endpoints (:8765/:8766/:8767)
 
 Context:
@@ -6216,13 +6216,13 @@ curl -s --max-time 120 -X POST http://192.168.3.184:8766/chat \
 PHASE 3: Збережи DRAKON схеми через MCP Worker
 ==================================================================
 
-JWT=$(curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/auth/login \
+JWT=$(curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"owner","password":"805235io."}' | python3 -c 'import sys,json; print(json.load(sys.stdin).get("token",""))')
 
 Якщо architect-agent повернув DRAKON IR у відповіді:
 - Зберегти кожну схему через:
-  curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/drakon/commit \
+  curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/drakon/commit \
     -H "Authorization: Bearer $JWT" \
     -H "Content-Type: application/json" \
     -d '{"folder":"uav-watcher","name":"flow.threat-detection-ai","ir": <IR_FROM_AGENT>}'
@@ -7724,7 +7724,7 @@ SESSION:2026-05-31|TASK-102:opendesign-review|RPi-7459+screenshots|opendesign-st
 TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
 
 # 1. Отримати функцію score_proximity (рядки 78-100 uav_watcher.py)
-curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" \
+curl -s "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" \
   | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
@@ -7788,7 +7788,7 @@ SESSION:2026-05-31|TASK-101:pipeline-analysis|score-proximity+refactor|screensho
 **Крок 1 — Отримати код:**
 ```bash
 TMPD=${TMPDIR:-/data/data/com.termux/files/usr/tmp}
-curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" | python3 -c "
+curl -s "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
 lines=d.get('content','').split('\n')
@@ -10840,7 +10840,7 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
    curl -s http://localhost:8766/health && echo " architect ok"'
 
 # 5. Тест pipeline через Worker
-curl -s --max-time 20 -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
+curl -s --max-time 20 -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer drakon-mcp-2026" \
   -d "{\"code\":\"def hello():\\n  return 1\",\"language\":\"python\",\"filename\":\"test.py\"}" | \
@@ -10956,7 +10956,7 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
 
 # 5. Тест через Worker
 sleep 5
-curl -s --max-time 30 -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
+curl -s --max-time 30 -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer drakon-mcp-2026" \
   --data-raw '{"source_code":"def check_level(level):\n  if level > 3:\n    return \"ALERT\"\n  return None","language":"python","filename":"test.py"}' | \
@@ -11011,7 +11011,7 @@ sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
 
 # 4. Тест через worker
 sleep 5
-curl -s --max-time 30 -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
+curl -s --max-time 30 -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer drakon-mcp-2026" \
   --data-raw '{"source_code":"def check(lvl):\n  if lvl > 3:\n    return \"ALERT\"\n  return None","language":"python","filename":"test.py"}' 2>/dev/null
@@ -11110,7 +11110,7 @@ lang: uk
 #### Код для отримання функцій:
 ```bash
 # score_proximity function
-curl -s "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" \
+curl -s "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/github/file?owner=maxfraieho&repo=uav-watcher&path=uav_watcher.py&branch=master" \
   | python3 -c "
 import json,sys
 d=json.load(sys.stdin)
@@ -11235,7 +11235,7 @@ SESSION:DATE|TASK-113:manual-testing-plan+docs-audit|scenarios:7|docs-checked:4|
 
 **Актуальний стан системи (для передачі агенту):**
 ```
-- Worker URL: https://drakon-mcp-worker.maxfraieho.workers.dev/v1/...
+- Worker URL: https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/...
 - Architect agent: http://192.168.3.184:8766 (LAN), продакшн = Cloudflare Worker
 - DRAKON agent: через proxy agy.exodus.pp.ua/v1
 - Pipeline analyze: POST /pipeline/analyze {"source_code": "..."} → job_id → /pipeline/status/{id}
@@ -11274,7 +11274,7 @@ manuals = [
 
 SYSTEM_CONTEXT = """
 Актуальний стан AI-DRAKON (2026-05-31):
-- Worker: drakon-mcp-worker.maxfraieho.workers.dev/v1/
+- Worker: drakon-antigravity-worker.maxfraieho.workers.dev/v1/
 - Pipeline API: POST /pipeline/analyze {"source_code":"..."} → job_id → GET /pipeline/status/{id}
 - Worker UTF-8 fix: TextDecoder('utf-8').decode(Uint8Array.from(atob(...), c=>c.charCodeAt(0)))
 - DRAKON IR вузли: b0 (branchId:0, обов'язковий), action (content+one), question (content+one+two), end
@@ -12321,7 +12321,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-const WORKER_URL = "https://drakon-mcp-worker.maxfraieho.workers.dev";
+const WORKER_URL = "https://drakon-antigravity-worker.maxfraieho.workers.dev";
 const AGENT_URL = "http://192.168.3.184:8766";
 
 interface Message { role: "user" | "assistant"; content: string; }
@@ -12616,7 +12616,7 @@ curl -s -X POST http://192.168.3.184:8766/files/write \
   -H "Content-Type: application/json" \
   -d '{
     "path": "docs/architecture/agents-overview.md",
-    "content": "# AI-DRAKON — Архітектура агентів\n\n## Єдиний сервіс\n\nВсі агенти об'\''єднані в `architect-agent` (порт 8766).\n\n## Агенти\n\n| Agent ID | Призначення | System prompt |\n|----------|-------------|---------------|\n| `architect` | Головний архітектор, file tools | ARCHITECT_SYSTEM_PROMPT |\n| `drakon` | Python код → DRAKON IR JSON | DRAKON_SYSTEM |\n| `docs` | Документознавець, wiki-links | DOCS_SYSTEM |\n| `sonate-solidaire` | Публічний асистент асоціації | KB з sonate-solidaire.me/kb/ |\n\n## Ендпоінти\n\n```\nGET  /agents/{id}/health\nPOST /agents/{id}/chat\n     body: { message, context?, agent_mode? }\n```\n\n## LangGraph Pipeline\n\nDRAKON IR JSON → graph_loader.py → StateGraph\n\n```\npipelines/*.drakon.json\n  ↓ load_graph_from_ir()\n  ↓ NODE_REGISTRY[node_name](state)\n  ↓ SSE stream або sync response\n```\n\n## File Tools (для агентів)\n\n```\nGET  /files/list?path=docs/\nGET  /files/read?path=docs/file.md\nPOST /files/write  { path, content }\nPOST /files/patch  { path, old_string, new_string }\nPOST /files/delete { path }\n```\n\n## Cloudflare Worker\n\n`drakon-mcp-worker.maxfraieho.workers.dev`\n\n- `/v1/agents/{id}/chat` → proxies до architect-agent\n- `sonate-solidaire` — публічний route (без auth)\n- інші агенти — потребують Bearer token\n",
+    "content": "# AI-DRAKON — Архітектура агентів\n\n## Єдиний сервіс\n\nВсі агенти об'\''єднані в `architect-agent` (порт 8766).\n\n## Агенти\n\n| Agent ID | Призначення | System prompt |\n|----------|-------------|---------------|\n| `architect` | Головний архітектор, file tools | ARCHITECT_SYSTEM_PROMPT |\n| `drakon` | Python код → DRAKON IR JSON | DRAKON_SYSTEM |\n| `docs` | Документознавець, wiki-links | DOCS_SYSTEM |\n| `sonate-solidaire` | Публічний асистент асоціації | KB з sonate-solidaire.me/kb/ |\n\n## Ендпоінти\n\n```\nGET  /agents/{id}/health\nPOST /agents/{id}/chat\n     body: { message, context?, agent_mode? }\n```\n\n## LangGraph Pipeline\n\nDRAKON IR JSON → graph_loader.py → StateGraph\n\n```\npipelines/*.drakon.json\n  ↓ load_graph_from_ir()\n  ↓ NODE_REGISTRY[node_name](state)\n  ↓ SSE stream або sync response\n```\n\n## File Tools (для агентів)\n\n```\nGET  /files/list?path=docs/\nGET  /files/read?path=docs/file.md\nPOST /files/write  { path, content }\nPOST /files/patch  { path, old_string, new_string }\nPOST /files/delete { path }\n```\n\n## Cloudflare Worker\n\n`drakon-antigravity-worker.maxfraieho.workers.dev`\n\n- `/v1/agents/{id}/chat` → proxies до architect-agent\n- `sonate-solidaire` — публічний route (без auth)\n- інші агенти — потребують Bearer token\n",
     "create_dirs": true
   }'
 ```
@@ -18817,7 +18817,7 @@ with open('development/TASKS.md','w') as f: f.write(c)
 !!IMPORTANT!! SSH to 192.168.3.184. Run locally on AGY3 Termux.
 
 ### STEP 0 — Root cause summary
-- `drakon-mcp-worker.maxfraieho.workers.dev` — Worker's `env.GITHUB_TOKEN` is expired (returns 401 even on public repos)
+- `drakon-antigravity-worker.maxfraieho.workers.dev` — Worker's `env.GITHUB_TOKEN` is expired (returns 401 even on public repos)
 - Frontend sends `X-Github-Token` header with user's PAT — if PAT is valid, Worker uses IT instead of env
 - Repo `maxfraieho/sonate-solidsite` returns 404 unauthenticated (private or doesn't exist)
 - Error "GitHub повернув помилку" is too generic
@@ -19794,11 +19794,11 @@ INSERT BEFORE that line (add this block above it):
         return jsonResponse({
           success: true,
           apiKey,
-          mcpUrl: 'https://drakon-mcp-worker.maxfraieho.workers.dev/mcp',
+          mcpUrl: 'https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp',
           config: {
             type: 'http',
-            url: 'https://drakon-mcp-worker.maxfraieho.workers.dev/mcp',
-            serverUrl: 'https://drakon-mcp-worker.maxfraieho.workers.dev/mcp',
+            url: 'https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp',
+            serverUrl: 'https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp',
             headers: { Authorization: `Bearer ${apiKey}` },
           },
         });
@@ -19849,7 +19849,7 @@ CLOUDFLARE_API_TOKEN=<CF_WORKERS_TOKEN> \
 
 Verify by testing:
 ```bash
-curl -s https://drakon-mcp-worker.maxfraieho.workers.dev/health | head -c 200
+curl -s https://drakon-antigravity-worker.maxfraieho.workers.dev/health | head -c 200
 ```
 
 ---
@@ -19875,7 +19875,7 @@ useEffect(() => {
   // Load current MCP key on mount
   const jwt = localStorage.getItem("jwt");
   if (!jwt) return;
-  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
   setIsLoadingMcpKey(true);
   fetch(`${workerUrl}/v1/api-key`, {
     headers: { Authorization: `Bearer ${jwt}` },
@@ -19894,7 +19894,7 @@ useEffect(() => {
 const generateMcpKey = async () => {
   const jwt = localStorage.getItem("jwt");
   if (!jwt) { toast.error("Потрібна авторизація"); return; }
-  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
   setIsGeneratingMcpKey(true);
   try {
     const res = await fetch(`${workerUrl}/v1/api-key/generate`, {
@@ -19919,7 +19919,7 @@ const generateMcpKey = async () => {
 const revokeMcpKey = async () => {
   const jwt = localStorage.getItem("jwt");
   if (!jwt) return;
-  const workerUrl = (settings.app.workerUrl || "https://drakon-mcp-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+  const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
   try {
     await fetch(`${workerUrl}/v1/api-key`, { method: "DELETE", headers: { Authorization: `Bearer ${jwt}` } });
     setMcpKey(null);
@@ -19987,8 +19987,8 @@ Also update the `md:grid-cols-6` to `md:grid-cols-7` in the TabsList className.
                   mcpServers: {
                     drakon: {
                       type: "http",
-                      url: "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
-                      serverUrl: "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+                      url: "https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp",
+                      serverUrl: "https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp",
                       headers: { Authorization: `Bearer ${mcpKey}` }
                     }
                   }
@@ -20001,7 +20001,7 @@ Also update the `md:grid-cols-6` to `md:grid-cols-7` in the TabsList className.
   "mcpServers": {
     "drakon": {
       "type": "http",
-      "url": "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+      "url": "https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp",
       "headers": { "Authorization": "Bearer ${mcpKey.slice(0,14)}...${mcpKey.slice(-6)}" }
     }
   }
@@ -23525,7 +23525,7 @@ SESSION:2026-06-13|TASK-222:data-isolation+appwrite-billing|localStorage-scoped+
 
 [ ] TASK-237: Лендинг — наратив "два сервіси — один Suite" (spec: EXECUTION-PROMPTS.md → TASK-237; src/pages/LandingPage.tsx +.lovable)
 
-[ ] TASK-227: GitHub App + OAuth, encrypted token (spec: EXECUTION-PROMPTS.md → TASK-227; передумова Q: реєстрація GitHub App)
+[ ] TASK-227: GitHub App OAuth flow — OAuth routes у worker-mcp-drakon.js + Appwrite schema + Settings UI (spec: EXECUTION-PROMPTS.md → TASK-227; ✅ App registered, secrets set in drakon-antigravity-worker)
 
 [ ] TASK-228: DRAKON→Bloom deep-link з zone-токеном (spec: EXECUTION-PROMPTS.md → TASK-228)
 

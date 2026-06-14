@@ -154,7 +154,7 @@ PROXY_URL=http://localhost:18880
 PROXY_TOKEN=freecc
 PROXY_MODEL=coding-proxy
 KNOWLEDGE_DIR=knowledge
-WORKER_URL=https://drakon-mcp-worker.maxfraieho.workers.dev
+WORKER_URL=https://drakon-antigravity-worker.maxfraieho.workers.dev
 WORKER_TOKEN=drakon-mcp-2026
 ```
 
@@ -1038,7 +1038,7 @@ git commit -m "feat(worker): /analyze-python proxy endpoint → drakon-agent ser
 ```
 UI (ai-drakon-setup.pages.dev)
   ↓ POST /analyze-python { code, filename, project_context }
-CF Worker (drakon-mcp-worker.maxfraieho.workers.dev)
+CF Worker (drakon-antigravity-worker.maxfraieho.workers.dev)
   ↓ proxy → http://192.168.3.184:8765/analyze
 drakon-agent FastAPI
   ├─ Python ast → raw IR

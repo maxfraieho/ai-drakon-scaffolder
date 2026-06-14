@@ -2,7 +2,7 @@
 
 **Backend is already deployed.**
 
-Worker endpoints live at `https://drakon-mcp-worker.maxfraieho.workers.dev`:
+Worker endpoints live at `https://drakon-antigravity-worker.maxfraieho.workers.dev`:
 - `GET /v1/projects/list` — returns sharon-global + uav-watcher
 - `GET /v1/drakon-ir/list?project=slug` — lists IR diagrams for project
 - `GET /v1/drakon-ir/{name}?project=slug` — returns IR diagram JSON

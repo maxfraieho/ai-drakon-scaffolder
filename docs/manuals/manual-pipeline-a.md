@@ -36,11 +36,11 @@ lang: uk
 
 ## 3. Запуск через MCP-інтерфейс (API)
 
-Для інтеграції використовується Cloudflare Worker: `https://drakon-mcp-worker.maxfraieho.workers.dev/v1/`.
+Для інтеграції використовується Cloudflare Worker: `https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/`.
 
 ### Виклик аналізу:
 ```bash
-curl -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
+curl -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/pipeline/analyze \
   -H "Authorization: Bearer ${PROXY_TOKEN}" \
   -d '{"source_code": "def test(): pass"}'
 ```

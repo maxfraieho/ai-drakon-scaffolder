@@ -24,8 +24,8 @@ lang: uk
 |----------|---------|
 | Target | `https://ai-drakon-scaffolder.pages.dev/` |
 | Credentials | `owner` / `805235io` |
-| Worker | `https://drakon-mcp-worker.maxfraieho.workers.dev` |
-| MCP endpoint | `https://drakon-mcp-worker.maxfraieho.workers.dev/mcp` |
+| Worker | `https://drakon-antigravity-worker.maxfraieho.workers.dev` |
+| MCP endpoint | `https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp` |
 | Dev server | `192.168.3.184` |
 | Architect agent | `:8766` |
 | Docs agent | `:8767` |
@@ -39,17 +39,17 @@ lang: uk
 
 ```bash
 # MCP health
-curl -s https://drakon-mcp-worker.maxfraieho.workers.dev/health
+curl -s https://drakon-antigravity-worker.maxfraieho.workers.dev/health
 
 # Отримати session ID та список інструментів (24 MCP tools)
 SCRIPT=~/.claude/skills/notebooklm-mcp/scripts/notebooklm_mcp.py
 # АБО через HTTP:
-curl -s -X GET https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X GET https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Accept: application/json, text/event-stream"
 # Зафіксувати mcp-session-id з заголовка відповіді
 
 # Список всіх MCP tools
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -H "Accept: application/json, text/event-stream" \
@@ -64,7 +64,7 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 
 ```bash
 # docs.query — DQL запит
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"docs.query","arguments":{"query":"TABLE title, type, status FROM \"docs\" WHERE type = \"concept\" SORT title ASC"}}}'
@@ -72,19 +72,19 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 # Очікується: список концептуальних документів
 
 # docs.read — читання файлу
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"docs.read","arguments":{"path":"docs/concept/01-vision.md"}}}'
 
 # docs.wikilink — розкриття wikilink
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"docs.wikilink","arguments":{"title":"01-vision"}}}'
 
 # docs.backlinks — зворотні посилання
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"docs.backlinks","arguments":{"path":"docs/concept/04-pipelines.md"}}}'
@@ -94,7 +94,7 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 
 ```bash
 # pipeline.analyze — Pipeline A (код → IR)
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{
@@ -112,7 +112,7 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 # Зафіксувати job_id з відповіді
 
 # pipeline.status — статус job
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"pipeline.status","arguments":{"job_id":"[JOB_ID]"}}}'
@@ -121,7 +121,7 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 
 # pipeline.generate — Pipeline B (IR → код)
 # Взяти IR з попереднього результату і згенерувати JS
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{
@@ -147,7 +147,7 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 
 # Виконати повний CRUD цикл:
 # 1. Create
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"diagram.create","arguments":{"title":"MCP Test Diagram","ir":{"nodes":[{"id":"b0","type":"start","title":"START"}],"edges":[]}}}}'
@@ -164,7 +164,7 @@ curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
 
 ```bash
 # agent.chat — надіслати повідомлення архітектурному агенту
-curl -s -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp \
+curl -s -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp \
   -H "Content-Type: application/json" \
   -H "mcp-session-id: [SESSION_ID]" \
   -d '{

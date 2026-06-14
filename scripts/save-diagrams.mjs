@@ -11,7 +11,7 @@
 
 // Resave DRAKON diagrams in correct widget format (branch-based, not IR-input-based)
 
-const WORKER_URL = 'https://drakon-mcp-worker.maxfraieho.workers.dev';
+const WORKER_URL = 'https://drakon-antigravity-worker.maxfraieho.workers.dev';
 const MCP_TOKEN = 'drakon-mcp-2026';
 const GH_TOKEN = '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';
 const FOLDER = 'free-claude-code';

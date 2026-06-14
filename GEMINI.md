@@ -13,7 +13,7 @@ Live UI: https://ai-drakon-scaffolder.pages.dev/
 - **docs-agent** :8767 — docs CRUD + notes + projects registry
 
 ## Cloudflare Worker
-- URL: https://drakon-mcp-worker.maxfraieho.workers.dev
+- URL: https://drakon-antigravity-worker.maxfraieho.workers.dev
 - Auth: `Bearer drakon-mcp-2026`
 - Config: `wrangler.jsonc`
 

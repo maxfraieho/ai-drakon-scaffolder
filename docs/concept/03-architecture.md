@@ -113,7 +113,7 @@ React/Vite/TypeScript застосунок, що будується Lovable і �
 
 | Сервіс | Хост | Порт | URL | Статус |
 |--------|------|------|-----|--------|
-| Cloudflare Worker | CF Edge | — | drakon-mcp-worker.maxfraieho.workers.dev | ✅ |
+| Cloudflare Worker | CF Edge | — | drakon-antigravity-worker.maxfraieho.workers.dev | ✅ |
 | Cloudflare Pages | CF Edge | — | ai-drakon-setup.pages.dev | ✅ |
 | drakon-agent | 192.168.3.184 | 8765 | через tunnel | ✅ |
 | architect-agent | 192.168.3.184 | 8766 | через tunnel | ✅ |

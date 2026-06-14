@@ -58,7 +58,7 @@ cat > ~/workspace/ai-drakon-setup/src/lib/pipeline-api.ts << 'EOF'
 const workerUrl = () =>
   (typeof window !== "undefined" && (window as any).__ENV_WORKER_URL__) ||
   import.meta.env.VITE_WORKER_URL ||
-  "https://drakon-mcp-worker.maxfraieho.workers.dev";
+  "https://drakon-antigravity-worker.maxfraieho.workers.dev";
 
 function authHeaders(): Record<string, string> {
   const jwt = typeof window !== "undefined" ? localStorage.getItem("jwt") : null;

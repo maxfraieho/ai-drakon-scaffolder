@@ -18,7 +18,7 @@ This document records the issues, inconsistencies, and observations collected du
 
 ## 2. Worker Authentication Failure with Credentials
 
-- **Symptom**: Attempting to authenticate via `https://drakon-mcp-worker.maxfraieho.workers.dev/auth/login` using the documented credentials:
+- **Symptom**: Attempting to authenticate via `https://drakon-antigravity-worker.maxfraieho.workers.dev/auth/login` using the documented credentials:
   ```json
   {"username": "owner", "password": "805235io."}
   ```
@@ -33,7 +33,7 @@ This document records the issues, inconsistencies, and observations collected du
 
 ## 3. Cloudflare WAF Block for Python urllib
 
-- **Symptom**: Making HTTP requests from a standard Python script via `urllib.request` to the Cloudflare Worker domain `https://drakon-mcp-worker.maxfraieho.workers.dev` returned `HTTP Error 403: Forbidden`.
+- **Symptom**: Making HTTP requests from a standard Python script via `urllib.request` to the Cloudflare Worker domain `https://drakon-antigravity-worker.maxfraieho.workers.dev` returned `HTTP Error 403: Forbidden`.
 - **Cause**: Cloudflare's WAF (Web Application Firewall) blocks the default Python User-Agent string (`Python-urllib/3.x`).
 - **Workaround**: Setting a standard User-Agent header (like `"User-Agent": "curl/7.68.0"`) resolved the block instantly.
 - **Status**: Fixed. Added `"User-Agent": "curl/7.68.0"` to all urllib requests in the shared service client modules (`services/shared/llm_client.py` and `services/shared/ai_memory.py`), which resolved all 403 blocks instantly.

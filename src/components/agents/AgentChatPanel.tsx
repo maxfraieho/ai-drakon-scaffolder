@@ -65,8 +65,8 @@ function useSlotInfo(slotName: string | null) {
     const workerUrl = (
       typeof window !== "undefined"
         ? localStorage.getItem("app_worker_url") ||
-          "https://drakon-mcp-worker.maxfraieho.workers.dev"
-        : "https://drakon-mcp-worker.maxfraieho.workers.dev"
+          "https://drakon-antigravity-worker.maxfraieho.workers.dev"
+        : "https://drakon-antigravity-worker.maxfraieho.workers.dev"
     ).replace(/\/+$/, "");
     fetch(`${workerUrl}/v1/proxy/slot-info?slot=${encodeURIComponent(slotName)}`)
       .then((r) => r.json())

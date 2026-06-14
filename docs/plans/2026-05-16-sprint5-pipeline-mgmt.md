@@ -499,7 +499,7 @@ CLOUDFLARE_API_TOKEN=$(grep CLOUDFLARE_API_TOKEN .env | cut -d= -f2) \
 JWT=$(grep JWT_SECRET ~/workspace/ai-drakon-setup/.env | cut -d= -f2)
 curl -s \
   -H "Authorization: Bearer $JWT" \
-  "https://drakon-mcp-worker.maxfraieho.workers.dev/v1/agents/pipeline" \
+  "https://drakon-antigravity-worker.maxfraieho.workers.dev/v1/agents/pipeline" \
   | python3 -m json.tool | head -10
 ```
 
@@ -560,7 +560,7 @@ export interface ValidationResult {
 
 const worker = () =>
   import.meta.env.VITE_WORKER_URL ??
-  "https://drakon-mcp-worker.maxfraieho.workers.dev";
+  "https://drakon-antigravity-worker.maxfraieho.workers.dev";
 
 function authHeaders(): HeadersInit {
   const jwt = localStorage.getItem("jwt") ?? "";

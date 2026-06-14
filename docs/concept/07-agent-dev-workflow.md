@@ -70,7 +70,7 @@ GOCLAW_OPENAI_BASE_URL=http://localhost:18880/v1
   "mcpServers": {
     "drakon": {
       "type": "streamable-http",
-      "url": "https://drakon-mcp-worker.maxfraieho.workers.dev/mcp",
+      "url": "https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp",
       "headers": { "Authorization": "Bearer drakon-mcp-2026" }
     }
   }

@@ -2,7 +2,7 @@
 
 ## Контекст
 
-Backend вже готовий і задеплоєний. Worker `https://drakon-mcp-worker.maxfraieho.workers.dev` повертає 4 проекти з GitHub-метаданими:
+Backend вже готовий і задеплоєний. Worker `https://drakon-antigravity-worker.maxfraieho.workers.dev` повертає 4 проекти з GitHub-метаданими:
 
 ```json
 GET /v1/projects/list

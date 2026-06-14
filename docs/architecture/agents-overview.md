@@ -15,12 +15,12 @@ lang: uk
 ## Єдиний сервіс
 
 Всі агенти об'єднані в **architect-agent** (`192.168.3.184:8766`).
-Публічний доступ через Cloudflare Worker: `drakon-mcp-worker.maxfraieho.workers.dev`.
+Публічний доступ через Cloudflare Worker: `drakon-antigravity-worker.maxfraieho.workers.dev`.
 
 ```
 Frontend (sonate-solidaire.me / ai-drakon UI)
     ↓
-Cloudflare Worker  drakon-mcp-worker.maxfraieho.workers.dev
+Cloudflare Worker  drakon-antigravity-worker.maxfraieho.workers.dev
     ↓  /v1/agents/{id}/chat
 architect-agent  192.168.3.184:8766
     ↓  pipeline/graph_loader.py

@@ -42,7 +42,7 @@ UI для спілкування з трьома агентами. Вкладк�
 ## Cloudflare конфігурація
 
 - Account ID: c354ea45a11a1e1c14f1f41fe780cb34
-- Worker: drakon-mcp-worker.maxfraieho.workers.dev
+- Worker: drakon-antigravity-worker.maxfraieho.workers.dev
 - Pages: ai-drakon-setup.pages.dev
 - MinIO bucket: drakon (на apiminio.exodus.pp.ua)
 

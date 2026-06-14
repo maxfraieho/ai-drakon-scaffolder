@@ -542,7 +542,7 @@ if (name === 'drakon.savememory') {
 **Крок 2:** Додати описи інструментів  
 **Крок 3:** Додати обробники  
 **Крок 4:** Деплой: `CLOUDFLARE_API_TOKEN=<token> npx wrangler@latest deploy`  
-**Крок 5:** Протестувати: `curl -X POST https://drakon-mcp-worker.maxfraieho.workers.dev/mcp -H "Authorization: Bearer drakon-mcp-2026" -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'`  
+**Крок 5:** Протестувати: `curl -X POST https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp -H "Authorization: Bearer drakon-mcp-2026" -H "Content-Type: application/json" -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'`  
 **Крок 6:** Перевірити, що нові інструменти з'явилися у списку  
 **Крок 7:** Коміт: `feat: worker MCP tools for agent memory + chat routing`
 
@@ -997,7 +997,7 @@ ai-drakon-setup/
 | Сервіс | Адреса | Авторизація |
 |--------|--------|-------------|
 | Фронтенд | https://ai-drakon-setup.pages.dev | JWT (сторінка входу) |
-| Воркер MCP | https://drakon-mcp-worker.maxfraieho.workers.dev/mcp | Bearer drakon-mcp-2026 |
+| Воркер MCP | https://drakon-antigravity-worker.maxfraieho.workers.dev/mcp | Bearer drakon-mcp-2026 |
 | drakon-agent | http://192.168.3.184:8765 | немає (локально) |
 | architect-agent | http://192.168.3.184:8766 | немає (локально) |
 | docs-agent | http://192.168.3.184:8767 | немає (локально) |
