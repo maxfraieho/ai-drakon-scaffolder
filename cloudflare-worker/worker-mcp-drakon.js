@@ -2135,6 +2135,228 @@ async function handleUserConfigPut(request, env) {
   return jsonResponse({ success: true });
 }
 
+async function handleGithubAuthStart(request, env) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+  if (!token) {
+    return errorResponse('Missing Appwrite JWT token', 400);
+  }
+
+  // Verify the Appwrite token to get the user ID
+  const appwriteUser = await verifyAppwriteJwt(token);
+  if (!appwriteUser || !appwriteUser.$id) {
+    return errorResponse('Invalid Appwrite token', 401);
+  }
+
+  const userId = appwriteUser.$id;
+
+  // Determine redirect URL after callback is finished
+  let redirectUrl = 'https://aidrakon.tech/settings';
+  const referer = request.headers.get('Referer');
+  if (referer) {
+    try {
+      const refUrl = new URL(referer);
+      if (refUrl.hostname === 'localhost' || refUrl.hostname.endsWith('aidrakon.tech')) {
+        refUrl.pathname = '/settings';
+        refUrl.search = '';
+        redirectUrl = refUrl.toString();
+      }
+    } catch (_) {}
+  }
+
+  // Generate state token
+  const statePayload = {
+    userId,
+    userAppwriteJwt: token,
+    redirectUrl
+  };
+
+  const state = await generateJWT(statePayload, env.JWT_SECRET, 10 * 60 * 1000); // 10 min TTL
+
+  const clientId = env.GITHUB_APP_CLIENT_ID;
+  if (!clientId) {
+    return errorResponse('GITHUB_APP_CLIENT_ID is not configured on the server', 500);
+  }
+
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(clientId)}&state=${encodeURIComponent(state)}`;
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Location': githubAuthUrl,
+      'Access-Control-Allow-Origin': '*',
+    }
+  });
+}
+
+async function handleGithubAuthCallback(request, env) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const state = url.searchParams.get('state');
+
+  if (!code || !state) {
+    return errorResponse('Missing code or state', 400);
+  }
+
+  // Verify state
+  let statePayload;
+  try {
+    statePayload = await verifyJWT(state, env.JWT_SECRET);
+  } catch (_) {
+    return errorResponse('State verification failed', 400);
+  }
+
+  if (!statePayload || !statePayload.userId) {
+    return errorResponse('Invalid or expired state payload', 400);
+  }
+
+  const { userId, userAppwriteJwt, redirectUrl } = statePayload;
+
+  // Exchange code for access token
+  let tokenData;
+  try {
+    tokenData = await exchangeGithubCode(env, code);
+  } catch (err) {
+    return errorResponse(err.message, 400);
+  }
+
+  const accessToken = tokenData.access_token;
+  if (!accessToken) {
+    return errorResponse('OAuth token exchange did not return an access token', 400);
+  }
+
+  // Fetch GitHub login info
+  let githubLogin = '';
+  try {
+    const userProfile = await fetchGithubUser(accessToken);
+    githubLogin = userProfile.login;
+  } catch (err) {
+    console.error('Failed to fetch github user login:', err);
+  }
+
+  // Save to Appwrite user_profiles
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const appwriteApiKey = env.APPWRITE_API_KEY;
+
+  const docUrl = `${appwriteEndpoint}/databases/ai-drakon/collections/user_profiles/documents/${userId}`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Appwrite-Project': appwriteProjectId,
+  };
+  if (appwriteApiKey) {
+    headers['X-Appwrite-Key'] = appwriteApiKey;
+  } else if (userAppwriteJwt) {
+    headers['X-Appwrite-JWT'] = userAppwriteJwt;
+  }
+
+  try {
+    const patchResp = await fetch(docUrl, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        data: {
+          githubLogin: githubLogin || '',
+          githubToken: accessToken
+        }
+      })
+    });
+
+    if (patchResp.status === 404) {
+      // Document doesn't exist, create it (POST)
+      const createUrl = `${appwriteEndpoint}/databases/ai-drakon/collections/user_profiles/documents`;
+      const postResp = await fetch(createUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          documentId: userId,
+          data: {
+            userId: userId,
+            teamId: userId,
+            displayName: githubLogin || 'User',
+            githubLogin: githubLogin || '',
+            githubToken: accessToken,
+            locale: 'en',
+            createdAt: new Date().toISOString()
+          }
+        })
+      });
+      if (!postResp.ok) {
+        const errText = await postResp.text();
+        console.error(`Failed to create user_profile in Appwrite (status ${postResp.status}):`, errText);
+      }
+    } else if (!patchResp.ok) {
+      const errText = await patchResp.text();
+      console.error(`Failed to patch user_profile in Appwrite (status ${patchResp.status}):`, errText);
+    }
+  } catch (err) {
+    console.error('Failed to write GitHub token to Appwrite:', err);
+  }
+
+  // Redirect user back to /settings
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Location': redirectUrl || 'https://aidrakon.tech/settings',
+      'Access-Control-Allow-Origin': '*',
+    }
+  });
+}
+
+async function exchangeGithubCode(env, code) {
+  const clientId = env.GITHUB_APP_CLIENT_ID;
+  const clientSecret = env.GITHUB_APP_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error('GITHUB_APP_CLIENT_ID or GITHUB_APP_CLIENT_SECRET is not configured on the server');
+  }
+
+  const response = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': 'drakon-mcp-worker'
+    },
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`GitHub token exchange failed (HTTP ${response.status}): ${text.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(`GitHub OAuth error: ${data.error_description || data.error}`);
+  }
+
+  return data;
+}
+
+async function fetchGithubUser(accessToken) {
+  const response = await fetch('https://api.github.com/user', {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/vnd.github+json',
+      'User-Agent': 'drakon-mcp-worker',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`GitHub user fetch failed (HTTP ${response.status}): ${text.slice(0, 200)}`);
+  }
+
+  return response.json();
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -2156,6 +2378,14 @@ export default {
 
       if (method === 'POST' && path === '/auth/login') {
         return await handleAuthLogin(request, env);
+      }
+
+      if (method === 'GET' && path === '/auth/github/start') {
+        return await handleGithubAuthStart(request, env);
+      }
+
+      if (method === 'GET' && path === '/auth/github/callback') {
+        return await handleGithubAuthCallback(request, env);
       }
 
       if (method === 'GET' && path === '/mcp') {

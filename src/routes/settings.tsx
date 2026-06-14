@@ -25,6 +25,8 @@ import { useAuth } from "@/context/AuthContext";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 import type { AppSettings } from "@/types/settings";
 import { useProject } from "@/context/ProjectContext";
+import { databases } from "@/lib/appwrite";
+import { getAppwriteJwt } from "@/lib/appwrite-jwt";
 
 export const Route = createFileRoute("/settings")({
 component: SettingsRoute,
@@ -86,6 +88,45 @@ const [repoOpen, setRepoOpen] = useState(false);
 const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+
+const [githubConnected, setGithubConnected] = useState(false);
+const [githubUserLogin, setGithubUserLogin] = useState<string | null>(null);
+const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+useEffect(() => {
+  if (!user?.$id) return;
+  setIsLoadingProfile(true);
+  databases
+    .getDocument("ai-drakon", "user_profiles", user.$id)
+    .then((doc: any) => {
+      if (doc.githubToken) {
+        setGithubConnected(true);
+        setGithubUserLogin(doc.githubLogin || null);
+      } else {
+        setGithubConnected(false);
+      }
+    })
+    .catch(() => {
+      setGithubConnected(false);
+    })
+    .finally(() => {
+      setIsLoadingProfile(false);
+    });
+}, [user?.$id]);
+
+const handleConnectGithub = async () => {
+  try {
+    const jwt = await getAppwriteJwt();
+    if (!jwt) {
+      toast.error("Не вдалося отримати токен авторизації");
+      return;
+    }
+    const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+    window.location.href = `${workerUrl}/auth/github/start?token=${encodeURIComponent(jwt)}`;
+  } catch (error) {
+    toast.error("Помилка підключення GitHub");
+  }
+};
 
 const [mcpKey, setMcpKey] = useState<string | null>(null);
 const [mcpKeyMasked, setMcpKeyMasked] = useState<string | null>(null);
@@ -382,10 +423,51 @@ return (
         <CardDescription>Підключення до GitHub для роботи з проектами</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground space-y-1">
-          <p className="font-medium text-foreground">GitHub OAuth — незабаром</p>
-          <p>Підключення особистих репозиторіїв через GitHub OAuth буде доступно у наступному оновленні.</p>
-        </div>
+        {isLoadingProfile ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Завантаження профілю...</span>
+          </div>
+        ) : githubConnected ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-600 dark:text-emerald-400">
+              <Check className="h-5 w-5 shrink-0" />
+              <div>
+                <p className="font-medium">✅ Connected</p>
+                {githubUserLogin && (
+                  <p className="text-xs opacity-90 mt-0.5">
+                    Авторизовано як: <strong className="font-semibold">{githubUserLogin}</strong>
+                  </p>
+                )}
+              </div>
+            </div>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleConnectGithub}
+                className="text-xs"
+              >
+                <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                Перепідключити
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">GitHub App OAuth</p>
+              <p className="mt-1 text-xs">
+                Підключіть свій обліковий запис GitHub, щоб отримати доступ до ваших репозиторіїв та комітів.
+              </p>
+            </div>
+            <div>
+              <Button onClick={handleConnectGithub} size="sm">
+                Підключити GitHub
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
 
