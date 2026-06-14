@@ -2271,6 +2271,7 @@ async function handleGithubAuthCallback(request, env) {
         headers,
         body: JSON.stringify({
           documentId: userId,
+          "$permissions": ["read(\"user:" + userId + "\")", "update(\"user:" + userId + "\")"],
           data: {
             userId: userId,
             teamId: userId,
@@ -2298,7 +2299,7 @@ async function handleGithubAuthCallback(request, env) {
   return new Response(null, {
     status: 302,
     headers: {
-      'Location': redirectUrl || 'https://aidrakon.tech/settings',
+      'Location': (redirectUrl || 'https://aidrakon.tech/settings') + '?connected=1',
       'Access-Control-Allow-Origin': '*',
     }
   });

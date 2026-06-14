@@ -94,11 +94,10 @@ const [githubConnected, setGithubConnected] = useState(false);
 const [githubUserLogin, setGithubUserLogin] = useState<string | null>(null);
 const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
-useEffect(() => {
-  if (!user?.$id) return;
+const loadGithubProfile = (userId: string) => {
   setIsLoadingProfile(true);
   databases
-    .getDocument("ai-drakon", "user_profiles", user.$id)
+    .getDocument("ai-drakon", "user_profiles", userId)
     .then((doc: any) => {
       if (doc.githubToken) {
         setGithubConnected(true);
@@ -113,6 +112,20 @@ useEffect(() => {
     .finally(() => {
       setIsLoadingProfile(false);
     });
+};
+
+useEffect(() => {
+  if (!user?.$id) return;
+  loadGithubProfile(user.$id);
+
+  // Detect successful OAuth redirect from Worker
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("connected") === "1") {
+    window.history.replaceState({}, "", "/settings");
+    toast.success("GitHub підключено успішно!");
+    // Re-fetch after short delay to let Appwrite settle
+    setTimeout(() => loadGithubProfile(user.$id), 1200);
+  }
 }, [user?.$id]);
 
 const handleConnectGithub = async () => {
