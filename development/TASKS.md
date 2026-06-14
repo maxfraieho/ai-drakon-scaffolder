@@ -23665,3 +23665,75 @@ git push origin main
 ```
 SESSION:2026-06-14|TASK-226:settings-bypass-admin-fix|owner-bypass-JWT-check+ProjectContext-cleanup|commit:<hash>|★★★
 ```
+
+[ ] TASK-BLOOM-GITHUB-LOGIN-v2: GitHub OAuth login button for Bloom (garden-bloom repo)
+
+### Context
+garden-bloom is a separate service at https://bloom.aidrakon.tech/
+Login component: src/components/AccessGateUI.tsx
+Appwrite project: 6a23420a003a04b4997b
+GitHub OAuth2 already enabled in Appwrite Console.
+
+### STEP 1: Clone/pull garden-bloom
+Get GitHub token from existing ai-drakon-scaffolder remote URL, then clone garden-bloom:
+```bash
+GH_TOKEN=$(git -C ~/workspace/ai-drakon-scaffolder remote get-url origin | grep -o "ghp_[a-zA-Z0-9]*")
+git clone "https://maxfraieho:${GH_TOKEN}@github.com/maxfraieho/garden-bloom" ~/workspace/garden-bloom 2>/dev/null || git -C ~/workspace/garden-bloom pull origin main
+```
+
+### STEP 2: Read these files
+```
+~/workspace/garden-bloom/src/components/AccessGateUI.tsx
+~/workspace/garden-bloom/src/hooks/useOwnerAuth.tsx
+~/workspace/garden-bloom/src/lib/appwrite.ts (or src/lib/auth.ts if missing)
+```
+
+### STEP 3: Add GitHub OAuth button
+In AccessGateUI.tsx, add `Github` import from lucide-react.
+Add this handler inside the component (before return):
+```typescript
+const handleGithubLogin = () => {
+  account.createOAuth2Session(
+    "github",
+    window.location.origin + "/",
+    window.location.origin + "/"
+  );
+};
+```
+After the password form closing tag, add:
+```tsx
+<div className="w-full flex flex-col gap-3">
+  <div className="relative flex items-center py-1">
+    <div className="flex-grow border-t border-border/40" />
+    <span className="flex-shrink mx-3 text-muted-foreground text-xs">або</span>
+    <div className="flex-grow border-t border-border/40" />
+  </div>
+  <button
+    type="button"
+    onClick={handleGithubLogin}
+    className="w-full flex items-center justify-center gap-2 h-10 rounded-lg border border-border/60 bg-background/50 text-foreground hover:bg-accent/40 transition-colors text-sm font-medium"
+  >
+    <Github className="h-4 w-4" />
+    Увійти через GitHub
+  </button>
+</div>
+```
+If i18n exists (src/lib/i18n.ts or similar), add key `loginWithGithub` in all languages.
+
+### STEP 4: Commit and push
+```bash
+cd ~/workspace/garden-bloom
+git add src/components/AccessGateUI.tsx
+# + any i18n file if changed
+git commit -m "feat(auth): add GitHub OAuth login button to Bloom login page"
+git push origin main
+```
+Check if .lovable/ sync dir exists:
+```bash
+ls .lovable/src/components/ 2>/dev/null && cp src/components/AccessGateUI.tsx .lovable/src/components/AccessGateUI.tsx && git add .lovable/src/components/AccessGateUI.tsx && git commit -m "sync(.lovable): Bloom AccessGateUI GitHub login" && git push origin main
+```
+
+### Diary
+```
+SESSION:$(date +%Y-%m-%d)|TASK-BLOOM-GITHUB-LOGIN-v2:done|commit:$(git -C ~/workspace/garden-bloom rev-parse --short HEAD)|bloom-github-oauth-button
+```
