@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { BookOpen, Brain, Folder, PlusCircle } from "lucide-react";
+import { BookOpen, Brain, Folder, PlusCircle, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
-import { api, type KnowledgeZone, type ZoneHealth } from "@/lib/api";
+import { api, type KnowledgeZone, type ZoneHealth, buildBloomZoneUrl } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -170,6 +170,20 @@ export function KnowledgeZonesList() {
                     </Badge>
                   ))}
                 </div>
+              )}
+
+              {/* Bloom deep-link */}
+              {buildBloomZoneUrl(zone) && (
+                <a
+                  href={buildBloomZoneUrl(zone)!}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline mt-1"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  Відкрити в Bloom
+                </a>
               )}
             </CardContent>
           </Card>

@@ -142,6 +142,11 @@ export type DeleteKnowledgeZoneResponse = {
 
 export type ZoneHealth = "ready" | "pending" | "failed";
 
+export function buildBloomZoneUrl(zone: KnowledgeZone): string | null {
+  if (!zone.accessCode) return null;
+  return `https://bloom.aidrakon.tech/zone/${zone.accessCode}`;
+}
+
 const headers = (): HeadersInit => ({
   Authorization: `Bearer ${getAccessToken() ?? ""}`,
   "Content-Type": "application/json",
