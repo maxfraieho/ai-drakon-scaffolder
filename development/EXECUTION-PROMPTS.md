@@ -21,6 +21,10 @@ lang: uk
 **Виконавці:** AGY3 (складні TS-задачі, локально на Termux) або Lovable (UI).
 **Порядок:** строго за блоками A → B → C → D; усередині блоку — за номерами.
 **Обов'язкові правила (для кожного промпта):**
+0. **ОБОВ'ЯЗКОВИЙ ПОШУК ПЕРЕД БУДЬ-ЯКИМ Read АБО РЕДАГУВАННЯМ:**
+   - **Код/символи/типи** → спочатку `mcp__gitnexus__query("назва або концепція", repo="ai-drakon-scaffolder")` → отримай `filePath` + `startLine` → тоді `Read(file, offset=line-5, limit=40)`. Ніколи не читай файл повністю без попереднього GitNexus-запиту.
+   - **Документи/текст/плани/README** → спочатку `mcp__mempalace__mempalace_search("ключові слова", wing="ai-drakon-scaffolder")` → отримай `source_file` + контекст → читай тільки потрібний фрагмент.
+   - Виключення: нові файли (щойно створені у цій задачі), pure configs (`.env`, `wrangler.toml`).
 1. Робота локально: `/data/data/com.termux/files/home/workspace/ai-drakon-scaffolder`
    (AGY3) або відповідне репо garden.
 2. Після зміни `src/X` → `cp src/X .lovable/src/X` (CF Pages будує з `.lovable/`).
@@ -315,7 +319,14 @@ Callback URL: `https://drakon-antigravity-worker.maxfraieho.workers.dev/auth/git
   додати поле `githubToken` (encrypted string, type: "string") у `user_profiles`.
 
 **Кроки:**
-1. Прочитай `cloudflare-worker/worker-mcp-drakon.js` рядки 1-100 і 2138-2200 — зрозумій routing pattern (fetch handler, маршрути).
+1. `mcp__gitnexus__query("fetch handler routing URL dispatch", repo="ai-drakon-scaffolder")` → знайди fetch entry-point у `worker-mcp-drakon.js`, Read тільки знайдені рядки.
+2. `mcp__gitnexus__query("verifyOwnerAuth githubHeaders", repo="ai-drakon-scaffolder")` → точні рядки → Read(offset, limit=30).
+3. `mcp__gitnexus__query("handleHealth handlePipeline JSON response", repo="ai-drakon-scaffolder")` → зрозумій шаблон маршруту для нових handlers.
+4. `mcp__mempalace__mempalace_search("GitHub OAuth flow user-to-server token", wing="ai-drakon-scaffolder")` → документація якщо є.
+5. Додай `/auth/github/start` і `/auth/github/callback` за знайденим routing-шаблоном.
+6. Додай `githubToken` у Appwrite schema (`infrastructure/appwrite/schema.ts`).
+7. UI: settings.tsx вкладка "Профіль" — кнопка + статус.
+8. Деплой: `npx wrangler deploy --config wrangler-antigravity.jsonc` (без tsc!). — зрозумій routing pattern (fetch handler, маршрути).
 2. Знайди `verifyOwnerAuth` (~рядок 188) — для розуміння auth flow.
 3. Знайди `githubHeaders` (~рядок 66) — там `env.GITHUB_TOKEN`; залиш як fallback.
 4. Додай в кінці fetch handler (перед default 404) маршрути `/auth/github/start` і `/auth/github/callback`.
