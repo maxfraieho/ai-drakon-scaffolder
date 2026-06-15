@@ -25,6 +25,9 @@ import { useAuth } from "@/context/AuthContext";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 import type { AppSettings } from "@/types/settings";
 import { useProject } from "@/context/ProjectContext";
+import { databases } from "@/lib/appwrite";
+import { getAppwriteJwt } from "@/lib/appwrite-jwt";
+import { saveUserConfig, syncUserConfigToCloud } from "@/lib/user-config-api";
 
 export const Route = createFileRoute("/settings")({
 component: SettingsRoute,
@@ -86,6 +89,66 @@ const [repoOpen, setRepoOpen] = useState(false);
 const [githubStatus, setGithubStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 const [n8nStatus, setN8nStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
 const [minioStatus, setMinioStatus] = useState<ConnectionStatus>({ type: "idle", text: "Не перевірено" });
+
+const [githubConnected, setGithubConnected] = useState(false);
+const [githubUserLogin, setGithubUserLogin] = useState<string | null>(null);
+const [isLoadingProfile, setIsLoadingProfile] = useState(false);
+
+const loadGithubProfile = (userId: string) => {
+  setIsLoadingProfile(true);
+  databases
+    .getDocument("ai-drakon", "user_profiles", userId)
+    .then((doc: any) => {
+      if (doc.githubToken) {
+        setGithubConnected(true);
+        setGithubUserLogin(doc.githubLogin || null);
+        // Auto-populate token so GitHub operations work without manual PAT
+        setSettings(prev => {
+          const updated = { ...prev, github: { ...prev.github, token: doc.githubToken } };
+          if (typeof window !== "undefined") {
+            localStorage.setItem("ai_drakon_settings", JSON.stringify(updated));
+          }
+          return updated;
+        });
+      } else {
+        setGithubConnected(false);
+      }
+    })
+    .catch(() => {
+      setGithubConnected(false);
+    })
+    .finally(() => {
+      setIsLoadingProfile(false);
+    });
+};
+
+useEffect(() => {
+  if (!user?.$id) return;
+  loadGithubProfile(user.$id);
+
+  // Detect successful OAuth redirect from Worker
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("connected") === "1") {
+    window.history.replaceState({}, "", "/settings");
+    toast.success("GitHub підключено успішно!");
+    // Re-fetch after short delay to let Appwrite settle
+    setTimeout(() => loadGithubProfile(user.$id), 1200);
+  }
+}, [user?.$id]);
+
+const handleConnectGithub = async () => {
+  try {
+    const jwt = await getAppwriteJwt();
+    if (!jwt) {
+      toast.error("Не вдалося отримати токен авторизації");
+      return;
+    }
+    const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+    window.location.href = `${workerUrl}/auth/github/start?token=${encodeURIComponent(jwt)}`;
+  } catch (error) {
+    toast.error("Помилка підключення GitHub");
+  }
+};
 
 const [mcpKey, setMcpKey] = useState<string | null>(null);
 const [mcpKeyMasked, setMcpKeyMasked] = useState<string | null>(null);
@@ -192,8 +255,12 @@ const saveSettings = () => {
 try {
 writeSettings(settings);
 localStorage.setItem("drakon_agent_base_url", agentBaseUrl.trim() || "http://192.168.3.184");
+
+// Synchronize to MinIO
+void syncUserConfigToCloud();
+
 toast.success("Налаштування збережено", {
-description: "Конфігурацію оновлено локально.",
+description: "Конфігурацію оновлено локально та синхронізовано з хмарою.",
 });
 } catch (error) {
 toast.error("Не вдалося зберегти налаштування", {
@@ -343,7 +410,7 @@ return (
 <TabsList className="inline-flex w-max min-w-full gap-1 px-1 md:w-auto md:px-0">
   <TabsTrigger value="profile" className="shrink-0 whitespace-nowrap">Профіль</TabsTrigger>
   <TabsTrigger value="mcp" className="shrink-0 whitespace-nowrap">MCP Access</TabsTrigger>
-  {isAdmin && <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>}
+  <TabsTrigger value="github" className="shrink-0 whitespace-nowrap">GitHub</TabsTrigger>
   {isAdmin && <TabsTrigger value="agents" className="shrink-0 whitespace-nowrap">Агенти</TabsTrigger>}
   {isAdmin && <TabsTrigger value="docs" className="shrink-0 whitespace-nowrap">Документація</TabsTrigger>}
   {isAdmin && <TabsTrigger value="n8n" className="shrink-0 whitespace-nowrap">n8n</TabsTrigger>}
@@ -382,10 +449,51 @@ return (
         <CardDescription>Підключення до GitHub для роботи з проектами</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground space-y-1">
-          <p className="font-medium text-foreground">GitHub OAuth — незабаром</p>
-          <p>Підключення особистих репозиторіїв через GitHub OAuth буде доступно у наступному оновленні.</p>
-        </div>
+        {isLoadingProfile ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Завантаження профілю...</span>
+          </div>
+        ) : githubConnected ? (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2 rounded-md bg-emerald-500/10 border border-emerald-500/20 px-4 py-3 text-sm text-emerald-600 dark:text-emerald-400">
+              <Check className="h-5 w-5 shrink-0" />
+              <div>
+                <p className="font-medium">✅ Connected</p>
+                {githubUserLogin && (
+                  <p className="text-xs opacity-90 mt-0.5">
+                    Авторизовано як: <strong className="font-semibold">{githubUserLogin}</strong>
+                  </p>
+                )}
+              </div>
+            </div>
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleConnectGithub}
+                className="text-xs"
+              >
+                <RefreshCw className="mr-2 h-3.5 w-3.5" />
+                Перепідключити
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground">
+              <p className="font-medium text-foreground">GitHub App OAuth</p>
+              <p className="mt-1 text-xs">
+                Підключіть свій обліковий запис GitHub, щоб отримати доступ до ваших репозиторіїв та комітів.
+              </p>
+            </div>
+            <div>
+              <Button onClick={handleConnectGithub} size="sm">
+                Підключити GitHub
+              </Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
 
@@ -418,7 +526,6 @@ return (
   </div>
 </TabsContent>
 
-{isAdmin && (
 <TabsContent value="github" className="pb-20 md:pb-0">
 <Card>
 <CardHeader>
@@ -478,7 +585,6 @@ disabled={isCheckingGithub}>
 </CardContent>
 </Card>
 </TabsContent>
-)}
 
 {isAdmin && (
 <TabsContent value="agents">
@@ -565,7 +671,11 @@ return;
 }
 try {
 writeSettings(settings);
-toast.success("Адреси агентів збережено");
+
+// Synchronize to MinIO
+void syncUserConfigToCloud();
+
+toast.success("Адреси агентів збережено та синхронізовано з хмарою");
 } catch (error) {
 toast.error("Не вдалося зберегти", {
 description: error instanceof Error ? error.message : "Невідома помилка",

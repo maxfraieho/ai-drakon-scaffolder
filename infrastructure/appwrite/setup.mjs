@@ -67,6 +67,7 @@ await createCollection("user_profiles", "User Profiles", true, [
   str("userId", 36), str("teamId", 36), str("displayName", 128),
   str("githubLogin", 64, false), str("defaultProject", 128, false),
   en("locale", ["uk", "en"]), dt("createdAt"),
+  str("githubToken", 512, false, { encrypted: true }),
 ]);
 
 await createCollection("team_settings", "Team Settings", true, [

@@ -31,6 +31,7 @@ export interface UserProfile {
   defaultProject?: string;
   locale: "uk" | "en";
   createdAt: string;       // ISO 8601
+  githubToken?: string;    // encrypted
 }
 
 /**
