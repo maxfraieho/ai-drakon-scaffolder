@@ -23666,7 +23666,7 @@ git push origin main
 SESSION:2026-06-14|TASK-226:settings-bypass-admin-fix|owner-bypass-JWT-check+ProjectContext-cleanup|commit:<hash>|★★★
 ```
 
-[ ] TASK-BLOOM-GITHUB-LOGIN-v2: GitHub OAuth login button for Bloom (garden-bloom repo)
+[x] TASK-BLOOM-GITHUB-LOGIN-v2: GitHub OAuth login button for Bloom (garden-bloom repo)
 
 ### Context
 garden-bloom is a separate service at https://bloom.aidrakon.tech/
