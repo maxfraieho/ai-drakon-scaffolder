@@ -23662,3 +23662,179 @@ git push origin main
 ```
 SESSION:2026-06-14|TASK-226:settings-bypass-admin-fix|owner-bypass-JWT-check+ProjectContext-cleanup|commit:<hash>|★★★
 ```
+
+---
+
+## [ ] TASK-237: GitHub OAuth для Bloom через Appwrite SDK
+
+!!IMPORTANT!! Run via SSH on dev server 192.168.3.184. All commands must be executed as:
+sshpass -p "805235io." ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 "COMMAND"
+Working directory on dev server: /home/vokov/projects/garden-bloom/
+
+### Context
+- Appwrite project: 6a23420a003a04b4997b (fra.cloud.appwrite.io)
+- GitHub OAuth App "AI-DRAKON-Appwrite" already configured in Appwrite with callback:
+  https://fra.cloud.appwrite.io/v1/account/sessions/oauth2/callback/github/6a23420a003a04b4997b
+- bloom.aidrakon.tech already added as Web Platform in Appwrite
+- Cloudflare Worker already has verifyAppwriteJwt() that validates Appwrite JWT
+- Token storage key: "owner-session-token" in localStorage
+- Cloudflare Pages builds from .lovable/ dir — must sync changes there too
+
+### Steps
+
+**STEP 1: Install appwrite SDK**
+```
+cd /home/vokov/projects/garden-bloom && npm install appwrite
+```
+
+**STEP 2: Create /home/vokov/projects/garden-bloom/src/lib/appwrite.ts**
+```typescript
+import { Client, Account, OAuthProvider } from appwrite;
+
+const client = new Client()
+  .setEndpoint(https://fra.cloud.appwrite.io/v1)
+  .setProject(6a23420a003a04b4997b);
+
+export const account = new Account(client);
+
+export function loginWithGitHub(): void {
+  const origin = window.location.origin;
+  account.createOAuth2Session(
+    OAuthProvider.Github,
+    `${origin}/?oauth=success`,
+    `${origin}/?oauth=failed`,
+  );
+}
+
+export async function getAppwriteJWT(): Promise<string | null> {
+  try {
+    const response = await account.createJWT();
+    return response.jwt;
+  } catch {
+    return null;
+  }
+}
+
+export async function logoutAppwrite(): Promise<void> {
+  try {
+    await account.deleteSession(current);
+  } catch {
+    // ignore
+  }
+}
+```
+Note: if OAuthProvider is not available in the installed version, use the string github directly.
+
+**STEP 3: Modify /home/vokov/projects/garden-bloom/src/hooks/useOwnerAuth.tsx**
+
+Add import after existing imports:
+```typescript
+import { getAppwriteJWT, logoutAppwrite } from @/lib/appwrite;
+```
+
+Add loginWithAppwriteSession to OwnerAuthContextValue interface:
+```typescript
+loginWithAppwriteSession: () => Promise<boolean>;
+```
+
+Add this useCallback inside OwnerAuthProvider (before the value object):
+```typescript
+const loginWithAppwriteSession = useCallback(async (): Promise<boolean> => {
+  setState(prev => ({ ...prev, isLoading: true, error: null }));
+  try {
+    const jwt = await getAppwriteJWT();
+    if (!jwt) throw new Error(No Appwrite session);
+    const validateResponse = await gatewayAuthRequest(/auth/validate, { token: jwt });
+    if (!validateResponse.ok) throw new Error(Validation failed);
+    const { valid } = await validateResponse.json();
+    if (!valid) throw new Error(Token not valid);
+    storeToken(jwt);
+    setState(prev => ({
+      ...prev,
+      isAuthenticated: true,
+      isLoading: false,
+      error: null,
+    }));
+    toast.success(Signed in with GitHub);
+    return true;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : GitHub login failed;
+    setState(prev => ({ ...prev, isLoading: false, error: message }));
+    toast.error(GitHub login failed, { description: message });
+    return false;
+  }
+}, []);
+```
+
+Add loginWithAppwriteSession to the value object.
+
+Also in logout: add `await logoutAppwrite();` before `clearToken();`.
+
+**STEP 4: Modify /home/vokov/projects/garden-bloom/src/components/AccessGateUI.tsx**
+
+Add import:
+```typescript
+import { loginWithGitHub } from @/lib/appwrite;
+```
+
+Add loginWithAppwriteSession to useOwnerAuth destructuring:
+```typescript
+const { login, setupPassword, isLoading, error, isInitialized, loginWithAppwriteSession } = useOwnerAuth();
+```
+
+Add useEffect inside AccessGateUI component (after existing useEffect):
+```typescript
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get(oauth) === success) {
+    window.history.replaceState({}, , window.location.pathname);
+    loginWithAppwriteSession();
+  } else if (params.get(oauth) === failed) {
+    window.history.replaceState({}, , window.location.pathname);
+  }
+}, [loginWithAppwriteSession]);
+```
+
+Add GitHub button inside the "Form container" div, after the closing of the form tags and before the closing of the container div:
+```tsx
+{/* GitHub OAuth divider */}
+<div className="mt-4 pt-4 border-t border-white/10">
+  <button
+    type="button"
+    onClick={loginWithGitHub}
+    disabled={isLoading}
+    className="w-full flex items-center justify-center gap-2.5 h-11 rounded-lg border border-white/15 bg-white/5 text-sm font-medium text-gray-200 hover:bg-white/10 hover:border-white/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z" />
+    </svg>
+    Continue with GitHub
+  </button>
+</div>
+```
+
+**STEP 5: Sync to .lovable/**
+```
+cp /home/vokov/projects/garden-bloom/src/lib/appwrite.ts /home/vokov/projects/garden-bloom/.lovable/src/lib/appwrite.ts
+cp /home/vokov/projects/garden-bloom/src/hooks/useOwnerAuth.tsx /home/vokov/projects/garden-bloom/.lovable/src/hooks/useOwnerAuth.tsx
+cp /home/vokov/projects/garden-bloom/src/components/AccessGateUI.tsx /home/vokov/projects/garden-bloom/.lovable/src/components/AccessGateUI.tsx
+```
+
+**STEP 6: Commit and push**
+```
+cd /home/vokov/projects/garden-bloom
+git add src/lib/appwrite.ts src/hooks/useOwnerAuth.tsx src/components/AccessGateUI.tsx .lovable/src/lib/appwrite.ts .lovable/src/hooks/useOwnerAuth.tsx .lovable/src/components/AccessGateUI.tsx package.json package-lock.json
+git commit -m "feat(auth): add GitHub OAuth login via Appwrite SDK"
+git push origin main
+```
+
+### Verification
+After push, check:
+1. git log --oneline -3 shows the new commit
+2. The 3 modified files exist in both src/ and .lovable/src/
+3. package.json has "appwrite" in dependencies
+
+### Diary
+```
+SESSION:2026-06-15|TASK-237:bloom-github-oauth|appwrite-sdk+loginWithGitHub+AccessGateUI-button+lovable-sync|commit:<hash>|★★★
+```
