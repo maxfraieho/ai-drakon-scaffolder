@@ -105,9 +105,7 @@ const loadGithubProfile = (userId: string) => {
         // Auto-populate token so GitHub operations work without manual PAT
         setSettings(prev => {
           const updated = { ...prev, github: { ...prev.github, token: doc.githubToken } };
-          if (typeof window !== "undefined") {
-            localStorage.setItem("ai_drakon_settings", JSON.stringify(updated));
-          }
+          writeSettings(updated);
           return updated;
         });
       } else {

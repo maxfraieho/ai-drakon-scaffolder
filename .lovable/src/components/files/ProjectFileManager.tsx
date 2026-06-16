@@ -770,19 +770,19 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           <FileCode className="h-10 w-10 text-[var(--accent-amber)] animate-pulse" />
           <div>
             <h3 className="font-mono text-sm font-semibold text-[var(--text-primary)]">
-              GitHub не налаштований
+              Репозиторій не обрано
             </h3>
             <p className="mt-2 font-mono text-xs text-[var(--text-muted)] leading-relaxed">
-              Режими All та Code потребують підключення до репозиторію GitHub. Налаштуйте доступ у вкладці Налаштування.
+              Режими All та Code потребують активного репозиторію GitHub. Оберіть репозиторій зі списку.
             </p>
           </div>
           <button
             type="button"
-            onClick={() => navigate({ to: "/settings" })}
+            onClick={() => document.dispatchEvent(new CustomEvent("open-add-repo"))}
             className="inline-flex items-center gap-2 rounded px-4 py-1.5 font-mono text-[11px] font-medium bg-[var(--accent-amber)] text-black hover:brightness-110 active:scale-[0.98] transition-all"
           >
             <Settings className="h-3.5 w-3.5" />
-            Відкрити Налаштування
+            Обрати репозиторій
           </button>
         </div>
       </div>
