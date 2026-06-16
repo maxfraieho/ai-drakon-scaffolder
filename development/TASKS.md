@@ -23770,3 +23770,39 @@ SESSION:2026-06-16|TASK-SKG-1:llm-client-temperature|services/shared/llm_client.
 ```
 
 [x] TASK-SKG-1
+
+
+---
+
+## TASK-SKG-2: Ядро екстракції `semantic_graph.py` + юніт-тести
+
+**Виконавець: AGY3 (192.168.3.204)** · fallback: AGY4
+**!!IMPORTANT!! Залежить від SKG-1 (вже виконано, commit 1f08823). Чисті функції — БЕЗ мережі/LLM у тестах (мокати вхід).**
+**!!IMPORTANT!! Перед редагуванням — Read поточний `services/docs-agent/notes_route.py`, номери рядків у плані можуть бути застарілими.**
+
+### Що зробити
+Створити `services/docs-agent/semantic_graph.py` з функціями (повний опис — `docs/plans/2026-06-16-semantic-knowledge-graph-docs-agent.md`, Фаза 2; короткий опис — `docs/architecture/06_semantic_knowledge_graph.md`, §3.2):
+`collect_articles`, `build_extraction_prompt`, `parse_relationships`, `enforce_link_budget`,
+`render_semantic_block`, `upsert_semantic_section`.
+- Перевикористати з `notes_route.py`: `_flat_notes`, `_strip_frontmatter`, `_parse_wikilinks`, `_resolve_root`.
+- Системний промпт — розділ 5 плану. Бюджет ≤2 крос-секційних (різний `folder`), `snake_case` предикат.
+- Чисті шляхи в лінках: без `docs/`, без `.md`.
+- `upsert_semantic_section`: замінити ЛИШЕ підблок «Цей документ пов'язаний з:», зберігши «є частиною».
+
+Створити `services/docs-agent/tests/test_semantic_graph.py` (по 1 тесту за раз, запускати кожен):
+- `test_parse_rejects_same_folder_and_self_links`
+- `test_enforce_budget_max_two_per_node`
+- `test_upsert_preserves_parent_moc_line`
+
+### Verify
+```bash
+cd services/docs-agent && python3 -m pytest tests/test_semantic_graph.py -q
+```
+Очікувати: усі 3 PASS. Перед позначенням готовим: `VERIFY: pytest test_semantic_graph — PASS`.
+
+### Diary
+```
+SESSION:2026-06-16|TASK-SKG-2:semantic-graph-core+tests|services/docs-agent/semantic_graph.py|3-tests-PASS|commit:<sha>
+```
+
+[ ] TASK-SKG-2
