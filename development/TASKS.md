@@ -23883,3 +23883,67 @@ SESSION:2026-06-16|TASK-SKG-4:semantic-edge-type|notes_route.py+ExecutionGraph.t
 ```
 
 [x] TASK-SKG-4
+
+
+---
+
+## TASK-238: Діагностика+фікс — GitHub OAuth connect скидає на /login (Appwrite 401)
+
+**Виконавець: AGY2 (192.168.3.30, Windows, Antigravity Desktop з вбудованим браузером)**
+**!!IMPORTANT!! СПОЧАТКУ `git pull origin main` у локальному чекауті ai-drakon-scaffolder — має бути не старіше за commit ca8c178.**
+**!!IMPORTANT!! Продакшн (aidrakon.tech, Cloudflare Pages) будується з `.lovable/src/...`, НЕ з `src/...`. Будь-яка зміна файлу в `src/X` ОБОВ'ЯЗКОВО дублюється в `.lovable/src/X` (`diff src/X .lovable/src/X` має бути порожнім перед комітом).**
+
+### Контекст бага
+Два НЕЗАЛЕЖНІ GitHub-флоу в застосунку:
+1. **Логін у застосунок через GitHub** — `src/pages/LoginPage.tsx:140` `handleGithubLogin` → Appwrite-native `account.createOAuth2Session(...)`.
+2. **Підключення GitHub-репозиторію** (це і є джерело бага) — кнопка "Підключити GitHub" на /settings, `src/routes/settings.tsx:139-151` `handleConnectGithub`:
+   - бере Appwrite JWT через `getAppwriteJwt()` (`src/lib/appwrite-jwt.ts`)
+   - робить ПОВНИЙ `window.location.href` редірект на Cloudflare Worker `${workerUrl}/auth/github/start?token=...` (workerUrl = `https://drakon-antigravity-worker.maxfraieho.workers.dev`)
+   - Worker (`cloudflare-worker/worker-mcp-drakon.js`, `handleGithubAuthStart` ~2138, `handleGithubAuthCallback` ~2192) — 302 на github.com, користувач підтверджує, GitHub редіректить на Worker callback, Worker обмінює code→access_token, PATCH в Appwrite `user_profiles/{userId}` (server-side, без впливу на браузерні куки), 302 назад на `https://aidrakon.tech/settings?connected=1`.
+
+### Симптом (підтверджено, НЕ загальна проблема сесії)
+- Звичайний F5 на /workspace чи /settings — сесія тримається нормально.
+- Саме після повернення на `/settings?connected=1` після GitHub-флоу — застосунок кидає на `/login`. Консоль:
+  `GET https://fra.cloud.appwrite.io/v1/account 401`
+  `POST https://fra.cloud.appwrite.io/v1/account/jwts 401`
+
+### Релевантні файли
+- `src/context/AuthContext.tsx` (рядки 17-37) — on-mount `account.get()` + умовний `account.createJWT()`.
+- `src/lib/appwrite.ts` — Client: endpoint `https://fra.cloud.appwrite.io/v1`, project `6a23420a003a04b4997b` (cross-origin відносно aidrakon.tech).
+- `src/lib/appwrite-jwt.ts` — кеш JWT 10 хв у пам'яті модуля (зникає при full-page reload — очікувано).
+- `src/lib/auth.ts` — `setAccessToken`/`getAccessToken`/`clearAccessToken` (localStorage keys `jwt`, `aegisroute.access_token`); `clearAccessToken` (повний `localStorage.clear()` з білим списком) викликається ТІЛЬКИ з явних logout-кнопок — у GitHub-флоу не зачіпається.
+- `src/routes/settings.tsx:388-397` — guard на /login: лише якщо `!user && !hasJwt` ОБИДВА одночасно.
+
+### Гіпотези (не підтверджені — перевірити реальними даними з браузера)
+- H1: Сесія/JWT Appwrite з коротким TTL, а цикл Worker→GitHub→Worker (час очікування підтвердження користувачем) довший за нього, тоді як швидкий F5 встигає.
+- H2: Storage/cookie-partitioning ефект через multi-hop редірект-ланцюжок (aidrakon.tech→workers.dev→github.com→workers.dev→aidrakon.tech).
+- H3: Інша причина, не видна зі статичного аналізу коду.
+
+### Що зробити (реальний браузер з активною сесією користувача)
+1. Відкрити DevTools на https://aidrakon.tech/settings (Application + Network tabs).
+2. ДО кліку "Підключити GitHub" — зафіксувати localStorage (`jwt`, `aegisroute.access_token`, `cookieFallback` та інші appwrite-ключі) + Cookies для aidrakon.tech і fra.cloud.appwrite.io.
+3. Клік "Підключити GitHub", пройти реальну GitHub-авторизацію.
+4. Одразу після повернення на `/settings?connected=1` (до інших дій) — повторно зафіксувати ті ж localStorage-ключі+cookies, і в Network tab знайти точні запити `/v1/account` та `/v1/account/jwts` — Request headers + Response body.
+5. Порівняти з контрольним кейсом (звичайний F5) — в чому різниця.
+6. На основі РЕАЛЬНИХ спостережень (не вгадувати) визначити причину.
+7. Реалізувати точкове виправлення:
+   - Якщо причина — full-page redirect через чужі домени ламає React/JS-стан: розглянути popup-window (`window.open` + postMessage назад в основну вкладку) замість `window.location.href`, щоб основна вкладка з активною сесією НІКОЛИ не перезавантажувалась.
+   - Якщо причина — справді короткий TTL сесії в Appwrite Console (Auth → Session length): це НЕ в коді — чітко зазначити це у звіті, не намагатись виправити кодом.
+   - Інша причина — виправити відповідно до спостережень.
+8. Продублювати будь-яку зміну файлу з `src/` у `.lovable/src/`.
+
+### Git
+- Стейджити файли ПОІМЕННО (`git add path/to/file`), НІКОЛИ `git add .`.
+- Комміт-меседж: що було не так + що виправлено.
+- `git push origin main`.
+
+### Verify
+- `diff src/<файл> .lovable/src/<файл>` — порожньо для кожного зміненого файлу.
+- Живий ретест на aidrakon.tech: повторити кроки 1-5, підтвердити що 401/redirect на /login більше не відбувається.
+
+### Diary
+```
+SESSION:<дата>|TASK-238:github-oauth-401-logout-fix|<файли>|root-cause:<H1/H2/H3/інше>|commit:<hash>
+```
+
+[ ] TASK-238
