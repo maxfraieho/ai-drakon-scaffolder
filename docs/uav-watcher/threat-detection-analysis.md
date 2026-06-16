@@ -39,7 +39,7 @@
 > Agent API returns key 'reply', not 'response'. Use d.get('reply') or d.get('response', '').
 
 ## Семантичні зв'язки
-**Цей документ є частиною:** [[uav-watcher/_INDEX]]
+**Цей документ є частиною:** [[INDEX]]
 
 **Цей документ пов'язаний з:**
-- [[uav-watcher/_INDEX]] — переглянути всі документи розділу
+- [[INDEX]] — переглянути всі документи розділу
