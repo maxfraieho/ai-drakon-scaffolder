@@ -44,3 +44,5 @@ AI-консультантом Sharon та веб-інтерфейсом конф
 - [[uav_watcher.py]]
 - [[geo_monitor.py]]
 - [[shelter_search.py]]
+
+**Цей документ пов'язаний з:**
