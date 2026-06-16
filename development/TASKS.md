@@ -23847,4 +23847,4 @@ curl -s "http://localhost:${PORT}/notes/build-semantic-graph?project=ai-drakon&a
 SESSION:2026-06-16|TASK-SKG-3:build-semantic-graph-endpoint|notes_route.py|dry-run-verified|commit:<sha>
 ```
 
-[ ] TASK-SKG-3
+[x] TASK-SKG-3
