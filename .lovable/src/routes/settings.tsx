@@ -94,11 +94,31 @@ const [githubConnected, setGithubConnected] = useState(false);
 const [githubUserLogin, setGithubUserLogin] = useState<string | null>(null);
 const [isLoadingProfile, setIsLoadingProfile] = useState(false);
 
+const checkGithubToken = async (token: string): Promise<boolean> => {
+  try {
+    const response = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/vnd.github+json",
+      },
+    });
+    if (response.ok) {
+      const data = await response.json();
+      setGithubConnected(true);
+      setGithubUserLogin(data.login || "User");
+      return true;
+    }
+  } catch (err) {
+    console.error("Failed to check GitHub token:", err);
+  }
+  return false;
+};
+
 const loadGithubProfile = (userId: string) => {
   setIsLoadingProfile(true);
   databases
     .getDocument("ai-drakon", "user_profiles", userId)
-    .then((doc: any) => {
+    .then(async (doc: any) => {
       if (doc.githubToken) {
         setGithubConnected(true);
         setGithubUserLogin(doc.githubLogin || null);
@@ -109,11 +129,23 @@ const loadGithubProfile = (userId: string) => {
           return updated;
         });
       } else {
-        setGithubConnected(false);
+        const localToken = readSettings().github.token;
+        if (localToken) {
+          await checkGithubToken(localToken);
+        } else {
+          setGithubConnected(false);
+          setGithubUserLogin(null);
+        }
       }
     })
-    .catch(() => {
-      setGithubConnected(false);
+    .catch(async () => {
+      const localToken = readSettings().github.token;
+      if (localToken) {
+        await checkGithubToken(localToken);
+      } else {
+        setGithubConnected(false);
+        setGithubUserLogin(null);
+      }
     })
     .finally(() => {
       setIsLoadingProfile(false);
@@ -121,16 +153,29 @@ const loadGithubProfile = (userId: string) => {
 };
 
 useEffect(() => {
-  if (!user?.$id) return;
-  loadGithubProfile(user.$id);
+  if (user?.$id) {
+    loadGithubProfile(user.$id);
 
-  // Detect successful OAuth redirect from Worker
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("connected") === "1") {
-    window.history.replaceState({}, "", "/settings");
-    toast.success("GitHub підключено успішно!");
-    // Re-fetch after short delay to let Appwrite settle
-    setTimeout(() => loadGithubProfile(user.$id), 1200);
+    // Detect successful OAuth redirect from Worker
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("connected") === "1") {
+      window.history.replaceState({}, "", "/settings");
+      toast.success("GitHub підключено успішно!");
+      // Re-fetch after short delay to let Appwrite settle
+      setTimeout(() => loadGithubProfile(user.$id), 1200);
+    }
+  } else {
+    // If not logged in or bypass, verify the local settings token if it exists
+    const localToken = readSettings().github.token;
+    if (localToken) {
+      setIsLoadingProfile(true);
+      checkGithubToken(localToken).finally(() => {
+        setIsLoadingProfile(false);
+      });
+    } else {
+      setGithubConnected(false);
+      setGithubUserLogin(null);
+    }
   }
 }, [user?.$id]);
 
@@ -285,21 +330,31 @@ const updateSettings = (updater: (prev: AppSettings) => AppSettings) => {
 setSettings((prev) => updater(prev));
 };
 
-const saveSettings = () => {
+const saveSettings = async () => {
 try {
-writeSettings(settings);
-localStorage.setItem("drakon_agent_base_url", agentBaseUrl.trim() || "http://192.168.3.184");
+  writeSettings(settings);
+  localStorage.setItem("drakon_agent_base_url", agentBaseUrl.trim() || "http://192.168.3.184");
 
-// Synchronize to MinIO
-void syncUserConfigToCloud();
+  // Synchronize to MinIO
+  void syncUserConfigToCloud();
 
-toast.success("Налаштування збережено", {
-description: "Конфігурацію оновлено локально та синхронізовано з хмарою.",
-});
+  toast.success("Налаштування збережено", {
+    description: "Конфігурацію оновлено локально та синхронізовано з хмарою.",
+  });
+
+  // Verify and update connection status immediately after saving
+  if (settings.github.token) {
+    setIsLoadingProfile(true);
+    await checkGithubToken(settings.github.token);
+    setIsLoadingProfile(false);
+  } else {
+    setGithubConnected(false);
+    setGithubUserLogin(null);
+  }
 } catch (error) {
-toast.error("Не вдалося зберегти налаштування", {
-description: error instanceof Error ? error.message : "Невідома помилка",
-});
+  toast.error("Не вдалося зберегти налаштування", {
+    description: error instanceof Error ? error.message : "Невідома помилка",
+  });
 }
 };
 
