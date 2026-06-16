@@ -23995,4 +23995,17 @@ SESSION:2026-06-16|TASK-SKG-5:ui-trigger-retroactive+502-fix|llm_client.py-opena
 SESSION:<дата>|TASK-238:github-oauth-401-logout-fix|<файли>|root-cause:<H1/H2/H3/інше>|commit:<hash>
 ```
 
-[ ] TASK-238
+[x] TASK-238
+
+---
+
+## TASK-239: Verify local GitHub token on settings load/save (finalize and commit)
+
+**Виконавець: AGY3 (Termux, locally)**
+
+### Що зробити
+1. Перевірити та переконатись, що локальні settings-зміни в `src/routes/settings.tsx` та `.lovable/src/routes/settings.tsx` працюють та проходять build.
+2. Закомітити зміни.
+3. Позначити задачу виконаною.
+
+[x] TASK-239
