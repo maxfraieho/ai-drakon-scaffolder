@@ -20,6 +20,7 @@ def chat(
     api_key: str = "",
     max_tokens: int = 4096,
     system: str = "",
+    temperature: float | None = None,
 ) -> str:
     """Send chat request. Returns text response. Raises on error."""
     headers = {"Content-Type": "application/json", "User-Agent": "curl/7.68.0"}
@@ -34,6 +35,8 @@ def chat(
     }
     if system:
         payload["system"] = system
+    if temperature is not None:
+        payload["temperature"] = temperature
 
     url = base_url.rstrip("/") + "/v1/messages"
     data = json.dumps(payload).encode()
