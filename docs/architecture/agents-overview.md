@@ -123,7 +123,8 @@ architect-agent nodes_ss.py
 ---
 
 ## Семантичні зв'язки
+**Цей документ є частиною:** [[architecture/_INDEX]]
 
-- [[architecture/_INDEX]] — Індекс архітектурних документів
-- [[manuals/manual-agent-studio]] — Практичний мануал Agent Studio
-- [[architecture/02_drakon_to_langgraph_mapping]] — Специфікація DRAKON → LangGraph
+**Цей документ пов'язаний з:**
+- [[manuals/manual-agent-studio]] — пов'язаний документ (manual agent studio)
+- [[architecture/02_drakon_to_langgraph_mapping]] — пов'язаний документ (02 drakon to langgraph mapping)

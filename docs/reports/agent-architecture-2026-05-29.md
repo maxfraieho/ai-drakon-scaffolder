@@ -91,5 +91,7 @@ lang: uk
 ---
 
 ## Семантичні зв'язки
-Цей документ є частиною: [[reports/_INDEX]]
-Пов'язано з: [[architecture/02_drakon_to_langgraph_mapping]]
+**Цей документ є частиною:** [[reports/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[architecture/02_drakon_to_langgraph_mapping]] — пов'язаний документ (02 drakon to langgraph mapping)

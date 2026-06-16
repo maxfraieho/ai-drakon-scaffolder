@@ -38,4 +38,6 @@ data: {"status": "finished"}
 
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[reports/_INDEX]]
-**Пов'язано з:** [[plans/2026-05-29-unified-agent-framework-v2]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-29-unified-agent-framework-v2]] — пов'язаний документ (2026 05 29 unified agent framework v2)

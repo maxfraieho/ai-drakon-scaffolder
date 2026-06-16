@@ -29,3 +29,9 @@
 
 **Bonus fix:** Worker `atob()` → `TextDecoder('utf-8')` for correct Cyrillic display in Code editor.
 Worker deployed: `424c94a9-7843-4e27-9328-97727c22cabe`
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

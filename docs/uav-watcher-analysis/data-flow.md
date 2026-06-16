@@ -122,3 +122,9 @@ sequenceDiagram
     API-->>BotCmd: JSON reply
     BotCmd->>User: Deliver text message
 ```
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

@@ -260,4 +260,4 @@ graph TD
 **Цей документ є частиною:** [[plans/_INDEX]]
 
 **Цей документ пов'язаний з:**
-- [[plans/_INDEX]] — переглянути всі документи розділу
+- [[plans/2026-05-29-unified-agent-framework-v2]] — наступний розділ (2026 05 29 unified agent framework v2)

@@ -264,3 +264,9 @@ python3 -m mempalace diary write --agent agt-ogy3 "SESSION:2026-05-29|TASK-57:va
 - **Agents/Pipeline/Diagrams** — проектний dropdown залишився без змін
 - Якщо Settings пусті → Code показує "Налаштуйте GitHub у вкладці Налаштування"
 - Якщо `docs/{repo}/` не існує → Notes порожні (очікувана поведінка)
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-30-ai-drakon-issues-from-uav-analysis]] — наступний розділ (2026 05 30 ai drakon issues from uav analysis)

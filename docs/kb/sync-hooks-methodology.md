@@ -124,4 +124,6 @@ bash ~/bin/delegate-agy.sh "TASK-N"
 
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[kb/_INDEX]]
-**Пов'язано з:** [[COLLABORATION]] — повний гайд по Claude+AGY системі
+
+**Цей документ пов'язаний з:**
+- [[COLLABORATION]] — пов'язаний документ (COLLABORATION)

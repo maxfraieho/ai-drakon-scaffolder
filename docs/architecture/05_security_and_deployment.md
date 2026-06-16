@@ -135,4 +135,4 @@ async function handleRequest(request, env) {
 **Цей документ є частиною:** [[architecture/_INDEX]]
 
 **Цей документ пов'язаний з:**
-- [[architecture/_INDEX]] — переглянути всі документи розділу
+- [[architecture/06_semantic_knowledge_graph]] — наступний розділ (06 semantic knowledge graph)

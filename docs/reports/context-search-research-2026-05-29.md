@@ -144,5 +144,7 @@ class KBClient:
 ---
 
 ## Семантичні зв'язки
-Цей документ є частиною: [[reports/_INDEX]]
-Пов'язано з: [[reports/agent-architecture-2026-05-29]]
+**Цей документ є частиною:** [[reports/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[reports/agent-architecture-2026-05-29]] — пов'язаний документ (agent architecture 2026 05 29)

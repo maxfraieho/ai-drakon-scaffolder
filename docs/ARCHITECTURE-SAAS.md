@@ -275,3 +275,9 @@ cookie `a_session_*` (домен Appwrite) до Worker-а НЕ доходить.
 JWT залишиться для API-клієнтів та CLI.
 
 Реалізація: `services/architect-agent-flue/src/middleware/auth.ts` (TASK-205).
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

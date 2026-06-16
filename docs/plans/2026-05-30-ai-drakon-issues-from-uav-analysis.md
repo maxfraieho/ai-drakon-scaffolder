@@ -57,3 +57,9 @@ This document records the issues, inconsistencies, and observations collected du
 ## 5. Agent Ports & Connectivity
 
 - **Status**: Excellent. All three local agent ports on the dev server (`http://192.168.3.184:8765`, `8766`, and `8767`) were highly responsive, reachable from Termux, and functioned flawlessly without timeout issues.
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-30-mempalace-first-methodology]] — наступний розділ (2026 05 30 mempalace first methodology)

@@ -39,6 +39,7 @@
 > Agent API returns key 'reply', not 'response'. Use d.get('reply') or d.get('response', '').
 
 ## Семантичні зв'язки
-- [[services/drakon-agent/_INDEX]]
-- [[services/architect-agent/_INDEX]]
-- [[uav-watcher/threat-detection-logic]]
+**Цей документ є частиною:** [[uav-watcher/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[uav-watcher/_INDEX]] — переглянути всі документи розділу

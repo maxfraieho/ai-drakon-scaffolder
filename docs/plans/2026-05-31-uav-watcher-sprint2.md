@@ -65,3 +65,9 @@ bash ~/bin/delegate-agy.sh "TASK-107"
 bash ~/bin/delegate-agy.sh "TASK-108"
 bash ~/bin/delegate-agy.sh "TASK-109"
 ```
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-06-16-semantic-knowledge-graph-TASKS]] — наступний розділ (2026 06 16 semantic knowledge graph TASKS)

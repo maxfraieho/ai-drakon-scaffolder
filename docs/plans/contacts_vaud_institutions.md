@@ -22,3 +22,9 @@
 | **Médiathèque de Nyon** | Avenue Viollier 10, 1260 Nyon | mediatheque@nyon.ch | Partenaire lieu / Soutien | 2 (Court terme) |
 | **Théâtre du Reflet (Nyon)** | Rue des Marchandises 5, 1260 Nyon | contact@reflet.ch | Partenaire lieu | 2 (Court terme) |
 | **Fondation Sandoz** | Avenue d'Ouchy 14, 1006 Lausanne | fpfs@sandoz.com | Financement | 3 (Moyen terme) |
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/_INDEX]] — переглянути всі документи розділу

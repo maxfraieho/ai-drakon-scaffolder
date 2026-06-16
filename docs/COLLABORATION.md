@@ -262,7 +262,7 @@ Pipeline: search_kb → LLM prompt → SSE output.
 ---
 
 ## Семантичні зв'язки
-**Цей документ є частиною:** [[docs/_INDEX]]
+**Цей документ є частиною:** [[INDEX]]
 
-**Пов'язано з:**
-- [[kb/sync-hooks-methodology]] — деталі hooks та mempalace
+**Цей документ пов'язаний з:**
+- [[kb/sync-hooks-methodology]] — пов'язаний документ (sync hooks methodology)

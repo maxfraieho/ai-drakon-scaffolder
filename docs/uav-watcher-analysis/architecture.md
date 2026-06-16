@@ -72,3 +72,9 @@ graph TD
 - Queries are normalized and analyzed to detect user state: `ACTIVE THREAT`, `PANIC`, `STUPOR`, `DISSOCIATION`, or `SUICIDAL RISK`.
 - **RAG Integration**: Retrieves emergency context from local markdown guides, matches it with recent threat logs, and falls back to a DuckDuckGo search if current information is requested.
 - Outputs are generated via LLM Proxy with strict constraints (no markdown formatting, short conversational paragraphs, directive verbs in emergencies).
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

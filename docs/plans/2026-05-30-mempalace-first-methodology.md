@@ -153,3 +153,9 @@ Commit: `git commit -m "docs: add MemPalace-first methodology section (TASK-67)"
 
 **Diary:** `"SESSION:2026-05-30|TASK-61..67:mempalace-first-methodology|DONE|all-agents|★★★"`
 (agent: agt-ogy3)
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-30-uav-watcher-ai-refactoring]] — наступний розділ (2026 05 30 uav watcher ai refactoring)

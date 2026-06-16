@@ -126,8 +126,8 @@ lang: uk
 ---
 
 ## Семантичні зв'язки
-**Цей документ є частиною:** [[plans/_INDEX]]  
-**Пов'язано з:**  
-- [[reports/agent-architecture-2026-05-29]] — Аналіз архітектури агентів  
-- [[reports/context-search-research-2026-05-29]] — Дослідження контекстного пошуку  
-- [[plans/2026-05-21-drakon-langgraph-runtime]] — Рантайм LangGraph  
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-29-variant-a-single-github-config]] — наступний розділ (2026 05 29 variant a single github config)
+- [[reports/agent-architecture-2026-05-29]] — пов'язаний документ (agent architecture 2026 05 29)

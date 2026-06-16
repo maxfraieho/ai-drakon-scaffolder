@@ -45,5 +45,7 @@ status: documented
   текстового контенту.
 
 ## Семантичні зв'язки
-- [[_INDEX]]
-- [[services/drakon-agent/_INDEX]]
+**Цей документ є частиною:** [[uav-watcher/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[uav-watcher/_INDEX]] — переглянути всі документи розділу

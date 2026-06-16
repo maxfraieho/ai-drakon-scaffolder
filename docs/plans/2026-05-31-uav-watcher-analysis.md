@@ -108,3 +108,9 @@ git add development/TASKS.md
 git commit -m "chore(tasks): mark TASK-93 done"
 git push origin main
 ```
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-31-uav-watcher-sprint2]] — наступний розділ (2026 05 31 uav watcher sprint2)

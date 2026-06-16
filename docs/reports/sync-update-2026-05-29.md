@@ -90,4 +90,6 @@ ai-memory зберігає timestamp-логи у wiki. MemPalace diary — ос�
 
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[reports/_INDEX]]
-**Пов'язано з:** [[kb/sync-hooks-methodology]] — деталі hooks реалізації
+
+**Цей документ пов'язаний з:**
+- [[kb/sync-hooks-methodology]] — пов'язаний документ (sync hooks methodology)

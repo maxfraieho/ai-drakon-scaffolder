@@ -464,3 +464,9 @@ SESSION:$(date +%Y-%m-%d)|TASK-190..194:ui-bug-sprint|token-fix+project-list+age
   налаштувань або CORS заголовках Worker
 - Якщо `settings-storage.ts` використовує Appwrite замість localStorage — шукай де
   `databases.updateDocument` або `account.updatePrefs` очищає поля при логіні
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

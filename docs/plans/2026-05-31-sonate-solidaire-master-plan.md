@@ -530,3 +530,8 @@ sonate-solidaire.me      → coquille vide → à remplir avec contenu propre
 "Quelles sont les conditions pour obtenir une salle communale gratuite dans le canton de Vaud?"
 ```
 
+## Семантичні зв'язки
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-31-uav-watcher-analysis]] — наступний розділ (2026 05 31 uav watcher analysis)

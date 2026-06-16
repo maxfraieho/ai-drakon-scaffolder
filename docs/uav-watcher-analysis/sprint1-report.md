@@ -27,3 +27,9 @@
 3. **Unicode / UTF-8 Title Fix**: Resolve the encoding issues causing corrupted characters in diagram flow names.
 4. **Notes & Previews UX Polish**: Add starter templates to `/notes` and add descriptions to pipeline scenarios.
 5. **Real-world Agent E2E Tests**: Run end-to-end code translation tasks using actual Python segments from `uav_watcher.py` (e.g., threat classifier, shelter locator).
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

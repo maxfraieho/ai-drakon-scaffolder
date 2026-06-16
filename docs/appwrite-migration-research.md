@@ -176,3 +176,9 @@ If we proceed with the migration:
 4. **Server Middleware**: Write session cookie extraction helpers in Cloudflare Pages server functions using the Appwrite Node SDK.
 5. **D1 Schema Update**: Modify D1 database schemas to add `user_id` fields to all user-owned tables and update existing queries.
 6. **Billing & Stripe Webhook**: Build the Stripe payment integration webhook to update Appwrite user accounts.
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

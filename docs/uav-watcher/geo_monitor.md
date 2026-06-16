@@ -47,5 +47,7 @@ OpenStreetMap (Overpass). Для оптимізації продуктивнос
 - `asyncio` — для асинхронного виконання мережевих запитів.
 
 ## Семантичні зв'язки
-- [[services/drakon-agent/_INDEX]]
-- [[services/architect-agent/_INDEX]]
+**Цей документ є частиною:** [[uav-watcher/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[uav-watcher/_INDEX]] — переглянути всі документи розділу

@@ -202,9 +202,8 @@ Sprint 1–2 (auth, D1/KV/Appwrite, middleware) — закриті 2026-06-12 �
 - `npx tsc --noEmit` чистий після кожного етапу; `src/` ↔ `.lovable/src/`.
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[INDEX]]
+
 **Цей документ пов'язаний з:**
-- [[ARCHITECTURE-SAAS]] — SaaS-обгортка (auth, billing, tenancy) — чинна
-- [[krytyka]] — критичний аудит, джерело корекцій §2
-- [[kb/01-drakon-ir-spec]] — специфікація DRAKON IR (вхід компілятора)
+- [[ARCHITECTURE-SAAS]] — пов'язаний документ (ARCHITECTURE SAAS)
+- [[krytyka]] — пов'язаний документ (krytyka)

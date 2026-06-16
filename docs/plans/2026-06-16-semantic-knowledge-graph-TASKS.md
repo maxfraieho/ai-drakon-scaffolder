@@ -198,3 +198,9 @@ SESSION:2026-06-16|TASK-SKG-6:scaling+pipeline-node|semantic_graph.py+graphs.py|
 - Спершу ставити в чергу ЛИШЕ SKG-1; SKG-2/3 розблокувати після верифікації попередньої.
 - SKG-4 і SKG-6 можна паралелити (різні агенти) ПІСЛЯ SKG-3 — але не на одному терміналі (правило: не кілька bg-задач одночасно на одному агенті).
 - Після SKG-5 — синк `.lovable/` якщо змінювались `src/` файли (правило lovable-sync).
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[plans/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-06-16-semantic-knowledge-graph-docs-agent]] — наступний розділ (2026 06 16 semantic knowledge graph docs agent)

@@ -254,5 +254,7 @@ Update `docs/COLLABORATION.md`:
 
 ## Семантичні зв'язки
 **Цей документ є частиною:** [[plans/_INDEX]]
-**Замінює:** [[plans/2026-05-29-unified-agent-framework]] (попередня версія)
-**Пов'язано з:** [[reports/agent-architecture-2026-05-29]] — дослідження
+
+**Цей документ пов'язаний з:**
+- [[plans/2026-05-29-unified-agent-framework]] — наступний розділ (2026 05 29 unified agent framework)
+- [[reports/agent-architecture-2026-05-29]] — пов'язаний документ (agent architecture 2026 05 29)

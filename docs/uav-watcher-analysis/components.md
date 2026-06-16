@@ -90,3 +90,9 @@ Logic behind the chatbot pipeline nodes.
   - [retrieve_kb](file:///home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py#L443-L571): Runs database queries for coordinates, calls `find_shelters_sync` to get closest shelters, pulls recent threat database logs for situational context, and extracts matching sections from the markdown Knowledge Base.
   - [web_search](file:///home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py#L574-L603): If web terms match, fetches extra context snippets from DuckDuckGo.
   - [generate](file:///home/vokov/projects/uav-watcher/consultant/pipeline/nodes.py#L606-L665): Configures prompt according to psychological state heuristic indicators (Panic, active threat) and queries LLM proxies.
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

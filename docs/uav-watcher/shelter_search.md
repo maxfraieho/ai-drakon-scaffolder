@@ -50,6 +50,7 @@ status: documented
   блокуванням кешу.
 
 ## Семантичні зв'язки
-- [[_INDEX]]
-- [[geo_utils/_INDEX]]
-- [[bot_commands/_INDEX]]
+**Цей документ є частиною:** [[uav-watcher/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[uav-watcher/_INDEX]] — переглянути всі документи розділу

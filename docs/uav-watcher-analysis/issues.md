@@ -57,3 +57,9 @@ This document identifies bugs, code smells, architecture flaws, security concern
 - **Location:** [sharon/pipelines/threat_classifier.py:105-131](file:///home/vokov/projects/uav-watcher/sharon/pipelines/threat_classifier.py#L105-L131)
 - **Problem:** If a proxy endpoint returns a temporary `429` (Rate Limited) or `503` (Service Unavailable), the code fails or instantly switches to the next proxy without retrying.
 - **Remedy:** Implement exponential back-off using a decorator/library like `tenacity`.
+
+## Семантичні зв'язки
+**Цей документ є частиною:** [[INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[INDEX]] — переглянути всі документи розділу

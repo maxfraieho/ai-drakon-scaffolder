@@ -137,5 +137,5 @@ SVG force-directed граф (zoom/pan, пошук, depth-slider, focus-mode). С
 **Цей документ є частиною:** [[architecture/_INDEX]]
 
 **Цей документ пов'язаний з:**
-- [[concept/06-knowledge-base]] — жива vs frozen база знань, де живуть статті зони
-- [[concept/08-agent-docs-integration]] — як агенти читають markdown-KB (frontmatter, пошук)
+- [[concept/06-knowledge-base]] — пов'язаний документ (06 knowledge base)
+- [[concept/08-agent-docs-integration]] — пов'язаний документ (08 agent docs integration)

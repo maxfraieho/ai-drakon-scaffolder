@@ -48,7 +48,7 @@ status: documented
 - `sharon.routes.pipeline_trace` — інструментарій для відстеження загроз.
 
 ## Семантичні зв'язки
-- [[_INDEX]]
-- [[knowledge_base/_INDEX]]
-- [[pipeline/_INDEX]]
-- [[memory/_INDEX]]
+**Цей документ є частиною:** [[uav-watcher/_INDEX]]
+
+**Цей документ пов'язаний з:**
+- [[uav-watcher/_INDEX]] — переглянути всі документи розділу

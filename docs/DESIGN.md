@@ -247,9 +247,8 @@ OpenDesign (192.168.3.184:7460, plugin `ai-drakon-mobile`, design-system
 4. Після інтеграції: `npx tsc --noEmit` → дзеркало `.lovable` → окремий коміт на компонент.
 
 ## Семантичні зв'язки
-
 **Цей документ є частиною:** [[INDEX]]
-**Пов'язаний з:**
-- [[ARCHITECTURE-CORE]] — концепція компілятора (ДНК→білок), джерело §0
-- [[ui-pages-reference]] — довідник існуючих сторінок (вхід для Reality Map)
-- [[ARCHITECTURE-SAAS]] — SaaS-обгортка (auth у TopBar, квоти в Evidence Drawer)
+
+**Цей документ пов'язаний з:**
+- [[ARCHITECTURE-CORE]] — пов'язаний документ (ARCHITECTURE CORE)
+- [[ui-pages-reference]] — пов'язаний документ (ui pages reference)
