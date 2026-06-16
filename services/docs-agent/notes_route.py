@@ -464,6 +464,173 @@ def restructure_notes(project: Optional[str] = Query(default=None, description="
         raise HTTPException(status_code=500, detail=f"Restructuring failed: {e}")
 
 
+@router.get("/build-semantic-graph")
+@router.post("/build-semantic-graph")
+def build_semantic_graph(
+    project: Optional[str] = Query(default=None, description="Project slug"),
+    apply: bool = Query(default=False, description="False=dry-run preview, True=write+commit"),
+    model: Optional[str] = Query(default=None, description="LLM model name override"),
+):
+    """
+    Extracts semantic graph from knowledge-zone articles and inserts up to 2 cross-section
+    wikilinks into each article's 'Семантичні зв'язки' section.
+    Dry-run (apply=False) returns proposed diffs; apply=True writes, restructures, and commits.
+    """
+    _ensure_docs_root()
+    root = _resolve_root(project)
+    
+    from semantic_graph import (
+        collect_articles,
+        build_extraction_prompt,
+        parse_relationships,
+        enforce_link_budget,
+        render_semantic_block,
+        upsert_semantic_section,
+    )
+    
+    import sys
+    shared_dir = str(REPO_ROOT / "services" / "shared")
+    if shared_dir not in sys.path:
+        sys.path.append(shared_dir)
+    from llm_client import chat
+
+    articles = collect_articles(root, project)
+    if not articles:
+        return {
+            "success": True,
+            "model": model or os.getenv("LLM_MODEL", "gemini-2.5-flash"),
+            "proposed": [],
+            "stats": {"notes": 0, "links": 0}
+        }
+
+    system_prompt, user_prompt = build_extraction_prompt(articles)
+    
+    model_name = model or os.getenv("LLM_MODEL", "gemini-2.5-flash")
+    messages = [{"role": "user", "content": user_prompt}]
+    
+    try:
+        llm_response = chat(
+            messages=messages,
+            system=system_prompt,
+            temperature=0,
+            model=model_name
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LLM request failed: {e}")
+        
+    rels = parse_relationships(llm_response, articles)
+    budgeted_rels = enforce_link_budget(rels, articles)
+    
+    proposed = []
+    
+    for note in articles:
+        slug = note["slug"]
+        path = _path_from_slug(slug, project)
+        if not path.exists():
+            continue
+        try:
+            content = path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+            
+        semantic_block = render_semantic_block(slug, budgeted_rels, articles)
+        new_content, changed = upsert_semantic_section(content, semantic_block)
+        
+        if changed:
+            proposed.append({
+                "slug": slug,
+                "before": content,
+                "after": new_content
+            })
+
+    git_status = "dry-run"
+    if apply and proposed:
+        repo_root = _git_repo_for_path(root)
+        try:
+            subprocess.run(
+                ["git", "-C", str(repo_root), "pull", "--rebase", "--autostash", "-q"],
+                check=True, capture_output=True, timeout=30
+            )
+        except Exception as e:
+            print(f"[warn] git pull failed: {e}")
+            
+        # Write files
+        for item in proposed:
+            slug = item["slug"]
+            path = _path_from_slug(slug, project)
+            try:
+                path.write_text(item["after"], encoding="utf-8")
+            except Exception as e:
+                raise HTTPException(status_code=500, detail=f"Failed to write file for {slug}: {e}")
+                
+        # Call restructure_wiki_graph to normalize
+        try:
+            restructure_wiki_graph(root, project)
+        except Exception as e:
+            print(f"[warn] restructure_wiki_graph failed: {e}")
+            
+        # Get list of modified files
+        status_res = subprocess.run(
+            ["git", "-C", str(repo_root), "status", "--porcelain"],
+            capture_output=True, text=True, timeout=10
+        )
+        modified_files = []
+        if status_res.returncode == 0:
+            for line in status_res.stdout.splitlines():
+                if len(line) > 3:
+                    file_path = line[3:].strip()
+                    abs_file_path = (repo_root / file_path).resolve()
+                    try:
+                        abs_file_path.relative_to(root.resolve())
+                        modified_files.append(file_path)
+                    except ValueError:
+                        pass
+                        
+        if modified_files:
+            # git add files individually
+            for rel_path in modified_files:
+                subprocess.run(
+                    ["git", "-C", str(repo_root), "add", rel_path],
+                    check=True, capture_output=True, timeout=10
+                )
+                
+            # git commit
+            commit_msg = f"docs(graph): semantic links for {project or 'root'}"
+            commit_res = subprocess.run(
+                ["git", "-C", str(repo_root), "commit", "-m", commit_msg],
+                capture_output=True, timeout=10
+            )
+            
+            # git push
+            if commit_res.returncode == 0:
+                push_res = subprocess.run(
+                    ["git", "-C", str(repo_root), "push", "-q"],
+                    capture_output=True, timeout=30
+                )
+                if push_res.returncode == 0:
+                    git_status = "pushed changes"
+                else:
+                    git_status = f"commit success but push failed: {push_res.stderr.decode()}"
+            else:
+                git_status = "no structural changes to commit"
+        else:
+            git_status = "no file changes detected"
+
+    response = {
+        "success": True,
+        "model": model_name,
+        "proposed": proposed,
+        "stats": {
+            "notes": len(articles),
+            "links": len(budgeted_rels)
+        }
+    }
+    if apply:
+        response["git_status"] = git_status
+        
+    return response
+
+
 @router.get("/graph")
 def notes_graph(project: Optional[str] = Query(default=None, description="Project slug for scoped docs")):
     """Build graph data: nodes (all notes) + edges (wikilinks between notes)."""

@@ -3,7 +3,11 @@ import os
 from pathlib import Path
 
 # Add services/docs-agent to path to be able to import semantic_graph and notes_route
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+agent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, agent_dir)
+shared_dir = os.path.join(os.path.dirname(agent_dir), "shared")
+sys.path.insert(0, shared_dir)
+
 
 from semantic_graph import parse_relationships, enforce_link_budget, upsert_semantic_section
 
@@ -75,5 +79,76 @@ Some text here.
     assert "[[kb/_INDEX]]" in new_content
     assert "[[new-link]] — реалізує" in new_content
     assert "[[old-link]] — розширює" not in new_content
+
+
+def test_build_semantic_graph_endpoint():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from notes_route import router
+    from unittest.mock import patch, MagicMock
+
+    app = FastAPI()
+    app.include_router(router)
+    client = TestClient(app)
+
+    mock_articles = [
+        {"id": 1, "slug": "concept/06-kb", "title": "KB", "folder": "concept", "summary": ""},
+        {"id": 2, "slug": "architecture/06-kg", "title": "KG", "folder": "architecture", "summary": ""},
+    ]
+
+    llm_resp = """
+    ```json
+    {
+      "relationships": [
+        {"source_id": 1, "link": "extends", "target_id": 2}
+      ]
+    }
+    ```
+    """
+
+    mock_file_content = """# KB
+Some content here.
+## Семантичні зв'язки
+**Цей документ є частиною:** [[concept/_INDEX]]
+"""
+
+    mock_file_content_kb = """# KB
+Some content here.
+## Семантичні зв'язки
+**Цей документ є частиною:** [[concept/_INDEX]]
+"""
+
+    mock_file_content_kg = """# KG
+Some content here.
+## Семантичні зв'язки
+**Цей документ є частиною:** [[architecture/_INDEX]]
+
+**Цей документ пов'язаний з:**
+"""
+
+    def mock_path_side_effect(slug, project=None):
+        m = MagicMock()
+        m.exists.return_value = True
+        if slug == "concept/06-kb":
+            m.read_text.return_value = mock_file_content_kb
+        else:
+            m.read_text.return_value = mock_file_content_kg
+        return m
+
+    with patch("semantic_graph.collect_articles", return_value=mock_articles), \
+         patch("notes_route._resolve_root", return_value=Path("/tmp")), \
+         patch("notes_route._path_from_slug", side_effect=mock_path_side_effect), \
+         patch("llm_client.chat", return_value=llm_resp) as mock_chat:
+
+        response = client.get("/notes/build-semantic-graph?project=mock-project&apply=false")
+        
+        assert response.status_code == 200
+        data = response.json()
+        assert data["success"] is True
+        assert len(data["proposed"]) == 1
+        assert data["proposed"][0]["slug"] == "concept/06-kb"
+        assert "[[architecture/06-kg]] — розширює" in data["proposed"][0]["after"]
+        mock_chat.assert_called_once()
+
 
 
