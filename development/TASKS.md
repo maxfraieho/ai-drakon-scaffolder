@@ -24009,3 +24009,19 @@ SESSION:<дата>|TASK-238:github-oauth-401-logout-fix|<файли>|root-cause:
 3. Позначити задачу виконаною.
 
 [x] TASK-239
+
+---
+
+## TASK-240: Cloud Migration Phase 0 - Fact-Finding & Inventory Verification
+
+**Виконавець: AGY3 (Termux, locally)**
+
+### Що зробити
+1. З'ясувати максимальний execution-timeout для Appwrite Cloud functions.
+2. Визначити призначення та роль локального проксі на порту :19195.
+3. Провести звірку паритету між Python-агентами та їх Flue (TypeScript) версіями.
+4. З'ясувати, чи є OpenDesign (порт :7460) runtime-залежністю продукту чи лише dev-tool.
+5. Перевірити, чи викликається docs-agent/gitnexus_route.py:generate_docs з фронтенду.
+
+[x] TASK-240
+
