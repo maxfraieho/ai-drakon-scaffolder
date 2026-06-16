@@ -23848,3 +23848,38 @@ SESSION:2026-06-16|TASK-SKG-3:build-semantic-graph-endpoint|notes_route.py|dry-r
 ```
 
 [x] TASK-SKG-3
+
+
+---
+
+## TASK-SKG-4: Тип ребра `semantic` у вʼювері
+
+**Виконавець: AGY3 (192.168.3.204)**
+**!!IMPORTANT!! Залежить від SKG-3 (вже виконано, commit 67b7724, маршрут live). НЕ редагувати `import/garden-bloom/**` (референс).**
+**!!IMPORTANT!! Перед редагуванням — Read поточний файл, номери рядків у плані можуть бути застарілими.**
+
+### Що зробити
+1. `services/docs-agent/notes_route.py` → функція `notes_graph`: класифікувати ребро —
+   лінки з підблоку «пов'язаний з» (секція «Семантичні зв'язки», НЕ «є частиною») → `type:"semantic"`,
+   інакше лишити поточну логіку (`"navigational"`).
+2. `src/components/docs/garden/ExecutionGraph.tsx`: фарбувати/штрихувати ребра за `edge.type`
+   (semantic — окремий колір + пунктир, відмінно від структурних/navigational).
+
+### Verify
+```bash
+curl -s "http://localhost:8767/notes/graph?project=ai-drakon" | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+print(sorted(set(e['type'] for e in d['edges'])))
+"
+```
+Очікувати: масив МІСТИТЬ `"semantic"` (за умови, що хоч одна стаття вже має підблок
+«пов'язаний з» — якщо ще немає жодного семантичного лінка, допустимо порожньо, але код
+класифікації має бути коректним за читанням джерела).
+
+### Diary
+```
+SESSION:2026-06-16|TASK-SKG-4:semantic-edge-type|notes_route.py+ExecutionGraph.tsx|commit:<sha>
+```
+
+[ ] TASK-SKG-4
