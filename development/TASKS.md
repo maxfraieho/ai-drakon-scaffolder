@@ -23844,7 +23844,7 @@ curl -s "http://localhost:${PORT}/notes/build-semantic-graph?project=ai-drakon&a
 
 ### Diary
 ```
-SESSION:2026-06-16|TASK-SKG-3:build-semantic-graph-endpoint|notes_route.py|dry-run-verified|commit:<sha>
+SESSION:2026-06-16|TASK-SKG-3:build-semantic-graph-endpoint|notes_route.py|dry-run-verified|commit:67b7724
 ```
 
 [x] TASK-SKG-3
@@ -23883,6 +23883,37 @@ SESSION:2026-06-16|TASK-SKG-4:semantic-edge-type|notes_route.py+ExecutionGraph.t
 ```
 
 [x] TASK-SKG-4
+
+
+---
+
+## TASK-SKG-5: UI-тригер у вкладці «Документація» + QA
+
+**Spec:** `docs/plans/2026-06-16-semantic-knowledge-graph-TASKS.md → TASK-SKG-5`
+**Виконано поза формальною чергою (commit `35658ca`, без діарі-запису агента) — додано
+пост-фактум для відповідності TASKS.md фактичному стану коду.**
+
+### Що зроблено
+- `src/lib/api.ts`: `buildSemanticGraph(project?, apply=false, model?)`.
+- `src/pages/GardenPage.tsx`: кнопка «Побудувати семантичні зв'язки» у вкладці
+  «Документація» → прев'ю diff → «Застосувати» → `apply=true` → інвалідація `GET /notes/graph`.
+- `src/lib/garden/notesApi.ts`: проксі-виклики до docs-agent.
+
+### Відомий блокер (виявлено 2026-06-16, НЕ код-бага)
+Кнопка дає `HTTP 502: docs-agent /notes/build-semantic-graph 502`. Корінь — docs-agent
+коректно ловить помилку LLM-виклику (`notes_route.py:519`) і повертає 502 з деталем
+`"LLM request failed: HTTP Error 530: <none>"`. `services/shared/llm_client.py` ходить на
+`https://agy.exodus.pp.ua/v1/messages` (проксі AGY phone) — цей tunnel зараз віддає
+Cloudflare error 1016 (Origin DNS error), бо AGY phone (192.168.3.25) офлайн (100% ping loss,
+no route to host по SSH). Код SKG-3/SKG-5 не винен — проблема в одній точці відмови
+(LLM proxy залежить від постійно увімкненого телефону).
+
+### Diary
+```
+SESSION:2026-06-16|TASK-SKG-5:ui-trigger-retroactive|GardenPage.tsx+api.ts+notesApi.ts|commit:35658ca|blocked-by:agy-phone-tunnel-down
+```
+
+[x] TASK-SKG-5 (код) / [ ] фактично працює (блокується інфра — AGY phone офлайн)
 
 
 ---
