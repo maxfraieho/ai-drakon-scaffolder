@@ -23737,3 +23737,36 @@ ls .lovable/src/components/ 2>/dev/null && cp src/components/AccessGateUI.tsx .l
 ```
 SESSION:$(date +%Y-%m-%d)|TASK-BLOOM-GITHUB-LOGIN-v2:done|commit:$(git -C ~/workspace/garden-bloom rev-parse --short HEAD)|bloom-github-oauth-button
 ```
+
+---
+
+## TASK-SKG-1: llm_client — підтримка `temperature`
+
+**Виконавець: AGY3 (192.168.3.204)** · fallback: AGY4
+**!!IMPORTANT!! Атомарна задача. Лише 1 файл. Без побічних змін.**
+**Spec:** `docs/plans/2026-06-16-semantic-knowledge-graph-TASKS.md → TASK-SKG-1`
+**Контекст:** `docs/architecture/06_semantic_knowledge_graph.md` (повна методика)
+
+### Що зробити
+У `services/shared/llm_client.py`, функція `chat(...)`:
+- Додати параметр `temperature: float | None = None`.
+- Якщо `temperature is not None` → `payload["temperature"] = temperature`.
+- Інші сигнатури/дефолти не чіпати.
+
+### Verify
+```bash
+PYTHONPATH=services/shared python3 -c "from llm_client import chat; print(chat([{'role':'user','content':'ping'}], max_tokens=10, temperature=0))"
+```
+Очікувати: текст-відповідь без traceback.
+
+### Перед стартом (правило флоту)
+1. `mempalace search "llm_client chat proxy"` (wing ai_drakon_scaffolder)
+2. GitNexus impact на `chat` (repo ai-drakon-scaffolder)
+3. verify → commit (по файлах) → push → diary
+
+### Diary
+```
+SESSION:2026-06-16|TASK-SKG-1:llm-client-temperature|services/shared/llm_client.py|commit:<sha>
+```
+
+[ ] TASK-SKG-1
