@@ -23899,21 +23899,39 @@ SESSION:2026-06-16|TASK-SKG-4:semantic-edge-type|notes_route.py+ExecutionGraph.t
   «Документація» → прев'ю diff → «Застосувати» → `apply=true` → інвалідація `GET /notes/graph`.
 - `src/lib/garden/notesApi.ts`: проксі-виклики до docs-agent.
 
-### Відомий блокер (виявлено 2026-06-16, НЕ код-бага)
-Кнопка дає `HTTP 502: docs-agent /notes/build-semantic-graph 502`. Корінь — docs-agent
-коректно ловить помилку LLM-виклику (`notes_route.py:519`) і повертає 502 з деталем
-`"LLM request failed: HTTP Error 530: <none>"`. `services/shared/llm_client.py` ходить на
-`https://agy.exodus.pp.ua/v1/messages` (проксі AGY phone) — цей tunnel зараз віддає
-Cloudflare error 1016 (Origin DNS error), бо AGY phone (192.168.3.25) офлайн (100% ping loss,
-no route to host по SSH). Код SKG-3/SKG-5 не винен — проблема в одній точці відмови
-(LLM proxy залежить від постійно увімкненого телефону).
+### Виправлено 2026-06-16 — корінь і фікс
+Кнопка давала `HTTP 502: docs-agent /notes/build-semantic-graph 502`. Ланцюжок причин:
+1. `services/shared/llm_client.py` завжди бив у Anthropic-формат (`/v1/messages`,
+   `x-api-key`) незалежно від налаштувань.
+2. `services/docs-agent/.env` (реально вантажиться через `load_dotenv()` у `main.py`,
+   а НЕ через нечинний `environment="..."` рядок в `/etc/init.d/ai-docs-agent` —
+   OpenRC `environment=` тут взагалі не передається в процес, перевірено на 4 сервісах)
+   задає `PROXY_URL=http://localhost:19195/v1`, `PROXY_PROTOCOL=openai`,
+   `PROXY_TOKEN=agy3`, `PROXY_MODEL=gemini-2.5-flash` — локальний OpenAI-сумісний проксі
+   (127.0.0.1:19195, без жодної залежності від AGY-телефону).
+3. Через (1) запити йшли на `http://localhost:19195/v1/v1/messages` (хибний шлях,
+   неправильний формат) → 404 → обгорталось у 502.
+
+Фікс: `llm_client.chat()` тепер бере `protocol` (з `PROXY_PROTOCOL`) і гілкує
+запит/відповідь — `"openai"` → `POST {base}/chat/completions` + `Authorization: Bearer`
++ `choices[0].message.content`; `"anthropic"` (дефолт) → стара поведінка.
+Commits: `6d52cc9` (PROXY_* замість LLM_*), `bcc6bc3` (підтримка openai-протоколу).
+Перевірено живим dry-run на дев-сервері: `success:true`, `stats:{notes:123,links:16}`.
+
+**Окреме непов'язане спостереження (не виправлялось — поза скоупом):** `/etc/init.d/`
+у 4 сервісах (`ai-drakon-agent`, `ai-architect-agent`, `ai-docs-agent`, `uav-consultant`)
+використовує OpenRC-рядок `environment="..."`, який НЕ передає змінні в процес
+(перевірено через `/proc/PID/environ` — порожньо для всіх PROXY_*). Це не зламало
+SKG-5, бо `docs-agent/.env` через `load_dotenv()` все одно перекриває; але якщо
+у когось з інших сервісів немає власного `.env`, вони можуть мовчки використовувати
+лише хардкоджені дефолти. Варто перевірити окремо.
 
 ### Diary
 ```
-SESSION:2026-06-16|TASK-SKG-5:ui-trigger-retroactive|GardenPage.tsx+api.ts+notesApi.ts|commit:35658ca|blocked-by:agy-phone-tunnel-down
+SESSION:2026-06-16|TASK-SKG-5:ui-trigger-retroactive+502-fix|llm_client.py-openai-protocol|commit:35658ca,6d52cc9,bcc6bc3|live-verified:notes=123,links=16
 ```
 
-[x] TASK-SKG-5 (код) / [ ] фактично працює (блокується інфра — AGY phone офлайн)
+[x] TASK-SKG-5 (код + фактично працює, перевірено живим dry-run 2026-06-16)
 
 
 ---
