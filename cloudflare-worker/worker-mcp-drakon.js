@@ -2164,11 +2164,14 @@ async function handleGithubAuthStart(request, env) {
     } catch (_) {}
   }
 
+  const popup = url.searchParams.get('popup') === 'true';
+
   // Generate state token
   const statePayload = {
     userId,
     userAppwriteJwt: token,
-    redirectUrl
+    redirectUrl,
+    popup
   };
 
   const state = await generateJWT(statePayload, env.JWT_SECRET, 10 * 60 * 1000); // 10 min TTL
@@ -2210,7 +2213,7 @@ async function handleGithubAuthCallback(request, env) {
     return errorResponse('Invalid or expired state payload', 400);
   }
 
-  const { userId, userAppwriteJwt, redirectUrl } = statePayload;
+  const { userId, userAppwriteJwt, redirectUrl, popup } = statePayload;
 
   // Exchange code for access token
   let tokenData;
@@ -2293,6 +2296,29 @@ async function handleGithubAuthCallback(request, env) {
     }
   } catch (err) {
     console.error('Failed to write GitHub token to Appwrite:', err);
+  }
+
+  if (popup) {
+    return new Response(
+      `<html>
+        <head><title>GitHub Connected</title></head>
+        <body>
+          <p>Connecting...</p>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: "GITHUB_CONNECTED", success: true }, "*");
+            }
+            window.close();
+          </script>
+        </body>
+      </html>`,
+      {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+        }
+      }
+    );
   }
 
   // Redirect user back to /settings

@@ -47,7 +47,41 @@ export function OnboardingWizard({ userId, onComplete, onSandbox }: OnboardingWi
       }
       const settings = readSettings();
       const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
-      window.location.href = `${workerUrl}/auth/github/start?token=${encodeURIComponent(jwt)}`;
+      const authUrl = `${workerUrl}/auth/github/start?token=${encodeURIComponent(jwt)}&popup=true`;
+
+      const width = 600;
+      const height = 700;
+      const left = window.screen.width / 2 - width / 2;
+      const top = window.screen.height / 2 - height / 2;
+
+      const popupWindow = window.open(
+        authUrl,
+        "Connect GitHub",
+        `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes,scrollbars=yes`
+      );
+
+      if (!popupWindow) {
+        toast.error("Попап заблоковано браузером. Будь ласка, дозвольте попапи для цього сайту.");
+        return;
+      }
+
+      const handleMessage = (event: MessageEvent) => {
+        if (event.data && event.data.type === "GITHUB_CONNECTED") {
+          window.removeEventListener("message", handleMessage);
+          toast.success("GitHub підключено успішно!");
+          handleNext();
+        }
+      };
+
+      window.addEventListener("message", handleMessage);
+
+      const checkClosed = setInterval(() => {
+        if (popupWindow.closed) {
+          clearInterval(checkClosed);
+          window.removeEventListener("message", handleMessage);
+        }
+      }, 1000);
+
     } catch (error) {
       toast.error("Помилка підключення GitHub");
     } finally {

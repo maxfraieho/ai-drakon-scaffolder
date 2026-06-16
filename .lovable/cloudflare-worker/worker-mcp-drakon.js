@@ -168,6 +168,24 @@ async function verifyJWT(token, secret) {
   }
 }
 
+async function verifyAppwriteJwt(token) {
+  try {
+    const resp = await fetch('https://fra.cloud.appwrite.io/v1/account', {
+      headers: {
+        'X-Appwrite-Project': '6a23420a003a04b4997b',
+        'X-Appwrite-JWT': token,
+        'Content-Type': 'application/json',
+      },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) return null;
+    const user = await resp.json();
+    return user && user.$id ? user : null;
+  } catch {
+    return null;
+  }
+}
+
 async function verifyOwnerAuth(request, env) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
@@ -179,11 +197,19 @@ async function verifyOwnerAuth(request, env) {
     return { role: 'owner', sub: 'mcp-agent' };
   }
 
-  // JWT (для фронтенду)
-  const payload = await verifyJWT(token, env.JWT_SECRET);
-  if (!payload || payload.role !== 'owner') return null;
+  // Worker JWT (для owner login через /auth/login)
+  try {
+    const payload = await verifyJWT(token, env.JWT_SECRET);
+    if (payload && payload.role === 'owner') return payload;
+  } catch (_) {}
 
-  return payload;
+  // Appwrite JWT (для email-авторизованих користувачів)
+  const appwriteUser = await verifyAppwriteJwt(token);
+  if (appwriteUser) {
+    return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
+  }
+
+  return null;
 }
 
 function s3UriEncode(str) {
@@ -902,12 +928,21 @@ async function handleAuthLogin(request, env) {
 
   const ownerUsername = String(env.OWNER_USERNAME || 'owner');
   const ownerPasswordHash = String(env.OWNER_PASSWORD_HASH || '');
-  if (!ownerPasswordHash) {
-    return errorResponse('OWNER_PASSWORD_HASH is not configured', 500, undefined, 'SERVER_CONFIG_ERROR');
+  const adminPassword = String(env.ADMIN_PASSWORD || '');
+
+  let authenticated = false;
+  if (adminPassword && password === adminPassword) {
+    authenticated = true;
+  } else if (ownerPasswordHash) {
+    const hashHex = await hashPassword(password, env.JWT_SECRET);
+    if (hashHex === ownerPasswordHash) {
+      authenticated = true;
+    }
+  } else {
+    return errorResponse('Authentication is not configured (neither OWNER_PASSWORD_HASH nor ADMIN_PASSWORD set)', 500, undefined, 'SERVER_CONFIG_ERROR');
   }
 
-  const hashHex = await hashPassword(password, env.JWT_SECRET);
-  if (username !== ownerUsername || hashHex !== ownerPasswordHash) {
+  if (username !== ownerUsername || !authenticated) {
     return errorResponse('Invalid credentials', 401, undefined, 'INVALID_CREDENTIALS');
   }
 
@@ -1148,6 +1183,48 @@ async function handleGithubCommitFile(args, env, requestToken = '') {
     sha: result.content?.sha,
     commitSha: result.commit?.sha,
     commitUrl: result.commit?.html_url,
+  };
+}
+
+async function handleGithubDeleteFile(args, env, requestToken = '') {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const path = String(args?.path || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo || !path) {
+    return { success: false, error: 'owner, repo, path required' };
+  }
+
+  let sha;
+  try {
+    const existing = await githubFetch(
+      env,
+      `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}?ref=${encodeURIComponent(branch)}`,
+      {},
+      requestToken,
+    );
+    sha = existing.sha;
+  } catch (err) {
+    return { success: false, error: 'File not found on GitHub: ' + err.message };
+  }
+
+  const body = {
+    message: `delete(${path.split('/').pop()}): delete via Garden`,
+    branch,
+    sha,
+  };
+
+  const result = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path}`,
+    { method: 'DELETE', body: JSON.stringify(body) },
+    requestToken,
+  );
+
+  return {
+    success: true,
+    commitSha: result.commit?.sha,
   };
 }
 
@@ -1922,7 +1999,7 @@ async function handleHealth(env) {
 // Logs each request to MinIO (agent, ms, status).
 // ============================================
 
-const VALID_AGENT_IDS = ['drakon', 'architect', 'docs'];
+const VALID_AGENT_IDS = ['drakon', 'architect', 'docs', 'sonate-solidaire'];
 const DOCS_AGENT_URL = 'https://docs-agent.exodus.pp.ua';
 
 function isPythonCode(msg) {
@@ -1939,27 +2016,30 @@ async function handleAgentChat(agentId, request, env, ctx) {
     return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
   }
 
-  const { message, context, agentUrl } = body;
+  const { message, context, agentUrl, llmConfig } = body;
   if (!message || typeof message !== 'string') {
     return errorResponse('message is required', 400, undefined, 'MISSING_FIELD');
   }
 
   // agentUrl from client (from Settings), fallback to env vars
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   const defaultUrls = {
     drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
-    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    architect: architectUrl,
     docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+    'sonate-solidaire': architectUrl,
   };
   const targetUrl = (typeof agentUrl === 'string' && agentUrl.startsWith('https://'))
     ? agentUrl
     : defaultUrls[agentId];
 
-  // Route: DRAKON + Python code → /analyze, otherwise → /chat
+  // Route: DRAKON + Python → /analyze; multi-agent IDs → /agents/{id}/chat; else → /chat
   const usesAnalyze = agentId === 'drakon' && isPythonCode(message);
-  const endpoint = usesAnalyze ? '/analyze' : '/chat';
+  const usesAgentRoute = ['sonate-solidaire'].includes(agentId);
+  const endpoint = usesAnalyze ? '/analyze' : usesAgentRoute ? `/agents/${agentId}/chat` : '/chat';
   const agentBody = usesAnalyze
-    ? JSON.stringify({ code: message, refine: true })
-    : JSON.stringify({ message, context: context || null });
+    ? JSON.stringify({ code: message, refine: true, llmConfig: llmConfig || null })
+    : JSON.stringify({ message, context: context || null, llmConfig: llmConfig || null });
 
   const t0 = Date.now();
   let agentResp;
@@ -2028,6 +2108,282 @@ async function handleAgentHealth(agentId, env) {
 }
 
 
+
+// User config handlers
+async function handleUserConfigGet(request, env) {
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+  const userId = (payload.sub || payload.email || 'default').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const key = `users/${userId}/config.json`;
+  try {
+    const data = await getFromMinIO(env, key);
+    if (!data) return jsonResponse({ success: true, config: null });
+    return jsonResponse({ success: true, config: JSON.parse(data) });
+  } catch (_) {
+    return jsonResponse({ success: true, config: null });
+  }
+}
+
+async function handleUserConfigPut(request, env) {
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+  const userId = (payload.sub || payload.email || 'default').replace(/[^a-zA-Z0-9._-]/g, '_');
+  const key = `users/${userId}/config.json`;
+  let body;
+  try { body = await request.json(); } catch (_) { return errorResponse('Invalid JSON', 400); }
+  await uploadToMinIO(env, key, JSON.stringify(body));
+  return jsonResponse({ success: true });
+}
+
+async function handleGithubAuthStart(request, env) {
+  const url = new URL(request.url);
+  const token = url.searchParams.get('token');
+  if (!token) {
+    return errorResponse('Missing Appwrite JWT token', 400);
+  }
+
+  // Verify the Appwrite token to get the user ID
+  const appwriteUser = await verifyAppwriteJwt(token);
+  if (!appwriteUser || !appwriteUser.$id) {
+    return errorResponse('Invalid Appwrite token', 401);
+  }
+
+  const userId = appwriteUser.$id;
+
+  // Determine redirect URL after callback is finished
+  let redirectUrl = 'https://aidrakon.tech/settings';
+  const referer = request.headers.get('Referer');
+  if (referer) {
+    try {
+      const refUrl = new URL(referer);
+      if (refUrl.hostname === 'localhost' || refUrl.hostname.endsWith('aidrakon.tech') || refUrl.hostname.endsWith('pages.dev')) {
+        refUrl.pathname = '/settings';
+        refUrl.search = '';
+        redirectUrl = refUrl.toString();
+      }
+    } catch (_) {}
+  }
+
+  const popup = url.searchParams.get('popup') === 'true';
+
+  // Generate state token
+  const statePayload = {
+    userId,
+    userAppwriteJwt: token,
+    redirectUrl,
+    popup
+  };
+
+  const state = await generateJWT(statePayload, env.JWT_SECRET, 10 * 60 * 1000); // 10 min TTL
+
+  const clientId = env.GITHUB_APP_CLIENT_ID;
+  if (!clientId) {
+    return errorResponse('GITHUB_APP_CLIENT_ID is not configured on the server', 500);
+  }
+
+  const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${encodeURIComponent(clientId)}&state=${encodeURIComponent(state)}`;
+
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Location': githubAuthUrl,
+      'Access-Control-Allow-Origin': '*',
+    }
+  });
+}
+
+async function handleGithubAuthCallback(request, env) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  const state = url.searchParams.get('state');
+
+  if (!code || !state) {
+    return errorResponse('Missing code or state', 400);
+  }
+
+  // Verify state
+  let statePayload;
+  try {
+    statePayload = await verifyJWT(state, env.JWT_SECRET);
+  } catch (_) {
+    return errorResponse('State verification failed', 400);
+  }
+
+  if (!statePayload || !statePayload.userId) {
+    return errorResponse('Invalid or expired state payload', 400);
+  }
+
+  const { userId, userAppwriteJwt, redirectUrl, popup } = statePayload;
+
+  // Exchange code for access token
+  let tokenData;
+  try {
+    tokenData = await exchangeGithubCode(env, code);
+  } catch (err) {
+    return errorResponse(err.message, 400);
+  }
+
+  const accessToken = tokenData.access_token;
+  if (!accessToken) {
+    return errorResponse('OAuth token exchange did not return an access token', 400);
+  }
+
+  // Fetch GitHub login info
+  let githubLogin = '';
+  try {
+    const userProfile = await fetchGithubUser(accessToken);
+    githubLogin = userProfile.login;
+  } catch (err) {
+    console.error('Failed to fetch github user login:', err);
+  }
+
+  // Save to Appwrite user_profiles
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const appwriteApiKey = env.APPWRITE_API_KEY;
+
+  const docUrl = `${appwriteEndpoint}/databases/ai-drakon/collections/user_profiles/documents/${userId}`;
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Appwrite-Project': appwriteProjectId,
+  };
+  if (appwriteApiKey) {
+    headers['X-Appwrite-Key'] = appwriteApiKey;
+  } else if (userAppwriteJwt) {
+    headers['X-Appwrite-JWT'] = userAppwriteJwt;
+  }
+
+  try {
+    const patchResp = await fetch(docUrl, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        data: {
+          githubLogin: githubLogin || '',
+          githubToken: accessToken
+        }
+      })
+    });
+
+    if (patchResp.status === 404) {
+      // Document doesn't exist, create it (POST)
+      const createUrl = `${appwriteEndpoint}/databases/ai-drakon/collections/user_profiles/documents`;
+      const postResp = await fetch(createUrl, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          documentId: userId,
+          "$permissions": ["read(\"user:" + userId + "\")", "update(\"user:" + userId + "\")"],
+          data: {
+            userId: userId,
+            teamId: userId,
+            displayName: githubLogin || 'User',
+            githubLogin: githubLogin || '',
+            githubToken: accessToken,
+            locale: 'en',
+            createdAt: new Date().toISOString()
+          }
+        })
+      });
+      if (!postResp.ok) {
+        const errText = await postResp.text();
+        console.error(`Failed to create user_profile in Appwrite (status ${postResp.status}):`, errText);
+      }
+    } else if (!patchResp.ok) {
+      const errText = await patchResp.text();
+      console.error(`Failed to patch user_profile in Appwrite (status ${patchResp.status}):`, errText);
+    }
+  } catch (err) {
+    console.error('Failed to write GitHub token to Appwrite:', err);
+  }
+
+  if (popup) {
+    return new Response(
+      `<html>
+        <head><title>GitHub Connected</title></head>
+        <body>
+          <p>Connecting...</p>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ type: "GITHUB_CONNECTED", success: true }, "*");
+            }
+            window.close();
+          </script>
+        </body>
+      </html>`,
+      {
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Access-Control-Allow-Origin': '*',
+        }
+      }
+    );
+  }
+
+  // Redirect user back to /settings
+  return new Response(null, {
+    status: 302,
+    headers: {
+      'Location': (redirectUrl || 'https://aidrakon.tech/settings') + '?connected=1',
+      'Access-Control-Allow-Origin': '*',
+    }
+  });
+}
+
+async function exchangeGithubCode(env, code) {
+  const clientId = env.GITHUB_APP_CLIENT_ID;
+  const clientSecret = env.GITHUB_APP_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    throw new Error('GITHUB_APP_CLIENT_ID or GITHUB_APP_CLIENT_SECRET is not configured on the server');
+  }
+
+  const response = await fetch('https://github.com/login/oauth/access_token', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'User-Agent': 'drakon-mcp-worker'
+    },
+    body: JSON.stringify({
+      client_id: clientId,
+      client_secret: clientSecret,
+      code
+    })
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`GitHub token exchange failed (HTTP ${response.status}): ${text.slice(0, 200)}`);
+  }
+
+  const data = await response.json();
+  if (data.error) {
+    throw new Error(`GitHub OAuth error: ${data.error_description || data.error}`);
+  }
+
+  return data;
+}
+
+async function fetchGithubUser(accessToken) {
+  const response = await fetch('https://api.github.com/user', {
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Accept': 'application/vnd.github+json',
+      'User-Agent': 'drakon-mcp-worker',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`GitHub user fetch failed (HTTP ${response.status}): ${text.slice(0, 200)}`);
+  }
+
+  return response.json();
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -2049,6 +2405,14 @@ export default {
 
       if (method === 'POST' && path === '/auth/login') {
         return await handleAuthLogin(request, env);
+      }
+
+      if (method === 'GET' && path === '/auth/github/start') {
+        return await handleGithubAuthStart(request, env);
+      }
+
+      if (method === 'GET' && path === '/auth/github/callback') {
+        return await handleGithubAuthCallback(request, env);
       }
 
       if (method === 'GET' && path === '/mcp') {
@@ -2143,7 +2507,17 @@ export default {
         if (!streamPayload) return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
         return await handlePipelineStream(streamJobId, env, ctx);
       }
+      // ─── Sonate Solidaire public chat (no auth required) ─────────────────
+      const ssChatMatch = path.match(/^\/v1\/agents\/(sonate-solidaire)\/chat$/);
+      if (method === 'POST' && ssChatMatch) {
+        return await handleAgentChat(ssChatMatch[1], request, env, ctx);
+      }
       // ─────────────────────────────────────────────────────────────────────
+
+      if (path === '/v1/user/config') {
+        if (method === 'GET') return await handleUserConfigGet(request, env);
+        if (method === 'PUT') return await handleUserConfigPut(request, env);
+      }
 
       const ownerPayload = await verifyOwnerAuth(request, env);
       if (!ownerPayload) {
@@ -2198,6 +2572,17 @@ export default {
           return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
         }
         return jsonResponse(await handleGithubCommitFile(body, env, requestToken));
+      }
+
+      if (method === 'DELETE' && path === '/v1/github/delete') {
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        let body;
+        try {
+          body = await request.json();
+        } catch {
+          return errorResponse('Invalid JSON', 400, undefined, 'INVALID_JSON');
+        }
+        return jsonResponse(await handleGithubDeleteFile(body, env, requestToken));
       }
 
       if (method === 'GET' && path === '/v1/github/branches') {
@@ -2435,13 +2820,14 @@ async function handleNotesCommit(request, env) {
   let body;
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
 
-  // Lovable sends: { slug, path, content (full markdown with FM), sha, message }
-  // Our format: { slug, title, content (body only), tags }
+  // Lovable sends: { slug, path, content (full markdown with FM), sha, message, project }
+  // Our format: { slug, title, content (body only), tags, project }
   // Handle both formats
   let slug = body.slug || '';
   let title = body.title;
   let bodyContent = body.content || '';
   let tags = body.tags || [];
+  let project = body.project || '';
 
   if (!title && bodyContent.startsWith('---')) {
     // Parse frontmatter from content
@@ -2466,7 +2852,7 @@ async function handleNotesCommit(request, env) {
   const res = await fetch(`${DOCS_AGENT_URL}/notes/write`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slug, title, content: bodyContent, tags }),
+    body: JSON.stringify({ slug, title, content: bodyContent, tags, project }),
     signal: AbortSignal.timeout(30_000),
   });
   if (!res.ok) {
@@ -2489,12 +2875,13 @@ async function handleNotesDelete(request, env) {
   let body;
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
   const slug = body.slug || '';
+  const project = body.project || '';
   if (!slug) return errorResponse('slug required', 400);
 
   const res = await fetch(`${DOCS_AGENT_URL}/notes/delete`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ slug }),
+    body: JSON.stringify({ slug, project }),
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return errorResponse(`docs-agent /notes/delete ${res.status}`, 502);
