@@ -466,4 +466,28 @@ export const api = {
       `${resolveApiBase()}/v1/github/branches?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}`,
       { headers: githubRequestHeaders(owner, token) },
     ).then((r) => r.json()),
+
+  buildSemanticGraph: async (
+    project?: string,
+    apply = false,
+    model?: string,
+  ): Promise<{
+    success: boolean;
+    model: string;
+    proposed: Array<{ slug: string; before: string; after: string }>;
+    stats: { notes: number; links: number };
+    git_status?: string;
+  }> => {
+    const params = new URLSearchParams();
+    if (project) params.set("project", project);
+    params.set("apply", String(apply));
+    if (model) params.set("model", model);
+
+    const response = await fetch(`${resolveApiBase()}/v1/notes/build-semantic-graph?${params.toString()}`, {
+      method: "POST",
+      headers: headers(),
+    });
+
+    return parseResponse(response);
+  },
 };

@@ -446,3 +446,44 @@ function getRootFolder(slug: string): string {
   const idx = slug.indexOf("/");
   return idx === -1 ? "_root" : slug.slice(0, idx);
 }
+
+export interface SemanticGraphBuildResponse {
+  success: boolean;
+  model: string;
+  proposed: Array<{ slug: string; before: string; after: string }>;
+  stats: { notes: number; links: number };
+  git_status?: string;
+}
+
+export async function buildSemanticGraph(
+  project?: string,
+  apply = false,
+  model?: string
+): Promise<SemanticGraphBuildResponse> {
+  const gh = getActiveProjectGithub();
+  if (gh) {
+    throw new Error("Побудова семантичного графу через GitHub OAuth наразі не підтримується. Використовуйте локальний/серверний проект.");
+  }
+
+  const token = jwt();
+  if (!token) throw new Error("Не авторизовано (JWT відсутній)");
+
+  const params = new URLSearchParams();
+  if (project) params.set("project", project);
+  params.set("apply", String(apply));
+  if (model) params.set("model", model);
+
+  const res = await fetch(`${workerUrl()}/v1/notes/build-semantic-graph?${params.toString()}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) {
+    const txt = await res.text().catch(() => "");
+    throw new Error(`build-semantic-graph HTTP ${res.status}: ${txt}`);
+  }
+  return res.json() as Promise<SemanticGraphBuildResponse>;
+}
+

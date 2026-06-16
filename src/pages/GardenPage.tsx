@@ -5,12 +5,16 @@ import {
 } from "lucide-react";
 import { ExecutionGraph } from "@/components/docs/garden/ExecutionGraph";
 import { NoteRenderer } from "@/components/docs/garden/NoteRenderer";
-import { fetchNotesList, fetchNote } from "@/lib/garden/notesApi";
+import { fetchNotesList, fetchNote, buildSemanticGraph } from "@/lib/garden/notesApi";
+import type { SemanticGraphBuildResponse } from "@/lib/garden/notesApi";
 import { useProject } from "@/context/ProjectContext";
 import { getRootFolder } from "@/lib/garden/graphTypes";
 import type { GraphNode, GraphEdge, NoteListItem } from "@/lib/garden/graphTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -101,6 +105,21 @@ function groupByFolder(notes: NoteListItem[]): Map<string, NoteTreeItem[]> {
   return map;
 }
 
+function renderProposedDiff(before: string, after: string) {
+  const beforeLines = before.split("\n");
+  const afterLines = after.split("\n");
+  const addedLines = afterLines.filter(line => !beforeLines.includes(line) && line.trim().length > 0);
+  return (
+    <div className="rounded border border-zinc-800 bg-zinc-950 p-2 font-mono text-[10px] leading-relaxed">
+      {addedLines.map((line, idx) => (
+        <div key={idx} className="text-emerald-400 bg-emerald-950/20 px-1 py-0.5 rounded-sm">
+          + {line}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function GardenPage() {
   const { activeProject } = useProject();
   const projectSlug = activeProject?.slug;
@@ -115,6 +134,53 @@ export function GardenPage() {
   const [noteLoading, setNoteLoading] = useState(false);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [graph, setGraph] = useState<{ nodes: GraphNode[]; edges: GraphEdge[] }>({ nodes: [], edges: [] });
+
+  const [isBuildingGraph, setIsBuildingGraph] = useState(false);
+  const [isApplyingGraph, setIsApplyingGraph] = useState(false);
+  const [showDiffDialog, setShowDiffDialog] = useState(false);
+  const [proposedChanges, setProposedChanges] = useState<SemanticGraphBuildResponse["proposed"] | null>(null);
+  const [graphStats, setGraphStats] = useState<SemanticGraphBuildResponse["stats"] | null>(null);
+
+  const handleBuildSemanticGraphStart = async () => {
+    setIsBuildingGraph(true);
+    try {
+      const res = await buildSemanticGraph(projectSlug, false);
+      if (res.success) {
+        setProposedChanges(res.proposed);
+        setGraphStats(res.stats);
+        if (res.proposed.length === 0) {
+          toast.info("Семантична структура вже є оптимальною. Жодних нових зв'язків не запропоновано.");
+        } else {
+          setShowDiffDialog(true);
+        }
+      } else {
+        toast.error("Не вдалося проаналізувати зв'язки");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Помилка аналізу зв'язків");
+    } finally {
+      setIsBuildingGraph(false);
+    }
+  };
+
+  const handleApplySemanticGraph = async () => {
+    setIsApplyingGraph(true);
+    try {
+      const res = await buildSemanticGraph(projectSlug, true);
+      if (res.success) {
+        toast.success(`Успішно оновлено! Додано зв'язків: ${res.stats?.links || 0}. Статус коміту: ${res.git_status || ''}`);
+        setShowDiffDialog(false);
+        setProposedChanges(null);
+        await loadNotes();
+      } else {
+        toast.error("Не вдалося застосувати семантичні зв'язки");
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Помилка застосування змін");
+    } finally {
+      setIsApplyingGraph(false);
+    }
+  };
 
   const loadNotes = useCallback(async () => {
     setLoading(true);
@@ -213,12 +279,32 @@ export function GardenPage() {
         <span className="font-mono text-[10px] text-[var(--text-muted)]">
           {notes.length} нотаток
         </span>
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => void handleBuildSemanticGraphStart()}
+            disabled={isBuildingGraph || loading}
+            className="h-6 gap-1 px-2 font-mono text-[9px] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] bg-transparent hover:bg-white/5"
+          >
+            {isBuildingGraph ? (
+              <>
+                <Loader2 className="h-2.5 w-2.5 animate-spin" />
+                Аналіз…
+              </>
+            ) : (
+              <>
+                <Network className="h-2.5 w-2.5 text-amber-500" />
+                Побудувати семантичні зв'язки
+              </>
+            )}
+          </Button>
           <button
             type="button"
             onClick={() => void loadNotes()}
             disabled={loading}
             className="inline-flex h-5 w-5 items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-40"
+            title="Оновити список"
           >
             <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
           </button>
@@ -358,6 +444,54 @@ export function GardenPage() {
           )}
         </div>
       )}
+
+      <Dialog open={showDiffDialog} onOpenChange={setShowDiffDialog}>
+        <DialogContent className="max-w-xl bg-zinc-900 text-zinc-100 border border-zinc-800 shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-semibold tracking-tight text-amber-500">
+              Запропоновані семантичні зв'язки
+            </DialogTitle>
+            <DialogDescription className="text-[11px] text-zinc-400">
+              LLM проаналізував {graphStats?.notes} нотаток та запропонував додати наступні перехресні зв'язки:
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="my-4 max-h-[300px] overflow-y-auto space-y-4 pr-1">
+            {proposedChanges && proposedChanges.map((change) => (
+              <div key={change.slug} className="space-y-1.5">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-[11px] text-zinc-300 font-mono">{change.slug}</span>
+                </div>
+                {renderProposedDiff(change.before, change.after)}
+              </div>
+            ))}
+          </div>
+
+          <DialogFooter className="flex items-center justify-end gap-2 border-t border-zinc-800 pt-3">
+            <Button
+              variant="ghost"
+              onClick={() => setShowDiffDialog(false)}
+              className="h-7 text-[11px] font-medium hover:bg-zinc-800 hover:text-zinc-100 text-zinc-400 border border-zinc-800"
+            >
+              Скасувати
+            </Button>
+            <Button
+              onClick={() => void handleApplySemanticGraph()}
+              disabled={isApplyingGraph}
+              className="h-7 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20"
+            >
+              {isApplyingGraph ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />
+                  Застосування…
+                </>
+              ) : (
+                "Застосувати та закомiтити"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

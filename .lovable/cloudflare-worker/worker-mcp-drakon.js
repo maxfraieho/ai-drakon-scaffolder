@@ -2471,6 +2471,9 @@ export default {
       if (method === 'DELETE' && path === '/v1/notes/delete') {
         return await handleNotesDelete(request, env);
       }
+      if (method === 'POST' && path === '/v1/notes/build-semantic-graph') {
+        return await handleNotesBuildSemanticGraph(request, env);
+      }
       // ──────────────────────────────────────────────────────────────────────
 
       // ─── GitHub read-only routes (no auth needed — Worker uses server-side token) ─────
@@ -2885,6 +2888,38 @@ async function handleNotesDelete(request, env) {
     signal: AbortSignal.timeout(15_000),
   });
   if (!res.ok) return errorResponse(`docs-agent /notes/delete ${res.status}`, 502);
+  return jsonResponse(await res.json());
+}
+
+async function handleNotesBuildSemanticGraph(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  if (!token) return errorResponse('Authorization required', 401);
+  try {
+    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
+  } catch {
+    return errorResponse('Invalid or expired token', 401);
+  }
+
+  const url = new URL(request.url);
+  const project = url.searchParams.get('project') || '';
+  const apply = url.searchParams.get('apply') || 'false';
+  const model = url.searchParams.get('model') || '';
+
+  const params = new URLSearchParams();
+  if (project) params.set('project', project);
+  if (apply) params.set('apply', apply);
+  if (model) params.set('model', model);
+
+  const res = await fetch(`${DOCS_AGENT_URL}/notes/build-semantic-graph?${params.toString()}`, {
+    method: 'POST',
+    signal: AbortSignal.timeout(120_000), // Generous 120s timeout
+  });
+
+  if (!res.ok) {
+    const errText = await res.text().catch(() => '');
+    return errorResponse(`docs-agent /notes/build-semantic-graph ${res.status}: ${errText}`, 502);
+  }
   return jsonResponse(await res.json());
 }
 // ─────────────────────────────────────────────────────────────────────────────
