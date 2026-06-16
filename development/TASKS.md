@@ -23802,7 +23802,8 @@ cd services/docs-agent && python3 -m pytest tests/test_semantic_graph.py -q
 
 ### Diary
 ```
-SESSION:2026-06-16|TASK-SKG-2:semantic-graph-core+tests|services/docs-agent/semantic_graph.py|3-tests-PASS|commit:<sha>
+SESSION:2026-06-16|TASK-SKG-2:semantic-graph-core+tests|services/docs-agent/semantic_graph.py|3-tests-PASS|commit:4b1fca7
 ```
 
-[ ] TASK-SKG-2
+[x] TASK-SKG-2
+
