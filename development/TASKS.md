@@ -23807,3 +23807,44 @@ SESSION:2026-06-16|TASK-SKG-2:semantic-graph-core+tests|services/docs-agent/sema
 
 [x] TASK-SKG-2
 
+
+
+---
+
+## TASK-SKG-3: Ендпоінт `POST /notes/build-semantic-graph` (dry-run/apply)
+
+**Виконавець: AGY3 (192.168.3.204)** · fallback: AGY4
+**!!IMPORTANT!! Залежить від SKG-2 (вже виконано, commits d2e7f78+4b1fca7, 3 pytest PASS). `apply=False` за замовч. `apply=True` комітить у git (оборотно).**
+**!!IMPORTANT!! Перед редагуванням — Read поточний `services/docs-agent/notes_route.py`, номери рядків у плані можуть бути застарілими.**
+
+### Що зробити
+У `services/docs-agent/notes_route.py` (поруч із `restructure_notes`) додати маршрут
+`build_semantic_graph(project, apply=False, model=None)` — повна логіка кроків 1–7
+описана у `docs/plans/2026-06-16-semantic-knowledge-graph-docs-agent.md` (Фаза 3) та
+`docs/architecture/06_semantic_knowledge_graph.md` (§3.3):
+- Використати функції з `services/docs-agent/semantic_graph.py` (вже готові: `collect_articles`,
+  `build_extraction_prompt`, `parse_relationships`, `enforce_link_budget`, `upsert_semantic_section`).
+- `chat(...)` з `services/shared/llm_client.py`, `temperature=0`, `model=model or os.getenv("LLM_MODEL")`.
+- dry-run (`apply=false`, дефолт) → повертає `{success, model, proposed:[{slug, before, after}], stats}`,
+  нічого НЕ пише на диск.
+- apply (`apply=true`) → записати змінені файли → викликати `restructure_wiki_graph(root, project)` →
+  git add (по файлах, НЕ `git add .`) → commit `docs(graph): semantic links for <project>` → push
+  (патерн як у `restructure_notes`).
+
+### Verify (dry-run, БЕЗ запису на диск)
+```bash
+cd services/docs-agent
+PORT=$(grep -m1 -oE '180[0-9][0-9]' main.py | head -1)
+curl -s "http://localhost:${PORT}/notes/build-semantic-graph?project=ai-drakon&apply=false" \
+  | python3 -m json.tool | head -40
+```
+Очікувати: `proposed` непорожній масив; кожен `after` відрізняється від `before` лише
+рядками `- [[...]]` у блоці «пов'язаний з» (Parent MOC рядок незмінний). Жодних файлів
+на диску не змінилось (`git status` чистий після curl).
+
+### Diary
+```
+SESSION:2026-06-16|TASK-SKG-3:build-semantic-graph-endpoint|notes_route.py|dry-run-verified|commit:<sha>
+```
+
+[ ] TASK-SKG-3
