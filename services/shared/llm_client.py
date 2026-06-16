@@ -8,8 +8,12 @@ import urllib.error
 from typing import Any
 
 
-DEFAULT_BASE_URL = os.getenv("LLM_BASE_URL", "https://agy.exodus.pp.ua")
-DEFAULT_MODEL = os.getenv("LLM_MODEL", "gemini-2.5-flash")
+# PROXY_* is the project-wide convention (see /etc/init.d/ai-drakon-agent,
+# ai-architect-agent, ai-docs-agent, uav-consultant). LLM_* kept as a secondary
+# fallback for callers that don't follow that convention.
+DEFAULT_BASE_URL = os.getenv("PROXY_URL", os.getenv("LLM_BASE_URL", "https://agy.exodus.pp.ua"))
+DEFAULT_MODEL = os.getenv("PROXY_MODEL", os.getenv("LLM_MODEL", "gemini-2.5-flash"))
+DEFAULT_API_KEY = os.getenv("PROXY_TOKEN", os.getenv("LLM_API_KEY", ""))
 DEFAULT_TIMEOUT = int(os.getenv("LLM_TIMEOUT", "60"))
 
 
@@ -17,7 +21,7 @@ def chat(
     messages: list[dict],
     model: str = DEFAULT_MODEL,
     base_url: str = DEFAULT_BASE_URL,
-    api_key: str = "",
+    api_key: str = DEFAULT_API_KEY,
     max_tokens: int = 4096,
     system: str = "",
     temperature: float | None = None,
