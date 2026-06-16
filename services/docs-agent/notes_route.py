@@ -652,6 +652,35 @@ def notes_graph(project: Optional[str] = Query(default=None, description="Projec
         try:
             raw = path.read_text(encoding="utf-8")
             body = _strip_frontmatter(raw)
+
+            # Resolve semantic targets first
+            semantic_matched = set()
+            m_sec = re.search(r"## Семантичні зв[\x27\u2019`]язки(.*)", body, re.DOTALL | re.IGNORECASE)
+            if m_sec:
+                sec_content = m_sec.group(1)
+                m_sub = re.search(r"Цей документ пов[\x27\u2019`]язаний з:(.*)", sec_content, re.DOTALL | re.IGNORECASE)
+                if m_sub:
+                    sub_content = m_sub.group(1)
+                    header_pos = sub_content.find("\n##")
+                    if header_pos != -1:
+                        sub_content = sub_content[:header_pos]
+                    
+                    for t in _parse_wikilinks(sub_content):
+                        t_clean = t.strip()
+                        t_slug = t_clean.lower().replace(" ", "-")
+                        matched_s = None
+                        if t_clean in slug_set:
+                            matched_s = t_clean
+                        elif t_slug in slug_set:
+                            matched_s = t_slug
+                        else:
+                            for s in slug_set:
+                                if s.split("/")[-1] == t_clean or s.split("/")[-1] == t_slug:
+                                    matched_s = s
+                                    break
+                        if matched_s:
+                            semantic_matched.add(matched_s)
+
             for target in _parse_wikilinks(body):
                 # Normalize target slug
                 target_slug = target.strip().lower().replace(" ", "-")
@@ -668,10 +697,11 @@ def notes_graph(project: Optional[str] = Query(default=None, description="Projec
                             matched = s
                             break
                 if matched and matched != note["slug"]:
+                    edge_type = "semantic" if matched in semantic_matched else "navigational"
                     edges.append({
                         "source": note["slug"],
                         "target": matched,
-                        "type": "navigational",
+                        "type": edge_type,
                     })
         except Exception:
             continue

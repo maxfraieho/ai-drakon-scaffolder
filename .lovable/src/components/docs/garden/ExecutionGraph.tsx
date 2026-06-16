@@ -66,7 +66,7 @@ return map;
 
 const EDGE_TYPE_CONFIG: Record<string, { color: string; width: number; label: string }> = {
 structural: { color: 'var(--primary)', width: 2.4, label: 'Structural' },
-semantic: { color: 'var(--accent-foreground)', width: 1.8, label: 'Semantic' },
+semantic: { color: 'var(--color-warning)', width: 1.8, label: 'Semantic' },
 navigational: { color: 'var(--muted-foreground)', width: 1.4, label: 'Navigational' },
 };
 
@@ -824,6 +824,7 @@ const { strokeWidth, strokeOpacity, stroke } = getEdgeStyle(edge, edge.source, e
 return (
 <line key={`e-${i}`} x1={s.x} y1={s.y} x2={tg.x} y2={tg.y}
 stroke={stroke} strokeWidth={strokeWidth} strokeOpacity={strokeOpacity}
+strokeDasharray={getEdgeType(edge) === 'semantic' ? "4,4" : undefined}
 style={{ transition: 'stroke-opacity 0.3s ease, stroke-width 0.3s ease' }}
 />
 );
@@ -896,12 +897,23 @@ transition: 'opacity 0.3s ease' }}
 {/* Legend */}
 <div className="flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2.5 border-t border-border bg-muted/20">
 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Зв'язки</span>
-{Object.entries(EDGE_TYPE_CONFIG).map(([type, cfg]) => (
+{Object.entries(EDGE_TYPE_CONFIG).map(([type, cfg]) => {
+const isSemantic = type === 'semantic';
+return (
 <span key={type} className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+{isSemantic ? (
+<span className="w-5 flex items-center justify-between" style={{ height: `${cfg.width}px` }}>
+<span className="w-[4px] h-full" style={{ background: cfg.color }} />
+<span className="w-[4px] h-full" style={{ background: cfg.color }} />
+<span className="w-[4px] h-full" style={{ background: cfg.color }} />
+</span>
+) : (
 <span className="w-5 rounded-full" style={{ background: cfg.color, height: `${cfg.width}px` }} />
+)}
 {cfg.label}
 </span>
-))}
+);
+})}
 <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground ml-2">
 <span className="w-2 h-2 rounded-full bg-primary" />
 <span className="w-3 h-3 rounded-full bg-primary" />
