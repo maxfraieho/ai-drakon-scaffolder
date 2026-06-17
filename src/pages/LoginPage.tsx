@@ -138,7 +138,7 @@ export function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleGithubLogin = () => {
-    account.createOAuth2Session(
+    account.createOAuth2Token(
       OAuthProvider.Github,
       window.location.origin + "/diagrams",
       window.location.origin + "/login"
