@@ -24614,3 +24614,130 @@ SESSION:2026-06-17|TASK-248:kb-search-mcp|tools:kb_search+kb_index|docs-agent-fl
 ```
 
 [x] TASK-248
+
+---
+
+## TASK-249: Fix GitHub OAuth redirect loop in incognito mode
+
+**Виконавець: AGY**
+**!!IMPORTANT!! Run locally on Termux (AGY). NO SSH to dev server.**
+**Priority: HIGH — production bug**
+
+### Проблема
+
+Після GitHub OAuth (`account.createOAuth2Session`) браузер редіректить на `/diagrams`.
+Всі захищені маршрути перевіряють `hasClientJwt()` (читає localStorage) СИНХРОННО.
+В incognito localStorage порожній — маршрут негайно редіректить на `/login`.
+`AuthContext` async-завантажує сесію через `account.get()` (cookie від Appwrite) —
+але це відбувається ПІСЛЯ redirect. Результат: login loop.
+
+### Root cause
+
+src/routes/diagrams.tsx (і 7+ інших) роблять:
+  if (!hasClientJwt()) return Navigate to login
+Але не чекають поки AuthContext завершить account.get().
+
+### Рішення
+
+#### Крок 1 — Додати useRequireAuth hook в src/lib/route-auth.ts
+
+Додати в КІНЕЦЬ файлу (після існуючого коду):
+
+```typescript
+import { useState, useEffect } from "react";
+import { useAuth } from "@/context/AuthContext";
+
+export function useRequireAuth(): { loading: boolean; allowed: boolean } {
+  const { isAuthenticated, isLoading } = useAuth();
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  return {
+    loading: !hydrated || isLoading,
+    allowed: isAuthenticated,
+  };
+}
+```
+
+#### Крок 2 — Оновити захищені маршрути
+
+В кожному з цих файлів замінити auth guard:
+
+БУЛО (варіант 1 з hydrated):
+```typescript
+const [hydrated, setHydrated] = useState(false);
+useEffect(() => setHydrated(true), []);
+if (!hydrated) return null;
+if (!hasClientJwt()) return <Navigate to="/login" replace />;
+```
+
+БУЛО (варіант 2 без hydrated):
+```typescript
+if (!hasClientJwt()) return <Navigate to="/login" replace />;
+```
+
+СТАЛО (в обох випадках):
+```typescript
+const { loading, allowed } = useRequireAuth();
+if (loading) return null;
+if (!allowed) return <Navigate to="/login" replace />;
+```
+
+Файли:
+- src/routes/diagrams.tsx
+- src/routes/workspace.tsx
+- src/routes/github.tsx
+- src/routes/sync.tsx
+- src/routes/pipelines.tsx
+- src/routes/docs.tsx
+- src/routes/code.tsx
+- src/routes/diagram.editor.tsx
+- src/routes/agents.tsx
+
+Імпорти: `import { useRequireAuth } from "@/lib/route-auth";`
+Видалити: `import { hasClientJwt } from "@/lib/route-auth";` якщо більше не використовується
+Видалити зайвий: `import { useState, useEffect } from "react";` якщо більше не потрібно
+
+НЕ ЧІПАТИ:
+- src/routes/__root.tsx (hasClientJwt для UI логіки, не redirect)
+- src/routes/index.tsx (public landing)
+- src/routes/login.tsx (вже правильно через useAuth)
+
+#### Крок 3 — Sync + Git
+
+```bash
+cp src/lib/route-auth.ts .lovable/src/lib/route-auth.ts
+for f in diagrams workspace github sync pipelines docs code agents; do
+  cp "src/routes/${f}.tsx" ".lovable/src/routes/${f}.tsx" 2>/dev/null || true
+done
+cp "src/routes/diagram.editor.tsx" ".lovable/src/routes/diagram.editor.tsx" 2>/dev/null || true
+
+git add src/lib/route-auth.ts .lovable/src/lib/route-auth.ts \
+  src/routes/diagrams.tsx src/routes/workspace.tsx \
+  src/routes/github.tsx src/routes/sync.tsx \
+  src/routes/pipelines.tsx src/routes/docs.tsx \
+  src/routes/code.tsx src/routes/diagram.editor.tsx \
+  src/routes/agents.tsx \
+  .lovable/src/routes/diagrams.tsx .lovable/src/routes/workspace.tsx \
+  .lovable/src/routes/github.tsx .lovable/src/routes/sync.tsx \
+  .lovable/src/routes/pipelines.tsx .lovable/src/routes/docs.tsx \
+  .lovable/src/routes/code.tsx .lovable/src/routes/diagram.editor.tsx \
+  .lovable/src/routes/agents.tsx
+
+git commit -m "fix(auth): wait for AuthContext before route guard — fixes OAuth incognito loop"
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-249 done"
+git push origin main
+```
+
+### Верифікація
+
+1. Відкрити https://aidrakon.tech в incognito
+2. GitHub OAuth login
+3. Має відкритися /diagrams, НЕ /login
+
+### Diary
+```
+SESSION:2026-06-17|TASK-249:oauth-incognito-fix|useRequireAuth-hook|9-routes|commit:<hash>
+```
+
+[ ] TASK-249
