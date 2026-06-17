@@ -3,8 +3,16 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
-Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -38,6 +46,7 @@ export function ProjectSelector() {
   const [deleting, setDeleting] = useState<string | null>(null);
 
   const [repoInput, setRepoInput] = useState("");
+  const [comboFilter, setComboFilter] = useState("");
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<GhRepo[]>([]);
   const [searchError, setSearchError] = useState("");
@@ -115,6 +124,7 @@ export function ProjectSelector() {
     setAddOpen(false);
     setManagerOpen(false);
     setRepoInput("");
+    setComboFilter("");
     setSearchResults([]);
     toast.success(`Проект ${repo.full_name} додано`);
   };
@@ -136,6 +146,12 @@ export function ProjectSelector() {
         .finally(() => setDeleting(null));
     }
   };
+
+  const filteredRepos = searchResults.filter(r =>
+    comboFilter === "" ||
+    r.full_name.toLowerCase().includes(comboFilter.toLowerCase()) ||
+    (r.description ?? "").toLowerCase().includes(comboFilter.toLowerCase())
+  );
 
 return (
 <>
@@ -238,97 +254,117 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
 
 <Dialog open={addOpen} onOpenChange={(o) => {
   setAddOpen(o);
-  if (o) { setSearchResults([]); setSearchError(""); void loadUserRepos(); }
+  if (o) { setSearchResults([]); setSearchError(""); setComboFilter(""); void loadUserRepos(); }
 }}>
-  <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-md font-mono rounded-2xl">
+  <DialogContent className="sm:max-w-md bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono rounded-2xl">
     <DialogHeader>
       <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
         Додати репозиторій
       </DialogTitle>
       <DialogDescription className="text-[11px] text-[var(--text-muted)]">
-        Введіть owner/repo або оберіть з вашого списку
+        Введіть назву або оберіть з вашого списку
       </DialogDescription>
     </DialogHeader>
 
-    <div className="flex gap-2 items-center">
-      <Input
-        value={repoInput}
-        onChange={(e) => setRepoInput(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter") void searchRepo(); }}
-        placeholder="maxfraieho/uav-watcher"
-        className="border-white/10 bg-white/5 focus:border-teal-400/50 focus:ring-teal-400/20 rounded-xl h-11 flex-1 text-[11px] font-mono"
-      />
-      <Button onClick={() => void searchRepo()} disabled={searching}
-        className="bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded-xl h-11 px-4 text-xs shrink-0">
-        {searching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Знайти"}
-      </Button>
-    </div>
-
-    {searchError === "__no_token__" ? (
-      <div className="flex flex-col gap-2 items-center py-4">
-        <p className="text-[10px] text-[var(--text-muted)] font-mono text-center">
-          GitHub токен не налаштовано
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            setAddOpen(false);
-            setManagerOpen(false);
-            document.dispatchEvent(new CustomEvent("open-settings", { detail: { tab: "github" } }));
-          }}
-          className="font-mono text-[10px] text-[var(--accent-amber)] underline hover:no-underline"
-        >
-          Налаштувати токен → Settings
-        </button>
-        <p className="text-[9px] text-[var(--text-muted)] font-mono text-center">
-          або введіть owner/repo вручну
-        </p>
-      </div>
-    ) : searchError ? (
-      <p className="text-[10px] text-red-400 font-mono">{searchError}</p>
-    ) : null}
-
-    <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto pr-1">
-      {searchResults.map((repo) => (
-        <button
-          key={repo.full_name}
-          type="button"
-          onClick={() => pickRepo(repo)}
-          className="flex flex-col gap-0.5 rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2.5 py-2 text-left hover:bg-white/5 hover:border-[var(--accent-amber)]/40 transition-colors"
-        >
-          <span className="font-mono text-[11px] text-[var(--accent-amber)] font-medium">
-            {repo.full_name}
-          </span>
-          {repo.description && (
-            <span className="font-mono text-[9px] text-[var(--text-muted)] line-clamp-1">
-              {repo.description}
-            </span>
+    <div className="flex flex-col gap-3 py-1">
+      {/* Combobox з живим пошуком */}
+      <Command className="rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)]">
+        <CommandInput
+          placeholder="Пошук репозиторію..."
+          value={comboFilter}
+          onValueChange={setComboFilter}
+          className="font-mono text-[12px]"
+        />
+        <CommandList className="max-h-[260px]">
+          {searching && (
+            <div className="flex items-center justify-center py-4 gap-2">
+              <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)]" />
+              <span className="font-mono text-[10px] text-[var(--text-muted)]">Завантаження...</span>
+            </div>
           )}
-          <div className="flex gap-2 mt-0.5">
-            {repo.language && (
-              <span className="font-mono text-[8px] text-[var(--text-muted)]">{repo.language}</span>
-            )}
-            <span className="font-mono text-[8px] text-[var(--text-muted)]">{repo.default_branch}</span>
-            {repo.private && (
-              <span className="font-mono text-[8px] text-red-400/60">private</span>
-            )}
-          </div>
-        </button>
-      ))}
-      {searching && (
-        <div className="flex items-center justify-center py-4 gap-2 text-[10px] text-[var(--text-muted)] font-mono">
-          <Loader2 className="h-3 w-3 animate-spin" /> Пошук...
-        </div>
-      )}
-      {!searching && searchResults.length === 0 && !searchError && (
-        <p className="text-[10px] text-[var(--text-muted)] font-mono text-center py-4">
-          Введіть owner/repo і натисніть Знайти
-        </p>
-      )}
+          {!searching && searchError === "__no_token__" && (
+            <div className="flex flex-col gap-2 items-center py-4">
+              <p className="text-[10px] text-[var(--text-muted)] font-mono text-center">GitHub токен не налаштовано</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setAddOpen(false);
+                  document.dispatchEvent(new CustomEvent("open-settings", { detail: { tab: "github" } }));
+                }}
+                className="font-mono text-[10px] text-[var(--accent-amber)] underline hover:no-underline"
+              >
+                Налаштувати токен → Settings
+              </button>
+            </div>
+          )}
+          {!searching && searchError && searchError !== "__no_token__" && (
+            <CommandEmpty className="font-mono text-[11px] text-red-400 py-3 text-center">
+              {searchError}
+            </CommandEmpty>
+          )}
+          {!searching && searchResults.length > 0 && (
+            <CommandGroup>
+              {filteredRepos.map((repo) => (
+                <CommandItem
+                  key={repo.full_name}
+                  value={repo.full_name}
+                  onSelect={() => pickRepo(repo)}
+                  className="flex flex-col items-start gap-0.5 cursor-pointer font-mono aria-selected:bg-white/5"
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <span className="flex-1 text-[12px] text-[var(--text-primary)]">{repo.full_name}</span>
+                    {repo.private && (
+                      <span className="text-[9px] px-1 rounded bg-[var(--border-subtle)] text-[var(--text-muted)]">private</span>
+                    )}
+                    {repo.language && (
+                      <span className="text-[9px] text-[var(--text-muted)]">{repo.language}</span>
+                    )}
+                  </div>
+                  {repo.description && (
+                    <span className="text-[10px] text-[var(--text-muted)] truncate w-full">{repo.description}</span>
+                  )}
+                </CommandItem>
+              ))}
+              {filteredRepos.length === 0 && comboFilter !== "" && (
+                <CommandItem
+                  value={`__manual__${comboFilter}`}
+                  onSelect={async () => { setRepoInput(comboFilter); setComboFilter(""); await searchRepo(); }}
+                  className="font-mono text-[11px] cursor-pointer"
+                >
+                  Знайти «{comboFilter}» на GitHub →
+                </CommandItem>
+              )}
+            </CommandGroup>
+          )}
+          {!searching && searchResults.length === 0 && !searchError && (
+            <CommandEmpty className="font-mono text-[10px] text-[var(--text-muted)] py-4 text-center">
+              Репозиторії не знайдено
+            </CommandEmpty>
+          )}
+        </CommandList>
+      </Command>
+
+      {/* Ручний ввід owner/repo */}
+      <div className="flex gap-2">
+        <Input
+          placeholder="owner/repo (вручну)"
+          value={repoInput}
+          onChange={(e) => setRepoInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && void searchRepo()}
+          className="font-mono text-[11px] bg-[var(--bg-base)] border-[var(--border-subtle)] h-9"
+        />
+        <Button
+          size="sm"
+          onClick={() => void searchRepo()}
+          disabled={searching || !repoInput.trim()}
+          className="font-mono text-[10px] bg-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/90 text-black h-9 shrink-0"
+        >
+          Знайти
+        </Button>
+      </div>
     </div>
   </DialogContent>
 </Dialog>
 </>
 );
 }
-
