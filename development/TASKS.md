@@ -24059,4 +24059,4 @@ SESSION:<дата>|TASK-238:github-oauth-401-logout-fix|<файли>|root-cause:
 SESSION:<дата>|TASK-241:flue-parity-inventory|files-read:architect+drakon agents|output:flue-parity-2026-06-17.md
 ```
 
-[ ] TASK-241
+[x] TASK-241
