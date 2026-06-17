@@ -205,53 +205,51 @@ Archivist AI (NotebookLM MCP, `192.168.3.234:8002`) обслуговує 104 н�
 
 ## 13. AI-DRAKON як Developer Tool
 
-AI-DRAKON — це не самостійний проект, а **інструментарій розробника агентів**.
+AI-DRAKON — це не самостійний проект, а **компілятор візуальної мови DRAKON в агентний код** для будь-якого проекту.
 
-### Концепція
-Розробник використовує AI-DRAKON щоб будувати LangGraph-агентів для БУДЬ-ЯКОГО проекту:
-- Sharon UAV Watcher → threat-classifier agent
-- CRM система → ticket-handler agent
-- Будь-що інше → свій агент з DRAKON-логікою
+### Концепція (2026-06-17, Flue Runtime)
+Розробник створює DRAKON-схему → компілятор генерує Flue workflow:
+- Sharon UAV Watcher → `threat-classifier.workflow.ts`
+- CRM система → `ticket-handler.workflow.ts`
+- Будь-яка логіка → типізований TS-агент під цільовий фреймворк
 
-### Unified Framework (реалізовано 2026-05-29)
+### Pipeline компіляції
 ```
-services/shared/
-  graph_loader.py    ← DRAKON IR → LangGraph StateGraph
-  kb_client.py       ← SQLite FTS5 пошук (unicode61, кирилиця)
-  llm_client.py      ← AGY/Anthropic/OpenAI клієнт
-  ai_memory.py       ← ai-memory MCP wrapper
-  built_in_tools.py  ← search_kb, analyze_code, generate_ir, save_to_project
-  llm_node.py        ← llm_node_factory(prompt) → LangGraph node
-```
-
-### Автоматичне розрізнення tool vs prompt
-```python
-# DRAKON action node content може бути:
-# 1. Назва built-in tool → "search_kb", "analyze_code"
-# 2. LLM промпт → "Проаналізуй та визнач загрозу"
-# graph_loader.py автоматично:
-fn = _resolve_node_fn(content, node_registry)
-# priority: per-agent registry > BUILT_IN_TOOLS > llm_node_factory
+DRAKON IR (source of truth)
+  ↓ Export mRNA  (drakongen.js → pseudocode.ts)
+Псевдокод (людино-читаємий текст)
+  ↓ Compile with Ribosome  (architect-agent-flue Worker)
+  ↓ + KB з Зони Знань (drakon-antigravity-worker MCP)
+Flue workflow TypeScript  (артефакт збірки)
+  ↓ tsc --noEmit → wrangler deploy
 ```
 
-### Per-project storage
+### Цільова структура сервісів
 ```
-~/projects/{slug}/agents/{name}/
-  pipeline.drakon.json   ← DRAKON IR (source of truth)
-  kb/*.md                ← база знань агента
-```
-
-### API (architect-agent :8766)
-```
-GET  /projects/{slug}/agents                    → список агентів
-PUT  /projects/{slug}/agents/{name}/pipeline    → зберегти + компілювати
-POST /projects/{slug}/agents/{name}/execute     → SSE виконання
-GET  /projects/{slug}/agents/{name}/kb/search   → пошук по KB
+services/
+  architect-agent-flue/   ← CF Worker: DRAKON IR → Flue workflow
+    src/tools/ribosome.ts    compilePseudocode()
+    POST /compile            → скачати .workflow.ts
+  docs-agent-flue/        ← CF Worker: документація + KB MCP
+    tools/kb-search.ts       kb_search(), kb_index()
+  semantic-graph/         ← Appwrite Function: wiki-links екстракція
+    src/collect.ts, extract.ts, budget.ts, render.ts, github.ts
 ```
 
-### Demo: Sharon UAV
-`/projects/sharon-uav/agents/threat-classifier/` — перший реальний проект.
-Pipeline: search_kb → LLM prompt → SSE output.
+### Per-project storage (Appwrite + GitHub)
+```
+GitHub: docs/{project}/{slug}.md   ← статті KB (git = source of truth)
+Appwrite: kb_embeddings collection ← vector embeddings (768-dim BGE)
+Appwrite: knowledge_zones          ← MCP endpoint configs per tenant
+```
+
+### API (architect-agent-flue Worker)
+```
+POST /compile      → { pseudocode, nodes[], target } → .workflow.ts
+POST /analyze      → DRAKON IR аналіз + валідація
+GET  /tools        → список доступних tools для рибосоми
+GET  /health       → статус Worker
+```
 
 ---
 
