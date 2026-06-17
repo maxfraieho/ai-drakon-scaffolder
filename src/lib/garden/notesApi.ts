@@ -483,9 +483,6 @@ export async function buildSemanticGraph(
   model?: string
 ): Promise<SemanticGraphBuildResponse> {
   const gh = getActiveProjectGithub();
-  if (gh) {
-    throw new Error("Побудова семантичного графу через GitHub OAuth наразі не підтримується. Використовуйте локальний/серверний проект.");
-  }
 
   const token = jwt();
   if (!token) throw new Error("Не авторизовано (JWT відсутній)");
@@ -494,6 +491,13 @@ export async function buildSemanticGraph(
   if (project) params.set("project", project);
   params.set("apply", String(apply));
   if (model) params.set("model", model);
+  // Pass GitHub project info so the Appwrite function can fetch files
+  if (gh) {
+    params.set("github_owner", gh.owner);
+    params.set("github_repo", gh.repo);
+    params.set("github_branch", gh.branch);
+    if (gh.token) params.set("github_token", gh.token);
+  }
 
   const res = await fetch(`${workerUrl()}/v1/notes/build-semantic-graph?${params.toString()}`, {
     method: "POST",

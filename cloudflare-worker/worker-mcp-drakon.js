@@ -3247,6 +3247,10 @@ async function handleNotesBuildSemanticGraph(request, env) {
   const project = url.searchParams.get('project') || '';
   const apply = url.searchParams.get('apply') || 'true';
   const model = url.searchParams.get('model') || '';
+  const github_owner = url.searchParams.get('github_owner') || '';
+  const github_repo = url.searchParams.get('github_repo') || '';
+  const github_branch = url.searchParams.get('github_branch') || '';
+  const github_token = url.searchParams.get('github_token') || '';
 
   const functionId = env.SEMANTIC_GRAPH_FUNCTION_ID;
   const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
@@ -3255,6 +3259,12 @@ async function handleNotesBuildSemanticGraph(request, env) {
   if (!functionId || !apiKey) {
     return errorResponse('SEMANTIC_GRAPH_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
   }
+
+  const graphBody = { project, apply: apply === 'true', model };
+  if (github_owner) graphBody.github_owner = github_owner;
+  if (github_repo) graphBody.github_repo = github_repo;
+  if (github_branch) graphBody.github_branch = github_branch;
+  if (github_token) graphBody.github_token = github_token;
 
   const execRes = await fetch(
     `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
@@ -3267,7 +3277,7 @@ async function handleNotesBuildSemanticGraph(request, env) {
       },
       body: JSON.stringify({
         async: true,
-        body: JSON.stringify({ project, apply: apply === 'true', model }),
+        body: JSON.stringify(graphBody),
       }),
     }
   );

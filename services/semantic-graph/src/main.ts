@@ -10,10 +10,6 @@ export default async (context: any) => {
   const env = process.env as Record<string, string | undefined>;
   const gatewayUrl = env.LLM_GATEWAY_URL || 'https://6a3200cd00182e876067.fra.appwrite.run';
   const gatewayToken = env.LLM_GATEWAY_TOKEN || 'freecc';
-  const githubToken = env.GITHUB_TOKEN || '';
-  const githubRepo = env.GITHUB_REPO || 'maxfraieho/ai-drakon-scaffolder';
-  const githubBranch = env.GITHUB_BRANCH || 'main';
-  const docsPath = env.DOCS_PATH || 'docs';
 
   if (req.method === 'GET' && req.path === '/health') {
     return res.json({ status: 'ok', service: 'semantic-graph' });
@@ -32,6 +28,16 @@ export default async (context: any) => {
     const project: string = body.project || '';
     const apply: boolean = body.apply !== false;  // default: true (write files)
     const model: string = body.model || '';
+
+    // Per-request GitHub params override env defaults
+    const githubToken = body.github_token || env.GITHUB_TOKEN || '';
+    const githubOwner = body.github_owner || '';
+    const githubRepoName = body.github_repo || '';
+    const githubRepo = githubOwner && githubRepoName
+      ? `${githubOwner}/${githubRepoName}`
+      : env.GITHUB_REPO || 'maxfraieho/ai-drakon-scaffolder';
+    const githubBranch = body.github_branch || env.GITHUB_BRANCH || 'main';
+    const docsPath = body.docs_path || env.DOCS_PATH || 'docs';
 
     log(`Initializing GitHub API for ${githubRepo} (branch: ${githubBranch})...`);
     const gh = new GitHubAPI(githubToken, githubRepo, githubBranch);

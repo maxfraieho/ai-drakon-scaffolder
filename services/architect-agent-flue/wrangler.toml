@@ -4,7 +4,7 @@ compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-PROXY_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
+PROXY_URL = "https://6a3200cd00182e876067.fra.appwrite.run/v1/chat/completions"
 PROXY_MODEL = "gemini-2.5-flash"
 GITHUB_REPO = "maxfraieho/ai-drakon-scaffolder"
 NOTEBOOKLM_MCP = "https://notebooklm.exodus.pp.ua/mcp"
