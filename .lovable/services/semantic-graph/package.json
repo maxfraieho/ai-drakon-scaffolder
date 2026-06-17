@@ -1,0 +1,14 @@
+{
+  "name": "semantic-graph",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node node_modules/typescript/bin/tsc --outDir dist",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  }
+}
