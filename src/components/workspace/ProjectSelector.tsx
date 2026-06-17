@@ -18,7 +18,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { type Project, useProject } from "@/context/ProjectContext";
-import { readSettings } from "@/lib/settings-storage";
+import { readSettings, writeSettings } from "@/lib/settings-storage";
+import { account } from "@/lib/appwrite";
 
 interface GhRepo {
   full_name: string;
@@ -71,7 +72,20 @@ export function ProjectSelector() {
   }, [addOpen]);
 
   const loadUserRepos = async () => {
-    const token = readSettings().github?.token;
+    let token = readSettings().github?.token;
+
+    // Fallback: get token directly from current GitHub OAuth session
+    if (!token) {
+      try {
+        const session = await account.getSession("current");
+        if (session.provider === "github" && session.providerAccessToken) {
+          token = session.providerAccessToken;
+          const s = readSettings();
+          writeSettings({ ...s, github: { ...s.github, token } });
+        }
+      } catch (_) {}
+    }
+
     if (!token) {
       setSearchError("__no_token__");
       return;
