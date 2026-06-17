@@ -4,7 +4,7 @@ tags:
   - status:canonical
   - format:spec
 created: 2026-06-12
-updated: 2026-06-12
+updated: 2026-06-17
 tier: 1
 title: "AI-DRAKON — Ядро продукту: компілятор візуальної мови в агентний код"
 lang: uk
@@ -168,7 +168,7 @@ Sprint 1–2 (auth, D1/KV/Appwrite, middleware) — закриті 2026-06-12 �
   `workflows/threat-classifier.ts`, `tsc --noEmit` чистий.
 
 ### Sprint 4 — Зони Знань (паливо рибосоми)
-- D1 `knowledge_zones` CRUD (`/zones`) + zone_secrets (Appwrite encrypted).
+- Appwrite DB `knowledge_zones` CRUD (`/zones`) + zone_secrets (Appwrite encrypted).
 - MCP-proxy маршрут у Worker: `POST /mcp-proxy/:zone` → HTTP до серверів зони.
 - UI ZoneCreationDialog → реальний бекенд.
 - Рибосома читає KB з зони користувача, не з хардкоду.
@@ -181,7 +181,7 @@ Sprint 1–2 (auth, D1/KV/Appwrite, middleware) — закриті 2026-06-12 �
 ### Sprint 6 — SaaS-добудова (обгортка)
 - quotaMiddleware на всі LLM-маршрути (зараз тільки /me).
 - Stripe webhook + Cron reset + Usage dashboard.
-- Консолідація 3 workers → ai-drakon-flue (якщо Flue стабілізувався).
+- Phase 4: Archivist AI → Appwrite Function (консолідація 3 workers вже виконана: drakon-antigravity-worker + architect-agent-flue + docs-agent-flue).
 
 ### Sprint 7+ — Гартування
 - Per-resource ACL (якщо є попит), security audit, onboarding,

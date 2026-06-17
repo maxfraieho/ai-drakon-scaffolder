@@ -4,7 +4,7 @@ tags:
   - status:canonical
   - format:guide
 created: 2026-06-16
-updated: 2026-06-16
+updated: 2026-06-17
 tier: 1
 title: "06 — Семантичний граф знань (Документознавець + LLM)"
 lang: uk
@@ -44,7 +44,7 @@ lang: uk
 | Entity `{id, name, label}` | **Стаття зони**: `id`=індекс, `name`=title, `label`=розділ (`folder`) |
 | Relationship `{source_id, link, target_id}` | **Семантичний зв'язок між статтями**; `link` — `snake_case` предикат (`prerequisite_of`, `extends`, `implements`, `relates_to`, `contrast_to`, `example_of`) |
 | «Use ONLY the input data» | Жорстко: лише надані title+summary; заборона вигаданих статей/слагів |
-| Детермінізм (`temperature=0`) | через `services/shared/llm_client.py` (`chat(..., temperature=0)`) |
+| Детермінізм (`temperature=0`) | через llm-gateway Appwrite Function (`temperature=0`) |
 | Бюджет зв'язків | ≤2 семантичні на статтю, **лише крос-секційні** (різний `folder`) |
 | Масштабування (chunking + merge) | для зон > ~40 статей — батчинг вікнами + дедуп за slug |
 
@@ -56,30 +56,31 @@ lang: uk
 ## 3. Серверна логіка (backend)
 
 ### 3.1 LLM-проксі — наші моделі
-Усі виклики йдуть через уніфікований клієнт `services/shared/llm_client.py` →
-проксі `LLM_BASE_URL` (дефолт `https://agy.exodus.pp.ua`, Anthropic-формат `/v1/messages`).
-Модель налаштовується через env `LLM_MODEL` (дефолт — Flash-клас, дешева). Жодного
-прямого Gemini SDK — лише наш проксі.
+Усі виклики йдуть через **llm-gateway** (Appwrite Function,
+`6a3200cd00182e876067.fra.appwrite.run`, token `freecc`) — проксі з failover-ланцюгом
+NIM→NIM2→OpenRouter→Gemini 2.5 Flash. Детермінізм забезпечується `temperature=0`.
+Жодного прямого Gemini SDK і жодного `llm_client.py` — лише llm-gateway.
+(`services/shared/llm_client.py` DEPRECATED, замінений llm-gateway.)
 
-### 3.2 Ядро екстракції — `services/docs-agent/semantic_graph.py`
-Чисті, тестовані функції:
+### 3.2 Ядро екстракції — Appwrite Function `semantic-graph` (`services/semantic-graph/src/`)
+Чисті, тестовані TypeScript-модулі (`services/docs-agent/semantic_graph.py` DEPRECATED):
 
-| Функція | Призначення |
-|---------|-------------|
-| `collect_articles` | зібрати `[{id, slug, title, folder, summary}]` (summary ≈ перші 600 символів body) |
-| `build_extraction_prompt` | system+user промпт: лише вхідні дані, snake_case, бюджет ≤2, крос-секційність |
-| `parse_relationships` | парс JSON, валідація id, відкид self/дублів і **внутрішньо-секційних** ребер |
-| `enforce_link_budget` | лишити ≤2 вихідних семантичних на статтю |
-| `render_semantic_block` | згенерувати підблок «Цей документ пов'язаний з:» з чистими шляхами |
-| `upsert_semantic_section` | замінити ЛИШЕ цей підблок, зберігши «Цей документ є частиною:» (Parent MOC) |
+| Модуль | Призначення |
+|--------|-------------|
+| `github.ts` | читання статей зони через GitHub API → `[{id, slug, title, folder, summary}]` (summary ≈ перші 600 символів body) |
+| `collect.ts` | нормалізація зібраних статей, дедуп, підготовка вхідних даних для екстракції |
+| `extract.ts` | system+user промпт + виклик llm-gateway: лише вхідні дані, snake_case, бюджет ≤2, крос-секційність; парс JSON, валідація id, відкид self/дублів і **внутрішньо-секційних** ребер |
+| `budget.ts` | лишити ≤2 вихідних семантичних на статтю |
+| `render.ts` | згенерувати підблок «Цей документ пов'язаний з:» та замінити ЛИШЕ його, зберігши «Цей документ є частиною:» (Parent MOC) |
 
-### 3.3 Ендпоінт Документознавця — `services/docs-agent/notes_route.py`
-`POST /notes/build-semantic-graph?project=&apply=&model=`:
-1. `collect_articles` → `build_extraction_prompt` → `chat(temperature=0)`
-2. `parse_relationships` → `enforce_link_budget`
-3. `upsert_semantic_section` для кожної зміненої статті
+### 3.3 Ендпоінт — `drakon-antigravity-worker` → Appwrite Function (async)
+`POST /v1/notes/semantic-graph?project=&apply=&model=` (на drakon-antigravity-worker),
+який диспетчерить запит у Appwrite Function `semantic-graph` (async, до 900s):
+1. `github.ts` (collect) → `extract.ts` (промпт + llm-gateway, `temperature=0`)
+2. `budget.ts` (enforce link budget)
+3. `render.ts` (upsert semantic section) для кожної зміненої статті
 4. **`apply=false`** (дефолт) → повертає прев'ю diff-ів `{proposed:[{slug, before, after}], stats}`
-5. **`apply=true`** → запис → `restructure_wiki_graph` (нормалізація) → git commit/push
+5. **`apply=true`** → запис через GitHub API → нормалізація → git commit/push
    `docs(graph): semantic links for <project>`
 
 ### 3.4 Джерело правди = git-markdown (НЕ Appwrite)
@@ -114,13 +115,14 @@ SVG force-directed граф (zoom/pan, пошук, depth-slider, focus-mode). С
 ## 5. Потік даних (end-to-end)
 
 ```
-Клієнт (GardenPage) ──POST /notes/build-semantic-graph?apply=false──▶ docs-agent
-   docs-agent: collect_articles → build_prompt → llm_client.chat(temp=0) [наш проксі]
-            → parse → enforce_budget → upsert (in-memory)
+Клієнт (GardenPage) ──POST /v1/notes/semantic-graph?apply=false──▶ drakon-antigravity-worker
+   worker ──dispatch──▶ Appwrite Function semantic-graph (async ≤900s)
+      github.ts (collect через GitHub API) → extract.ts (промпт + llm-gateway, temp=0)
+            → budget.ts → render.ts (upsert, in-memory)
    ◀────────────── proposed diffs (прев'ю) ──────────────
-Клієнт «Застосувати» ──apply=true──▶ docs-agent: запис .md → restructure_wiki_graph
+Клієнт «Застосувати» ──apply=true──▶ semantic-graph: запис .md через GitHub API → нормалізація
             → git commit/push (оборотно)
-   ◀── GET /notes/graph (edges з type:"semantic") ──▶ ExecutionGraph (пунктирні ребра)
+   ◀── GET /v1/notes/graph (edges з type:"semantic") ──▶ ExecutionGraph (пунктирні ребра)
 ```
 
 ---

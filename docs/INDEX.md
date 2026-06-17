@@ -4,7 +4,7 @@ tags:
   - status:canonical
   - format:index
 created: 2026-05-28
-updated: 2026-06-08
+updated: 2026-06-17
 tier: 1
 title: "AI-DRAKON — Головний індекс документації"
 lang: uk
@@ -35,6 +35,7 @@ lang: uk
 | **Agents** | [[agents/_INDEX]] | Специфікації навичок та конфігурації AI-агентів (AGY) | active | 2 |
 | **Templates** | [[templates/_INDEX]] | Шаблони промптів та інструкції з міграцій Lovable | active | 2 |
 | **UX Audit** | [[ux-audit/_INDEX]] | UI/UX аналіз, ризики та промпти для редизайну | active | 3 |
+| **Cloud Migration** | [[appwrite-migration-research]] | Хмарна міграція (Phases 0–3): Appwrite Functions, CF Workers, llm-gateway, semantic-graph | active | 2 |
 
 ---
 
@@ -70,7 +71,7 @@ lang: uk
 
 База знань повністю перекладена українською мовою та стандартизована:
 
-- **Загальна кількість статей**: 59 файлів `.md` (індекси включно)
+- **Загальна кількість статей**: 65+ файлів `.md` (індекси включно)
 - **Мова документації**: Українська (UK)
 - **Розподіл за рівнями важливості (Tiers)**:
   - **Tier 1 (Канонічні специфікації, стандарти)**: ~15 файлів

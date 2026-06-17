@@ -6,7 +6,7 @@
 > ЗАСТАРІВ — чинний roadmap у ARCHITECTURE-CORE.md §3. §4 (connectMcpServer
 > напряму з Worker) скоригований на MCP-proxy pattern — див. CORE §2.
 
-> **Статус:** проєкт (ФАЗ 2), 2026-06-12. Ґрунтується на Gap Analysis реального коду
+> **Статус:** проєкт (ФАЗ 2), updated: 2026-06-17. Ґрунтується на Gap Analysis реального коду
 > (commit `bceae3e`) та верифікованих сигнатурах Flue API (flueframework.com).
 > **Стратегічний план:** «План розвитку SaaS для мультиагентних систем.md»
 
@@ -35,8 +35,9 @@
                                         └─ NotebookLM (mcp__notebooklm__*)
 ```
 
-**Поточний стан:** 3 окремі Workers (`drakon/architect/docs-agent-flue`) — всі живі.
-**Цільовий стан:** один `ai-drakon-flue` Worker (консолідація за FLUE-MIGRATION-PLAN §2).
+**Поточний стан (2026-06-17):** хмарна міграція (Phases 0–3) завершена. Чинні сервіси:
+`drakon-antigravity-worker` (головний CF Worker: MCP зони знань, KB vector search BGE, MinIO, профілі памʼяті) + `architect-agent-flue` (DRAKON IR → Flue workflow) + `docs-agent-flue` (документація, `kb_search`/`kb_index`) + `llm-gateway` (Appwrite Function: LLM проксі failover NIM→NIM2→OpenRouter→Gemini 2.5 Flash) + `semantic-graph` (Appwrite Function async 900s: GitHub API → llm-gateway → wikilinks).
+**Цільовий стан (Phase 4):** Archivist AI → Appwrite Function; консолідація KB в Appwrite.
 
 ## 2. Аутентифікація та tenant isolation
 
@@ -230,7 +231,8 @@ services/ai-drakon-flue/
 ```
 
 Міграція: існуючі маршрути architect-agent-flue/src/index.ts переносяться як є,
-під authMiddleware. Python-агенти (8765-8767) — fallback до завершення Sprint 5.
+під authMiddleware. Python-агенти (8765-8767) ВИДАЛЕНІ — замінені Appwrite Functions
+(llm-gateway, semantic-graph) + CF Workers.
 
 ## 8. Межі безпеки
 
@@ -244,12 +246,12 @@ services/ai-drakon-flue/
 
 | Sprint | Тижні | Зміст | Стан |
 |---|---|---|---|
-| 1 | 1–2 | Стабілізація: TASK-203 (Appwrite AuthContext), TASK-204 (stale URLs), верифікація токена/encoding | 🔄 у AGY3 |
-| 2 | 3–4 | Appwrite Teams onboarding, authMiddleware + KV, D1 схема (цей документ), tenant isolation | план |
-| 3 | 5–6 | Knowledge Zones: D1 + zone_secrets + connectMcpServer у workflows; GitNexus/NotebookLM дефолтні зони | план |
+| 1 | 1–2 | Стабілізація: TASK-203 (Appwrite AuthContext), TASK-204 (stale URLs), верифікація токена/encoding | ✅ закрито |
+| 2 | 3–4 | Appwrite Teams onboarding, authMiddleware + KV, Appwrite DB схема (цей документ), tenant isolation | ✅ закрито |
+| 3 | 5–6 | Knowledge Zones: Appwrite DB + zone_secrets + MCP-proxy у workflows; GitNexus/Archivist AI дефолтні зони | ✅ закрито |
 | 4 | 7–8 | Білінг: billing_profiles, quotaMiddleware, Stripe webhook, Usage dashboard | план |
-| 5 | 9–10 | Консолідація у ai-drakon-flue; subagents + dispatch; virtual sandbox всюди | план |
-| 6 | 11–12 | Remote sandbox PoC, onboarding flow, security audit (tenant isolation pen-test) | план |
+| 5 | 9–10 | Multi-target рибосома + цикл компіляції; subagents + dispatch; virtual sandbox всюди | план |
+| 6 | 11–12 | Phase 4: Archivist AI → Appwrite Function; remote sandbox PoC, onboarding flow, security audit (tenant isolation pen-test) | план |
 
 ### 2.4 Корекція (2026-06-12): JWT замість cookie між доменами
 

@@ -4,7 +4,7 @@ tags:
   - status:active
   - format:guide
 created: 2026-05-28
-updated: 2026-06-08
+updated: 2026-06-17
 tier: 1
 title: "Керівництво по спільній роботі Claude та AGY"
 lang: uk
@@ -31,14 +31,16 @@ lang: uk
 | **AGY CLI (phone)** | Termux (динамічний IP, ~192.168.3.25) | Прості задачі (Python, docs) |
 | **AGY3 (tablet)** | Termux (`192.168.3.204:8022`) | **Основний виконавець**: складні TypeScript/SSH задачі |
 | **AGY Proxy** | `https://agy.exodus.pp.ua` | Публічний API-ендпоінт для моделей Gemini/Claude |
-| **architect-agent-flue** | `architect-agent-flue.maxfraieho.workers.dev` | CF Worker: архітектор (authMiddleware, live) |
-| **drakon-agent-flue** | `drakon-agent-flue.maxfraieho.workers.dev` | CF Worker: DRAKON IR аналіз (live) |
-| **docs-agent-flue** | `docs-agent-flue.maxfraieho.workers.dev` | CF Worker: документація (live) |
-| **Dev Server** | `192.168.3.184` | Хостинг Docker-контейнерів, фонових агентів, проксі-роутерів |
-| **Python agents** (:8765-8767) | `192.168.3.184` | **fallback** (drakon/architect/docs-agent) — до Sprint 5 |
+| **drakon-antigravity-worker** | `drakon-antigravity-worker.maxfraieho.workers.dev` | **Головний CF Worker**: MCP зони знань, KB vector search (CF Workers AI BGE), MinIO, профілі памʼяті |
+| **architect-agent-flue** | `architect-agent-flue.maxfraieho.workers.dev` | CF Worker: компілятор DRAKON IR → Flue workflow (live) |
+| **docs-agent-flue** | `docs-agent-flue.maxfraieho.workers.dev` | CF Worker: документація + `kb_search`/`kb_index` MCP tools (live) |
+| **llm-gateway** | Appwrite Function (`6a3200cd00182e876067.fra.appwrite.run`) | LLM проксі failover: NIM→NIM2→OpenRouter→Gemini 2.5 Flash |
+| **semantic-graph** | Appwrite Function (`6a32155a001560ddd02f.fra.appwrite.run`) | Async 900s: GitHub API → llm-gateway → wikilinks |
+| **Appwrite Cloud** | `fra.cloud.appwrite.io` (project `6a23420a003a04b4997b`) | Auth, DB (`kb_embeddings` 768-dim BGE), Functions |
+| **Dev Server** | `192.168.3.184` | ai-memory, MemPalace, допоміжні сервіси |
 | **ai-memory** | `192.168.3.184:49374` | Рівень синхронізації сесій між агентами |
 | **MemPalace** | `192.168.3.184` (Python) | Семантична пам'ять, ведення щоденників та граф знань (KG) |
-| **NotebookLM** | `192.168.3.234:8002` | Довгострокова база знань проекту |
+| **Archivist AI** (NotebookLM MCP) | `192.168.3.234:8002` | Довгострокова база знань проекту (104 ноутбуки) |
 | **cloudflared** | OrangePi native | Публічний безпечний тунель, що відкриває доступ до внутрішніх служб |
 
 ---
@@ -51,7 +53,7 @@ lang: uk
 - **Компоненти**:
   - **Щоденник (Diary)**: Індивідуальні щоденники для кожного агента (`agent: agt-ogy` для AGY, `agent: claude-code` для Claude).
   - **Граф знань (KG)**: Графове сховище, що зберігає структуровані факти та зв'язки проекту.
-  - **Шахта MemPalace (Mine)**: Понад 1439 файлів кодової бази, проіндексованих у 19 ящиках.
+  - **Шахта MemPalace (Mine)**: ~21 000 drawers (wing `ai_drakon_scaffolder` = 425 drawers), проіндексованих з кодової бази.
 - **Використання**: Запит контексту між активними сесіями, семантичний пошук коду та низькорівневе відстеження завдань.
 
 ### Рівень 2 — Синхронізація сесій між агентами (ai-memory)
@@ -61,8 +63,8 @@ lang: uk
   - Надає кінцеві точки для індексування та пошуку по минулих траєкторіях агентів.
 - **Інтеграція**: Автоматичні хук-скрипти `ai-memory-start.sh` та `ai-memory-end.sh` запускаються до та після кожної сесії Termux/AGY, забезпечуючи персистентність логів у `~/workspace/ai-memory-logs/`.
 
-### Рівень 3 — Довгострокова концептуальна пам'ять (NotebookLM)
-- **Технологія**: Сервер Model Context Protocol (MCP) з підтримкою потокового HTTP, що працює на Raspberry Pi 4B (порт `8002`).
+### Рівень 3 — Довгострокова концептуальна пам'ять (Archivist AI)
+- **Технологія**: Сервер Model Context Protocol (MCP) з підтримкою потокового HTTP, що працює на Raspberry Pi 4B (`192.168.3.234:8002`).
 - **Контекст**:
   - Зберігає канонічні документи (`docs/`), специфікації, посібники з інтеграції та зведені звіти з архітектури.
   - Надає інтерфейс природної мови (RAG) для глибокого концептуального аналізу кодової бази.
@@ -113,7 +115,7 @@ lang: uk
 | Інстанс | Хост | SSH-доступ | Quota / Особливості |
 |---------|------|------------|---------------------|
 | **AGY phone** | `192.168.3.25` (динамічний) | `u0_a284:123456` порт `8022` | змінна квота (основний телефон) |
-| **AGY3 tablet** | `192.168.3.162` (статичний) | `u0_a410:TermuxSsh2026!` порт `8022` | 100% квота (виділений планшет) |
+| **AGY3 tablet** | `192.168.3.204` (статичний) | `u0_a410:TermuxSsh2026!` порт `8022` | 100% квота (виділений планшет) |
 
 Обидва середовища повністю ідентичні та містять:
 - Встановлений `agy` CLI та проксі
@@ -144,8 +146,8 @@ lang: uk
 
 ---
 
-## 9. База знань NotebookLM (Notebook Sources)
-У системі `drn-ai` NotebookLM (ID: `6139067a-5776-4b29-8869-7c9f9aed475c`) зареєстровані та оновлюються такі ключові джерела:
+## 9. База знань Archivist AI (Notebook Sources)
+Archivist AI (NotebookLM MCP, `192.168.3.234:8002`) обслуговує 104 ноутбуки. У ноутбуці `drn-ai` зареєстровані та оновлюються такі ключові джерела:
 
 1. `GEMINI.md 2026-05-28` — Канонічний опис платформи та інструкції.
 2. `docs/COLLABORATION.md` — Цей посібник з архітектури та взаємодії.
@@ -161,15 +163,14 @@ lang: uk
 - **Шлях конфігурації**: `/etc/cloudflared/config.yml`
 
 ### Довідник публічних адрес
+- `aidrakon.tech` ➔ Продакшн фронтенд (Cloudflare Pages, деплой з `.lovable/`)
+- `drakon-antigravity-worker.maxfraieho.workers.dev` ➔ Головний CF Worker (MCP зони знань, KB vector search, MinIO, профілі памʼяті)
+- `architect-agent-flue.maxfraieho.workers.dev` ➔ CF Worker: компілятор DRAKON IR → Flue workflow
+- `docs-agent-flue.maxfraieho.workers.dev` ➔ CF Worker: документація (`kb_search`/`kb_index`)
 - `agy.exodus.pp.ua` ➔ Termux AGY проксі (`:8080`)
-- `claude.exodus.pp.ua` ➔ Raspberry Pi 3B Claude Code (`:3456`)
 - `claude2.exodus.pp.ua` ➔ OrangePi Claude Code (`:3456`)
-- `drakon-agent-flue.maxfraieho.workers.dev` ➔ Cloudflare воркер Drakon Logic Agent
-- `architect-agent-flue.maxfraieho.workers.dev` ➔ Cloudflare воркер Architect Agent
-- `docs-agent-flue.maxfraieho.workers.dev` ➔ Cloudflare воркер Docs Agent
-- `openai-proxy.exodus.pp.ua` ➔ Безкоштовний проксі Nvidia NIM (`:18880`)
 - `garden-mcp.exodus.pp.ua` ➔ Ендпоінт MCP-сервера (`:8081`)
-- `notebooklm.exodus.pp.ua` ➔ Сервер MCP NotebookLM (`:8002`)
+- `notebooklm.exodus.pp.ua` ➔ Archivist AI (NotebookLM MCP, `:8002`)
 - `ssh.exodus.pp.ua` ➔ Безпечний тунель SSH (`:22`)
 
 ---
@@ -178,34 +179,27 @@ lang: uk
 Фронтенд-додаток (`ai-drakon-scaffolder`) містить трьох спеціалізованих фонових агентів, які налаштовуються у вкладці **Налаштування** (Settings) фронтенду, де вказуються їхні Cloudflare Workers URL:
 
 - **Architect Agent URL** ➔ `https://architect-agent-flue.maxfraieho.workers.dev`
-- **DRAKON Logic Agent URL** ➔ `https://drakon-agent-flue.maxfraieho.workers.dev`
 - **Docs Agent URL** ➔ `https://docs-agent-flue.maxfraieho.workers.dev`
+- **Knowledge / Main Worker URL** ➔ `https://drakon-antigravity-worker.maxfraieho.workers.dev`
 
-Всі воркери використовують Flue Runtime для виконання відповідних дій та інструментів.
+Воркери використовують Flue Runtime для виконання відповідних дій та інструментів.
+`drakon-agent-flue` видалений — його функції перенесені в `drakon-antigravity-worker`.
 
 ---
 
-## 12. Дорожня карта — Масштабування
+## 12. Дорожня карта — Хмарна міграція
 
-### Фаза 1 (Завершено ✅)
-- Двопротокольний проксі AGY з підтримкою форматів OpenAI та Anthropic.
-- Стабільне публікування Termux через тунель Cloudflare.
-- Автоматичний запис та синхронізація сесій `ai-memory`.
-- Структурована черга завдань (`TASKS.md`) для крос-агентної координації.
-- Оновлено налаштування провайдерів моделей у фронтенді для підтримки проксі AGY.
+Перехід від Python-агентів на dev-сервері до повністю хмарної архітектури (CF Workers + Appwrite Functions). Статус станом на 2026-06-17:
 
-### Фаза 2 (Наступні кроки 🚀)
-- Переведення всіх трьох агентів генерації каркасів (Architect, DRAKON, Docs) на використання AGY як основної моделі міркування.
-- Встановлення нативних хуків `ai-memory` на OrangePi для автоматичного запису сесій Claude Code.
-- Створення MCP-сервера `ai-memory` (`memory_query`, `memory_write_page`) для Claude Code.
-- Оновлення `free-claude-code-proxy` на `192.168.3.184` для виведення `agy-tunnel` з автоматичним перемиканням на моделі Nvidia NIM у разі лімітів.
-- Впровадження автоматичної ротації Google-акаунтів та керування квотами для AGY.
+| Phase | Зміст | Стан |
+|-------|-------|------|
+| **Phase 0** | Інвентаризація, Appwrite project (`6a23420a003a04b4997b`), базовий каркас функцій | ✅ |
+| **Phase 1** | `llm-gateway` Appwrite Function: проксі failover NIM→NIM2→OpenRouter→Gemini 2.5 Flash; видалення `services/shared/llm_client.py` | ✅ |
+| **Phase 2** | `drakon-antigravity-worker` (MCP зони знань, KB vector search BGE, MinIO, профілі памʼяті); консолідація 3 окремих Workers; видалення `drakon-agent-flue` | ✅ |
+| **Phase 3** | `semantic-graph` Appwrite Function (async 900s, GitHub API → llm-gateway → wikilinks); `kb_embeddings` Appwrite DB (768-dim BGE); видалення `services/docs-agent/semantic_graph.py` | ✅ |
+| **Phase 4** | Archivist AI → Appwrite Function; консолідація KB в Appwrite | заплановано |
 
-### Фаза 3 (Майбутнє бачення 🌌)
-- Повністю автоматизований виконавець завдань: Claude робить push змін у `TASKS.md`, вебхук запускає Termux/AGY, AGY автоматично виконує завдання, перевіряє результати тестами і робить push у Git без участі людини.
-- Інтеграція семантичного пошуку по минулих сесіях безпосередньо у контекст системного промпту Claude.
-- Автоматична синхронізація з NotebookLM: після кожної успішної сесії Claude звіт автоматично компілюється та завантажується як нове джерело в блокнот `drn-ai`.
-- Розподіл виконання завдань на рой (swarm) паралельно підключених пристроїв Android/Termux.
+**Що видалено застаріле:** Python agents (`:8765-8767`) на dev-сервері, `services/shared/llm_client.py`, `services/docs-agent/semantic_graph.py`, `drakon-agent-flue` worker, LangGraph (замінено Flue Runtime).
 
 ---
 
