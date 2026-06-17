@@ -97,6 +97,19 @@ export function ProjectSelector() {
         "https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator",
         { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } }
       );
+      if (resp.status === 401) {
+        // Token expired or revoked — drop it so the user is re-prompted cleanly
+        try {
+          const s = readSettings();
+          writeSettings({ ...s, github: { ...s.github, token: "" } });
+        } catch (_) {}
+        setSearchError("__no_token__");
+        return;
+      }
+      if (resp.status === 403) {
+        // Valid token but missing `repo` scope (or rate-limited)
+        throw new Error("Токен без доступу до репозиторіїв (потрібен scope 'repo'). Перелогіньтесь через GitHub або вкажіть PAT у Settings.");
+      }
       if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
       setSearchResults(await resp.json() as GhRepo[]);
     } catch (e) {

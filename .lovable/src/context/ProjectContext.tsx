@@ -254,10 +254,9 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     setActiveProjectState(prev => prev?.slug === slug ? null : prev);
   }, [userId, activeProject]);
 
-  useEffect(() => {
-    void loadProjects();
-  }, [loadProjects]);
-
+  // Reset in-memory state synchronously when the account changes, BEFORE the
+  // load effect runs (effects fire in declaration order). This prevents one
+  // account's projects from briefly showing under another account.
   useEffect(() => {
     setProjects([]);
     setActiveProjectState(null);
@@ -274,6 +273,10 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
       ].forEach(k => localStorage.removeItem(k));
     }
   }, [userId]);
+
+  useEffect(() => {
+    void loadProjects();
+  }, [loadProjects]);
 
   return (
     <ProjectContext.Provider

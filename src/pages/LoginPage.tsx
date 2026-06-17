@@ -138,10 +138,14 @@ export function LoginPage() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleGithubLogin = () => {
+    // 4th arg = OAuth scopes. Default GitHub OAuth only grants user:email, which
+    // cannot list private repos. Request `repo` so providerAccessToken can read
+    // the user's repositories in the "Add repository" dialog.
     account.createOAuth2Token(
       OAuthProvider.Github,
       window.location.origin + "/diagrams",
-      window.location.origin + "/login"
+      window.location.origin + "/login",
+      ["user:email", "repo", "read:org"]
     );
   };
 
