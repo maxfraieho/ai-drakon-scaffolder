@@ -194,7 +194,13 @@ export function GardenPage() {
       const folders = new Set(list.map((n) => getRootFolder(n.slug)));
       setExpandedFolders(folders);
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "Помилка завантаження";
+      const raw = e instanceof Error ? e.message : "Помилка завантаження";
+      // 401/403 from GitHub or the Worker almost always means a missing/invalid
+      // GitHub token (private repos). Point the user at Settings.
+      const isAuth = /\b(401|403)\b/.test(raw);
+      const msg = isAuth
+        ? "Не вдалось завантажити документи: перевірте GitHub токен у Налаштуваннях (приватні репозиторії потребують токена)."
+        : raw;
       setError(msg);
       toast.error(msg);
     } finally {

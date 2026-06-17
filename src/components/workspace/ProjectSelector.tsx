@@ -56,14 +56,14 @@ export function ProjectSelector() {
   const loadUserRepos = async () => {
     const token = readSettings().github?.token;
     if (!token) {
-      setSearchError("GitHub token не налаштовано. Введіть owner/repo вручну (напр. maxfraieho/uav-watcher) або додайте токен у Налаштуваннях.");
+      setSearchError("__no_token__");
       return;
     }
     setSearching(true);
     setSearchError("");
     try {
       const resp = await fetch(
-        "https://api.github.com/user/repos?sort=updated&per_page=30&affiliation=owner,collaborator",
+        "https://api.github.com/user/repos?sort=updated&per_page=100&affiliation=owner,collaborator",
         { headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json" } }
       );
       if (!resp.ok) throw new Error(`GitHub API ${resp.status}`);
@@ -264,7 +264,29 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
       </Button>
     </div>
 
-    {searchError && <p className="text-[10px] text-red-400 font-mono">{searchError}</p>}
+    {searchError === "__no_token__" ? (
+      <div className="flex flex-col gap-2 items-center py-4">
+        <p className="text-[10px] text-[var(--text-muted)] font-mono text-center">
+          GitHub токен не налаштовано
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            setAddOpen(false);
+            setManagerOpen(false);
+            document.dispatchEvent(new CustomEvent("open-settings", { detail: { tab: "github" } }));
+          }}
+          className="font-mono text-[10px] text-[var(--accent-amber)] underline hover:no-underline"
+        >
+          Налаштувати токен → Settings
+        </button>
+        <p className="text-[9px] text-[var(--text-muted)] font-mono text-center">
+          або введіть owner/repo вручну
+        </p>
+      </div>
+    ) : searchError ? (
+      <p className="text-[10px] text-red-400 font-mono">{searchError}</p>
+    ) : null}
 
     <div className="flex flex-col gap-1 max-h-[50vh] overflow-y-auto pr-1">
       {searchResults.map((repo) => (

@@ -20,17 +20,39 @@ interface ProjectData {
 function getActiveProjectGithub(): { owner: string; repo: string; branch: string; token: string } | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem("ai_drakon_active_project_data");
-    if (!raw) return null;
-    const project = JSON.parse(raw) as ProjectData;
-    if (project.github?.owner && project.github?.repo) {
-      const ghCfg = getGithubConfig();
-      return {
-        owner: project.github.owner,
-        repo: project.github.repo,
-        branch: project.github.branch || "main",
-        token: ghCfg?.token || "",
-      };
+    // ProjectContext stores the active project under a user-scoped key:
+    //   ai_drakon_active_project_<userId>_data
+    // Legacy (pre-TASK-222) unscoped key: ai_drakon_active_project_data
+    // Scan all matching keys so we work regardless of the logged-in userId.
+    const DATA_PREFIX = "ai_drakon_active_project_";
+    const DATA_SUFFIX = "_data";
+
+    const candidates: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(DATA_PREFIX) && key.endsWith(DATA_SUFFIX) && !key.includes("anon")) {
+        candidates.push(key);
+      }
+    }
+    // Prefer user-scoped keys (longer) over the legacy unscoped key.
+    candidates.sort((a, b) => b.length - a.length);
+    if (!candidates.includes("ai_drakon_active_project_data")) {
+      candidates.push("ai_drakon_active_project_data");
+    }
+
+    for (const key of candidates) {
+      const raw = localStorage.getItem(key);
+      if (!raw) continue;
+      const project = JSON.parse(raw) as ProjectData;
+      if (project.github?.owner && project.github?.repo) {
+        const ghCfg = getGithubConfig();
+        return {
+          owner: project.github.owner,
+          repo: project.github.repo,
+          branch: project.github.branch || "main",
+          token: ghCfg?.token || "",
+        };
+      }
     }
   } catch (e) {
     console.error("Error reading active project github config:", e);
