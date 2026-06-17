@@ -24060,3 +24060,163 @@ SESSION:<дата>|TASK-241:flue-parity-inventory|files-read:architect+drakon ag
 ```
 
 [x] TASK-241
+
+---
+
+## TASK-242: Phase 1 — llm-gateway Appwrite Function (implement + push)
+
+**Виконавець: AGY**
+
+### Контекст
+Cloud-migration Phase 1. Замінюємо локальний Aegis Relay (free-claude-code :8082/:18880)
+та AGY-проксі (agy.exodus.pp.ua, agy3.exodus.pp.ua) єдиною Appwrite Function `llm-gateway`.
+Failover: NIM (primary) -> OpenRouter (fallback). DeepSeek пропускаємо (ключ порожній).
+
+### Що зробити
+
+1. Створити `services/llm-gateway/` з такою структурою:
+```
+services/llm-gateway/
+  package.json
+  tsconfig.json
+  src/
+    main.ts      <- Appwrite Function entry point
+    failover.ts  <- NIM -> OpenRouter логіка
+    formats.ts   <- Anthropic <-> OpenAI конвертація
+```
+
+2. `package.json`:
+```json
+{
+  "name": "llm-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc --outDir dist",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+3. `src/formats.ts` — конвертація форматів:
+- `anthropicToOpenAI(body)` -> OpenAI `{messages, model, max_tokens, ...}`
+- `openAIResponseToAnthropic(data)` -> Anthropic `{content:[{type:"text",text:"..."}], ...}`
+
+4. `src/failover.ts` — failover через fetch:
+- Providers масив: `[{url: "https://integrate.api.nvidia.com/v1", key: NIM_API_KEY_1}, {url: "https://integrate.api.nvidia.com/v1", key: NIM_API_KEY_2}, {url: "https://openrouter.ai/api/v1", key: OPENROUTER_API_KEY}]`
+- `callWithFailover(openaiPayload, env)` — перебирає providers, перший успішний (2xx) повертає
+- Таймаут кожного: 25s (Appwrite sync max ~30s)
+- При 429 — переходить до наступного без retry
+- Default model mapping: будь-який вхідний model -> `nvidia/llama-3.3-nemotron-super-49b-v1`
+
+5. `src/main.ts` — Appwrite Function entry point:
+```typescript
+export default async ({ req, res, log, error }) => {
+  // GET /health
+  // POST /v1/messages       -> Anthropic format
+  // POST /v1/chat/completions -> OpenAI format
+  // AUTH: Bearer check (req.headers['authorization'] vs AUTH_TOKEN env)
+};
+```
+- Читає env: `NIM_API_KEY`, `NIM_API_KEY_2`, `OPENROUTER_API_KEY`, `AUTH_TOKEN` (default: `freecc`)
+- Anthropic path: конвертує через `formats.ts`, викликає failover, конвертує відповідь назад
+- OpenAI path: передає напряму у failover, повертає як є
+
+6. Sync: `cp -r services/llm-gateway/ .lovable/services/llm-gateway/`
+
+7. Git:
+```
+git add services/llm-gateway/ .lovable/services/llm-gateway/
+git commit -m "feat(llm-gateway): Appwrite Function scaffold + failover NIM->OpenRouter"
+git push origin main
+```
+
+### НЕ робити
+- Не деплоїти в Appwrite (це ручна дія Q через Console)
+- Не чіпати Python агентів або CF Worker secrets
+
+### Критерій готовності
+- `services/llm-gateway/src/main.ts` існує і компілюється (`tsc --noEmit`)
+- `git log origin/main -1` показує коміт з `feat(llm-gateway)`
+
+### Diary
+```
+SESSION:<дата>|TASK-242:llm-gateway-scaffold|files:main.ts+failover.ts+formats.ts|commit:<hash>
+```
+
+[ ] TASK-242
+
+---
+
+## TASK-244: Phase 1 — Switch all clients to llm-gateway (after Q provides endpoint)
+
+**Виконавець: AGY**
+**ЗАЛЕЖИТЬ ВІД: TASK-242 (done) + Q надав APPWRITE_GATEWAY_URL**
+
+### Контекст
+Після того як Q задеплоїв llm-gateway в Appwrite Console і надав endpoint URL
+(вигляд: `https://<region>.appwrite.io/v1/functions/<id>/executions` або custom domain),
+переключити всіх клієнтів на новий gateway.
+
+### Змінні (Q заповнить перед запуском)
+- `GATEWAY_URL` = `____________________________` (Appwrite Function endpoint)
+- `GATEWAY_AUTH_TOKEN` = `freecc`
+
+### Що зробити
+
+**Флюшні агенти (CF Workers) — оновити wrangler.toml або через wrangler CLI:**
+
+Для кожного з трьох сервісів:
+- `services/architect-agent-flue/`
+- `services/drakon-agent-flue/`
+- `services/docs-agent-flue/`
+
+Знайти у `wrangler.toml` або `wrangler.jsonc` секрет `PROXY_URL` і замінити на `GATEWAY_URL`.
+Якщо через CLI: `wrangler secret put PROXY_URL` (вводить значення з stdin).
+Якщо в файлі — оновити і пушити.
+
+**Python агенти (dev-сервер) — оновити .env:**
+
+```bash
+# На dev-сервері 192.168.3.184:
+sed -i 's|PROXY_URL=.*|PROXY_URL=GATEWAY_URL|' /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/.env
+sed -i 's|PROXY_URL=.*|PROXY_URL=GATEWAY_URL|' /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/.env
+sed -i 's|PROXY_URL=.*|PROXY_URL=GATEWAY_URL|' /home/vokov/projects/ai-drakon-scaffolder/services/docs-agent/.env
+```
+
+Рестарт сервісів:
+```bash
+echo '805235io.' | sudo -S rc-service ai-architect-agent restart
+echo '805235io.' | sudo -S rc-service ai-drakon-agent restart
+echo '805235io.' | sudo -S rc-service ai-docs-agent restart
+```
+
+**Перевірка:**
+```bash
+# Health кожного Flue-агента:
+curl https://architect-agent.exodus.pp.ua/health
+curl https://drakon-agent.exodus.pp.ua/health
+curl https://docs-agent.exodus.pp.ua/health
+
+# Тестовий LLM-запит через llm-gateway:
+curl -X POST GATEWAY_URL/v1/chat/completions \
+  -H "Authorization: Bearer freecc" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"test","messages":[{"role":"user","content":"ping, reply with pong"}]}'
+```
+
+### Критерій готовності
+- Всі 3 `/health` = 200
+- `curl` тест llm-gateway повертає `pong` або подібну відповідь
+- `free-claude-code` можна вимкнути: `sudo rc-service free-claude-code stop` (окремий крок, тільки після 24год OK)
+
+### Diary
+```
+SESSION:<дата>|TASK-244:switch-clients-llm-gateway|agents:3xFlue+3xPython|gateway:<url>|commit:<hash>
+```
+
+[ ] TASK-244
