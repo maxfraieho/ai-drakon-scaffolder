@@ -2474,6 +2474,9 @@ export default {
       if (method === 'POST' && path === '/v1/notes/build-semantic-graph') {
         return await handleNotesBuildSemanticGraph(request, env);
       }
+      if (method === 'GET' && path === '/v1/notes/semantic-graph-status') {
+        return await handleSemanticGraphStatus(request, env);
+      }
       // ──────────────────────────────────────────────────────────────────────
 
       // ─── GitHub read-only routes (no auth needed — Worker uses server-side token) ─────
@@ -2903,24 +2906,76 @@ async function handleNotesBuildSemanticGraph(request, env) {
 
   const url = new URL(request.url);
   const project = url.searchParams.get('project') || '';
-  const apply = url.searchParams.get('apply') || 'false';
+  const apply = url.searchParams.get('apply') || 'true';
   const model = url.searchParams.get('model') || '';
 
-  const params = new URLSearchParams();
-  if (project) params.set('project', project);
-  if (apply) params.set('apply', apply);
-  if (model) params.set('model', model);
+  const functionId = env.SEMANTIC_GRAPH_FUNCTION_ID;
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
 
-  const res = await fetch(`${DOCS_AGENT_URL}/notes/build-semantic-graph?${params.toString()}`, {
-    method: 'POST',
-    signal: AbortSignal.timeout(120_000), // Generous 120s timeout
-  });
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    return errorResponse(`docs-agent /notes/build-semantic-graph ${res.status}: ${errText}`, 502);
+  if (!functionId || !apiKey) {
+    return errorResponse('SEMANTIC_GRAPH_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
   }
-  return jsonResponse(await res.json());
+
+  const execRes = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+      body: JSON.stringify({
+        async: true,
+        body: JSON.stringify({ project, apply: apply === 'true', model }),
+      }),
+    }
+  );
+
+  if (!execRes.ok) {
+    const errText = await execRes.text().catch(() => '');
+    return errorResponse(`Appwrite execution failed: ${execRes.status} ${errText}`, 502);
+  }
+
+  const execData = await execRes.json();
+  return jsonResponse({
+    status: 'accepted',
+    execution_id: execData.$id,
+    message: 'Semantic graph build started. Poll /v1/notes/semantic-graph-status?execution_id=...',
+  });
+}
+
+async function handleSemanticGraphStatus(request, env) {
+  const url = new URL(request.url);
+  const executionId = url.searchParams.get('execution_id');
+  if (!executionId) return errorResponse('execution_id required', 400);
+
+  const functionId = env.SEMANTIC_GRAPH_FUNCTION_ID;
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+
+  if (!functionId || !apiKey) return errorResponse('not configured', 503);
+
+  const res = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    {
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+    }
+  );
+
+  if (!res.ok) return errorResponse(`Appwrite status check failed: ${res.status}`, 502);
+  const data = await res.json();
+  return jsonResponse({
+    execution_id: data.$id,
+    status: data.status,        // 'waiting', 'processing', 'completed', 'failed'
+    duration: data.duration,
+    output: data.status === 'completed' ? JSON.parse(data.responseBody || '{}') : undefined,
+    error: data.status === 'failed' ? data.errors : undefined,
+  });
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
