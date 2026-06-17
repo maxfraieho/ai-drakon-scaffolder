@@ -24526,7 +24526,7 @@ GET /databases/{db}/collections/{col}/documents?queries[]=equal("project","X")&q
 SESSION:2026-06-17|TASK-247:kb-indexer|CF-Workers-AI-BGE+cosine+graph-expand|deploy:done|commit:<hash>
 ```
 
-[ ] TASK-247
+[x] TASK-247
 
 ---
 
