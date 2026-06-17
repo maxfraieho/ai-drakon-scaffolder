@@ -8,13 +8,13 @@ export async function llmComplete(
 ): Promise<string> {
   const resolvedEnv = env || (typeof process !== 'undefined' ? process.env : undefined);
 
-  let baseUrl = proxyUrl || resolvedEnv?.PROXY_URL || 'https://6a3200cd00182e876067.fra.appwrite.run/v1/chat/completions';
+  let baseUrl = proxyUrl || resolvedEnv?.PROXY_URL || 'https://6a3200cd0006b155c099.fra.appwrite.run/v1/chat/completions';
   let url = baseUrl;
   if (url && !url.endsWith('/chat/completions')) {
     url = url.endsWith('/') ? url + 'chat/completions' : url + '/chat/completions';
   }
 
-  const key = apiKey || resolvedEnv?.PROXY_TOKEN || resolvedEnv?.CUSTOM_API_KEY || 'dummy';
+  const key = apiKey || resolvedEnv?.PROXY_TOKEN || resolvedEnv?.CUSTOM_API_KEY || 'freecc';
   
   const res = await fetch(url, {
     method: 'POST',
