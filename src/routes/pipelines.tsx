@@ -1,5 +1,5 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { hasClientJwt } from "@/lib/route-auth";
+import { useRequireAuth } from "@/lib/route-auth";
 import { PipelineCommandCenter } from "@/components/pipelines/PipelineCommandCenter";
 
 export const Route = createFileRoute("/pipelines")({
@@ -7,6 +7,8 @@ export const Route = createFileRoute("/pipelines")({
 });
 
 function PipelinesRoute() {
-  if (!hasClientJwt()) return <Navigate to="/login" replace />;
+  const { loading, allowed } = useRequireAuth();
+  if (loading) return null;
+  if (!allowed) return <Navigate to="/login" replace />;
   return <PipelineCommandCenter />;
 }

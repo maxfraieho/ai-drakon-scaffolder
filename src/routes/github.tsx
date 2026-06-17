@@ -38,7 +38,7 @@ SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/lib/api";
 import { readFoldersFromStorage } from "@/lib/folder-storage";
-import { hasClientJwt } from "@/lib/route-auth";
+import { useRequireAuth } from "@/lib/route-auth";
 import { readSettings } from "@/lib/settings-storage";
 import { useProject } from "@/context/ProjectContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -107,8 +107,9 @@ return content.split("\n").slice(0, count).join("\n");
 }
 
 function GitHubRoute() {
-const navigate = useNavigate();
-const isMobile = useIsMobile();
+  const { loading: authLoading, allowed } = useRequireAuth();
+  const navigate = useNavigate();
+  const isMobile = useIsMobile();
 const holdTimerRef = useRef<number | null>(null);
 
 const githubDefaults = readSettings().github;
@@ -480,9 +481,10 @@ const previewView = preview ? (
 </div>
 );
 
-if (!hasClientJwt()) {
-return <Navigate to="/login" replace />;
-}
+  if (authLoading) return null;
+  if (!allowed) {
+    return <Navigate to="/login" replace />;
+  }
 
 return (
 <div className="min-h-screen bg-background px-3 pb-6 pt-3 text-foreground md:px-6">

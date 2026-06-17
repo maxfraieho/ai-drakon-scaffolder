@@ -1,16 +1,16 @@
 import { createFileRoute, Navigate } from "@tanstack/react-router";
 
 import DiagramEditorPage from "@/pages/DiagramEditorPage";
-import { hasClientJwt } from "@/lib/route-auth";
+import { useRequireAuth } from "@/lib/route-auth";
 
 export const Route = createFileRoute("/diagram/editor")({
-component: DiagramEditorRoute,
+  component: DiagramEditorRoute,
 });
 
 function DiagramEditorRoute() {
-if (!hasClientJwt()) {
-return <Navigate to="/login" replace />;
-}
-return <DiagramEditorPage />;
+  const { loading, allowed } = useRequireAuth();
+  if (loading) return null;
+  if (!allowed) return <Navigate to="/login" replace />;
+  return <DiagramEditorPage />;
 }
 

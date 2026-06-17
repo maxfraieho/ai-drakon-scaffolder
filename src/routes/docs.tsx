@@ -1,7 +1,7 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { GardenPage } from "@/pages/GardenPage";
-import { hasClientJwt } from "@/lib/route-auth";
+import { useRequireAuth } from "@/lib/route-auth";
 import { useProject } from "@/context/ProjectContext";
 
 export const Route = createFileRoute("/docs")({
@@ -9,9 +9,9 @@ export const Route = createFileRoute("/docs")({
 });
 
 function DocsRoute() {
-  if (!hasClientJwt()) {
-    return <Navigate to="/login" replace />;
-  }
+  const { loading, allowed } = useRequireAuth();
+  if (loading) return null;
+  if (!allowed) return <Navigate to="/login" replace />;
   return <DocsContent />;
 }
 

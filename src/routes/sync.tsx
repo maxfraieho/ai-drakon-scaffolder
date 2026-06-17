@@ -34,18 +34,18 @@ sanitizeDiagramId,
 saveDiagramToGit,
 saveDiagramToMinio,
 } from "@/lib/mcp/projects";
-import { hasClientJwt } from "@/lib/route-auth";
+import { useRequireAuth } from "@/lib/route-auth";
 import type { AnalysisJob } from "@/types/analysis";
 
 export const Route = createFileRoute("/sync")({
-component: SyncRoute,
+  component: SyncRoute,
 });
 
 function SyncRoute() {
-if (!hasClientJwt()) {
-return <Navigate to="/login" replace />;
-}
-return <SyncPage />;
+  const { loading, allowed } = useRequireAuth();
+  if (loading) return null;
+  if (!allowed) return <Navigate to="/login" replace />;
+  return <SyncPage />;
 }
 
 function SyncPage() {
