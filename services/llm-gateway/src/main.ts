@@ -1,7 +1,7 @@
 import { anthropicToOpenAI, openAIResponseToAnthropic } from './formats';
 import { callWithFailover } from './failover';
 
-export default async ({ req, res, log, error }: any) => {
+const handler = async ({ req, res, log, error }: any) => {
   const path = req.path || req.url || '';
   const method = req.method || 'GET';
   const cleanPath = path.split('?')[0].replace(/\/+$/, '');
@@ -77,3 +77,6 @@ export default async ({ req, res, log, error }: any) => {
   error(`Route not found: ${method} ${cleanPath}`);
   return res.json({ error: 'Not Found' }, 404);
 };
+
+export default handler;
+module.exports = handler;

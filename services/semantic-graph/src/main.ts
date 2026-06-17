@@ -4,11 +4,11 @@ import { buildExtractionPrompt, callLLM, parseRelationships } from './extract';
 import { enforceLinkBudget } from './budget';
 import { renderSemanticBlock, upsertSemanticSection } from './render';
 
-export default async (context: any) => {
+const handler = async (context: any) => {
   const { req, res, log, error } = context;
   
   const env = process.env as Record<string, string | undefined>;
-  const gatewayUrl = env.LLM_GATEWAY_URL || 'https://6a3200cd00182e876067.fra.appwrite.run';
+  const gatewayUrl = env.LLM_GATEWAY_URL || 'https://6a3200cd0006b155c099.fra.appwrite.run';
   const gatewayToken = env.LLM_GATEWAY_TOKEN || 'freecc';
 
   if (req.method === 'GET' && req.path === '/health') {
@@ -121,3 +121,6 @@ export default async (context: any) => {
     }, 500);
   }
 };
+
+export default handler;
+module.exports = handler;

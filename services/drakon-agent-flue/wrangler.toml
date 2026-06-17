@@ -4,7 +4,7 @@ compatibility_date = "2026-04-01"
 compatibility_flags = ["nodejs_compat"]
 
 [vars]
-PROXY_URL = "https://6a3200cd00182e876067.fra.appwrite.run/v1/chat/completions"
+PROXY_URL = "https://6a3200cd0006b155c099.fra.appwrite.run/v1/chat/completions"
 PROXY_MODEL = "gemini-2.5-flash"
 
 [[kv_namespaces]]
