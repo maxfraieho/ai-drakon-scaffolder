@@ -3234,13 +3234,12 @@ async function handleNotesDelete(request, env) {
 }
 
 async function handleNotesBuildSemanticGraph(request, env) {
-  const authHeader = request.headers.get('Authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  if (!token) return errorResponse('Authorization required', 401);
-  try {
-    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
-  } catch {
-    return errorResponse('Invalid or expired token', 401);
+  // Accept BOTH the worker-signed owner JWT AND the Appwrite JWT (email-logged-in
+  // users send the Appwrite JWT, which is NOT HMAC-signed by JWT_SECRET).
+  // verifyOwnerAuth() mirrors handleKbIndex and falls through to verifyAppwriteJwt.
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) {
+    return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
   }
 
   const url = new URL(request.url);
