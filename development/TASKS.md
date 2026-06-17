@@ -24602,7 +24602,7 @@ git push origin main
 SESSION:2026-06-17|TASK-245:semantic-graph-scaffold|files:main+github+collect+extract+budget+render|commit:<hash>
 ```
 
-[ ] TASK-245
+[x] TASK-245
 
 ---
 
