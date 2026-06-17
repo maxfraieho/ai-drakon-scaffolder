@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { type Project, useProject } from "@/context/ProjectContext";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
-import { account } from "@/lib/appwrite";
+import { account, databases } from "@/lib/appwrite";
 
 interface GhRepo {
   full_name: string;
@@ -74,11 +74,21 @@ export function ProjectSelector() {
   const loadUserRepos = async () => {
     let token = readSettings().github?.token;
 
-    // Fallback: get token directly from current GitHub OAuth session
+    // Fallback: try Appwrite user_profiles (cross-device) then session providerAccessToken
     if (!token) {
       try {
         const session = await account.getSession("current");
-        if (session.provider === "github" && session.providerAccessToken) {
+        // 1. user_profiles — written on OAuth login, syncs cross-device
+        try {
+          const doc: any = await databases.getDocument("ai-drakon", "user_profiles", session.$id);
+          if (doc.githubToken) {
+            token = doc.githubToken;
+            const s = readSettings();
+            writeSettings({ ...s, github: { ...s.github, token } });
+          }
+        } catch (_) {}
+        // 2. providerAccessToken from current session (works only on same-device session)
+        if (!token && session.provider === "github" && session.providerAccessToken) {
           token = session.providerAccessToken;
           const s = readSettings();
           writeSettings({ ...s, github: { ...s.github, token } });
