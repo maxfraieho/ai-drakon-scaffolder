@@ -491,7 +491,6 @@ export async function buildSemanticGraph(
   if (project) params.set("project", project);
   params.set("apply", String(apply));
   if (model) params.set("model", model);
-  // Pass GitHub project info so the Appwrite function can fetch files
   if (gh) {
     params.set("github_owner", gh.owner);
     params.set("github_repo", gh.repo);
@@ -501,15 +500,40 @@ export async function buildSemanticGraph(
 
   const res = await fetch(`${workerUrl()}/v1/notes/build-semantic-graph?${params.toString()}`, {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { Authorization: `Bearer ${token}` },
   });
 
   if (!res.ok) {
     const txt = await res.text().catch(() => "");
     throw new Error(`build-semantic-graph HTTP ${res.status}: ${txt}`);
   }
-  return res.json() as Promise<SemanticGraphBuildResponse>;
+
+  const init = await res.json() as Record<string, unknown>;
+
+  // Sync result — return directly
+  if (typeof init.success === "boolean") {
+    return init as unknown as SemanticGraphBuildResponse;
+  }
+
+  // Async: poll semantic-graph-status until completed (up to 6 min)
+  const executionId = init.execution_id as string | undefined;
+  if (!executionId) throw new Error("Немає execution_id у відповіді worker");
+
+  for (let i = 0; i < 120; i++) {
+    await new Promise<void>((r) => setTimeout(r, 3000));
+    const statusRes = await fetch(
+      `${workerUrl()}/v1/notes/semantic-graph-status?execution_id=${executionId}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    ).catch(() => null);
+    if (!statusRes?.ok) continue;
+    const s = await statusRes.json() as Record<string, unknown>;
+    if (s.status === "completed" && s.output) {
+      return s.output as unknown as SemanticGraphBuildResponse;
+    }
+    if (s.status === "failed") {
+      throw new Error(`Semantic graph failed: ${String(s.error || "невідома помилка")}`);
+    }
+  }
+  throw new Error("Timeout: семантичний граф не завершився за 6 хвилин");
 }
 
