@@ -7,7 +7,6 @@ import {
 } from "@/components/ui/dialog";
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandInput,
   CommandItem,
@@ -61,6 +60,15 @@ export function ProjectSelector() {
       document.removeEventListener("open-add-repo", openAdd);
     };
   }, []);
+
+  useEffect(() => {
+    if (addOpen) {
+      setSearchResults([]);
+      setSearchError("");
+      setComboFilter("");
+      void loadUserRepos();
+    }
+  }, [addOpen]);
 
   const loadUserRepos = async () => {
     const token = readSettings().github?.token;
@@ -252,10 +260,7 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
 </DialogContent>
 </Dialog>
 
-<Dialog open={addOpen} onOpenChange={(o) => {
-  setAddOpen(o);
-  if (o) { setSearchResults([]); setSearchError(""); setComboFilter(""); void loadUserRepos(); }
-}}>
+<Dialog open={addOpen} onOpenChange={setAddOpen}>
   <DialogContent className="sm:max-w-md bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono rounded-2xl">
     <DialogHeader>
       <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
@@ -268,7 +273,7 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
 
     <div className="flex flex-col gap-3 py-1">
       {/* Combobox з живим пошуком */}
-      <Command className="rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)]">
+      <Command shouldFilter={false} className="rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)]">
         <CommandInput
           placeholder="Пошук репозиторію..."
           value={comboFilter}
@@ -298,9 +303,7 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
             </div>
           )}
           {!searching && searchError && searchError !== "__no_token__" && (
-            <CommandEmpty className="font-mono text-[11px] text-red-400 py-3 text-center">
-              {searchError}
-            </CommandEmpty>
+            <div className="py-3 text-center font-mono text-[11px] text-red-400">{searchError}</div>
           )}
           {!searching && searchResults.length > 0 && (
             <CommandGroup>
@@ -337,9 +340,9 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
             </CommandGroup>
           )}
           {!searching && searchResults.length === 0 && !searchError && (
-            <CommandEmpty className="font-mono text-[10px] text-[var(--text-muted)] py-4 text-center">
+            <div className="py-4 text-center font-mono text-[10px] text-[var(--text-muted)]">
               Репозиторії не знайдено
-            </CommandEmpty>
+            </div>
           )}
         </CommandList>
       </Command>

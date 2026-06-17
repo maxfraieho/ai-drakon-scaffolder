@@ -571,14 +571,48 @@ return (
         ) : (
           <div className="flex flex-col gap-4">
             <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">GitHub App OAuth</p>
+              <p className="font-medium text-foreground">GitHub Personal Access Token</p>
               <p className="mt-1 text-xs">
-                Підключіть свій обліковий запис GitHub, щоб отримати доступ до ваших репозиторіїв та комітів.
+                Введіть GitHub PAT для доступу до репозиторіїв. Створіть токен на{" "}
+                <a
+                  href="https://github.com/settings/tokens/new?scopes=repo&description=AI-DRAKON"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline text-foreground hover:text-primary"
+                >
+                  github.com/settings/tokens
+                </a>{" "}
+                з доступом <code className="text-xs bg-muted px-1 rounded">repo</code>.
               </p>
             </div>
-            <div>
-              <Button onClick={handleConnectGithub} size="sm">
-                Підключити GitHub
+            <div className="flex gap-2">
+              <Input
+                type="password"
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                value={settings.github.token}
+                onChange={(e) =>
+                  updateSettings((prev) => ({
+                    ...prev,
+                    github: { ...prev.github, token: e.target.value },
+                  }))
+                }
+                className="text-xs font-mono"
+              />
+              <Button
+                size="sm"
+                onClick={async () => {
+                  const ok = await checkGithubToken(settings.github.token);
+                  if (ok) {
+                    const updated = { ...settings, github: { ...settings.github, token: settings.github.token } };
+                    writeSettings(updated);
+                    toast.success("GitHub токен збережено");
+                  } else {
+                    toast.error("Невірний токен або немає доступу");
+                  }
+                }}
+                disabled={!settings.github.token.trim()}
+              >
+                Зберегти
               </Button>
             </div>
           </div>
