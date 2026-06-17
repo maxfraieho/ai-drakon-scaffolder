@@ -8,7 +8,7 @@ export async function llmComplete(
 ): Promise<string> {
   const resolvedEnv = env || (typeof process !== 'undefined' ? process.env : undefined);
 
-  let baseUrl = proxyUrl || resolvedEnv?.PROXY_URL || 'https://agy3.exodus.pp.ua/v1/chat/completions';
+  let baseUrl = proxyUrl || resolvedEnv?.PROXY_URL || 'https://6a3200cd00182e876067.fra.appwrite.run/v1/chat/completions';
   let url = baseUrl;
   if (url && !url.endsWith('/chat/completions')) {
     url = url.endsWith('/') ? url + 'chat/completions' : url + '/chat/completions';
