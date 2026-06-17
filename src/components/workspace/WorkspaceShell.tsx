@@ -225,7 +225,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
             </SheetHeader>
             <div className="flex h-[calc(100%-2.5rem)] flex-col overflow-hidden">
               <div className="border-b border-[var(--border-subtle)] shrink-0">
-                <ProjectSelector />
+                <ProjectSelector withDialogs={false} />
               </div>
               <nav aria-label="Мобільна навігація" className="flex-1 overflow-y-auto p-2">
                 <NavDivider label="Робочий простір" />

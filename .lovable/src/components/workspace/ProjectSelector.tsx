@@ -31,7 +31,7 @@ interface GhRepo {
   language: string | null;
 }
 
-export function ProjectSelector() {
+export function ProjectSelector({ withDialogs = true }: { withDialogs?: boolean }) {
   const {
     projects,
     activeProject,
@@ -80,7 +80,7 @@ export function ProjectSelector() {
         const session = await account.getSession("current");
         // 1. user_profiles — written on OAuth login, syncs cross-device
         try {
-          const doc: any = await databases.getDocument("ai-drakon", "user_profiles", session.$id);
+          const doc: any = await databases.getDocument("ai-drakon", "user_profiles", session.userId);
           if (doc.githubToken) {
             token = doc.githubToken;
             const s = readSettings();
@@ -244,7 +244,7 @@ return (
   )}
 </div>
 
-<Dialog open={managerOpen} onOpenChange={setManagerOpen}>
+{withDialogs && <Dialog open={managerOpen} onOpenChange={setManagerOpen}>
 <DialogContent className="bg-[var(--bg-surface)] border-[var(--border-subtle)] max-w-lg font-mono rounded-2xl">
 <DialogHeader>
 <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
@@ -295,9 +295,9 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
 Додати новий проект
 </button>
 </DialogContent>
-</Dialog>
+</Dialog>}
 
-<Dialog open={addOpen} onOpenChange={setAddOpen}>
+{withDialogs && <Dialog open={addOpen} onOpenChange={setAddOpen}>
   <DialogContent className="sm:max-w-md bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono rounded-2xl">
     <DialogHeader>
       <DialogTitle className="text-[13px] uppercase tracking-wider text-[var(--text-primary)]">
@@ -404,7 +404,7 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
       </div>
     </div>
   </DialogContent>
-</Dialog>
+</Dialog>}
 </>
 );
 }
