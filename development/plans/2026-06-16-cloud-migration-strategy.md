@@ -173,3 +173,71 @@ ai-memory, [OpenDesign — за Фазою 0].
 - https://appwrite.io/education
 - https://appwrite.io/pricing
 - https://appwrite.io/docs/advanced/platform/pro
+
+---
+
+## Результати Фази 0 (закрито 2026-06-17)
+
+| Питання | Відповідь | Джерело |
+|---|---|---|
+| Appwrite max execution-timeout | Sync: **30s** (hard). Async: **900s** — завжди async | Appwrite docs |
+| Порт :19195 | `agy-failover/proxy.py` — LLM failover proxy. **Поза скоупом міграції** | `ps aux` на dev-сервері |
+| Python ↔ Flue parity | 4 gaps: memory, settings, pipeline resume/state, shared pipeline CRUD | `development/investigations/flue-parity-2026-06-17.md` |
+| OpenDesign статус | **Dev-tool тільки** — нуль посилань у `src/`, `cloudflare-worker/`, `services/`. Підтверджено поза скоупом | GitNexus grep |
+| `generate_docs` на фронтенді | **НІ** — `src/lib/docs-api.ts` викликає `/docs/generate/md`, не `/gitnexus/generate-docs` | GitNexus context |
+
+---
+
+## Gaps з Фази 0 — інтеграція у Фазу 3
+
+Знайдено 4 прогалини між Python `architect/drakon-agent` і Flue-версіями.
+Всі мають бути закриті **до** вимкнення Python-агентів (Фаза 3).
+
+### Gap 1: Memory management — HIGH
+
+**Відсутнє у Flue:** `GET /memory/list`, `GET /memory/get`, `POST /memory/save`
+
+**Python реалізація:** `memory_manager.py` → GitHub API (файли `memory/AGENT/` у репо).
+
+**Рішення:** Appwrite DB collection `agent_memory` (fields: `agent`, `key`, `content`, `updated_at`).
+Flue-агент читає/пише через Appwrite SDK. Ключі через Appwrite API Key у env.
+Scope: нові ендпоінти у Flue Worker → Appwrite DB.
+
+### Gap 2: Settings endpoint — MEDIUM
+
+**Відсутнє у Flue:** `GET /settings` (в обох агентах).
+
+**Python реалізація:** повертає конфіг з env/config (LLM URL, repo path, модель).
+
+**Рішення:** Flue Worker читає з `env.*` (вже є в CF Worker secrets). `GET /settings` → JSON з env. Trivial — один ендпоінт.
+
+### Gap 3: Pipeline resume/state — MEDIUM
+
+**Відсутнє у Flue:** `POST .../resume`, `GET .../state` для активних LangGraph-задач.
+
+**Python реалізація:** LangGraph checkpointing через in-memory store.
+
+**Рішення:** Durable Objects у Flue вже мають job store (`getJobDO`). Додати ендпоінти
+`resume` і `state` у Flue Worker з читанням DO-стану. Appwrite-функцій не потребує — це CF-рівень.
+
+**Примітка для Фази 2:** дизайн "1 invocation/документ" для semantic-graph обходить
+проблему resume без додаткового коду.
+
+### Gap 4: Shared pipeline CRUD — LOW
+
+**Відсутнє у Flue:** `/v1/agents/pipeline/{id}` — CRUD для збережених конфігурацій пайплайнів.
+
+**Рішення:** Appwrite DB collection `pipeline_configs` або CF KV. Низький пріоритет — рідко використовується.
+
+---
+
+## Оновлений фазовий план (з gaps)
+
+| Фаза | Що | Під-задачі з gaps | Критерій «готово» |
+|---|---|---|---|
+| **0. Інвентар** | ✅ ЗАКРИТО 2026-06-17 | — | Усі 5 фактів підтверджено |
+| **1. LLM-gateway** | Failover-Function → Appwrite | — | `free-claude-code` stop 24 год без регресій |
+| **2. semantic-graph** | Async-job → Appwrite DB | "1 invocation/doc" обходить Gap 3 для цього шляху | Граф ідентичний на тест-корпусі; Worker не б'є `DOCS_AGENT_URL` |
+| **3. Python agents off** | Switch front to Flue; OpenRC stop | **Gap 1** (memory → Appwrite DB), **Gap 2** (settings → CF env), **Gap 3** (resume/state → DO endpoints), **Gap 4** (pipeline CRUD → Appwrite DB/KV) | Чат + pipeline SSE лише через Flue — нема регресій |
+| **4. NotebookLM** | → Appwrite Function | — | `/notebooks` відповідає без RPi |
+| **5. OpenDesign** | ✅ dev-tool, поза скоупом (підтверджено Фазою 0) | — | Продукт не б'є `:7460` |
