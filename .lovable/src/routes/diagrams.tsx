@@ -2,7 +2,7 @@ import { createFileRoute, Navigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { DiagramsPage } from "@/pages/DiagramsPage";
 import { useRequireAuth } from "@/lib/route-auth";
-import { account } from "@/lib/appwrite";
+import { account, databases } from "@/lib/appwrite";
 import { setAccessToken } from "@/lib/auth";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 
@@ -29,9 +29,29 @@ function DiagramsRoute() {
       .then(async (session) => {
         // GitHub OAuth login — save provider token so repos load without PAT
         if (session.provider === "github" && session.providerAccessToken) {
+          const token = session.providerAccessToken;
+          // 1. Save locally (single-device, immediate use)
           try {
             const s = readSettings();
-            writeSettings({ ...s, github: { ...s.github, token: session.providerAccessToken } });
+            writeSettings({ ...s, github: { ...s.github, token } });
+          } catch (_) {}
+          // 2. Persist to Appwrite user_profiles for cross-device sync
+          try {
+            const ghResp = await fetch("https://api.github.com/user", {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: "application/vnd.github+json",
+              },
+            });
+            const ghUser = ghResp.ok ? await ghResp.json() : {};
+            const profileData = { githubToken: token, githubLogin: ghUser.login || "" };
+            try {
+              await databases.createDocument("ai-drakon", "user_profiles", userId, profileData);
+            } catch {
+              try {
+                await databases.updateDocument("ai-drakon", "user_profiles", userId, profileData);
+              } catch {}
+            }
           } catch (_) {}
         }
         try {

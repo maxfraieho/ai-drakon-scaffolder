@@ -26,7 +26,7 @@ import { readSettings, writeSettings } from "@/lib/settings-storage";
 import type { AppSettings } from "@/types/settings";
 import { useProject } from "@/context/ProjectContext";
 import { account, databases } from "@/lib/appwrite";
-import { getAppwriteJwt } from "@/lib/appwrite-jwt";
+import { OAuthProvider } from "appwrite";
 import { saveUserConfig, syncUserConfigToCloud } from "@/lib/user-config-api";
 
 export const Route = createFileRoute("/settings")({
@@ -117,22 +117,9 @@ const checkGithubToken = async (token: string): Promise<boolean> => {
 const loadGithubProfile = async (userId: string) => {
   setIsLoadingProfile(true);
   try {
-    // 1. Current Appwrite session — if user logged in via GitHub OAuth,
-    //    providerAccessToken IS the GitHub token; no PAT entry needed
-    try {
-      const session = await account.getSession("current");
-      if (session.provider === "github" && session.providerAccessToken) {
-        setSettings(prev => {
-          const updated = { ...prev, github: { ...prev.github, token: session.providerAccessToken } };
-          writeSettings(updated);
-          return updated;
-        });
-        await checkGithubToken(session.providerAccessToken);
-        return;
-      }
-    } catch (_) {}
-
-    // 2. user_profiles collection (saved via popup OAuth Worker)
+    // 1. user_profiles collection (Appwrite) — token saved here on GitHub OAuth
+    //    login, so it syncs across devices. account.getSession("current") is NOT
+    //    reliable for providerAccessToken on Appwrite Cloud, so we don't use it.
     try {
       const doc: any = await databases.getDocument("ai-drakon", "user_profiles", userId);
       if (doc.githubToken) {
@@ -189,49 +176,17 @@ useEffect(() => {
 
 const handleConnectGithub = async () => {
   try {
-    const jwt = await getAppwriteJwt();
-    if (!jwt) {
-      toast.error("Не вдалося отримати токен авторизації");
-      return;
-    }
-    const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
-    const authUrl = `${workerUrl}/auth/github/start?token=${encodeURIComponent(jwt)}&popup=true`;
-
-    const width = 600;
-    const height = 700;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-
-    const popupWindow = window.open(
-      authUrl,
-      "Connect GitHub",
-      `width=${width},height=${height},left=${left},top=${top},status=no,resizable=yes,scrollbars=yes`
+    const successUrl = `${window.location.origin}/diagrams`;
+    const failureUrl = `${window.location.origin}/settings`;
+    // Same Appwrite GitHub OAuth redirect flow as LoginPage — on return the
+    // /diagrams route persists providerAccessToken to user_profiles (cross-device).
+    await account.createOAuth2Token(
+      OAuthProvider.Github,
+      successUrl,
+      failureUrl,
+      ["user:email", "repo", "read:org"]
     );
-
-    if (!popupWindow) {
-      toast.error("Попап заблоковано браузером. Будь ласка, дозвольте попапи для цього сайту.");
-      return;
-    }
-
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data && event.data.type === "GITHUB_CONNECTED") {
-        window.removeEventListener("message", handleMessage);
-        toast.success("GitHub підключено успішно!");
-        if (user?.$id) {
-          loadGithubProfile(user.$id);
-        }
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-
-    const checkClosed = setInterval(() => {
-      if (popupWindow.closed) {
-        clearInterval(checkClosed);
-        window.removeEventListener("message", handleMessage);
-      }
-    }, 1000);
-
+    // createOAuth2Token triggers a full-page redirect — code below won't run.
   } catch (error) {
     toast.error("Помилка підключення GitHub");
   }
