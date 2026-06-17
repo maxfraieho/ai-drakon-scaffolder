@@ -15,5 +15,5 @@ id = "d4fdc6c83e994032a51be4542b245e27"
 preview_id = "d4fdc6c83e994032a51be4542b245e27"
 
 [[migrations]]
-tag = "v1"
+tag = "v2-delete-docs-do"
 deleted_classes = ["Docs"]
