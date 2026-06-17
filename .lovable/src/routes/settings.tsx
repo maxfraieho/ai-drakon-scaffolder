@@ -321,6 +321,49 @@ try {
 }
 };
 
+const [savingSettingsPat, setSavingSettingsPat] = useState(false);
+
+const saveGithubPat = async () => {
+  const t = settings.github.token.trim();
+  setSavingSettingsPat(true);
+  try {
+    if (t) {
+      const resp = await fetch("https://api.github.com/user", {
+        headers: { Authorization: `Bearer ${t}`, Accept: "application/vnd.github+json" },
+      });
+      if (!resp.ok) throw new Error("Невалідний токен");
+      const ghUser = await resp.json();
+      const updated = { ...settings, github: { ...settings.github, token: t } };
+      setSettings(updated);
+      writeSettings(updated);
+      // Save to Appwrite user_profiles for cross-device sync
+      if (user?.$id) {
+        try {
+          await databases.createDocument("ai-drakon", "user_profiles", user.$id, { githubToken: t, githubLogin: ghUser.login });
+        } catch {
+          try { await databases.updateDocument("ai-drakon", "user_profiles", user.$id, { githubToken: t, githubLogin: ghUser.login }); } catch {}
+        }
+      }
+      setGithubConnected(true);
+      setGithubUserLogin(ghUser.login);
+      setGithubStatus({ type: "success", text: `Підключено: @${ghUser.login}` });
+      toast.success(`GitHub підключено: ${ghUser.login}`);
+    } else {
+      const updated = { ...settings, github: { ...settings.github, token: "" } };
+      setSettings(updated);
+      writeSettings(updated);
+      setGithubConnected(false);
+      setGithubUserLogin(null);
+      setGithubStatus({ type: "idle", text: "Не перевірено" });
+      toast.success("GitHub токен видалено");
+    }
+  } catch (e) {
+    toast.error(e instanceof Error ? e.message : "Помилка");
+  } finally {
+    setSavingSettingsPat(false);
+  }
+};
+
 const verifyGithub = async () => {
 if (!settings.github.token.trim()) {
   setGithubStatus({ type: "error", text: "Введіть Personal Access Token" });
@@ -616,17 +659,22 @@ aria-label="Toggle token visibility"
 <p className="text-xs text-muted-foreground">Потрібні права: repo (read + write
 contents)</p>
 <a
-href="https://github.com/settings/tokens/new"
+href="https://github.com/settings/tokens/new?scopes=repo&description=AI-DRAKON"
 target="_blank"
 rel="noreferrer"
 className="inline-flex items-center gap-1 text-xs text-primary"
 >
-Створити токен
+Створити токен (scope: repo)
 <ExternalLink className="h-3.5 w-3.5" />
 </a>
 </div>
 
 <div className="flex flex-wrap items-center gap-2">
+<Button type="button" onClick={() => void saveGithubPat()}
+disabled={savingSettingsPat}>
+{savingSettingsPat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+{savingSettingsPat ? "Збереження..." : "Зберегти токен"}
+</Button>
 <Button type="button" variant="outline" onClick={verifyGithub}
 disabled={isCheckingGithub}>
 <RefreshCw className="mr-2 h-4 w-4" />

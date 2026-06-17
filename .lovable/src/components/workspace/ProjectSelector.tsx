@@ -51,6 +51,44 @@ export function ProjectSelector({ withDialogs = true }: { withDialogs?: boolean 
   const [searchResults, setSearchResults] = useState<GhRepo[]>([]);
   const [searchError, setSearchError] = useState("");
 
+  const [patInput, setPatInput] = useState("");
+  const [savingPat, setSavingPat] = useState(false);
+
+  const savePatToken = async () => {
+    const t = patInput.trim();
+    if (!t) return;
+    setSavingPat(true);
+    try {
+      // Validate token with GitHub API
+      const resp = await fetch("https://api.github.com/user", {
+        headers: { Authorization: `Bearer ${t}`, Accept: "application/vnd.github+json" },
+      });
+      if (!resp.ok) throw new Error("Невалідний токен");
+      const ghUser = await resp.json();
+      // Save to localStorage
+      const s = readSettings();
+      writeSettings({ ...s, github: { ...s.github, token: t } });
+      // Save to Appwrite user_profiles for cross-device sync
+      try {
+        const session = await account.getSession("current");
+        const userId = session.userId;
+        try {
+          await databases.createDocument("ai-drakon", "user_profiles", userId, { githubToken: t, githubLogin: ghUser.login || "" });
+        } catch {
+          try { await databases.updateDocument("ai-drakon", "user_profiles", userId, { githubToken: t, githubLogin: ghUser.login || "" }); } catch {}
+        }
+      } catch {}
+      setPatInput("");
+      setSearchError("");
+      toast.success(`GitHub підключено: ${ghUser.login}`);
+      void loadUserRepos(); // Reload repos
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Помилка");
+    } finally {
+      setSavingPat(false);
+    }
+  };
+
   useEffect(() => {
     const openManager = () => setManagerOpen(true);
     const openAdd = () => { setManagerOpen(false); setAddOpen(true); };
@@ -325,18 +363,36 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
             </div>
           )}
           {!searching && searchError === "__no_token__" && (
-            <div className="flex flex-col gap-2 items-center py-4">
-              <p className="text-[10px] text-[var(--text-muted)] font-mono text-center">GitHub токен не налаштовано</p>
-              <button
-                type="button"
-                onClick={() => {
-                  setAddOpen(false);
-                  document.dispatchEvent(new CustomEvent("open-settings", { detail: { tab: "github" } }));
-                }}
-                className="font-mono text-[10px] text-[var(--accent-amber)] underline hover:no-underline"
+            <div className="flex flex-col gap-3 p-4">
+              <p className="text-[11px] text-[var(--text-muted)] font-mono text-center">
+                Потрібен GitHub токен для доступу до репозиторіїв
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  placeholder="ghp_xxxxxxxxxxxx"
+                  value={patInput}
+                  onChange={(e) => setPatInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && void savePatToken()}
+                  className="font-mono text-[11px] bg-[var(--bg-base)] border-[var(--border-subtle)] h-8"
+                />
+                <Button
+                  size="sm"
+                  onClick={() => void savePatToken()}
+                  disabled={savingPat || !patInput.trim()}
+                  className="font-mono text-[10px] bg-[var(--accent-amber)] text-black h-8 shrink-0"
+                >
+                  {savingPat ? <Loader2 className="h-3 w-3 animate-spin" /> : "OK"}
+                </Button>
+              </div>
+              <a
+                href="https://github.com/settings/tokens/new?scopes=repo&description=AI-DRAKON"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-mono text-[9px] text-[var(--accent-amber)] underline text-center hover:no-underline"
               >
-                Налаштувати токен → Settings
-              </button>
+                Створити токен на GitHub (scope: repo) →
+              </a>
             </div>
           )}
           {!searching && searchError && searchError !== "__no_token__" && (
