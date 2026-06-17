@@ -3275,7 +3275,7 @@ async function handleNotesBuildSemanticGraph(request, env) {
         'X-Appwrite-Key': apiKey,
       },
       body: JSON.stringify({
-        async: true,
+        async: false,
         body: JSON.stringify(graphBody),
       }),
     }
@@ -3287,11 +3287,13 @@ async function handleNotesBuildSemanticGraph(request, env) {
   }
 
   const execData = await execRes.json();
-  return jsonResponse({
-    status: 'accepted',
-    execution_id: execData.$id,
-    message: 'Semantic graph build started. Poll /v1/notes/semantic-graph-status?execution_id=...',
-  });
+  if (execData.status === 'failed') {
+    return errorResponse('Function failed: ' + (execData.errors || execData.responseBody || ''), 502);
+  }
+  let fnResult;
+  try { fnResult = JSON.parse(execData.responseBody || '{}'); }
+  catch (_) { fnResult = { success: false, error: 'Invalid function response' }; }
+  return jsonResponse(fnResult);
 }
 
 async function handleSemanticGraphStatus(request, env) {
