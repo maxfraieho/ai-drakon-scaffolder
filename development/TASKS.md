@@ -24305,7 +24305,53 @@ curl -s https://architect-agent.exodus.pp.ua/he
 - Retrieval: BM25 top-20 → cosine similarity re-rank → 1-hop wiki link expansion → top-5
 - При < 10K docs: Float32Array cosine в CF Worker < 5ms, vector DB не потрібен
 
-### Крок 1 — Appwrite Collection (Q створить вручну в Console)
+### Крок 1 — Appwrite Collection (створити через Appwrite REST API)
+
+AGY виконує локально в Termux:
+
+```bash
+DB="default"
+PROJECT="6a23420a003a04b4997b"
+KEY="standard_33aa94e5f182d1f28c64d88135f2972f6e56a67ab0a63a369bc0e1bfb2be3fff5dd929e7f72565b22d92660e686a1ec78c649279fe8eb63dc0e6fb0db5dea63fbc7d3031e23410380cbfcf6392c2e795b1411f858542ce689b00c8dba28a91138da2b35d1decc4d0f8e9dd0382a6190f052e81593b93c3c08d280eb9fc2fbb83"
+BASE="https://fra.cloud.appwrite.io/v1"
+
+# 1. Create collection
+curl -sf -X POST "$BASE/databases/$DB/collections" \
+  -H "X-Appwrite-Project: $PROJECT" -H "X-Appwrite-Key: $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"collectionId":"kb_embeddings","name":"KB Embeddings","permissions":[]}'
+
+# Wait for collection to be ready
+sleep 2
+
+# 2. Attributes
+for ATTR in \
+  '{"key":"project","size":64,"required":true}' \
+  '{"key":"slug","size":256,"required":true}' \
+  '{"key":"content_hash","size":64,"required":true}' \
+  '{"key":"title","size":512,"required":false}' \
+  '{"key":"graph_neighbors","size":4000,"required":false}' \
+  '{"key":"embedding","size":20000,"required":false}'; do
+  curl -sf -X POST "$BASE/databases/$DB/collections/kb_embeddings/attributes/string" \
+    -H "X-Appwrite-Project: $PROJECT" -H "X-Appwrite-Key: $KEY" \
+    -H "Content-Type: application/json" -d "$ATTR" && sleep 1
+done
+
+curl -sf -X POST "$BASE/databases/$DB/collections/kb_embeddings/attributes/datetime" \
+  -H "X-Appwrite-Project: $PROJECT" -H "X-Appwrite-Key: $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"key":"updated_at","required":false}'
+
+sleep 2
+
+# 3. Index
+curl -sf -X POST "$BASE/databases/$DB/collections/kb_embeddings/indexes" \
+  -H "X-Appwrite-Project: $PROJECT" -H "X-Appwrite-Key: $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"key":"project_idx","type":"key","attributes":["project"]}'
+
+echo "Collection kb_embeddings created"
+```
 
 **Collection ID:** `kb_embeddings`  
 **Attributes:**
