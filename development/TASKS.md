@@ -24618,9 +24618,9 @@ CF Worker (`cloudflare-worker/worker-mcp-drakon.js`) зараз у `handleNotesB
 Треба замінити на виклик нової Appwrite Function async.
 
 ### Змінні (Q заповнить)
-- `SEMANTIC_GRAPH_FUNCTION_ID` = `_______` (ID функції з TASK-245)
+- `SEMANTIC_GRAPH_FUNCTION_ID` = `6a32155a00077735bcf6`
 - `APPWRITE_PROJECT_ID` = `6a23420a003a04b4997b`
-- `APPWRITE_API_KEY` = `_______` (Q створить server API key в Console → API Keys)
+- `APPWRITE_API_KEY` = (на dev сервері: /home/vokov/.env → APPWRITE_API_KEY)
 
 ### Крок 1 — Знайти handleNotesBuildSemanticGraph
 
