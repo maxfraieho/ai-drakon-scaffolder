@@ -24220,3 +24220,108 @@ SESSION:<дата>|TASK-244:switch-clients-llm-gateway|agents:3xFlue+3xPython|ga
 ```
 
 [ ] TASK-244
+
+---
+
+## TASK-244b: Phase 1 — Switch all clients to llm-gateway (ACTIVE)
+
+**Виконавець: AGY**
+**Gateway URL (verified working):** `https://6a3200cd00182e876067.fra.appwrite.run`
+**Auth token:** `freecc`
+
+### Що зробити
+
+#### 1. Оновити Flue агенти (3 файли — зміна default URL у source code)
+
+Для кожного з трьох файлів замінити рядок з `agy3.exodus.pp.ua` на gateway URL:
+
+**Файл A:** `services/architect-agent-flue/lib/llm-client.ts`
+**Файл B:** `services/drakon-agent-flue/lib/llm-client.ts`
+**Файл C:** `services/docs-agent-flue/lib/llm-client.ts`
+
+У кожному файлі знайти рядок:
+```
+let baseUrl = proxyUrl || resolvedEnv?.PROXY_URL || 'https://agy3.exodus.pp.ua/v1/chat/completions';
+```
+Замінити на:
+```
+let baseUrl = proxyUrl || resolvedEnv?.PROXY_URL || 'https://6a3200cd00182e876067.fra.appwrite.run/v1/chat/completions';
+```
+
+Також sync: `cp services/architect-agent-flue/lib/llm-client.ts .lovable/services/architect-agent-flue/lib/llm-client.ts` (аналогічно для drakon і docs).
+
+#### 2. Оновити Python агенти (SSH на dev-сервер 192.168.3.184)
+
+```bash
+# SSH: sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184
+
+# Оновити PROXY_URL у .env кожного Python агента:
+sed -i 's|^PROXY_URL=.*|PROXY_URL=https://6a3200cd00182e876067.fra.appwrite.run|' \
+  /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/.env
+
+sed -i 's|^PROXY_URL=.*|PROXY_URL=https://6a3200cd00182e876067.fra.appwrite.run|' \
+  /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/.env
+
+sed -i 's|^PROXY_URL=.*|PROXY_URL=https://6a3200cd00182e876067.fra.appwrite.run|' \
+  /home/vokov/projects/ai-drakon-scaffolder/services/docs-agent/.env
+
+# Якщо PROXY_URL рядка нема — додати:
+grep -q "^PROXY_URL=" /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/.env || \
+  echo "PROXY_URL=https://6a3200cd00182e876067.fra.appwrite.run" >> /home/vokov/projects/ai-drakon-scaffolder/services/architect-agent/.env
+
+grep -q "^PROXY_URL=" /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/.env || \
+  echo "PROXY_URL=https://6a3200cd00182e876067.fra.appwrite.run" >> /home/vokov/projects/ai-drakon-scaffolder/services/drakon-agent/.env
+
+grep -q "^PROXY_URL=" /home/vokov/projects/ai-drakon-scaffolder/services/docs-agent/.env || \
+  echo "PROXY_URL=https://6a3200cd00182e876067.fra.appwrite.run" >> /home/vokov/projects/ai-drakon-scaffolder/services/docs-agent/.env
+
+# Рестарт сервісів:
+echo '805235io.' | sudo -S rc-service ai-architect-agent restart || true
+echo '805235io.' | sudo -S rc-service ai-drakon-agent restart || true
+echo '805235io.' | sudo -S rc-service ai-docs-agent restart || true
+```
+
+#### 3. Верифікація
+
+```bash
+# Тест gateway напряму:
+curl -s --max-time 15 https://6a3200cd00182e876067.fra.appwrite.run/
+
+# Тест через Flue агенти (якщо є публічні health endpoints):
+curl -s https://architect-agent.exodus.pp.ua/health 2>/dev/null || echo "no public endpoint"
+
+# Тест LLM через gateway:
+curl -s --max-time 30 -X POST https://6a3200cd00182e876067.fra.appwrite.run/v1/chat/completions \
+  -H "Authorization: Bearer freecc" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"test","messages":[{"role":"user","content":"ping"}],"max_tokens":5}'
+```
+
+#### 4. Git
+
+```bash
+git add services/architect-agent-flue/lib/llm-client.ts \
+        services/drakon-agent-flue/lib/llm-client.ts \
+        services/docs-agent-flue/lib/llm-client.ts \
+        .lovable/services/architect-agent-flue/lib/llm-client.ts \
+        .lovable/services/drakon-agent-flue/lib/llm-client.ts \
+        .lovable/services/docs-agent-flue/lib/llm-client.ts
+git commit -m "feat(llm-gateway): switch all Flue agents to Appwrite llm-gateway"
+git push origin main
+```
+
+### НЕ робити
+- Не зупиняти `free-claude-code` — це окремий крок після 24год спостереження
+- Не чіпати `graph_loader.py` (він використовує `localhost:18880` — залишиться до Фази 3)
+
+### Критерій готовності
+- `curl https://6a3200cd00182e876067.fra.appwrite.run/` = `{"status":"ok",...}`
+- `git log origin/main -1` містить `feat(llm-gateway): switch all Flue agents`
+- Python агенти перезапущені з новим PROXY_URL
+
+### Diary
+```
+SESSION:<дата>|TASK-244b:switch-clients-llm-gateway|flue:3 files|python:.env x3|gateway:6a3200cd|commit:<hash>
+```
+
+[ ] TASK-244b
