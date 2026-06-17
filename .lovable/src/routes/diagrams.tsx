@@ -4,6 +4,7 @@ import { DiagramsPage } from "@/pages/DiagramsPage";
 import { useRequireAuth } from "@/lib/route-auth";
 import { account } from "@/lib/appwrite";
 import { setAccessToken } from "@/lib/auth";
+import { readSettings, writeSettings } from "@/lib/settings-storage";
 
 export const Route = createFileRoute("/diagrams")({
   component: DiagramsRoute,
@@ -25,7 +26,14 @@ function DiagramsRoute() {
 
     account
       .createSession(userId, secret)
-      .then(async () => {
+      .then(async (session) => {
+        // GitHub OAuth login — save provider token so repos load without PAT
+        if (session.provider === "github" && session.providerAccessToken) {
+          try {
+            const s = readSettings();
+            writeSettings({ ...s, github: { ...s.github, token: session.providerAccessToken } });
+          } catch (_) {}
+        }
         try {
           const jwtObj = await account.createJWT();
           setAccessToken(jwtObj.jwt);

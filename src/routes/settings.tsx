@@ -25,7 +25,7 @@ import { useAuth } from "@/context/AuthContext";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 import type { AppSettings } from "@/types/settings";
 import { useProject } from "@/context/ProjectContext";
-import { databases } from "@/lib/appwrite";
+import { account, databases } from "@/lib/appwrite";
 import { getAppwriteJwt } from "@/lib/appwrite-jwt";
 import { saveUserConfig, syncUserConfigToCloud } from "@/lib/user-config-api";
 
@@ -114,42 +114,50 @@ const checkGithubToken = async (token: string): Promise<boolean> => {
   return false;
 };
 
-const loadGithubProfile = (userId: string) => {
+const loadGithubProfile = async (userId: string) => {
   setIsLoadingProfile(true);
-  databases
-    .getDocument("ai-drakon", "user_profiles", userId)
-    .then(async (doc: any) => {
+  try {
+    // 1. Current Appwrite session — if user logged in via GitHub OAuth,
+    //    providerAccessToken IS the GitHub token; no PAT entry needed
+    try {
+      const session = await account.getSession("current");
+      if (session.provider === "github" && session.providerAccessToken) {
+        setSettings(prev => {
+          const updated = { ...prev, github: { ...prev.github, token: session.providerAccessToken } };
+          writeSettings(updated);
+          return updated;
+        });
+        await checkGithubToken(session.providerAccessToken);
+        return;
+      }
+    } catch (_) {}
+
+    // 2. user_profiles collection (saved via popup OAuth Worker)
+    try {
+      const doc: any = await databases.getDocument("ai-drakon", "user_profiles", userId);
       if (doc.githubToken) {
         setGithubConnected(true);
         setGithubUserLogin(doc.githubLogin || null);
-        // Auto-populate token so GitHub operations work without manual PAT
         setSettings(prev => {
           const updated = { ...prev, github: { ...prev.github, token: doc.githubToken } };
           writeSettings(updated);
           return updated;
         });
-      } else {
-        const localToken = readSettings().github.token;
-        if (localToken) {
-          await checkGithubToken(localToken);
-        } else {
-          setGithubConnected(false);
-          setGithubUserLogin(null);
-        }
+        return;
       }
-    })
-    .catch(async () => {
-      const localToken = readSettings().github.token;
-      if (localToken) {
-        await checkGithubToken(localToken);
-      } else {
-        setGithubConnected(false);
-        setGithubUserLogin(null);
-      }
-    })
-    .finally(() => {
-      setIsLoadingProfile(false);
-    });
+    } catch (_) {}
+
+    // 3. Locally stored token
+    const localToken = readSettings().github.token;
+    if (localToken) {
+      await checkGithubToken(localToken);
+    } else {
+      setGithubConnected(false);
+      setGithubUserLogin(null);
+    }
+  } finally {
+    setIsLoadingProfile(false);
+  }
 };
 
 useEffect(() => {
@@ -571,48 +579,14 @@ return (
         ) : (
           <div className="flex flex-col gap-4">
             <div className="rounded-md bg-muted/40 border border-border/50 px-4 py-3 text-sm text-muted-foreground">
-              <p className="font-medium text-foreground">GitHub Personal Access Token</p>
+              <p className="font-medium text-foreground">GitHub App OAuth</p>
               <p className="mt-1 text-xs">
-                Введіть GitHub PAT для доступу до репозиторіїв. Створіть токен на{" "}
-                <a
-                  href="https://github.com/settings/tokens/new?scopes=repo&description=AI-DRAKON"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline text-foreground hover:text-primary"
-                >
-                  github.com/settings/tokens
-                </a>{" "}
-                з доступом <code className="text-xs bg-muted px-1 rounded">repo</code>.
+                Підключіть свій обліковий запис GitHub, щоб отримати доступ до ваших репозиторіїв та комітів.
               </p>
             </div>
-            <div className="flex gap-2">
-              <Input
-                type="password"
-                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                value={settings.github.token}
-                onChange={(e) =>
-                  updateSettings((prev) => ({
-                    ...prev,
-                    github: { ...prev.github, token: e.target.value },
-                  }))
-                }
-                className="text-xs font-mono"
-              />
-              <Button
-                size="sm"
-                onClick={async () => {
-                  const ok = await checkGithubToken(settings.github.token);
-                  if (ok) {
-                    const updated = { ...settings, github: { ...settings.github, token: settings.github.token } };
-                    writeSettings(updated);
-                    toast.success("GitHub токен збережено");
-                  } else {
-                    toast.error("Невірний токен або немає доступу");
-                  }
-                }}
-                disabled={!settings.github.token.trim()}
-              >
-                Зберегти
+            <div>
+              <Button onClick={handleConnectGithub} size="sm">
+                Підключити GitHub
               </Button>
             </div>
           </div>
