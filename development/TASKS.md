@@ -24741,3 +24741,194 @@ SESSION:2026-06-17|TASK-249:oauth-incognito-fix|useRequireAuth-hook|9-routes|com
 ```
 
 [x] TASK-249
+
+---
+
+## TASK-250: Repo Selector Combobox з пошуком
+
+**!!IMPORTANT!! Run locally on AGY3 Termux — NOT on dev server**
+
+### Контекст
+Скріншоти показують: у діалозі "Додати репозиторій" юзер мусить вручну вводити `owner/repo`.
+Потрібен Command combobox з живим фільтром для 100+ репозиторіїв.
+
+Command (cmdk) компонент вже є: `src/components/ui/command.tsx`
+
+### Файли для зміни
+
+**Основний файл:** `src/components/workspace/ProjectSelector.tsx` (334 рядки)
+
+### Кроки виконання
+
+```bash
+# 1. Підготовка
+cd ~/workspace/ai-drakon-scaffolder
+git fetch origin
+git reset --hard origin/main
+git clean -fd
+
+# 2. Редагування файлу
+# (Claude Code редагує напряму)
+
+# 3. Верифікація
+NODE_OPTIONS=--max-old-space-size=900 npx tsc --noEmit
+
+# 4. Синхронізація .lovable
+cp src/components/workspace/ProjectSelector.tsx .lovable/src/components/workspace/ProjectSelector.tsx
+
+# 5. Коміт
+git add src/components/workspace/ProjectSelector.tsx .lovable/src/components/workspace/ProjectSelector.tsx
+git commit -m "feat(ui): repo selector — Command combobox з живим пошуком для 100+ repos"
+git push origin main
+```
+
+### Зміни в ProjectSelector.tsx
+
+**1. Додати імпорти** (після існуючих imports):
+```typescript
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+```
+
+**2. Додати стан** (всередині компонента після існуючих useState):
+```typescript
+const [comboFilter, setComboFilter] = useState("");
+```
+
+**3. Оновити `useEffect` для open-add-repo** — автозавантаження репо при відкритті:
+```typescript
+const openAdd = () => {
+  setManagerOpen(false);
+  setAddOpen(true);
+  void loadUserRepos();  // ← додати цей рядок
+};
+```
+
+**4. Замінити вміст `<DialogContent>` для addOpen Dialog** новим JSX:
+
+Замінити все між `<DialogContent ...>` і `</DialogContent>` на:
+```tsx
+<DialogContent className="sm:max-w-md bg-[var(--bg-surface)] border-[var(--border-subtle)] text-[var(--text-primary)]">
+  <DialogHeader>
+    <DialogTitle className="font-mono text-sm">ДОДАТИ РЕПОЗИТОРІЙ</DialogTitle>
+    <DialogDescription className="font-mono text-[11px] text-[var(--text-muted)]">
+      Введіть назву або оберіть з вашого списку
+    </DialogDescription>
+  </DialogHeader>
+  <div className="flex flex-col gap-3 py-2">
+    <Command className="rounded-[var(--radius-sm)] border border-[var(--border-subtle)] bg-[var(--bg-base)]">
+      <CommandInput
+        placeholder="Пошук репозиторію..."
+        value={comboFilter}
+        onValueChange={setComboFilter}
+        className="font-mono text-[12px]"
+        onFocus={() => { if (searchResults.length === 0 && !searching) void loadUserRepos(); }}
+      />
+      <CommandList className="max-h-[280px]">
+        {searching && (
+          <div className="flex items-center justify-center py-4 gap-2">
+            <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)]" />
+            <span className="font-mono text-[10px] text-[var(--text-muted)]">Завантаження...</span>
+          </div>
+        )}
+        {!searching && searchError === "__no_token__" && (
+          <div className="flex flex-col gap-2 items-center py-4">
+            <p className="text-[10px] text-[var(--text-muted)] font-mono text-center">GitHub токен не налаштовано</p>
+            <button
+              type="button"
+              onClick={() => { setAddOpen(false); document.dispatchEvent(new CustomEvent("open-settings", { detail: { tab: "github" } })); }}
+              className="font-mono text-[10px] text-[var(--accent-amber)] underline hover:no-underline"
+            >
+              Налаштувати токен → Settings
+            </button>
+          </div>
+        )}
+        {!searching && searchError && searchError !== "__no_token__" && (
+          <CommandEmpty className="font-mono text-[11px] text-red-400 py-3 text-center">{searchError}</CommandEmpty>
+        )}
+        {!searching && searchResults.length > 0 && (
+          <CommandGroup>
+            {searchResults
+              .filter(r =>
+                comboFilter === "" ||
+                r.full_name.toLowerCase().includes(comboFilter.toLowerCase()) ||
+                (r.description ?? "").toLowerCase().includes(comboFilter.toLowerCase())
+              )
+              .map((repo) => (
+                <CommandItem
+                  key={repo.full_name}
+                  value={repo.full_name}
+                  onSelect={() => pickRepo(repo)}
+                  className="flex flex-col items-start gap-0.5 cursor-pointer font-mono"
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <span className="flex-1 text-[12px] text-[var(--text-primary)]">{repo.full_name}</span>
+                    {repo.private && (
+                      <span className="text-[9px] px-1 rounded bg-[var(--border-subtle)] text-[var(--text-muted)]">private</span>
+                    )}
+                    {repo.language && (
+                      <span className="text-[9px] text-[var(--text-muted)]">{repo.language}</span>
+                    )}
+                  </div>
+                  {repo.description && (
+                    <span className="text-[10px] text-[var(--text-muted)] truncate w-full">{repo.description}</span>
+                  )}
+                </CommandItem>
+              ))}
+            {comboFilter !== "" && !searchResults.some(r => r.full_name.toLowerCase().includes(comboFilter.toLowerCase())) && (
+              <CommandItem
+                value={comboFilter}
+                onSelect={async () => { setRepoInput(comboFilter); await searchRepo(); }}
+                className="font-mono text-[11px] cursor-pointer"
+              >
+                Знайти «{comboFilter}» на GitHub →
+              </CommandItem>
+            )}
+          </CommandGroup>
+        )}
+      </CommandList>
+    </Command>
+    <div className="flex gap-2">
+      <Input
+        placeholder="owner/repo (вручну)"
+        value={repoInput}
+        onChange={(e) => setRepoInput(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && void searchRepo()}
+        className="font-mono text-[11px] bg-[var(--bg-base)] border-[var(--border-subtle)]"
+      />
+      <Button
+        size="sm"
+        onClick={() => void searchRepo()}
+        disabled={searching || !repoInput.trim()}
+        className="font-mono text-[10px] bg-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/90 text-black"
+      >
+        Знайти
+      </Button>
+    </div>
+  </div>
+</DialogContent>
+```
+
+### Верифікація
+```bash
+NODE_OPTIONS=--max-old-space-size=900 npx tsc --noEmit
+# Must exit 0, zero errors
+```
+
+### Commit message
+```
+feat(ui): repo selector — Command combobox з живим пошуком для 100+ repos
+```
+
+### Diary
+```
+SESSION:2026-06-17|TASK-250:repo-combobox|ProjectSelector→Command-cmdk|filter-live|commit:<hash>
+```
+
+[ ] TASK-250
