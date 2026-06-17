@@ -2766,7 +2766,8 @@ async function handleKbIndex(request, env) {
   // Appwrite Config
   const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
   const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
-  const appwriteApiKey = env.APPWRITE_API_KEY || 'standard_33aa94e5f182d1f28c64d88135f2972f6e56a67ab0a63a369bc0e1bfb2be3fff5dd929e7f72565b22d92660e686a1ec78c649279fe8eb63dc0e6fb0db5dea63fbc7d3031e23410380cbfcf6392c2e795b1411f858542ce689b00c8dba28a91138da2b35d1decc4d0f8e9dd0382a6190f052e81593b93c3c08d280eb9fc2fbb83';
+  const appwriteApiKey = env.APPWRITE_API_KEY;
+  if (!appwriteApiKey) return errorResponse('APPWRITE_API_KEY secret not configured', 500);
   const dbId = env.APPWRITE_DATABASE_ID || 'ai-drakon';
   const collectionId = env.APPWRITE_KB_COLLECTION_ID || 'kb_embeddings';
 
@@ -2947,7 +2948,8 @@ async function handleKbSearch(request, env) {
   // 2. Fetch all embeddings for project from Appwrite kb_embeddings
   const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
   const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
-  const appwriteApiKey = env.APPWRITE_API_KEY || 'standard_33aa94e5f182d1f28c64d88135f2972f6e56a67ab0a63a369bc0e1bfb2be3fff5dd929e7f72565b22d92660e686a1ec78c649279fe8eb63dc0e6fb0db5dea63fbc7d3031e23410380cbfcf6392c2e795b1411f858542ce689b00c8dba28a91138da2b35d1decc4d0f8e9dd0382a6190f052e81593b93c3c08d280eb9fc2fbb83';
+  const appwriteApiKey = env.APPWRITE_API_KEY;
+  if (!appwriteApiKey) return errorResponse('APPWRITE_API_KEY secret not configured', 500);
   const dbId = env.APPWRITE_DATABASE_ID || 'ai-drakon';
   const collectionId = env.APPWRITE_KB_COLLECTION_ID || 'kb_embeddings';
 
