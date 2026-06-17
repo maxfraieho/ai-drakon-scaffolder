@@ -24219,7 +24219,7 @@ curl -X POST GATEWAY_URL/v1/chat/completions \
 SESSION:<дата>|TASK-244:switch-clients-llm-gateway|agents:3xFlue+3xPython|gateway:<url>|commit:<hash>
 ```
 
-[ ] TASK-244
+[x] TASK-244  # superseded by TASK-244b
 
 ---
 
@@ -24325,3 +24325,451 @@ SESSION:<дата>|TASK-244b:switch-clients-llm-gateway|flue:3 files|python:.env
 ```
 
 [x] TASK-244b
+
+---
+
+## TASK-245: Phase 2 — Appwrite Function `semantic-graph` (implement + deploy)
+
+**Виконавець: AGY**
+**Залежить від:** TASK-244b (done) — llm-gateway живий на `https://6a3200cd00182e876067.fra.appwrite.run`
+**!!IMPORTANT!! Run locally on Termux (AGY). NO SSH to dev server needed.**
+
+### Контекст
+Поточна реалізація semantic graph (`services/docs-agent/semantic_graph.py`) читає і пише файли напряму на dev-сервері. Треба перенести логіку в Appwrite Function, яка:
+1. Читає статті з GitHub API (замість локальної ФС)
+2. Виклик llm-gateway для LLM
+3. Записує оновлені файли назад через GitHub API
+4. Працює async (900s ліміт Appwrite)
+
+### Крок 1 — Scaffold `services/semantic-graph/`
+
+Створити структуру в репо (локально на AGY, workspace: `~/workspace/ai-drakon-scaffolder`):
+
+```
+services/semantic-graph/
+├── package.json
+├── tsconfig.json
+└── src/
+    ├── main.ts      — точка входу (Appwrite Function)
+    ├── github.ts    — GitHubAPI клас (скопіювати з docs-agent-flue/lib/github-api.ts)
+    ├── collect.ts   — збір статей з GitHub
+    ├── extract.ts   — prompt + llm-gateway + parse rels
+    ├── budget.ts    — enforce_link_budget (max 2 outgoing per node)
+    └── render.ts    — render_semantic_block + upsert_semantic_section
+```
+
+**package.json** (ідентично до llm-gateway):
+```json
+{
+  "name": "semantic-graph",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node node_modules/typescript/bin/tsc --outDir dist",
+    "start": "node dist/main.js"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.0.0"
+  }
+}
+```
+
+**tsconfig.json** (ідентично до llm-gateway):
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+    "outDir": "./dist",
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  "include": ["src/**/*"]
+}
+```
+
+### Крок 2 — github.ts
+
+Скопіювати `services/docs-agent-flue/lib/github-api.ts` як `src/github.ts`.
+Додати метод `listTree(path: string): Promise<{path: string; sha: string; type: string}[]>` для рекурсивного списку файлів:
+```typescript
+async listTree(treePath: string): Promise<{path: string; sha: string; type: string}[]> {
+  // GET /repos/{repo}/git/trees/{branch}?recursive=1
+  const data = await this.request(`/git/trees/${this.branch}?recursive=1`);
+  const prefix = treePath.replace(/\/$/, '') + '/';
+  return (data.tree || []).filter((f: any) => f.path.startsWith(prefix) && f.type === 'blob');
+}
+```
+
+### Крок 3 — collect.ts
+
+```typescript
+import { GitHubAPI } from './github.js';
+
+export interface Article {
+  slug: string;      // relative path without .md, e.g. "folder/article-name"
+  title: string;     // from first # heading or filename
+  folder: string;    // subfolder, e.g. "folder" or "" for root
+  summary: string;   // first 600 chars of body
+}
+
+export async function collectArticles(gh: GitHubAPI, docsPath: string, project?: string): Promise<Article[]> {
+  const root = project ? `${docsPath}/${project}` : docsPath;
+  const files = await gh.listTree(root);
+  const mdFiles = files.filter(f => f.path.endsWith('.md') && !f.path.includes('/_') && !f.path.endsWith('/_INDEX.md'));
+
+  const articles: Article[] = [];
+  for (const file of mdFiles) {
+    const { content } = await gh.getFile(file.path);
+    const relPath = file.path.replace(`${root}/`, '');
+    const slug = relPath.replace(/\.md$/, '');
+    const folder = slug.includes('/') ? slug.split('/')[0] : '';
+
+    // Extract title from first # heading
+    const titleMatch = content.match(/^#\s+(.+)$/m);
+    const title = titleMatch ? titleMatch[1].trim() : slug;
+
+    // Summary: first 600 chars of content after stripping frontmatter
+    const body = content.replace(/^---[\s\S]*?---\n/, '').trim();
+    const summary = body.slice(0, 600);
+
+    articles.push({ slug, title, folder, summary });
+  }
+  return articles;
+}
+```
+
+### Крок 4 — extract.ts
+
+Логіка побудови промпту і виклику llm-gateway. Перенести з `semantic_graph.py`:
+
+- `build_extraction_prompt(articles)` → system + user prompts (Ukrainian, як в Python)
+- `callLLM(messages, gatewayUrl, authToken)` → POST до llm-gateway `/v1/chat/completions`
+- `parseRelationships(llmResponse, articles)` → parse JSON `{"relationships":[{"source_id","link","target_id"}]}`; validate IDs; reject same-folder links
+
+Промпт (переклад з Python, дослівно):
+- System: "Ти — помічник для побудови семантичного графу. Повертай тільки валідний JSON."
+- User: список статей (id=slug, title, folder, summary), потім задача: знайти значущі семантичні зв'язки між статтями, відповісти JSON `{"relationships":[{"source_id":"...","link":"...","target_id":"..."}]}`
+
+Перевірка відповіді:
+- parse JSON (може бути в ```json ... ``` блоці)
+- кожен rel: source_id і target_id мають бути valid slugs з articles list
+- якщо source_id.folder === target_id.folder → skip (same-folder link blocked)
+
+### Крок 5 — budget.ts
+
+```typescript
+export function enforceLinkBudget(
+  rels: {source_id: string; link: string; target_id: string}[],
+  maxOutgoing: number = 2
+): {source_id: string; link: string; target_id: string}[] {
+  const counts: Record<string, number> = {};
+  return rels.filter(r => {
+    counts[r.source_id] = (counts[r.source_id] || 0) + 1;
+    return counts[r.source_id] <= maxOutgoing;
+  });
+}
+```
+
+### Крок 6 — render.ts
+
+```typescript
+// renderSemanticBlock: creates "## Семантичні зв'язки" markdown section
+export function renderSemanticBlock(rels: {link: string; target_id: string}[], articles: Article[]): string {
+  if (rels.length === 0) return '';
+  const lines = rels.map(r => {
+    const target = articles.find(a => a.slug === r.target_id);
+    const title = target?.title || r.target_id;
+    return `- ${r.link}: [[${r.target_id}|${title}]]`;
+  });
+  return `## Семантичні зв'язки\n\n${lines.join('\n')}\n`;
+}
+
+// upsertSemanticSection: inserts or replaces "## Семантичні зв'язки" section in markdown content
+export function upsertSemanticSection(content: string, newBlock: string): string {
+  const sectionRegex = /\n## Семантичні зв'язки[\s\S]*?(?=\n## |\n---|\n#[^#]|$)/;
+  if (sectionRegex.test(content)) {
+    return content.replace(sectionRegex, newBlock ? `\n${newBlock}` : '');
+  }
+  return content.trimEnd() + '\n\n' + newBlock;
+}
+```
+
+### Крок 7 — main.ts
+
+```typescript
+import { Client, Functions } from 'node-appwrite';
+```
+Ні! Appwrite Functions entry point не використовує SDK — просто `export default async (context: any)`:
+
+```typescript
+export default async (context: any) => {
+  const { req, res, log, error } = context;
+  
+  const env = process.env as Record<string, string | undefined>;
+  const gatewayUrl = env.LLM_GATEWAY_URL || 'https://6a3200cd00182e876067.fra.appwrite.run';
+  const gatewayToken = env.LLM_GATEWAY_TOKEN || 'freecc';
+  const githubToken = env.GITHUB_TOKEN || '';
+  const githubRepo = env.GITHUB_REPO || 'maxfraieho/ai-drakon-scaffolder';
+  const githubBranch = env.GITHUB_BRANCH || 'main';
+  const docsPath = env.DOCS_PATH || 'docs';
+
+  if (req.method === 'GET' && req.path === '/health') {
+    return res.json({ status: 'ok', service: 'semantic-graph' });
+  }
+
+  const body = req.body ? JSON.parse(req.body) : {};
+  const project: string = body.project || '';
+  const apply: boolean = body.apply !== false;  // default: true (write files)
+  const model: string = body.model || '';
+
+  // ... collect → extract → budget → render → (if apply) write → return summary
+}
+```
+
+Виклик llm-gateway (OpenAI format):
+```typescript
+const resp = await fetch(`${gatewayUrl}/v1/chat/completions`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${gatewayToken}`
+  },
+  body: JSON.stringify({
+    model: model || 'auto',
+    messages: [...promptMessages],
+    max_tokens: 2000,
+    temperature: 0.3
+  })
+});
+```
+
+### Крок 8 — Build + sync
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder/services/semantic-graph
+npm install
+npm run build   # verify no TS errors
+
+# Sync to .lovable
+cp -r ~/workspace/ai-drakon-scaffolder/services/semantic-graph \
+      ~/workspace/ai-drakon-scaffolder/.lovable/services/semantic-graph
+```
+
+### Крок 9 — Appwrite deployment
+
+**Appwrite Console** (Q зробить це вручну після TASK-245):
+- Functions → Create Function
+- Name: `semantic-graph`
+- Runtime: Node.js 18
+- Root Directory: `services/semantic-graph`
+- Entry point: `dist/main.js`
+- Build command: `npm install && npm run build`
+- Env vars:
+  - `LLM_GATEWAY_URL` = `https://6a3200cd00182e876067.fra.appwrite.run`
+  - `LLM_GATEWAY_TOKEN` = `freecc`
+  - `GITHUB_TOKEN` = (Q надасть)
+  - `GITHUB_REPO` = `maxfraieho/ai-drakon-scaffolder`
+  - `GITHUB_BRANCH` = `main`
+  - `DOCS_PATH` = `docs`
+- Execute access: Any (for testing) → потім JWT-only
+- Timeout: 900 (async)
+
+**AGY:** після деплою — записати у diary ID функції (вигляд `6a...`).
+
+### Крок 10 — Git
+
+```bash
+cd ~/workspace/ai-drakon-scaffolder
+git add services/semantic-graph/ .lovable/services/semantic-graph/
+git commit -m "feat(semantic-graph): Appwrite Function scaffold — GitHub API + llm-gateway"
+# Оновити TASK-245 → [x]
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-245 done"
+git push origin main
+```
+
+### Diary
+```
+SESSION:2026-06-17|TASK-245:semantic-graph-scaffold|files:main+github+collect+extract+budget+render|commit:<hash>
+```
+
+[ ] TASK-245
+
+---
+
+## TASK-246: Phase 2 — Update CF Worker: semantic-graph → Appwrite async
+
+**Виконавець: AGY**
+**Залежить від:** TASK-245 (done) + Q задеплоїв функцію і надав FUNCTION_ID
+**!!IMPORTANT!! Run locally on Termux (AGY).**
+
+### Контекст
+CF Worker (`cloudflare-worker/worker-mcp-drakon.js`) зараз у `handleNotesBuildSemanticGraph`
+проксює запит на dev-сервер Python docs-agent з таймаутом 120s.
+Треба замінити на виклик нової Appwrite Function async.
+
+### Змінні (Q заповнить)
+- `SEMANTIC_GRAPH_FUNCTION_ID` = `_______` (ID функції з TASK-245)
+- `APPWRITE_PROJECT_ID` = `6a23420a003a04b4997b`
+- `APPWRITE_API_KEY` = `_______` (Q створить server API key в Console → API Keys)
+
+### Крок 1 — Знайти handleNotesBuildSemanticGraph
+
+У файлі `cloudflare-worker/worker-mcp-drakon.js`:
+```bash
+grep -n "handleNotesBuildSemanticGraph\|build-semantic-graph" cloudflare-worker/worker-mcp-drakon.js
+```
+Очікувані лінії: ~2894-2925.
+
+### Крок 2 — Замінити функцію
+
+Замінити весь блок `async function handleNotesBuildSemanticGraph(request, env)` на:
+
+```javascript
+async function handleNotesBuildSemanticGraph(request, env) {
+  const authHeader = request.headers.get('Authorization') || '';
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  if (!token) return errorResponse('Authorization required', 401);
+  try {
+    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
+  } catch {
+    return errorResponse('Invalid or expired token', 401);
+  }
+
+  const url = new URL(request.url);
+  const project = url.searchParams.get('project') || '';
+  const apply = url.searchParams.get('apply') || 'true';
+  const model = url.searchParams.get('model') || '';
+
+  const functionId = env.SEMANTIC_GRAPH_FUNCTION_ID;
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+
+  if (!functionId || !apiKey) {
+    return errorResponse('SEMANTIC_GRAPH_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
+  }
+
+  const execRes = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+      body: JSON.stringify({
+        async: true,
+        body: JSON.stringify({ project, apply: apply === 'true', model }),
+      }),
+    }
+  );
+
+  if (!execRes.ok) {
+    const errText = await execRes.text().catch(() => '');
+    return errorResponse(`Appwrite execution failed: ${execRes.status} ${errText}`, 502);
+  }
+
+  const execData = await execRes.json();
+  return jsonResponse({
+    status: 'accepted',
+    execution_id: execData.$id,
+    message: 'Semantic graph build started. Poll /v1/notes/semantic-graph-status?execution_id=...',
+  });
+}
+
+async function handleSemanticGraphStatus(request, env) {
+  const url = new URL(request.url);
+  const executionId = url.searchParams.get('execution_id');
+  if (!executionId) return errorResponse('execution_id required', 400);
+
+  const functionId = env.SEMANTIC_GRAPH_FUNCTION_ID;
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+
+  if (!functionId || !apiKey) return errorResponse('not configured', 503);
+
+  const res = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    {
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+    }
+  );
+
+  if (!res.ok) return errorResponse(`Appwrite status check failed: ${res.status}`, 502);
+  const data = await res.json();
+  return jsonResponse({
+    execution_id: data.$id,
+    status: data.status,        // 'waiting', 'processing', 'completed', 'failed'
+    duration: data.duration,
+    output: data.status === 'completed' ? JSON.parse(data.responseBody || '{}') : undefined,
+    error: data.status === 'failed' ? data.errors : undefined,
+  });
+}
+```
+
+### Крок 3 — Додати route для status endpoint
+
+У worker роутері (де є `if (method === 'POST' && path === '/v1/notes/build-semantic-graph')`), додати поруч:
+```javascript
+if (method === 'GET' && path === '/v1/notes/semantic-graph-status') {
+  return await handleSemanticGraphStatus(request, env);
+}
+```
+
+### Крок 4 — Додати env vars до wrangler.toml
+
+У `cloudflare-worker/wrangler.toml` (або wrangler.jsonc) знайти секцію `[vars]` і додати:
+```toml
+SEMANTIC_GRAPH_FUNCTION_ID = ""
+APPWRITE_PROJECT_ID = "6a23420a003a04b4997b"
+```
+
+`APPWRITE_API_KEY` — секрет, не в файл! Тільки через `wrangler secret put APPWRITE_API_KEY` або CF Dashboard.
+**AGY:** не додавай APPWRITE_API_KEY у wrangler.toml або в git!
+
+### Крок 5 — Sync + Git
+
+```bash
+# Sync worker to .lovable:
+cp cloudflare-worker/worker-mcp-drakon.js .lovable/cloudflare-worker/worker-mcp-drakon.js
+
+git add cloudflare-worker/worker-mcp-drakon.js \
+        .lovable/cloudflare-worker/worker-mcp-drakon.js \
+        cloudflare-worker/wrangler.toml 2>/dev/null || true
+git commit -m "feat(semantic-graph): CF Worker → Appwrite async execution"
+# Оновити TASK-246 → [x]
+git add development/TASKS.md
+git commit -m "chore(tasks): TASK-246 done"
+git push origin main
+```
+
+### Верифікація
+Після деплою (Q задеплоїть Worker через CF Dashboard або AGY через wrangler):
+```bash
+# Dry-run (apply=false): не пише файли, тільки повертає execution_id
+curl -X POST https://drakon-mcp.exodus.pp.ua/v1/notes/build-semantic-graph?apply=false \
+  -H "Authorization: Bearer $JWT" | jq .
+
+# Через хвилину перевірити статус:
+curl "https://drakon-mcp.exodus.pp.ua/v1/notes/semantic-graph-status?execution_id=<id>" | jq .
+```
+
+### Diary
+```
+SESSION:2026-06-17|TASK-246:cf-worker-semantic-graph-appwrite|handler:replaced+status-endpoint|commit:<hash>
+```
+
+[ ] TASK-246
