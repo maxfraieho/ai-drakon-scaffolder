@@ -2720,6 +2720,343 @@ async function handleKb(kbPath, request, env) {
   });
 }
 
+async function md5Hex(message) {
+  const msgBuffer = new TextEncoder().encode(message);
+  const hashBuffer = await crypto.subtle.digest('MD5', msgBuffer);
+  return [...new Uint8Array(hashBuffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function cosineSimilarity(a, b) {
+  const fa = new Float32Array(a);
+  const fb = new Float32Array(b);
+  let dot = 0, normA = 0, normB = 0;
+  for (let i = 0; i < fa.length; i++) {
+    dot += fa[i] * fb[i];
+    normA += fa[i] * fa[i];
+    normB += fb[i] * fb[i];
+  }
+  return dot / (Math.sqrt(normA) * Math.sqrt(normB) + 1e-8);
+}
+
+async function handleKbIndex(request, env) {
+  // Auth: JWT check (як в інших handlers)
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) {
+    return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+  }
+
+  const url = new URL(request.url);
+  const project = url.searchParams.get('project') || '';
+  if (!project) {
+    return errorResponse('project parameter is required', 400);
+  }
+
+  // 1. Fetch article list from docs-agent
+  //    GET DOCS_AGENT_URL/notes/list?project=X&flat=true
+  const listUrl = `${DOCS_AGENT_URL}/notes/list?flat=true&project=${encodeURIComponent(project)}`;
+  const listRes = await fetch(listUrl, { signal: AbortSignal.timeout(15_000) });
+  if (!listRes.ok) {
+    return errorResponse(`docs-agent /notes/list failed with status ${listRes.status}`, 502);
+  }
+  const notes = await listRes.json();
+  if (!Array.isArray(notes)) {
+    return errorResponse('Invalid notes response format from docs-agent', 502);
+  }
+
+  // Appwrite Config
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const appwriteApiKey = env.APPWRITE_API_KEY || 'standard_33aa94e5f182d1f28c64d88135f2972f6e56a67ab0a63a369bc0e1bfb2be3fff5dd929e7f72565b22d92660e686a1ec78c649279fe8eb63dc0e6fb0db5dea63fbc7d3031e23410380cbfcf6392c2e795b1411f858542ce689b00c8dba28a91138da2b35d1decc4d0f8e9dd0382a6190f052e81593b93c3c08d280eb9fc2fbb83';
+  const dbId = env.APPWRITE_DATABASE_ID || 'ai-drakon';
+  const collectionId = env.APPWRITE_KB_COLLECTION_ID || 'kb_embeddings';
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Appwrite-Project': appwriteProjectId,
+    'X-Appwrite-Key': appwriteApiKey
+  };
+
+  let indexedCount = 0;
+  let skippedCount = 0;
+  const errors = [];
+
+  for (const note of notes) {
+    const slug = note.slug;
+    const title = note.title || '';
+    if (!slug) continue;
+
+    try {
+      // 2. Fetch content via DOCS_AGENT_URL/notes/read?slug=X&project=Y
+      const readUrl = `${DOCS_AGENT_URL}/notes/read?slug=${encodeURIComponent(slug)}&project=${encodeURIComponent(project)}`;
+      const readRes = await fetch(readUrl, { signal: AbortSignal.timeout(10_000) });
+      if (!readRes.ok) {
+        errors.push({ slug, error: `Failed to fetch note content: ${readRes.status}` });
+        continue;
+      }
+      const noteData = await readRes.json();
+      const content = noteData.content || '';
+
+      // 3. Compute content_hash = MD5(content)
+      const contentHash = await md5Hex(content);
+
+      // Deterministic document ID: 'k_' + MD5(project + ':' + slug)
+      const docIdSeed = `${project}:${slug}`;
+      const docId = `k_${await md5Hex(docIdSeed)}`;
+
+      // 4. Check if hash changed vs Appwrite (skip if same)
+      const docUrl = `${appwriteEndpoint}/databases/${dbId}/collections/${collectionId}/documents/${docId}`;
+      const checkRes = await fetch(docUrl, { method: 'GET', headers });
+      
+      let existingDoc = null;
+      if (checkRes.ok) {
+        existingDoc = await checkRes.json();
+      }
+
+      if (existingDoc && existingDoc.content_hash === contentHash) {
+        skippedCount++;
+        continue;
+      }
+
+      // 5. Build text for embedding: title + "\n" + first 1000 chars of body
+      const first1000 = content.slice(0, 1000);
+      const textToEmbed = `${title}\n${first1000}`;
+
+      // 6. Call Cloudflare Workers AI
+      if (!env.AI) {
+        throw new Error('Workers AI binding (env.AI) is not configured');
+      }
+      const aiResult = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: textToEmbed });
+      
+      let embeddingArr = null;
+      if (aiResult && aiResult.data && Array.isArray(aiResult.data[0])) {
+        embeddingArr = aiResult.data[0];
+      } else if (aiResult && Array.isArray(aiResult.data)) {
+        embeddingArr = aiResult.data;
+      } else if (aiResult && Array.isArray(aiResult)) {
+        embeddingArr = aiResult;
+      }
+      if (!embeddingArr) {
+        throw new Error(`Failed to extract embedding data from AI response: ${JSON.stringify(aiResult)}`);
+      }
+      const embeddingStr = JSON.stringify(embeddingArr);
+
+      // 7. Extract graph_neighbors from "## Семантичні зв'язки" section (parse [[slug|title]] links)
+      const neighbors = [];
+      const secIdx = content.indexOf("## Семантичні зв'язки");
+      if (secIdx !== -1) {
+        const sectionText = content.slice(secIdx);
+        const wikiLinkRegex = /\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g;
+        let match;
+        while ((match = wikiLinkRegex.exec(sectionText)) !== null) {
+          const neighborSlug = match[1].trim();
+          if (neighborSlug && !neighbors.includes(neighborSlug)) {
+            neighbors.push(neighborSlug);
+          }
+        }
+      }
+      const graphNeighborsStr = JSON.stringify(neighbors);
+
+      // 8. Upsert to Appwrite: POST/PATCH kb_embeddings
+      const dataPayload = {
+        project,
+        slug,
+        content_hash: contentHash,
+        title,
+        graph_neighbors: graphNeighborsStr,
+        embedding: embeddingStr,
+        updated_at: new Date().toISOString()
+      };
+
+      if (existingDoc) {
+        // PATCH
+        const patchRes = await fetch(docUrl, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({ data: dataPayload })
+        });
+        if (!patchRes.ok) {
+          throw new Error(`Appwrite PATCH failed: ${patchRes.status} ${await patchRes.text()}`);
+        }
+      } else {
+        // POST
+        const createUrl = `${appwriteEndpoint}/databases/${dbId}/collections/${collectionId}/documents`;
+        const postRes = await fetch(createUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            documentId: docId,
+            data: dataPayload
+          })
+        });
+        if (!postRes.ok) {
+          throw new Error(`Appwrite POST failed: ${postRes.status} ${await postRes.text()}`);
+        }
+      }
+
+      indexedCount++;
+    } catch (err) {
+      errors.push({ slug, error: err.message });
+    }
+  }
+
+  return jsonResponse({
+    success: errors.length === 0,
+    indexed: indexedCount,
+    skipped: skippedCount,
+    errors
+  });
+}
+
+async function handleKbSearch(request, env) {
+  const url = new URL(request.url);
+  const project = url.searchParams.get('project') || '';
+  if (!project) {
+    return errorResponse('project parameter is required', 400);
+  }
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return errorResponse('Invalid JSON body', 400);
+  }
+  const query = body.query;
+  const top_k = body.top_k !== undefined ? Number(body.top_k) : 5;
+  if (!query) {
+    return errorResponse('query is required', 400);
+  }
+
+  // 1. Embed query via env.AI.run('@cf/baai/bge-base-en-v1.5', { text: query })
+  if (!env.AI) {
+    return errorResponse('Workers AI binding (env.AI) is not configured', 503);
+  }
+  const aiResult = await env.AI.run('@cf/baai/bge-base-en-v1.5', { text: query });
+  
+  let queryEmbedding = null;
+  if (aiResult && aiResult.data && Array.isArray(aiResult.data[0])) {
+    queryEmbedding = aiResult.data[0];
+  } else if (aiResult && Array.isArray(aiResult.data)) {
+    queryEmbedding = aiResult.data;
+  } else if (aiResult && Array.isArray(aiResult)) {
+    queryEmbedding = aiResult;
+  }
+  if (!queryEmbedding) {
+    return errorResponse('Failed to generate query embedding', 500);
+  }
+
+  // 2. Fetch all embeddings for project from Appwrite kb_embeddings
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const appwriteApiKey = env.APPWRITE_API_KEY || 'standard_33aa94e5f182d1f28c64d88135f2972f6e56a67ab0a63a369bc0e1bfb2be3fff5dd929e7f72565b22d92660e686a1ec78c649279fe8eb63dc0e6fb0db5dea63fbc7d3031e23410380cbfcf6392c2e795b1411f858542ce689b00c8dba28a91138da2b35d1decc4d0f8e9dd0382a6190f052e81593b93c3c08d280eb9fc2fbb83';
+  const dbId = env.APPWRITE_DATABASE_ID || 'ai-drakon';
+  const collectionId = env.APPWRITE_KB_COLLECTION_ID || 'kb_embeddings';
+
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Appwrite-Project': appwriteProjectId,
+    'X-Appwrite-Key': appwriteApiKey
+  };
+
+  const allDocuments = [];
+  let offset = 0;
+  const limit = 100;
+  while (true) {
+    const queryStr = `equal("project", "${project}")`;
+    const docListUrl = `${appwriteEndpoint}/databases/${dbId}/collections/${collectionId}/documents?queries[]=${encodeURIComponent(queryStr)}&limit=${limit}&offset=${offset}`;
+    const docListRes = await fetch(docListUrl, { method: 'GET', headers });
+    if (!docListRes.ok) {
+      return errorResponse(`Failed to fetch documents from Appwrite: ${docListRes.status}`, 502);
+    }
+    const docListJson = await docListRes.json();
+    const documents = docListJson.documents || [];
+    allDocuments.push(...documents);
+    if (documents.length < limit) {
+      break;
+    }
+    offset += limit;
+  }
+
+  // 3. Cosine similarity: Float32Array dot products
+  const candidates = [];
+  for (const doc of allDocuments) {
+    if (!doc.embedding) continue;
+    let docEmbedding;
+    try {
+      docEmbedding = JSON.parse(doc.embedding);
+    } catch (_) {
+      continue;
+    }
+    if (!Array.isArray(docEmbedding)) continue;
+    const score = cosineSimilarity(queryEmbedding, docEmbedding);
+    
+    let graphNeighbors = [];
+    if (doc.graph_neighbors) {
+      try {
+        graphNeighbors = JSON.parse(doc.graph_neighbors);
+      } catch (_) {}
+    }
+
+    candidates.push({
+      slug: doc.slug,
+      title: doc.title || '',
+      project: doc.project,
+      vectorScore: score,
+      graphNeighbors: graphNeighbors
+    });
+  }
+
+  // 4. Take top-20 by vector score
+  candidates.sort((a, b) => b.vectorScore - a.vectorScore);
+  const top20 = candidates.slice(0, 20);
+
+  // 5. Graph expansion: for each top-20 doc, fetch graph_neighbors slugs
+  //    Add neighbors to candidate set (if not already there)
+  const allCandidatesMap = new Map();
+  for (const c of candidates) {
+    allCandidatesMap.set(c.slug, c);
+  }
+
+  const candidateSet = new Set(top20.map(c => c.slug));
+  for (const c of top20) {
+    for (const neighborSlug of c.graphNeighbors) {
+      if (allCandidatesMap.has(neighborSlug)) {
+        candidateSet.add(neighborSlug);
+      }
+    }
+  }
+
+  // 6. Re-rank candidates:
+  //    score = 0.6 * vectorScore + 0.4 * linkCentrality
+  //    linkCentrality = count of times this slug appears as neighbor in top-20 results
+  const finalCandidates = [];
+  for (const slug of candidateSet) {
+    const cand = allCandidatesMap.get(slug);
+    const inTop20 = top20.some(t => t.slug === slug);
+    
+    let linkCentrality = 0;
+    for (const t of top20) {
+      if (t.graphNeighbors.includes(slug)) {
+        linkCentrality++;
+      }
+    }
+
+    const score = 0.6 * cand.vectorScore + 0.4 * linkCentrality;
+
+    finalCandidates.push({
+      slug: cand.slug,
+      title: cand.title,
+      project: cand.project,
+      score: score,
+      via: inTop20 ? 'vector' : 'graph'
+    });
+  }
+
+  // 7. Return top_k results: [{ slug, title, project, score, via: 'vector'|'graph' }]
+  finalCandidates.sort((a, b) => b.score - a.score);
+  const results = finalCandidates.slice(0, top_k);
+  return jsonResponse(results);
+}
+
 async function handlePipeline(pipelinePath, request, env, ctx) {
   const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   const targetUrl = architectUrl + '/pipeline/' + pipelinePath;
@@ -3006,6 +3343,13 @@ async function handleSemanticGraphStatus(request, env) {
 
 
       // ─── KB proxy ─────────────────────────────────────────────────────────
+      if (method === 'POST' && path === '/v1/kb/index') {
+        return await handleKbIndex(request, env);
+      }
+      if (method === 'POST' && path === '/v1/kb/search') {
+        return await handleKbSearch(request, env);
+      }
+
       if (method === 'POST' && path === '/v1/kb/contribute') {
         return await handleKb('contribute', request, env);
       }
