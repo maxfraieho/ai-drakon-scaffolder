@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 GITHUB_REPO = "maxfraieho/ai-drakon-scaffolder"
 DOCS_PATH = "docs"
-PROXY_URL = "https://agy3.exodus.pp.ua/v1"
+PROXY_URL = "https://generativelanguage.googleapis.com/v1beta/openai"
 PROXY_MODEL = "gemini-2.5-flash"
 
 [[kv_namespaces]]
