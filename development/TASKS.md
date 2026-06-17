@@ -24772,4 +24772,4 @@ curl "https://drakon-mcp.exodus.pp.ua/v1/notes/semantic-graph-status?execution_i
 SESSION:2026-06-17|TASK-246:cf-worker-semantic-graph-appwrite|handler:replaced+status-endpoint|commit:<hash>
 ```
 
-[ ] TASK-246
+[x] TASK-246
