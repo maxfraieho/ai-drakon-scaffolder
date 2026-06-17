@@ -36,6 +36,10 @@ lang: uk
 | **Templates** | [[templates/_INDEX]] | Шаблони промптів та інструкції з міграцій Lovable | active | 2 |
 | **UX Audit** | [[ux-audit/_INDEX]] | UI/UX аналіз, ризики та промпти для редизайну | active | 3 |
 | **Cloud Migration** | [[appwrite-migration-research]] | Хмарна міграція (Phases 0–3): Appwrite Functions, CF Workers, llm-gateway, semantic-graph | active | 2 |
+| **Onboarding** (Tutorial) | [[ONBOARDING]] | Покроковий перший запуск: клон, env, dev, перший деплой, верифікація | active | 2 |
+| **Deployment** (How-to) | [[DEPLOYMENT]] | Деплой/rollback/моніторинг усіх компонентів, міграції D1 + Appwrite, секрети | active | 2 |
+| **Troubleshooting** (How-to) | [[TROUBLESHOOTING]] | Симптом → причина → рішення: 401/402/500, KB, OAuth, semantic-graph, Archivist | active | 2 |
+| **API Reference** | [[API-REFERENCE]] | Усі endpoints Main Worker + architect-agent-flue + docs-agent-flue | active | 2 |
 
 ---
 
@@ -60,10 +64,14 @@ lang: uk
 
 ### 💻 Для розробників (Developer Path)
 > Практична робота з пайплайнами, автоматизацією тестування та інтеграцією.
-1. [[manuals/manual-pipeline-a]] — Робота з Pipeline A (код → схема).
-2. [[manuals/manual-pipeline-b]] — Робота з Pipeline B (схема → код).
-3. [[agents/agy/README]] — Навички та можливості виконавчого агента AGY.
-4. [[plans/2026-05-26-pinchtab-test-plan]] — Сценарії та протоколи автоматизованого тестування.
+1. [[ONBOARDING]] — Перший запуск: клон, env, dev-сервери, перший деплой (Tutorial).
+2. [[manuals/manual-pipeline-a]] — Робота з Pipeline A (код → схема).
+3. [[manuals/manual-pipeline-b]] — Робота з Pipeline B (схема → код).
+4. [[API-REFERENCE]] — Довідник endpoints (Reference).
+5. [[DEPLOYMENT]] — Деплой, rollback, моніторинг (How-to).
+6. [[TROUBLESHOOTING]] — Типові помилки і рішення (How-to).
+7. [[agents/agy/README]] — Навички та можливості виконавчого агента AGY.
+8. [[plans/2026-05-26-pinchtab-test-plan]] — Сценарії та протоколи автоматизованого тестування.
 
 ---
 

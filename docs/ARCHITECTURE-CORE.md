@@ -46,10 +46,17 @@ DRAKON-схема         = ДНК        (єдине джерело істин�
    рибосомі знання про цільовий фреймворк, патерни tool-calling, few-shot
    приклади. Без KB рибосома — звичайний генератор коду; з KB — компілятор.
 
-Стратегічний наслідок: **незалежність від фреймворку**. Якщо Flue помре або
-зламає API (а це реальний ризик — див. §2) — перенавчаємо рибосому на
-LangGraph.js чи CF Agents SDK. DRAKON-схеми клієнтів не чіпаємо. Це і є
-захист бізнесу, якого не дає жоден "редактор діаграм".
+Стратегічний наслідок: **незалежність від фреймворку**. Зараз єдиний
+актуальний target компілятора — **Flue** (Cloudflare Flue Runtime).
+Якщо Flue помре або зламає API (а це реальний ризик — див. §2) —
+перенавчаємо рибосому на інший target (CF Agents SDK, LangGraph.js).
+DRAKON-схеми клієнтів не чіпаємо. Це і є захист бізнесу, якого не дає
+жоден "редактор діаграм".
+
+> **HISTORICAL**: попередні версії цього документа називали `langgraph-py`
+> та `langgraph-js` активними targets. LangGraph повністю замінено на
+> Flue Runtime (див. `COLLABORATION.md §12`). LangGraph залишається лише
+> теоретичним резервним target-ом на випадок відмови Flue, **не активним**.
 
 ---
 
@@ -96,8 +103,13 @@ TASK-215 лише підключив його до кнопки **Export mRNA** 
 
 Жива реалізація: `services/architect-agent-flue/tools/ribosome.ts`
 (`compilePseudocode`) + маршрут `POST /compile` + кнопка **Compile** в UI
-(скачує `{name}.workflow.ts`). KB-зони поки НЕ підключені (Sprint 4);
-llmConfig з налаштувань UI прокидається (TASK-212).
+(скачує `{name}.workflow.ts`). llmConfig з налаштувань UI прокидається (TASK-212).
+
+**KB-зони — Phase 3 ✅ live.** Векторний пошук по KB працює: колекція
+`kb_embeddings` в Appwrite DB (768-dim вектори, CF Workers AI
+`@cf/baai/bge-base-en-v1.5`). `POST /compile` приймає `zoneId` → рибосома
+через MCP-proxy (`tools/mcp-proxy.ts → fetchZoneContext`) підтягує
+KB-контекст цільового фреймворку у згенерований код.
 Відомий шлiф: системний промпт ще не велить брати модель з env.PROXY_MODEL —
 рибосома може вигадати 'gpt-4o' у згенерованому коді.
 
@@ -105,7 +117,8 @@ llmConfig з налаштувань UI прокидається (TASK-212).
 Вхід:
   ├── псевдокод (з редактора)
   ├── список доступних tools (з /tools endpoint architect-agent-flue)
-  └── цільовий фреймворк (flue | langgraph-js | cf-agents | langgraph-py)
+  └── цільовий фреймворк: flue (єдиний активний target)
+      ~~langgraph-js~~, ~~langgraph-py~~, ~~cf-agents~~ — HISTORICAL/резерв
 
 KB (через Зону Знань / MCP):
   ├── docs цільового фреймворку
@@ -189,6 +202,23 @@ Sprint 1–2 (auth, D1/KV/Appwrite, middleware) — закриті 2026-06-12 �
 
 Оцінка: 5 спринтів ≈ 10–14 тижнів реального часу solo dev + AGY-флот
 (з коефіцієнтом критики ×1.5–2 від оптимістичних 7).
+
+---
+
+## 3.5. Hybrid DB — розподіл сховищ
+
+Платформа використовує **дві БД** з чітким поділом за типом даних:
+
+| Сховище | Що зберігає | Чому |
+|---------|-------------|------|
+| **Cloudflare D1** (`ai-drakon`) | metadata: `diagrams`, `pipeline_runs`, `agent_configs`, `knowledge_zones`, `billing_profiles` | низька латентність на edge, поряд з Worker; легкі рядкові записи |
+| **Appwrite DB** (`ai-drakon`, project `6a23420a003a04b4997b`) | важкі дані: `kb_embeddings` (768-dim BGE вектори у JSON), `user_profiles`, `zone_secrets` (encrypted), `audit_log` | вектори завеликі для D1; Appwrite дає encrypted attributes для секретів зон та керовану auth |
+
+D1 — для всього, що читається/пишеться у гарячому шляху Worker (metadata
+проєктів, пайплайни, конфіги агентів). Appwrite DB — для embeddings та
+будь-яких даних, прив'язаних до Appwrite-користувача (auth, billing, секрети).
+Worker звертається до Appwrite через REST (`APPWRITE_DATABASE_ID=ai-drakon`,
+`APPWRITE_KB_COLLECTION_ID=kb_embeddings`).
 
 ---
 

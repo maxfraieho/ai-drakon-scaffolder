@@ -30,7 +30,7 @@ lang: uk
 | **Claude Code** | OrangePi (`192.168.3.161:3456`) | Головний агент-оркестратор |
 | **AGY CLI (phone)** | Termux (динамічний IP, ~192.168.3.25) | Прості задачі (Python, docs) |
 | **AGY3 (tablet)** | Termux (`192.168.3.204:8022`) | **Основний виконавець**: складні TypeScript/SSH задачі |
-| **AGY Proxy** | `https://agy.exodus.pp.ua` | Публічний API-ендпоінт для моделей Gemini/Claude |
+| **AGY Proxy** ⚠️ DEPRECATED | ~~`https://agy.exodus.pp.ua`~~ | **DEPRECATED**: замінено на `llm-gateway` Appwrite Function. Більше НЕ використовувати як LLM endpoint. |
 | **drakon-antigravity-worker** | `drakon-antigravity-worker.maxfraieho.workers.dev` | **Головний CF Worker**: MCP зони знань, KB vector search (CF Workers AI BGE), MinIO, профілі памʼяті |
 | **architect-agent-flue** | `architect-agent-flue.maxfraieho.workers.dev` | CF Worker: компілятор DRAKON IR → Flue workflow (live) |
 | **docs-agent-flue** | `docs-agent-flue.maxfraieho.workers.dev` | CF Worker: документація + `kb_search`/`kb_index` MCP tools (live) |
@@ -142,7 +142,7 @@ lang: uk
 - **AGY Termux SSH**: `sshpass -p "123456" ssh -p 8022 u0_a284@192.168.3.195`
 - **Dev Server SSH**: `sshpass -p "805235io." ssh vokov@192.168.3.184`
 - **RPi 4B SSH (NotebookLM MCP)**: `sshpass -p "805235io." ssh vokov@192.168.3.234`
-- **Адреса AGY Proxy**: `https://agy.exodus.pp.ua`
+- ~~**Адреса AGY Proxy**: `https://agy.exodus.pp.ua`~~ ⚠️ **DEPRECATED** — LLM-запити йдуть через `llm-gateway` Appwrite Function, не через цей проксі.
 
 ---
 
@@ -167,7 +167,7 @@ Archivist AI (NotebookLM MCP, `192.168.3.234:8002`) обслуговує 104 н�
 - `drakon-antigravity-worker.maxfraieho.workers.dev` ➔ Головний CF Worker (MCP зони знань, KB vector search, MinIO, профілі памʼяті)
 - `architect-agent-flue.maxfraieho.workers.dev` ➔ CF Worker: компілятор DRAKON IR → Flue workflow
 - `docs-agent-flue.maxfraieho.workers.dev` ➔ CF Worker: документація (`kb_search`/`kb_index`)
-- `agy.exodus.pp.ua` ➔ Termux AGY проксі (`:8080`)
+- ~~`agy.exodus.pp.ua`~~ ➔ Termux AGY проксі (`:8080`) — ⚠️ **DEPRECATED**: LLM-проксі замінено на `llm-gateway` Appwrite Function (`6a3200cd00182e876067.fra.appwrite.run`). Тунель лишається тільки для прямого SSH-делегування задач на AGY.
 - `claude2.exodus.pp.ua` ➔ OrangePi Claude Code (`:3456`)
 - `garden-mcp.exodus.pp.ua` ➔ Ендпоінт MCP-сервера (`:8081`)
 - `notebooklm.exodus.pp.ua` ➔ Archivist AI (NotebookLM MCP, `:8002`)
