@@ -28,7 +28,7 @@ lang: uk
 | Компонент | Адреса | Призначення |
 |-----------|---------|-------------|
 | **Claude Code** | OrangePi (`192.168.3.161:3456`) | Головний агент-оркестратор |
-| **AGY CLI (phone)** | Termux (динамічний IP, ~192.168.3.25) | Прості задачі (Python, docs) |
+| **AGY CLI (phone)** | Termux (динамічний IP, ~192.168.3.25) | Прості Termux bash/git задачі (НЕ Python agents — їх видалено як сервіси; bash/git у Termux лишається) |
 | **AGY3 (tablet)** | Termux (`192.168.3.204:8022`) | **Основний виконавець**: складні TypeScript/SSH задачі |
 | **AGY Proxy** ⚠️ DEPRECATED | ~~`https://agy.exodus.pp.ua`~~ | **DEPRECATED**: замінено на `llm-gateway` Appwrite Function. Більше НЕ використовувати як LLM endpoint. |
 | **drakon-antigravity-worker** | `drakon-antigravity-worker.maxfraieho.workers.dev` | **Головний CF Worker**: MCP зони знань, KB vector search (CF Workers AI BGE), MinIO, профілі памʼяті |

@@ -242,16 +242,22 @@ services/ai-drakon-flue/
 4. tenant_id ін'єктується middleware-ом, ніколи з body запиту.
 5. `drakonwidget.js` та `src/lib/drakon/adapter.ts` — незмінні.
 
-## 9. Sprint Roadmap (solo dev + AGY агенти)
+## 9. Sprint Roadmap
 
-| Sprint | Тижні | Зміст | Стан |
-|---|---|---|---|
-| 1 | 1–2 | Стабілізація: TASK-203 (Appwrite AuthContext), TASK-204 (stale URLs), верифікація токена/encoding | ✅ закрито |
-| 2 | 3–4 | Appwrite Teams onboarding, authMiddleware + KV, Appwrite DB схема (цей документ), tenant isolation | ✅ закрито |
-| 3 | 5–6 | Knowledge Zones: Appwrite DB + zone_secrets + MCP-proxy у workflows; GitNexus/Archivist AI дефолтні зони | ✅ закрито |
-| 4 | 7–8 | Білінг: billing_profiles, quotaMiddleware, Stripe webhook, Usage dashboard | план |
-| 5 | 9–10 | Multi-target рибосома + цикл компіляції; subagents + dispatch; virtual sandbox всюди | план |
-| 6 | 11–12 | Phase 4: Archivist AI → Appwrite Function; remote sandbox PoC, onboarding flow, security audit (tenant isolation pen-test) | план |
+> **КАНОНІЧНЕ ДЖЕРЕЛО:** roadmap нижче синхронізований з
+> [`ARCHITECTURE-CORE.md`](ARCHITECTURE-CORE.md) §3. CORE — джерело істини
+> (status: canonical, «спершу цінність — компілятор, потім обгортка — SaaS»).
+> Цей документ описує лише SaaS-шар; за повним обґрунтуванням спринтів —
+> дивись CORE §3. Зміни вносити спершу в CORE, потім синхронізувати сюди.
+
+| Sprint | Зміст | Стан |
+|---|---|---|
+| 1–2 | Стабілізація + SaaS-каркас: Appwrite AuthContext (TASK-203), stale URLs (TASK-204), authMiddleware + KV, Appwrite DB схема, tenant isolation | ✅ закрито |
+| 3 | **Компілятор MVP (ядро):** IR → псевдокод → рибосома v1 (target: Flue), KB-контекст через MCP-proxy; верифікація ThreatClassifier → `.workflow.ts`, `tsc --noEmit` чистий | ✅ закрито |
+| 4 | **Зони Знань:** Appwrite DB `knowledge_zones` CRUD + zone_secrets; MCP-proxy маршрут `POST /mcp-proxy/:zone`; ZoneCreationDialog → реальний бекенд; рибосома читає KB з зони користувача | план |
+| 5 | **Multi-target + цикл компіляції:** другий target (LangGraph.js / Python); авто-цикл схема → re-export → re-compile → tsc → preview; довгі компіляції через `ArchitectJobStore` DO | план |
+| 6 | **SaaS-добудова (обгортка):** quotaMiddleware на всі LLM-маршрути; Stripe webhook + Cron reset + Usage dashboard; Phase 4 — Archivist AI → Appwrite Function | план |
+| 7+ | **Гартування:** per-resource ACL (за попитом), security audit (tenant isolation pen-test), onboarding flow, remote sandbox PoC | план |
 
 ### 2.4 Корекція (2026-06-12): JWT замість cookie між доменами
 

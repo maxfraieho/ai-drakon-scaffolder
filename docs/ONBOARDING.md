@@ -92,7 +92,21 @@ GITHUB_TOKEN=...                  # для semantic-graph (GitHub API)
 
 ---
 
-## 3. Запуск фронтенду локально
+## 3. Ініціалізація бази даних
+
+Перед першим запуском — створити схеми (ідемпотентно, безпечно перезапускати):
+
+```bash
+# Appwrite колекції (auth, kb_embeddings, zone_secrets, audit_log)
+node infrastructure/appwrite/setup.mjs
+
+# CF D1 metadata schema (diagrams, pipeline_runs, knowledge_zones тощо)
+wrangler d1 execute ai-drakon --file infrastructure/d1/schema.sql --config wrangler-antigravity.jsonc
+```
+
+---
+
+## 4. Запуск фронтенду локально
 
 ```bash
 npm run dev    # → http://localhost:5173
@@ -103,7 +117,7 @@ npm run dev    # → http://localhost:5173
 
 ---
 
-## 4. Запуск Main Worker локально (wrangler dev)
+## 5. Запуск Main Worker локально (wrangler dev)
 
 ```bash
 wrangler dev --config wrangler-antigravity.jsonc
@@ -115,7 +129,7 @@ wrangler dev --config wrangler-antigravity.jsonc
 
 ---
 
-## 5. Перший деплой
+## 6. Перший деплой
 
 ```bash
 # Frontend → CF Pages: автоматично через GitHub push у main (build з .lovable/)
@@ -137,7 +151,7 @@ appwrite functions createDeployment --functionId semantic-graph --activate true
 
 ---
 
-## 6. Верифікація
+## 7. Верифікація
 
 ```bash
 curl https://drakon-antigravity-worker.maxfraieho.workers.dev/health

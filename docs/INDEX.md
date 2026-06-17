@@ -40,6 +40,7 @@ lang: uk
 | **Deployment** (How-to) | [[DEPLOYMENT]] | Деплой/rollback/моніторинг усіх компонентів, міграції D1 + Appwrite, секрети | active | 2 |
 | **Troubleshooting** (How-to) | [[TROUBLESHOOTING]] | Симптом → причина → рішення: 401/402/500, KB, OAuth, semantic-graph, Archivist | active | 2 |
 | **API Reference** | [[API-REFERENCE]] | Усі endpoints Main Worker + architect-agent-flue + docs-agent-flue | active | 2 |
+| **Contributing** (How-to) | [[CONTRIBUTING]] | Як розширювати платформу: workflow, новий compiler target, нова KB-зона, тестування, PR checklist | active | 2 |
 
 ---
 
@@ -70,8 +71,9 @@ lang: uk
 4. [[API-REFERENCE]] — Довідник endpoints (Reference).
 5. [[DEPLOYMENT]] — Деплой, rollback, моніторинг (How-to).
 6. [[TROUBLESHOOTING]] — Типові помилки і рішення (How-to).
-7. [[agents/agy/README]] — Навички та можливості виконавчого агента AGY.
-8. [[plans/2026-05-26-pinchtab-test-plan]] — Сценарії та протоколи автоматизованого тестування.
+7. [[CONTRIBUTING]] — Як розширювати платформу: workflow, нові targets/зони, PR checklist (How-to).
+8. [[agents/agy/README]] — Навички та можливості виконавчого агента AGY.
+9. [[plans/2026-05-26-pinchtab-test-plan]] — Сценарії та протоколи автоматизованого тестування.
 
 ---
 
@@ -97,4 +99,5 @@ lang: uk
 - [[COLLABORATION]] — Керівництво по спільній роботі Claude та AGY
 - [[ui-pages-reference]] — Довідник по сторінках інтерфейсу UI
 - [[ARCHITECTURE-SAAS]] — Архітектура SaaS-шару (мультиоренда, Appwrite + CF D1)
+- [[CONTRIBUTING]] — How-to: як розширювати платформу (compiler targets, KB-зони, PR)
 - [[../infrastructure/cloudflare-resources]] — CF D1/KV ресурси (створені 2026-06-12)
