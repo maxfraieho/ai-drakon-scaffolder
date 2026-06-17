@@ -24025,3 +24025,38 @@ SESSION:<дата>|TASK-238:github-oauth-401-logout-fix|<файли>|root-cause:
 
 [x] TASK-240
 
+
+---
+
+## TASK-241: Phase 0 — Python agents vs Flue parity inventory
+
+**Виконавець: AGY**
+
+### Мета
+Скласти точний перелік всіх ендпоінтів/функцій у Python-агентах та їх статус у Flue-версіях.
+
+### Що зробити
+1. Прочитати `services/architect-agent/` — список усіх FastAPI routes і ключових функцій.
+2. Прочитати `services/drakon-agent/` — список усіх FastAPI routes і ключових функцій.
+3. Для кожного знайти Flue-аналог у `services/architect-agent-flue/` і `services/drakon-agent-flue/`.
+4. Скласти таблицю у Markdown:
+
+| Endpoint/функція | Python файл:рядок | Flue-аналог | Статус |
+|---|---|---|---|
+| POST /gitnexus/analyze | architect-agent/gitnexus_route.py:121 | architect-agent-flue/? | ✅/❌/~partial |
+
+5. Записати результат у `development/investigations/flue-parity-2026-06-17.md`.
+
+### НЕ робити
+- Не комітити.
+- Не вносити жодних змін у код.
+
+### Критерій готовності
+Файл `development/investigations/flue-parity-2026-06-17.md` існує і містить заповнену таблицю.
+
+### Diary
+```
+SESSION:<дата>|TASK-241:flue-parity-inventory|files-read:architect+drakon agents|output:flue-parity-2026-06-17.md
+```
+
+[ ] TASK-241
