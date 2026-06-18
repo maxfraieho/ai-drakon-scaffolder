@@ -1,6 +1,6 @@
 import React from "react";
 import { Link as NavLink } from "@tanstack/react-router";
-import { Workflow, Bot, GitMerge, BookOpen, Home } from "lucide-react";
+import { Workflow, Bot, GitMerge, BookOpen, Home, Code2 } from "lucide-react";
 
 interface NavItem {
   label: string;
@@ -13,13 +13,14 @@ export const MobileNavigationDock: React.FC = () => {
     { label: "Diagrams", icon: Workflow, to: "/diagrams" },
     { label: "Agents", icon: Bot, to: "/agents" },
     { label: "Pipelines", icon: GitMerge, to: "/pipelines" },
+    { label: "Codegen", icon: Code2, to: "/codegen" },
     { label: "Docs", icon: BookOpen, to: "/docs" },
     { label: "Home", icon: Home, to: "/" },
   ];
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-zinc-900/95 backdrop-blur border-t border-zinc-800 pb-safe md:hidden">
-      <div className="flex justify-around items-center h-16 max-w-md mx-auto px-4">
+      <div className="flex items-center h-16 max-w-md mx-auto px-2">
         {items.map((item) => {
           const Icon = item.icon;
           return (
@@ -29,7 +30,7 @@ export const MobileNavigationDock: React.FC = () => {
               activeOptions={{ exact: item.to === "/" }}
               activeProps={{ className: "text-indigo-400" }}
               inactiveProps={{ className: "text-zinc-500" }}
-              className="relative flex flex-col items-center justify-center w-14 h-12 transition-colors"
+              className="relative flex-1 min-w-0 flex flex-col items-center justify-center h-12 transition-colors"
             >
               {({ isActive }) => (
                 <>

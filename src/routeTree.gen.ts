@@ -9,11 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as SyncRouteImport } from './routes/sync'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PipelinesRouteImport } from './routes/pipelines'
 import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as ObservabilityRouteImport } from './routes/observability'
 import { Route as NotebooksRouteImport } from './routes/notebooks'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
@@ -21,8 +23,9 @@ import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as DevcycleRouteImport } from './routes/devcycle'
-import { Route as CodeRouteImport } from './routes/code'
 import { Route as CodegenRouteImport } from './routes/codegen'
+import { Route as CodeRouteImport } from './routes/code'
+import { Route as ArchitectRouteImport } from './routes/architect'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
@@ -34,9 +37,12 @@ import { Route as ApiKnowledgeZonesRouteImport } from './routes/api.knowledge.zo
 import { Route as ApiKnowledgeZonesZoneIdRouteImport } from './routes/api.knowledge.zones.$zoneId'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm.retry'
-import { Route as ArchitectRouteImport } from './routes/architect'
-import { Route as ObservabilityRouteImport } from './routes/observability'
 
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SyncRoute = SyncRouteImport.update({
   id: '/sync',
   path: '/sync',
@@ -60,6 +66,11 @@ const PipelinesRoute = PipelinesRouteImport.update({
 const PipelineRoute = PipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObservabilityRoute = ObservabilityRouteImport.update({
+  id: '/observability',
+  path: '/observability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotebooksRoute = NotebooksRouteImport.update({
@@ -97,19 +108,14 @@ const DevcycleRoute = DevcycleRouteImport.update({
   path: '/devcycle',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CodeRoute = CodeRouteImport.update({
-  id: '/code',
-  path: '/code',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CodegenRoute = CodegenRouteImport.update({
   id: '/codegen',
   path: '/codegen',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AgentsRoute = AgentsRouteImport.update({
-  id: '/agents',
-  path: '/agents',
+const CodeRoute = CodeRouteImport.update({
+  id: '/code',
+  path: '/code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArchitectRoute = ArchitectRouteImport.update({
@@ -117,9 +123,9 @@ const ArchitectRoute = ArchitectRouteImport.update({
   path: '/architect',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ObservabilityRoute = ObservabilityRouteImport.update({
-  id: '/observability',
-  path: '/observability',
+const AgentsRoute = AgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -178,6 +184,7 @@ const ApiKnowledgeZonesZoneIdNotebooklmRetryRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/architect': typeof ArchitectRoute
   '/code': typeof CodeRoute
   '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
@@ -187,11 +194,13 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
+  '/observability': typeof ObservabilityRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
+  '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
@@ -205,6 +214,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/architect': typeof ArchitectRoute
   '/code': typeof CodeRoute
   '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
@@ -214,11 +224,13 @@ export interface FileRoutesByTo {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
+  '/observability': typeof ObservabilityRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
+  '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
@@ -233,6 +245,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
+  '/architect': typeof ArchitectRoute
   '/code': typeof CodeRoute
   '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
@@ -242,11 +255,13 @@ export interface FileRoutesById {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
+  '/observability': typeof ObservabilityRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/sync': typeof SyncRoute
+  '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
@@ -262,6 +277,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/agents'
+    | '/architect'
     | '/code'
     | '/codegen'
     | '/devcycle'
@@ -271,11 +287,13 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/notebooks'
+    | '/observability'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
     | '/sync'
+    | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
     | '/api/knowledge/zones'
@@ -289,6 +307,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/agents'
+    | '/architect'
     | '/code'
     | '/codegen'
     | '/devcycle'
@@ -298,11 +317,13 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/notebooks'
+    | '/observability'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
     | '/sync'
+    | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
     | '/api/knowledge/zones'
@@ -316,6 +337,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/agents'
+    | '/architect'
     | '/code'
     | '/codegen'
     | '/devcycle'
@@ -325,11 +347,13 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/notebooks'
+    | '/observability'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
     | '/sitemap.xml'
     | '/sync'
+    | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
     | '/api/knowledge/zones'
@@ -343,10 +367,10 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  ArchitectRoute: typeof ArchitectRoute
-  ObservabilityRoute: typeof ObservabilityRoute
   AgentsRoute: typeof AgentsRoute
+  ArchitectRoute: typeof ArchitectRoute
   CodeRoute: typeof CodeRoute
+  CodegenRoute: typeof CodegenRoute
   DevcycleRoute: typeof DevcycleRoute
   DiagramsRoute: typeof DiagramsRoute
   DocsRoute: typeof DocsRoute
@@ -354,11 +378,13 @@ export interface RootRouteChildren {
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   NotebooksRoute: typeof NotebooksRoute
+  ObservabilityRoute: typeof ObservabilityRoute
   PipelineRoute: typeof PipelineRouteWithChildren
   PipelinesRoute: typeof PipelinesRoute
   SettingsRoute: typeof SettingsRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   SyncRoute: typeof SyncRoute
+  WorkspaceRoute: typeof WorkspaceRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
   ApiKnowledgeZonesRoute: typeof ApiKnowledgeZonesRouteWithChildren
@@ -368,6 +394,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/workspace': {
+      id: '/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sync': {
       id: '/sync'
       path: '/sync'
@@ -401,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/pipeline'
       fullPath: '/pipeline'
       preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/observability': {
+      id: '/observability'
+      path: '/observability'
+      fullPath: '/observability'
+      preLoaderRoute: typeof ObservabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notebooks': {
@@ -452,13 +492,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevcycleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/code': {
-      id: '/code'
-      path: '/code'
-      fullPath: '/code'
-      preLoaderRoute: typeof CodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/codegen': {
       id: '/codegen'
       path: '/codegen'
@@ -466,18 +499,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CodegenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/code': {
+      id: '/code'
+      path: '/code'
+      fullPath: '/code'
+      preLoaderRoute: typeof CodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/architect': {
       id: '/architect'
       path: '/architect'
       fullPath: '/architect'
       preLoaderRoute: typeof ArchitectRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/observability': {
-      id: '/observability'
-      path: '/observability'
-      fullPath: '/observability'
-      preLoaderRoute: typeof ObservabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents': {
@@ -615,9 +648,8 @@ const ApiKnowledgeZonesRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  ArchitectRoute: ArchitectRoute,
-  ObservabilityRoute: ObservabilityRoute,
   AgentsRoute: AgentsRoute,
+  ArchitectRoute: ArchitectRoute,
   CodeRoute: CodeRoute,
   CodegenRoute: CodegenRoute,
   DevcycleRoute: DevcycleRoute,
@@ -627,11 +659,13 @@ const rootRouteChildren: RootRouteChildren = {
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   NotebooksRoute: NotebooksRoute,
+  ObservabilityRoute: ObservabilityRoute,
   PipelineRoute: PipelineRouteWithChildren,
   PipelinesRoute: PipelinesRoute,
   SettingsRoute: SettingsRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   SyncRoute: SyncRoute,
+  WorkspaceRoute: WorkspaceRoute,
   DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,
   ApiKnowledgeZonesRoute: ApiKnowledgeZonesRouteWithChildren,
@@ -641,13 +675,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
