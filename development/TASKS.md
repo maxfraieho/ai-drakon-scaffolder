@@ -24932,3 +24932,196 @@ SESSION:2026-06-17|TASK-250:repo-combobox|ProjectSelector→Command-cmdk|filter-
 ```
 
 [ ] TASK-250
+
+
+---
+
+## TASK-251: DRAKON Code Generation — LLM → .drakon JSON → Код
+
+**Executor**: AGY3 (Claude Opus 4.6-thinking)
+**Scope**: Нова feature AI-DRAKON: генерація коду з текстового опису функції через LLM.
+
+### Контекст
+
+DrakonTech — Electron IDE, компілює `.drakon` (JSON флоучарт) → JavaScript/Lua/тощо.
+Форк: `git@github.com:maxfraieho/drakon.tech.desktop.git`
+Шлях на dev server: `/home/vokov/projects/drakon.tech.desktop/`
+GitNexus: `drakon-tech` (5382 nodes, indexed 2026-06-18)
+
+Архітектура:
+```
+User text → React UI → CF Worker /v1/codegen
+  → Appwrite Function drakon-codegen
+    → LLM (NIM: nvidia/llama-3.3-nemotron-super-49b-v1) → .drakon JSON
+  → React: drakontechgen.js (client-side bundle) → code
+→ UI shows: generated code + JSON
+```
+
+### Step 0: GitNexus Research
+
+```bash
+BASE="https://gitnexus.exodus.pp.ua/api/mcp"
+# drakon-tech code gen API:
+curl -s -X POST "$BASE" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query","arguments":{"repo":"drakon-tech","query":"buildGenerator language output code generation","goal":"understand code gen API entry point"}}}'
+
+# ai-drakon-scaffolder Appwrite Function pattern:
+curl -s -X POST "$BASE" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"query","arguments":{"repo":"ai-drakon-scaffolder","query":"Appwrite Function NIM LLM semantic-graph main.ts","goal":"find pattern to replicate for new function"}}}'
+
+# CF Worker route map:
+curl -s -X POST "$BASE" -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"route_map","arguments":{"repo":"ai-drakon-scaffolder"}}}'
+```
+
+### Step 1: Read Key Files
+
+```bash
+DEV="sshpass -p 805235io. ssh -o StrictHostKeyChecking=no vokov@192.168.3.184"
+$DEV "head -200 /home/vokov/projects/drakon.tech.desktop/src/static/js/build.js"
+$DEV "grep -n 'module.exports\|buildGenerator\|Js2604\|createDrakon' /home/vokov/projects/drakon.tech.desktop/src/static/libs/drakontechgen.js | head -30"
+$DEV "head -100 /home/vokov/projects/ai-drakon-scaffolder/services/semantic-graph/src/main.ts"
+```
+
+### Step 2: Architecture Decision
+
+Choose and document:
+- **Option A (recommended)**: Appwrite Function returns `.drakon` JSON only. Client-side `drakontechgen.js` (in public/) compiles to code.
+- **Option B**: Appwrite Function runs `drakontechgen.js` server-side (Node.js), returns compiled code.
+
+Write chosen option as comment before implementation.
+
+### Step 3: Appwrite Function `drakon-codegen`
+
+Copy pattern from: `/home/vokov/projects/ai-drakon-scaffolder/services/semantic-graph/`
+New function: `/home/vokov/projects/ai-drakon-scaffolder/services/drakon-codegen/`
+
+Input (POST body):
+```json
+{"description": "function sorts array and removes duplicates", "language": "JS2604", "functionName": "sortUnique", "params": "arr"}
+```
+
+LLM prompt template:
+```
+You are a DRAKON flowchart expert. Generate a valid .drakon JSON for this function.
+
+Function name: {functionName}
+Parameters: {params}  
+Description: {description}
+
+DRAKON JSON rules:
+- "type": "drakon"
+- "items": dict of node_id (string) to node object
+- Node types:
+  * {"type":"branch","branchId":0,"one":"NEXT_ID"} — entry (id "2", branchId must be 0)
+  * {"type":"action","one":"NEXT_ID","content":"step description"} — action
+  * {"type":"end"} — always id "1"
+- "keywords": {"function":false,"machine":false,"async":false,"export":true}
+- "params": "{params}"
+- Content = natural language or pseudocode (NOT exact code)
+- Simple linear: branch(2) → action(3) → action(4) → ... → end(1)
+
+Example (hello world):
+{"items":{"1":{"type":"end"},"2":{"type":"branch","branchId":0,"one":"3"},"3":{"type":"action","one":"1","content":"print Hello World"}},"type":"drakon","keywords":{"export":true},"params":""}
+
+Return ONLY valid JSON, no markdown fences, no explanation.
+```
+
+NIM config (same as semantic-graph):
+```typescript
+const nimKey = env.NIM_API_KEY;
+const gatewayUrl = nimKey
+  ? "https://integrate.api.nvidia.com"
+  : (env.LLM_GATEWAY_URL || "https://6a3200cd0006b155c099.fra.appwrite.run");
+const model = nimKey ? "nvidia/llama-3.3-nemotron-super-49b-v1" : "auto";
+```
+
+Output:
+```json
+{"success": true, "drakon_json": {...}, "language": "JS2604"}
+```
+
+Create: `services/drakon-codegen/src/main.ts`, `appwrite.json`, `package.json`
+
+### Step 4: CF Worker Endpoint
+
+File: `/home/vokov/projects/ai-drakon-scaffolder/cloudflare-worker/worker-mcp-drakon.js`
+
+Add router cases:
+```javascript
+case path === '/v1/codegen' && method === 'POST':
+  return await handleDrakonCodegen(request, env);
+case path === '/v1/codegen-status' && method === 'GET':
+  return await handleCodegenStatus(request, env);
+```
+
+Pattern: same as handleBuildSemanticGraph + handleSemanticGraphStatus.
+
+Deploy:
+```bash
+sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184 \
+  'cd /home/vokov/projects/ai-drakon-scaffolder && CLOUDFLARE_API_TOKEN="$CF_API_TOKEN" npx wrangler deploy --config wrangler-antigravity.jsonc 2>&1 | tail -5'
+```
+
+### Step 5: Frontend — CodegenPage.tsx
+
+File: `src/pages/CodegenPage.tsx`
+
+Components:
+- Select for language (JS2604=JavaScript, Lua2604=Lua, Clojure)
+- Textarea for description (Ukrainian/English)
+- Input for functionName, params
+- "Згенерувати код" Button
+- Code display block (pre/code with syntax highlight)
+- Collapsible JSON accordion for drakon_json
+
+API client: `src/lib/codegen/codegenApi.ts`
+```typescript
+export async function generateDrakonCode(params: {
+  description: string; language: string;
+  functionName: string; params: string;
+}): Promise<{ drakon_json: object; language: string }> { ... }
+```
+
+### Step 6: drakontechgen.js client-side (if Option A chosen)
+
+```bash
+DEV="sshpass -p 805235io. ssh -o StrictHostKeyChecking=no vokov@192.168.3.184"
+$DEV "cp /home/vokov/projects/drakon.tech.desktop/src/static/libs/drakontechgen.js /home/vokov/projects/ai-drakon-scaffolder/public/drakontechgen.js"
+```
+
+In CodegenPage.tsx, load via script tag or dynamic import.
+The bundle exposes `window.drakontechgen` with `buildGenerator` function.
+
+### Step 7: Route
+
+File: `src/App.tsx`
+Add: `<Route path="/codegen" element={<CodegenPage />} />`
+
+### Step 8: Lovable Sync + Commit
+
+```bash
+DEV="sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184"
+$DEV "cd /home/vokov/projects/ai-drakon-scaffolder && cp -r src/ .lovable/src/"
+$DEV "cd /home/vokov/projects/ai-drakon-scaffolder && git add services/drakon-codegen/ src/pages/CodegenPage.tsx src/lib/codegen/ public/drakontechgen.js cloudflare-worker/worker-mcp-drakon.js .lovable/src/ && git commit -m 'feat(codegen): DRAKON code generation via LLM — Appwrite Function + CF Worker + CodegenPage' && git push"
+```
+
+### Verification
+
+```bash
+DEV="sshpass -p '805235io.' ssh -o StrictHostKeyChecking=no vokov@192.168.3.184"
+$DEV "cd /home/vokov/projects/ai-drakon-scaffolder && NODE_OPTIONS=--max-old-space-size=900 npx tsc --noEmit 2>&1 | tail -10"
+$DEV "curl -s -X POST https://antigravity.exodus.pp.ua/v1/codegen -H 'Authorization: Bearer TEST' -H 'Content-Type: application/json' -d '{\"description\":\"print hello world\",\"language\":\"JS2604\",\"functionName\":\"hello\",\"params\":\"\"}' | python3 -m json.tool | head -20"
+```
+
+### Commit message
+```
+feat(codegen): DRAKON code gen — LLM generates .drakon JSON, drakontechgen.js compiles to code
+```
+
+### Diary
+```
+SESSION:2026-06-18|TASK-251:drakon-codegen|LLM->.drakon-JSON->JS|AppwriteFn+CFWorker+CodegenPage|commit:<hash>
+```
+
+[ ] TASK-251

@@ -2477,6 +2477,12 @@ export default {
       if (method === 'GET' && path === '/v1/notes/semantic-graph-status') {
         return await handleSemanticGraphStatus(request, env);
       }
+      if (method === 'POST' && path === '/v1/codegen') {
+        return await handleDrakonCodegen(request, env);
+      }
+      if (method === 'GET' && path === '/v1/codegen-status') {
+        return await handleCodegenStatus(request, env);
+      }
       // ──────────────────────────────────────────────────────────────────────
 
       // ─── GitHub read-only routes (no auth needed — Worker uses server-side token) ─────
@@ -3234,19 +3240,22 @@ async function handleNotesDelete(request, env) {
 }
 
 async function handleNotesBuildSemanticGraph(request, env) {
-  const authHeader = request.headers.get('Authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  if (!token) return errorResponse('Authorization required', 401);
-  try {
-    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
-  } catch {
-    return errorResponse('Invalid or expired token', 401);
+  // Accept BOTH the worker-signed owner JWT AND the Appwrite JWT (email-logged-in
+  // users send the Appwrite JWT, which is NOT HMAC-signed by JWT_SECRET).
+  // verifyOwnerAuth() mirrors handleKbIndex and falls through to verifyAppwriteJwt.
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) {
+    return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
   }
 
   const url = new URL(request.url);
   const project = url.searchParams.get('project') || '';
   const apply = url.searchParams.get('apply') || 'true';
   const model = url.searchParams.get('model') || '';
+  const github_owner = url.searchParams.get('github_owner') || '';
+  const github_repo = url.searchParams.get('github_repo') || '';
+  const github_branch = url.searchParams.get('github_branch') || '';
+  const github_token = url.searchParams.get('github_token') || '';
 
   const functionId = env.SEMANTIC_GRAPH_FUNCTION_ID;
   const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
@@ -3255,6 +3264,12 @@ async function handleNotesBuildSemanticGraph(request, env) {
   if (!functionId || !apiKey) {
     return errorResponse('SEMANTIC_GRAPH_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
   }
+
+  const graphBody = { project, apply: apply === 'true', model };
+  if (github_owner) graphBody.github_owner = github_owner;
+  if (github_repo) graphBody.github_repo = github_repo;
+  if (github_branch) graphBody.github_branch = github_branch;
+  if (github_token) graphBody.github_token = github_token;
 
   const execRes = await fetch(
     `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
@@ -3267,7 +3282,7 @@ async function handleNotesBuildSemanticGraph(request, env) {
       },
       body: JSON.stringify({
         async: true,
-        body: JSON.stringify({ project, apply: apply === 'true', model }),
+        body: JSON.stringify(graphBody),
       }),
     }
   );
@@ -3279,9 +3294,8 @@ async function handleNotesBuildSemanticGraph(request, env) {
 
   const execData = await execRes.json();
   return jsonResponse({
-    status: 'accepted',
     execution_id: execData.$id,
-    message: 'Semantic graph build started. Poll /v1/notes/semantic-graph-status?execution_id=...',
+    status: 'accepted',
   });
 }
 
@@ -3308,12 +3322,163 @@ async function handleSemanticGraphStatus(request, env) {
 
   if (!res.ok) return errorResponse(`Appwrite status check failed: ${res.status}`, 502);
   const data = await res.json();
+
+  // Appwrite Education plan never persists responseBody.
+  // Parse logs instead: function emits "Changed: N, applied: M".
+  let output = undefined;
+  if (data.status === 'completed') {
+    if (data.responseBody) {
+      try { output = JSON.parse(data.responseBody); } catch (_) {}
+    }
+    if (!output || typeof output.success !== 'boolean') {
+      const logs = data.logs || '';
+      const changedM = logs.match(/Changed: (\d+), applied: (\d+)/);
+      const notesM   = logs.match(/Collected (\d+) articles/);
+      const relsM    = logs.match(/Found (\d+) raw relationships/);
+      const isOk     = data.responseStatusCode === 200;
+      output = {
+        success: isOk,
+        proposed: [],
+        stats: {
+          notes:   notesM   ? parseInt(notesM[1])   : 0,
+          links:   relsM    ? parseInt(relsM[1])    : 0,
+          changed: changedM ? parseInt(changedM[1]) : 0,
+        },
+        git_status: 'dry-run',
+      };
+    }
+  }
   return jsonResponse({
     execution_id: data.$id,
-    status: data.status,        // 'waiting', 'processing', 'completed', 'failed'
+    status: data.status,
     duration: data.duration,
-    output: data.status === 'completed' ? JSON.parse(data.responseBody || '{}') : undefined,
-    error: data.status === 'failed' ? data.errors : undefined,
+    output,
+    error: data.status === 'failed' ? (data.errors || 'Function failed') : undefined,
+  });
+}
+
+// ─── DRAKON code generation (LLM → .drakon JSON) ─────────────────────────────
+// Triggers the "drakon-codegen" Appwrite Function asynchronously and returns an
+// execution_id; the frontend polls /v1/codegen-status.
+async function handleDrakonCodegen(request, env) {
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) {
+    return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+  }
+
+  let body = {};
+  try {
+    const text = await request.text();
+    if (text) body = JSON.parse(text);
+  } catch (_) {
+    return errorResponse('Invalid JSON body', 400);
+  }
+
+  const description = String(body.description || '').trim();
+  if (!description) return errorResponse('description is required', 400);
+
+  const codegenBody = {
+    description,
+    language: body.language || 'JS2604',
+    functionName: body.functionName || 'myFunction',
+    params: body.params || '',
+  };
+  if (body.model) codegenBody.model = body.model;
+
+  const functionId = env.DRAKON_CODEGEN_FUNCTION_ID;
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+
+  if (!functionId || !apiKey) {
+    return errorResponse('DRAKON_CODEGEN_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
+  }
+
+  const execRes = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+      body: JSON.stringify({
+        async: true,
+        body: JSON.stringify(codegenBody),
+      }),
+    }
+  );
+
+  if (!execRes.ok) {
+    const errText = await execRes.text().catch(() => '');
+    return errorResponse(`Appwrite execution failed: ${execRes.status} ${errText}`, 502);
+  }
+
+  const execData = await execRes.json();
+  return jsonResponse({
+    execution_id: execData.$id,
+    status: 'accepted',
+  });
+}
+
+async function handleCodegenStatus(request, env) {
+  const url = new URL(request.url);
+  const executionId = url.searchParams.get('execution_id');
+  if (!executionId) return errorResponse('execution_id required', 400);
+
+  const functionId = env.DRAKON_CODEGEN_FUNCTION_ID;
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+
+  if (!functionId || !apiKey) return errorResponse('not configured', 503);
+
+  const res = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    {
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+    }
+  );
+
+  if (!res.ok) return errorResponse(`Appwrite status check failed: ${res.status}`, 502);
+  const data = await res.json();
+
+  // Appwrite Education plan never persists responseBody. The function logs the
+  // full result as "DRAKON_JSON_RESULT:<base64>"; reconstruct from there.
+  let output = undefined;
+  if (data.status === 'completed') {
+    if (data.responseBody) {
+      try { output = JSON.parse(data.responseBody); } catch (_) {}
+    }
+    if (!output || typeof output.success !== 'boolean') {
+      const logs = data.logs || '';
+      const m = logs.match(/DRAKON_JSON_RESULT:([A-Za-z0-9+/=]+)/);
+      if (m) {
+        try {
+          const decoded = atob(m[1]);
+          output = JSON.parse(decoded);
+        } catch (_) {
+          output = undefined;
+        }
+      }
+      if (!output) {
+        const isOk = data.responseStatusCode === 200;
+        output = {
+          success: isOk,
+          error: isOk ? undefined : 'Could not recover drakon_json from logs',
+        };
+      }
+    }
+  }
+
+  return jsonResponse({
+    execution_id: data.$id,
+    status: data.status,
+    duration: data.duration,
+    output,
+    error: data.status === 'failed' ? (data.errors || 'Function failed') : undefined,
   });
 }
 // ─────────────────────────────────────────────────────────────────────────────
