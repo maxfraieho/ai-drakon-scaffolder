@@ -8,8 +8,12 @@ const handler = async (context: any) => {
   const { req, res, log, error } = context;
 
   const env = process.env as Record<string, string | undefined>;
-  const gatewayUrl = env.LLM_GATEWAY_URL || "https://6a3200cd0006b155c099.fra.appwrite.run";
-  const gatewayToken = env.LLM_GATEWAY_TOKEN || "freecc";
+  // Use NVIDIA NIM directly if key is set (bypasses the gateway function)
+  const nimKey = env.NIM_API_KEY;
+  const gatewayUrl = nimKey
+    ? "https://integrate.api.nvidia.com"
+    : (env.LLM_GATEWAY_URL || "https://6a3200cd0006b155c099.fra.appwrite.run");
+  const gatewayToken = nimKey || env.LLM_GATEWAY_TOKEN || "freecc";
 
   if (req.method === "GET" && req.path === "/health") {
     return res.json({ status: "ok", service: "semantic-graph" });
@@ -23,7 +27,7 @@ const handler = async (context: any) => {
 
     const project: string = body.project || "";
     const apply: boolean = body.apply !== false;
-    const model: string = body.model || "";
+    const model: string = body.model || (nimKey ? "nvidia/llama-3.3-nemotron-super-49b-v1" : "auto");
 
     const githubToken = body.github_token || env.GITHUB_TOKEN || "";
     const githubOwner = body.github_owner || "";
@@ -69,7 +73,7 @@ const handler = async (context: any) => {
     const budgetedRels = enforceLinkBudget(rawRels);
     log(`Budgeted to ${budgetedRels.length} relationships.`);
 
-    const proposed: Array<{ slug: string; before: string; after: string }> = [];
+    const proposed: Array<{ slug: string; links: number }> = [];
     const updatedSlugs: string[] = [];
 
     log("Processing articles...");
@@ -80,7 +84,7 @@ const handler = async (context: any) => {
       const [updatedContent, changed] = upsertSemanticSection(originalContent, newBlock);
 
       if (changed) {
-        proposed.push({ slug: article.slug, before: originalContent, after: updatedContent });
+        proposed.push({ slug: article.slug, links: outgoingRels.length });
         updatedSlugs.push(article.slug);
         if (apply && article.path) {
           log(`Writing ${article.slug} to GitHub...`);
@@ -94,11 +98,11 @@ const handler = async (context: any) => {
       }
     }
 
-    log(`Done. Proposed: ${proposed.length}, applied: ${apply ? updatedSlugs.length : 0}`);
+    log(`Done. Changed: ${proposed.length}, applied: ${apply ? updatedSlugs.length : 0}`);
     return res.json({
       success: true,
-      proposed,
-      stats: { notes: articles.length, links: budgetedRels.length },
+      proposed: [],
+      stats: { notes: articles.length, links: budgetedRels.length, changed: proposed.length },
       git_status: apply ? `Updated ${updatedSlugs.length} files` : "dry-run",
     });
   } catch (err: any) {

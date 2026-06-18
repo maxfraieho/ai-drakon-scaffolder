@@ -3316,12 +3316,38 @@ async function handleSemanticGraphStatus(request, env) {
 
   if (!res.ok) return errorResponse(`Appwrite status check failed: ${res.status}`, 502);
   const data = await res.json();
+
+  // Appwrite Education plan never persists responseBody.
+  // Parse logs instead: function emits "Changed: N, applied: M".
+  let output = undefined;
+  if (data.status === 'completed') {
+    if (data.responseBody) {
+      try { output = JSON.parse(data.responseBody); } catch (_) {}
+    }
+    if (!output || typeof output.success !== 'boolean') {
+      const logs = data.logs || '';
+      const changedM = logs.match(/Changed: (\d+), applied: (\d+)/);
+      const notesM   = logs.match(/Collected (\d+) articles/);
+      const relsM    = logs.match(/Found (\d+) raw relationships/);
+      const isOk     = data.responseStatusCode === 200;
+      output = {
+        success: isOk,
+        proposed: [],
+        stats: {
+          notes:   notesM   ? parseInt(notesM[1])   : 0,
+          links:   relsM    ? parseInt(relsM[1])    : 0,
+          changed: changedM ? parseInt(changedM[1]) : 0,
+        },
+        git_status: 'dry-run',
+      };
+    }
+  }
   return jsonResponse({
     execution_id: data.$id,
-    status: data.status,        // 'waiting', 'processing', 'completed', 'failed'
+    status: data.status,
     duration: data.duration,
-    output: data.status === 'completed' ? JSON.parse(data.responseBody || '{}') : undefined,
-    error: data.status === 'failed' ? data.errors : undefined,
+    output,
+    error: data.status === 'failed' ? (data.errors || 'Function failed') : undefined,
   });
 }
 // ─────────────────────────────────────────────────────────────────────────────
