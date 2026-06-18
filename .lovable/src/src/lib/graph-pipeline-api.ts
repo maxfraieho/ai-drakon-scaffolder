@@ -1,0 +1,190 @@
+/**
+ * graph-pipeline-api.ts
+ * Client for /graph-pipelines REST + SSE API on architect-agent (port 8766).
+ * URL resolution mirrors agent-api.ts: reads drakon_agent_base_url from localStorage,
+ * falls back to http://192.168.3.184, then appends architect port 8766.
+ */
+
+import type { IrDiagram } from "@/lib/htse/ir-types";
+import { readSettings } from "@/lib/settings-storage";
+import { getAppwriteJwt } from "./appwrite-jwt";
+
+export interface PipelineInfo {
+  name: string;
+  display_name: string;
+}
+
+export type { IrDiagram };
+
+export interface ExecutionEvent {
+  event: "node_done" | "breakpoint" | "done" | "error";
+  node: string | null;
+  state?: Record<string, unknown>;
+  error?: string;
+}
+
+function getArchitectBase(): string {
+  if (typeof window === "undefined") return "https://architect-agent-flue.maxfraieho.workers.dev";
+  return readSettings().agents.architectUrl.replace(/\/+$/, "");
+}
+
+export async function listPipelines(): Promise<PipelineInfo[]> {
+  const r = await fetch(`${getArchitectBase()}/graph-pipelines`);
+  if (!r.ok) throw new Error(`listPipelines: ${r.status}`);
+  const data = await r.json();
+  return data.pipelines ?? [];
+}
+
+export async function getPipeline(name: string): Promise<IrDiagram> {
+  const r = await fetch(`${getArchitectBase()}/graph-pipelines/${name}`);
+  if (!r.ok) throw new Error(`getPipeline(${name}): ${r.status}`);
+  return r.json();
+}
+
+export async function savePipeline(name: string, ir: IrDiagram): Promise<void> {
+  const r = await fetch(`${getArchitectBase()}/graph-pipelines/${name}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(ir),
+  });
+  if (!r.ok) throw new Error(`savePipeline: ${r.status}`);
+}
+
+export async function createPipeline(name: string): Promise<PipelineInfo> {
+  const postResp = await fetch(`${getArchitectBase()}/graph-pipelines`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name, display_name: name }),
+  }).catch(() => null);
+
+  if (postResp?.ok) {
+    return postResp.json() as Promise<PipelineInfo>;
+  }
+
+  const skeleton: IrDiagram = {
+    name,
+    access: "private",
+    params: [],
+    items: {
+      h0: { type: "header", content: name },
+      e0: { type: "end", content: "" },
+    },
+  };
+  await savePipeline(name, skeleton);
+  return { name, display_name: name };
+}
+
+export async function startExecution(
+  name: string,
+  initialState: Record<string, unknown> = {},
+  breakpoints: string[] = [],
+): Promise<string> {
+  const r = await fetch(`${getArchitectBase()}/graph-pipelines/${name}/execute`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ initial_state: initialState, breakpoints }),
+  });
+  if (!r.ok) throw new Error(`startExecution: ${r.status}`);
+  const data = await r.json();
+  return data.job_id as string;
+}
+
+export function streamExecution(
+  name: string,
+  jobId: string,
+  onEvent: (ev: ExecutionEvent) => void,
+  signal?: AbortSignal,
+): void {
+  const url = `${getArchitectBase()}/graph-pipelines/${name}/execute/${jobId}/stream`;
+  const es = new EventSource(url);
+  es.onmessage = (e) => {
+    try {
+      const ev: ExecutionEvent = JSON.parse(e.data);
+      onEvent(ev);
+      if (ev.event === "done" || ev.event === "error") es.close();
+    } catch {
+      /* skip malformed chunk */
+    }
+  };
+  es.onerror = () => es.close();
+  signal?.addEventListener("abort", () => es.close(), { once: true });
+}
+
+export async function resumeExecution(
+  name: string,
+  jobId: string,
+  stateOverride: Record<string, unknown> = {},
+): Promise<void> {
+  const r = await fetch(
+    `${getArchitectBase()}/graph-pipelines/${name}/execute/${jobId}/resume`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ state_override: stateOverride }),
+    },
+  );
+  if (!r.ok) throw new Error(`resumeExecution: ${r.status}`);
+}
+
+// ---- Per-project agent pipeline API ----
+
+export async function listProjectAgents(slug: string): Promise<{name: string, has_pipeline: boolean, kb_docs: number}[]> {
+  const base = getArchitectBase();
+  const resp = await fetch(`${base}/projects/${slug}/agents`);
+  const data = await resp.json();
+  return data.agents || [];
+}
+
+export async function getProjectPipeline(slug: string, agent: string): Promise<object | null> {
+  const base = getArchitectBase();
+  const resp = await fetch(`${base}/projects/${slug}/agents/${agent}/pipeline`);
+  if (!resp.ok) return null;
+  return resp.json();
+}
+
+export async function saveProjectPipeline(slug: string, agent: string, ir: object): Promise<boolean> {
+  const base = getArchitectBase();
+  const resp = await fetch(`${base}/projects/${slug}/agents/${agent}/pipeline`, {
+    method: "PUT",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({ir}),
+  });
+  return resp.ok;
+}
+
+export function streamProjectExecution(slug: string, agent: string, input: string): EventSource {
+  const base = getArchitectBase();
+  return new EventSource(`${base}/projects/${slug}/agents/${agent}/execute?input=${encodeURIComponent(input)}`);
+}
+
+export interface ProjectInfo {
+  slug: string;
+  name: string;
+  description: string;
+  repo_url: string;
+  branch: string;
+  has_repo: boolean;
+  agents: string[];
+  github?: { owner: string; repo: string; branch: string };
+}
+
+export async function authHeaders(): Promise<HeadersInit> {
+  const jwt = await getAppwriteJwt();
+  return jwt ? { Authorization: `Bearer ${jwt}` } : {};
+}
+
+export async function listProjectsArch(): Promise<ProjectInfo[]> {
+  const headers = await authHeaders();
+  const r = await fetch(`${getArchitectBase()}/projects`, { headers });
+  if (!r.ok) throw new Error(`listProjectsArch: ${r.status}`);
+  return ((await r.json()).projects ?? []);
+}
+
+export async function createProjectArch(slug: string, name: string, description = '', repoUrl = '') {
+  const r = await fetch(`${getArchitectBase()}/projects/${encodeURIComponent(slug)}`,
+    { method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, description, repo_url: repoUrl }) });
+  if (!r.ok) throw new Error(`createProjectArch: ${r.status}`);
+  return (await r.json()).project;
+}
+
