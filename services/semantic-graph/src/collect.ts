@@ -1,10 +1,10 @@
 import { GitHubAPI } from './github';
 
 export interface Article {
-  slug: string;      // relative path without .md, e.g. "folder/article-name"
-  title: string;     // from first # heading or filename
-  folder: string;    // top-level folder, e.g. "docs" or "" for root
-  summary: string;   // first 150 chars of body
+  slug: string;
+  title: string;
+  folder: string;
+  summary: string;
   path?: string;
   sha?: string;
   content?: string;
@@ -21,18 +21,34 @@ const EXCLUDED_DIRS = [
   '.git/',
 ];
 
-// Scan the entire repository for all markdown files.
-// No docsPath or project filter — works with any repo structure.
+const MAX_FETCH = 150;
+
+// Priority order: docs/ > README > top-level > deep-nested
+function pathPriority(path: string): number {
+  const lower = path.toLowerCase();
+  if (lower.startsWith('docs/')) return 0;
+  if (lower === 'readme.md') return 1;
+  if (!path.includes('/')) return 2;
+  const depth = path.split('/').length;
+  return depth + 2;
+}
+
 export async function collectArticles(gh: GitHubAPI): Promise<Article[]> {
-  const files = await gh.listAllMd('');
-  const mdFiles = files.filter(f =>
+  // One API call to get all .md paths
+  const allFiles = await gh.listAllMd('');
+  const mdFiles = allFiles.filter(f =>
     !EXCLUDED_DIRS.some(ex => f.path.includes(ex)) &&
     !f.path.includes('/_') &&
     !f.path.endsWith('/_INDEX.md')
   );
 
+  // Sort by priority and take only top MAX_FETCH before fetching content
+  const prioritised = mdFiles
+    .sort((a, b) => pathPriority(a.path) - pathPriority(b.path))
+    .slice(0, MAX_FETCH);
+
   const articles: Article[] = [];
-  for (const file of mdFiles) {
+  for (const file of prioritised) {
     const { content, sha } = await gh.getFile(file.path);
     const slug = file.path.replace(/\.md$/, '');
     const parts = slug.split('/');
