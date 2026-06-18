@@ -516,7 +516,7 @@ export async function buildSemanticGraph(
   }
 
   // Async: poll semantic-graph-status until completed (up to 6 min)
-  const executionId = init.execution_id as string | undefined;
+  let executionId = init.execution_id as string | undefined;
   if (!executionId) throw new Error("Немає execution_id у відповіді worker");
 
   for (let i = 0; i < 120; i++) {
@@ -531,7 +531,23 @@ export async function buildSemanticGraph(
       return s.output as unknown as SemanticGraphBuildResponse;
     }
     if (s.status === "failed") {
-      throw new Error(`Semantic graph failed: ${String(s.error || "невідома помилка")}`);
+      const errMsg = String(s.error || "");
+      // Cold-start timeout — container is now warm, auto-retry once
+      if (errMsg.includes("Timed out waiting for runtime") && i < 30) {
+        const retryRes = await fetch(`${workerUrl()}/v1/notes/build-semantic-graph?${params.toString()}`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch(() => null);
+        if (retryRes?.ok) {
+          const retryInit = await retryRes.json() as Record<string, unknown>;
+          const retryId = retryInit.execution_id as string | undefined;
+          if (retryId) {
+            executionId = retryId;  // Warm container retry
+            continue;
+          }
+        }
+      }
+      throw new Error(`Semantic graph failed: ${errMsg || "невідома помилка"}`);
     }
   }
   throw new Error("Timeout: семантичний граф не завершився за 6 хвилин");

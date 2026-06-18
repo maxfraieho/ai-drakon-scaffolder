@@ -28,7 +28,7 @@ export async function collectArticles(gh: GitHubAPI, docsPath: string, project?:
 
     // Summary: first 600 chars of content after stripping frontmatter
     const body = content.replace(/^---[\s\S]*?---\n/, '').trim();
-    const summary = body.slice(0, 600);
+    const summary = body.slice(0, 150);
 
     articles.push({ slug, title, folder, summary, path: file.path, sha, content });
   }
