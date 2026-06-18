@@ -3,11 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node node_modules/typescript/bin/tsc --outDir dist",
+    "build": "node node_modules/typescript/bin/tsc",
     "start": "node dist/main.js"
   },
-  "dependencies": {},
-  "devDependencies": {
+  "dependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.0.0"
   }
