@@ -6,7 +6,7 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 GITHUB_REPO = "maxfraieho/ai-drakon-scaffolder"
 DOCS_PATH = "docs"
-PROXY_URL = "https://6a3200cd0006b155c099.fra.appwrite.run/v1/chat/completions"
+PROXY_URL = "https://llm-proxy.fra.appwrite.run"
 PROXY_MODEL = "gemini-2.5-flash"
 
 [[kv_namespaces]]
