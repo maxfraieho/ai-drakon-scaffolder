@@ -1,6 +1,5 @@
 import { Article } from './collect';
 
-// renderSemanticBlock: creates "## Семантичні зв'язки" markdown section
 export function renderSemanticBlock(rels: {link: string; target_id: string}[], articles: Article[]): string {
   if (rels.length === 0) return '';
   const lines = rels.map(r => {
@@ -11,11 +10,22 @@ export function renderSemanticBlock(rels: {link: string; target_id: string}[], a
   return `## Семантичні зв'язки\n\n${lines.join('\n')}\n`;
 }
 
-// upsertSemanticSection: inserts or replaces "## Семантичні зв'язки" section in markdown content
-export function upsertSemanticSection(content: string, newBlock: string): string {
+// Returns [updatedContent, changed] tuple
+export function upsertSemanticSection(content: string, newBlock: string): [string, boolean] {
   const sectionRegex = /\n## Семантичні зв'язки[\s\S]*?(?=\n## |\n---|\n#[^#]|$)/;
-  if (sectionRegex.test(content)) {
-    return content.replace(sectionRegex, newBlock ? `\n${newBlock}` : '');
+  const hasSection = sectionRegex.test(content);
+
+  if (hasSection) {
+    if (!newBlock) {
+      return [content.replace(sectionRegex, ''), true];
+    }
+    const updated = content.replace(sectionRegex, `\n${newBlock}`);
+    return [updated, updated !== content];
   }
-  return content.trimEnd() + '\n\n' + newBlock;
+
+  if (!newBlock) {
+    return [content, false];
+  }
+
+  return [content.trimEnd() + '\n\n' + newBlock, true];
 }

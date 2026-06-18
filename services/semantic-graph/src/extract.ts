@@ -7,7 +7,7 @@ export interface Relationship {
 }
 
 export function buildExtractionPrompt(articles: Article[]): { systemPrompt: string; userPrompt: string } {
-  const systemPrompt = 
+  const systemPrompt =
     "Ти — помічник для побудови семантичного графу. Повертай тільки валідний JSON.";
 
   const lines = articles.map(art => {
@@ -15,9 +15,9 @@ export function buildExtractionPrompt(articles: Article[]): { systemPrompt: stri
     return `${art.slug} | ${art.folder} | ${art.title} | ${cleanSummary}`;
   });
 
-  const userPrompt = 
-    "Список статей:\n" + 
-    lines.join('\n') + 
+  const userPrompt =
+    "Список статей:\n" +
+    lines.join('\n') +
     "\n\nЗадача: знайти значущі семантичні зв'язки між статтями, відповісти JSON у форматі:\n" +
     '{"relationships":[{"source_id":"...","link":"...","target_id":"..."}]}';
 
@@ -39,7 +39,7 @@ export async function callLLM(
     body: JSON.stringify({
       model: model || 'auto',
       messages,
-      max_tokens: 2000,
+      max_tokens: 8000,
       temperature: 0.3
     })
   });
@@ -103,7 +103,6 @@ export function parseRelationships(llmResponse: string, articles: Article[]): Re
 
     if (!sourceArt || !targetArt) continue;
 
-    // Reject if in the same folder
     if (sourceArt.folder === targetArt.folder) continue;
 
     const key = `${source_id}||${target_id}`;

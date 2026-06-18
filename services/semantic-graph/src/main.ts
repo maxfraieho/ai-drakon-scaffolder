@@ -4,15 +4,16 @@ import { buildExtractionPrompt, callLLM, parseRelationships } from "./extract";
 import { enforceLinkBudget } from "./budget";
 import { renderSemanticBlock, upsertSemanticSection } from "./render";
 
+const MAX_ARTICLES = 200;
+
 const handler = async (context: any) => {
   const { req, res, log, error } = context;
 
   const env = process.env as Record<string, string | undefined>;
-  // Use NVIDIA NIM directly if key is set (bypasses the gateway function)
   const nimKey = env.NIM_API_KEY;
   const gatewayUrl = nimKey
     ? "https://integrate.api.nvidia.com"
-    : (env.LLM_GATEWAY_URL || "https://6a3200cd0006b155c099.fra.appwrite.run");
+    : (env.LLM_GATEWAY_URL || "https://llm-proxy.fra.appwrite.run");
   const gatewayToken = nimKey || env.LLM_GATEWAY_TOKEN || "freecc";
 
   if (req.method === "GET" && req.path === "/health") {
@@ -25,7 +26,6 @@ const handler = async (context: any) => {
       body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     }
 
-    const project: string = body.project || "";
     const apply: boolean = body.apply !== false;
     const model: string = body.model || (nimKey ? "nvidia/llama-3.3-nemotron-super-49b-v1" : "auto");
 
@@ -35,15 +35,21 @@ const handler = async (context: any) => {
     const githubRepo =
       githubOwner && githubRepoName
         ? `${githubOwner}/${githubRepoName}`
-        : env.GITHUB_REPO || "maxfraieho/ai-drakon-scaffolder";
+        : env.GITHUB_REPO || "";
     const githubBranch = body.github_branch || env.GITHUB_BRANCH || "main";
-    const docsPath = body.docs_path || env.DOCS_PATH || "docs";
+
+    if (!githubRepo) {
+      return res.json(
+        { success: false, error: "No repository specified. Pass github_owner + github_repo or set GITHUB_REPO env var." },
+        400
+      );
+    }
 
     log(`Initializing GitHub API for ${githubRepo} (branch: ${githubBranch})...`);
     const gh = new GitHubAPI(githubToken, githubRepo, githubBranch);
 
-    log(`Collecting articles from docs path: ${docsPath}, project: ${project || "none"}...`);
-    const articles = await collectArticles(gh, docsPath, project);
+    log(`Scanning all markdown files in ${githubRepo}...`);
+    let articles = await collectArticles(gh);
     log(`Collected ${articles.length} articles.`);
 
     if (articles.length === 0) {
@@ -53,6 +59,14 @@ const handler = async (context: any) => {
         stats: { notes: 0, links: 0 },
         git_status: "no articles",
       });
+    }
+
+    // For large repos, prioritise articles with more content
+    if (articles.length > MAX_ARTICLES) {
+      articles = articles
+        .sort((a, b) => (b.content?.length ?? 0) - (a.content?.length ?? 0))
+        .slice(0, MAX_ARTICLES);
+      log(`Trimmed to top ${MAX_ARTICLES} articles by content length.`);
     }
 
     log("Building LLM extraction prompt...");
