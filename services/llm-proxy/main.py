@@ -1,4 +1,4 @@
-"""LLM Proxy Appwrite Function — OpenAI chat/completions interface, NIM->OpenRouter failover.
+"""LLM Proxy Appwrite Function — OpenAI chat/completions interface, NIM->OpenRouter->Groq failover.
 
 Replaces the Node.js llm-gateway. Callers (semantic-graph, drakon-codegen) POST
 OpenAI-format requests to /v1/chat/completions and read choices[0].message.content,
@@ -27,8 +27,12 @@ OR_MODEL_MAP = {
     "default": "meta-llama/llama-3.3-70b-instruct:free",
 }
 
+# Groq model (same for all roles — llama-3.3-70b-versatile is the best free option)
+GROQ_MODEL = "llama-3.3-70b-versatile"
+
 NIM_BASE = "https://integrate.api.nvidia.com/v1/chat/completions"
 OR_BASE = "https://openrouter.ai/api/v1/chat/completions"
+GROQ_BASE = "https://api.groq.com/openai/v1/chat/completions"
 
 
 def detect_role(model: str) -> str:
@@ -68,7 +72,7 @@ def main(context):
 
     # Auth check
     auth = req.headers.get("authorization", "") or req.headers.get("Authorization", "")
-    expected = f"Bearer {os.environ.get('AUTH_TOKEN', 'freecc')}"
+    expected = f"Bearer {os.environ.get(AUTH_TOKEN, freecc)}"
     if auth != expected:
         return res.json({"error": "Unauthorized"}, 401)
 
@@ -101,20 +105,23 @@ def main(context):
     nim_key1 = os.environ.get("NIM_API_KEY", "")
     nim_key2 = os.environ.get("NIM_API_KEY_2", "")
     or_key = os.environ.get("OPENROUTER_API_KEY", "")
+    groq_key = os.environ.get("GROQ_API_KEY", "")
 
     providers = []
     if nim_key1:
-        providers.append(("NIM-1", NIM_BASE, nim_key1, nim_model))
+        providers.append(("NIM-1", NIM_BASE, nim_key1, nim_model, 12))
     if nim_key2:
-        providers.append(("NIM-2", NIM_BASE, nim_key2, nim_model))
+        providers.append(("NIM-2", NIM_BASE, nim_key2, nim_model, 12))
     if or_key:
-        providers.append(("OR", OR_BASE, or_key, OR_MODEL_MAP.get(role, OR_MODEL_MAP["default"])))
+        providers.append(("OR", OR_BASE, or_key, OR_MODEL_MAP.get(role, OR_MODEL_MAP["default"]), 40))
+    if groq_key:
+        providers.append(("GROQ", GROQ_BASE, groq_key, GROQ_MODEL, 30))
 
     if not providers:
         return res.json({"error": "No LLM providers configured"}, 503)
 
     last_error = None
-    for name, url, key, model in providers:
+    for name, url, key, model, per_timeout in providers:
         payload = {**base_payload, "model": model}
         headers = {
             "Content-Type": "application/json",
@@ -123,9 +130,6 @@ def main(context):
         if "openrouter" in url:
             headers["HTTP-Referer"] = "https://antigravity.exodus.pp.ua"
             headers["X-Title"] = "AI-DRAKON"
-
-        # NIM is known to hang; short timeout so failover stays inside the 60s budget.
-        per_timeout = 12 if name.startswith("NIM") else 40
 
         log(f"LLM-PROXY: trying {name} model={model} (timeout={per_timeout}s)")
         try:
@@ -137,7 +141,6 @@ def main(context):
 
         if status == 200 and resp_body.get("choices"):
             log(f"LLM-PROXY: success via {name}")
-            # Return OpenAI-format response untouched (callers read choices[0].message.content)
             return res.json(resp_body)
 
         last_error = f"{name} status={status}: {str(resp_body)[:200]}"
