@@ -23,8 +23,8 @@ import { Route as GithubRouteImport } from './routes/github'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as DevcycleRouteImport } from './routes/devcycle'
-import { Route as CodeRouteImport } from './routes/code'
 import { Route as CodegenRouteImport } from './routes/codegen'
+import { Route as CodeRouteImport } from './routes/code'
 import { Route as ArchitectRouteImport } from './routes/architect'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
@@ -108,14 +108,14 @@ const DevcycleRoute = DevcycleRouteImport.update({
   path: '/devcycle',
   getParentRoute: () => rootRouteImport,
 } as any)
-const CodeRoute = CodeRouteImport.update({
-  id: '/code',
-  path: '/code',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const CodegenRoute = CodegenRouteImport.update({
   id: '/codegen',
   path: '/codegen',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CodeRoute = CodeRouteImport.update({
+  id: '/code',
+  path: '/code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArchitectRoute = ArchitectRouteImport.update({
@@ -370,6 +370,7 @@ export interface RootRouteChildren {
   AgentsRoute: typeof AgentsRoute
   ArchitectRoute: typeof ArchitectRoute
   CodeRoute: typeof CodeRoute
+  CodegenRoute: typeof CodegenRoute
   DevcycleRoute: typeof DevcycleRoute
   DiagramsRoute: typeof DiagramsRoute
   DocsRoute: typeof DocsRoute
@@ -491,18 +492,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevcycleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/code': {
-      id: '/code'
-      path: '/code'
-      fullPath: '/code'
-      preLoaderRoute: typeof CodeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/codegen': {
       id: '/codegen'
       path: '/codegen'
       fullPath: '/codegen'
       preLoaderRoute: typeof CodegenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/code': {
+      id: '/code'
+      path: '/code'
+      fullPath: '/code'
+      preLoaderRoute: typeof CodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/architect': {
