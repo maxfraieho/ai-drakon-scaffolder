@@ -23,6 +23,7 @@ import {
   Loader2,
   Plus,
   FileCode2,
+  Code2,
   Braces,
   Activity,
   ChevronUp,
@@ -81,6 +82,7 @@ const NAV_WORKSPACE: NavItem[] = [
   { to: "/knowledge", label: "Знання", icon: Brain }, // Added Knowledge item
   { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },
   { to: "/workspace", label: "Workspace", icon: Layers },
+  { to: "/codegen", label: "Codegen", icon: Code2 },
 ];
 
 const NAV_SYSTEM: NavItem[] = [
@@ -98,6 +100,7 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/pipelines")) return { section: "Pipeline", sectionPath: "/pipelines" };
   if (pathname.startsWith("/knowledge")) return { section: "Знання", sectionPath: "/knowledge" };
   if (pathname.startsWith("/notebooks")) return { section: "Knowledge Agents", sectionPath: "/notebooks" };
+  if (pathname.startsWith("/codegen")) return { section: "Codegen", sectionPath: "/codegen" };
   if (pathname.startsWith("/code")) return { section: "Код", sectionPath: "/code" };
   if (pathname.startsWith("/workspace")) return { section: "Workspace", sectionPath: "/workspace" };
   return { section: "Workspace", sectionPath: "/" };
