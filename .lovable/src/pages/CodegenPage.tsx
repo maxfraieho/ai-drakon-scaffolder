@@ -20,21 +20,6 @@ import {
 } from "@/components/ui/select";
 import { generateDrakonCode, type CodegenResponse } from "@/lib/codegen/codegenApi";
 
-// drakongen + drakontechgen are loaded from /public at runtime and attach to window.
-declare global {
-  interface Window {
-    drakongen?: {
-      toPseudocode: (
-        drakonJson: unknown,
-        name: string,
-        filename: string,
-        language: string
-      ) => string;
-    };
-    drakontechgen?: unknown;
-  }
-}
-
 const LANGUAGES = [
   { value: "JS2604", label: "JavaScript" },
   { value: "Lua2604", label: "Lua" },
@@ -95,7 +80,7 @@ export function CodegenPage() {
       try {
         if (window.drakongen?.toPseudocode) {
           const text = window.drakongen.toPseudocode(
-            res.drakon_json,
+            JSON.stringify(res.drakon_json),
             functionName,
             `${functionName}.drakon`,
             language
