@@ -148,9 +148,11 @@ export function GardenPage() {
       if (res.success) {
         setProposedChanges(res.proposed);
         setGraphStats(res.stats);
-        if (res.proposed.length === 0) {
+        const changedCount = res.stats?.changed ?? res.proposed.length;
+        if (changedCount === 0) {
           toast.info("Семантична структура вже є оптимальною. Жодних нових зв'язків не запропоновано.");
         } else {
+          toast.success("Знайдено змін: " + changedCount + ". Зв'язків: " + (res.stats?.links ?? 0) + ".");
           setShowDiffDialog(true);
         }
       } else {

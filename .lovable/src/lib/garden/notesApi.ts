@@ -425,7 +425,7 @@ export async function deleteNote(slug: string, project?: string): Promise<void> 
 export async function fetchNotesGraph(project?: string): Promise<{
   nodes: Array<{ slug: string; title: string; exists: boolean }>;
   edges: Array<{ source: string; target: string; type: string }>;
-  stats: { notes: number; links: number };
+  stats: { notes: number; links: number; changed?: number };
 }> {
   const gh = getActiveProjectGithub();
   if (gh) {
@@ -472,7 +472,7 @@ function getRootFolder(slug: string): string {
 export interface SemanticGraphBuildResponse {
   success: boolean;
   model: string;
-  proposed: Array<{ slug: string; before: string; after: string }>;
+  proposed: Array<{ slug: string; links: number }>;
   stats: { notes: number; links: number };
   git_status?: string;
 }
