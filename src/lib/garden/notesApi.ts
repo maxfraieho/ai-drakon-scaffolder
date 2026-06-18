@@ -472,8 +472,8 @@ function getRootFolder(slug: string): string {
 export interface SemanticGraphBuildResponse {
   success: boolean;
   model: string;
-  proposed: Array<{ slug: string; links: number }>;
-  stats: { notes: number; links: number };
+  proposed: Array<{ slug: string; links: number; before?: string; after?: string }>;
+  stats: { notes: number; links: number; changed?: number };
   git_status?: string;
 }
 
