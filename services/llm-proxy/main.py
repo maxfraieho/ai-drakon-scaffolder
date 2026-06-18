@@ -1,4 +1,4 @@
-"""LLM Proxy Appwrite Function — OpenAI chat/completions, NIM->OpenRouter->Groq failover."""
+"""LLM Proxy Appwrite Function — OpenAI chat/completions, NIM->OpenRouter->Groq->Google failover."""
 
 import json
 import urllib.request
@@ -21,9 +21,18 @@ OR_MODEL_MAP = {
 
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
-NIM_BASE  = "https://integrate.api.nvidia.com/v1/chat/completions"
-OR_BASE   = "https://openrouter.ai/api/v1/chat/completions"
-GROQ_BASE = "https://api.groq.com/openai/v1/chat/completions"
+# Google Gemini via OpenAI-compatible endpoint. flash-lite has the highest free-tier quota.
+GOOGLE_MODEL_MAP = {
+    "opus": "gemini-2.5-flash",
+    "sonnet": "gemini-2.5-flash-lite",
+    "haiku": "gemini-2.5-flash-lite",
+    "default": "gemini-2.5-flash-lite",
+}
+
+NIM_BASE    = "https://integrate.api.nvidia.com/v1/chat/completions"
+OR_BASE     = "https://openrouter.ai/api/v1/chat/completions"
+GROQ_BASE   = "https://api.groq.com/openai/v1/chat/completions"
+GOOGLE_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"
 
 
 def detect_role(model: str) -> str:
@@ -113,6 +122,10 @@ def main(context):
 
     for i, key in enumerate(_load_keys("GROQ_API_KEY", "GROQ_API_KEYS"), 1):
         providers.append(("GROQ-" + str(i), GROQ_BASE, key, GROQ_MODEL, 30))
+
+    google_model = GOOGLE_MODEL_MAP.get(role, GOOGLE_MODEL_MAP["default"])
+    for i, key in enumerate(_load_keys("GOOGLE_API_KEY", "GOOGLE_API_KEYS"), 1):
+        providers.append(("GOOGLE-" + str(i), GOOGLE_BASE, key, google_model, 30))
 
     if not providers:
         return res.json({"error": "No LLM providers configured"}, 503)
