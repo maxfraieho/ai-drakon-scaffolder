@@ -24,6 +24,7 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as DevcycleRouteImport } from './routes/devcycle'
 import { Route as CodeRouteImport } from './routes/code'
+import { Route as CodegenRouteImport } from './routes/codegen'
 import { Route as ArchitectRouteImport } from './routes/architect'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
@@ -113,8 +114,8 @@ const CodeRoute = CodeRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CodegenRoute = CodegenRouteImport.update({
-  id: /codegen,
-  path: /codegen,
+  id: '/codegen',
+  path: '/codegen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ArchitectRoute = ArchitectRouteImport.update({
@@ -185,6 +186,7 @@ export interface FileRoutesByFullPath {
   '/agents': typeof AgentsRoute
   '/architect': typeof ArchitectRoute
   '/code': typeof CodeRoute
+  '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -214,6 +216,7 @@ export interface FileRoutesByTo {
   '/agents': typeof AgentsRoute
   '/architect': typeof ArchitectRoute
   '/code': typeof CodeRoute
+  '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -244,6 +247,7 @@ export interface FileRoutesById {
   '/agents': typeof AgentsRoute
   '/architect': typeof ArchitectRoute
   '/code': typeof CodeRoute
+  '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -275,6 +279,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/architect'
     | '/code'
+    | '/codegen'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -304,6 +309,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/architect'
     | '/code'
+    | '/codegen'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -333,6 +339,7 @@ export interface FileRouteTypes {
     | '/agents'
     | '/architect'
     | '/code'
+    | '/codegen'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -489,6 +496,13 @@ declare module '@tanstack/react-router' {
       path: '/code'
       fullPath: '/code'
       preLoaderRoute: typeof CodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/codegen': {
+      id: '/codegen'
+      path: '/codegen'
+      fullPath: '/codegen'
+      preLoaderRoute: typeof CodegenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/architect': {

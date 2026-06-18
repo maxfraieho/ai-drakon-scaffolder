@@ -103,8 +103,8 @@ const CodeRoute = CodeRouteImport.update({
   getParentRoute: () => rootRouteImport,
 } as any)
 const CodegenRoute = CodegenRouteImport.update({
-  id: /codegen,
-  path: /codegen,
+  id: '/codegen',
+  path: '/codegen',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsRoute = AgentsRouteImport.update({
@@ -179,6 +179,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
   '/code': typeof CodeRoute
+  '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -205,6 +206,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
   '/code': typeof CodeRoute
+  '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -232,6 +234,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/agents': typeof AgentsRoute
   '/code': typeof CodeRoute
+  '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
   '/docs': typeof DocsRoute
@@ -260,6 +263,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agents'
     | '/code'
+    | '/codegen'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -286,6 +290,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agents'
     | '/code'
+    | '/codegen'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -312,6 +317,7 @@ export interface FileRouteTypes {
     | '/'
     | '/agents'
     | '/code'
+    | '/codegen'
     | '/devcycle'
     | '/diagrams'
     | '/docs'
@@ -451,6 +457,13 @@ declare module '@tanstack/react-router' {
       path: '/code'
       fullPath: '/code'
       preLoaderRoute: typeof CodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/codegen': {
+      id: '/codegen'
+      path: '/codegen'
+      fullPath: '/codegen'
+      preLoaderRoute: typeof CodegenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/architect': {
