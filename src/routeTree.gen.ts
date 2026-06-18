@@ -22,6 +22,7 @@ import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as DevcycleRouteImport } from './routes/devcycle'
 import { Route as CodeRouteImport } from './routes/code'
+import { Route as CodegenRouteImport } from './routes/codegen'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
@@ -99,6 +100,11 @@ const DevcycleRoute = DevcycleRouteImport.update({
 const CodeRoute = CodeRouteImport.update({
   id: '/code',
   path: '/code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CodegenRoute = CodegenRouteImport.update({
+  id: /codegen,
+  path: /codegen,
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsRoute = AgentsRouteImport.update({
@@ -600,6 +606,7 @@ const rootRouteChildren: RootRouteChildren = {
   ObservabilityRoute: ObservabilityRoute,
   AgentsRoute: AgentsRoute,
   CodeRoute: CodeRoute,
+  CodegenRoute: CodegenRoute,
   DevcycleRoute: DevcycleRoute,
   DiagramsRoute: DiagramsRoute,
   DocsRoute: DocsRoute,

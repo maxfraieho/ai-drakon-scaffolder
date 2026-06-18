@@ -112,6 +112,11 @@ const CodeRoute = CodeRouteImport.update({
   path: '/code',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CodegenRoute = CodegenRouteImport.update({
+  id: /codegen,
+  path: /codegen,
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArchitectRoute = ArchitectRouteImport.update({
   id: '/architect',
   path: '/architect',
@@ -631,6 +636,7 @@ const rootRouteChildren: RootRouteChildren = {
   AgentsRoute: AgentsRoute,
   ArchitectRoute: ArchitectRoute,
   CodeRoute: CodeRoute,
+  CodegenRoute: CodegenRoute,
   DevcycleRoute: DevcycleRoute,
   DiagramsRoute: DiagramsRoute,
   DocsRoute: DocsRoute,
