@@ -1,17 +1,10 @@
-"""LLM Proxy Appwrite Function — OpenAI chat/completions interface, NIM->OpenRouter->Groq failover.
-
-Replaces the Node.js llm-gateway. Callers (semantic-graph, drakon-codegen) POST
-OpenAI-format requests to /v1/chat/completions and read choices[0].message.content,
-so this proxy speaks OpenAI format end to end (no Anthropic conversion needed).
-"""
+"""LLM Proxy Appwrite Function — OpenAI chat/completions, NIM->OpenRouter->Groq failover."""
 
 import json
 import urllib.request
 import urllib.error
 import os
 
-
-# Map a requested model hint -> concrete NIM model id.
 MODEL_MAP = {
     "opus": "moonshotai/kimi-k2-instruct",
     "sonnet": "nvidia/llama-3.3-nemotron-super-49b-v1",
@@ -19,7 +12,6 @@ MODEL_MAP = {
     "default": "nvidia/llama-3.3-nemotron-super-49b-v1",
 }
 
-# Verified-available OpenRouter free slugs (2026-06); failover target.
 OR_MODEL_MAP = {
     "opus": "meta-llama/llama-3.3-70b-instruct:free",
     "sonnet": "qwen/qwen3-next-80b-a3b-instruct:free",
@@ -27,11 +19,10 @@ OR_MODEL_MAP = {
     "default": "meta-llama/llama-3.3-70b-instruct:free",
 }
 
-# Groq model (same for all roles — llama-3.3-70b-versatile is the best free option)
 GROQ_MODEL = "llama-3.3-70b-versatile"
 
-NIM_BASE = "https://integrate.api.nvidia.com/v1/chat/completions"
-OR_BASE = "https://openrouter.ai/api/v1/chat/completions"
+NIM_BASE  = "https://integrate.api.nvidia.com/v1/chat/completions"
+OR_BASE   = "https://openrouter.ai/api/v1/chat/completions"
 GROQ_BASE = "https://api.groq.com/openai/v1/chat/completions"
 
 
@@ -44,8 +35,21 @@ def detect_role(model: str) -> str:
     return "sonnet"
 
 
-def http_post(url: str, payload: dict, headers: dict, timeout: int = 30):
-    """Synchronous HTTP POST, returns (status_code, response_dict)."""
+def _load_keys(primary_env: str, pool_env: str) -> list:
+    """Return deduplicated key list: primary, _2, _3, then pool (comma-separated)."""
+    keys = []
+    for suffix in ("", "_2", "_3", "_4"):
+        k = os.environ.get(primary_env + suffix, "").strip()
+        if k and k not in keys:
+            keys.append(k)
+    for k in os.environ.get(pool_env, "").split(","):
+        k = k.strip()
+        if k and k not in keys:
+            keys.append(k)
+    return keys
+
+
+def http_post(url, payload, headers, timeout=30):
     data = json.dumps(payload).encode()
     req = urllib.request.Request(url, data=data, headers=headers, method="POST")
     try:
@@ -66,17 +70,14 @@ def main(context):
     log = context.log
     error = context.error
 
-    # Health check (callers probe GET /health)
     if getattr(req, "method", "POST") == "GET":
         return res.json({"status": "ok", "service": "llm-proxy"})
 
-    # Auth check
     auth = req.headers.get("authorization", "") or req.headers.get("Authorization", "")
-    expected = f"Bearer {os.environ.get(AUTH_TOKEN, freecc)}"
-    if auth != expected:
+    token = os.environ.get("AUTH_TOKEN", "freecc")
+    if auth != "Bearer " + token:
         return res.json({"error": "Unauthorized"}, 401)
 
-    # Parse body (OpenAI chat/completions shape)
     body = req.body
     if isinstance(body, (bytes, bytearray)):
         body = body.decode()
@@ -90,62 +91,58 @@ def main(context):
 
     requested_model = body.get("model", "auto")
     role = detect_role(requested_model)
-    nim_model = MODEL_MAP.get(role, MODEL_MAP["default"])
 
-    messages = body.get("messages", [])
     base_payload = {
-        "messages": messages,
+        "messages": body.get("messages", []),
         "max_tokens": body.get("max_tokens", 4096),
         "temperature": body.get("temperature", 0.7),
         "stream": False,
     }
 
-    log(f"LLM-PROXY: requested={requested_model} role={role} nim={nim_model}")
-
-    nim_key1 = os.environ.get("NIM_API_KEY", "")
-    nim_key2 = os.environ.get("NIM_API_KEY_2", "")
-    or_key = os.environ.get("OPENROUTER_API_KEY", "")
-    groq_key = os.environ.get("GROQ_API_KEY", "")
+    log("LLM-PROXY: model=" + requested_model + " role=" + role)
 
     providers = []
-    if nim_key1:
-        providers.append(("NIM-1", NIM_BASE, nim_key1, nim_model, 12))
-    if nim_key2:
-        providers.append(("NIM-2", NIM_BASE, nim_key2, nim_model, 12))
-    if or_key:
-        providers.append(("OR", OR_BASE, or_key, OR_MODEL_MAP.get(role, OR_MODEL_MAP["default"]), 40))
-    if groq_key:
-        providers.append(("GROQ", GROQ_BASE, groq_key, GROQ_MODEL, 30))
+
+    nim_model = MODEL_MAP.get(role, MODEL_MAP["default"])
+    for i, key in enumerate(_load_keys("NIM_API_KEY", "NIM_API_KEYS"), 1):
+        providers.append(("NIM-" + str(i), NIM_BASE, key, nim_model, 12))
+
+    or_model = OR_MODEL_MAP.get(role, OR_MODEL_MAP["default"])
+    for i, key in enumerate(_load_keys("OPENROUTER_API_KEY", "OPENROUTER_API_KEYS"), 1):
+        providers.append(("OR-" + str(i), OR_BASE, key, or_model, 40))
+
+    for i, key in enumerate(_load_keys("GROQ_API_KEY", "GROQ_API_KEYS"), 1):
+        providers.append(("GROQ-" + str(i), GROQ_BASE, key, GROQ_MODEL, 30))
 
     if not providers:
         return res.json({"error": "No LLM providers configured"}, 503)
 
     last_error = None
     for name, url, key, model, per_timeout in providers:
-        payload = {**base_payload, "model": model}
+        payload = dict(base_payload)
+        payload["model"] = model
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {key}",
+            "Authorization": "Bearer " + key,
         }
         if "openrouter" in url:
             headers["HTTP-Referer"] = "https://antigravity.exodus.pp.ua"
             headers["X-Title"] = "AI-DRAKON"
 
-        log(f"LLM-PROXY: trying {name} model={model} (timeout={per_timeout}s)")
+        log("LLM-PROXY: trying " + name + " model=" + model + " timeout=" + str(per_timeout) + "s")
         try:
             status, resp_body = http_post(url, payload, headers, timeout=per_timeout)
         except Exception as e:
-            last_error = f"{name} exception: {str(e)[:200]}"
-            error(f"LLM-PROXY: {last_error}")
+            last_error = name + " exception: " + str(e)[:200]
+            error("LLM-PROXY: " + last_error)
             continue
 
         if status == 200 and resp_body.get("choices"):
-            log(f"LLM-PROXY: success via {name}")
+            log("LLM-PROXY: success via " + name)
             return res.json(resp_body)
 
-        last_error = f"{name} status={status}: {str(resp_body)[:200]}"
-        error(f"LLM-PROXY: {last_error}")
-        continue
+        last_error = name + " status=" + str(status) + ": " + str(resp_body)[:200]
+        error("LLM-PROXY: " + last_error)
 
-    error(f"LLM-PROXY: all providers failed. Last: {last_error}")
-    return res.json({"error": f"All LLM providers failed: {last_error}"}, 503)
+    error("LLM-PROXY: all providers failed. Last: " + str(last_error))
+    return res.json({"error": "All LLM providers failed: " + str(last_error)}, 503)
