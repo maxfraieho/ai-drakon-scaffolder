@@ -470,7 +470,9 @@ export function GardenPage() {
                 <div className="flex items-center gap-1.5">
                   <span className="font-semibold text-[11px] text-zinc-300 font-mono">{change.slug}</span>
                 </div>
-                {renderProposedDiff(change.before, change.after)}
+                {change.before && change.after
+                  ? renderProposedDiff(change.before, change.after)
+                  : null}
               </div>
             ))}
           </div>
