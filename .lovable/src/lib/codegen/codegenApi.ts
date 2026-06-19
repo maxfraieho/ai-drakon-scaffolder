@@ -2,6 +2,9 @@
 // Mirrors the async poll pattern used by buildSemanticGraph() in notesApi.ts:
 // POST /v1/codegen -> execution_id, then poll /v1/codegen-status until completed.
 
+import { account } from "@/lib/appwrite";
+import { setAccessToken } from "@/lib/auth";
+
 function workerUrl(): string {
   if (typeof window !== "undefined") {
     const v = localStorage.getItem("app_worker_url");
@@ -10,9 +13,20 @@ function workerUrl(): string {
   return "https://drakon-antigravity-worker.maxfraieho.workers.dev";
 }
 
-function jwt(): string | null {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem("jwt");
+// Returns a valid token for the worker. If the stored token is the bypass key,
+// return it directly. Otherwise refresh the Appwrite JWT (it expires in 15 min).
+async function getToken(): Promise<string> {
+  const stored = localStorage.getItem("jwt") ?? "";
+  if (!stored) throw new Error("Не авторизовано (JWT відсутній)");
+  if (stored === "drakon-mcp-2026") return stored;
+  // Try to get a fresh Appwrite JWT.
+  try {
+    const { jwt: fresh } = await account.createJWT();
+    setAccessToken(fresh);
+    return fresh;
+  } catch {
+    return stored; // fall back to whatever is stored
+  }
 }
 
 export interface CodegenParams {
@@ -32,8 +46,7 @@ export interface CodegenResponse {
 }
 
 export async function generateDrakonCode(input: CodegenParams): Promise<CodegenResponse> {
-  const token = jwt();
-  if (!token) throw new Error("Не авторизовано (JWT відсутній)");
+  const token = await getToken();
 
   const res = await fetch(`${workerUrl()}/v1/codegen`, {
     method: "POST",
