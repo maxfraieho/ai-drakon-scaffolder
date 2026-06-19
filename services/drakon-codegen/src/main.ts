@@ -41,22 +41,37 @@ async function callLLM(
   return data.choices?.[0]?.message?.content || "";
 }
 
-// Extract the first JSON object from a possibly markdown-wrapped LLM response.
+// Extract the first balanced JSON object from a possibly markdown-wrapped LLM response.
 function extractJsonObject(text: string): any {
-  let jsonStr = "";
-  const fenced = text.match(/```json\s*([\s\S]*?)\s*```/);
+  // Try fenced block first (```json ... ``` or ``` ... ```)
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
   if (fenced) {
-    jsonStr = fenced[1].trim();
-  } else {
-    const startIdx = text.indexOf("{");
-    const endIdx = text.lastIndexOf("}");
-    if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-      jsonStr = text.slice(startIdx, endIdx + 1).trim();
-    } else {
-      jsonStr = text.trim();
+    return JSON.parse(fenced[1].trim());
+  }
+  // Walk character-by-character tracking nesting depth to find first balanced {}.
+  // This avoids the lastIndexOf bug where trailing text with } chars causes an overrun.
+  let depth = 0;
+  let inString = false;
+  let escape = false;
+  let start = -1;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (escape) { escape = false; continue; }
+    if (ch === "\\" && inString) { escape = true; continue; }
+    if (ch === "\"") { inString = !inString; continue; }
+    if (inString) continue;
+    if (ch === "{") {
+      if (depth === 0) start = i;
+      depth++;
+    } else if (ch === "}") {
+      depth--;
+      if (depth === 0 && start !== -1) {
+        return JSON.parse(text.slice(start, i + 1));
+      }
     }
   }
-  return JSON.parse(jsonStr);
+  // Fallback: try the whole thing
+  return JSON.parse(text.trim());
 }
 
 // Minimal structural validation / normalisation of a .drakon document.
