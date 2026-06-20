@@ -32,3 +32,19 @@ SECTION 4 — TASKS.md рядки (формат: [ ] TASK-DRK-N: Назва [AGE
 Збережи у /tmp/drakon-platform-prd.md
 scp до vokov@192.168.3.184:/home/vokov/projects/ai-drakon-scaffolder/development/DRAKON-PLATFORM-PRD.md
 
+
+# DRAKON Platform Implementation Tasks (from DRAKON-PLATFORM-PRD.md)
+[ ] TASK-DRK-2: React-компонент обгортка для drakonwidget [AGENT: agt3]
+[ ] TASK-DRK-3: Динамічне завантаження drakontechgen.js у браузері [AGENT: agt3]
+[ ] TASK-DRK-4: Клієнтська компіляція .drakon->JS/Lua (drakontechgen buildGenerator) [AGENT: opus]
+[ ] TASK-DRK-5: Файлове дерево проекту у бічній панелі Workspace [AGENT: agt3]
+[ ] TASK-DRK-6: Збереження схем та коду в GitHub через GitHub API [AGENT: opus]
+[ ] TASK-DRK-7: Docs-Agent Appwrite Function — оновлення docs/domain.md [AGENT: claude]
+[ ] TASK-DRK-8: Architect-Agent Appwrite Function — генерація скелетних .drakon схем [AGENT: claude]
+[ ] TASK-DRK-9: Валідація .drakon схем у drakon-codegen Appwrite Function [AGENT: opus]
+[ ] TASK-DRK-10: Silent Refresh для Appwrite JWT (15хв expiry) [AGENT: agt3]
+[ ] TASK-DRK-11: UI стартового інтерв'ю для нових проектів (/project/new) [AGENT: agt3]
+[ ] TASK-DRK-12: Лінкер — збірка всіх модулів за solution.json [AGENT: opus]
+[ ] TASK-DRK-13: Підсвітка помилок компіляції на вузлах drakonwidget [AGENT: agt3]
+[ ] TASK-DRK-14: Тести генерації та збірки DRAKON-схем [AGENT: opus]
+[ ] TASK-DRK-15: CF Worker нові endpoints для агентів (docs-agent, architect-agent) [AGENT: agt3]
