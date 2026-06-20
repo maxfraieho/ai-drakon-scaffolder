@@ -26,6 +26,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { listPipelines } from "@/lib/graph-pipeline-api";
 import type { PipelineInfo } from "@/lib/graph-pipeline-api";
+import { FileTreeItem } from "@/components/workspace/FileTree";
+import type { FSNode } from "@/components/workspace/FileTree";
+import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 
 const EXT_TO_LANG: Record<string, string> = {
   py: "python", ts: "typescript", tsx: "typescript",
@@ -45,197 +48,6 @@ function shouldShowEntry(path: string, mode: "all" | "docs" | "code"): boolean {
   if (mode === "docs") return path === "" || path.startsWith("docs");
   if (mode === "code") return !path.startsWith("docs") && !path.startsWith("node_modules");
   return !path.startsWith("node_modules");
-}
-
-interface FSNode {
-  name: string;
-  path: string;
-  type: "file" | "dir";
-  children?: FSNode[];
-  isLoaded?: boolean;
-  isLoading?: boolean;
-  sha?: string;
-}
-
-interface FileTreeItemProps {
-  node: FSNode;
-  level: number;
-  selectedPath: string;
-  onSelectFile: (path: string) => void;
-  onToggleFolder: (node: FSNode) => void;
-  onAddFile: (parentPath: string) => void;
-  onAddFolder: (parentPath: string) => void;
-  onTagFolder: (parentPath: string) => void;
-  onDeleteNode: (node: FSNode) => void;
-  onAnalyze: (node: FSNode) => void;
-  expandedPaths: Set<string>;
-  searchQuery: string;
-}
-
-function FileTreeItem({
-  node,
-  level,
-  selectedPath,
-  onSelectFile,
-  onToggleFolder,
-  onAddFile,
-  onAddFolder,
-  onTagFolder,
-  onDeleteNode,
-  onAnalyze,
-  expandedPaths,
-  searchQuery,
-}: FileTreeItemProps) {
-  const isExpanded = expandedPaths.has(node.path) || !!searchQuery.trim();
-  const isSelected = selectedPath === node.path;
-
-  if (node.type === "dir") {
-    return (
-      <div className="w-full">
-        <div className="group flex items-center hover:bg-white/5/40 rounded transition-colors pr-2">
-          <button
-            type="button"
-            onClick={() => onToggleFolder(node)}
-            className="flex-1 flex items-center gap-1.5 py-1 text-left text-xs text-[var(--text-primary)] min-w-0"
-            style={{ paddingLeft: `${8 + level * 12}px` }}
-          >
-            {node.isLoading ? (
-              <Loader2 className="h-3 w-3 animate-spin text-[var(--text-muted)] shrink-0" />
-            ) : isExpanded ? (
-              <ChevronDown className="h-3 w-3 text-[var(--text-muted)] shrink-0" />
-            ) : (
-              <ChevronRight className="h-3 w-3 text-[var(--text-muted)] shrink-0" />
-            )}
-            {isExpanded ? (
-              <FolderOpen className="h-3.5 w-3.5 text-[var(--accent-amber)] shrink-0" />
-            ) : (
-              <Folder className="h-3.5 w-3.5 text-[var(--accent-amber)] shrink-0" />
-            )}
-            <span className="truncate">{node.name}</span>
-          </button>
-          
-          <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 shrink-0 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-5 w-5 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors p-1"
-              title="Analyze"
-              onClick={(e) => { e.stopPropagation(); void onAnalyze(node); }}
-            >
-              <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-            </Button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onAddFile(node.path); }}
-              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
-              title="Новий файл"
-            >
-              <FilePlus className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onAddFolder(node.path); }}
-              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
-              title="Нова папка"
-            >
-              <FolderPlus className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onTagFolder(node.path); }}
-              className="p-1 text-[var(--text-secondary)] hover:text-[var(--accent-amber)] hover:bg-white/5 rounded transition-colors"
-              title="Прив'язати до зони"
-            >
-              <Tag className="h-3 w-3" />
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.stopPropagation(); onDeleteNode(node); }}
-              className="p-1 text-[var(--text-secondary)] hover:text-red-400 hover:bg-white/5 rounded transition-colors"
-              title="Видалити папку"
-            >
-              <Trash2 className="h-3 w-3" />
-            </button>
-          </div>
-        </div>
-
-        {isExpanded && node.children && (
-          <div className="w-full">
-            {node.children.map((child) => (
-              <FileTreeItem
-                key={child.path}
-                node={child}
-                level={level + 1}
-                selectedPath={selectedPath}
-                onSelectFile={onSelectFile}
-                onToggleFolder={onToggleFolder}
-                onAddFile={onAddFile}
-                onAddFolder={onAddFolder}
-                onTagFolder={onTagFolder}
-                onDeleteNode={onDeleteNode}
-                onAnalyze={onAnalyze}
-                expandedPaths={expandedPaths}
-                searchQuery={searchQuery}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const ext = node.name.split(".").pop() ?? "";
-  return (
-    <div className="group flex items-center hover:bg-white/5/40 rounded transition-colors pr-2">
-      <button
-        type="button"
-        onClick={() => onSelectFile(node.path)}
-        className={cn(
-          "flex-1 flex items-center gap-1.5 py-1.5 text-left text-xs min-w-0",
-          isSelected
-            ? "bg-[var(--accent-dim)] text-[var(--accent-amber)] font-medium rounded-sm"
-            : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-        )}
-        style={{ paddingLeft: `${20 + level * 12}px` }}
-      >
-        <FileText className="h-3.5 w-3.5 shrink-0" />
-        <span className="truncate">{node.name}</span>
-        {ext && (
-          <span className="text-[8px] px-1 py-0.2 bg-[var(--bg-elevated)] rounded text-[var(--text-muted)] uppercase font-mono shrink-0 ml-auto mr-1 group-hover:hidden">
-            {ext}
-          </span>
-        )}
-      </button>
-
-      <div className="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 shrink-0 transition-opacity ml-auto">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-5 w-5 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors p-1"
-          title="Analyze"
-          onClick={(e) => { e.stopPropagation(); void onAnalyze(node); }}
-        >
-          <Sparkles className="h-3.5 w-3.5 text-amber-400" />
-        </Button>
-        <button
-          type="button"
-          onClick={() => onSelectFile(node.path)}
-          className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
-          title="Редагувати"
-        >
-          <Edit className="h-3 w-3" />
-        </button>
-        <button
-          type="button"
-          onClick={() => onDeleteNode(node)}
-          className="p-1 text-[var(--text-secondary)] hover:text-red-400 hover:bg-white/5 rounded transition-colors"
-          title="Видалити файл"
-        >
-          <Trash2 className="h-3 w-3" />
-        </button>
-      </div>
-    </div>
-  );
 }
 
 interface ProjectFileManagerProps {
@@ -266,6 +78,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
   const [loadingFile, setLoadingFile] = useState(false);
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [drakonDiagram, setDrakonDiagram] = useState<any>(null);
 
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [cursorPos, setCursorPos] = useState({ line: 1, column: 1 });
@@ -420,6 +233,48 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
     }
   };
 
+  const saveSerializedFile = async (path: string, content: string) => {
+    if (!path) return false;
+    try {
+      if (isGitHub) {
+        const message = `edit(${path.split("/").pop()}): update via ProjectFileManager`;
+        const res = await api.githubCommitFile(owner, repo, path, content, message, branch, token);
+        if (res.success) {
+          toast.success("Збережено в GitHub");
+          if (res.commitSha) setFileSha(res.commitSha);
+          return true;
+        } else {
+          toast.error("Помилка збереження в GitHub");
+          return false;
+        }
+      } else {
+        const slug = path.replace(/^docs\//, "").replace(/\.md$/, "");
+        const title = selectedNoteDetails?.title || slug.split("/").pop() || slug;
+        const tags = selectedNoteDetails?.tags || [];
+        const res = await commitNote({
+          slug,
+          title,
+          content,
+          tags,
+          sha: fileSha || undefined,
+          project: activeProject?.slug || undefined,
+        });
+        if (res.success) {
+          toast.success("Збережено локально");
+          if (res.sha) setFileSha(res.sha);
+          return true;
+        } else {
+          toast.error("Помилка збереження");
+          return false;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error("Помилка при збереженні");
+      return false;
+    }
+  };
+
   const openFile = async (path: string) => {
     setLoadingFile(true);
     try {
@@ -430,6 +285,16 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           setFilePath(path);
           setFileSha(res.sha);
           setSelectedNoteDetails(null);
+          if (path.endsWith(".drakon")) {
+            try {
+              setDrakonDiagram(JSON.parse(res.content));
+            } catch (err) {
+              console.error("Failed to parse .drakon file", err);
+              setDrakonDiagram(null);
+            }
+          } else {
+            setDrakonDiagram(null);
+          }
         } else {
           toast.error("Не вдалося завантажити файл з GitHub");
         }
@@ -445,6 +310,16 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
             title: res.title,
             tags: res.tags || [],
           });
+          if (path.endsWith(".drakon")) {
+            try {
+              setDrakonDiagram(JSON.parse(res.content));
+            } catch (err) {
+              console.error("Failed to parse local .drakon note", err);
+              setDrakonDiagram(null);
+            }
+          } else {
+            setDrakonDiagram(null);
+          }
         } else {
           toast.error("Не вдалося завантажити локальний документ");
         }
@@ -460,41 +335,15 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
   const saveFile = async () => {
     if (!filePath) return;
     setSaving(true);
-    try {
-      if (isGitHub) {
-        const message = `edit(${filePath.split("/").pop()}): update via ProjectFileManager`;
-        const res = await api.githubCommitFile(owner, repo, filePath, code, message, branch, token);
-        if (res.success) {
-          toast.success("Збережено в GitHub");
-          if (res.commitSha) setFileSha(res.commitSha);
-        } else {
-          toast.error("Помилка збереження в GitHub");
-        }
-      } else {
-        const slug = filePath.replace(/^docs\//, "").replace(/\.md$/, "");
-        const title = selectedNoteDetails?.title || slug.split("/").pop() || slug;
-        const tags = selectedNoteDetails?.tags || [];
-        const res = await commitNote({
-          slug,
-          title,
-          content: code,
-          tags,
-          sha: fileSha || undefined,
-          project: activeProject?.slug || undefined,
-        });
-        if (res.success) {
-          toast.success("Збережено локально");
-          if (res.sha) setFileSha(res.sha);
-        } else {
-          toast.error("Помилка збереження");
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      toast.error("Помилка при збереженні");
-    } finally {
-      setSaving(false);
-    }
+    await saveSerializedFile(filePath, code);
+    setSaving(false);
+  };
+
+  const handleSaveDiagramOverride = async (diagram: any) => {
+    const serialized = JSON.stringify(diagram, null, 2);
+    setCode(serialized);
+    setDrakonDiagram(diagram);
+    return await saveSerializedFile(filePath, serialized);
   };
 
   const handleEditorDidMount = (editor: any) => {
@@ -948,7 +797,7 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
               </span>
             )}
             
-            {filePath && (
+            {filePath && !filePath.endsWith(".drakon") && (
               <>
                 <Button
                   variant="ghost"
@@ -990,27 +839,37 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
                   </div>
                 </div>
               )}
-              <Editor
-                height="100%"
-                language={detectLang(filePath)}
-                value={code}
-                theme={monacoTheme}
-                onChange={(v) => setCode(v ?? "")}
-                onMount={handleEditorDidMount}
-                options={{
-                  minimap: { enabled: false },
-                  scrollBeyondLastLine: false,
-                  fontSize: 12,
-                  lineHeight: 18,
-                  fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
-                  fontLigatures: true,
-                  padding: { top: 12, bottom: 12 },
-                  wordWrap: "on",
-                  scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
-                  overviewRulerLanes: 0,
-                  bracketPairColorization: { enabled: true },
-                }}
-              />
+              {filePath.endsWith(".drakon") && drakonDiagram ? (
+                <div className="flex-1 min-h-0 p-4">
+                  <DrakonEditor
+                    diagram={drakonDiagram}
+                    diagramId={filePath}
+                    onSaveOverride={handleSaveDiagramOverride}
+                  />
+                </div>
+              ) : (
+                <Editor
+                  height="100%"
+                  language={detectLang(filePath)}
+                  value={code}
+                  theme={monacoTheme}
+                  onChange={(v) => setCode(v ?? "")}
+                  onMount={handleEditorDidMount}
+                  options={{
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    fontSize: 12,
+                    lineHeight: 18,
+                    fontFamily: "'JetBrains Mono', 'Fira Code', monospace",
+                    fontLigatures: true,
+                    padding: { top: 12, bottom: 12 },
+                    wordWrap: "on",
+                    scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
+                    overviewRulerLanes: 0,
+                    bracketPairColorization: { enabled: true },
+                  }}
+                />
+              )}
             </div>
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-[var(--text-muted)] font-mono">
