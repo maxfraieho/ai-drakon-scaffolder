@@ -34,8 +34,8 @@ scp до vokov@192.168.3.184:/home/vokov/projects/ai-drakon-scaffolder/developme
 
 
 # DRAKON Platform Implementation Tasks (from DRAKON-PLATFORM-PRD.md)
-[ ] TASK-DRK-2: React-компонент обгортка для drakonwidget [AGENT: agt3]
-[ ] TASK-DRK-3: Динамічне завантаження drakontechgen.js у браузері [AGENT: agt3]
+[x] TASK-DRK-2: React-компонент обгортка для drakonwidget [AGENT: agt3]
+[x] TASK-DRK-3: Динамічне завантаження drakontechgen.js у браузері [AGENT: agt3]
 [ ] TASK-DRK-4: Клієнтська компіляція .drakon->JS/Lua (drakontechgen buildGenerator) [AGENT: opus]
 [ ] TASK-DRK-5: Файлове дерево проекту у бічній панелі Workspace [AGENT: agt3]
 [ ] TASK-DRK-6: Збереження схем та коду в GitHub через GitHub API [AGENT: opus]

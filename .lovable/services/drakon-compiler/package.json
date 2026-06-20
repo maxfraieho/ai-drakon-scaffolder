@@ -1,0 +1,13 @@
+{
+  "name": "drakon-compiler",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "node node_modules/typescript/bin/tsc --outDir dist",
+    "start": "node dist/main.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.21",
+    "typescript": "^5.9.3"
+  }
+}
