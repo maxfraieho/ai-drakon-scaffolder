@@ -1,5 +1,5 @@
 
-[ ] TASK-DRK-1: Планування DRAKON Platform — PRD + Issues + TASKS
+[x] TASK-DRK-1: Планування DRAKON Platform — PRD + Issues + TASKS
 !!IMPORTANT!! Run locally on AGY3 Termux. Do NOT SSH anywhere.
 
 ## Контекст
