@@ -50,6 +50,126 @@ function shouldShowEntry(path: string, mode: "all" | "docs" | "code"): boolean {
   return !path.startsWith("node_modules");
 }
 
+async function compileDiagramClientSide(name: string, diagram: any, language: string = "JS2604"): Promise<string> {
+  const loadScript = (src: string) => {
+    return new Promise<void>((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error(`Failed to load ${src}`));
+      document.head.appendChild(script);
+    });
+  };
+
+  // Load all dependencies in order
+  await loadScript("/drakongen.js");
+  await loadScript("/esprima.js");
+  await loadScript("/escodegen.browser.min.js");
+  await loadScript("/luaparse.js");
+  await loadScript("/drakontechgen.js");
+
+  const errors: string[] = [];
+  const codeChunks: string[] = [];
+
+  function onError(err: any) {
+    errors.push(err?.message || String(err));
+  }
+
+  function onData(chunk: string) {
+    codeChunks.push(chunk);
+  }
+
+  const stripHtml = (html: string): string => {
+    if (!html || !html.includes("<")) return html;
+    return html
+      .replace(/<\/p>\s*<p>/gi, "\n")
+      .replace(/<br\s*\/?>/gi, "\n")
+      .replace(/<li>/gi, "\n")
+      .replace(/<[^>]+>/g, "")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&")
+      .replace(/&nbsp;/g, " ")
+      .replace(/&quot;/g, '"')
+      .trim();
+  };
+
+  const normalizeParams = (html: string): string => {
+    if (!html || !html.includes("<")) return html;
+    const items: string[] = [];
+    const re = /<li[^>]*>(.*?)<\/li>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) !== null) {
+      const text = m[1].replace(/<[^>]+>/g, "").trim();
+      if (text) items.push(text);
+    }
+    return items.length > 0 ? items.join("\n") : stripHtml(html);
+  };
+
+  const normalizeItems = (items: any) => {
+    if (!items) return items;
+    const result: any = {};
+    for (const [id, item] of Object.entries(items)) {
+      const normalized = { ...(item as any) };
+      if (typeof normalized.content === "string") {
+        normalized.content = stripHtml(normalized.content);
+      }
+      if (typeof normalized.secondary === "string") {
+        normalized.secondary = stripHtml(normalized.secondary);
+      }
+      result[id] = normalized;
+    }
+    return result;
+  };
+
+  const normalizedDiagram = {
+    type: "drakon",
+    name: diagram.name || name,
+    items: normalizeItems(diagram.items),
+    params: typeof diagram.params === "string" ? normalizeParams(diagram.params) : diagram.params,
+  };
+
+  const getObjectByHandle = async (handle: string) => {
+    if (handle === "root" || handle === name) {
+      return normalizedDiagram;
+    }
+    return null;
+  };
+
+  if (!(window as any).drakontechgen?.buildGenerator) {
+    throw new Error("drakontechgen.buildGenerator not available");
+  }
+
+  const generator = (window as any).drakontechgen.buildGenerator(
+    name,
+    "root",
+    getObjectByHandle,
+    onError,
+    onData,
+    language,
+    "",
+    {
+      iife: false,
+      unit: false,
+      dependencies: [],
+      outputFile: "",
+    }
+  );
+
+  await generator.run();
+
+  if (errors.length > 0 && codeChunks.length === 0) {
+    throw new Error("Compilation errors:\n" + errors.join("\n"));
+  }
+
+  return codeChunks.join("\n");
+}
+
 interface ProjectFileManagerProps {
   defaultMode?: "all" | "docs" | "code";
 }
@@ -343,7 +463,35 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
     const serialized = JSON.stringify(diagram, null, 2);
     setCode(serialized);
     setDrakonDiagram(diagram);
-    return await saveSerializedFile(filePath, serialized);
+    
+    // Save the .drakon file
+    const ok = await saveSerializedFile(filePath, serialized);
+    if (!ok) return false;
+
+    // Compile diagram and save the compiled code file too
+    try {
+      const functionName = filePath.split("/").pop()?.replace(/\.drakon$/, "") || "function";
+      
+      // Determine the target language (default to JavaScript / .js)
+      let language = "JS2604";
+      let codeExtension = ".js";
+      if (filePath.toLowerCase().includes("lua")) {
+        language = "Lua2604";
+        codeExtension = ".lua";
+      }
+
+      const compiledCode = await compileDiagramClientSide(functionName, diagram, language);
+      const compiledPath = filePath.replace(/\.drakon$/, codeExtension);
+      
+      // Commit the compiled code to GitHub/Notes
+      await saveSerializedFile(compiledPath, compiledCode);
+      toast.success(`Згенеровано та збережено код: ${compiledPath.split("/").pop()}`);
+    } catch (err) {
+      console.error("Failed to compile diagram on save", err);
+      toast.error(`Помилка компіляції: ${err instanceof Error ? err.message : String(err)}`);
+    }
+    
+    return true;
   };
 
   const handleEditorDidMount = (editor: any) => {
