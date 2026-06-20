@@ -14,6 +14,8 @@ saveGenerationHistory,
 type GenerationHistoryItem,
 } from "@/lib/pipeline-history";
 import { kbContribute } from "@/lib/kb-api";
+import { readSettings } from "@/lib/settings-storage";
+import { diagramToPseudocode } from "@/lib/drakon/pseudocode";
 
 interface CodeGenerationPanelProps {
 open: boolean;
@@ -121,8 +123,59 @@ setStatus("running");
 setResult(null);
 setErrorMsg("");
 try {
-const resp = await startGeneration(diagramIr, lang, description.trim());
-setJobId(resp.job_id);
+const drakonJson = (diagramIr as any)?.items ? diagramIr : { items: diagramIr };
+const pseudo = await diagramToPseudocode(drakonJson, diagramName || "diagram");
+
+const settings = readSettings();
+const architectUrl = settings?.agents?.architectUrl || "https://architect-agent.exodus.pp.ua";
+const compileUrl = `${architectUrl.replace(/\/$/, "")}/compile`;
+
+const response = await fetch(compileUrl, {
+method: "POST",
+headers: {
+"Content-Type": "application/json",
+},
+body: JSON.stringify({
+pipelineName: diagramName || "diagram",
+pseudocode: pseudo,
+nodes: [],
+target: lang,
+}),
+signal: AbortSignal.timeout(120000),
+});
+
+if (!response.ok) {
+throw new Error(`сервер повернув статус ${response.status}`);
+}
+
+const data = await response.json();
+if (!data || typeof data.code !== "string") {
+throw new Error("Некоректна відповідь від сервера компіляції");
+}
+
+const elapsedNow = startedAtRef.current
+? Math.floor((Date.now() - startedAtRef.current) / 1000)
+: 0;
+
+setResult({
+code: data.code,
+language: lang,
+syntax_errors: [],
+iterations: 1,
+});
+setStatus("done");
+setKbSaved(false);
+toast.success("Код згенеровано");
+
+saveGenerationHistory({
+scheme: diagramName || "diagram",
+language: lang,
+description,
+code: data.code,
+iterations: 1,
+elapsed: elapsedNow,
+});
+setHistory(loadGenerationHistory());
 } catch (e) {
 setStatus("error");
 setErrorMsg(e instanceof Error ? e.message : "Не вдалося запустити");

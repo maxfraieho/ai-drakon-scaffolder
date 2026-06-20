@@ -3067,7 +3067,9 @@ async function handleKbSearch(request, env) {
 
 async function handlePipeline(pipelinePath, request, env, ctx) {
   const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
-  const targetUrl = architectUrl + '/pipeline/' + pipelinePath;
+  const targetUrl = pipelinePath === 'compile'
+    ? architectUrl + '/compile'
+    : architectUrl + '/pipeline/' + pipelinePath;
 
   const init = {
     method: request.method,
@@ -3499,8 +3501,8 @@ async function handleCodegenStatus(request, env) {
       if (method === 'POST' && path === '/v1/pipeline/analyze') {
         return await handlePipeline('analyze', request, env, ctx);
       }
-      if (method === 'POST' && path === '/v1/pipeline/generate') {
-        return await handlePipeline('generate', request, env, ctx);
+      if (method === 'POST' && path === '/v1/pipeline/compile') {
+        return await handlePipeline('compile', request, env, ctx);
       }
       const pipelineStatusMatch = path.match(/^\/v1\/pipeline\/status\/([^\/]+)$/);
       if (method === 'GET' && pipelineStatusMatch) {
