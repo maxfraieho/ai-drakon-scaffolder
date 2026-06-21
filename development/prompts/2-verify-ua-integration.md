@@ -3,6 +3,8 @@
 ## РОЛЬ
 Ти — агент-тестувальник (QA / Validator). Твоя мета — перевірити коректність реалізації завдань DRK-17, 18, 19, 20, 22 на RPI 3b у робочій директорії `/home/vokov/workspace/ai-drakon-scaffolder`.
 
+Для автоматизованого тестування інтерфейсу ти будеш використовувати MCP-сервер `agent-workspace`, що надає доступ до Chromium та X11 на машині RPI 3b.
+
 ---
 
 ## КРОКИ ДЛЯ ВИКОНАННЯ
@@ -26,39 +28,49 @@ npx -y -p typescript tsc src/lib/understand/*.ts --noEmit --target es2022 --modu
 Переконайся, що команда завершується з кодом `0` та не повертає помилок компіляції.
 
 ### Крок 3: Перевірка логіки роуту у Worker
-Перевір, що код Cloudflare Worker містить роут `/v1/understand/status`.
-Для тестування синтаксису коду воркера запусти локальний dry-run через wrangler (якщо wrangler встановлено):
-```bash
-npx wrangler dev --dry-run
-```
-Або просто провалідуй синтаксис Javascript-файлу за допомогою Node:
-```bash
-node -c cloudflare-worker/worker-mcp-drakon.js
-```
+1. Перевір, що в коді Cloudflare Worker (`cloudflare-worker/worker-mcp-drakon.js`) присутній роут `/v1/understand/status`.
+2. Провалідуй синтаксис Javascript-файлу за допомогою Node:
+   ```bash
+   node -c cloudflare-worker/worker-mcp-drakon.js
+   ```
 
-### Крок 4: Аналіз коду інтерфейсу та вкладок
-1. Перевір `src/pages/WorkspacePage.tsx` — переконайся, що:
-   - Вкладка `kg` (Knowledge Graph) присутня у списку режимів: `type WorkspaceMode = "code" | "docs" | "kg"`.
-   - Вона рендерить `<KnowledgeGraphPanel graphJsonUrl={graphJsonUrl} />`.
-   - Змінна `graphJsonUrl` формується з параметрами `owner`, `repo`, `branch`, `token`.
-2. Перевір `src/components/workspace/WorkspaceShell.tsx` — переконайся, що:
-   - Додано стейт `const [evidenceData, setEvidenceData] = useState<string | null>(null);`.
-   - У панелі `EVIDENCE` замість старого хардкод-тексту рендериться вміст `evidenceData` (або повідомлення `No analysis data yet...`).
+### Крок 4: Автоматизоване тестування інтерфейсу (Браузер)
+За допомогою MCP-інструментів `agent-workspace` виконай наступні дії:
 
-### Крок 5: Перевірка Git та Синхронізації
-Перевір статус Git-репозиторію. Робоча директорія має бути чистою, а всі зміни — запушеними:
+1. **Запусти X11 сесію**:
+   Виклич інструмент `workspace_start` з параметром `acknowledge_hidden_workspace=true`.
+
+2. **Запусти Chromium та перейди на сторінку**:
+   Виклич інструмент `workspace_open_browser` з URL `https://ai-drakon-setup.pages.dev`.
+
+3. **Зачекай завантаження та перевір головний екран**:
+   - Переконайся, що навігація завершена: `workspace_browser_navigate(url="https://ai-drakon-setup.pages.dev", wait_ms=4000)`.
+   - Зроби скріншот екрана: `workspace_screenshot(output_path="/tmp/screen_home.png")`.
+   - Переглянь файл `/tmp/screen_home.png` за допомогою інструменту `view_file` (без вказання рядків), щоб візуально підтвердити запуск.
+
+4. **Тестування вкладки Knowledge Graph**:
+   - Оскільки на сторінці Workspace тепер є три вкладки (Код, Документація, Knowledge Graph), виклич `workspace_browser_snapshot`, щоб знайти селектор для кнопки вкладки "Knowledge Graph".
+   - Надішли клік на вкладку за допомогою `workspace_browser_click(selector="...")` (або виклич `workspace_paste_text` після фокусування, якщо це React SPA).
+   - Зачекай 3 секунди та зроби скріншот: `workspace_screenshot(output_path="/tmp/screen_kg.png")`.
+   - Прочитай `/tmp/screen_kg.png` за допомогою `view_file`. Має відобразитись панель Knowledge Graph (з повідомленням "Run /understand on your project..." або інтерактивним графом).
+
+5. **Тестування EVIDENCE Drawer**:
+   - Перейди на сторінку редактора схем (наприклад, відкривши будь-яку діаграму зі списку).
+   - Зачекай рендерингу та зроби скріншот: `workspace_screenshot(output_path="/tmp/screen_editor.png")`.
+   - Переконайся, що внизу сторінки відображається панель EVIDENCE, яка показує текст: *"No analysis data yet. Save a diagram to see impact analysis."* (замість старого *"Waiting for Phase C compiler trace data..."*).
+
+### Крок 5: Перевірка Git статусу
+Переконайся, що твій робочий простір синхронізований:
 ```bash
 git status
-git log -n 5 --oneline
 ```
 
 ---
 
 ## РЕЗУЛЬТАТ
-Напиши звіт про результати тестування:
-1. Чи всі файли на місці та синхронізовані з `.lovable/`? (Так/Ні)
-2. Чи успішно пройшов typecheck адаптерів? (Код виходу / Помилки)
-3. Чи валідний синтаксис Worker API?
-4. Чи чистий `git status`?
-5. Запиши результат у свій Diary:
+Надішли детальний звіт:
+1. Статус наявності файлів.
+2. Результат typecheck адаптерів.
+3. Опис візуального тестування (додай скріншоти або підтвердь успішне завантаження вкладки Knowledge Graph та панелі EVIDENCE).
+4. Запиши результат у свій Diary:
    `SESSION:2026-06-21|TASK-DRK-VERIFY:done|status:success|★★★`
