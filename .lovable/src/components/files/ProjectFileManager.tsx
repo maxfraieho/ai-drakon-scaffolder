@@ -29,6 +29,7 @@ import type { PipelineInfo } from "@/lib/graph-pipeline-api";
 import { FileTreeItem } from "@/components/workspace/FileTree";
 import type { FSNode } from "@/components/workspace/FileTree";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
+import { linkProject } from "@/lib/codegen/linker";
 
 const EXT_TO_LANG: Record<string, string> = {
   py: "python", ts: "typescript", tsx: "typescript",
@@ -227,6 +228,70 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
   const [analyzePipelines, setAnalyzePipelines] = useState<PipelineInfo[]>([]);
   const [analyzeSelectedPipeline, setAnalyzeSelectedPipeline] = useState<string>("");
   const [analyzeDialogOpen, setAnalyzeDialogOpen] = useState(false);
+  const [linking, setLinking] = useState(false);
+
+  const handleAssembleProject = async () => {
+    setLinking(true);
+    try {
+      let solutionJson = "";
+      
+      // Read solution.json
+      if (isGitHub) {
+        const res = await api.githubGetFile(owner, repo, "solution.json", branch, token);
+        if (res.success) {
+          solutionJson = res.content;
+        } else {
+          toast.error("Не знайдено solution.json у корені репозиторію GitHub");
+          setLinking(false);
+          return;
+        }
+      } else {
+        const res = await fetchNote("solution", activeProject?.slug || undefined);
+        if (res) {
+          solutionJson = res.content;
+        } else {
+          toast.error("Не знайдено локального solution.json");
+          setLinking(false);
+          return;
+        }
+      }
+
+      // Linker file reader implementation
+      const getFileFunc = async (path: string): Promise<string> => {
+        if (isGitHub) {
+          const res = await api.githubGetFile(owner, repo, path, branch, token);
+          if (res.success) return res.content;
+          throw new Error(`Файл ${path} не знайдено в GitHub`);
+        } else {
+          const slug = path.replace(/^docs\//, "").replace(/\.md$/, "");
+          const res = await fetchNote(slug, activeProject?.slug || undefined);
+          if (res) return res.content;
+          throw new Error(`Локальний файл ${path} не знайдено`);
+        }
+      };
+
+      const result = await linkProject(solutionJson, getFileFunc);
+
+      // Save target file
+      const ok = await saveSerializedFile(result.targetPath, result.code);
+      if (ok) {
+        if (result.warnings.length > 0) {
+          toast.warning("Проект зібрано з попередженнями", {
+            description: result.warnings.join("\n"),
+            duration: 10000,
+          });
+        } else {
+          toast.success(`Проект успішно зібрано! Збережено у ${result.targetPath}`);
+        }
+        await loadRootTree();
+      }
+    } catch (err) {
+      console.error("Failed to link project", err);
+      toast.error(`Помилка лінкування: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setLinking(false);
+    }
+  };
 
   const monacoTheme = theme === "dark" || (theme === "system" && typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "vs-dark" : "vs-light";
 
@@ -944,6 +1009,22 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
                 branch: {branch}
               </span>
             )}
+
+            <Button
+              onClick={handleAssembleProject}
+              disabled={linking}
+              size="sm"
+              variant="outline"
+              className="h-7 font-mono text-[11px] gap-1 px-3 border-[var(--border-subtle)] hover:bg-[var(--bg-surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              title="Зібрати проект згідно з solution.json"
+            >
+              {linking ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-[var(--accent-amber)]" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5" />
+              )}
+              {linking ? "Збірка..." : "Зібрати проект"}
+            </Button>
             
             {filePath && !filePath.endsWith(".drakon") && (
               <>
