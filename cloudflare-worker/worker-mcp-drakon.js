@@ -1252,9 +1252,9 @@ async function handleGithubListBranches(args, env, requestToken = '') {
 // ─── Agent MCP helpers ────────────────────────────────────────────────────────
 async function mcpCallAgent(agentId, message, context, env, ctx) {
   const defaultUrls = {
-    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
-    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
-    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent-flue.maxfraieho.workers.dev',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev',
   };
   const targetUrl = defaultUrls[agentId];
   const usesAnalyze = agentId === 'drakon' && isPythonCode(message);
@@ -1284,7 +1284,7 @@ async function mcpCallAgent(agentId, message, context, env, ctx) {
 }
 
 async function mcpCallPipeline(endpoint, body, env) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
   try {
     const resp = await fetch(architectUrl + '/pipeline/' + endpoint, {
       method: 'POST',
@@ -1302,7 +1302,7 @@ async function mcpCallPipeline(endpoint, body, env) {
 }
 
 async function mcpGetPipelineStatus(jobId, env) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
   try {
     const resp = await fetch(architectUrl + '/pipeline/status/' + encodeURIComponent(jobId), {
       signal: AbortSignal.timeout(15_000),
@@ -1318,7 +1318,7 @@ async function mcpGetPipelineStatus(jobId, env) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Dataview / docs knowledge base tools
 
-const DOCS_AGENT_BASE = 'https://docs-agent.exodus.pp.ua';
+const DOCS_AGENT_BASE = 'https://docs-agent-flue.maxfraieho.workers.dev';
 
 async function handleDocsDataviewQuery(query, env) {
   try {
@@ -2000,7 +2000,7 @@ async function handleHealth(env) {
 // ============================================
 
 const VALID_AGENT_IDS = ['drakon', 'architect', 'docs', 'sonate-solidaire'];
-const DOCS_AGENT_URL = 'https://docs-agent.exodus.pp.ua';
+const DOCS_AGENT_URL = 'https://docs-agent-flue.maxfraieho.workers.dev';
 
 function isPythonCode(msg) {
   return /\bdef\s+\w+\s*\(|class\s+\w+[\s:(]|^import\s+\w+|^from\s+\w+\s+import|async\s+def\s+\w+/m.test(msg);
@@ -2022,11 +2022,11 @@ async function handleAgentChat(agentId, request, env, ctx) {
   }
 
   // agentUrl from client (from Settings), fallback to env vars
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
   const defaultUrls = {
-    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent-flue.maxfraieho.workers.dev',
     architect: architectUrl,
-    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev',
     'sonate-solidaire': architectUrl,
   };
   const targetUrl = (typeof agentUrl === 'string' && agentUrl.startsWith('https://'))
@@ -2092,9 +2092,9 @@ async function handleAgentHealth(agentId, env) {
     return errorResponse('Unknown agent: ' + agentId, 404, undefined, 'NOT_FOUND');
   }
   const defaultUrls = {
-    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
-    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
-    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent-flue.maxfraieho.workers.dev',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev',
   };
   try {
     const resp = await fetch(defaultUrls[agentId] + '/health', {
@@ -2605,7 +2605,7 @@ export default {
 
       // ─── Docs-agent proxy (/v1/docs/* → docs-agent) ───────────────────────────
       if (path.startsWith('/v1/docs/')) {
-        const docsUrl = env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua';
+        const docsUrl = env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev';
         const agentPath = path.slice(3); // strip /v1
         const targetUrl = docsUrl + agentPath + (url.search || '');
         const proxied = new Request(targetUrl, {
@@ -2618,7 +2618,7 @@ export default {
 
       // ─── Architect-agent projects proxy (/v1/projects/* → architect-agent) ───
       if (path.startsWith('/v1/projects')) {
-        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
         const agentPath = path.slice(3); // strip /v1
         const targetUrl = architectUrl + agentPath + (url.search || '');
         const proxied = new Request(targetUrl, {
@@ -2631,7 +2631,7 @@ export default {
 
       // ─── Architect-agent graph-pipelines proxy (/v1/graph-pipelines/* → architect-agent) ───
       if (path.startsWith('/v1/graph-pipelines')) {
-        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
         const agentPath = path.slice(3); // strip /v1
         const targetUrl = architectUrl + agentPath + (url.search || '');
         const proxied = new Request(targetUrl, {
@@ -2741,7 +2741,7 @@ export default {
 
 // ── Pipeline SSE stream (architect-agent polling → browser EventSource) ──────
 async function handlePipelineStream(jobId, env, ctx) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   const encoder = new TextEncoder();
@@ -2811,7 +2811,7 @@ async function handlePipelineStream(jobId, env, ctx) {
 // ─────────────────────────────────────────────────────────────────────────────
 // ── Pipeline proxy (architect-agent LangGraph endpoints) ─────────────────────
 async function handleKb(kbPath, request, env) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
   const targetUrl = architectUrl + '/kb/' + kbPath;
   const url = new URL(request.url);
   const fullTarget = targetUrl + url.search;
@@ -3172,7 +3172,7 @@ async function handleKbSearch(request, env) {
 }
 
 async function handlePipeline(pipelinePath, request, env, ctx) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
   const targetUrl = architectUrl + '/pipeline/' + pipelinePath;
 
   const init = {
@@ -3719,7 +3719,7 @@ async function handleCompileStatus(request, env) {
 
       // ─── Pipeline config registry (/v1/agents/pipeline* → architect-agent) ───
       if (path.startsWith('/v1/agents/pipeline')) {
-        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
         const targetUrl = architectUrl + path + (url.search || '');
         const proxied = new Request(targetUrl, {
           method: request.method,
