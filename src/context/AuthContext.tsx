@@ -1,7 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { account } from "@/lib/appwrite";
 import type { Models } from "appwrite";
-import { hasClientJwt } from "@/lib/route-auth";
 import { setAccessToken } from "@/lib/auth";
 
 type AuthContextValue = {
@@ -23,12 +22,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .get()
       .then(async (u) => {
         setUser(u);
-        if (u && !hasClientJwt()) {
-          try {
-            const jwtObj = await account.createJWT();
-            setAccessToken(jwtObj.jwt);
-          } catch (err) {
-            console.error("Failed to generate JWT on auth mount:", err);
+        if (u) {
+          const stored = localStorage.getItem("jwt");
+          if (stored !== "drakon-mcp-2026") {
+            try {
+              const jwtObj = await account.createJWT();
+              setAccessToken(jwtObj.jwt);
+            } catch (err) {
+              console.error("Failed to generate JWT on auth mount:", err);
+            }
           }
         }
       })
@@ -36,10 +38,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  // Silent Refresh для Appwrite JWT (15хв expiry)
+  // Periodically refresh the token every 10 minutes if user is authenticated via Appwrite.
+  useEffect(() => {
+    if (!user) return;
+
+    const intervalId = setInterval(async () => {
+      const stored = localStorage.getItem("jwt");
+      if (stored === "drakon-mcp-2026") return;
+
+      try {
+        const jwtObj = await account.createJWT();
+        setAccessToken(jwtObj.jwt);
+        console.log("Appwrite JWT silently refreshed.");
+      } catch (err) {
+        console.error("Failed to silently refresh Appwrite JWT:", err);
+      }
+    }, 10 * 60 * 1000); // 10 minutes
+
+    return () => clearInterval(intervalId);
+  }, [user]);
+
   const login = async (email: string, password: string) => {
     await account.createEmailPasswordSession(email, password);
     const u = await account.get();
     setUser(u);
+    try {
+      const jwtObj = await account.createJWT();
+      setAccessToken(jwtObj.jwt);
+    } catch (err) {
+      console.error("Failed to generate JWT on login:", err);
+    }
   };
 
   const logout = async () => {

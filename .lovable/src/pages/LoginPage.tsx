@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { readSettings } from "@/lib/settings-storage";
 import { setAccessToken } from "@/lib/auth";
 import { account } from "@/lib/appwrite";
+import { useAuth } from "@/context/AuthContext";
 
 function NetworkBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -129,6 +130,7 @@ function NetworkBackground() {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login: appwriteLogin } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -155,9 +157,7 @@ export function LoginPage() {
     setErrorMsg(null);
     try {
       await account.create(ID.unique(), username, password, name || undefined);
-      await account.createEmailPasswordSession(username, password);
-      const jwtObj = await account.createJWT();
-      setAccessToken(jwtObj.jwt);
+      await appwriteLogin(username, password);
       navigate({ to: "/diagrams", replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Помилка реєстрації");
@@ -190,9 +190,7 @@ export function LoginPage() {
 
     if (username.includes("@")) {
       try {
-        await account.createEmailPasswordSession(username, password);
-        const jwtObj = await account.createJWT();
-        setAccessToken(jwtObj.jwt);
+        await appwriteLogin(username, password);
         navigate({ to: "/diagrams", replace: true });
         return;
       } catch (err) {
