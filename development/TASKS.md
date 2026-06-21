@@ -41,7 +41,7 @@ scp до vokov@192.168.3.184:/home/vokov/projects/ai-drakon-scaffolder/developme
 [x] TASK-DRK-6: Збереження схем та коду в GitHub через GitHub API [AGENT: opus]
 [x] TASK-DRK-7: Docs-Agent Appwrite Function — оновлення docs/domain.md [AGENT: claude]
 [x] TASK-DRK-8: Architect-Agent Appwrite Function — генерація скелетних .drakon схем [AGENT: claude]
-[ ] TASK-DRK-9: Валідація .drakon схем у drakon-codegen Appwrite Function [AGENT: opus]
+[x] TASK-DRK-9: Валідація .drakon схем у drakon-codegen Appwrite Function [AGENT: opus]
 [ ] TASK-DRK-10: Silent Refresh для Appwrite JWT (15хв expiry) [AGENT: agt3]
 [ ] TASK-DRK-11: UI стартового інтерв'ю для нових проектів (/project/new) [AGENT: agt3]
 [ ] TASK-DRK-12: Лінкер — збірка всіх модулів за solution.json [AGENT: opus]

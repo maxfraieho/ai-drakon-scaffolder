@@ -101,6 +101,85 @@ function validateDrakon(doc: any, params: string): any {
   return doc;
 }
 
+// Check structural correctness and reachability in a .drakon items diagram
+function validateDrakonFlow(items: any): string[] {
+  const errors: string[] = [];
+  const visited = new Set<string>();
+
+  if (!items) {
+    errors.push("Missing diagram items");
+    return errors;
+  }
+  
+  if (!items["2"]) {
+    errors.push("Missing entry branch node '2'");
+    return errors;
+  }
+  
+  if (!items["1"] || items["1"].type !== "end") {
+    errors.push("Missing end node '1' of type 'end'");
+  }
+
+  // Check structure and transitions
+  const keys = Object.keys(items);
+  for (const id of keys) {
+    const node = items[id];
+    if (!node || typeof node !== "object") {
+      errors.push(`Node '${id}' is not an object`);
+      continue;
+    }
+    if (!node.type) {
+      errors.push(`Node '${id}' is missing a 'type' field`);
+      continue;
+    }
+
+    if (node.type === "action" || node.type === "branch") {
+      if (!node.one) {
+        errors.push(`Node '${id}' of type '${node.type}' is missing transition link 'one'`);
+      } else if (!items[node.one]) {
+        errors.push(`Node '${id}' points to non-existent node '${node.one}' via 'one'`);
+      }
+    } else if (node.type === "question") {
+      if (!node.one) {
+        errors.push(`Node '${id}' of type 'question' is missing transition link 'one'`);
+      } else if (!items[node.one]) {
+        errors.push(`Node '${id}' points to non-existent node '${node.one}' via 'one'`);
+      }
+      if (!node.two) {
+        errors.push(`Node '${id}' of type 'question' is missing transition link 'two'`);
+      } else if (!items[node.two]) {
+        errors.push(`Node '${id}' points to non-existent node '${node.two}' via 'two'`);
+      }
+    }
+  }
+
+  // Reachability search from '2'
+  const stack: string[] = ["2"];
+  const reached = new Set<string>();
+  
+  while (stack.length > 0) {
+    const currentId = stack.pop()!;
+    if (reached.has(currentId)) continue;
+    reached.add(currentId);
+    
+    const node = items[currentId];
+    if (node) {
+      if (node.one && items[node.one]) {
+        stack.push(node.one);
+      }
+      if (node.two && items[node.two]) {
+        stack.push(node.two);
+      }
+    }
+  }
+
+  if (!reached.has("1")) {
+    errors.push("End node '1' is not reachable from entry branch '2'");
+  }
+
+  return errors;
+}
+
 const handler = async (context: any) => {
   const { req, res, log, error } = context;
 
@@ -163,16 +242,47 @@ Rules:
 - For conditionals: {"type":"question","one":"YES_ID","two":"NO_ID","content":"condition?"}
 - Return ONLY valid JSON, no markdown, no explanation.`;
 
-    const messages: LLMMessage[] = [
+    let messages: LLMMessage[] = [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },
     ];
 
-    log(`Calling LLM Gateway at ${gatewayUrl}...`);
-    const llmResponse = await callLLM(messages, gatewayUrl, gatewayToken, model);
+    let drakonJson: any = null;
+    let attempts = 0;
+    const maxAttempts = 3;
 
-    log("Parsing .drakon JSON from LLM response...");
-    const drakonJson = validateDrakon(extractJsonObject(llmResponse), params);
+    while (attempts < maxAttempts) {
+      attempts++;
+      log(`Calling LLM Gateway at ${gatewayUrl} (attempt ${attempts}/${maxAttempts})...`);
+      const llmResponse = await callLLM(messages, gatewayUrl, gatewayToken, model);
+
+      try {
+        log("Extracting and parsing .drakon JSON from LLM response...");
+        const parsed = extractJsonObject(llmResponse);
+        const normalized = validateDrakon(parsed, params);
+        
+        // Detailed structural/flow validation
+        const flowErrors = validateDrakonFlow(normalized.items);
+        if (flowErrors.length > 0) {
+          throw new Error("Validation errors: " + flowErrors.join("; "));
+        }
+        
+        drakonJson = normalized;
+        break; // Success!
+      } catch (err: any) {
+        log(`Validation failed on attempt ${attempts}: ${err.message}`);
+        if (attempts >= maxAttempts) {
+          throw new Error(`Failed to generate a valid DRAKON diagram after ${maxAttempts} attempts. Last error: ${err.message}`);
+        }
+        
+        // Add LLM's response and errors to messages context for correction
+        messages.push({ role: "assistant", content: llmResponse });
+        messages.push({
+          role: "user",
+          content: `Your previous response had the following validation errors:\n${err.message}\n\nPlease correct the errors and return ONLY the corrected valid DRAKON JSON.`
+        });
+      }
+    }
 
     const nodeCount = Object.keys(drakonJson.items || {}).length;
     const result = {
