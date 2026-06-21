@@ -14,3 +14,6 @@ export type { ChatContext } from "./context";
 
 export { buildDiffContext, formatDiffAnalysis } from "./diff";
 export type { DiffContext } from "./diff";
+
+export { loadKnowledgeGraph, getAgentContext } from "./agent-context";
+
