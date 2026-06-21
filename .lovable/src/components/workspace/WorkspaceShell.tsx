@@ -166,6 +166,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [evidenceCollapsed, setEvidenceCollapsed] = useState(() => {
     try { return localStorage.getItem("evidence_collapsed") === "true"; } catch { return true; }
   });
+  const [evidenceData, setEvidenceData] = useState<string | null>(null);
 
   const iconRailItems = [
     { id: "logic", to: "/diagrams", label: "Logic", icon: GitBranch, enabled: true },
@@ -563,10 +564,15 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto p-3 font-mono text-[11px] text-[var(--text-secondary)]">
-              {/* Slot for children/future wiring in Phase C */}
-              <div className="flex items-center justify-center h-full text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)]">
-                Waiting for Phase C compiler trace data...
-              </div>
+              {evidenceData ? (
+                <div className="p-4 font-mono text-sm text-gray-300 overflow-auto">
+                  <pre className="whitespace-pre-wrap">{evidenceData}</pre>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-full text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)]">
+                  No analysis data yet. Save a diagram to see impact analysis.
+                </div>
+              )}
             </div>
           </div>
         </div>
