@@ -68,6 +68,13 @@ class DocumentRequest(BaseModel):
     tags: Optional[List[str]] = None
 
 
+class DomainRequest(BaseModel):
+    interview: str
+    project: Optional[str] = "uav-watcher"
+    slug: Optional[str] = "domain"
+    tags: Optional[List[str]] = None
+
+
 class AgentSettingsRequest(BaseModel):
     repo_root: Optional[str] = None
     proxy_model: Optional[str] = None
@@ -167,6 +174,98 @@ def document_module(req: DocumentRequest):
     # Git commit + push
     rel_path = f"docs/{clean_slug}"
     git_ok, git_err = _git_save(REPO_ROOT_path, rel_path, f"docs: document module {req.module_name}")
+
+    return {
+        "success": True,
+        "slug": slug,
+        "path": rel_path,
+        "git_ok": git_ok,
+        "git_error": git_err if not git_ok else None,
+        "preview": content[:500],
+    }
+
+
+@app.post("/docs/domain")
+def update_domain(req: DomainRequest):
+    """Generate or update domain.md in docs/ based on starter interview."""
+    from ai_chat.docs_chat import PROXY_URL, PROXY_MODEL
+
+    REPO_ROOT_path = Path(os.getenv("REPO_ROOT", ""))
+    DOCS_ROOT = REPO_ROOT_path / "docs"
+
+    project = req.project or "uav-watcher"
+    slug = req.slug or "domain"
+    tag_list = req.tags or ["domain", project]
+    tags_str = ", ".join(f'"{t}"' for t in tag_list)
+    date_str = date.today().isoformat()
+
+    clean_slug = slug.lstrip("/").replace("..", "").replace("\\", "/")
+    if not clean_slug.endswith(".md"):
+        clean_slug += ".md"
+    
+    # Save folder structure: docs/{project}/domain.md
+    out_path = DOCS_ROOT / project / clean_slug
+
+    existing_content = ""
+    if out_path.exists():
+        try:
+            existing_content = out_path.read_text(encoding="utf-8")
+        except Exception:
+            pass
+
+    if existing_content:
+        message = (
+            f"Онови або доповни наявний документ доменної моделі (domain model) для проекту {project} на основі нової інформації з інтерв'ю.\n\n"
+            f"Інтерв'ю / Нові вимоги:\n"
+            f"\"\"\"\n{req.interview}\n\"\"\"\n\n"
+            f"Поточний вміст docs/{project}/{clean_slug}:\n"
+            f"\"\"\"\n{existing_content}\n\"\"\"\n\n"
+            f"УВАГА: Збережи формат Obsidian Markdown. НЕ обгортай відповідь у ```markdown або ```yaml блоки. Починай відразу з --- frontmatter. Якщо потрібно, онови frontmatter. Збережи структуру розділів:\n"
+            f"# Доменна модель: <Назва проекту>\n"
+            f"## Опис системи\n"
+            f"## Терміни предметної області (Глосарій)\n"
+            f"## Бізнес-правила та обмеження\n"
+            f"## Запланована архітектура (Модулі)\n"
+        )
+    else:
+        message = (
+            f"Проаналізуй інтерв'ю або вимоги користувача і створи новий документ доменної моделі (domain model) для проекту {project}.\n\n"
+            f"Напиши документ у форматі Obsidian Markdown. УВАГА: НЕ обгортай відповідь у ```markdown або ```yaml блоки. Починай відразу з --- frontmatter. З YAML frontmatter:\n"
+            f"```yaml\n---\ntitle: Доменна модель: {project}\ntype: domain\n"
+            f"project: {project}\ntags: [{tags_str}]\nrelated: []\ncreated: {date_str}\n"
+            f"status: documented\n---\n```\n\n"
+            f"Документ повинен містити такі секції (УКРАЇНСЬКОЮ мовою):\n"
+            f"# Доменна модель: <Назва проекту>\n"
+            f"## Опис системи\n"
+            f"## Терміни предметної області (Глосарій)\n"
+            f"## Бізнес-правила та обмеження\n"
+            f"## Запланована архітектура (Модулі)\n\n"
+            f"Вхідні вимоги з інтерв'ю:\n"
+            f"\"\"\"\n{req.interview}\n\"\"\""
+        )
+
+    memory_context = ""
+    try:
+        memory_context = get_memory(AGENT_NAME, "MEMORY.md") or ""
+    except Exception:
+        pass
+
+    try:
+        result = docs_chat(message, memory_context=memory_context)
+    except Exception as exc:
+        raise HTTPException(status_code=502, detail=str(exc))
+
+    content = result.get("reply", "")
+    if not content:
+        raise HTTPException(status_code=502, detail="Empty reply from LLM")
+
+    # Save file
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(content, encoding="utf-8")
+
+    # Git commit + push
+    rel_path = f"docs/{project}/{clean_slug}"
+    git_ok, git_err = _git_save(REPO_ROOT_path, rel_path, f"docs: update domain model for {project}")
 
     return {
         "success": True,
