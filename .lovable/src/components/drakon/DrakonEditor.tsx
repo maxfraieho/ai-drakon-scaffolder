@@ -5,8 +5,7 @@ import { useTheme } from '@/components/theme-provider';
 import { slugify } from '@/lib/utils';
 import {
 Loader2, AlertCircle, Save, Undo, Redo, Download, Home, Plus,
-ZoomIn, ZoomOut, Copy, Scissors, Trash2, ClipboardPaste, MousePointer, Hand, FileText,
-ChevronRight, ChevronDown
+ZoomIn, ZoomOut, Copy, Scissors, Trash2, ClipboardPaste, MousePointer, Hand, FileText
 } from 'lucide-react';
 
 // Standard DRAKON icon images
@@ -119,7 +118,8 @@ const widgetRef = useRef<DrakonWidgetType | null>(null);
 const [isLoading, setIsLoading] = useState(true);
 const [error, setError] = useState<string | null>(null);
 const [conversionIssues, setConversionIssues] = useState<ValidationIssue[]>([]);
-const [isIssuesExpanded, setIsIssuesExpanded] = useState(false);
+const [autofixes, setAutofixes] = useState<any[]>([]);
+const [isIssuesPanelExpanded, setIsIssuesPanelExpanded] = useState(false);
 const [hasChanges, setHasChanges] = useState(false);
 const [diagramName, setDiagramName] = useState(diagram?.name ||
 t.drakonEditor.newDiagram);
@@ -173,105 +173,126 @@ stop: () => {},
 const drakonLabels = useMemo(() => getDrakonLabels(t.drakon), [t.drakon]);
 const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon]);
 
-const buildConfig = useCallback((): DrakonConfig => ({
-startEditContent: (item, isReadonly) => {
-if (isReadonly) return;
-setEditDialog({
-open: true,
-title: t.drakon.editContent,
-value: item.content || '',
-onConfirm: (newContent) => {
-if (widgetRef.current) {
-widgetRef.current.setContent(item.id, newContent);
-setHasChanges(true);
-}
-},
-});
-},
-showContextMenu: (left, top, items) => {
-// Convert page coordinates to container-relative coordinates
-const containerEl = containerRef.current;
-uiStateRef.current = 'contextMenuOpen';
-console.log('[DRK] showContextMenu, uiState → contextMenuOpen');
-if (containerEl) {
-const rect = containerEl.getBoundingClientRect();
-setContextMenu({ x: left - rect.left, y: top - rect.top, items });
-} else {
-setContextMenu({ x: left, y: top, items });
-}
-},
-startEditSecondary: (item, isReadonly) => {
-if (isReadonly) return;
-setEditDialog({
-open: true,
-title: t.drakon.editSecondaryText,
-value: item.secondary || '',
-onConfirm: (newSecondary) => {
-if (widgetRef.current) {
-widgetRef.current.setSecondary(item.id, newSecondary);
-setHasChanges(true);
-}
-},
-});
-},
-startEditLink: (item, isReadonly) => {
-if (isReadonly) return;
-setEditDialog({
-open: true,
-title: t.drakon.editLink || 'Edit Link',
-value: item.link || '',
-onConfirm: (newLink) => {
-if (widgetRef.current) {
-widgetRef.current.setLink(item.id, newLink);
-setHasChanges(true);
-}
-},
-});
-},
-startEditStyle: (ids, oldStyle, _x, _y, _accepted) => {
-setFormatDialog({
-open: true,
-title: t.drakon.format || 'Format',
-style: (oldStyle || {}) as Record<string, unknown>,
-onConfirm: (newStyle) => {
-if (widgetRef.current) {
-widgetRef.current.setStyle(ids, newStyle);
-setHasChanges(true);
-}
-},
-});
-},
-startEditDiagramStyle: (oldStyle, _x, _y) => {
-setFormatDialog({
-open: true,
-title: t.drakon.format || 'Format Diagram',
-style: (oldStyle || {}) as Record<string, unknown>,
-onConfirm: (newStyle) => {
-if (widgetRef.current) {
-widgetRef.current.setDiagramStyle(newStyle);
-setHasChanges(true);
-}
-},
-});
-},
-canSelect: !panMode,
-canvasIcons: true,
-textFormat: 'plain',
-font: '14px system-ui, -apple-system, sans-serif',
-headerFont: 'bold 16px system-ui, -apple-system, sans-serif',
-theme: getGardenDrakonTheme(isDark),
-translate: drakonTranslate,
-...drakonLabels,
-onSelectionChanged: (items) => {
-console.log('[DRK] onSelectionChanged, uiState:', uiStateRef.current, 'items:', items?.length);
-if (onSelectionChanged) {
-  onSelectionChanged(items);
-}
-},
-onZoomChanged: (newZoom) => {
-setZoomLevel(newZoom);
-},
-}), [isDark, panMode, drakonLabels, drakonTranslate, t.drakon]);
+  const buildConfig = useCallback((): DrakonConfig => {
+    const issuesIcons: Record<string, Partial<DrakonConfigTheme>> = {};
+    conversionIssues.forEach(issue => {
+      if (issue.nodeId) {
+        issuesIcons[issue.nodeId] = {
+          iconBorder: issue.severity === 'error' ? '#dc2626' : '#d97706',
+          lineWidth: 2.5
+        };
+      }
+    });
+
+    const baseTheme = getGardenDrakonTheme(isDark);
+    const themeWithIssues = {
+      ...baseTheme,
+      icons: {
+        ...baseTheme.icons,
+        ...issuesIcons
+      }
+    };
+
+    return {
+      startEditContent: (item, isReadonly) => {
+        if (isReadonly) return;
+        setEditDialog({
+          open: true,
+          title: t.drakon.editContent,
+          value: item.content || '',
+          onConfirm: (newContent) => {
+            if (widgetRef.current) {
+              widgetRef.current.setContent(item.id, newContent);
+              setHasChanges(true);
+            }
+          },
+        });
+      },
+      showContextMenu: (left, top, items) => {
+        // Convert page coordinates to container-relative coordinates
+        const containerEl = containerRef.current;
+        uiStateRef.current = 'contextMenuOpen';
+        console.log('[DRK] showContextMenu, uiState → contextMenuOpen');
+        if (containerEl) {
+          const rect = containerEl.getBoundingClientRect();
+          setContextMenu({ x: left - rect.left, y: top - rect.top, items });
+        } else {
+          setContextMenu({ x: left, y: top, items });
+        }
+      },
+      startEditSecondary: (item, isReadonly) => {
+        if (isReadonly) return;
+        setEditDialog({
+          open: true,
+          title: t.drakon.editSecondaryText,
+          value: item.secondary || '',
+          onConfirm: (newSecondary) => {
+            if (widgetRef.current) {
+              widgetRef.current.setSecondary(item.id, newSecondary);
+              setHasChanges(true);
+            }
+          },
+        });
+      },
+      startEditLink: (item, isReadonly) => {
+        if (isReadonly) return;
+        setEditDialog({
+          open: true,
+          title: t.drakon.editLink || 'Edit Link',
+          value: item.link || '',
+          onConfirm: (newLink) => {
+            if (widgetRef.current) {
+              widgetRef.current.setLink(item.id, newLink);
+              setHasChanges(true);
+            }
+          },
+        });
+      },
+      startEditStyle: (ids, oldStyle, _x, _y, _accepted) => {
+        setFormatDialog({
+          open: true,
+          title: t.drakon.format || 'Format',
+          style: (oldStyle || {}) as Record<string, unknown>,
+          onConfirm: (newStyle) => {
+            if (widgetRef.current) {
+              widgetRef.current.setStyle(ids, newStyle);
+              setHasChanges(true);
+            }
+          },
+        });
+      },
+      startEditDiagramStyle: (oldStyle, _x, _y) => {
+        setFormatDialog({
+          open: true,
+          title: t.drakon.format || 'Format Diagram',
+          style: (oldStyle || {}) as Record<string, unknown>,
+          onConfirm: (newStyle) => {
+            if (widgetRef.current) {
+              widgetRef.current.setDiagramStyle(newStyle);
+              setHasChanges(true);
+            }
+          },
+        });
+      },
+      canSelect: !panMode,
+      canvasIcons: true,
+      textFormat: 'plain',
+      font: '14px system-ui, -apple-system, sans-serif',
+      headerFont: 'bold 16px system-ui, -apple-system, sans-serif',
+      theme: themeWithIssues,
+      translate: drakonTranslate,
+      ...drakonLabels,
+      onSelectionChanged: (items) => {
+        console.log('[DRK] onSelectionChanged, uiState:', uiStateRef.current, 'items:', items?.length);
+        if (onSelectionChanged) {
+          onSelectionChanged(items);
+        }
+      },
+      onZoomChanged: (newZoom) => {
+        setZoomLevel(newZoom);
+      },
+    };
+  }, [isDark, panMode, drakonLabels, drakonTranslate, t.drakon, conversionIssues]);
 
 // Initialize widget
 useEffect(() => {
@@ -336,9 +357,12 @@ if (containerRef.current) containerRef.current.innerHTML = '';
 useEffect(() => {
 if (!diagram) {
 setConversionIssues([]);
+setAutofixes([]);
 return;
 }
-setConversionIssues(convertDiagramToIrWithValidation(diagram).issues);
+const result = convertDiagramToIrWithValidation(diagram);
+setConversionIssues(result.issues);
+setAutofixes(result.autofixes || []);
 }, [diagram]);
 
 // Native capture-phase guard: prevent canvas/widget from clearing selection
@@ -456,23 +480,6 @@ if (timer) clearTimeout(timer);
 };
 }, [isLoading, buildConfig, diagramId]);
 
-// Escape key exits paste mode or closes context menu
-useEffect(() => {
-const handleKeyDown = (e: KeyboardEvent) => {
-if (e.key === 'Escape') {
-if (contextMenu) {
-setContextMenu(null);
-uiStateRef.current = 'default';
-} else if (uiStateRef.current === 'pasteMode') {
-uiStateRef.current = 'default';
-widgetRef.current?.redraw();
-}
-}
-};
-window.addEventListener('keydown', handleKeyDown);
-return () => window.removeEventListener('keydown', handleKeyDown);
-}, [contextMenu]);
-
 const handleSave = useCallback(async () => {
 if (!widgetRef.current) return;
 
@@ -482,11 +489,12 @@ raw.name = diagramName;
 if (raw && Array.isArray(raw.params)) {
 raw.params = (raw.params as string[]).join(', ');
 }
-const { issues } = convertDiagramToIrWithValidation(raw);
+const { issues, autofixes: rawAutofixes } = convertDiagramToIrWithValidation(raw);
 setConversionIssues(issues);
+setAutofixes(rawAutofixes || []);
 if (issues.some(i => i.severity === 'error')) {
-setIsIssuesExpanded(true);
 toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
+setIsIssuesPanelExpanded(true);
 return;
 }
 const ok = await onSaveOverride(raw);
@@ -501,11 +509,12 @@ diagramData.name = diagramName;
 if (diagramData && Array.isArray(diagramData.params)) {
 diagramData.params = (diagramData.params as string[]).join(', ');
 }
-const { issues: directIssues } = convertDiagramToIrWithValidation(diagramData as DrakonDiagram);
+const { issues: directIssues, autofixes: directAutofixes } = convertDiagramToIrWithValidation(diagramData as DrakonDiagram);
 setConversionIssues(directIssues);
+setAutofixes(directAutofixes || []);
 if (directIssues.some(i => i.severity === 'error')) {
-setIsIssuesExpanded(true);
 toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
+setIsIssuesPanelExpanded(true);
 return;
 }
 
@@ -566,17 +575,106 @@ setIsSaving(false);
 }
 }, [diagramId, diagramName, folderSlug, isNew, onSaved, onSaveOverride, projectFolder]);
 
-// Global shortcut Ctrl+S or Cmd+S to save diagram
+// Escape key exits paste mode or closes context menu
 useEffect(() => {
-const handleSaveShortcut = (e: KeyboardEvent) => {
-if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+const handleKeyDown = (e: KeyboardEvent) => {
+if (e.key === 'Escape') {
+if (contextMenu) {
+setContextMenu(null);
+uiStateRef.current = 'default';
+} else if (uiStateRef.current === 'pasteMode') {
+uiStateRef.current = 'default';
+widgetRef.current?.redraw();
+}
+} else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
 e.preventDefault();
-handleSave();
+void handleSave();
 }
 };
-window.addEventListener('keydown', handleSaveShortcut);
-return () => window.removeEventListener('keydown', handleSaveShortcut);
-}, [handleSave]);
+window.addEventListener('keydown', handleKeyDown);
+return () => window.removeEventListener('keydown', handleKeyDown);
+}, [contextMenu, handleSave]);
+
+const handleApplyAutofix = useCallback(async (type: string) => {
+if (!widgetRef.current) return;
+try {
+const json = widgetRef.current.exportJson();
+const currentDiagram = JSON.parse(json) as DrakonDiagram;
+
+let modified = false;
+
+if (type === 'merge_terminals') {
+// Find existing 'end' node or create one
+let endNodeId = Object.keys(currentDiagram.items).find(
+id => currentDiagram.items[id].type === 'end'
+);
+
+if (!endNodeId) {
+endNodeId = 'end_node_auto';
+currentDiagram.items[endNodeId] = { type: 'end' };
+modified = true;
+}
+
+// Find all nodes that are not 'end' nodes and have no 'one' pointer
+for (const [id, item] of Object.entries(currentDiagram.items)) {
+if (id !== endNodeId && item.type !== 'end' && !item.one) {
+item.one = endNodeId;
+modified = true;
+}
+}
+} else if (type === 'remove_orphan') {
+// Run BFS from start node (first item) to find reachable nodes
+const itemIds = Object.keys(currentDiagram.items);
+if (itemIds.length > 0) {
+const startId = itemIds[0];
+const visited = new Set<string>();
+const queue: string[] = [startId];
+
+while (queue.length > 0) {
+const currentId = queue.shift();
+if (!currentId || visited.has(currentId)) continue;
+visited.add(currentId);
+
+const current = currentDiagram.items[currentId];
+if (!current) continue;
+
+const nextIds = [current.one, current.two].filter((id): id is string => Boolean(id));
+for (const nextId of nextIds) {
+if (currentDiagram.items[nextId] && !visited.has(nextId)) {
+queue.push(nextId);
+}
+}
+}
+
+// Delete orphans
+for (const id of itemIds) {
+if (!visited.has(id)) {
+delete currentDiagram.items[id];
+modified = true;
+}
+}
+}
+}
+
+if (modified) {
+setDiagramName(currentDiagram.name);
+setHasChanges(true);
+
+const effectiveId = diagramId || 'new-diagram';
+await widgetRef.current.setDiagram(effectiveId, currentDiagram, editSender);
+
+// Re-validate to update the issues list
+const result = convertDiagramToIrWithValidation(currentDiagram);
+setConversionIssues(result.issues);
+setAutofixes(result.autofixes || []);
+
+toast.success(`Застосовано виправлення: ${type}`);
+}
+} catch (err) {
+console.error('Failed to apply autofix', err);
+toast.error('Не вдалося застосувати автоматичне виправлення');
+}
+}, [diagramId, editSender]);
 
 const handleUndo = useCallback(() => {
 widgetRef.current?.undo();
@@ -880,80 +978,83 @@ disabled={isLoading}
 </div>
 
 {/* Conversion/validation issues */}
-{conversionIssues.length > 0 && (
-  <div className="shrink-0 border-b bg-muted/30">
-    <div 
-      className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
-      onClick={() => setIsIssuesExpanded(!isIssuesExpanded)}
-    >
-      <div className="flex items-center gap-2">
-        <AlertCircle className={cn(
-          "h-4 w-4",
-          conversionIssues.some(i => i.severity === 'error') ? "text-destructive" : "text-amber-500"
-        )} />
-        <span className="text-sm font-medium">
-          Проблеми валідації ({conversionIssues.length})
-        </span>
-        <span className="text-xs text-muted-foreground hidden sm:inline">
-          ({conversionIssues.filter(i => i.severity === 'error').length} помилок, {conversionIssues.filter(i => i.severity === 'warning').length} попереджень)
-        </span>
-      </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">
-          {isIssuesExpanded ? "Приховати" : "Детальніше"}
-        </span>
-        {isIssuesExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
-      </div>
-    </div>
-
-    {isIssuesExpanded && (
-      <div className="px-3 pb-3 pt-1 max-h-48 overflow-y-auto flex flex-col gap-2">
-        {conversionIssues.map((issue, i) => (
-          <div 
-            key={i} 
-            className={cn(
-              "flex flex-col sm:flex-row sm:items-start justify-between gap-2 p-2.5 rounded-lg border text-xs leading-relaxed",
-              issue.severity === 'error'
-                ? 'bg-destructive/10 text-destructive border-destructive/20'
-                : 'bg-amber-500/10 text-amber-700 dark:text-amber-500 border-amber-500/20',
-            )}
+{conversionIssues.length > 0 && (() => {
+  const errorsCount = conversionIssues.filter(i => i.severity === 'error').length;
+  const warningsCount = conversionIssues.filter(i => i.severity !== 'error').length;
+  return (
+    <div className="shrink-0 border-b bg-muted/30">
+      {/* Panel Header */}
+      <div className="flex items-center justify-between px-3 py-1.5">
+        <div className="flex items-center gap-2">
+          <AlertCircle className={cn("h-4 w-4", errorsCount > 0 ? "text-destructive" : "text-amber-500")} />
+          <span className="text-xs font-medium">
+            {errorsCount > 0 ? `${errorsCount} помилок` : 'Немає помилок'}
+            {', '}
+            {warningsCount > 0 ? `${warningsCount} попереджень` : 'немає попереджень'}
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {autofixes.map((fix) => (
+            <Button
+              key={fix.type}
+              variant="outline"
+              size="sm"
+              className="h-6 text-[10px] py-0.5 px-2 border-primary/30 text-primary hover:bg-primary/10"
+              onClick={() => handleApplyAutofix(fix.type)}
+            >
+              Auto-fix: {fix.type === 'merge_terminals' ? "Об'єднати термінали" : 'Видалити ізольовані'}
+            </Button>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 text-[10px] py-0.5 px-2"
+            onClick={() => setIsIssuesPanelExpanded(!isIssuesPanelExpanded)}
           >
-            <div className="flex flex-col gap-1 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={cn(
-                  "px-1.5 py-0.5 rounded text-[10px] uppercase font-bold",
-                  issue.severity === 'error' ? 'bg-destructive text-destructive-foreground' : 'bg-amber-500 text-amber-foreground'
-                )}>
-                  {issue.severity === 'error' ? 'Помилка' : 'Попередження'}
-                </span>
-                <span className="font-mono text-[10px] bg-background/50 px-1 py-0.5 rounded opacity-80">
-                  {issue.code}
-                </span>
-                {issue.nodeId && (
-                  <button
-                    type="button"
-                    className="font-mono text-[10px] bg-background/50 hover:bg-background/80 px-1 py-0.5 rounded border border-muted-foreground/20 cursor-pointer transition-colors"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigator.clipboard.writeText(issue.nodeId || "");
-                      toast.success("ID вузла скопійовано");
-                    }}
-                    title="Натисніть, щоб скопіювати ID вузла"
-                  >
-                    Node ID: {issue.nodeId}
-                  </button>
-                )}
-              </div>
-              <p className="text-foreground/90 font-medium mt-0.5">
-                {issue.message}
-              </p>
-            </div>
-          </div>
-        ))}
+            {isIssuesPanelExpanded ? 'Приховати деталі' : 'Показати деталі'}
+          </Button>
+        </div>
       </div>
-    )}
-  </div>
-)}
+
+      {/* Panel Details */}
+      {isIssuesPanelExpanded && (
+        <div className="max-h-36 overflow-y-auto px-3 py-2 space-y-1 bg-background border-t">
+          {conversionIssues.map((issue, i) => (
+            <div key={i} className="flex items-start justify-between text-xs py-1 border-b last:border-0 border-muted">
+              <div className="flex items-start gap-1.5 min-w-0 mr-4">
+                <span className={cn(
+                  "w-1.5 h-1.5 rounded-full mt-1.5 shrink-0",
+                  issue.severity === 'error' ? "bg-destructive" : "bg-amber-500"
+                )} />
+                <div className="min-w-0">
+                  <span className="font-semibold mr-1.5 font-mono text-[9px] text-muted-foreground bg-muted px-1 py-0.5 rounded">
+                    {issue.code}
+                  </span>
+                  <span className="text-foreground">{issue.message}</span>
+                </div>
+              </div>
+              {issue.nodeId && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-5 text-[9px] font-mono shrink-0 py-0 px-1.5"
+                  onClick={() => {
+                    if (widgetRef.current) {
+                      widgetRef.current.showItem(issue.nodeId!);
+                      toast.info(`Фокус на вузол: ${issue.nodeId}`);
+                    }
+                  }}
+                >
+                  Focus: {issue.nodeId}
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+})()}
 
 {/* Editor layout with toolbar at bottom */}
 <div className="flex flex-col flex-1 min-h-0 gap-2">
