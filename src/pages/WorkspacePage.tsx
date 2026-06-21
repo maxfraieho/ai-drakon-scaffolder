@@ -1,13 +1,27 @@
 import { useState } from "react";
-import { FileCode, FileText } from "lucide-react";
+import { FileCode, FileText, Brain } from "lucide-react";
 import { ProjectFileManager } from "@/components/files/ProjectFileManager";
 import { GardenPage } from "@/pages/GardenPage";
 import { cn } from "@/lib/utils";
+import { useProject } from "@/context/ProjectContext";
+import { getGithubConfig } from "@/lib/settings-storage";
+import { KnowledgeGraphPanel } from "@/components/workspace/KnowledgeGraphPanel";
 
-type WorkspaceMode = "code" | "docs";
+type WorkspaceMode = "code" | "docs" | "kg";
 
 export function WorkspacePage() {
   const [mode, setMode] = useState<WorkspaceMode>("code");
+  const { activeProject } = useProject();
+  const ghCfg = getGithubConfig();
+
+  const owner = activeProject?.github?.owner || ghCfg.owner || "";
+  const repo = activeProject?.github?.repo || ghCfg.repo || "";
+  const branch = activeProject?.github?.branch || ghCfg.branch || "main";
+  const token = ghCfg.token || "";
+
+  const graphJsonUrl = owner && repo
+    ? `/understand-dashboard/?owner=${owner}&repo=${repo}&branch=${branch}&token=${token}`
+    : undefined;
 
   return (
     <div className="flex flex-col h-full w-full bg-[var(--bg-base)] text-[var(--text-primary)]">
@@ -16,6 +30,7 @@ export function WorkspacePage() {
           [
             { m: "code" as WorkspaceMode, label: "Код", Icon: FileCode },
             { m: "docs" as WorkspaceMode, label: "Документація", Icon: FileText },
+            { m: "kg" as WorkspaceMode, label: "Knowledge Graph", Icon: Brain },
           ]
         ).map(({ m, label, Icon }) => (
           <button
@@ -42,7 +57,11 @@ export function WorkspacePage() {
         <div className={cn("h-full", mode !== "docs" && "hidden")}>
           <GardenPage />
         </div>
+        <div className={cn("h-full", mode !== "kg" && "hidden")}>
+          <KnowledgeGraphPanel graphJsonUrl={graphJsonUrl} />
+        </div>
       </div>
     </div>
   );
 }
+
