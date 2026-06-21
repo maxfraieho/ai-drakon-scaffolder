@@ -3,8 +3,9 @@ Manages pipeline storage and execution scoped to project+agent.
 """
 import json
 import os
+import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional, List
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -20,6 +21,10 @@ router = APIRouter(prefix="/projects", tags=["project-pipelines"])
 class PipelinePayload(BaseModel):
     ir: dict
     description: str = ""
+
+
+class ScaffoldPayload(BaseModel):
+    language: Optional[str] = "javascript"
 
 
 def _pipeline_path(slug: str, agent: str) -> Path:
@@ -69,6 +74,159 @@ def create_project(slug: str, payload: dict = {}):
         'created_at': datetime.datetime.utcnow().isoformat() + 'Z'}
     (project_dir / 'config.json').write_text(_json.dumps(config, indent=2, ensure_ascii=False))
     return {'success': True, 'project': config}
+
+
+@router.post('/{slug}/scaffold')
+def scaffold_project(slug: str, payload: ScaffoldPayload):
+    """Scaffold project skeleton diagrams and solution.json based on domain.md."""
+    from ai_chat.architect_chat import architect_chat_with_system
+    import subprocess
+    import datetime
+
+    # 1. Determine repo path
+    repo_root = os.getenv("REPO_ROOT", "")
+    if not repo_root:
+        # Fallback to projects base
+        repo_root = str(PROJECTS_BASE / slug / "repo")
+
+    repo_path = Path(repo_root)
+    if not repo_path.exists():
+        raise HTTPException(status_code=404, detail=f"Repository path not found: {repo_root}")
+
+    # 2. Read domain.md
+    domain_path = repo_path / "docs" / slug / "domain.md"
+    if not domain_path.exists():
+        domain_path = repo_path / "docs" / "domain.md"
+
+    if not domain_path.exists():
+        raise HTTPException(status_code=404, detail=f"docs/{slug}/domain.md or docs/domain.md not found in {repo_root}")
+
+    try:
+        domain_content = domain_path.read_text(encoding="utf-8")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to read domain.md: {e}")
+
+    # 3. Call LLM to extract modules/functions JSON
+    system_prompt = (
+        "Ти — AI-агент Архітектор платформи AI-DRAKON.\n"
+        "Твоє завдання — проаналізувати доменну модель (domain.md) та виділити перелік модулів та функцій для реалізації.\n\n"
+        "Поверни результат ВИКЛЮЧНО як JSON-блок (між ```json та ```), що містить список модулів.\n"
+        "Кожен модуль має мати name (англійською мовою, зміїний_регістр або camelCase) та список functions.\n"
+        "Кожна функція має мати name (англійською мовою), description (короткий опис) та список params (параметрів як масив рядків).\n\n"
+        "Приклад виходу:\n"
+        "```json\n"
+        "{\n"
+        "  \"modules\": [\n"
+        "    {\n"
+        "      \"name\": \"auth\",\n"
+        "      \"functions\": [\n"
+        "        {\n"
+        "          \"name\": \"login\",\n"
+        "          \"description\": \"Автентифікація користувача за логіном та паролем\",\n"
+        "          \"params\": [\"username\", \"password\"]\n"
+        "        }\n"
+        "      ]\n"
+        "    }\n"
+        "  ]\n"
+        "}\n"
+        "```\n\n"
+        "НЕ додавай жодного додаткового тексту чи пояснень, тільки JSON блок!"
+    )
+
+    try:
+        res = architect_chat_with_system(
+            f"Проаналізуй наступну доменну модель та виділи модулі та функції:\n\n{domain_content}",
+            system_prompt=system_prompt
+        )
+        reply = res.get("reply", "")
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"LLM call failed: {e}")
+
+    # Parse JSON from reply
+    scaffold_data = None
+    m = re.search(r"```json\s*(\{.*?\})\s*```", reply, re.DOTALL)
+    if m:
+        try:
+            scaffold_data = json.loads(m.group(1))
+        except Exception:
+            pass
+
+    if not scaffold_data or "modules" not in scaffold_data:
+        raise HTTPException(status_code=502, detail=f"Failed to parse modules/functions JSON from LLM: {reply[:300]}")
+
+    # 4. Create or update solution.json
+    solution_path = repo_path / "solution.json"
+    existing_solution = {"project": slug, "modules": []}
+    if solution_path.exists():
+        try:
+            existing_solution = json.loads(solution_path.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
+    lang = payload.language or "javascript"
+    language_code = "Lua2604" if "lua" in lang.lower() else "JS2604"
+
+    created_files = []
+
+    for mod in scaffold_data["modules"]:
+        mod_name = mod["name"].lower().strip()
+        existing_mod = next((m for m in existing_solution.get("modules", []) if m["name"].lower() == mod_name), None)
+        if not existing_mod:
+            existing_mod = {"name": mod["name"], "functions": []}
+            if "modules" not in existing_solution:
+                existing_solution["modules"] = []
+            existing_solution["modules"].append(existing_mod)
+
+        for fn in mod.get("functions", []):
+            fn_name = fn["name"].strip()
+            existing_fn = next((f for f in existing_mod.get("functions", []) if f["name"] == fn_name), None)
+
+            drakon_rel_path = f"src/modules/{mod_name}/{fn_name}.drakon"
+            drakon_abs_path = repo_path / drakon_rel_path
+
+            if not existing_fn:
+                existing_fn = {
+                    "name": fn_name,
+                    "description": fn.get("description", ""),
+                    "path": drakon_rel_path,
+                    "language": language_code
+                }
+                if "functions" not in existing_mod:
+                    existing_mod["functions"] = []
+                existing_mod["functions"].append(existing_fn)
+
+            # Create empty diagram if doesn't exist
+            if not drakon_abs_path.exists():
+                drakon_abs_path.parent.mkdir(parents=True, exist_ok=True)
+                params_str = ", ".join(fn.get("params", [])) if isinstance(fn.get("params"), list) else fn.get("params", "")
+                drakon_diagram = {
+                    "name": fn_name,
+                    "access": "write",
+                    "params": params_str,
+                    "items": {
+                        "1": { "type": "end" },
+                        "2": { "type": "branch", "branchId": 0, "one": "3" },
+                        "3": { "type": "action", "content": fn.get("description", "Початок реалізації"), "one": "1" }
+                    }
+                }
+                drakon_abs_path.write_text(json.dumps(drakon_diagram, indent=2, ensure_ascii=False), encoding="utf-8")
+                created_files.append(drakon_rel_path)
+
+    # Write solution.json
+    solution_path.write_text(json.dumps(existing_solution, indent=2, ensure_ascii=False), encoding="utf-8")
+    created_files.append("solution.json")
+
+    # 5. Git commit + push
+    for f in created_files:
+        subprocess.run(["git", "-C", str(repo_path), "add", f], capture_output=True)
+    subprocess.run(["git", "-C", str(repo_path), "commit", "-m", f"scaffold(project): create skeletal diagrams and update solution.json for {slug}"], capture_output=True)
+    subprocess.run(["git", "-C", str(repo_path), "push", "origin", "main"], capture_output=True)
+
+    return {
+        "success": True,
+        "solution": existing_solution,
+        "created_files": created_files
+    }
 
 
 @router.get("/{slug}/agents")
