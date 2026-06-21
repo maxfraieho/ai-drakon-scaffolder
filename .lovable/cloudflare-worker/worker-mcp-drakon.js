@@ -2483,6 +2483,12 @@ export default {
       if (method === 'GET' && path === '/v1/codegen-status') {
         return await handleCodegenStatus(request, env);
       }
+      if (method === 'POST' && path === '/v1/compile') {
+        return await handleDrakonCompile(request, env);
+      }
+      if (method === 'GET' && path === '/v1/compile-status') {
+        return await handleCompileStatus(request, env);
+      }
       // ──────────────────────────────────────────────────────────────────────
 
       // ─── GitHub read-only routes (no auth needed — Worker uses server-side token) ─────
@@ -2534,6 +2540,45 @@ export default {
       const ownerPayload = await verifyOwnerAuth(request, env);
       if (!ownerPayload) {
         return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+      }
+
+      // ─── Docs-agent proxy (/v1/docs/* → docs-agent) ───────────────────────────
+      if (path.startsWith('/v1/docs/')) {
+        const docsUrl = env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua';
+        const agentPath = path.slice(3); // strip /v1
+        const targetUrl = docsUrl + agentPath + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        return fetch(proxied);
+      }
+
+      // ─── Architect-agent projects proxy (/v1/projects/* → architect-agent) ───
+      if (path.startsWith('/v1/projects')) {
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+        const agentPath = path.slice(3); // strip /v1
+        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        return fetch(proxied);
+      }
+
+      // ─── Architect-agent graph-pipelines proxy (/v1/graph-pipelines/* → architect-agent) ───
+      if (path.startsWith('/v1/graph-pipelines')) {
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+        const agentPath = path.slice(3); // strip /v1
+        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        return fetch(proxied);
       }
 
       if (method === 'POST' && path === '/v1/drakon/commit') {
@@ -3468,6 +3513,134 @@ async function handleCodegenStatus(request, env) {
         output = {
           success: isOk,
           error: isOk ? undefined : 'Could not recover drakon_json from logs',
+        };
+      }
+    }
+  }
+
+  return jsonResponse({
+    execution_id: data.$id,
+    status: data.status,
+    duration: data.duration,
+    output,
+    error: data.status === 'failed' ? (data.errors || 'Function failed') : undefined,
+  });
+}
+
+// ─── DRAKON code compilation (Drakon JSON → JS/Lua) ─────────────────────────
+// Triggers the "drakon-compiler" Appwrite Function asynchronously and returns an
+// execution_id; the frontend polls /v1/compile-status.
+async function handleDrakonCompile(request, env) {
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) {
+    return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+  }
+
+  let body = {};
+  try {
+    const text = await request.text();
+    if (text) body = JSON.parse(text);
+  } catch (_) {
+    return errorResponse('Invalid JSON body', 400);
+  }
+
+  const name = body.name;
+  const root = body.root;
+  const diagrams = body.diagrams;
+  if (!name || !root || !diagrams) {
+    return errorResponse('name, root, and diagrams are required', 400);
+  }
+
+  const compileBody = {
+    name,
+    root,
+    diagrams,
+    language: body.language || 'JS',
+    mainFun: body.mainFun || '',
+    settings: body.settings || {},
+  };
+
+  const functionId = env.DRAKON_COMPILER_FUNCTION_ID;
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+
+  if (!functionId || !apiKey) {
+    return errorResponse('DRAKON_COMPILER_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
+  }
+
+  const execRes = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+      body: JSON.stringify({
+        async: true,
+        body: JSON.stringify(compileBody),
+      }),
+    }
+  );
+
+  if (!execRes.ok) {
+    const errText = await execRes.text().catch(() => '');
+    return errorResponse(`Appwrite execution failed: ${execRes.status} ${errText}`, 502);
+  }
+
+  const execData = await execRes.json();
+  return jsonResponse({
+    execution_id: execData.$id,
+    status: 'accepted',
+  });
+}
+
+async function handleCompileStatus(request, env) {
+  const url = new URL(request.url);
+  const executionId = url.searchParams.get('execution_id');
+  if (!executionId) return errorResponse('execution_id required', 400);
+
+  const functionId = env.DRAKON_COMPILER_FUNCTION_ID;
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+
+  if (!functionId || !apiKey) return errorResponse('not configured', 503);
+
+  const res = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    {
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+    }
+  );
+
+  if (!res.ok) return errorResponse(`Appwrite status check failed: ${res.status}`, 502);
+  const data = await res.json();
+
+  let output = undefined;
+  if (data.status === 'completed') {
+    if (data.responseBody) {
+      try { output = JSON.parse(data.responseBody); } catch (_) {}
+    }
+    if (!output || typeof output.ok !== 'boolean') {
+      const logs = data.logs || '';
+      const m = logs.match(/DRAKON_CODE_RESULT:([A-Za-z0-9+/=]+)/);
+      if (m) {
+        try {
+          const decoded = atob(m[1]);
+          output = JSON.parse(decoded);
+        } catch (_) {
+          output = undefined;
+        }
+      }
+      if (!output) {
+        const isOk = data.responseStatusCode === 200;
+        output = {
+          ok: isOk,
+          error: isOk ? undefined : 'Could not recover drakon_code from logs',
         };
       }
     }
