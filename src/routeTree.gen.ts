@@ -28,6 +28,7 @@ import { Route as CodeRouteImport } from './routes/code'
 import { Route as ArchitectRouteImport } from './routes/architect'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ProjectNewRouteImport } from './routes/project.new'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
 import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
 import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
@@ -133,6 +134,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProjectNewRoute = ProjectNewRouteImport.update({
+  id: '/project/new',
+  path: '/project/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EditorIdRoute = EditorIdRouteImport.update({
   id: '/editor/$id',
   path: '/editor/$id',
@@ -203,6 +209,7 @@ export interface FileRoutesByFullPath {
   '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/project/new': typeof ProjectNewRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/project/new': typeof ProjectNewRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
@@ -264,6 +272,7 @@ export interface FileRoutesById {
   '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/project/new': typeof ProjectNewRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/project/new'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
     | '/api/notebooklm/notebooks'
@@ -326,6 +336,7 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/project/new'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
     | '/api/notebooklm/notebooks'
@@ -356,6 +367,7 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/project/new'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
     | '/api/notebooklm/notebooks'
@@ -387,6 +399,7 @@ export interface RootRouteChildren {
   WorkspaceRoute: typeof WorkspaceRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
+  ProjectNewRoute: typeof ProjectNewRoute
   ApiKnowledgeZonesRoute: typeof ApiKnowledgeZonesRouteWithChildren
   ApiNotebooklmChatRoute: typeof ApiNotebooklmChatRoute
   ApiNotebooklmNotebooksRoute: typeof ApiNotebooklmNotebooksRoute
@@ -525,6 +538,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/project/new': {
+      id: '/project/new'
+      path: '/project/new'
+      fullPath: '/project/new'
+      preLoaderRoute: typeof ProjectNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/editor/$id': {
@@ -668,6 +688,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkspaceRoute: WorkspaceRoute,
   DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,
+  ProjectNewRoute: ProjectNewRoute,
   ApiKnowledgeZonesRoute: ApiKnowledgeZonesRouteWithChildren,
   ApiNotebooklmChatRoute: ApiNotebooklmChatRoute,
   ApiNotebooklmNotebooksRoute: ApiNotebooklmNotebooksRoute,

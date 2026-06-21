@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -332,6 +333,15 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
 <Plus className="h-3.5 w-3.5" />
 Додати новий проект
 </button>
+
+<Link
+to="/project/new"
+onClick={() => setManagerOpen(false)}
+className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-subtle)] px-3 py-2 text-[11px] text-[var(--accent-amber)] hover:border-[var(--accent-amber)]/40 hover:bg-[var(--accent-dim)] transition-colors w-full mt-2"
+>
+<Sparkles className="h-3.5 w-3.5" />
+Створити з AI (Документознавець)
+</Link>
 </DialogContent>
 </Dialog>}
 

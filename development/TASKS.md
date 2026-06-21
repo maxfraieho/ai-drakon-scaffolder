@@ -43,7 +43,7 @@ scp до vokov@192.168.3.184:/home/vokov/projects/ai-drakon-scaffolder/developme
 [x] TASK-DRK-8: Architect-Agent Appwrite Function — генерація скелетних .drakon схем [AGENT: claude]
 [x] TASK-DRK-9: Валідація .drakon схем у drakon-codegen Appwrite Function [AGENT: opus]
 [x] TASK-DRK-10: Silent Refresh для Appwrite JWT (15хв expiry) [AGENT: agt3]
-[ ] TASK-DRK-11: UI стартового інтерв'ю для нових проектів (/project/new) [AGENT: agt3]
+[x] TASK-DRK-11: UI стартового інтерв'ю для нових проектів (/project/new) [AGENT: agt3]
 [ ] TASK-DRK-12: Лінкер — збірка всіх модулів за solution.json [AGENT: opus]
 [ ] TASK-DRK-13: Підсвітка помилок компіляції на вузлах drakonwidget [AGENT: agt3]
 [ ] TASK-DRK-14: Тести генерації та збірки DRAKON-схем [AGENT: opus]
