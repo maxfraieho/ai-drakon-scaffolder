@@ -480,7 +480,12 @@ raw.name = diagramName;
 if (raw && Array.isArray(raw.params)) {
 raw.params = (raw.params as string[]).join(', ');
 }
-setConversionIssues(convertDiagramToIrWithValidation(raw).issues);
+const { issues } = convertDiagramToIrWithValidation(raw);
+setConversionIssues(issues);
+if (issues.some(i => i.severity === 'error')) {
+toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
+return;
+}
 const ok = await onSaveOverride(raw);
 if (ok) setHasChanges(false);
 return;
@@ -493,7 +498,12 @@ diagramData.name = diagramName;
 if (diagramData && Array.isArray(diagramData.params)) {
 diagramData.params = (diagramData.params as string[]).join(', ');
 }
-setConversionIssues(convertDiagramToIrWithValidation(diagramData as DrakonDiagram).issues);
+const { issues: directIssues } = convertDiagramToIrWithValidation(diagramData as DrakonDiagram);
+setConversionIssues(directIssues);
+if (directIssues.some(i => i.severity === 'error')) {
+toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
+return;
+}
 
 const targetFolder =
 (projectFolder.folderSlug || '').trim() || folderSlug || 'general';

@@ -30,6 +30,7 @@ import { FileTreeItem } from "@/components/workspace/FileTree";
 import type { FSNode } from "@/components/workspace/FileTree";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
 import { linkProject } from "@/lib/codegen/linker";
+import { convertDiagramToIrWithValidation } from "@/lib/htse/diagram-to-ir";
 
 const EXT_TO_LANG: Record<string, string> = {
   py: "python", ts: "typescript", tsx: "typescript",
@@ -525,6 +526,13 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
   };
 
   const handleSaveDiagramOverride = async (diagram: any) => {
+    // Validate diagram structure before saving (defense in depth)
+    const { issues } = convertDiagramToIrWithValidation(diagram);
+    if (issues.some(i => i.severity === 'error')) {
+      toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
+      return false;
+    }
+
     const serialized = JSON.stringify(diagram, null, 2);
     setCode(serialized);
     setDrakonDiagram(diagram);
