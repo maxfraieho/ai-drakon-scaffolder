@@ -5,7 +5,8 @@ import { useTheme } from '@/components/theme-provider';
 import { slugify } from '@/lib/utils';
 import {
 Loader2, AlertCircle, Save, Undo, Redo, Download, Home, Plus,
-ZoomIn, ZoomOut, Copy, Scissors, Trash2, ClipboardPaste, MousePointer, Hand, FileText
+ZoomIn, ZoomOut, Copy, Scissors, Trash2, ClipboardPaste, MousePointer, Hand, FileText,
+ChevronRight, ChevronDown
 } from 'lucide-react';
 
 // Standard DRAKON icon images
@@ -118,6 +119,7 @@ const widgetRef = useRef<DrakonWidgetType | null>(null);
 const [isLoading, setIsLoading] = useState(true);
 const [error, setError] = useState<string | null>(null);
 const [conversionIssues, setConversionIssues] = useState<ValidationIssue[]>([]);
+const [isIssuesExpanded, setIsIssuesExpanded] = useState(false);
 const [hasChanges, setHasChanges] = useState(false);
 const [diagramName, setDiagramName] = useState(diagram?.name ||
 t.drakonEditor.newDiagram);
@@ -483,6 +485,7 @@ raw.params = (raw.params as string[]).join(', ');
 const { issues } = convertDiagramToIrWithValidation(raw);
 setConversionIssues(issues);
 if (issues.some(i => i.severity === 'error')) {
+setIsIssuesExpanded(true);
 toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
 return;
 }
@@ -501,6 +504,7 @@ diagramData.params = (diagramData.params as string[]).join(', ');
 const { issues: directIssues } = convertDiagramToIrWithValidation(diagramData as DrakonDiagram);
 setConversionIssues(directIssues);
 if (directIssues.some(i => i.severity === 'error')) {
+setIsIssuesExpanded(true);
 toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
 return;
 }
@@ -561,6 +565,18 @@ onSaved?.(effectiveId);
 setIsSaving(false);
 }
 }, [diagramId, diagramName, folderSlug, isNew, onSaved, onSaveOverride, projectFolder]);
+
+// Global shortcut Ctrl+S or Cmd+S to save diagram
+useEffect(() => {
+const handleSaveShortcut = (e: KeyboardEvent) => {
+if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+e.preventDefault();
+handleSave();
+}
+};
+window.addEventListener('keydown', handleSaveShortcut);
+return () => window.removeEventListener('keydown', handleSaveShortcut);
+}, [handleSave]);
 
 const handleUndo = useCallback(() => {
 widgetRef.current?.undo();
@@ -865,33 +881,78 @@ disabled={isLoading}
 
 {/* Conversion/validation issues */}
 {conversionIssues.length > 0 && (
-<div className="shrink-0 flex items-center gap-1.5 overflow-x-auto flex-nowrap px-2 py-1.5 border-b no-scrollbar">
-{conversionIssues.map((issue, i) => (
-<Tooltip key={i}>
-<TooltipTrigger asChild>
-<button
-className={cn(
-'inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-mono cursor-pointer',
-issue.severity === 'error'
-? 'bg-destructive/10 text-destructive border border-destructive/30'
-: 'bg-amber-500/10 text-amber-600 border border-amber-500/30',
-)}
-onClick={() => issue.nodeId && void navigator.clipboard.writeText(issue.nodeId)}
->
-<AlertCircle className="h-3 w-3 shrink-0" />
-{issue.nodeId ?? issue.code}
-</button>
-</TooltipTrigger>
-<TooltipContent side="bottom" className="max-w-xs">
-<p className="font-mono text-[10px] text-muted-foreground">{issue.code}</p>
-<p className="text-xs">{issue.message}</p>
-{issue.nodeId && (
-<p className="font-mono text-[10px] text-muted-foreground mt-1">nodeId: {issue.nodeId}</p>
-)}
-</TooltipContent>
-</Tooltip>
-))}
-</div>
+  <div className="shrink-0 border-b bg-muted/30">
+    <div 
+      className="flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors"
+      onClick={() => setIsIssuesExpanded(!isIssuesExpanded)}
+    >
+      <div className="flex items-center gap-2">
+        <AlertCircle className={cn(
+          "h-4 w-4",
+          conversionIssues.some(i => i.severity === 'error') ? "text-destructive" : "text-amber-500"
+        )} />
+        <span className="text-sm font-medium">
+          Проблеми валідації ({conversionIssues.length})
+        </span>
+        <span className="text-xs text-muted-foreground hidden sm:inline">
+          ({conversionIssues.filter(i => i.severity === 'error').length} помилок, {conversionIssues.filter(i => i.severity === 'warning').length} попереджень)
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">
+          {isIssuesExpanded ? "Приховати" : "Детальніше"}
+        </span>
+        {isIssuesExpanded ? <ChevronDown className="h-4 w-4 text-muted-foreground" /> : <ChevronRight className="h-4 w-4 text-muted-foreground" />}
+      </div>
+    </div>
+
+    {isIssuesExpanded && (
+      <div className="px-3 pb-3 pt-1 max-h-48 overflow-y-auto flex flex-col gap-2">
+        {conversionIssues.map((issue, i) => (
+          <div 
+            key={i} 
+            className={cn(
+              "flex flex-col sm:flex-row sm:items-start justify-between gap-2 p-2.5 rounded-lg border text-xs leading-relaxed",
+              issue.severity === 'error'
+                ? 'bg-destructive/10 text-destructive border-destructive/20'
+                : 'bg-amber-500/10 text-amber-700 dark:text-amber-500 border-amber-500/20',
+            )}
+          >
+            <div className="flex flex-col gap-1 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className={cn(
+                  "px-1.5 py-0.5 rounded text-[10px] uppercase font-bold",
+                  issue.severity === 'error' ? 'bg-destructive text-destructive-foreground' : 'bg-amber-500 text-amber-foreground'
+                )}>
+                  {issue.severity === 'error' ? 'Помилка' : 'Попередження'}
+                </span>
+                <span className="font-mono text-[10px] bg-background/50 px-1 py-0.5 rounded opacity-80">
+                  {issue.code}
+                </span>
+                {issue.nodeId && (
+                  <button
+                    type="button"
+                    className="font-mono text-[10px] bg-background/50 hover:bg-background/80 px-1 py-0.5 rounded border border-muted-foreground/20 cursor-pointer transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(issue.nodeId || "");
+                      toast.success("ID вузла скопійовано");
+                    }}
+                    title="Натисніть, щоб скопіювати ID вузла"
+                  >
+                    Node ID: {issue.nodeId}
+                  </button>
+                )}
+              </div>
+              <p className="text-foreground/90 font-medium mt-0.5">
+                {issue.message}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
 )}
 
 {/* Editor layout with toolbar at bottom */}

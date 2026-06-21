@@ -545,12 +545,38 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
     try {
       const functionName = filePath.split("/").pop()?.replace(/\.drakon$/, "") || "function";
       
+      // Read solution.json to determine the project language
+      let solutionJson = "";
+      try {
+        if (isGitHub) {
+          const res = await api.githubGetFile(owner, repo, "solution.json", branch, token);
+          if (res.success) {
+            solutionJson = res.content;
+          }
+        } else {
+          const res = await fetchNote("solution", activeProject?.slug || undefined);
+          if (res) {
+            solutionJson = res.content;
+          }
+        }
+      } catch (err) {
+        console.warn("Could not read solution.json for language detection", err);
+      }
+
       // Determine the target language (default to JavaScript / .js)
       let language = "JS2604";
       let codeExtension = ".js";
-      if (filePath.toLowerCase().includes("lua")) {
-        language = "Lua2604";
-        codeExtension = ".lua";
+      if (solutionJson) {
+        try {
+          const solution = JSON.parse(solutionJson);
+          const solLang = solution.language?.toLowerCase();
+          if (solLang === "lua" || solution.target?.endsWith(".lua")) {
+            language = "Lua2604";
+            codeExtension = ".lua";
+          }
+        } catch (err) {
+          console.warn("Could not parse solution.json for language detection", err);
+        }
       }
 
       const compiledCode = await compileDiagramClientSide(functionName, diagram, language);
