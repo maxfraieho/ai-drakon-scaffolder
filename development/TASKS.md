@@ -45,10 +45,10 @@ scp до vokov@192.168.3.184:/home/vokov/projects/ai-drakon-scaffolder/developme
 [x] TASK-DRK-10: Silent Refresh для Appwrite JWT (15хв expiry) [AGENT: agt3]
 [x] TASK-DRK-11: UI стартового інтерв'ю для нових проектів (/project/new) [AGENT: agt3]
 [x] TASK-DRK-12: Лінкер — збірка всіх модулів за solution.json [AGENT: opus]
-[ ] TASK-DRK-13: Підсвітка помилок компіляції на вузлах drakonwidget [AGENT: agt3]
+[x] TASK-DRK-13: Підсвітка помилок компіляції на вузлах drakonwidget [AGENT: agt3]
 [ ] TASK-DRK-14: Тести генерації та збірки DRAKON-схем [AGENT: opus]
 [ ] TASK-DRK-15: CF Worker нові endpoints для агентів (docs-agent, architect-agent) [AGENT: agt3]
-[x] TASK-DRK-16: UX & Compilation Improvements from prompts/1.md [AGENT: agt3]
+[ ] TASK-DRK-16: UX & Compilation Improvements from prompts/1.md [AGENT: agt3]
 
 ## TASK-DRK-16: UX & Compilation Improvements from prompts/1.md
 !!IMPORTANT!! Run locally on AGY3 Termux in /home/vokov/workspace/ai-drakon-scaffolder.
