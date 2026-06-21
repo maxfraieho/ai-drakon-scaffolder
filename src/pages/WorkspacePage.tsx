@@ -19,10 +19,6 @@ export function WorkspacePage() {
   const branch = activeProject?.github?.branch || ghCfg.branch || "main";
   const token = ghCfg.token || "";
 
-  const graphJsonUrl = owner && repo
-    ? `/understand-dashboard/?owner=${owner}&repo=${repo}&branch=${branch}&token=${token}`
-    : undefined;
-
   return (
     <div className="flex flex-col h-full w-full bg-[var(--bg-base)] text-[var(--text-primary)]">
       <div className="flex items-center px-2 h-8 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
@@ -58,10 +54,14 @@ export function WorkspacePage() {
           <GardenPage />
         </div>
         <div className={cn("h-full", mode !== "kg" && "hidden")}>
-          <KnowledgeGraphPanel graphJsonUrl={graphJsonUrl} />
+          <KnowledgeGraphPanel
+            owner={owner}
+            repo={repo}
+            branch={branch}
+            token={token}
+          />
         </div>
       </div>
     </div>
   );
 }
-

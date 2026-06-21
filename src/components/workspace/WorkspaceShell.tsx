@@ -69,6 +69,9 @@ import { cn } from "@/lib/utils";
 import { clearAccessToken } from "@/lib/auth";
 import { useTheme } from "@/components/theme-provider";
 import { MobileNavigationDock } from "@/components/mobile/MobileNavigationDock";
+import { loadKnowledgeGraph } from "@/lib/understand/agent-context";
+import { buildDiffContext, formatDiffAnalysis } from "@/lib/understand/diff";
+import { getGithubConfig } from "@/lib/settings-storage";
 
 type NavItem = {
   to: string;
@@ -166,7 +169,10 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [evidenceCollapsed, setEvidenceCollapsed] = useState(() => {
     try { return localStorage.getItem("evidence_collapsed") === "true"; } catch { return true; }
   });
-  const [evidenceData, setEvidenceData] = useState<string | null>(null);
+  const [evidenceData, setEvidenceData] = useState<string | null>(() => {
+    try { return localStorage.getItem("evidence_last") || null; } catch { return null; }
+  });
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
 
   const iconRailItems = [
     { id: "logic", to: "/diagrams", label: "Logic", icon: GitBranch, enabled: true },
@@ -187,6 +193,40 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
+
+  /* ── EVIDENCE: listen for diagram-saved events ── */
+  useEffect(() => {
+    const handler = async (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      const changedFiles: string[] = detail?.changedFiles ?? [];
+      const ghCfg = getGithubConfig();
+      const owner = activeProject?.github?.owner || ghCfg.owner || "";
+      const repo = activeProject?.github?.repo || ghCfg.repo || "";
+      const token = ghCfg.token || "";
+      if (!owner || !repo || !token) return;
+
+      setEvidenceLoading(true);
+      try {
+        const graph = await loadKnowledgeGraph(owner, repo, token);
+        if (graph) {
+          const diffCtx = buildDiffContext(graph, changedFiles);
+          const analysis = formatDiffAnalysis(diffCtx);
+          setEvidenceData(analysis);
+          setEvidenceCollapsed(false);
+          try { localStorage.setItem("evidence_collapsed", "false"); } catch {}
+          try { localStorage.setItem("evidence_last", analysis); } catch {}
+        } else {
+          setEvidenceData("Knowledge graph not available.\nCommit a .understand-anything/knowledge-graph.json file to enable impact analysis.");
+        }
+      } catch (err) {
+        setEvidenceData("Error running diff analysis: " + (err instanceof Error ? err.message : "Unknown"));
+      } finally {
+        setEvidenceLoading(false);
+      }
+    };
+    document.addEventListener("diagram-saved", handler);
+    return () => document.removeEventListener("diagram-saved", handler);
+  }, [activeProject]);
 
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -564,13 +604,18 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
               </span>
             </div>
             <div className="flex-1 overflow-y-auto p-3 font-mono text-[11px] text-[var(--text-secondary)]">
-              {evidenceData ? (
-                <div className="p-4 font-mono text-sm text-gray-300 overflow-auto">
-                  <pre className="whitespace-pre-wrap">{evidenceData}</pre>
+              {evidenceLoading ? (
+                <div className="flex items-center justify-center h-full gap-2 text-[var(--text-muted)]">
+                  <span className="animate-spin h-3 w-3 border-b-2 border-amber-500 rounded-full inline-block" />
+                  Аналіз впливу…
+                </div>
+              ) : evidenceData ? (
+                <div className="p-3 font-mono text-[11px] text-gray-300 overflow-auto">
+                  <pre className="whitespace-pre-wrap leading-relaxed">{evidenceData}</pre>
                 </div>
               ) : (
-                <div className="flex items-center justify-center h-full text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)]">
-                  No analysis data yet. Save a diagram to see impact analysis.
+                <div className="flex items-center justify-center h-full text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)] text-[11px]">
+                  Збережіть діаграму, щоб побачити аналіз впливу змін.
                 </div>
               )}
             </div>
