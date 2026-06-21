@@ -48,3 +48,25 @@ scp до vokov@192.168.3.184:/home/vokov/projects/ai-drakon-scaffolder/developme
 [ ] TASK-DRK-13: Підсвітка помилок компіляції на вузлах drakonwidget [AGENT: agt3]
 [ ] TASK-DRK-14: Тести генерації та збірки DRAKON-схем [AGENT: opus]
 [ ] TASK-DRK-15: CF Worker нові endpoints для агентів (docs-agent, architect-agent) [AGENT: agt3]
+[ ] TASK-DRK-16: UX & Compilation Improvements from prompts/1.md [AGENT: agt3]
+
+## TASK-DRK-16: UX & Compilation Improvements from prompts/1.md
+!!IMPORTANT!! Run locally on AGY3 Termux in /home/vokov/workspace/ai-drakon-scaffolder.
+Do NOT SSH anywhere (work locally, commit per step, push at end).
+
+### Специфікація завдань:
+1. **Language detection з solution.json (БЛОК 3)**:
+   - Читати solution.json для визначення мови проекту в `src/components/files/ProjectFileManager.tsx` (compileDiagramClientSide) замість `filePath.includes("lua")`.
+2. **Validation panel (БЛОК 1)**:
+   - Розгорнути панель помилок з повним списком issues та описом кожної при блокуванні збереження.
+   - Файл: `src/components/drakon/DrakonEditor.tsx` (рядки 856-885).
+3. **Ctrl+S shortcut (БЛОК 5)**:
+   - Додати глобальний keyboard handler в `DrakonEditor.tsx` для Ctrl+S (зберегти діаграму).
+
+### Формат роботи:
+1. Опиши план змін.
+2. Виконай зміни.
+3. Скопіюй змінені файли в `.lovable/src/`.
+4. Перевір `npx tsc --noEmit` — чи немає нових помилок.
+5. Закоміть з описовим commit message у форматі: `feat(DRK-X): короткий опис`.
+
