@@ -2532,6 +2532,67 @@ export default {
       }
       // ─────────────────────────────────────────────────────────────────────
 
+      // ─── Public health checks & understand status (no auth required) ─────
+      const agentHealthMatch = path.match(/^\/v1\/agents\/([^\/]+)\/health$/);
+      if (method === 'GET' && agentHealthMatch) {
+        return await handleAgentHealth(agentHealthMatch[1], env);
+      }
+
+      if (method === 'GET' && path === '/v1/understand/status') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        if (!owner || !repo) {
+          return jsonResponse({ error: 'owner and repo required' }, 400);
+        }
+
+        try {
+          const token = String(requestToken || env.GITHUB_TOKEN || '').trim();
+          const headers = {
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'ai-drakon-worker',
+          };
+          if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+          }
+
+          const kgPath = '.understand-anything/knowledge-graph.json';
+          const ghRes = await fetch(
+            `https://api.github.com/repos/${owner}/${repo}/contents/${kgPath}`,
+            { headers }
+          );
+          const exists = ghRes.ok;
+          let meta = null;
+          if (exists) {
+            const rawHeaders = {
+              'Accept': 'application/vnd.github.raw+json',
+              'User-Agent': 'ai-drakon-worker',
+            };
+            if (token) {
+              rawHeaders['Authorization'] = `Bearer ${token}`;
+            }
+            const raw = await fetch(
+              `https://api.github.com/repos/${owner}/${repo}/contents/${kgPath}`,
+              { headers: rawHeaders }
+            );
+            if (raw.ok) {
+              const graph = await raw.json();
+              meta = {
+                version: graph.version,
+                nodeCount: graph.nodes?.length ?? 0,
+                edgeCount: graph.edges?.length ?? 0,
+                layerCount: graph.layers?.length ?? 0,
+                project: graph.project,
+              };
+            }
+          }
+          return jsonResponse({ exists, meta });
+        } catch (err) {
+          return jsonResponse({ error: err.message }, 500);
+        }
+      }
+      // ─────────────────────────────────────────────────────────────────────
+
       if (path === '/v1/user/config') {
         if (method === 'GET') return await handleUserConfigGet(request, env);
         if (method === 'PUT') return await handleUserConfigPut(request, env);
@@ -2647,60 +2708,6 @@ export default {
         const repo = url.searchParams.get('repo') || '';
         const requestToken = request.headers.get('X-Github-Token') || '';
         return jsonResponse(await handleGithubListBranches({ owner, repo }, env, requestToken));
-      }
-
-      if (method === 'GET' && path === '/v1/understand/status') {
-        const owner = url.searchParams.get('owner') || '';
-        const repo = url.searchParams.get('repo') || '';
-        const requestToken = request.headers.get('X-Github-Token') || '';
-        if (!owner || !repo) {
-          return jsonResponse({ error: 'owner and repo required' }, 400);
-        }
-
-        try {
-          const token = String(requestToken || env.GITHUB_TOKEN || '').trim();
-          const headers = {
-            'Accept': 'application/vnd.github.v3+json',
-            'User-Agent': 'ai-drakon-worker',
-          };
-          if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-          }
-
-          const kgPath = '.understand-anything/knowledge-graph.json';
-          const ghRes = await fetch(
-            `https://api.github.com/repos/${owner}/${repo}/contents/${kgPath}`,
-            { headers }
-          );
-          const exists = ghRes.ok;
-          let meta = null;
-          if (exists) {
-            const rawHeaders = {
-              'Accept': 'application/vnd.github.raw+json',
-              'User-Agent': 'ai-drakon-worker',
-            };
-            if (token) {
-              rawHeaders['Authorization'] = `Bearer ${token}`;
-            }
-            const raw = await fetch(
-              `https://api.github.com/repos/${owner}/${repo}/contents/${kgPath}`,
-              { headers: rawHeaders }
-            );
-            if (raw.ok) {
-              const graph = await raw.json();
-              meta = {
-                version: graph.version,
-                nodeCount: graph.nodes?.length ?? 0,
-                edgeCount: graph.edges?.length ?? 0,
-                layerCount: graph.layers?.length ?? 0,
-                project: graph.project,
-              };
-            }
-          }
-          return jsonResponse({ exists, meta });
-        } catch (err) {
-          return jsonResponse({ error: err.message }, 500);
-        }
       }
 
       const drakonGetMatch = path.match(/^\/v1\/drakon\/([^\/]+)\/([^\/]+)$/);
@@ -3764,10 +3771,7 @@ async function handleCompileStatus(request, env) {
         return await handleAgentChat(agentChatMatch[1], request, env, ctx);
       }
 
-      const agentHealthMatch = path.match(/^\/v1\/agents\/([^\/]+)\/health$/);
-      if (method === 'GET' && agentHealthMatch) {
-        return await handleAgentHealth(agentHealthMatch[1], env);
-      }
+
       // ──────────────────────────────────────────────────────────────────
 
       return errorResponse('Not found', 404, { method, path }, 'NOT_FOUND');

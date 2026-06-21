@@ -570,6 +570,15 @@ toast.error(
 
 setHasChanges(false);
 onSaved?.(effectiveId);
+
+// Dispatch custom event for EVIDENCE panel diff analysis
+document.dispatchEvent(
+  new CustomEvent("diagram-saved", {
+    detail: {
+      changedFiles: [`drn/${effectiveId}.json`],
+    },
+  }),
+);
 } finally {
 setIsSaving(false);
 }
