@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import {
-  LayoutDashboard, FileText, FileCode, Cog, Cpu, Moon, Sun, LogOut,
+  LayoutDashboard, FileText, FileCode, Cog, Cpu, Moon, Sun, LogOut, Activity, GitBranch, Layers, Workflow,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -22,9 +22,15 @@ interface CommandPaletteProps {
 }
 
 const NAV_ITEMS = [
+  { label: "Pipelines", to: "/pipelines", icon: Workflow, shortcut: "G P" },
   { label: "Схеми", to: "/diagrams", icon: LayoutDashboard, shortcut: "G D" },
   { label: "Документація", to: "/docs", icon: FileText, shortcut: "G N" },
   { label: "Код", to: "/code", icon: FileCode, shortcut: "G C" },
+  { label: "Architect", to: "/architect", icon: Layers, shortcut: "G R" },
+  { label: "GitHub", to: "/github", icon: GitBranch, shortcut: "G H" },
+  { label: "Observability", to: "/observability", icon: Activity, shortcut: "G O" },
+  { label: "Sync", to: "/sync", icon: Activity, shortcut: "G Y" },
+  { label: "Workspace", to: "/workspace", icon: Layers, shortcut: "G W" },
   { label: "Агенти", to: "/agents", icon: Cpu, shortcut: "G A" },
   { label: "Налаштування", to: "/settings", icon: Cog, shortcut: "G ," },
 ] as const;
