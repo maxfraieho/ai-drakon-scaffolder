@@ -82,8 +82,14 @@ type NavItem = {
 const NAV_WORKSPACE: NavItem[] = [
   { to: "/pipelines", label: "Pipeline", icon: Workflow },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
+  { to: "/docs", label: "Документація", icon: FileText },
+  { to: "/code", label: "Код", icon: FileCode },
+  { to: "/architect", label: "Architect", icon: Layers },
+  { to: "/github", label: "GitHub", icon: GitBranch },
   { to: "/knowledge", label: "Знання", icon: Brain }, // Added Knowledge item
   { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },
+  { to: "/observability", label: "Observability", icon: Activity },
+  { to: "/sync", label: "Sync", icon: Loader2 },
   { to: "/workspace", label: "Workspace", icon: Layers },
   { to: "/codegen", label: "Codegen", icon: Code2 },
 ];
@@ -97,7 +103,12 @@ const NAV_SYSTEM: NavItem[] = [
 function getBreadcrumb(pathname: string): { section: string; sectionPath: string; sub?: string } {
   if (pathname.startsWith("/diagram/editor")) return { section: "Diagrams", sectionPath: "/diagrams", sub: "Editor" };
   if (pathname.startsWith("/diagrams")) return { section: "Diagrams", sectionPath: "/diagrams" };
+  if (pathname.startsWith("/architect")) return { section: "Architect", sectionPath: "/architect" };
+  if (pathname.startsWith("/github")) return { section: "GitHub", sectionPath: "/github" };
   if (pathname.startsWith("/docs")) return { section: "Документація", sectionPath: "/docs" };
+  if (pathname.startsWith("/observability")) return { section: "Observability", sectionPath: "/observability" };
+  if (pathname.startsWith("/sync")) return { section: "Sync", sectionPath: "/sync" };
+  if (pathname.startsWith("/devcycle")) return { section: "DevCycle", sectionPath: "/devcycle" };
   if (pathname.startsWith("/settings")) return { section: "Settings", sectionPath: "/settings" };
   if (pathname.startsWith("/agents")) return { section: "Агенти", sectionPath: "/agents" };
   if (pathname.startsWith("/pipelines")) return { section: "Pipeline", sectionPath: "/pipelines" };

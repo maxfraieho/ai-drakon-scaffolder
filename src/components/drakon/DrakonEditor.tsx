@@ -64,7 +64,7 @@ saveDiagramToMinio,
 import { getGithubConfig } from '@/lib/settings-storage';
 import { toast } from 'sonner';
 import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender,
-DrakonConfig } from '@/types/drakonwidget';
+DrakonConfig, DrakonConfigTheme } from '@/types/drakonwidget';
 import { convertDiagramToIrWithValidation } from '@/lib/htse/diagram-to-ir';
 import type { ValidationIssue } from '@/lib/htse/ir-validator-core';
 
@@ -362,7 +362,7 @@ return;
 }
 const result = convertDiagramToIrWithValidation(diagram);
 setConversionIssues(result.issues);
-setAutofixes(result.autofixes || []);
+setAutofixes([]);
 }, [diagram]);
 
 // Native capture-phase guard: prevent canvas/widget from clearing selection
@@ -489,9 +489,9 @@ raw.name = diagramName;
 if (raw && Array.isArray(raw.params)) {
 raw.params = (raw.params as string[]).join(', ');
 }
-const { issues, autofixes: rawAutofixes } = convertDiagramToIrWithValidation(raw);
+const { issues } = convertDiagramToIrWithValidation(raw);
 setConversionIssues(issues);
-setAutofixes(rawAutofixes || []);
+setAutofixes([]);
 if (issues.some(i => i.severity === 'error')) {
 toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
 setIsIssuesPanelExpanded(true);
@@ -509,9 +509,9 @@ diagramData.name = diagramName;
 if (diagramData && Array.isArray(diagramData.params)) {
 diagramData.params = (diagramData.params as string[]).join(', ');
 }
-const { issues: directIssues, autofixes: directAutofixes } = convertDiagramToIrWithValidation(diagramData as DrakonDiagram);
+const { issues: directIssues } = convertDiagramToIrWithValidation(diagramData as DrakonDiagram);
 setConversionIssues(directIssues);
-setAutofixes(directAutofixes || []);
+setAutofixes([]);
 if (directIssues.some(i => i.severity === 'error')) {
 toast.error('Діаграма містить помилки структури. Виправте перед збереженням.');
 setIsIssuesPanelExpanded(true);
@@ -675,7 +675,7 @@ await widgetRef.current.setDiagram(effectiveId, currentDiagram, editSender);
 // Re-validate to update the issues list
 const result = convertDiagramToIrWithValidation(currentDiagram);
 setConversionIssues(result.issues);
-setAutofixes(result.autofixes || []);
+setAutofixes([]);
 
 toast.success(`Застосовано виправлення: ${type}`);
 }
