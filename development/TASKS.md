@@ -76,3 +76,7 @@ Do NOT SSH anywhere (work locally, commit per step, push at end).
 4. Перевір `npx tsc --noEmit` — чи немає нових помилок.
 5. Закоміть з описовим commit message у форматі: `feat(DRK-X): короткий опис`.
 
+
+## Diary
+SESSION:2026-06-21|TASK-DRK-VERIFY:done|status:success|★★★
+
