@@ -53,7 +53,7 @@ scp до vokov@192.168.3.184:/home/vokov/projects/ai-drakon-scaffolder/developme
 [x] TASK-DRK-18: Knowledge Graph panel component for workspace [AGENT: antigravity]
 [x] TASK-DRK-19: CF Worker /v1/understand/* endpoints [AGENT: antigravity]
 [x] TASK-DRK-20: EVIDENCE panel with diff analysis data [AGENT: antigravity]
-[ ] TASK-DRK-21: Auto-generate knowledge graph on project creation [AGENT: TBD]
+[x] TASK-DRK-21: Auto-generate knowledge graph on project creation [AGENT: antigravity]
 [x] TASK-DRK-22: Agent context helper for UA knowledge graph [AGENT: antigravity]
 
 ## TASK-DRK-16: UX & Compilation Improvements from prompts/1.md
