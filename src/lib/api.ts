@@ -90,6 +90,20 @@ type ProjectActionResponse = {
   message?: string;
 };
 
+type ArchitectDecomposeResponse = {
+  success: boolean;
+  components?: Array<{ name: string; description: string }>;
+  error?: string;
+  message?: string;
+};
+
+type ArchitectBuildParallelResponse = {
+  success?: boolean;
+  buildId?: string;
+  error?: string;
+  message?: string;
+};
+
 // Knowledge Zone Types
 export type KnowledgeZone = {
   id: string;
@@ -327,6 +341,24 @@ export const api = {
       body: JSON.stringify({ project, instructions }),
     });
     return parseResponse<ProjectActionResponse>(response);
+  },
+
+  decomposeApp: async (appDescription: string): Promise<ArchitectDecomposeResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/architect/decompose`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ appDescription }),
+    });
+    return parseResponse<ArchitectDecomposeResponse>(response);
+  },
+
+  startPlayPipeBuild: async (components: Array<{ name: string; description: string; agentId: string }>): Promise<ArchitectBuildParallelResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/architect/build-parallel`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ components }),
+    });
+    return parseResponse<ArchitectBuildParallelResponse>(response);
   },
 
   // Knowledge Zone API

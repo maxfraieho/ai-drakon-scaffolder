@@ -59,6 +59,8 @@ interface NewAgentWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSaved?: (agentName: string) => void;
+  initialAgentName?: string;
+  initialDescription?: string;
 }
 
 function studioPath(slug: string, agentName: string) {
@@ -88,7 +90,14 @@ const processingMessages = [
   "Preparing agent graph structure...",
 ];
 
-export function NewAgentWizard({ slug, open, onOpenChange, onSaved }: NewAgentWizardProps) {
+export function NewAgentWizard({
+  slug,
+  open,
+  onOpenChange,
+  onSaved,
+  initialAgentName,
+  initialDescription,
+}: NewAgentWizardProps) {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
 
@@ -111,9 +120,21 @@ export function NewAgentWizard({ slug, open, onOpenChange, onSaved }: NewAgentWi
       setStepError(null);
       setGeneratedSchema(null);
       setMessageIndex(0);
-      form.reset({ agentName: "", description: "" });
+      form.reset({
+        agentName: initialAgentName ?? "",
+        description: initialDescription ?? "",
+      });
     }
-  }, [open, form]);
+  }, [open, form, initialAgentName, initialDescription]);
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        agentName: initialAgentName ?? "",
+        description: initialDescription ?? "",
+      });
+    }
+  }, [open, form, initialAgentName, initialDescription]);
 
   useEffect(() => {
     if (step !== 2) return;
