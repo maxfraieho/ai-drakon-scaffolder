@@ -25,6 +25,7 @@ import { api } from "@/lib/api";
 import { createGithubRepo } from "@/lib/github-api";
 import { getGithubConfig } from "@/lib/settings-storage";
 import { cn } from "@/lib/utils";
+import type { KnowledgeGraph } from "@/lib/understand/types";
 
 const stepOneSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(50, "Name must be at most 50 characters"),
@@ -218,6 +219,48 @@ export function NewProjectWizard() {
 
       if (!result.success) {
         throw new Error("Project name already exists or project creation failed");
+      }
+
+      // TASK-DRK-21: Auto-generate knowledge graph on project creation
+      if (githubInfo) {
+        const skeletonKg: KnowledgeGraph = {
+          version: "1.0",
+          kind: "codebase",
+          project: {
+            name: formValues.name,
+            languages: formValues.mode === "agent" ? ["typescript", "javascript"] : [formValues.mode],
+            frameworks: ["ai-drakon"],
+            description: formValues.description?.trim() || "",
+            analyzedAt: new Date().toISOString(),
+            gitCommitHash: "",
+          },
+          nodes: [
+            {
+              id: "root-project",
+              type: "module",
+              name: formValues.name,
+              summary: formValues.description?.trim() || "Initial project module",
+              tags: ["project-root", formValues.mode],
+              complexity: "simple",
+            }
+          ],
+          edges: [],
+          layers: [],
+          tour: [],
+        };
+
+        try {
+          await api.githubCommitFile(
+            githubInfo.owner,
+            githubInfo.repo,
+            ".understand-anything/knowledge-graph.json",
+            JSON.stringify(skeletonKg, null, 2),
+            "chore: initialize knowledge graph",
+            githubInfo.branch || "main"
+          );
+        } catch (err) {
+          console.warn("Failed to auto-generate knowledge graph:", err);
+        }
       }
 
       return {
