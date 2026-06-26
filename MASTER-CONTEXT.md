@@ -102,3 +102,27 @@
 - **CONTEXT.md:** `/home/vokov/workspace/ai-drakon-scaffolder/CONTEXT.md`
 - **Playbook:** `/home/vokov/workspace/ai-drakon-scaffolder/development/plans/2026-06-27-manual-testing-playbook.md`
 - **Infra workflows:** `/home/vokov/projects/exodus-infra/workflows/agent-fleet.md` (на dev-сервері)
+
+## 🔄 Як використовувати цей файл
+
+### В новій сесії зі мною:
+```
+Привіт! Продовжуємо AI-DRAKON.
+
+[Встав вміст MASTER-CONTEXT.md]
+
+Зараз: [що саме робимо]
+Питання: [конкретне питання]
+```
+
+### Автоіндексація в MemPalace:
+```bash
+python3 -m mempalace index \
+  --file ~/workspace/ai-drakon-scaffolder/MASTER-CONTEXT.md \
+  --wing ai-drakon \
+  --tags "master-context,project-status,architecture"
+```
+
+## 🔗 Репозиторій
+- **GitHub:** https://github.com/maxfraieho/ai-drakon-scaffolder
+- **Deployed:** https://ai-drakon-scaffolder.pages.dev
