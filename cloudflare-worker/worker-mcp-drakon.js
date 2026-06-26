@@ -3808,6 +3808,66 @@ async function handleCompileStatus(request, env) {
         }
       }
 
+      // ─── GitHub OAuth & repository endpoints ────────────────────────────
+      if (method === 'GET' && path === '/v1/github/oauth/authorize') {
+        return await handleGithubAuthStart(request, env);
+      }
+
+      if (method === 'GET' && path === '/v1/github/oauth/callback') {
+        return await handleGithubAuthCallback(request, env);
+      }
+
+      if (method === 'POST' && path === '/v1/github/create-repo') {
+        try {
+          const authPayload = await verifyOwnerAuth(request, env);
+          if (!authPayload) return errorResponse('Unauthorized', 401);
+
+          const { name, private: isPrivate } = await request.json();
+          if (!name) return errorResponse('Missing repo name', 400);
+
+          const userId = authPayload.sub;
+          const authHeader = request.headers.get('Authorization');
+          const token = authHeader.slice(7);
+
+          let githubToken;
+          try {
+            githubToken = await getGithubTokenForUser(userId, token, env);
+          } catch (err) {
+            return errorResponse(`Could not retrieve GitHub token: ${err.message}`, 400);
+          }
+
+          const createRepoResp = await fetch('https://api.github.com/user/repos', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${githubToken}`,
+              'Content-Type': 'application/json',
+              'User-Agent': 'ai-drakon-scaffolder-worker',
+              'Accept': 'application/vnd.github+json',
+            },
+            body: JSON.stringify({
+              name,
+              private: isPrivate ?? true,
+              auto_init: true,
+            }),
+          });
+
+          if (!createRepoResp.ok) {
+            const errText = await createRepoResp.text();
+            return errorResponse(`GitHub API error: ${errText}`, createRepoResp.status);
+          }
+
+          const repoData = await createRepoResp.json();
+          return jsonResponse({
+            success: true,
+            repoUrl: repoData.html_url,
+            fullName: repoData.full_name,
+            cloneUrl: repoData.clone_url,
+          });
+        } catch (e) {
+          return errorResponse(`Create repo failed: ${e.message}`, 500);
+        }
+      }
+
       // ─── Agent proxy ──────────────────────────────────────────────────
       const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);
       if (method === 'POST' && agentChatMatch) {
@@ -4211,4 +4271,32 @@ function createZip(files) {
   }
 
   return result;
+}
+
+async function getGithubTokenForUser(userId, userJwt, env) {
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const appwriteApiKey = env.APPWRITE_API_KEY;
+
+  const docUrl = `${appwriteEndpoint}/databases/ai-drakon/collections/user_profiles/documents/${userId}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Appwrite-Project': appwriteProjectId,
+  };
+  if (appwriteApiKey) {
+    headers['X-Appwrite-Key'] = appwriteApiKey;
+  } else if (userJwt) {
+    headers['X-Appwrite-JWT'] = userJwt;
+  }
+
+  const resp = await fetch(docUrl, { headers });
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch user profile from Appwrite: status ${resp.status}`);
+  }
+  const doc = await resp.json();
+  const githubToken = doc.githubToken || (doc.data && doc.data.githubToken);
+  if (!githubToken) {
+    throw new Error('GitHub token not found in user profile');
+  }
+  return githubToken;
 }
