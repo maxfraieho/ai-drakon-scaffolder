@@ -3796,6 +3796,19 @@ async function handleCompileStatus(request, env) {
         }
       }
 
+      // ─── Architect-agent general proxy (/v1/architect/* → architect-agent) ───
+      if (path.startsWith('/v1/architect/')) {
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+        const agentPath = path.slice(3); // strip /v1 -> /architect/decompose
+        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        return fetch(proxied);
+      }
+
       // ─── N8N compiler endpoint ──────────────────────────────────────────
       if (method === 'POST' && path === '/v1/compiler/n8n') {
         try {
