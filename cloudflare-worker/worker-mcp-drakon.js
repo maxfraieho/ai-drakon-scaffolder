@@ -3765,6 +3765,18 @@ async function handleCompileStatus(request, env) {
       if (method === 'DELETE' && kbDeleteMatch) {
         return await handleKb('delete/' + decodeURIComponent(kbDeleteMatch[1]), request, env);
       }
+      // ─── N8N compiler endpoint ──────────────────────────────────────────
+      if (method === 'POST' && path === '/v1/compiler/n8n') {
+        try {
+          const { schema, name } = await request.json();
+          if (!schema || !name) return errorResponse('Missing schema or name');
+          const workflow = ribosomeN8NInline(schema, name);
+          return jsonResponse({ success: true, workflow });
+        } catch (e) {
+          return errorResponse(`N8N compilation failed: ${e.message}`, 500);
+        }
+      }
+
       // ─── Agent proxy ──────────────────────────────────────────────────
       const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);
       if (method === 'POST' && agentChatMatch) {
@@ -3780,3 +3792,151 @@ async function handleCompileStatus(request, env) {
     }
   },
 };
+
+function ribosomeN8NInline(ir, workflowName) {
+  if (!ir || typeof ir !== 'object') {
+    throw new Error('Invalid IR diagram');
+  }
+
+  if (!ir.items || Object.keys(ir.items).length === 0) {
+    return {
+      name: workflowName,
+      nodes: [],
+      connections: {},
+      active: false,
+      settings: { executionOrder: 'v1' },
+    };
+  }
+
+  const nodes = [];
+  const connections = {};
+  const nameMap = new Map();
+  const usedNames = new Set();
+
+  const getUniqueName = (content, type, id) => {
+    let name = content.replace(/^::\s*n8n\s*::\s*/i, '').trim();
+    if (!name) {
+      name = type;
+    }
+    name = name.replace(/[^a-zA-Z0-9 _-]/g, '');
+    if (!name) name = 'node';
+
+    let uniqueName = name;
+    let counter = 1;
+    while (usedNames.has(uniqueName)) {
+      uniqueName = `${name} ${counter}`;
+      counter++;
+    }
+    usedNames.add(uniqueName);
+    return uniqueName;
+  };
+
+  const itemEntries = Object.entries(ir.items);
+
+  // Pass 1: Nodes
+  itemEntries.forEach(([itemId, item], index) => {
+    let nodeType = 'n8n-nodes-base.noOp';
+    let typeVersion = 1;
+
+    if (item.meta && item.meta.n8nNodeType) {
+      nodeType = item.meta.n8nNodeType;
+      typeVersion = item.meta.n8nTypeVersion || 1;
+    } else if (item.content && item.content.startsWith(':: n8n ::')) {
+      const parts = item.content.split('::');
+      const service = parts[2] ? parts[2].trim() : '';
+      if (service === 'Webhook') {
+        nodeType = 'n8n-nodes-base.webhook';
+        typeVersion = 2;
+      } else if (service === 'HTTP Request') {
+        nodeType = 'n8n-nodes-base.httpRequest';
+        typeVersion = 3;
+      } else if (service === 'Telegram') {
+        nodeType = 'n8n-nodes-base.telegram';
+        typeVersion = 1;
+      } else if (service === 'Code') {
+        nodeType = 'n8n-nodes-base.code';
+        typeVersion = 2;
+      }
+    } else if (item.type === 'question') {
+      nodeType = 'n8n-nodes-base.if';
+      typeVersion = 2;
+    }
+
+    const nodeName = getUniqueName(item.content || '', item.type, itemId);
+    nameMap.set(itemId, nodeName);
+
+    const parameters = { ...(item.meta && item.meta.n8nParams || {}) };
+
+    const node = {
+      id: itemId,
+      name: nodeName,
+      type: nodeType,
+      typeVersion,
+      position: [index * 220, 300],
+      parameters,
+    };
+
+    if (item.meta && item.meta.credentialName) {
+      let credType = 'httpHeaderAuth';
+      if (nodeType.includes('telegram')) credType = 'telegramApi';
+      else if (nodeType.includes('httpRequest')) credType = 'httpHeaderAuth';
+
+      node.credentials = {
+        [credType]: {
+          id: '',
+          name: item.meta.credentialName,
+        },
+      };
+    }
+
+    nodes.push(node);
+  });
+
+  // Pass 2: Connections
+  itemEntries.forEach(([itemId, item]) => {
+    const sourceName = nameMap.get(itemId);
+    if (!sourceName) return;
+
+    const mainConnections = [];
+
+    // Output 0 (one)
+    if (item.one && nameMap.has(item.one)) {
+      mainConnections[0] = [
+        {
+          node: nameMap.get(item.one),
+          type: 'main',
+          index: 0,
+        },
+      ];
+    } else {
+      mainConnections[0] = [];
+    }
+
+    // Output 1 (two) - question
+    if (item.type === 'question') {
+      if (item.two && nameMap.has(item.two)) {
+        mainConnections[1] = [
+          {
+            node: nameMap.get(item.two),
+            type: 'main',
+            index: 0,
+          },
+        ];
+      } else {
+        mainConnections[1] = [];
+      }
+    }
+
+    if (mainConnections[0].length > 0 || (mainConnections[1] && mainConnections[1].length > 0)) {
+      connections[sourceName] = { main: mainConnections };
+    }
+  });
+
+  return {
+    name: workflowName,
+    nodes,
+    connections,
+    active: false,
+    settings: { executionOrder: 'v1' },
+  };
+}
