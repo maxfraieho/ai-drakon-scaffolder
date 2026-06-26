@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useParams } from "@tanstack/react-router";
 import { PipelineList } from "@/components/agents/PipelineList";
 import { StudioToolbar } from "@/components/agents/StudioToolbar";
+import { RuntimeTargetToggle } from "@/components/agents/RuntimeTargetToggle";
 import { PropertiesPanel } from "@/components/agents/PropertiesPanel";
 import { ExecutionPanel } from "@/components/agents/ExecutionPanel";
 import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
@@ -23,13 +26,18 @@ import { convertDiagramToIr } from "@/lib/htse/diagram-to-ir";
 import { usePipelineExecution } from "@/hooks/usePipelineExecution";
 import { UnsavedChangesGuard } from "@/components/workspace/UnsavedChangesGuard";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import { getGithubConfig } from "@/lib/settings-storage";
+import { getAccessToken } from "@/lib/auth";
 import { api } from "@/lib/api";
+import { resolveWorkerUrl } from "@/lib/worker-url";
+import { getProject } from "@/lib/appwrite-projects";
 import type { DrakonDiagram } from "@/types/drakonwidget";
 
 export default function AgentStudioPage() {
-  const [selectedPipelineName, setSelectedPipelineName] = useState<string | null>(null);
+  const { slug, agentId } = useParams({ from: "/p/$slug/agents/$agentId/studio" });
+
+  const [selectedPipelineName, setSelectedPipelineName] = useState<string | null>(agentId);
   const [activeDiagram, setActiveDiagram] = useState<DrakonDiagram | undefined>(undefined);
   const [stateClass, setStateClass] = useState("AnalysisState");
   const [breakpoints, setBreakpoints] = useState<string[]>([]);
@@ -48,8 +56,15 @@ export default function AgentStudioPage() {
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [leftPanelMobileOpen, setLeftPanelMobileOpen] = useState(false);
   const [rightPanelMobileOpen, setRightPanelMobileOpen] = useState(false);
+  const [runtimeTarget, setRuntimeTarget] = useState<"flue" | "eve">("flue");
   const isMobile = useIsMobile();
   const hasOpenedMobileListRef = useRef(false);
+
+  const { data: project } = useQuery({
+    queryKey: ["project", slug],
+    queryFn: () => getProject(slug),
+    staleTime: 5 * 60 * 1000,
+  });
 
   // SSE Pipeline Execution Hook
   const {
@@ -65,6 +80,10 @@ export default function AgentStudioPage() {
   } = usePipelineExecution();
 
   // Load pipeline diagram
+  useEffect(() => {
+    setSelectedPipelineName(agentId);
+  }, [agentId]);
+
   useEffect(() => {
     if (!selectedPipelineName) return;
 
@@ -246,8 +265,53 @@ export default function AgentStudioPage() {
   };
 
   // Launch pipeline
-  const handleRun = () => {
+  const handleRun = async () => {
     if (!selectedPipelineName) return;
+
+    if (runtimeTarget === "eve") {
+      if (!activeDiagram) {
+        toast.error("Немає активної DRAKON-схеми для компіляції.");
+        return;
+      }
+
+      try {
+        const currentDrakonIR = convertDiagramToIr(activeDiagram);
+        const token = getAccessToken();
+        const response = await fetch(`${resolveWorkerUrl()}/v1/architect/compile-eve/zip`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            ir: currentDrakonIR,
+            projectId: slug,
+            projectName: agentId,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text().catch(() => "");
+          throw new Error(errorText || `HTTP ${response.status}`);
+        }
+
+        const zipBlob = await response.blob();
+        const downloadUrl = URL.createObjectURL(zipBlob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = `${agentId}-eve-agent.zip`;
+        link.click();
+        URL.revokeObjectURL(downloadUrl);
+
+        toast.success("EVE agent filesystem compiled and downloaded successfully!");
+      } catch (err) {
+        console.error("EVE compile failed:", err);
+        toast.error(`Помилка EVE-компіляції: ${err instanceof Error ? err.message : String(err)}`);
+      }
+
+      return;
+    }
+
     setConsoleOpen(true);
     runPipeline(selectedPipelineName, {}, breakpoints);
   };
@@ -272,6 +336,29 @@ export default function AgentStudioPage() {
     }
   }, [isMobile]);
 
+  const deploymentStatus: "deployed" | "draft" | "error" = (() => {
+    const rawStatus = String((project as any)?.status ?? "").toLowerCase();
+    if (rawStatus === "error" || rawStatus === "failed") return "error";
+    if (rawStatus === "draft" || rawStatus === "pending") return "draft";
+    if (project && (project as any).exists === false) return "draft";
+    return "deployed";
+  })();
+
+  const statusBadge = {
+    deployed: {
+      text: "● Live",
+      className: "border-emerald-400/30 bg-emerald-500/15 text-emerald-200",
+    },
+    draft: {
+      text: "● Draft",
+      className: "border-amber-400/30 bg-amber-500/15 text-amber-200",
+    },
+    error: {
+      text: "● Error",
+      className: "border-red-400/30 bg-red-500/15 text-red-200",
+    },
+  }[deploymentStatus];
+
   return (
     <div
       className="flex h-full min-h-0 w-full flex-col overflow-hidden text-xs"
@@ -280,6 +367,40 @@ export default function AgentStudioPage() {
         color: "var(--text-primary)",
       }}
     >
+      <header className="shrink-0 border-b border-white/10 bg-slate-950/40 px-3 py-2 backdrop-blur-xl md:px-4">
+        <nav className="flex flex-wrap items-center gap-1 text-[11px] text-slate-300/90">
+          <Link to="/" className="transition-colors hover:text-white">
+            Projects
+          </Link>
+          <ChevronRight className="h-3 w-3 text-slate-500" />
+          <Link to="/p/$slug/overview" params={{ slug }} className="transition-colors hover:text-white">
+            {project?.name ?? slug}
+          </Link>
+          <ChevronRight className="h-3 w-3 text-slate-500" />
+          <Link to="/p/$slug/agents" params={{ slug }} className="transition-colors hover:text-white">
+            Agents
+          </Link>
+          <ChevronRight className="h-3 w-3 text-slate-500" />
+          <span className="text-white">Studio</span>
+        </nav>
+
+        <div className="mt-1.5 flex flex-wrap items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              to="/p/$slug/agents"
+              params={{ slug }}
+              className="inline-flex items-center rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-medium text-slate-200 transition-colors hover:bg-white/10"
+            >
+              ← Back to Agents
+            </Link>
+            <span className="font-mono text-xs text-slate-100">{agentId}</span>
+            <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusBadge.className}`}>
+              {statusBadge.text}
+            </span>
+          </div>
+        </div>
+      </header>
+
       {/* 3-Column Studio Layout */}
       <div className="flex flex-1 overflow-hidden min-h-0">
         {/* Column 1: Pipeline Sidebar List (desktop) */}
@@ -299,7 +420,6 @@ export default function AgentStudioPage() {
             hasBreakpoint={!!breakpointNode}
             leftPanelOpen={leftPanelOpen}
             rightPanelOpen={rightPanelOpen}
-            onRun={handleRun}
             onStop={stopPipeline}
             onSave={handleManualSave}
             onExport={handleExport}
@@ -308,7 +428,25 @@ export default function AgentStudioPage() {
             onToggleRightPanel={() => setRightPanelOpen((v) => !v)}
             onOpenLeftMobile={() => setLeftPanelMobileOpen(true)}
             onOpenRightMobile={() => setRightPanelMobileOpen(true)}
+            onRun={() => {
+              void handleRun();
+            }}
+            runLabel={runtimeTarget === "eve" ? "Compile for EVE" : "Запустити"}
+            runTitle={runtimeTarget === "eve" ? "Compile for EVE" : "Запустити пайплайн"}
+            rightSlot={
+              <RuntimeTargetToggle
+                value={runtimeTarget}
+                onValueChange={setRuntimeTarget}
+                disabled={isRunning || isSaving}
+              />
+            }
           />
+
+          {runtimeTarget === "eve" && (
+            <div className="mx-3 mt-2 rounded-xl border border-fuchsia-400/30 bg-gradient-to-r from-fuchsia-500/15 via-violet-500/15 to-purple-500/15 px-3 py-2 text-[11px] text-fuchsia-100 shadow-[0_0_28px_rgba(217,70,239,0.2)]">
+              EVE target selected. Output compilation will generate Vercel EVE filesystem structure (agent/).
+            </div>
+          )}
 
           {/* Tab Bar */}
           <div

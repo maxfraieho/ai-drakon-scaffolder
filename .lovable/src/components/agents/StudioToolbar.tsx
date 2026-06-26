@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Play, Square, Save, Download, RefreshCw, PanelLeft, PanelRight } from "lucide-react";
 
@@ -17,6 +18,9 @@ interface StudioToolbarProps {
   onToggleRightPanel: () => void;
   onOpenLeftMobile: () => void;
   onOpenRightMobile: () => void;
+  runLabel?: string;
+  runTitle?: string;
+  rightSlot?: ReactNode;
 }
 
 export function StudioToolbar({
@@ -35,6 +39,9 @@ export function StudioToolbar({
   onToggleRightPanel,
   onOpenLeftMobile,
   onOpenRightMobile,
+  runLabel = "Запустити",
+  runTitle = "Запустити пайплайн",
+  rightSlot,
 }: StudioToolbarProps) {
   return (
     <div
@@ -51,10 +58,10 @@ export function StudioToolbar({
             size="sm"
             onClick={onRun}
             className="flex items-center gap-1.5 h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
-            title="Запустити пайплайн"
+            title={runTitle}
           >
             <Play className="h-3.5 w-3.5" />
-            <span className="hidden md:inline">Запустити</span>
+            <span className="hidden md:inline">{runLabel}</span>
           </Button>
         ) : hasBreakpoint ? (
           <div className="flex items-center gap-2">
@@ -154,6 +161,8 @@ export function StudioToolbar({
           <Download className="h-3.5 w-3.5" />
           <span className="hidden md:inline">Експорт</span>
         </Button>
+
+        {rightSlot}
       </div>
     </div>
   );

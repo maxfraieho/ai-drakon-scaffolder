@@ -12,65 +12,26 @@ if (!fs.existsSync(serverDir)) {
 // Видаляємо functions/ — НЕ використовуємо!
 fs.rmSync(path.join(root, "functions"), { recursive: true, force: true });
 
-// Копіюємо server assets в dist/assets
-fs.cpSync(path.join(serverDir, "assets"), path.join(distDir, "assets"), {
-  recursive: true,
-});
+// ТанStack Start/Nitro (vite 7) генерує server bundle як index.mjs + _libs/_ssr/_chunks.
+// Копіюємо весь server bundle в dist/server, щоб _worker.js міг імпортувати entry напряму.
+const targetServerDir = path.join(distDir, "server");
+fs.rmSync(targetServerDir, { recursive: true, force: true });
+fs.cpSync(serverDir, targetServerDir, { recursive: true });
 
-// Знаходимо worker-entry або server-entry файл
-// Спочатку — через regex у server/index.js або server/server.js
-let workerFileName = null;
-const entryFiles = ["index.js", "server.js"];
-for (const f of entryFiles) {
-  const entryPath = path.join(serverDir, f);
-  if (fs.existsSync(entryPath)) {
-    const entryCode = fs.readFileSync(entryPath, "utf8");
-    const match = entryCode.match(/"\.\/assets\/((?:worker-entry|server)-[^"]+)"/);
-    if (match) {
-      workerFileName = match[1];
-      break;
-    }
-  }
+const serverEntryCandidates = ["index.mjs", "index.js", "server.mjs", "server.js"];
+const serverEntry = serverEntryCandidates.find((name) =>
+  fs.existsSync(path.join(targetServerDir, name))
+);
+
+if (!serverEntry) {
+  throw new Error(`Cannot detect server entry in ${targetServerDir}`);
 }
-
-// Fallback — шукаємо worker-entry-* або server-* безпосередньо в dist/assets
-if (!workerFileName) {
-  const assetsDir = path.join(distDir, "assets");
-  if (fs.existsSync(assetsDir)) {
-    const candidates = fs.readdirSync(assetsDir).filter((f) =>
-      f.startsWith("worker-entry-") || f.startsWith("server-")
-    );
-    if (candidates.length > 0) {
-      // Find the first JS file
-      const jsCandidate = candidates.find(c => c.endsWith(".js"));
-      if (jsCandidate) workerFileName = jsCandidate;
-    }
-  }
-}
-
-if (!workerFileName) {
-  throw new Error(
-    `Cannot detect worker entry: no worker-entry-* or server-* found in server files or dist/assets/`
-  );
-}
-
-// FIX: Також копіюємо server.js у dist/ щоб працювали відносні імпорти типу ../server.js
-const mainServerEntry = path.join(serverDir, "server.js");
-let hasServerWrapper = false;
-if (fs.existsSync(mainServerEntry)) {
-  fs.copyFileSync(mainServerEntry, path.join(distDir, "server.js"));
-  hasServerWrapper = true;
-  console.log("Copied server.js to dist/ to resolve relative imports");
-}
-
-// Статичні розширення які має обслуговувати env.ASSETS
-const STATIC_EXT_RE = /\.(js|mjs|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|webmanifest|map|txt|xml)$/i;
 
 // Створюємо _worker.js
 // worker-entry експортує handler як named export (напр. `w`),
 // а index.js re-експортує його як default. Імпортуємо ВСІ named exports
 // і шукаємо той, у якого є .fetch().
-const importPath = hasServerWrapper ? "./server.js" : `./assets/${workerFileName}`;
+const importPath = `./server/${serverEntry}`;
 const workerCode = `import * as entry from "${importPath}";
 
 const STATIC_PATH_RE = /^\\/assets\\//;
@@ -119,4 +80,4 @@ export default {
 fs.writeFileSync(path.join(distDir, "_worker.js"), workerCode, "utf8");
 
 console.log(`Prepared _worker.js with static asset handling at ${distDir}`);
-console.log(`  worker entry: ${workerFileName}`);
+console.log(`  worker entry: server/${serverEntry}`);
