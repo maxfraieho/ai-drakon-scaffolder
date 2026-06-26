@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 
-import { HomePage } from "@/pages/HomePage";
+import { ProjectsPage } from "@/pages/ProjectsPage";
 import LandingPage from "@/pages/LandingPage";
 import { hasClientJwt } from "@/lib/route-auth";
 
@@ -17,5 +17,5 @@ function Index() {
   if (!hasClientJwt()) {
     return <LandingPage />;
   }
-  return <HomePage />;
+  return <ProjectsPage />;
 }
