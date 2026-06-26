@@ -104,6 +104,12 @@ type ArchitectBuildParallelResponse = {
   message?: string;
 };
 
+type PlayPipeActionResponse = {
+  success?: boolean;
+  error?: string;
+  message?: string;
+};
+
 // Knowledge Zone Types
 export type KnowledgeZone = {
   id: string;
@@ -359,6 +365,31 @@ export const api = {
       body: JSON.stringify({ components }),
     });
     return parseResponse<ArchitectBuildParallelResponse>(response);
+  },
+
+  retryPlayPipeComponent: async (buildId: string, componentId: string): Promise<PlayPipeActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/playpipe/build/${encodeURIComponent(buildId)}/retry`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ componentId }),
+    });
+    return parseResponse<PlayPipeActionResponse>(response);
+  },
+
+  stopPlayPipeBuild: async (buildId: string): Promise<PlayPipeActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/playpipe/build/${encodeURIComponent(buildId)}/stop`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return parseResponse<PlayPipeActionResponse>(response);
+  },
+
+  commitPlayPipeBuild: async (buildId: string): Promise<PlayPipeActionResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/playpipe/build/${encodeURIComponent(buildId)}/commit`, {
+      method: "POST",
+      headers: headers(),
+    });
+    return parseResponse<PlayPipeActionResponse>(response);
   },
 
   // Knowledge Zone API

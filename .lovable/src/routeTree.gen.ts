@@ -42,6 +42,7 @@ import { Route as PSlugAgentsRouteImport } from './routes/p.$slug.agents'
 import { Route as ApiNotebooklmNotebooksRouteImport } from './routes/api.notebooklm.notebooks'
 import { Route as ApiNotebooklmChatRouteImport } from './routes/api.notebooklm.chat'
 import { Route as ApiKnowledgeZonesRouteImport } from './routes/api.knowledge.zones'
+import { Route as PSlugPlaypipeBuildRouteImport } from './routes/p.$slug.playpipe.build'
 import { Route as ApiKnowledgeZonesZoneIdRouteImport } from './routes/api.knowledge.zones.$zoneId'
 import { Route as PSlugAgentsAgentIdStudioRouteImport } from './routes/p.$slug.agents.$agentId.studio'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm'
@@ -212,6 +213,11 @@ const ApiKnowledgeZonesRoute = ApiKnowledgeZonesRouteImport.update({
   path: '/api/knowledge/zones',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PSlugPlaypipeBuildRoute = PSlugPlaypipeBuildRouteImport.update({
+  id: '/build',
+  path: '/build',
+  getParentRoute: () => PSlugPlaypipeRoute,
+} as any)
 const ApiKnowledgeZonesZoneIdRoute = ApiKnowledgeZonesZoneIdRouteImport.update({
   id: '/$zoneId',
   path: '/$zoneId',
@@ -267,10 +273,11 @@ export interface FileRoutesByFullPath {
   '/p/$slug/automations': typeof PSlugAutomationsRoute
   '/p/$slug/docs': typeof PSlugDocsRoute
   '/p/$slug/overview': typeof PSlugOverviewRoute
-  '/p/$slug/playpipe': typeof PSlugPlaypipeRoute
+  '/p/$slug/playpipe': typeof PSlugPlaypipeRouteWithChildren
   '/p/$slug/settings': typeof PSlugSettingsRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
+  '/p/$slug/playpipe/build': typeof PSlugPlaypipeBuildRoute
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
   '/p/$slug/agents/$agentId/studio': typeof PSlugAgentsAgentIdStudioRoute
   '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
@@ -306,10 +313,11 @@ export interface FileRoutesByTo {
   '/p/$slug/automations': typeof PSlugAutomationsRoute
   '/p/$slug/docs': typeof PSlugDocsRoute
   '/p/$slug/overview': typeof PSlugOverviewRoute
-  '/p/$slug/playpipe': typeof PSlugPlaypipeRoute
+  '/p/$slug/playpipe': typeof PSlugPlaypipeRouteWithChildren
   '/p/$slug/settings': typeof PSlugSettingsRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
+  '/p/$slug/playpipe/build': typeof PSlugPlaypipeBuildRoute
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
   '/p/$slug/agents/$agentId/studio': typeof PSlugAgentsAgentIdStudioRoute
   '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
@@ -346,10 +354,11 @@ export interface FileRoutesById {
   '/p/$slug/automations': typeof PSlugAutomationsRoute
   '/p/$slug/docs': typeof PSlugDocsRoute
   '/p/$slug/overview': typeof PSlugOverviewRoute
-  '/p/$slug/playpipe': typeof PSlugPlaypipeRoute
+  '/p/$slug/playpipe': typeof PSlugPlaypipeRouteWithChildren
   '/p/$slug/settings': typeof PSlugSettingsRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
+  '/p/$slug/playpipe/build': typeof PSlugPlaypipeBuildRoute
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
   '/p/$slug/agents/$agentId/studio': typeof PSlugAgentsAgentIdStudioRoute
   '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
@@ -391,6 +400,7 @@ export interface FileRouteTypes {
     | '/p/$slug/settings'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
+    | '/p/$slug/playpipe/build'
     | '/api/knowledge/zones/$zoneId/notebooklm'
     | '/p/$slug/agents/$agentId/studio'
     | '/api/knowledge/zones/$zoneId/notebooklm/retry'
@@ -430,6 +440,7 @@ export interface FileRouteTypes {
     | '/p/$slug/settings'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
+    | '/p/$slug/playpipe/build'
     | '/api/knowledge/zones/$zoneId/notebooklm'
     | '/p/$slug/agents/$agentId/studio'
     | '/api/knowledge/zones/$zoneId/notebooklm/retry'
@@ -469,6 +480,7 @@ export interface FileRouteTypes {
     | '/p/$slug/settings'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
+    | '/p/$slug/playpipe/build'
     | '/api/knowledge/zones/$zoneId/notebooklm'
     | '/p/$slug/agents/$agentId/studio'
     | '/api/knowledge/zones/$zoneId/notebooklm/retry'
@@ -736,6 +748,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiKnowledgeZonesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$slug/playpipe/build': {
+      id: '/p/$slug/playpipe/build'
+      path: '/build'
+      fullPath: '/p/$slug/playpipe/build'
+      preLoaderRoute: typeof PSlugPlaypipeBuildRouteImport
+      parentRoute: typeof PSlugPlaypipeRoute
+    }
     '/api/knowledge/zones/$zoneId': {
       id: '/api/knowledge/zones/$zoneId'
       path: '/$zoneId'
@@ -791,12 +810,24 @@ const PSlugAgentsRouteWithChildren = PSlugAgentsRoute._addFileChildren(
   PSlugAgentsRouteChildren,
 )
 
+interface PSlugPlaypipeRouteChildren {
+  PSlugPlaypipeBuildRoute: typeof PSlugPlaypipeBuildRoute
+}
+
+const PSlugPlaypipeRouteChildren: PSlugPlaypipeRouteChildren = {
+  PSlugPlaypipeBuildRoute: PSlugPlaypipeBuildRoute,
+}
+
+const PSlugPlaypipeRouteWithChildren = PSlugPlaypipeRoute._addFileChildren(
+  PSlugPlaypipeRouteChildren,
+)
+
 interface PSlugRouteChildren {
   PSlugAgentsRoute: typeof PSlugAgentsRouteWithChildren
   PSlugAutomationsRoute: typeof PSlugAutomationsRoute
   PSlugDocsRoute: typeof PSlugDocsRoute
   PSlugOverviewRoute: typeof PSlugOverviewRoute
-  PSlugPlaypipeRoute: typeof PSlugPlaypipeRoute
+  PSlugPlaypipeRoute: typeof PSlugPlaypipeRouteWithChildren
   PSlugSettingsRoute: typeof PSlugSettingsRoute
 }
 
@@ -805,7 +836,7 @@ const PSlugRouteChildren: PSlugRouteChildren = {
   PSlugAutomationsRoute: PSlugAutomationsRoute,
   PSlugDocsRoute: PSlugDocsRoute,
   PSlugOverviewRoute: PSlugOverviewRoute,
-  PSlugPlaypipeRoute: PSlugPlaypipeRoute,
+  PSlugPlaypipeRoute: PSlugPlaypipeRouteWithChildren,
   PSlugSettingsRoute: PSlugSettingsRoute,
 }
 
