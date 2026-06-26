@@ -3765,6 +3765,37 @@ async function handleCompileStatus(request, env) {
       if (method === 'DELETE' && kbDeleteMatch) {
         return await handleKb('delete/' + decodeURIComponent(kbDeleteMatch[1]), request, env);
       }
+      // ─── EVE compiler endpoints ──────────────────────────────────────────
+      if (method === 'POST' && path === '/v1/architect/compile-eve') {
+        try {
+          const { schema, projectName, projectSlug } = await request.json();
+          const name = projectName || projectSlug || 'eve-agent';
+          if (!schema) return errorResponse('Missing schema');
+          const bundle = ribosomeEVEInline(schema, name);
+          return jsonResponse({ success: true, bundle });
+        } catch (e) {
+          return errorResponse(`EVE compilation failed: ${e.message}`, 500);
+        }
+      }
+
+      if (method === 'POST' && path === '/v1/architect/compile-eve/zip') {
+        try {
+          const { schema, projectName, projectSlug } = await request.json();
+          const name = projectName || projectSlug || 'eve-agent';
+          if (!schema) return errorResponse('Missing schema');
+          const bundle = ribosomeEVEInline(schema, name);
+          const zipData = createZip(bundle.files);
+          return new Response(zipData, {
+            headers: {
+              'Content-Type': 'application/zip',
+              'Content-Disposition': `attachment; filename="${name.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-eve-agent.zip"`,
+            },
+          });
+        } catch (e) {
+          return new Response(`EVE compilation failed: ${e.message}`, { status: 500 });
+        }
+      }
+
       // ─── N8N compiler endpoint ──────────────────────────────────────────
       if (method === 'POST' && path === '/v1/compiler/n8n') {
         try {
@@ -3939,4 +3970,245 @@ function ribosomeN8NInline(ir, workflowName) {
     active: false,
     settings: { executionOrder: 'v1' },
   };
+}
+
+function ribosomeEVEInline(ir, projectName) {
+  if (!ir || typeof ir !== 'object') {
+    throw new Error('Invalid IR diagram');
+  }
+
+  const files = {};
+  let instructions = '';
+  const tools = [];
+  let requiresVercelConnect = false;
+
+  const itemEntries = Object.entries(ir.items || {});
+
+  const sanitizeName = (name) => {
+    return name.replace(/[^a-zA-Z0-9]/g, '');
+  };
+
+  const cleanContent = (content, prefix) => {
+    return content.replace(prefix, '').trim();
+  };
+
+  let firstActionForInstructions = '';
+  const llmBehaviors = [];
+
+  itemEntries.forEach(([itemId, item]) => {
+    if (item.meta && (item.meta.nodeKind === 'github' || item.meta.nodeKind === 'tool')) {
+      requiresVercelConnect = true;
+    }
+
+    const content = item.content || '';
+    if (item.type === 'action') {
+      if (content.startsWith(':: tool ::')) {
+        const fullToolName = cleanContent(content, ':: tool ::');
+        const toolNameClean = sanitizeName(fullToolName);
+        if (toolNameClean) {
+          tools.push({
+            name: toolNameClean,
+            content: fullToolName
+          });
+        }
+      } else if (content.startsWith(':: llm ::')) {
+        llmBehaviors.push(cleanContent(content, ':: llm ::'));
+      } else {
+        if (!firstActionForInstructions) {
+          firstActionForInstructions = content;
+        } else {
+          instructions += `- ${content}\n`;
+        }
+      }
+    } else if (item.type === 'question') {
+      instructions += `- Decision: ${content}\n`;
+    }
+  });
+
+  // Prepare instructions.md
+  let instructionsFileContent = `# Agent Instructions: ${projectName}\n\n`;
+  if (firstActionForInstructions) {
+    instructionsFileContent += `## Overview\n${firstActionForInstructions}\n\n`;
+  }
+  if (instructions) {
+    instructionsFileContent += `## Workflow rules\n${instructions}\n`;
+  }
+  if (llmBehaviors.length > 0) {
+    instructionsFileContent += `## LLM Behaviors\n`;
+    llmBehaviors.forEach(behavior => {
+      instructionsFileContent += `- ${behavior}\n`;
+    });
+  }
+
+  files['agent/instructions.md'] = instructionsFileContent;
+
+  // Prepare tools
+  let toolsExports = '';
+  tools.forEach(tool => {
+    const toolFileName = `agent/tools/${tool.name}.ts`;
+    const toolContent = `import { defineTool } from 'eve/tools';
+import { z } from 'zod';
+
+export default defineTool({
+  name: '${tool.name}',
+  description: '${tool.content.replace(/'/g, "\\'")}',
+  inputSchema: z.object({ input: z.string() }),
+  execute: async ({ input }) => {
+    // TODO: implement
+    return { result: input };
+  }
+});
+`;
+    files[toolFileName] = toolContent;
+    toolsExports += `export { default as ${tool.name} } from './tools/${tool.name}';\n`;
+  });
+
+  files['agent/tools/index.ts'] = toolsExports;
+
+  // agent.ts
+  files['agent/agent.ts'] = `import { defineAgent } from 'eve';
+import * as tools from './tools';
+
+export default defineAgent({
+  model: 'anthropic/claude-sonnet-4-6',
+  tools: Object.values(tools),
+});
+`;
+
+  // package.json
+  files['package.json'] = JSON.stringify({
+    name: projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+    version: '0.1.0',
+    dependencies: {
+      eve: '0.1.x'
+    }
+  }, null, 2) + '\n';
+
+  return {
+    files,
+    deployCommand: 'eve deploy',
+    requiresVercelConnect
+  };
+}
+
+function createZip(files) {
+  const encoder = new TextEncoder();
+  const fileList = [];
+  let currentOffset = 0;
+  const chunks = [];
+
+  const makeCrcTable = () => {
+    let c;
+    const crcTable = [];
+    for (let n = 0; n < 256; n++) {
+      c = n;
+      for (let k = 0; k < 8; k++) {
+        c = ((c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1));
+      }
+      crcTable[n] = c;
+    }
+    return crcTable;
+  };
+  const crcTable = makeCrcTable();
+
+  const crc32 = (data) => {
+    let crc = 0 ^ (-1);
+    for (let i = 0; i < data.length; i++) {
+      crc = (crc >>> 8) ^ crcTable[(crc ^ data[i]) & 0xff];
+    }
+    return (crc ^ (-1)) >>> 0;
+  };
+
+  const writeUint16 = (buf, offset, val) => {
+    buf[offset] = val & 0xff;
+    buf[offset + 1] = (val >>> 8) & 0xff;
+  };
+  const writeUint32 = (buf, offset, val) => {
+    buf[offset] = val & 0xff;
+    buf[offset + 1] = (val >>> 8) & 0xff;
+    buf[offset + 2] = (val >>> 16) & 0xff;
+    buf[offset + 3] = (val >>> 24) & 0xff;
+  };
+
+  for (const [filename, content] of Object.entries(files)) {
+    const filenameBytes = encoder.encode(filename);
+    const contentBytes = encoder.encode(content);
+    const crc = crc32(contentBytes);
+
+    const localHeader = new Uint8Array(30 + filenameBytes.length);
+    localHeader.set([0x50, 0x4b, 0x03, 0x04]);
+    writeUint16(localHeader, 4, 10);
+    writeUint16(localHeader, 6, 0);
+    writeUint16(localHeader, 8, 0);
+    writeUint16(localHeader, 10, 0);
+    writeUint16(localHeader, 12, 0);
+    writeUint32(localHeader, 14, crc);
+    writeUint32(localHeader, 18, contentBytes.length);
+    writeUint32(localHeader, 22, contentBytes.length);
+    writeUint16(localHeader, 26, filenameBytes.length);
+    writeUint16(localHeader, 28, 0);
+    localHeader.set(filenameBytes, 30);
+
+    chunks.push(localHeader);
+    chunks.push(contentBytes);
+
+    fileList.push({
+      filenameBytes,
+      crc,
+      length: contentBytes.length,
+      offset: currentOffset
+    });
+
+    currentOffset += localHeader.length + contentBytes.length;
+  }
+
+  const centralDirectoryOffset = currentOffset;
+  let centralDirectorySize = 0;
+
+  for (const file of fileList) {
+    const cdHeader = new Uint8Array(46 + file.filenameBytes.length);
+    cdHeader.set([0x50, 0x4b, 0x01, 0x02]);
+    writeUint16(cdHeader, 4, 20);
+    writeUint16(cdHeader, 6, 10);
+    writeUint16(cdHeader, 8, 0);
+    writeUint16(cdHeader, 10, 0);
+    writeUint16(cdHeader, 12, 0);
+    writeUint16(cdHeader, 14, 0);
+    writeUint32(cdHeader, 16, file.crc);
+    writeUint32(cdHeader, 20, file.length);
+    writeUint32(cdHeader, 24, file.length);
+    writeUint16(cdHeader, 28, file.filenameBytes.length);
+    writeUint16(cdHeader, 30, 0);
+    writeUint16(cdHeader, 32, 0);
+    writeUint16(cdHeader, 34, 0);
+    writeUint16(cdHeader, 36, 0);
+    writeUint32(cdHeader, 38, 0);
+    writeUint32(cdHeader, 42, file.offset);
+    cdHeader.set(file.filenameBytes, 46);
+
+    chunks.push(cdHeader);
+    centralDirectorySize += cdHeader.length;
+  }
+
+  const eocd = new Uint8Array(22);
+  eocd.set([0x50, 0x4b, 0x05, 0x06]);
+  writeUint16(eocd, 4, 0);
+  writeUint16(eocd, 6, 0);
+  writeUint16(eocd, 8, fileList.length);
+  writeUint16(eocd, 10, fileList.length);
+  writeUint32(eocd, 12, centralDirectorySize);
+  writeUint32(eocd, 16, centralDirectoryOffset);
+  writeUint16(eocd, 20, 0);
+
+  chunks.push(eocd);
+
+  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+  const result = new Uint8Array(totalLength);
+  let pos = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, pos);
+    pos += chunk.length;
+  }
+
+  return result;
 }
