@@ -29,9 +29,16 @@ import { Route as ArchitectRouteImport } from './routes/architect'
 import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectNewRouteImport } from './routes/project.new'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as EditorIdRouteImport } from './routes/editor.$id'
 import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
 import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
+import { Route as PSlugSettingsRouteImport } from './routes/p.$slug.settings'
+import { Route as PSlugPlaypipeRouteImport } from './routes/p.$slug.playpipe'
+import { Route as PSlugOverviewRouteImport } from './routes/p.$slug.overview'
+import { Route as PSlugDocsRouteImport } from './routes/p.$slug.docs'
+import { Route as PSlugAutomationsRouteImport } from './routes/p.$slug.automations'
+import { Route as PSlugAgentsRouteImport } from './routes/p.$slug.agents'
 import { Route as ApiNotebooklmNotebooksRouteImport } from './routes/api.notebooklm.notebooks'
 import { Route as ApiNotebooklmChatRouteImport } from './routes/api.notebooklm.chat'
 import { Route as ApiKnowledgeZonesRouteImport } from './routes/api.knowledge.zones'
@@ -139,6 +146,11 @@ const ProjectNewRoute = ProjectNewRouteImport.update({
   path: '/project/new',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EditorIdRoute = EditorIdRouteImport.update({
   id: '/editor/$id',
   path: '/editor/$id',
@@ -153,6 +165,36 @@ const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
   id: '/$pipelineId/edit',
   path: '/$pipelineId/edit',
   getParentRoute: () => PipelineRoute,
+} as any)
+const PSlugSettingsRoute = PSlugSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugPlaypipeRoute = PSlugPlaypipeRouteImport.update({
+  id: '/playpipe',
+  path: '/playpipe',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugOverviewRoute = PSlugOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugDocsRoute = PSlugDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugAutomationsRoute = PSlugAutomationsRouteImport.update({
+  id: '/automations',
+  path: '/automations',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugAgentsRoute = PSlugAgentsRouteImport.update({
+  id: '/agents',
+  path: '/agents',
+  getParentRoute: () => PSlugRoute,
 } as any)
 const ApiNotebooklmNotebooksRoute = ApiNotebooklmNotebooksRouteImport.update({
   id: '/api/notebooklm/notebooks',
@@ -209,10 +251,17 @@ export interface FileRoutesByFullPath {
   '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/p/$slug': typeof PSlugRouteWithChildren
   '/project/new': typeof ProjectNewRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
+  '/p/$slug/agents': typeof PSlugAgentsRoute
+  '/p/$slug/automations': typeof PSlugAutomationsRoute
+  '/p/$slug/docs': typeof PSlugDocsRoute
+  '/p/$slug/overview': typeof PSlugOverviewRoute
+  '/p/$slug/playpipe': typeof PSlugPlaypipeRoute
+  '/p/$slug/settings': typeof PSlugSettingsRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
@@ -240,10 +289,17 @@ export interface FileRoutesByTo {
   '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/p/$slug': typeof PSlugRouteWithChildren
   '/project/new': typeof ProjectNewRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
+  '/p/$slug/agents': typeof PSlugAgentsRoute
+  '/p/$slug/automations': typeof PSlugAutomationsRoute
+  '/p/$slug/docs': typeof PSlugDocsRoute
+  '/p/$slug/overview': typeof PSlugOverviewRoute
+  '/p/$slug/playpipe': typeof PSlugPlaypipeRoute
+  '/p/$slug/settings': typeof PSlugSettingsRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
@@ -272,10 +328,17 @@ export interface FileRoutesById {
   '/workspace': typeof WorkspaceRoute
   '/diagram/editor': typeof DiagramEditorRoute
   '/editor/$id': typeof EditorIdRoute
+  '/p/$slug': typeof PSlugRouteWithChildren
   '/project/new': typeof ProjectNewRoute
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
+  '/p/$slug/agents': typeof PSlugAgentsRoute
+  '/p/$slug/automations': typeof PSlugAutomationsRoute
+  '/p/$slug/docs': typeof PSlugDocsRoute
+  '/p/$slug/overview': typeof PSlugOverviewRoute
+  '/p/$slug/playpipe': typeof PSlugPlaypipeRoute
+  '/p/$slug/settings': typeof PSlugSettingsRoute
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
@@ -305,10 +368,17 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/p/$slug'
     | '/project/new'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
     | '/api/notebooklm/notebooks'
+    | '/p/$slug/agents'
+    | '/p/$slug/automations'
+    | '/p/$slug/docs'
+    | '/p/$slug/overview'
+    | '/p/$slug/playpipe'
+    | '/p/$slug/settings'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
@@ -336,10 +406,17 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/p/$slug'
     | '/project/new'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
     | '/api/notebooklm/notebooks'
+    | '/p/$slug/agents'
+    | '/p/$slug/automations'
+    | '/p/$slug/docs'
+    | '/p/$slug/overview'
+    | '/p/$slug/playpipe'
+    | '/p/$slug/settings'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
@@ -367,10 +444,17 @@ export interface FileRouteTypes {
     | '/workspace'
     | '/diagram/editor'
     | '/editor/$id'
+    | '/p/$slug'
     | '/project/new'
     | '/api/knowledge/zones'
     | '/api/notebooklm/chat'
     | '/api/notebooklm/notebooks'
+    | '/p/$slug/agents'
+    | '/p/$slug/automations'
+    | '/p/$slug/docs'
+    | '/p/$slug/overview'
+    | '/p/$slug/playpipe'
+    | '/p/$slug/settings'
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
@@ -399,6 +483,7 @@ export interface RootRouteChildren {
   WorkspaceRoute: typeof WorkspaceRoute
   DiagramEditorRoute: typeof DiagramEditorRoute
   EditorIdRoute: typeof EditorIdRoute
+  PSlugRoute: typeof PSlugRouteWithChildren
   ProjectNewRoute: typeof ProjectNewRoute
   ApiKnowledgeZonesRoute: typeof ApiKnowledgeZonesRouteWithChildren
   ApiNotebooklmChatRoute: typeof ApiNotebooklmChatRoute
@@ -547,6 +632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectNewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/editor/$id': {
       id: '/editor/$id'
       path: '/editor/$id'
@@ -567,6 +659,48 @@ declare module '@tanstack/react-router' {
       fullPath: '/pipeline/$pipelineId/edit'
       preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
       parentRoute: typeof PipelineRoute
+    }
+    '/p/$slug/settings': {
+      id: '/p/$slug/settings'
+      path: '/settings'
+      fullPath: '/p/$slug/settings'
+      preLoaderRoute: typeof PSlugSettingsRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/playpipe': {
+      id: '/p/$slug/playpipe'
+      path: '/playpipe'
+      fullPath: '/p/$slug/playpipe'
+      preLoaderRoute: typeof PSlugPlaypipeRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/overview': {
+      id: '/p/$slug/overview'
+      path: '/overview'
+      fullPath: '/p/$slug/overview'
+      preLoaderRoute: typeof PSlugOverviewRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/docs': {
+      id: '/p/$slug/docs'
+      path: '/docs'
+      fullPath: '/p/$slug/docs'
+      preLoaderRoute: typeof PSlugDocsRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/automations': {
+      id: '/p/$slug/automations'
+      path: '/automations'
+      fullPath: '/p/$slug/automations'
+      preLoaderRoute: typeof PSlugAutomationsRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/agents': {
+      id: '/p/$slug/agents'
+      path: '/agents'
+      fullPath: '/p/$slug/agents'
+      preLoaderRoute: typeof PSlugAgentsRouteImport
+      parentRoute: typeof PSlugRoute
     }
     '/api/notebooklm/notebooks': {
       id: '/api/notebooklm/notebooks'
@@ -624,6 +758,26 @@ const PipelineRouteChildren: PipelineRouteChildren = {
 const PipelineRouteWithChildren = PipelineRoute._addFileChildren(
   PipelineRouteChildren,
 )
+
+interface PSlugRouteChildren {
+  PSlugAgentsRoute: typeof PSlugAgentsRoute
+  PSlugAutomationsRoute: typeof PSlugAutomationsRoute
+  PSlugDocsRoute: typeof PSlugDocsRoute
+  PSlugOverviewRoute: typeof PSlugOverviewRoute
+  PSlugPlaypipeRoute: typeof PSlugPlaypipeRoute
+  PSlugSettingsRoute: typeof PSlugSettingsRoute
+}
+
+const PSlugRouteChildren: PSlugRouteChildren = {
+  PSlugAgentsRoute: PSlugAgentsRoute,
+  PSlugAutomationsRoute: PSlugAutomationsRoute,
+  PSlugDocsRoute: PSlugDocsRoute,
+  PSlugOverviewRoute: PSlugOverviewRoute,
+  PSlugPlaypipeRoute: PSlugPlaypipeRoute,
+  PSlugSettingsRoute: PSlugSettingsRoute,
+}
+
+const PSlugRouteWithChildren = PSlugRoute._addFileChildren(PSlugRouteChildren)
 
 interface ApiKnowledgeZonesZoneIdNotebooklmRouteChildren {
   ApiKnowledgeZonesZoneIdNotebooklmRetryRoute: typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
@@ -688,6 +842,7 @@ const rootRouteChildren: RootRouteChildren = {
   WorkspaceRoute: WorkspaceRoute,
   DiagramEditorRoute: DiagramEditorRoute,
   EditorIdRoute: EditorIdRoute,
+  PSlugRoute: PSlugRouteWithChildren,
   ProjectNewRoute: ProjectNewRoute,
   ApiKnowledgeZonesRoute: ApiKnowledgeZonesRouteWithChildren,
   ApiNotebooklmChatRoute: ApiNotebooklmChatRoute,
