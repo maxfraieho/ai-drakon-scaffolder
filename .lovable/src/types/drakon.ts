@@ -15,6 +15,15 @@ content: string;
 one?: string;
 two?: string;
 branchId?: string;
+meta?: {
+  nodeKind?: 'component' | 'n8n' | 'llm' | 'tool' | 'github';
+  componentSlug?: string;
+  agentId?: string;
+  n8nNodeType?: string;
+  n8nTypeVersion?: number;
+  n8nParams?: Record<string, unknown>;
+  credentialName?: string;
+};
 }
 
 export interface DrakonDiagram {
@@ -50,4 +59,3 @@ type: "update" | "insert" | "delete";
 itemId: string;
 data?: Partial<DrakonItem>;
 }
-
