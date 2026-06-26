@@ -219,7 +219,7 @@ function generateLuaBundle(
   output += `-- Generated: ${timestamp}\n`;
   output += `-- ============================================================================\n\n`;
 
-  // Forward declarations
+  // Generate forward declarations for Lua so functions can call each other regardless of definition order
   output += `-- --- Forward Declarations ---\n`;
   const allFuncNames: string[] = [];
   for (const mod of modulesData) {
@@ -230,11 +230,20 @@ function generateLuaBundle(
   }
   output += `\n`;
 
-  // Write function bodies
+  // Write function bodies (temporarily re-assigning them to local variables)
   for (const mod of modulesData) {
     output += `-- --- Module: ${mod.moduleName} ---\n\n`;
     for (const func of mod.functions) {
       output += `-- Source: ${func.path}\n`;
+      
+      // If the compiled lua code contains 'function name(...)', we strip 'function ' 
+      // and change it to 'name = function(...)' or keep it global depending on structure.
+      // But since we did forward declaration 'local name', writing:
+      // name = function(...) ... end
+      // or simply letting the compiled function be defined without the 'local' keyword:
+      // function name(...) ... end
+      // works perfectly because Lua resolves 'function name(...)' to the local variable 'name' if it is already in scope!
+      // This is an extremely elegant feature of Lua.
       output += `${func.code}\n\n`;
     }
   }

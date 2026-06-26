@@ -110,6 +110,20 @@ type PlayPipeActionResponse = {
   message?: string;
 };
 
+type CompileN8NResponse = {
+  success: boolean;
+  workflow?: unknown;
+  error?: string;
+  message?: string;
+  nodeIds?: string[];
+};
+
+type PushN8NResponse = {
+  success: boolean;
+  error?: string;
+  message?: string;
+};
+
 // Knowledge Zone Types
 export type KnowledgeZone = {
   id: string;
@@ -390,6 +404,48 @@ export const api = {
       headers: headers(),
     });
     return parseResponse<PlayPipeActionResponse>(response);
+  },
+
+  compileN8NWorkflow: async (schema: unknown, name: string): Promise<CompileN8NResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/compiler/n8n`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ schema, name }),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as CompileN8NResponse;
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || data.message || `HTTP ${response.status}`,
+        message: data.message,
+        nodeIds: Array.isArray(data.nodeIds) ? data.nodeIds : [],
+      };
+    }
+    return { ...data, success: true };
+  },
+
+  pushN8NWorkflow: async (payload: {
+    schema: unknown;
+    name: string;
+    n8nUrl: string;
+    n8nApiKey: string;
+  }): Promise<PushN8NResponse> => {
+    const response = await fetch(`${resolveApiBase()}/v1/compiler/n8n/push`, {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify(payload),
+    });
+
+    const data = (await response.json().catch(() => ({}))) as PushN8NResponse;
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || data.message || `HTTP ${response.status}`,
+        message: data.message,
+      };
+    }
+    return { ...data, success: true };
   },
 
   // Knowledge Zone API

@@ -1,6 +1,6 @@
 import { Navigate, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Check, Eye, EyeOff, ExternalLink, Loader2, RefreshCw, ShieldAlert, Trash2, Copy, Key } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { AgentLlmCard } from "@/components/agents/AgentLlmCard";
 import { useGithubRepos, mergeWithKnown } from "@/hooks/useGithubRepos";
 import { toast } from "sonner";
@@ -72,7 +72,7 @@ const isAdmin = user?.email === 'tukroschu@gmail.com' ||
     localStorage.getItem("aegisroute.access_token") === "drakon-mcp-2026" ||
     localStorage.getItem("jwt") === "drakon-mcp-2026"
   ));
-const { activeProject } = useProject();
+const { activeProject, loading: projectsLoading } = useProject();
 const activeProjectGithub = activeProject?.github;
 const [settings, setSettings] = useState<AppSettings>(() => readSettings());
 const [agentBaseUrl, setAgentBaseUrl] = useState(() =>
@@ -173,6 +173,28 @@ useEffect(() => {
     }
   }
 }, [user?.$id]);
+
+// Re-hydrate the form from localStorage AFTER ProjectContext.loadProjects() has
+// pulled the remote MinIO config and written it back via writeSettings(). Without
+// this, on a fresh device/login the form keeps the DEFAULT_SETTINGS it was seeded
+// with at mount, and clicking Save would overwrite the good cloud config with
+// defaults. Guarded so it runs once per load cycle and never clobbers edits made
+// while loading is already finished.
+const rehydratedRef = useRef(false);
+useEffect(() => {
+  if (projectsLoading) {
+    rehydratedRef.current = false;
+    return;
+  }
+  if (rehydratedRef.current) return;
+  rehydratedRef.current = true;
+  const fresh = readSettings();
+  setSettings(prev => (JSON.stringify(prev) === JSON.stringify(fresh) ? prev : fresh));
+  if (typeof window !== "undefined") {
+    const baseUrl = localStorage.getItem("drakon_agent_base_url");
+    if (baseUrl) setAgentBaseUrl(baseUrl);
+  }
+}, [projectsLoading]);
 
 const handleConnectGithub = async () => {
   try {
