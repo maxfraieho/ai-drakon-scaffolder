@@ -43,6 +43,7 @@ import { Route as ApiNotebooklmNotebooksRouteImport } from './routes/api.noteboo
 import { Route as ApiNotebooklmChatRouteImport } from './routes/api.notebooklm.chat'
 import { Route as ApiKnowledgeZonesRouteImport } from './routes/api.knowledge.zones'
 import { Route as ApiKnowledgeZonesZoneIdRouteImport } from './routes/api.knowledge.zones.$zoneId'
+import { Route as PSlugAgentsAgentIdStudioRouteImport } from './routes/p.$slug.agents.$agentId.studio'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm.retry'
 
@@ -216,6 +217,12 @@ const ApiKnowledgeZonesZoneIdRoute = ApiKnowledgeZonesZoneIdRouteImport.update({
   path: '/$zoneId',
   getParentRoute: () => ApiKnowledgeZonesRoute,
 } as any)
+const PSlugAgentsAgentIdStudioRoute =
+  PSlugAgentsAgentIdStudioRouteImport.update({
+    id: '/$agentId/studio',
+    path: '/$agentId/studio',
+    getParentRoute: () => PSlugAgentsRoute,
+  } as any)
 const ApiKnowledgeZonesZoneIdNotebooklmRoute =
   ApiKnowledgeZonesZoneIdNotebooklmRouteImport.update({
     id: '/notebooklm',
@@ -256,7 +263,7 @@ export interface FileRoutesByFullPath {
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
-  '/p/$slug/agents': typeof PSlugAgentsRoute
+  '/p/$slug/agents': typeof PSlugAgentsRouteWithChildren
   '/p/$slug/automations': typeof PSlugAutomationsRoute
   '/p/$slug/docs': typeof PSlugDocsRoute
   '/p/$slug/overview': typeof PSlugOverviewRoute
@@ -265,6 +272,7 @@ export interface FileRoutesByFullPath {
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
+  '/p/$slug/agents/$agentId/studio': typeof PSlugAgentsAgentIdStudioRoute
   '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
 }
 export interface FileRoutesByTo {
@@ -294,7 +302,7 @@ export interface FileRoutesByTo {
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
-  '/p/$slug/agents': typeof PSlugAgentsRoute
+  '/p/$slug/agents': typeof PSlugAgentsRouteWithChildren
   '/p/$slug/automations': typeof PSlugAutomationsRoute
   '/p/$slug/docs': typeof PSlugDocsRoute
   '/p/$slug/overview': typeof PSlugOverviewRoute
@@ -303,6 +311,7 @@ export interface FileRoutesByTo {
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
+  '/p/$slug/agents/$agentId/studio': typeof PSlugAgentsAgentIdStudioRoute
   '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
 }
 export interface FileRoutesById {
@@ -333,7 +342,7 @@ export interface FileRoutesById {
   '/api/knowledge/zones': typeof ApiKnowledgeZonesRouteWithChildren
   '/api/notebooklm/chat': typeof ApiNotebooklmChatRoute
   '/api/notebooklm/notebooks': typeof ApiNotebooklmNotebooksRoute
-  '/p/$slug/agents': typeof PSlugAgentsRoute
+  '/p/$slug/agents': typeof PSlugAgentsRouteWithChildren
   '/p/$slug/automations': typeof PSlugAutomationsRoute
   '/p/$slug/docs': typeof PSlugDocsRoute
   '/p/$slug/overview': typeof PSlugOverviewRoute
@@ -342,6 +351,7 @@ export interface FileRoutesById {
   '/pipeline/$pipelineId/edit': typeof PipelinePipelineIdEditRoute
   '/api/knowledge/zones/$zoneId': typeof ApiKnowledgeZonesZoneIdRouteWithChildren
   '/api/knowledge/zones/$zoneId/notebooklm': typeof ApiKnowledgeZonesZoneIdNotebooklmRouteWithChildren
+  '/p/$slug/agents/$agentId/studio': typeof PSlugAgentsAgentIdStudioRoute
   '/api/knowledge/zones/$zoneId/notebooklm/retry': typeof ApiKnowledgeZonesZoneIdNotebooklmRetryRoute
 }
 export interface FileRouteTypes {
@@ -382,6 +392,7 @@ export interface FileRouteTypes {
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
+    | '/p/$slug/agents/$agentId/studio'
     | '/api/knowledge/zones/$zoneId/notebooklm/retry'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -420,6 +431,7 @@ export interface FileRouteTypes {
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
+    | '/p/$slug/agents/$agentId/studio'
     | '/api/knowledge/zones/$zoneId/notebooklm/retry'
   id:
     | '__root__'
@@ -458,6 +470,7 @@ export interface FileRouteTypes {
     | '/pipeline/$pipelineId/edit'
     | '/api/knowledge/zones/$zoneId'
     | '/api/knowledge/zones/$zoneId/notebooklm'
+    | '/p/$slug/agents/$agentId/studio'
     | '/api/knowledge/zones/$zoneId/notebooklm/retry'
   fileRoutesById: FileRoutesById
 }
@@ -730,6 +743,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiKnowledgeZonesZoneIdRouteImport
       parentRoute: typeof ApiKnowledgeZonesRoute
     }
+    '/p/$slug/agents/$agentId/studio': {
+      id: '/p/$slug/agents/$agentId/studio'
+      path: '/$agentId/studio'
+      fullPath: '/p/$slug/agents/$agentId/studio'
+      preLoaderRoute: typeof PSlugAgentsAgentIdStudioRouteImport
+      parentRoute: typeof PSlugAgentsRoute
+    }
     '/api/knowledge/zones/$zoneId/notebooklm': {
       id: '/api/knowledge/zones/$zoneId/notebooklm'
       path: '/notebooklm'
@@ -759,8 +779,20 @@ const PipelineRouteWithChildren = PipelineRoute._addFileChildren(
   PipelineRouteChildren,
 )
 
+interface PSlugAgentsRouteChildren {
+  PSlugAgentsAgentIdStudioRoute: typeof PSlugAgentsAgentIdStudioRoute
+}
+
+const PSlugAgentsRouteChildren: PSlugAgentsRouteChildren = {
+  PSlugAgentsAgentIdStudioRoute: PSlugAgentsAgentIdStudioRoute,
+}
+
+const PSlugAgentsRouteWithChildren = PSlugAgentsRoute._addFileChildren(
+  PSlugAgentsRouteChildren,
+)
+
 interface PSlugRouteChildren {
-  PSlugAgentsRoute: typeof PSlugAgentsRoute
+  PSlugAgentsRoute: typeof PSlugAgentsRouteWithChildren
   PSlugAutomationsRoute: typeof PSlugAutomationsRoute
   PSlugDocsRoute: typeof PSlugDocsRoute
   PSlugOverviewRoute: typeof PSlugOverviewRoute
@@ -769,7 +801,7 @@ interface PSlugRouteChildren {
 }
 
 const PSlugRouteChildren: PSlugRouteChildren = {
-  PSlugAgentsRoute: PSlugAgentsRoute,
+  PSlugAgentsRoute: PSlugAgentsRouteWithChildren,
   PSlugAutomationsRoute: PSlugAutomationsRoute,
   PSlugDocsRoute: PSlugDocsRoute,
   PSlugOverviewRoute: PSlugOverviewRoute,
