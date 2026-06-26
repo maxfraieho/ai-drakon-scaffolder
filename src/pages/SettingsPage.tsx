@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Settings,
   Eye,
@@ -21,6 +24,15 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -30,7 +42,44 @@ import {
 import { toast } from "sonner";
 import { resolveWorkerUrl } from "@/lib/worker-url";
 import { authHeaders } from "@/lib/graph-pipeline-api";
-import { readSettings } from "@/lib/settings-storage";
+import { readSettings, writeSettings } from "@/lib/settings-storage";
+import { N8NConnectionStatus, type N8NConnectionState } from "@/components/n8n/N8NConnectionStatus";
+
+function isValidHttpsUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+const n8nSettingsSchema = z.object({
+  baseUrl: z
+    .string()
+    .trim()
+    .min(1, "N8N Instance URL is required")
+    .url("Enter a valid URL")
+    .refine((value) => value.startsWith("https://"), {
+      message: "URL must start with https://",
+    }),
+  apiKey: z.string().trim().min(1, "API key is required"),
+  webhookUrl: z
+    .string()
+    .trim()
+    .optional()
+    .refine((value) => !value || isValidHttpsUrl(value), "Webhook Base URL must be a valid https:// URL"),
+});
+
+type N8NSettingsFormValues = z.infer<typeof n8nSettingsSchema>;
+
+function normalizeUrl(url: string): string {
+  return url.trim().replace(/\/+$/, "");
+}
+
+function deriveWebhookBaseUrl(baseUrl: string): string {
+  return `${normalizeUrl(baseUrl)}/webhook`;
+}
 
 export function SettingsPage() {
   // --- API Keys State ---
@@ -85,6 +134,135 @@ export function SettingsPage() {
   const [cfDetail, setCfDetail] = useState<string>("Checking worker...");
   const [authStatus, setAuthStatus] = useState<"checking" | "online" | "offline" | "idle">("idle");
   const [authDetail, setAuthDetail] = useState<string>("Click to verify Appwrite JWT & /me connection");
+  const [showN8nApiKey, setShowN8nApiKey] = useState(false);
+  const [isTestingN8n, setIsTestingN8n] = useState(false);
+  const [n8nConnectionState, setN8nConnectionState] = useState<N8NConnectionState>("unconfigured");
+  const [connectedN8nUrl, setConnectedN8nUrl] = useState("");
+
+  const initialN8n = readSettings().n8n;
+  const n8nForm = useForm<N8NSettingsFormValues>({
+    resolver: zodResolver(n8nSettingsSchema),
+    defaultValues: {
+      baseUrl: initialN8n.baseUrl,
+      apiKey: initialN8n.apiKey,
+      webhookUrl: initialN8n.webhookUrl,
+    },
+    mode: "onSubmit",
+  });
+
+  const watchedN8nBaseUrl = n8nForm.watch("baseUrl");
+
+  const checkN8nConnection = async (
+    values?: N8NSettingsFormValues,
+    options?: { silent?: boolean },
+  ): Promise<void> => {
+    const payload = values ?? n8nForm.getValues();
+    const normalizedBaseUrl = normalizeUrl(payload.baseUrl || "");
+    const apiKey = payload.apiKey?.trim() || "";
+
+    if (!normalizedBaseUrl || !apiKey) {
+      setN8nConnectionState("unconfigured");
+      setConnectedN8nUrl("");
+      return;
+    }
+
+    setIsTestingN8n(true);
+    try {
+      const response = await fetch(`${normalizedBaseUrl}/api/v1/workflows`, {
+        method: "GET",
+        headers: {
+          "X-N8N-API-KEY": apiKey,
+        },
+        signal: AbortSignal.timeout(10000),
+      });
+
+      if (response.status === 401) {
+        setN8nConnectionState("error");
+        setConnectedN8nUrl("");
+        if (!options?.silent) {
+          toast.error("✗ Invalid API key");
+        }
+        return;
+      }
+
+      const payloadJson = (await response.json().catch(() => ({}))) as {
+        data?: unknown[];
+        workflows?: unknown[];
+      };
+
+      if (!response.ok) {
+        setN8nConnectionState("error");
+        setConnectedN8nUrl("");
+        if (!options?.silent) {
+          toast.error(`✗ Connection failed (HTTP ${response.status})`);
+        }
+        return;
+      }
+
+      const workflows = Array.isArray(payloadJson.data)
+        ? payloadJson.data
+        : Array.isArray(payloadJson.workflows)
+          ? payloadJson.workflows
+          : [];
+
+      setN8nConnectionState("connected");
+      setConnectedN8nUrl(normalizedBaseUrl);
+      if (!options?.silent) {
+        toast.success(`✓ Connected. Found ${workflows.length} workflows.`);
+      }
+    } catch {
+      setN8nConnectionState("error");
+      setConnectedN8nUrl("");
+      if (!options?.silent) {
+        toast.error("✗ Cannot reach N8N instance");
+      }
+    } finally {
+      setIsTestingN8n(false);
+    }
+  };
+
+  const handleTestN8nConnection = async (): Promise<void> => {
+    const isValid = await n8nForm.trigger(["baseUrl", "apiKey", "webhookUrl"]);
+    if (!isValid) {
+      return;
+    }
+    await checkN8nConnection();
+  };
+
+  const handleSaveN8nSettings = async (values: N8NSettingsFormValues): Promise<void> => {
+    const normalizedBaseUrl = normalizeUrl(values.baseUrl);
+    const webhookUrl = values.webhookUrl?.trim()
+      ? normalizeUrl(values.webhookUrl)
+      : deriveWebhookBaseUrl(normalizedBaseUrl);
+
+    const persisted = readSettings();
+    writeSettings({
+      ...persisted,
+      n8n: {
+        ...persisted.n8n,
+        baseUrl: normalizedBaseUrl,
+        apiKey: values.apiKey.trim(),
+        webhookUrl,
+        enabled: true,
+      },
+    });
+
+    n8nForm.reset({
+      baseUrl: normalizedBaseUrl,
+      apiKey: values.apiKey.trim(),
+      webhookUrl,
+    });
+
+    toast.success("N8N settings saved");
+    await checkN8nConnection(
+      {
+        baseUrl: normalizedBaseUrl,
+        apiKey: values.apiKey.trim(),
+        webhookUrl,
+      },
+      { silent: true },
+    );
+  };
 
   // --- Handlers ---
   const saveApiKey = (keyName: string, value: string, displayName: string) => {
@@ -222,6 +400,30 @@ export function SettingsPage() {
 
   useEffect(() => {
     runAllChecks();
+  }, []);
+
+  useEffect(() => {
+    const currentWebhook = (n8nForm.getValues("webhookUrl") || "").trim();
+    const nextWebhook = watchedN8nBaseUrl.trim() ? deriveWebhookBaseUrl(watchedN8nBaseUrl) : "";
+    if (!currentWebhook && nextWebhook) {
+      n8nForm.setValue("webhookUrl", nextWebhook, { shouldDirty: true, shouldValidate: true });
+    }
+  }, [watchedN8nBaseUrl, n8nForm]);
+
+  useEffect(() => {
+    if (initialN8n.baseUrl && initialN8n.apiKey) {
+      const hydrated: N8NSettingsFormValues = {
+        baseUrl: initialN8n.baseUrl,
+        apiKey: initialN8n.apiKey,
+        webhookUrl: initialN8n.webhookUrl || deriveWebhookBaseUrl(initialN8n.baseUrl),
+      };
+      n8nForm.reset(hydrated);
+      void checkN8nConnection(hydrated, { silent: true });
+      return;
+    }
+
+    setN8nConnectionState("unconfigured");
+    setConnectedN8nUrl("");
   }, []);
 
   return (
@@ -421,6 +623,122 @@ export function SettingsPage() {
                   {proxyDetail}
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          {/* N8N Integration Card */}
+          <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-sm shadow-xl">
+            <CardHeader className="border-b border-zinc-800/80 pb-4">
+              <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
+                <Globe className="w-5 h-5 text-amber-500" />
+                N8N Integration
+              </CardTitle>
+              <CardDescription className="text-zinc-400">
+                Configure your N8N instance and API key for workflow compilation and deployment.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              <N8NConnectionStatus status={n8nConnectionState} n8nUrl={connectedN8nUrl} checking={isTestingN8n} />
+
+              <Form {...n8nForm}>
+                <form onSubmit={n8nForm.handleSubmit(handleSaveN8nSettings)} className="space-y-4">
+                  <FormField
+                    control={n8nForm.control}
+                    name="baseUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-zinc-300">N8N Instance URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="https://your-n8n.instance.com"
+                            className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={n8nForm.control}
+                    name="apiKey"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-zinc-300">API Key</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              {...field}
+                              type={showN8nApiKey ? "text" : "password"}
+                              className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100 pr-10"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowN8nApiKey((prev) => !prev)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                              aria-label="Toggle N8N API key visibility"
+                            >
+                              {showN8nApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormDescription className="text-zinc-500">
+                          Found in N8N → Settings → API → Create API Key
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={n8nForm.control}
+                    name="webhookUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-zinc-300">Webhook Base URL</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            placeholder="https://your-n8n.instance.com/webhook"
+                            className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100"
+                          />
+                        </FormControl>
+                        <FormDescription className="text-zinc-500">
+                          Optional. If empty, this field is auto-filled from the instance URL.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleTestN8nConnection}
+                      disabled={isTestingN8n}
+                      className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                    >
+                      {isTestingN8n ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Activity className="w-4 h-4" />
+                      )}
+                      <span className="ml-2">Test Connection</span>
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      disabled={n8nForm.formState.isSubmitting}
+                      className="bg-amber-600 hover:bg-amber-700 text-white border-0"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save Settings
+                    </Button>
+                  </div>
+                </form>
+              </Form>
             </CardContent>
           </Card>
 
