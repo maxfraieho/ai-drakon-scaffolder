@@ -257,6 +257,90 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     location.pathname === to || location.pathname.startsWith(to + "/");
 
   const crumb = getBreadcrumb(location.pathname);
+  const isProjectHubView = location.pathname.startsWith("/p/");
+  const isProjectsListView = location.pathname === "/";
+  const isCleanView = isProjectsListView || isProjectHubView;
+
+  if (isCleanView) {
+    return (
+      <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
+        {isProjectsListView ? (
+          <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4">
+            <Link
+              to="/"
+              className="flex items-center gap-2 font-semibold text-[13px] text-[var(--text-primary)] tracking-wide"
+            >
+              <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
+              AI-DRAKON
+            </Link>
+
+            <div className="ml-auto flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setCmdOpen(true)}
+                className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--border-subtle)] px-2 font-mono text-[11px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors"
+                aria-label="Відкрити command palette"
+              >
+                <span>⌘K</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-label={theme === "dark" ? "Світла тема" : "Темна тема"}
+                className="inline-flex h-8 w-8 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Вийти"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="bg-[var(--bg-surface)] border border-white/10 rounded-2xl font-sans shadow-2xl">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle className="text-[var(--text-primary)] text-base font-semibold">
+                      Вийти з системи?
+                    </AlertDialogTitle>
+                    <AlertDialogDescription className="text-[var(--text-muted)] text-sm">
+                      JWT-токен буде видалено. Потрібно буде увійти знову.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel className="text-sm bg-transparent border border-white/10 text-[var(--text-secondary)] hover:bg-white/5 rounded-xl">
+                      Скасувати
+                    </AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={logout}
+                      className="text-sm bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded-xl"
+                    >
+                      Вийти
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </header>
+        ) : null}
+
+        <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
+
+        <CommandPalette
+          open={cmdOpen}
+          onOpenChange={setCmdOpen}
+          theme={theme === "system" ? "dark" : theme}
+          onToggleTheme={toggleTheme}
+          onLogout={logout}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">

@@ -1,14 +1,7 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useRequireAuth } from "@/lib/route-auth";
-import { CodegenPage } from "@/pages/CodegenPage";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/codegen")({
-  component: CodegenRoute,
+  beforeLoad: () => {
+    throw redirect({ to: "/" });
+  },
 });
-
-function CodegenRoute() {
-  const { loading, allowed } = useRequireAuth();
-  if (loading) return null;
-  if (!allowed) return <Navigate to="/login" replace />;
-  return <CodegenPage />;
-}

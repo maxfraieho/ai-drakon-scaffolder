@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { ObservabilityPage } from "@/pages/ObservabilityPage";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/observability")({
-  component: ObservabilityPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/" });
+  },
 });

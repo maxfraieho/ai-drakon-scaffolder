@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { NotebookLMPage } from "@/pages/NotebookLMPage";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/notebooks")({
-  component: NotebookLMPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/" });
+  },
 });

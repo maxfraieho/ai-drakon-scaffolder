@@ -1,7 +1,7 @@
-import { createContext, useContext, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { AlertTriangle, Github } from "lucide-react";
+import { AlertTriangle, Bot, Github, LogOut, Moon, Sun } from "lucide-react";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -12,7 +12,30 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { AgentChatPanel } from "@/components/agents/AgentChatPanel";
+import { CommandPalette } from "@/components/workspace/CommandPalette";
 import { ProjectSidebar } from "@/components/layout/ProjectSidebar";
+import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/components/theme-provider";
+import { clearAccessToken } from "@/lib/auth";
 import { getProject } from "@/lib/appwrite-projects";
 import type { Project } from "@/lib/schemas/project";
 
@@ -44,6 +67,35 @@ export function useProjectLayout() {
 export function ProjectLayout({ slug, children }: { slug: string; children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { logout: appwriteLogout } = useAuth();
+  const { theme, setTheme } = useTheme();
+  const [cmdOpen, setCmdOpen] = useState(false);
+  const [agentsOpen, setAgentsOpen] = useState(false);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((v) => !v);
+      }
+    };
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme(theme === "dark" ? "light" : "dark");
+  };
+
+  const logout = async () => {
+    try {
+      await appwriteLogout();
+    } catch (e) {
+      console.error("Appwrite logout failed:", e);
+    }
+    clearAccessToken();
+    navigate({ to: "/login", replace: true });
+  };
 
   const { data: project, isLoading, isError } = useQuery({
     queryKey: ["project", slug],
@@ -132,12 +184,98 @@ export function ProjectLayout({ slug, children }: { slug: string; children: Reac
                     </a>
                   </Button>
                 ) : null}
+
+                <div className="ml-auto flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCmdOpen(true)}
+                    className="inline-flex h-8 items-center gap-1.5 rounded border border-white/20 bg-white/5 px-2 font-mono text-[11px] text-slate-300 hover:bg-white/10 hover:text-slate-100 transition-colors"
+                    aria-label="Open command palette"
+                  >
+                    <span>⌘K</span>
+                  </button>
+
+                  <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+                    <SheetTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Agent chat"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-300 hover:bg-white/10 hover:text-slate-100"
+                      >
+                        <Bot className="h-4 w-4" />
+                      </button>
+                    </SheetTrigger>
+                    <SheetContent
+                      side="right"
+                      className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)]"
+                    >
+                      <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
+                        <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
+                          AI-агенти
+                        </SheetTitle>
+                      </SheetHeader>
+                      <div className="h-[calc(100%-3.25rem)]">
+                        <AgentChatPanel className="h-full" />
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    aria-label={theme === "dark" ? "Світла тема" : "Темна тема"}
+                    className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-300 hover:bg-white/10 hover:text-slate-100"
+                  >
+                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label="Вийти"
+                        className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-300 hover:bg-white/10 hover:text-slate-100"
+                      >
+                        <LogOut className="h-4 w-4" />
+                      </button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="bg-[var(--bg-surface)] border border-white/10 rounded-2xl font-sans shadow-2xl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-[var(--text-primary)] text-base font-semibold">
+                          Вийти з системи?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="text-[var(--text-muted)] text-sm">
+                          JWT-токен буде видалено. Потрібно буде увійти знову.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel className="text-sm bg-transparent border border-white/10 text-[var(--text-secondary)] hover:bg-white/5 rounded-xl">
+                          Скасувати
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={logout}
+                          className="text-sm bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded-xl"
+                        >
+                          Вийти
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </div>
             </header>
 
             <section className="flex-1 p-4 md:p-6">{children}</section>
           </main>
         </div>
+
+        <CommandPalette
+          open={cmdOpen}
+          onOpenChange={setCmdOpen}
+          theme={theme === "system" ? "dark" : theme}
+          onToggleTheme={toggleTheme}
+          onLogout={logout}
+        />
       </div>
     </ProjectLayoutContext.Provider>
   );

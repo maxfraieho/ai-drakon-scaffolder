@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useLocation } from "@tanstack/react-router";
 import {
   Settings,
   Eye,
@@ -44,6 +45,7 @@ import { resolveWorkerUrl } from "@/lib/worker-url";
 import { authHeaders } from "@/lib/graph-pipeline-api";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
 import { N8NConnectionStatus, type N8NConnectionState } from "@/components/n8n/N8NConnectionStatus";
+import type { AppSettings } from "@/types/settings";
 
 function isValidHttpsUrl(value: string): boolean {
   try {
@@ -81,7 +83,48 @@ function deriveWebhookBaseUrl(baseUrl: string): string {
   return `${normalizeUrl(baseUrl)}/webhook`;
 }
 
+function getProjectSettingsStorageKey(slug: string): string {
+  return `drakon.settings.project.${slug}`;
+}
+
+function readScopedSettings(slug: string | null): AppSettings {
+  if (!slug || typeof window === "undefined") {
+    return readSettings();
+  }
+
+  const fallback = readSettings();
+  try {
+    const raw = localStorage.getItem(getProjectSettingsStorageKey(slug));
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw) as AppSettings;
+    return {
+      ...fallback,
+      ...parsed,
+      github: { ...fallback.github, ...parsed.github },
+      n8n: { ...fallback.n8n, ...parsed.n8n },
+      app: { ...fallback.app, ...parsed.app },
+      minio: { ...fallback.minio, ...parsed.minio },
+      agents: { ...fallback.agents, ...parsed.agents },
+      cliAgents: Array.isArray(parsed.cliAgents) ? parsed.cliAgents : fallback.cliAgents,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
+function writeScopedSettings(slug: string | null, settings: AppSettings): void {
+  if (!slug || typeof window === "undefined") {
+    writeSettings(settings);
+    return;
+  }
+
+  localStorage.setItem(getProjectSettingsStorageKey(slug), JSON.stringify(settings));
+}
+
 export function SettingsPage() {
+  const location = useLocation();
+  const projectSlug = location.pathname.match(/^\/p\/([^/]+)\/settings(?:\/|$)/)?.[1] ?? null;
+
   // --- API Keys State ---
   const [show, setShow] = useState<Record<string, boolean>>({});
   const [keys, setKeys] = useState({
@@ -139,7 +182,7 @@ export function SettingsPage() {
   const [n8nConnectionState, setN8nConnectionState] = useState<N8NConnectionState>("unconfigured");
   const [connectedN8nUrl, setConnectedN8nUrl] = useState("");
 
-  const initialN8n = readSettings().n8n;
+  const initialN8n = readScopedSettings(projectSlug).n8n;
   const n8nForm = useForm<N8NSettingsFormValues>({
     resolver: zodResolver(n8nSettingsSchema),
     defaultValues: {
@@ -235,8 +278,8 @@ export function SettingsPage() {
       ? normalizeUrl(values.webhookUrl)
       : deriveWebhookBaseUrl(normalizedBaseUrl);
 
-    const persisted = readSettings();
-    writeSettings({
+    const persisted = readScopedSettings(projectSlug);
+    writeScopedSettings(projectSlug, {
       ...persisted,
       n8n: {
         ...persisted.n8n,
@@ -371,7 +414,7 @@ export function SettingsPage() {
     setAuthStatus("checking");
     setAuthDetail("Fetching JWT & verifying /me...");
     try {
-      const architectUrl = readSettings().agents.architectUrl.replace(/\/+$/, "");
+      const architectUrl = readScopedSettings(projectSlug).agents.architectUrl.replace(/\/+$/, "");
       const headers = await authHeaders();
       const resp = await fetch(`${architectUrl}/me`, {
         method: "GET",
@@ -400,7 +443,7 @@ export function SettingsPage() {
 
   useEffect(() => {
     runAllChecks();
-  }, []);
+  }, [projectSlug]);
 
   useEffect(() => {
     const currentWebhook = (n8nForm.getValues("webhookUrl") || "").trim();

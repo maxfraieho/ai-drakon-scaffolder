@@ -1,14 +1,7 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router";
-import { useRequireAuth } from "@/lib/route-auth";
-import { WorkspacePage } from "@/pages/WorkspacePage";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/workspace")({
-  component: WorkspaceRoute,
+  beforeLoad: () => {
+    throw redirect({ to: "/" });
+  },
 });
-
-function WorkspaceRoute() {
-  const { loading, allowed } = useRequireAuth();
-  if (loading) return null;
-  if (!allowed) return <Navigate to="/login" replace />;
-  return <WorkspacePage />;
-}
