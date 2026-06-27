@@ -16,5 +16,6 @@
     "APPWRITE_PROJECT_ID": "6a23420a003a04b4997b",
     "APPWRITE_KB_COLLECTION_ID": "kb_embeddings",
     "APPWRITE_DATABASE_ID": "ai-drakon"
+    // TODO: env.ARCHITECT_AGENT_URL and env.DOCS_AGENT_URL must be set as secrets via: wrangler secret put ARCHITECT_AGENT_URL
   }
 }
