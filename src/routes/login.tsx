@@ -15,7 +15,7 @@ function LoginRoute() {
   useEffect(() => setHydrated(true), []);
   if (!hydrated || isLoading) return null;
   if (isAuthenticated || hasClientJwt()) {
-    return <Navigate to="/diagrams" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <LoginPage />;

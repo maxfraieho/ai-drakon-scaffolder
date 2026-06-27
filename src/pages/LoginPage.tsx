@@ -145,7 +145,7 @@ export function LoginPage() {
     // the user's repositories in the "Add repository" dialog.
     account.createOAuth2Token(
       OAuthProvider.Github,
-      window.location.origin + "/diagrams",
+      window.location.origin + "/",
       window.location.origin + "/login",
       ["user:email", "repo", "read:org"]
     );
@@ -158,7 +158,7 @@ export function LoginPage() {
     try {
       await account.create(ID.unique(), username, password, name || undefined);
       await appwriteLogin(username, password);
-      navigate({ to: "/diagrams", replace: true });
+      navigate({ to: "/", replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Помилка реєстрації");
       setPassword("");
@@ -175,7 +175,7 @@ export function LoginPage() {
     // Direct Bearer token login bypass
     if (password === "drakon-mcp-2026" || username === "token") {
       setAccessToken(password || username);
-      navigate({ to: "/diagrams", replace: true });
+      navigate({ to: "/", replace: true });
       setIsSubmitting(false);
       return;
     }
@@ -183,7 +183,7 @@ export function LoginPage() {
     // Owner credential bypass mapped to the static bypass token
     if (username === "owner" && (password === "805235io" || password === "805235io.")) {
       setAccessToken("drakon-mcp-2026");
-      navigate({ to: "/diagrams", replace: true });
+      navigate({ to: "/", replace: true });
       setIsSubmitting(false);
       return;
     }
@@ -191,7 +191,7 @@ export function LoginPage() {
     if (username.includes("@")) {
       try {
         await appwriteLogin(username, password);
-        navigate({ to: "/diagrams", replace: true });
+        navigate({ to: "/", replace: true });
         return;
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : "Невірний логін або пароль");
@@ -215,7 +215,7 @@ export function LoginPage() {
         throw new Error(((data as { error?: string }).error) || "Невірний логін або пароль");
       }
       setAccessToken(token);
-      navigate({ to: "/diagrams", replace: true });
+      navigate({ to: "/", replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Невірний логін або пароль");
       setPassword("");
