@@ -3796,6 +3796,22 @@ async function handleCompileStatus(request, env) {
         }
       }
 
+      // ─── PlayPipe build control & SSE (/v1/playpipe/* → architect-agent) ─────────
+      if (path.startsWith('/v1/playpipe/')) {
+        const architectUrl = env.ARCHITECT_AGENT_URL ||
+          'https://architect-agent-flue.maxfraieho.workers.dev'; // fallback лише для dev
+        // Rewrite: /v1/playpipe/build/abc/stream → /architect/playpipe/build/abc/stream
+        const agentPath = '/architect' + path.slice(4); // /v1 → strip → /playpipe/...
+        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        // SSE requires streaming — не буферизувати
+        return fetch(proxied);
+      }
+
       // ─── Architect-agent general proxy (/v1/architect/* → architect-agent) ───
       if (path.startsWith('/v1/architect/')) {
         const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
@@ -3818,6 +3834,38 @@ async function handleCompileStatus(request, env) {
           return jsonResponse({ success: true, workflow });
         } catch (e) {
           return errorResponse(`N8N compilation failed: ${e.message}`, 500);
+        }
+      }
+
+      // ─── N8N push: compile + import to n8n server ───────────────────────────────
+      if (method === 'POST' && path === '/v1/compiler/n8n/push') {
+        try {
+          const { schema, name, n8nUrl, n8nApiKey } = await request.json();
+          if (!n8nUrl?.trim() || !n8nApiKey?.trim()) {
+            return errorResponse('n8nUrl and n8nApiKey are required', 400);
+          }
+          if (!schema || !name) return errorResponse('Missing schema or name', 400);
+          // Step 1: compile locally (ribosomeN8NInline вже є в цьому файлі)
+          const workflow = ribosomeN8NInline(schema, name);
+          // Step 2: import to n8n REST API
+          const n8nBase = n8nUrl.replace(/\/+$/, '');
+          const pushResp = await fetch(`${n8nBase}/api/v1/workflows`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-N8N-API-KEY': n8nApiKey,
+            },
+            body: JSON.stringify(workflow),
+            signal: AbortSignal.timeout(15_000),
+          });
+          if (!pushResp.ok) {
+            const errText = await pushResp.text().catch(() => '');
+            return errorResponse(`n8n rejected: ${errText}`, pushResp.status);
+          }
+          const result = await pushResp.json();
+          return jsonResponse({ success: true, workflowId: result.id, workflowName: result.name });
+        } catch (e) {
+          return errorResponse(`n8n push failed: ${e.message}`, 500);
         }
       }
 

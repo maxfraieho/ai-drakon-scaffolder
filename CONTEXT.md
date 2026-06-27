@@ -53,6 +53,18 @@ Appwrite Cloud (fra.cloud.appwrite.io, project: 6a23420a003a04b4997b)
   └── Auth — Education plan (JWT expires 15 min; refreshed in codegenApi.ts)
 ```
 
+## Agent Services (Appwrite Functions)
+- **architect-agent** (інтегровано через `env.ARCHITECT_AGENT_URL`):
+  * `POST /architect/decompose` — декомпозиція вимог на компоненти.
+  * `POST /architect/build-parallel` — запуск паралельної збірки.
+  * `GET /architect/playpipe/build/{buildId}/stream` (SSE) — стрім статусів збірки.
+  * `POST /architect/playpipe/build/{buildId}/retry` — перезапуск збірки компонента.
+  * `POST /architect/playpipe/build/{buildId}/stop` — зупинка збірки.
+- **docs-agent** (інтегровано через `env.DOCS_AGENT_URL`):
+  * Робота з базою знань та документацією.
+
+*Примітка: Адреси функцій встановлюються в CF Worker через `wrangler secret put ARCHITECT_AGENT_URL` та `wrangler secret put DOCS_AGENT_URL` для уникнення хардкоду доменів на кшталт `architect-agent-flue.maxfraieho.workers.dev`.*
+
 ## Current /codegen Flow
 
 1. User fills: function name, params, description, target language

@@ -45,12 +45,14 @@ from drakon_shared.pipeline_route import router as pipeline_config_router
 from graph_pipeline_route import router as graph_pipeline_router
 from project_pipeline_route import router as project_router
 from gitnexus_route import router as gitnexus_router
+from playpipe_route import router as playpipe_router
 app.include_router(pipeline_router)
 app.include_router(kb_router)
 app.include_router(pipeline_config_router)
 app.include_router(graph_pipeline_router)
 app.include_router(project_router)
 app.include_router(gitnexus_router)
+app.include_router(playpipe_router)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 
