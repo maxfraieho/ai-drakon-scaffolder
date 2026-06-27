@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { readSettings } from "@/lib/settings-storage";
 import { setAccessToken } from "@/lib/auth";
 import { account } from "@/lib/appwrite";
+import { useAuth } from "@/context/AuthContext";
 
 function NetworkBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -129,6 +130,7 @@ function NetworkBackground() {
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login: appwriteLogin } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -136,6 +138,15 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const withTimeout = async <T,>(promise: Promise<T>, ms = 15000): Promise<T> => {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error("Сервер авторизації не відповідає. Спробуйте ще раз.")), ms)
+      ),
+    ]);
+  };
 
   const handleGithubLogin = () => {
     // 4th arg = OAuth scopes. Default GitHub OAuth only grants user:email, which
@@ -155,9 +166,7 @@ export function LoginPage() {
     setErrorMsg(null);
     try {
       await account.create(ID.unique(), username, password, name || undefined);
-      await account.createEmailPasswordSession(username, password);
-      const jwtObj = await account.createJWT();
-      setAccessToken(jwtObj.jwt);
+      await withTimeout(appwriteLogin(username, password));
       navigate({ to: "/diagrams", replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Помилка реєстрації");
@@ -190,9 +199,7 @@ export function LoginPage() {
 
     if (username.includes("@")) {
       try {
-        await account.createEmailPasswordSession(username, password);
-        const jwtObj = await account.createJWT();
-        setAccessToken(jwtObj.jwt);
+        await withTimeout(appwriteLogin(username, password));
         navigate({ to: "/diagrams", replace: true });
         return;
       } catch (err) {

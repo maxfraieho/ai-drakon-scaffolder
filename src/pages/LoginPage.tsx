@@ -139,13 +139,22 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const withTimeout = async <T,>(promise: Promise<T>, ms = 15000): Promise<T> => {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error("Сервер авторизації не відповідає. Спробуйте ще раз.")), ms)
+      ),
+    ]);
+  };
+
   const handleGithubLogin = () => {
     // 4th arg = OAuth scopes. Default GitHub OAuth only grants user:email, which
     // cannot list private repos. Request `repo` so providerAccessToken can read
     // the user's repositories in the "Add repository" dialog.
     account.createOAuth2Token(
       OAuthProvider.Github,
-      window.location.origin + "/",
+      window.location.origin + "/diagrams",
       window.location.origin + "/login",
       ["user:email", "repo", "read:org"]
     );
@@ -157,8 +166,8 @@ export function LoginPage() {
     setErrorMsg(null);
     try {
       await account.create(ID.unique(), username, password, name || undefined);
-      await appwriteLogin(username, password);
-      navigate({ to: "/", replace: true });
+      await withTimeout(appwriteLogin(username, password));
+      navigate({ to: "/diagrams", replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Помилка реєстрації");
       setPassword("");
@@ -175,7 +184,7 @@ export function LoginPage() {
     // Direct Bearer token login bypass
     if (password === "drakon-mcp-2026" || username === "token") {
       setAccessToken(password || username);
-      navigate({ to: "/", replace: true });
+      navigate({ to: "/diagrams", replace: true });
       setIsSubmitting(false);
       return;
     }
@@ -183,15 +192,15 @@ export function LoginPage() {
     // Owner credential bypass mapped to the static bypass token
     if (username === "owner" && (password === "805235io" || password === "805235io.")) {
       setAccessToken("drakon-mcp-2026");
-      navigate({ to: "/", replace: true });
+      navigate({ to: "/diagrams", replace: true });
       setIsSubmitting(false);
       return;
     }
 
     if (username.includes("@")) {
       try {
-        await appwriteLogin(username, password);
-        navigate({ to: "/", replace: true });
+        await withTimeout(appwriteLogin(username, password));
+        navigate({ to: "/diagrams", replace: true });
         return;
       } catch (err) {
         setErrorMsg(err instanceof Error ? err.message : "Невірний логін або пароль");
@@ -215,7 +224,7 @@ export function LoginPage() {
         throw new Error(((data as { error?: string }).error) || "Невірний логін або пароль");
       }
       setAccessToken(token);
-      navigate({ to: "/", replace: true });
+      navigate({ to: "/diagrams", replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Невірний логін або пароль");
       setPassword("");
