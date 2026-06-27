@@ -1,5 +1,6 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 import { hasClientJwt } from "@/lib/route-auth";
 import { LoginPage } from "@/pages/LoginPage";
@@ -13,11 +14,19 @@ function LoginRoute() {
   const [hydrated, setHydrated] = useState(false);
   const { isAuthenticated, isLoading } = useAuth();
   useEffect(() => setHydrated(true), []);
-  if (!hydrated || isLoading) return null;
+
+  // Show spinner while auth is loading to prevent flash of empty page
+  if (!hydrated || isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-950">
+        <Loader2 className="h-8 w-8 animate-spin text-teal-400" />
+      </div>
+    );
+  }
+
   if (isAuthenticated || hasClientJwt()) {
     return <Navigate to="/diagrams" replace />;
   }
 
   return <LoginPage />;
 }
-
