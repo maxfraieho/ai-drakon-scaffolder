@@ -139,6 +139,15 @@ export function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const withTimeout = async <T,>(promise: Promise<T>, ms = 15000): Promise<T> => {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error("Сервер авторизації не відповідає. Спробуйте ще раз.")), ms)
+      ),
+    ]);
+  };
+
   const handleGithubLogin = () => {
     // 4th arg = OAuth scopes. Default GitHub OAuth only grants user:email, which
     // cannot list private repos. Request `repo` so providerAccessToken can read
@@ -157,7 +166,7 @@ export function LoginPage() {
     setErrorMsg(null);
     try {
       await account.create(ID.unique(), username, password, name || undefined);
-      await appwriteLogin(username, password);
+      await withTimeout(appwriteLogin(username, password));
       navigate({ to: "/diagrams", replace: true });
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : "Помилка реєстрації");
@@ -190,7 +199,7 @@ export function LoginPage() {
 
     if (username.includes("@")) {
       try {
-        await appwriteLogin(username, password);
+        await withTimeout(appwriteLogin(username, password));
         navigate({ to: "/diagrams", replace: true });
         return;
       } catch (err) {
