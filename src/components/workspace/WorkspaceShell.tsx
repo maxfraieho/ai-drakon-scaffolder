@@ -80,17 +80,12 @@ type NavItem = {
 };
 
 const NAV_WORKSPACE: NavItem[] = [
-  { to: "/pipelines", label: "Pipeline", icon: Workflow },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
   { to: "/docs", label: "Документація", icon: FileText },
   { to: "/code", label: "Код", icon: FileCode },
   { to: "/architect", label: "Architect", icon: Layers },
   { to: "/github", label: "GitHub", icon: GitBranch },
-  { to: "/knowledge", label: "Знання", icon: Brain }, // Added Knowledge item
   { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },
-  { to: "/observability", label: "Observability", icon: Activity },
-  { to: "/sync", label: "Sync", icon: Loader2 },
-  { to: "/workspace", label: "Workspace", icon: Layers },
   { to: "/codegen", label: "Codegen", icon: Code2 },
 ];
 
@@ -381,7 +376,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
         </Sheet>
 
         <Link
-          to="/pipelines"
+          to="/diagrams"
           className="flex items-center gap-2 font-semibold text-[13px] text-[var(--text-primary)] tracking-wide"
         >
           <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
@@ -730,3 +725,4 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     </div>
   );
 }
+
