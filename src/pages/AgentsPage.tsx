@@ -30,46 +30,85 @@ function studioPath(slug: string, agentName: string) {
 }
 
 export function AgentsPage() {
-  const { slug } = useParams({ from: "/p/$slug/agents" });
+  const { slug } = useParams({ strict: false }) as { slug?: string };
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   const [wizardOpen, setWizardOpen] = useState(false);
 
+  // Fetch all projects to list agents globally if no slug is provided
+  const { data: projectsData } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => api.listProjects(),
+    enabled: !slug,
+  });
+
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ["drakon-ir", "list", slug],
-    queryFn: () => api.listDrakonIr(slug),
+    queryKey: ["drakon-ir", "list", slug || "global", projectsData],
+    queryFn: async () => {
+      if (slug) {
+        const res = await api.listDrakonIr(slug);
+        return {
+          success: true,
+          agents: (res.diagrams || []).map((name) => ({ name, slug })),
+        };
+      } else {
+        const projects = (projectsData as any)?.projects || [];
+        const allAgents: Array<{ name: string; slug: string }> = [];
+
+        await Promise.all(
+          projects.map(async (p: any) => {
+            try {
+              const res = await api.listDrakonIr(p.slug);
+              if (res.success && Array.isArray(res.diagrams)) {
+                res.diagrams.forEach((name) => {
+                  allAgents.push({ name, slug: p.slug });
+                });
+              }
+            } catch (e) {
+              console.warn(`Failed to load agents for project ${p.slug}:`, e);
+            }
+          })
+        );
+
+        return {
+          success: true,
+          agents: allAgents,
+        };
+      }
+    },
+    enabled: !!slug || !!projectsData,
   });
 
   const agents = useMemo(() => {
-    if (!data?.success || !Array.isArray(data.diagrams)) return [];
-    return data.diagrams;
+    if (!data?.success || !Array.isArray(data.agents)) return [];
+    return data.agents;
   }, [data]);
 
   const deleteMutation = useMutation({
-    mutationFn: async (agentName: string) => {
-      const response = await api.deleteDiagram(slug, agentName);
+    mutationFn: async (payload: { slug: string; name: string }) => {
+      const response = await api.deleteDiagram(payload.slug, payload.name);
       if (!response?.success) {
         throw new Error(response?.message || response?.error || "Failed to delete agent");
       }
-      return agentName;
+      return payload;
     },
-    onSuccess: (agentName) => {
-      toast.success(`Deleted ${agentName}`);
-      void queryClient.invalidateQueries({ queryKey: ["drakon-ir", "list", slug] });
+    onSuccess: (payload) => {
+      toast.success(`Deleted ${payload.name}`);
+      void queryClient.invalidateQueries({ queryKey: ["drakon-ir", "list"] });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to delete agent");
     },
   });
 
-  const handleOpenStudio = (agentName: string) => {
-    navigate({ to: studioPath(slug, agentName) as never });
+  const handleOpenStudio = (agentSlug: string, agentName: string) => {
+    navigate({ to: studioPath(agentSlug, agentName) as never });
   };
 
-  const handleDelete = (agentName: string) => {
-    if (!window.confirm(`Delete agent \"${agentName}\"?`)) return;
-    void deleteMutation.mutateAsync(agentName);
+  const handleDelete = (agentSlug: string, agentName: string) => {
+    if (!window.confirm(`Delete agent "${agentName}"?`)) return;
+    void deleteMutation.mutateAsync({ slug: agentSlug, name: agentName });
   };
 
   return (
@@ -80,20 +119,26 @@ export function AgentsPage() {
       <div className="relative z-10 space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-[Outfit] text-3xl text-slate-100">Project Agents</h1>
+            <h1 className="font-[Outfit] text-3xl text-slate-100">
+              {slug ? "Project Agents" : "All Platform Agents"}
+            </h1>
             <p className="mt-1 text-sm text-slate-300">
-              Manage agent definitions, prompts, and execution settings.
+              {slug 
+                ? "Manage agent definitions, prompts, and execution settings." 
+                : "Overview of all agents across all registered projects."}
             </p>
           </div>
 
-          <Button
-            id="new-agent-btn"
-            className="bg-indigo-600 text-white shadow-[0_0_30px_rgba(99,102,241,0.45)] hover:bg-indigo-500"
-            onClick={() => setWizardOpen(true)}
-          >
-            <Plus className="h-4 w-4" />
-            New Agent
-          </Button>
+          {slug && (
+            <Button
+              id="new-agent-btn"
+              className="bg-indigo-600 text-white shadow-[0_0_30px_rgba(99,102,241,0.45)] hover:bg-indigo-500"
+              onClick={() => setWizardOpen(true)}
+            >
+              <Plus className="h-4 w-4" />
+              New Agent
+            </Button>
+          )}
         </header>
 
         {isLoading ? (
@@ -119,30 +164,36 @@ export function AgentsPage() {
             <div className="mb-4 rounded-full bg-indigo-500/15 p-5 shadow-[0_0_60px_rgba(99,102,241,0.45)]">
               <Bot className="h-10 w-10 text-indigo-200" />
             </div>
-            <h2 className="font-[Outfit] text-2xl text-slate-100">No agents created yet</h2>
+            <h2 className="font-[Outfit] text-2xl text-slate-100">
+              {slug ? "No agents created yet" : "No agents found on the platform"}
+            </h2>
             <p className="mt-2 max-w-md text-sm text-slate-300">
-              Generate your first DRAKON-powered agent and start building AI execution flows.
+              {slug
+                ? "Generate your first DRAKON-powered agent and start building AI execution flows."
+                : "No active agents found in any of the registered projects."}
             </p>
-            <Button
-              className="mt-6 bg-indigo-600 text-white hover:bg-indigo-500"
-              onClick={() => setWizardOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              New Agent
-            </Button>
+            {slug && (
+              <Button
+                className="mt-6 bg-indigo-600 text-white hover:bg-indigo-500"
+                onClick={() => setWizardOpen(true)}
+              >
+                <Plus className="h-4 w-4" />
+                New Agent
+              </Button>
+            )}
           </div>
         ) : null}
 
         {!isLoading && !isError && agents.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {agents.map((agentName, index) => {
-              const status = statusMeta[inferStatus(agentName, index)];
+            {agents.map((agent, index) => {
+              const status = statusMeta[inferStatus(agent.name, index)];
 
               return (
                 <Card
-                  key={agentName}
+                  key={`${agent.slug}:${agent.name}`}
                   className="group relative cursor-pointer overflow-hidden border-white/10 bg-slate-900/40 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-slate-900/60"
-                  onClick={() => handleOpenStudio(agentName)}
+                  onClick={() => handleOpenStudio(agent.slug, agent.name)}
                 >
                   <CardHeader className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
@@ -150,7 +201,12 @@ export function AgentsPage() {
                         <div className="rounded-md border border-white/15 bg-black/20 p-2">
                           <Bot className="h-4 w-4 text-indigo-200" />
                         </div>
-                        <h3 className="truncate font-medium text-slate-100">{agentName}</h3>
+                        <div>
+                          <h3 className="truncate font-medium text-slate-100">{agent.name}</h3>
+                          {!slug && (
+                            <p className="text-xs text-slate-400 font-mono mt-0.5">Project: {agent.slug}</p>
+                          )}
+                        </div>
                       </div>
                       <Badge className={status.className}>{status.label}</Badge>
                     </div>
@@ -164,7 +220,7 @@ export function AgentsPage() {
                         className="pointer-events-auto bg-indigo-600 text-white hover:bg-indigo-500"
                         onClick={(event) => {
                           event.stopPropagation();
-                          handleOpenStudio(agentName);
+                          handleOpenStudio(agent.slug, agent.name);
                         }}
                       >
                         Open in Studio
@@ -175,7 +231,7 @@ export function AgentsPage() {
                         className="pointer-events-auto border-white/20 bg-transparent text-slate-100 hover:bg-white/10"
                         onClick={(event) => {
                           event.stopPropagation();
-                          handleDelete(agentName);
+                          handleDelete(agent.slug, agent.name);
                         }}
                         disabled={deleteMutation.isPending}
                       >
@@ -188,9 +244,9 @@ export function AgentsPage() {
                         className="pointer-events-auto ml-auto text-slate-300 hover:text-white"
                         onClick={(event) => {
                           event.stopPropagation();
-                          handleOpenStudio(agentName);
+                          handleOpenStudio(agent.slug, agent.name);
                         }}
-                        aria-label={`Open settings for ${agentName}`}
+                        aria-label={`Open settings for ${agent.name}`}
                       >
                         <Settings className="h-4 w-4" />
                       </Button>
@@ -203,14 +259,16 @@ export function AgentsPage() {
         ) : null}
       </div>
 
-      <NewAgentWizard
-        slug={slug}
-        open={wizardOpen}
-        onOpenChange={setWizardOpen}
-        onSaved={() => {
-          void queryClient.invalidateQueries({ queryKey: ["drakon-ir", "list", slug] });
-        }}
-      />
+      {slug && (
+        <NewAgentWizard
+          slug={slug}
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          onSaved={() => {
+            void queryClient.invalidateQueries({ queryKey: ["drakon-ir", "list", slug] });
+          }}
+        />
+      )}
     </section>
   );
 }
