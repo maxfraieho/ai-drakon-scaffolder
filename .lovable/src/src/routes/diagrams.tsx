@@ -19,23 +19,25 @@ function DiagramsRoute() {
 
   useEffect(() => {
     if (!handlingOAuth) return;
+
     const params = new URLSearchParams(window.location.search);
     const userId = params.get("userId");
     const secret = params.get("secret");
-    if (!userId || !secret) { setHandlingOAuth(false); return; }
+    if (!userId || !secret) {
+      setHandlingOAuth(false);
+      return;
+    }
 
     account
       .createSession(userId, secret)
       .then(async (session) => {
-        // GitHub OAuth login — save provider token so repos load without PAT
         if (session.provider === "github" && session.providerAccessToken) {
           const token = session.providerAccessToken;
-          // 1. Save locally (single-device, immediate use)
           try {
             const s = readSettings();
             writeSettings({ ...s, github: { ...s.github, token } });
-          } catch (_) {}
-          // 2. Persist to Appwrite user_profiles for cross-device sync
+          } catch {}
+
           try {
             const ghResp = await fetch("https://api.github.com/user", {
               headers: {
@@ -52,18 +54,20 @@ function DiagramsRoute() {
                 await databases.updateDocument("ai-drakon", "user_profiles", userId, profileData);
               } catch {}
             }
-          } catch (_) {}
+          } catch {}
         }
+
         try {
           const jwtObj = await account.createJWT();
           setAccessToken(jwtObj.jwt);
-        } catch (_) {}
+        } catch {}
+
         window.location.replace("/diagrams");
       })
       .catch(() => {
         window.location.replace("/login");
       });
-  }, []);
+  }, [handlingOAuth]);
 
   const { loading, allowed } = useRequireAuth();
   if (handlingOAuth || loading) return null;
