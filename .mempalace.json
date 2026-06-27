@@ -1,6 +1,6 @@
 {
   "wing": "ai-drakon",
-  "index": ["src/**/*.{ts,tsx}", "services/**/*.py", "docs/**/*.md", "development/TASKS.md", "development/SYNC_METHODOLOGY.md", "HANDOFF.md", "package.json"],
+  "index": ["src/**/*.{ts,tsx}", "services/**/*.py", "docs/**/*.md", "development/TASKS.md", "development/SYNC_METHODOLOGY.md", "HANDOFF.md", "package.json", "MASTER-CONTEXT.md"],
   "exclude": [".env*", "node_modules/", "*.lock", "dist/", ".lovable/"],
   "chunk_by": "function"
 }
