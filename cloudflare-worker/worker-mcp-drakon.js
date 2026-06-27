@@ -2616,11 +2616,11 @@ export default {
         return fetch(proxied);
       }
 
-      // ─── Architect-agent projects proxy (/v1/projects/* → architect-agent) ───
+      // ─── Docs-agent projects proxy (/v1/projects/* → docs-agent) ───
       if (path.startsWith('/v1/projects')) {
-        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+        const docsUrl = env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev';
         const agentPath = path.slice(3); // strip /v1
-        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const targetUrl = docsUrl + agentPath + (url.search || '');
         const proxied = new Request(targetUrl, {
           method: request.method,
           headers: request.headers,
