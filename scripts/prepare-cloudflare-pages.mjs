@@ -2,8 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
-const sourceDir = path.join(root, ".lovable", "dist", "client");
 const targetDir = path.join(root, "dist");
+
+const sourceCandidates = [
+  path.join(root, ".lovable", "dist", "client"),
+  path.join(root, "dist", "client"),
+];
+
+const sourceDir = sourceCandidates.find((candidate) => fs.existsSync(candidate));
 
 function copyRecursive(source, target) {
   fs.mkdirSync(target, { recursive: true });
@@ -20,11 +26,19 @@ function copyRecursive(source, target) {
   }
 }
 
-if (!fs.existsSync(sourceDir)) {
-  throw new Error(`Build output not found: ${sourceDir}`);
+if (!sourceDir) {
+  throw new Error(
+    `Build output not found. Checked: ${sourceCandidates.join(", ")}`
+  );
 }
 
-fs.rmSync(targetDir, { recursive: true, force: true });
+const sourceInsideTarget = sourceDir.startsWith(`${targetDir}${path.sep}`);
+
+// Якщо source знаходиться всередині dist (наприклад dist/client), не чистимо весь dist.
+if (!sourceInsideTarget) {
+  fs.rmSync(targetDir, { recursive: true, force: true });
+}
+
 copyRecursive(sourceDir, targetDir);
 
 console.log(`Prepared Cloudflare Pages assets at ${targetDir}`);
