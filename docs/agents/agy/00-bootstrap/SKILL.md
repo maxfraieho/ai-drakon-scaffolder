@@ -2,4 +2,4 @@
 
 ## Семантичні зв'язки
 
-- describes: [[AGENTS|AGENTS]]
+- describes: [[AGENTS|AI-DRAKON Platform — Agent & Developer Guide]]
