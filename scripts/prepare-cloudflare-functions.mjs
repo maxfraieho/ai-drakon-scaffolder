@@ -2,11 +2,19 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
-const serverDir = path.join(root, ".lovable", "dist", "server");
 const distDir = path.join(root, "dist");
 
-if (!fs.existsSync(serverDir)) {
-  throw new Error(`Server build output not found: ${serverDir}`);
+const serverCandidates = [
+  path.join(root, ".lovable", "dist", "server"),
+  path.join(root, "dist", "server"),
+];
+
+const serverDir = serverCandidates.find((candidate) => fs.existsSync(candidate));
+
+if (!serverDir) {
+  throw new Error(
+    `Server build output not found. Checked: ${serverCandidates.join(", ")}`
+  );
 }
 
 // Видаляємо functions/ — НЕ використовуємо!
@@ -15,8 +23,12 @@ fs.rmSync(path.join(root, "functions"), { recursive: true, force: true });
 // ТанStack Start/Nitro (vite 7) генерує server bundle як index.mjs + _libs/_ssr/_chunks.
 // Копіюємо весь server bundle в dist/server, щоб _worker.js міг імпортувати entry напряму.
 const targetServerDir = path.join(distDir, "server");
-fs.rmSync(targetServerDir, { recursive: true, force: true });
-fs.cpSync(serverDir, targetServerDir, { recursive: true });
+const sourceInsideTarget = serverDir.startsWith(`${targetServerDir}${path.sep}`);
+
+if (!sourceInsideTarget) {
+  fs.rmSync(targetServerDir, { recursive: true, force: true });
+  fs.cpSync(serverDir, targetServerDir, { recursive: true });
+}
 
 const serverEntryCandidates = ["index.mjs", "index.js", "server.mjs", "server.js"];
 const serverEntry = serverEntryCandidates.find((name) =>
