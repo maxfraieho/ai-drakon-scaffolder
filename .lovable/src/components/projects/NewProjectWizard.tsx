@@ -26,6 +26,8 @@ import { createGithubRepo } from "@/lib/github-api";
 import { getGithubConfig } from "@/lib/settings-storage";
 import { cn } from "@/lib/utils";
 import type { KnowledgeGraph } from "@/lib/understand/types";
+import { account } from "@/lib/appwrite";
+import { OAuthProvider } from "appwrite";
 
 const stepOneSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(50, "Name must be at most 50 characters"),
@@ -465,16 +467,26 @@ export function NewProjectWizard() {
               {autoCreateRepo && !githubConnected && (
                 <Alert className="border-amber-500/30 bg-amber-500/10 text-amber-200">
                   <Github className="h-4 w-4" />
-                  <AlertTitle>GitHub connection required</AlertTitle>
-                  <AlertDescription className="mt-1">
-                    Connect GitHub in Settings first to enable auto-creation.
+                  <AlertTitle>Потрібно підключити GitHub</AlertTitle>
+                  <AlertDescription className="mt-1 flex flex-col gap-2 items-start">
+                    <span>
+                      Для автоматичного створення репозиторію необхідно підключити ваш акаунт GitHub.
+                    </span>
                     <Button
                       type="button"
-                      variant="link"
-                      className="h-auto px-1 py-0 text-amber-300"
-                      onClick={() => navigate({ to: "/settings" })}
+                      size="sm"
+                      onClick={() => {
+                        account.createOAuth2Token(
+                          OAuthProvider.Github,
+                          window.location.href,
+                          window.location.href,
+                          ["user:email", "repo", "read:org"]
+                        );
+                      }}
+                      className="bg-amber-600 hover:bg-amber-500 text-black text-xs font-semibold h-8 gap-1.5 rounded-[var(--radius-sm)] border-0 mt-1"
                     >
-                      Open Settings
+                      <Github className="h-3.5 w-3.5" />
+                      Підключити GitHub в один клік
                     </Button>
                   </AlertDescription>
                 </Alert>

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Loader2, Plus, Trash2, Sparkles } from "lucide-react";
+import { Loader2, Plus, Trash2, Sparkles, Github } from "lucide-react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
+import { OAuthProvider } from "appwrite";
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
@@ -373,36 +374,77 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
             </div>
           )}
           {!searching && searchError === "__no_token__" && (
-            <div className="flex flex-col gap-3 p-4">
-              <p className="text-[11px] text-[var(--text-muted)] font-mono text-center">
-                Потрібен GitHub токен для доступу до репозиторіїв
-              </p>
-              <div className="flex gap-2">
-                <Input
-                  type="password"
-                  placeholder="ghp_xxxxxxxxxxxx"
-                  value={patInput}
-                  onChange={(e) => setPatInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && void savePatToken()}
-                  className="font-mono text-[11px] bg-[var(--bg-base)] border-[var(--border-subtle)] h-8"
-                />
+            <div className="flex flex-col gap-3.5 p-4 font-sans border-t border-[var(--border-subtle)] bg-[var(--bg-base)]">
+              <div className="flex flex-col items-center justify-center text-center gap-1">
+                <Github className="h-8 w-8 text-[var(--accent-amber)] mb-1" />
+                <p className="text-[12px] font-bold text-zinc-100 uppercase tracking-wide">
+                  Підключення GitHub
+                </p>
+                <p className="text-[10px] text-zinc-400 max-w-[280px]">
+                  Оберіть швидкий вхід без генерації токенів або введіть Personal Access Token вручну.
+                </p>
+              </div>
+
+              {/* Option 1: Single-click OAuth (Recommended) */}
+              <div className="rounded-lg border border-[var(--accent-amber)]/20 bg-[var(--accent-amber)]/5 p-3 flex flex-col gap-2">
+                <div className="flex items-start justify-between">
+                  <span className="text-[10px] font-bold text-[var(--accent-amber)] font-mono">ВАРІАНТ 1 (Швидкий)</span>
+                  <span className="text-[9px] px-1 bg-[var(--accent-amber)]/20 text-[var(--accent-amber)] rounded">Рекомендовано</span>
+                </div>
+                <p className="text-[9px] text-zinc-400">
+                  Пряма авторизація через GitHub OAuth для автоматичного доступу до ваших репозиторіїв.
+                </p>
                 <Button
                   size="sm"
-                  onClick={() => void savePatToken()}
-                  disabled={savingPat || !patInput.trim()}
-                  className="font-mono text-[10px] bg-[var(--accent-amber)] text-black h-8 shrink-0"
+                  type="button"
+                  onClick={() => {
+                    account.createOAuth2Token(
+                      OAuthProvider.Github,
+                      window.location.href, // Redirect back to this exact page
+                      window.location.href,
+                      ["user:email", "repo", "read:org"]
+                    );
+                  }}
+                  className="bg-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/80 text-black text-[10px] font-semibold h-8 mt-1 gap-1.5 w-full rounded-[var(--radius-sm)] border-0"
                 >
-                  {savingPat ? <Loader2 className="h-3 w-3 animate-spin" /> : "OK"}
+                  <Github className="h-3.5 w-3.5" />
+                  Авторизувати GitHub в один клік
                 </Button>
               </div>
-              <a
-                href="https://github.com/settings/tokens/new?scopes=repo&description=AI-DRAKON"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-mono text-[9px] text-[var(--accent-amber)] underline text-center hover:no-underline"
-              >
-                Створити токен на GitHub (scope: repo) →
-              </a>
+
+              {/* Option 2: Manual Personal Access Token */}
+              <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 flex flex-col gap-2">
+                <span className="text-[10px] font-bold text-zinc-400 font-mono">ВАРІАНТ 2 (Вручну)</span>
+                <p className="text-[9px] text-zinc-400">
+                  Введіть свій Personal Access Token (Classic) з доступом до репозиторіїв.
+                </p>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    type="password"
+                    placeholder="ghp_xxxxxxxxxxxx"
+                    value={patInput}
+                    onChange={(e) => setPatInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && void savePatToken()}
+                    className="font-mono text-[10px] bg-zinc-950 border-zinc-850 h-8 flex-1 focus-visible:ring-amber-500/20 text-zinc-200"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => void savePatToken()}
+                    disabled={savingPat || !patInput.trim()}
+                    className="font-mono text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-200 h-8 shrink-0 border border-zinc-700"
+                  >
+                    {savingPat ? <Loader2 className="h-3 w-3 animate-spin" /> : "OK"}
+                  </Button>
+                </div>
+                <a
+                  href="https://github.com/settings/tokens/new?scopes=repo&description=AI-DRAKON"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-[9px] text-[var(--accent-amber)] underline text-center hover:no-underline mt-1 block"
+                >
+                  Створити токен на GitHub (scope: repo) →
+                </a>
+              </div>
             </div>
           )}
           {!searching && searchError && searchError !== "__no_token__" && (
