@@ -1,6 +1,6 @@
 # 🎯 AI-DRAKON — Master Context
 
-Останнє оновлення: 2026-06-27 01:10 (EEST)
+Останнє оновлення: 2026-06-28 21:52 (EEST)
 
 ## 📦 Проект
 - **Що це:** Платформа для розробки ПЗ на основі візуальних схем ДРАКОН з інтеграцією ШІ-агентів. Користувач описує алгоритм природною мовою → LLM генерує ДРАКОН-схему (JSON) → схема редагується у графічному редакторі та компілюється в робочий код.
@@ -68,11 +68,11 @@
 ---
 
 ## 📊 Поточний статус
-- **Фаза:** Повне функціональне UI тестування успішно пройдено через CDP (Chromium) на laptop.
-- **Готовність:** ~95%. Інтеграція фронтенду, шлюзу на Cloudflare Workers, бази Appwrite Cloud та сервісів повністю завершена.
-- **Останній коміт:** `40ec9cfc - feat(github): add one-click GitHub link and OAuth button options in project wizard and repo selector (Sun Jun 28 17:52:00 2026 +0300)`.
+- **Фаза:** Усі інструменти та провідні сторінки (Workspace, Codegen, Notebooks/Knowledge Agents, DevCycle, Observability, Pipelines, Sync) повністю розблоковані, розгорнуті в хмарі та успішно перевірені.
+- **Готовність:** ~98%. Мережеві запити, аутентифікація через GitHub OAuth, бази даних Appwrite Cloud, логування та всі інтерактивні розділи інтерфейсу повністю працездатні.
+- **Останній коміт:** `400085a4 - feat(ui): add pipelines dashboard listing and creation inside pipelines page`.
 - **Активні гілки:** `main` (Up to date з origin).
-- **Тести:** Усі Vitest тести пройшли успішно. Повне UI тестування по всіх вкладках (Overview, Agents, Docs, Settings, New Project Wizard, Add Repo modal) пройшло без жодної CORS або мережевої помилки.
+- **Тести:** Повне UI-тестування за допомогою CDP на laptop пройшло успішно. Перевірено відтворення сторінки Workspace (без редиректів), інтерактивний чат Archivist AI, запуск сценаріїв Refactoring Flow в DevCycle, логування системи та редактор pipelines.
 
 
 ---
