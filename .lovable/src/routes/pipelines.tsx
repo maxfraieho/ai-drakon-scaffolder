@@ -1,7 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import PipelinesPage from "@/pages/PipelineEditorPage";
 
 export const Route = createFileRoute("/pipelines")({
-  beforeLoad: () => {
-    throw redirect({ to: "/" });
-  },
+  component: PipelinesPage,
 });
