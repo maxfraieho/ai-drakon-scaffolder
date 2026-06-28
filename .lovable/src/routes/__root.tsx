@@ -18,6 +18,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProjectProvider } from "@/context/ProjectContext";
 import { ThemeProvider } from "@/components/theme-provider";
+import { DevCycleProvider } from "@/context/DevCycleContext";
 
 function NotFoundComponent() {
 return (
@@ -157,9 +158,11 @@ function RootComponent() {
                   <Outlet />
                 </div>
               ) : (
-                <WorkspaceShell>
-                  <Outlet />
-                </WorkspaceShell>
+                <DevCycleProvider>
+                  <WorkspaceShell>
+                    <Outlet />
+                  </WorkspaceShell>
+                </DevCycleProvider>
               )}
               <Toaster position="top-center" richColors closeButton />
             </TooltipProvider>
