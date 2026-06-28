@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { AlertTriangle, Bot, Github, LogOut, Moon, Sun } from "lucide-react";
 import {
@@ -36,7 +36,7 @@ import { ProjectSidebar } from "@/components/layout/ProjectSidebar";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/components/theme-provider";
 import { clearAccessToken } from "@/lib/auth";
-import { getProject } from "@/lib/appwrite-projects";
+import { getProject, createProject } from "@/lib/appwrite-projects";
 import type { Project } from "@/lib/schemas/project";
 
 type ProjectLayoutContextValue = {
@@ -97,7 +97,31 @@ export function ProjectLayout({ slug, children }: { slug: string; children: Reac
     navigate({ to: "/login", replace: true });
   };
 
-  const { data: project, isLoading, isError } = useQuery({
+  const queryClient = useQueryClient();
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+
+  const handleCreateProject = async () => {
+    setIsCreating(true);
+    setCreateError(null);
+    try {
+      await createProject({
+        slug,
+        name: slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+        mode: "agent",
+        description: "Автоматично ініціалізований проект для роботи та тестування",
+        githubBranch: "main",
+        runtimeTarget: "flue",
+      });
+      queryClient.invalidateQueries({ queryKey: ["project", slug] });
+    } catch (err: any) {
+      setCreateError(err.message || "Помилка при створенні проекту");
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const { data: project, isLoading, isError, error } = useQuery({
     queryKey: ["project", slug],
     queryFn: () => getProject(slug),
     staleTime: 5 * 60 * 1000,
@@ -128,6 +152,50 @@ export function ProjectLayout({ slug, children }: { slug: string; children: Reac
   }
 
   if (isError || !project) {
+    const isProjectNotFound = error instanceof Error && error.message.includes("not found");
+
+    if (isProjectNotFound) {
+      return (
+        <div className="flex min-h-[calc(100vh-3rem)] items-center justify-center bg-slate-950 px-4 text-slate-100">
+          <Card className="w-full max-w-xl border-indigo-500/30 bg-slate-900/80 backdrop-blur-xl shadow-2xl">
+            <CardContent className="space-y-6 p-8 text-left">
+              <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+                <Bot className="h-6 w-6 text-indigo-400 shrink-0" />
+                <h2 className="font-[Outfit] text-2xl text-slate-100">Проект ще не створено</h2>
+              </div>
+              
+              <div className="space-y-4 text-sm text-slate-300">
+                <p>
+                  Проект з ідентифікатором <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono">{slug}</code> існує локально на dev-сервері, але ще не зареєстрований у вашій хмарній базі Appwrite.
+                </p>
+                <p>
+                  Ви можете ініціалізувати його в один клік прямо зараз. Це автоматично створить необхідні структури у хмарі.
+                </p>
+                {createError && (
+                  <p className="text-xs text-rose-400 bg-rose-500/10 p-2.5 rounded border border-rose-500/20 font-mono">
+                    Помилка: {createError}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-4 border-t border-white/5">
+                <Button 
+                  onClick={handleCreateProject} 
+                  disabled={isCreating}
+                  className="bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-50"
+                >
+                  {isCreating ? "Ініціалізація..." : "Ініціалізувати проект у хмарі"}
+                </Button>
+                <Button onClick={() => navigate({ to: "/" })} variant="outline" className="border-white/15 bg-transparent text-slate-200 hover:bg-white/5">
+                  На головну
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
     return (
       <div className="flex min-h-[calc(100vh-3rem)] items-center justify-center bg-slate-950 px-4 text-slate-100">
         <Card className="w-full max-w-xl border-rose-500/30 bg-slate-900/80 backdrop-blur-xl shadow-2xl">
