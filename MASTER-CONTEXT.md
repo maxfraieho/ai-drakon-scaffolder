@@ -68,11 +68,12 @@
 ---
 
 ## 📊 Поточний статус
-- **Фаза:** Ручне тестування інтерфейсу (сценарії готові).
-- **Готовність:** ~85%. Основні сторінки та логіка (Overview, Agents, PlayPipe, Automations, Docs, Settings) інтегровані. Усі FastAPI мікросервіси перенесені в Appwrite Functions.
-- **Останній коміт:** `26c36fcc - docs: mark TASK-DRK-21 as complete (Fri Jun 26 21:50:29 2026 +0300)`.
+- **Фаза:** Повне функціональне UI тестування успішно пройдено через CDP (Chromium) на laptop.
+- **Готовність:** ~92%. Інтеграція фронтенду, шлюзу на Cloudflare Workers та сервісів повністю завершена.
+- **Останній коміт:** `7c0b378f - fix(worker, frontend): add Appwrite DB fallback IDs and Cloudflare Service Bindings for internal agent calls (Sun Jun 28 17:00:00 2026 +0300)`.
 - **Активні гілки:** `main` (Up to date з origin).
-- **Тести:** **38 Vitest тестів** пройшли на 100% успішно (green).
+- **Тести:** Усі Vitest тести пройшли успішно. Повне UI тестування по всіх вкладках (Overview, Agents, Docs, Settings, New Project Wizard) пройшло без жодної CORS або мережевої помилки.
+
 
 ---
 
