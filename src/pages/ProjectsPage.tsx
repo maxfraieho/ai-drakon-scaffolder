@@ -54,6 +54,7 @@ export function ProjectsPage() {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["projects", "list"],
     queryFn: () => api.listProjects(),
+    retry: false,
   });
 
   const projects = useMemo(() => {

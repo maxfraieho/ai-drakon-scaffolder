@@ -41,6 +41,7 @@ export function AgentsPage() {
     queryKey: ["projects"],
     queryFn: () => api.listProjects(),
     enabled: !slug,
+    retry: false,
   });
 
   const { data, isLoading, isError, error } = useQuery({

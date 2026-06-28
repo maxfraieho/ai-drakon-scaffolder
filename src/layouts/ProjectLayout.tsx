@@ -101,6 +101,7 @@ export function ProjectLayout({ slug, children }: { slug: string; children: Reac
     queryKey: ["project", slug],
     queryFn: () => getProject(slug),
     staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
   const sectionKey = location.pathname.split("/").filter(Boolean).at(-1) ?? "overview";
