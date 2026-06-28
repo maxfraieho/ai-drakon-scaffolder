@@ -23,7 +23,9 @@ fs.rmSync(path.join(root, "functions"), { recursive: true, force: true });
 // ТанStack Start/Nitro (vite 7) генерує server bundle як index.mjs + _libs/_ssr/_chunks.
 // Копіюємо весь server bundle в dist/server, щоб _worker.js міг імпортувати entry напряму.
 const targetServerDir = path.join(distDir, "server");
-const sourceInsideTarget = serverDir.startsWith(`${targetServerDir}${path.sep}`);
+const sourceInsideTarget =
+  serverDir === targetServerDir ||
+  serverDir.startsWith(`${targetServerDir}${path.sep}`);
 
 if (!sourceInsideTarget) {
   fs.rmSync(targetServerDir, { recursive: true, force: true });
