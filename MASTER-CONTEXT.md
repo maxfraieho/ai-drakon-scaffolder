@@ -32,7 +32,7 @@
 > **Поточний режим розробки (червень 2026):**
 > Розробка ведеться виключно на трьох вузлах:
 > 1. **AGY2** (Windows 11 Laptop, `192.168.3.30`) — кодування через GitHub MCP, ручне та браузерне тестування.
-> 2. **rpi3b** (Raspberry Pi 3B Dev Server, `192.168.3.184`) — хостинг GitNexus, сервісів та бази даних.
+> 2. **rpi3b** (Raspberry Pi 3B Dev Server, `192.168.3.184`) — хостинг GitNexus та локальних допоміжних інструментів.
 > 3. **OrangePi PC2** (local session node, `192.168.3.161`) — локальна сесія та оркестрація.
 >
 > Процес координується силами **двох різних акаунтів AGY** (з різними конфігураціями Git та токенами авторизації).
@@ -54,9 +54,8 @@
 
 ### 🛠️ Можливості вузла rpi3b (dev-сервер, Copilot):
 - **Служби та Бази Даних:** Хостинг векторної БД MemPalace (ChromaDB) та графової Code Intelligence бази GitNexus.
-- **Microservices Runtime:** Запуск FastAPI мікросервісів (`drakon-agent` :8765, `architect-agent` :8766, `drakon-codegen` :8767).
 - **CI/CD та Git:** Локальна Git-інфраструктура, запуск Docker-контейнерів, виконання фонових скриптів верифікації та тестування.
-- **ШІ-сервіси:** Локальні Appwrite Functions з інтеграцією LLM.
+- **ШІ-сервіси:** Усі інтелектуальні агенти (Architect-agent, Docs-agent, Drakon-agent, Drakon-codegen, Drakon-compiler) повністю мігровано на Appwrite Cloud Functions (у хмарі), що усуває потребу в локальному FastAPI середовищі на rpi3b.
 
 ### 🔌 Доступні MCP-сервери (Model Context Protocol):
 - **GitNexus MCP (`gitnexus`):** Повний аналіз зв'язків у коді, визначення blast radius змін (`impact`), семантичний пошук та виявлення регресій (`detect_changes`).
