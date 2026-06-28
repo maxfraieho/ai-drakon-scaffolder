@@ -1,8 +1,7 @@
 /**
  * graph-pipeline-api.ts
- * Client for /graph-pipelines REST + SSE API on architect-agent (port 8766).
- * URL resolution mirrors agent-api.ts: reads drakon_agent_base_url from localStorage,
- * falls back to http://192.168.3.184, then appends architect port 8766.
+ * Client for /graph-pipelines REST + SSE API on architect-agent.
+ * URL resolution mirrors agent-api.ts: reads settings.agents.architectUrl.
  */
 
 import type { IrDiagram } from "@/lib/htse/ir-types";

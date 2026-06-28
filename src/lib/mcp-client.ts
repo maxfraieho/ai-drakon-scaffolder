@@ -1,7 +1,7 @@
 import { readSettings } from "@/lib/settings-storage";
 
 export const AGENT_BASE_URL_STORAGE_KEY = "drakon_agent_base_url";
-export const DEFAULT_AGENT_BASE_URL = "http://192.168.3.184";
+export const DEFAULT_AGENT_BASE_URL = "https://aidrakon.tech";
 
 export type AgentKind = "drakon" | "architect" | "docs";
 

@@ -1,7 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { CodegenPage } from "@/pages/CodegenPage";
 
 export const Route = createFileRoute("/codegen")({
-  beforeLoad: () => {
-    throw redirect({ to: "/" });
-  },
+  component: CodegenPage,
 });

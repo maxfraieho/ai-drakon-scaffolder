@@ -1,15 +1,23 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-Bot,
-FileText,
-Github,
-LayoutGrid,
-LogOut,
-Menu,
-Moon,
-Settings as SettingsIcon,
-Sun,
+  Bot,
+  FileText,
+  Github,
+  LayoutGrid,
+  LogOut,
+  Menu,
+  Moon,
+  Settings as SettingsIcon,
+  Sun,
+  FileCode,
+  ChevronDown,
+  Sliders,
+  Brain,
+  BookOpen,
+  Terminal,
+  Activity,
+  Wand2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,16 +42,16 @@ import { clearAccessToken } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
 
 type NavItem = {
-to: "/diagrams" | "/github" | "/docs" | "/settings";
-label: string;
-icon: React.ComponentType<{ className?: string }>;
+  to: "/diagrams" | "/workspace" | "/docs" | "/settings";
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
 };
 
 const NAV: NavItem[] = [
-{ to: "/diagrams", label: "Схеми", icon: LayoutGrid },
-{ to: "/github", label: "Git", icon: Github },
-{ to: "/docs", label: "Документація", icon: FileText },
-{ to: "/settings", label: "Налаштування", icon: SettingsIcon },
+  { to: "/diagrams", label: "Схеми", icon: LayoutGrid },
+  { to: "/workspace", label: "Код & Знання", icon: FileCode },
+  { to: "/docs", label: "Документація", icon: FileText },
+  { to: "/settings", label: "Налаштування", icon: SettingsIcon },
 ];
 
 
@@ -179,6 +187,95 @@ active
 </Link>
 );
 })}
+
+<DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button
+      variant="ghost"
+      size="sm"
+      className="h-8 gap-1.5 px-3 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-elevated)] rounded-[var(--radius-sm)] ml-1 border border-white/5 bg-white/5"
+    >
+      <span>Інструменти</span>
+      <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent align="start" className="w-80 p-2 bg-[#09090b] border-white/10 shadow-2xl">
+    <div className="grid grid-cols-2 gap-1.5">
+      <Link
+        to="/codegen"
+        className="flex flex-col gap-1 rounded-md p-2 hover:bg-white/5 transition-all text-left"
+      >
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-100">
+          <Wand2 className="h-3.5 w-3.5 text-amber-500" />
+          Кодогенерація
+        </span>
+        <span className="text-[10px] text-zinc-400 leading-tight">
+          Генерація ДРАКОН-коду з опису ШІ.
+        </span>
+      </Link>
+      <Link
+        to="/knowledge"
+        className="flex flex-col gap-1 rounded-md p-2 hover:bg-white/5 transition-all text-left"
+      >
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-100">
+          <Brain className="h-3.5 w-3.5 text-teal-400" />
+          Бази знань
+        </span>
+        <span className="text-[10px] text-zinc-400 leading-tight">
+          Зони знань Garden Bloom.
+        </span>
+      </Link>
+      <Link
+        to="/notebooks"
+        className="flex flex-col gap-1 rounded-md p-2 hover:bg-white/5 transition-all text-left"
+      >
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-100">
+          <BookOpen className="h-3.5 w-3.5 text-blue-400" />
+          NotebookLM
+        </span>
+        <span className="text-[10px] text-zinc-400 leading-tight">
+          Archivist AI чат з джерелами.
+        </span>
+      </Link>
+      <Link
+        to="/devcycle"
+        className="flex flex-col gap-1 rounded-md p-2 hover:bg-white/5 transition-all text-left"
+      >
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-100">
+          <Terminal className="h-3.5 w-3.5 text-indigo-400" />
+          DevCycle
+        </span>
+        <span className="text-[10px] text-zinc-400 leading-tight">
+          Панель виконання завдань розробки.
+        </span>
+      </Link>
+      <Link
+        to="/observability"
+        className="flex flex-col gap-1 rounded-md p-2 hover:bg-white/5 transition-all text-left"
+      >
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-100">
+          <Activity className="h-3.5 w-3.5 text-emerald-400" />
+          Моніторинг
+        </span>
+        <span className="text-[10px] text-zinc-400 leading-tight">
+          Логи системи та активність.
+        </span>
+      </Link>
+      <Link
+        to="/pipelines"
+        className="flex flex-col gap-1 rounded-md p-2 hover:bg-white/5 transition-all text-left"
+      >
+        <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-100">
+          <Sliders className="h-3.5 w-3.5 text-rose-400" />
+          Пайплайни
+        </span>
+        <span className="text-[10px] text-zinc-400 leading-tight">
+          Редактор граф-пайплайнів.
+        </span>
+      </Link>
+    </div>
+  </DropdownMenuContent>
+</DropdownMenu>
 </nav>
 
 <div className="ml-auto flex items-center gap-1">
