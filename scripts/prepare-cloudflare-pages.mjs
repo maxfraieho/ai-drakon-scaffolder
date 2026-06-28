@@ -7,9 +7,18 @@ const targetDir = path.join(root, "dist");
 const sourceCandidates = [
   path.join(root, ".lovable", "dist", "client"),
   path.join(root, "dist", "client"),
+  path.join(root, ".lovable", "dist"),
+  path.join(root, "dist"),
 ];
 
-const sourceDir = sourceCandidates.find((candidate) => fs.existsSync(candidate));
+const sourceDir = sourceCandidates.find((candidate) => {
+  if (!fs.existsSync(candidate)) return false;
+  if (candidate.endsWith("dist")) {
+    // If it's a direct dist folder, only use it if it contains assets or a worker file/folder
+    return fs.existsSync(path.join(candidate, "assets")) || fs.existsSync(path.join(candidate, "_worker.js"));
+  }
+  return true;
+});
 
 function copyRecursive(source, target) {
   fs.mkdirSync(target, { recursive: true });
@@ -30,6 +39,11 @@ if (!sourceDir) {
   throw new Error(
     `Build output not found. Checked: ${sourceCandidates.join(", ")}`
   );
+}
+
+if (sourceDir === targetDir) {
+  console.log(`Source directory is already the target directory (${targetDir}). Skipping copy.`);
+  process.exit(0);
 }
 
 const sourceInsideTarget = sourceDir.startsWith(`${targetDir}${path.sep}`);
