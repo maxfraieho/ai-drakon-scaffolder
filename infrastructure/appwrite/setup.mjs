@@ -97,4 +97,18 @@ await createCollection("billing_profiles", "Billing Profiles", false, [
   dt("updatedAt", false),
 ]);
 
+// projects: document-level security enabled
+await createCollection("projects", "Projects", true, [
+  str("slug", 100),
+  str("name", 200),
+  en("mode", ["agent", "playpipe", "n8n"]),
+  str("description", 1000, false),
+  str("githubOwner", 100, false),
+  str("githubRepo", 100, false),
+  str("githubBranch", 50, false),
+  en("runtimeTarget", ["flue", "eve"]),
+  dt("createdAt"),
+  dt("updatedAt"),
+]);
+
 console.log("✅ Міграцію Appwrite завершено");
