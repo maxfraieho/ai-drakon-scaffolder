@@ -69,10 +69,10 @@
 
 ## 📊 Поточний статус
 - **Фаза:** Повне функціональне UI тестування успішно пройдено через CDP (Chromium) на laptop.
-- **Готовність:** ~92%. Інтеграція фронтенду, шлюзу на Cloudflare Workers та сервісів повністю завершена.
-- **Останній коміт:** `7c0b378f - fix(worker, frontend): add Appwrite DB fallback IDs and Cloudflare Service Bindings for internal agent calls (Sun Jun 28 17:00:00 2026 +0300)`.
+- **Готовність:** ~95%. Інтеграція фронтенду, шлюзу на Cloudflare Workers, бази Appwrite Cloud та сервісів повністю завершена.
+- **Останній коміт:** `40ec9cfc - feat(github): add one-click GitHub link and OAuth button options in project wizard and repo selector (Sun Jun 28 17:52:00 2026 +0300)`.
 - **Активні гілки:** `main` (Up to date з origin).
-- **Тести:** Усі Vitest тести пройшли успішно. Повне UI тестування по всіх вкладках (Overview, Agents, Docs, Settings, New Project Wizard) пройшло без жодної CORS або мережевої помилки.
+- **Тести:** Усі Vitest тести пройшли успішно. Повне UI тестування по всіх вкладках (Overview, Agents, Docs, Settings, New Project Wizard, Add Repo modal) пройшло без жодної CORS або мережевої помилки.
 
 
 ---
