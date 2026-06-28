@@ -3,8 +3,8 @@ import { Query, ID } from "appwrite";
 import { ProjectSchema, CreateProjectInput } from "./schemas/project";
 import type { Project, CreateProjectInputType } from "./schemas/project";
 
-const DB_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID ?? "";
-const COLL_ID = import.meta.env.VITE_APPWRITE_PROJECTS_COLLECTION_ID ?? "";
+const DB_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || "ai-drakon";
+const COLL_ID = import.meta.env.VITE_APPWRITE_PROJECTS_COLLECTION_ID || "projects";
 
 export async function getProjects(): Promise<Project[]> {
   const res = await databases.listDocuments(DB_ID, COLL_ID, [
