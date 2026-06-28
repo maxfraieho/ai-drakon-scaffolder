@@ -79,17 +79,77 @@ export function ProjectsPage() {
   }
 
   if (isError) {
+    const errorMsg = error instanceof Error ? error.message : "Unknown error occurred";
+    const isNetworkOrCors = errorMsg.toLowerCase().includes("fetch") || 
+                            errorMsg.toLowerCase().includes("network") || 
+                            errorMsg.toLowerCase().includes("cors");
+
     return (
       <section className="relative min-h-[70vh] overflow-hidden p-6 md:p-10">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
-        <div className="relative z-10 mx-auto max-w-6xl pt-16">
-          <Alert variant="destructive" className="border-red-500/30 bg-red-500/10 text-red-100 backdrop-blur-sm">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Couldn’t load projects</AlertTitle>
-            <AlertDescription>
-              {error instanceof Error ? error.message : "Unknown error occurred."}
-            </AlertDescription>
-          </Alert>
+        <div className="relative z-10 mx-auto max-w-2xl pt-10">
+          <div className="rounded-xl border border-red-500/20 bg-slate-900/80 p-6 text-slate-100 backdrop-blur-xl shadow-2xl space-y-6">
+            <div className="flex items-center gap-3 border-b border-red-500/20 pb-4">
+              <AlertCircle className="h-6 w-6 text-rose-400" />
+              <div>
+                <h2 className="text-xl font-semibold text-slate-100">Помилка завантаження проектів</h2>
+                <p className="text-xs text-rose-300 font-mono mt-0.5">Деталі: {errorMsg}</p>
+              </div>
+            </div>
+
+            {isNetworkOrCors ? (
+              <div className="space-y-4">
+                <p className="text-sm text-slate-300">
+                  Помилка типу <strong>"Failed to fetch"</strong> зазвичай означає відсутність налаштованого CORS у вашому кабінеті Appwrite. Будь ласка, виконайте ці прості кроки для вирішення:
+                </p>
+                <div className="space-y-3 text-sm text-slate-300">
+                  <div className="flex gap-2.5 items-start">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">1</span>
+                    <p>
+                      Відкрийте консоль Appwrite: <a href="https://auth.aidrakon.tech" target="_blank" rel="noreferrer" className="text-indigo-300 hover:text-indigo-200 underline font-medium">auth.aidrakon.tech</a>
+                    </p>
+                  </div>
+                  <div className="flex gap-2.5 items-start">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">2</span>
+                    <p>
+                      Перейдіть до вашого проекту (Project ID: <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono">6a23420a003a04b4997b</code>).
+                    </p>
+                  </div>
+                  <div className="flex gap-2.5 items-start">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">3</span>
+                    <p>
+                      Оберіть розділ <strong>Settings</strong> (або Platforms) та додайте нову <strong>Web Platform</strong>.
+                    </p>
+                  </div>
+                  <div className="flex gap-2.5 items-start">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">4</span>
+                    <p>
+                      У полі <strong>Hostname</strong> вкажіть домен цього сайту: <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">{typeof window !== "undefined" ? window.location.hostname : "aidrakon.tech"}</code>
+                    </p>
+                  </div>
+                  <div className="flex gap-2.5 items-start">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">5</span>
+                    <p>
+                      Збережіть та перезавантажте цю сторінку.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-sm text-slate-300">
+                Виникла помилка під час зв'язку із сервером бази даних Appwrite. Переконайтеся, що ви авторизовані та хост працює.
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-3 pt-4 border-t border-white/5">
+              <Button onClick={() => window.location.reload()} className="bg-indigo-600 text-white hover:bg-indigo-500">
+                Повторити запит
+              </Button>
+              <Button onClick={() => navigate({ to: "/login" })} variant="outline" className="border-white/15 bg-transparent text-slate-200 hover:bg-white/5">
+                Перейти до авторизації
+              </Button>
+            </div>
+          </div>
         </div>
       </section>
     );

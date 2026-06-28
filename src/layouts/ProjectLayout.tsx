@@ -129,12 +129,42 @@ export function ProjectLayout({ slug, children }: { slug: string; children: Reac
   if (isError || !project) {
     return (
       <div className="flex min-h-[calc(100vh-3rem)] items-center justify-center bg-slate-950 px-4 text-slate-100">
-        <Card className="w-full max-w-lg border-rose-400/30 bg-slate-900/60 backdrop-blur-xl">
-          <CardContent className="space-y-4 p-8 text-center">
-            <AlertTriangle className="mx-auto h-10 w-10 text-rose-300" />
-            <h2 className="font-[Outfit] text-2xl">Project not found</h2>
-            <p className="text-sm text-slate-300">We couldn't find this project or load its data.</p>
-            <Button onClick={() => navigate({ to: "/" })}>Back to Projects</Button>
+        <Card className="w-full max-w-xl border-rose-500/30 bg-slate-900/80 backdrop-blur-xl shadow-2xl">
+          <CardContent className="space-y-6 p-8 text-left">
+            <div className="flex items-center gap-3 border-b border-white/10 pb-4">
+              <AlertTriangle className="h-6 w-6 text-rose-400 shrink-0" />
+              <h2 className="font-[Outfit] text-2xl text-slate-100">Проект не знайдено або помилка завантаження</h2>
+            </div>
+            
+            <div className="space-y-4 text-sm text-slate-300">
+              <p>
+                Не вдалося завантажити дані для проекту <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono">{slug}</code>. Найчастіше це стається через відсутність налаштованого CORS-доступу в Appwrite для вашого поточного домену.
+              </p>
+              
+              <div className="space-y-3 pl-1 font-sans">
+                <div className="flex gap-2.5 items-start">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">1</span>
+                  <p>Відкрийте консоль Appwrite: <a href="https://auth.aidrakon.tech" target="_blank" rel="noreferrer" className="text-indigo-300 hover:text-indigo-200 underline font-medium">auth.aidrakon.tech</a></p>
+                </div>
+                <div className="flex gap-2.5 items-start">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">2</span>
+                  <p>Зайдіть у проект <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono">6a23420a003a04b4997b</code> та оберіть <strong>Settings</strong>.</p>
+                </div>
+                <div className="flex gap-2.5 items-start">
+                  <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">3</span>
+                  <p>Додайте нову Web Platform з Hostname: <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">{typeof window !== "undefined" ? window.location.hostname : "aidrakon.tech"}</code></p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-4 border-t border-white/5">
+              <Button onClick={() => navigate({ to: "/" })} className="bg-indigo-600 text-white hover:bg-indigo-500">
+                На головну сторінку
+              </Button>
+              <Button onClick={() => window.location.reload()} variant="outline" className="border-white/15 bg-transparent text-slate-200 hover:bg-white/5">
+                Повторити запит
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
