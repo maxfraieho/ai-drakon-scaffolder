@@ -30,7 +30,13 @@ function studioPath(slug: string, agentName: string) {
 }
 
 export function AgentsPage() {
-  const { slug } = useParams({ strict: false }) as { slug?: string };
+  const { slug } = (() => {
+    try {
+      return useParams({ strict: false }) as { slug?: string };
+    } catch {
+      return { slug: undefined };
+    }
+  })();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
