@@ -1252,9 +1252,9 @@ async function handleGithubListBranches(args, env, requestToken = '') {
 // ─── Agent MCP helpers ────────────────────────────────────────────────────────
 async function mcpCallAgent(agentId, message, context, env, ctx) {
   const defaultUrls = {
-    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent-flue.maxfraieho.workers.dev',
-    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev',
-    docs: env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev',
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
   };
   const targetUrl = defaultUrls[agentId];
   const usesAnalyze = agentId === 'drakon' && isPythonCode(message);
@@ -1284,7 +1284,7 @@ async function mcpCallAgent(agentId, message, context, env, ctx) {
 }
 
 async function mcpCallPipeline(endpoint, body, env) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   try {
     const resp = await fetch(architectUrl + '/pipeline/' + endpoint, {
       method: 'POST',
@@ -1302,7 +1302,7 @@ async function mcpCallPipeline(endpoint, body, env) {
 }
 
 async function mcpGetPipelineStatus(jobId, env) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   try {
     const resp = await fetch(architectUrl + '/pipeline/status/' + encodeURIComponent(jobId), {
       signal: AbortSignal.timeout(15_000),
@@ -1318,7 +1318,7 @@ async function mcpGetPipelineStatus(jobId, env) {
 // ─────────────────────────────────────────────────────────────────────────────
 // Dataview / docs knowledge base tools
 
-const DOCS_AGENT_BASE = 'https://docs-agent-flue.maxfraieho.workers.dev';
+const DOCS_AGENT_BASE = 'https://docs-agent.exodus.pp.ua';
 
 async function handleDocsDataviewQuery(query, env) {
   try {
@@ -1791,6 +1791,17 @@ async function handleMcp(request, env, ctx) {
   const method = body?.method;
   const params = body?.params || {};
 
+  if (method === 'notifications/initialized' || (method && method.startsWith('notifications/'))) {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Github-Token',
+      }
+    });
+  }
+
   if (method === 'initialize') {
     return jsonResponse({
       jsonrpc: '2.0',
@@ -2000,7 +2011,7 @@ async function handleHealth(env) {
 // ============================================
 
 const VALID_AGENT_IDS = ['drakon', 'architect', 'docs', 'sonate-solidaire'];
-const DOCS_AGENT_URL = 'https://docs-agent-flue.maxfraieho.workers.dev';
+const DOCS_AGENT_URL = 'https://docs-agent.exodus.pp.ua';
 
 function isPythonCode(msg) {
   return /\bdef\s+\w+\s*\(|class\s+\w+[\s:(]|^import\s+\w+|^from\s+\w+\s+import|async\s+def\s+\w+/m.test(msg);
@@ -2022,11 +2033,11 @@ async function handleAgentChat(agentId, request, env, ctx) {
   }
 
   // agentUrl from client (from Settings), fallback to env vars
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   const defaultUrls = {
-    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent-flue.maxfraieho.workers.dev',
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
     architect: architectUrl,
-    docs: env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
     'sonate-solidaire': architectUrl,
   };
   const targetUrl = (typeof agentUrl === 'string' && agentUrl.startsWith('https://'))
@@ -2092,9 +2103,9 @@ async function handleAgentHealth(agentId, env) {
     return errorResponse('Unknown agent: ' + agentId, 404, undefined, 'NOT_FOUND');
   }
   const defaultUrls = {
-    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent-flue.maxfraieho.workers.dev',
-    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev',
-    docs: env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev',
+    drakon: env.DRAKON_AGENT_URL || 'https://drakon-agent.exodus.pp.ua',
+    architect: env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua',
+    docs: env.DOCS_AGENT_URL || 'https://docs-agent.exodus.pp.ua',
   };
   try {
     const resp = await fetch(defaultUrls[agentId] + '/health', {
@@ -2384,6 +2395,17 @@ async function fetchGithubUser(accessToken) {
   return response.json();
 }
 
+function cleanProxyHeaders(request) {
+  const headers = new Headers();
+  const auth = request.headers.get('Authorization');
+  if (auth) headers.set('Authorization', auth);
+  const ct = request.headers.get('Content-Type');
+  if (ct) headers.set('Content-Type', ct);
+  const ghToken = request.headers.get('X-Github-Token');
+  if (ghToken) headers.set('X-Github-Token', ghToken);
+  return headers;
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -2605,41 +2627,59 @@ export default {
 
       // ─── Docs-agent proxy (/v1/docs/* → docs-agent) ───────────────────────────
       if (path.startsWith('/v1/docs/')) {
-        const docsUrl = env.DOCS_AGENT_URL || 'https://docs-agent-flue.maxfraieho.workers.dev';
         const agentPath = path.slice(3); // strip /v1
-        const targetUrl = docsUrl + agentPath + (url.search || '');
+        const targetUrl = 'https://docs-agent.exodus.pp.ua' + agentPath + (url.search || '');
         const proxied = new Request(targetUrl, {
           method: request.method,
-          headers: request.headers,
+          headers: cleanProxyHeaders(request),
           body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
         });
-        return fetch(proxied);
+        const response = env.DOCS_AGENT 
+          ? await env.DOCS_AGENT.fetch(proxied)
+          : await fetch(proxied);
+        const newResponse = new Response(response.body, response);
+        newResponse.headers.set('Access-Control-Allow-Origin', '*');
+        newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+        newResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Github-Token');
+        return newResponse;
       }
 
-      // ─── Architect-agent projects proxy (/v1/projects/* → architect-agent) ───
+      // ─── Docs-agent projects proxy (/v1/projects/* → docs-agent) ───
       if (path.startsWith('/v1/projects')) {
-        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
         const agentPath = path.slice(3); // strip /v1
-        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const targetUrl = 'https://docs-agent.exodus.pp.ua' + agentPath + (url.search || '');
         const proxied = new Request(targetUrl, {
           method: request.method,
-          headers: request.headers,
+          headers: cleanProxyHeaders(request),
           body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
         });
-        return fetch(proxied);
+        const response = env.DOCS_AGENT 
+          ? await env.DOCS_AGENT.fetch(proxied)
+          : await fetch(proxied);
+        const newResponse = new Response(response.body, response);
+        newResponse.headers.set('Access-Control-Allow-Origin', '*');
+        newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+        newResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Github-Token');
+        return newResponse;
       }
 
       // ─── Architect-agent graph-pipelines proxy (/v1/graph-pipelines/* → architect-agent) ───
       if (path.startsWith('/v1/graph-pipelines')) {
-        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
         const agentPath = path.slice(3); // strip /v1
-        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const targetUrl = 'https://architect-agent.exodus.pp.ua' + agentPath + (url.search || '');
         const proxied = new Request(targetUrl, {
           method: request.method,
-          headers: request.headers,
+          headers: cleanProxyHeaders(request),
           body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
         });
-        return fetch(proxied);
+        const response = env.ARCHITECT_AGENT 
+          ? await env.ARCHITECT_AGENT.fetch(proxied)
+          : await fetch(proxied);
+        const newResponse = new Response(response.body, response);
+        newResponse.headers.set('Access-Control-Allow-Origin', '*');
+        newResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+        newResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Github-Token');
+        return newResponse;
       }
 
       if (method === 'POST' && path === '/v1/drakon/commit') {
@@ -2741,7 +2781,7 @@ export default {
 
 // ── Pipeline SSE stream (architect-agent polling → browser EventSource) ──────
 async function handlePipelineStream(jobId, env, ctx) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   const encoder = new TextEncoder();
@@ -2811,7 +2851,7 @@ async function handlePipelineStream(jobId, env, ctx) {
 // ─────────────────────────────────────────────────────────────────────────────
 // ── Pipeline proxy (architect-agent LangGraph endpoints) ─────────────────────
 async function handleKb(kbPath, request, env) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   const targetUrl = architectUrl + '/kb/' + kbPath;
   const url = new URL(request.url);
   const fullTarget = targetUrl + url.search;
@@ -3172,7 +3212,7 @@ async function handleKbSearch(request, env) {
 }
 
 async function handlePipeline(pipelinePath, request, env, ctx) {
-  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+  const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
   const targetUrl = architectUrl + '/pipeline/' + pipelinePath;
 
   const init = {
@@ -3719,7 +3759,7 @@ async function handleCompileStatus(request, env) {
 
       // ─── Pipeline config registry (/v1/agents/pipeline* → architect-agent) ───
       if (path.startsWith('/v1/agents/pipeline')) {
-        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent-flue.maxfraieho.workers.dev';
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
         const targetUrl = architectUrl + path + (url.search || '');
         const proxied = new Request(targetUrl, {
           method: request.method,
@@ -3730,6 +3770,12 @@ async function handleCompileStatus(request, env) {
       }
 
       // ─── Pipeline proxy (/v1/pipeline/* → architect-agent) ─────────────
+      if (method === 'POST' && path === '/v1/pipeline/execute-deterministic') {
+        return await handleDrakonExecuteDeterministic(request, env);
+      }
+      if (method === 'GET' && path === '/v1/pipeline/execute-deterministic/status') {
+        return await handleDrakonExecuteDeterministicStatus(request, env);
+      }
       if (method === 'POST' && path === '/v1/pipeline/analyze') {
         return await handlePipeline('analyze', request, env, ctx);
       }
@@ -3765,6 +3811,170 @@ async function handleCompileStatus(request, env) {
       if (method === 'DELETE' && kbDeleteMatch) {
         return await handleKb('delete/' + decodeURIComponent(kbDeleteMatch[1]), request, env);
       }
+      // ─── EVE compiler endpoints ──────────────────────────────────────────
+      if (method === 'POST' && path === '/v1/architect/compile-eve') {
+        try {
+          const { schema, projectName, projectSlug } = await request.json();
+          const name = projectName || projectSlug || 'eve-agent';
+          if (!schema) return errorResponse('Missing schema');
+          const bundle = ribosomeEVEInline(schema, name);
+          return jsonResponse({ success: true, bundle });
+        } catch (e) {
+          return errorResponse(`EVE compilation failed: ${e.message}`, 500);
+        }
+      }
+
+      if (method === 'POST' && path === '/v1/architect/compile-eve/zip') {
+        try {
+          const { schema, projectName, projectSlug } = await request.json();
+          const name = projectName || projectSlug || 'eve-agent';
+          if (!schema) return errorResponse('Missing schema');
+          const bundle = ribosomeEVEInline(schema, name);
+          const zipData = createZip(bundle.files);
+          return new Response(zipData, {
+            headers: {
+              'Content-Type': 'application/zip',
+              'Content-Disposition': `attachment; filename="${name.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-eve-agent.zip"`,
+            },
+          });
+        } catch (e) {
+          return new Response(`EVE compilation failed: ${e.message}`, { status: 500 });
+        }
+      }
+
+      // ─── PlayPipe build control & SSE (/v1/playpipe/* → architect-agent) ─────────
+      if (path.startsWith('/v1/playpipe/')) {
+        const architectUrl = env.ARCHITECT_AGENT_URL ||
+          'https://architect-agent.exodus.pp.ua'; // fallback лише для dev
+        // Rewrite: /v1/playpipe/build/abc/stream → /architect/playpipe/build/abc/stream
+        const agentPath = '/architect' + path.slice(4); // /v1 → strip → /playpipe/...
+        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        // SSE requires streaming — не буферизувати
+        return fetch(proxied);
+      }
+
+      // ─── Architect-agent general proxy (/v1/architect/* → architect-agent) ───
+      if (path.startsWith('/v1/architect/')) {
+        const architectUrl = env.ARCHITECT_AGENT_URL || 'https://architect-agent.exodus.pp.ua';
+        const agentPath = path.slice(3); // strip /v1 -> /architect/decompose
+        const targetUrl = architectUrl + agentPath + (url.search || '');
+        const proxied = new Request(targetUrl, {
+          method: request.method,
+          headers: request.headers,
+          body: ['GET', 'HEAD'].includes(request.method) ? undefined : request.body,
+        });
+        return fetch(proxied);
+      }
+
+      // ─── N8N compiler endpoint ──────────────────────────────────────────
+      if (method === 'POST' && path === '/v1/compiler/n8n') {
+        try {
+          const { schema, name } = await request.json();
+          if (!schema || !name) return errorResponse('Missing schema or name');
+          const workflow = ribosomeN8NInline(schema, name);
+          return jsonResponse({ success: true, workflow });
+        } catch (e) {
+          return errorResponse(`N8N compilation failed: ${e.message}`, 500);
+        }
+      }
+
+      // ─── N8N push: compile + import to n8n server ───────────────────────────────
+      if (method === 'POST' && path === '/v1/compiler/n8n/push') {
+        try {
+          const { schema, name, n8nUrl, n8nApiKey } = await request.json();
+          if (!n8nUrl?.trim() || !n8nApiKey?.trim()) {
+            return errorResponse('n8nUrl and n8nApiKey are required', 400);
+          }
+          if (!schema || !name) return errorResponse('Missing schema or name', 400);
+          // Step 1: compile locally (ribosomeN8NInline вже є в цьому файлі)
+          const workflow = ribosomeN8NInline(schema, name);
+          // Step 2: import to n8n REST API
+          const n8nBase = n8nUrl.replace(/\/+$/, '');
+          const pushResp = await fetch(`${n8nBase}/api/v1/workflows`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-N8N-API-KEY': n8nApiKey,
+            },
+            body: JSON.stringify(workflow),
+            signal: AbortSignal.timeout(15_000),
+          });
+          if (!pushResp.ok) {
+            const errText = await pushResp.text().catch(() => '');
+            return errorResponse(`n8n rejected: ${errText}`, pushResp.status);
+          }
+          const result = await pushResp.json();
+          return jsonResponse({ success: true, workflowId: result.id, workflowName: result.name });
+        } catch (e) {
+          return errorResponse(`n8n push failed: ${e.message}`, 500);
+        }
+      }
+
+      // ─── GitHub OAuth & repository endpoints ────────────────────────────
+      if (method === 'GET' && path === '/v1/github/oauth/authorize') {
+        return await handleGithubAuthStart(request, env);
+      }
+
+      if (method === 'GET' && path === '/v1/github/oauth/callback') {
+        return await handleGithubAuthCallback(request, env);
+      }
+
+      if (method === 'POST' && path === '/v1/github/create-repo') {
+        try {
+          const authPayload = await verifyOwnerAuth(request, env);
+          if (!authPayload) return errorResponse('Unauthorized', 401);
+
+          const { name, private: isPrivate } = await request.json();
+          if (!name) return errorResponse('Missing repo name', 400);
+
+          const userId = authPayload.sub;
+          const authHeader = request.headers.get('Authorization');
+          const token = authHeader.slice(7);
+
+          let githubToken;
+          try {
+            githubToken = await getGithubTokenForUser(userId, token, env);
+          } catch (err) {
+            return errorResponse(`Could not retrieve GitHub token: ${err.message}`, 400);
+          }
+
+          const createRepoResp = await fetch('https://api.github.com/user/repos', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${githubToken}`,
+              'Content-Type': 'application/json',
+              'User-Agent': 'ai-drakon-scaffolder-worker',
+              'Accept': 'application/vnd.github+json',
+            },
+            body: JSON.stringify({
+              name,
+              private: isPrivate ?? true,
+              auto_init: true,
+            }),
+          });
+
+          if (!createRepoResp.ok) {
+            const errText = await createRepoResp.text();
+            return errorResponse(`GitHub API error: ${errText}`, createRepoResp.status);
+          }
+
+          const repoData = await createRepoResp.json();
+          return jsonResponse({
+            success: true,
+            repoUrl: repoData.html_url,
+            fullName: repoData.full_name,
+            cloneUrl: repoData.clone_url,
+          });
+        } catch (e) {
+          return errorResponse(`Create repo failed: ${e.message}`, 500);
+        }
+      }
+
       // ─── Agent proxy ──────────────────────────────────────────────────
       const agentChatMatch = path.match(/^\/v1\/agents\/([^\/]+)\/chat$/);
       if (method === 'POST' && agentChatMatch) {
@@ -3780,3 +3990,516 @@ async function handleCompileStatus(request, env) {
     }
   },
 };
+
+function ribosomeN8NInline(ir, workflowName) {
+  if (!ir || typeof ir !== 'object') {
+    throw new Error('Invalid IR diagram');
+  }
+
+  if (!ir.items || Object.keys(ir.items).length === 0) {
+    return {
+      name: workflowName,
+      nodes: [],
+      connections: {},
+      active: false,
+      settings: { executionOrder: 'v1' },
+    };
+  }
+
+  const nodes = [];
+  const connections = {};
+  const nameMap = new Map();
+  const usedNames = new Set();
+
+  const getUniqueName = (content, type, id) => {
+    let name = content.replace(/^::\s*n8n\s*::\s*/i, '').trim();
+    if (!name) {
+      name = type;
+    }
+    name = name.replace(/[^a-zA-Z0-9 _-]/g, '');
+    if (!name) name = 'node';
+
+    let uniqueName = name;
+    let counter = 1;
+    while (usedNames.has(uniqueName)) {
+      uniqueName = `${name} ${counter}`;
+      counter++;
+    }
+    usedNames.add(uniqueName);
+    return uniqueName;
+  };
+
+  const itemEntries = Object.entries(ir.items);
+
+  // Pass 1: Nodes
+  itemEntries.forEach(([itemId, item], index) => {
+    let nodeType = 'n8n-nodes-base.noOp';
+    let typeVersion = 1;
+
+    if (item.meta && item.meta.n8nNodeType) {
+      nodeType = item.meta.n8nNodeType;
+      typeVersion = item.meta.n8nTypeVersion || 1;
+    } else if (item.content && item.content.startsWith(':: n8n ::')) {
+      const parts = item.content.split('::');
+      const service = parts[2] ? parts[2].trim() : '';
+      if (service === 'Webhook') {
+        nodeType = 'n8n-nodes-base.webhook';
+        typeVersion = 2;
+      } else if (service === 'HTTP Request') {
+        nodeType = 'n8n-nodes-base.httpRequest';
+        typeVersion = 3;
+      } else if (service === 'Telegram') {
+        nodeType = 'n8n-nodes-base.telegram';
+        typeVersion = 1;
+      } else if (service === 'Code') {
+        nodeType = 'n8n-nodes-base.code';
+        typeVersion = 2;
+      }
+    } else if (item.type === 'question') {
+      nodeType = 'n8n-nodes-base.if';
+      typeVersion = 2;
+    }
+
+    const nodeName = getUniqueName(item.content || '', item.type, itemId);
+    nameMap.set(itemId, nodeName);
+
+    const parameters = { ...(item.meta && item.meta.n8nParams || {}) };
+
+    const node = {
+      id: itemId,
+      name: nodeName,
+      type: nodeType,
+      typeVersion,
+      position: [index * 220, 300],
+      parameters,
+    };
+
+    if (item.meta && item.meta.credentialName) {
+      let credType = 'httpHeaderAuth';
+      if (nodeType.includes('telegram')) credType = 'telegramApi';
+      else if (nodeType.includes('httpRequest')) credType = 'httpHeaderAuth';
+
+      node.credentials = {
+        [credType]: {
+          id: '',
+          name: item.meta.credentialName,
+        },
+      };
+    }
+
+    nodes.push(node);
+  });
+
+  // Pass 2: Connections
+  itemEntries.forEach(([itemId, item]) => {
+    const sourceName = nameMap.get(itemId);
+    if (!sourceName) return;
+
+    const mainConnections = [];
+
+    // Output 0 (one)
+    if (item.one && nameMap.has(item.one)) {
+      mainConnections[0] = [
+        {
+          node: nameMap.get(item.one),
+          type: 'main',
+          index: 0,
+        },
+      ];
+    } else {
+      mainConnections[0] = [];
+    }
+
+    // Output 1 (two) - question
+    if (item.type === 'question') {
+      if (item.two && nameMap.has(item.two)) {
+        mainConnections[1] = [
+          {
+            node: nameMap.get(item.two),
+            type: 'main',
+            index: 0,
+          },
+        ];
+      } else {
+        mainConnections[1] = [];
+      }
+    }
+
+    if (mainConnections[0].length > 0 || (mainConnections[1] && mainConnections[1].length > 0)) {
+      connections[sourceName] = { main: mainConnections };
+    }
+  });
+
+  return {
+    name: workflowName,
+    nodes,
+    connections,
+    active: false,
+    settings: { executionOrder: 'v1' },
+  };
+}
+
+function ribosomeEVEInline(ir, projectName) {
+  if (!ir || typeof ir !== 'object') {
+    throw new Error('Invalid IR diagram');
+  }
+
+  const files = {};
+  let instructions = '';
+  const tools = [];
+  let requiresVercelConnect = false;
+
+  const itemEntries = Object.entries(ir.items || {});
+
+  const sanitizeName = (name) => {
+    return name.replace(/[^a-zA-Z0-9]/g, '');
+  };
+
+  const cleanContent = (content, prefix) => {
+    return content.replace(prefix, '').trim();
+  };
+
+  let firstActionForInstructions = '';
+  const llmBehaviors = [];
+
+  itemEntries.forEach(([itemId, item]) => {
+    if (item.meta && (item.meta.nodeKind === 'github' || item.meta.nodeKind === 'tool')) {
+      requiresVercelConnect = true;
+    }
+
+    const content = item.content || '';
+    if (item.type === 'action') {
+      if (content.startsWith(':: tool ::')) {
+        const fullToolName = cleanContent(content, ':: tool ::');
+        const toolNameClean = sanitizeName(fullToolName);
+        if (toolNameClean) {
+          tools.push({
+            name: toolNameClean,
+            content: fullToolName
+          });
+        }
+      } else if (content.startsWith(':: llm ::')) {
+        llmBehaviors.push(cleanContent(content, ':: llm ::'));
+      } else {
+        if (!firstActionForInstructions) {
+          firstActionForInstructions = content;
+        } else {
+          instructions += `- ${content}\n`;
+        }
+      }
+    } else if (item.type === 'question') {
+      instructions += `- Decision: ${content}\n`;
+    }
+  });
+
+  // Prepare instructions.md
+  let instructionsFileContent = `# Agent Instructions: ${projectName}\n\n`;
+  if (firstActionForInstructions) {
+    instructionsFileContent += `## Overview\n${firstActionForInstructions}\n\n`;
+  }
+  if (instructions) {
+    instructionsFileContent += `## Workflow rules\n${instructions}\n`;
+  }
+  if (llmBehaviors.length > 0) {
+    instructionsFileContent += `## LLM Behaviors\n`;
+    llmBehaviors.forEach(behavior => {
+      instructionsFileContent += `- ${behavior}\n`;
+    });
+  }
+
+  files['agent/instructions.md'] = instructionsFileContent;
+
+  // Prepare tools
+  let toolsExports = '';
+  tools.forEach(tool => {
+    const toolFileName = `agent/tools/${tool.name}.ts`;
+    const toolContent = `import { defineTool } from 'eve/tools';
+import { z } from 'zod';
+
+export default defineTool({
+  name: '${tool.name}',
+  description: '${tool.content.replace(/'/g, "\\'")}',
+  inputSchema: z.object({ input: z.string() }),
+  execute: async ({ input }) => {
+    // TODO: implement
+    return { result: input };
+  }
+});
+`;
+    files[toolFileName] = toolContent;
+    toolsExports += `export { default as ${tool.name} } from './tools/${tool.name}';\n`;
+  });
+
+  files['agent/tools/index.ts'] = toolsExports;
+
+  // agent.ts
+  files['agent/agent.ts'] = `import { defineAgent } from 'eve';
+import * as tools from './tools';
+
+export default defineAgent({
+  model: 'anthropic/claude-sonnet-4-6',
+  tools: Object.values(tools),
+});
+`;
+
+  // package.json
+  files['package.json'] = JSON.stringify({
+    name: projectName.toLowerCase().replace(/[^a-z0-9-]/g, '-'),
+    version: '0.1.0',
+    dependencies: {
+      eve: '0.1.x'
+    }
+  }, null, 2) + '\n';
+
+  return {
+    files,
+    deployCommand: 'eve deploy',
+    requiresVercelConnect
+  };
+}
+
+function createZip(files) {
+  const encoder = new TextEncoder();
+  const fileList = [];
+  let currentOffset = 0;
+  const chunks = [];
+
+  const makeCrcTable = () => {
+    let c;
+    const crcTable = [];
+    for (let n = 0; n < 256; n++) {
+      c = n;
+      for (let k = 0; k < 8; k++) {
+        c = ((c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1));
+      }
+      crcTable[n] = c;
+    }
+    return crcTable;
+  };
+  const crcTable = makeCrcTable();
+
+  const crc32 = (data) => {
+    let crc = 0 ^ (-1);
+    for (let i = 0; i < data.length; i++) {
+      crc = (crc >>> 8) ^ crcTable[(crc ^ data[i]) & 0xff];
+    }
+    return (crc ^ (-1)) >>> 0;
+  };
+
+  const writeUint16 = (buf, offset, val) => {
+    buf[offset] = val & 0xff;
+    buf[offset + 1] = (val >>> 8) & 0xff;
+  };
+  const writeUint32 = (buf, offset, val) => {
+    buf[offset] = val & 0xff;
+    buf[offset + 1] = (val >>> 8) & 0xff;
+    buf[offset + 2] = (val >>> 16) & 0xff;
+    buf[offset + 3] = (val >>> 24) & 0xff;
+  };
+
+  for (const [filename, content] of Object.entries(files)) {
+    const filenameBytes = encoder.encode(filename);
+    const contentBytes = encoder.encode(content);
+    const crc = crc32(contentBytes);
+
+    const localHeader = new Uint8Array(30 + filenameBytes.length);
+    localHeader.set([0x50, 0x4b, 0x03, 0x04]);
+    writeUint16(localHeader, 4, 10);
+    writeUint16(localHeader, 6, 0);
+    writeUint16(localHeader, 8, 0);
+    writeUint16(localHeader, 10, 0);
+    writeUint16(localHeader, 12, 0);
+    writeUint32(localHeader, 14, crc);
+    writeUint32(localHeader, 18, contentBytes.length);
+    writeUint32(localHeader, 22, contentBytes.length);
+    writeUint16(localHeader, 26, filenameBytes.length);
+    writeUint16(localHeader, 28, 0);
+    localHeader.set(filenameBytes, 30);
+
+    chunks.push(localHeader);
+    chunks.push(contentBytes);
+
+    fileList.push({
+      filenameBytes,
+      crc,
+      length: contentBytes.length,
+      offset: currentOffset
+    });
+
+    currentOffset += localHeader.length + contentBytes.length;
+  }
+
+  const centralDirectoryOffset = currentOffset;
+  let centralDirectorySize = 0;
+
+  for (const file of fileList) {
+    const cdHeader = new Uint8Array(46 + file.filenameBytes.length);
+    cdHeader.set([0x50, 0x4b, 0x01, 0x02]);
+    writeUint16(cdHeader, 4, 20);
+    writeUint16(cdHeader, 6, 10);
+    writeUint16(cdHeader, 8, 0);
+    writeUint16(cdHeader, 10, 0);
+    writeUint16(cdHeader, 12, 0);
+    writeUint16(cdHeader, 14, 0);
+    writeUint32(cdHeader, 16, file.crc);
+    writeUint32(cdHeader, 20, file.length);
+    writeUint32(cdHeader, 24, file.length);
+    writeUint16(cdHeader, 28, file.filenameBytes.length);
+    writeUint16(cdHeader, 30, 0);
+    writeUint16(cdHeader, 32, 0);
+    writeUint16(cdHeader, 34, 0);
+    writeUint16(cdHeader, 36, 0);
+    writeUint32(cdHeader, 38, 0);
+    writeUint32(cdHeader, 42, file.offset);
+    cdHeader.set(file.filenameBytes, 46);
+
+    chunks.push(cdHeader);
+    centralDirectorySize += cdHeader.length;
+  }
+
+  const eocd = new Uint8Array(22);
+  eocd.set([0x50, 0x4b, 0x05, 0x06]);
+  writeUint16(eocd, 4, 0);
+  writeUint16(eocd, 6, 0);
+  writeUint16(eocd, 8, fileList.length);
+  writeUint16(eocd, 10, fileList.length);
+  writeUint32(eocd, 12, centralDirectorySize);
+  writeUint32(eocd, 16, centralDirectoryOffset);
+  writeUint16(eocd, 20, 0);
+
+  chunks.push(eocd);
+
+  const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
+  const result = new Uint8Array(totalLength);
+  let pos = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, pos);
+    pos += chunk.length;
+  }
+
+  return result;
+}
+
+async function getGithubTokenForUser(userId, userJwt, env) {
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const appwriteApiKey = env.APPWRITE_API_KEY;
+
+  const docUrl = `${appwriteEndpoint}/databases/ai-drakon/collections/user_profiles/documents/${userId}`;
+  const headers = {
+    'Content-Type': 'application/json',
+    'X-Appwrite-Project': appwriteProjectId,
+  };
+  if (appwriteApiKey) {
+    headers['X-Appwrite-Key'] = appwriteApiKey;
+  } else if (userJwt) {
+    headers['X-Appwrite-JWT'] = userJwt;
+  }
+
+  const resp = await fetch(docUrl, { headers });
+  if (!resp.ok) {
+    throw new Error(`Failed to fetch user profile from Appwrite: status ${resp.status}`);
+  }
+  const doc = await resp.json();
+  const githubToken = doc.githubToken || (doc.data && doc.data.githubToken);
+  if (!githubToken) {
+    throw new Error('GitHub token not found in user profile');
+  }
+  return githubToken;
+}
+
+async function handleDrakonExecuteDeterministic(request, env) {
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) return errorResponse('Unauthorized', 401);
+  
+  let body = {};
+  try {
+    const text = await request.text();
+    if (text) body = JSON.parse(text);
+  } catch (_) {
+    return errorResponse('Invalid JSON body', 400);
+  }
+  
+  const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f';
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+  
+  if (!functionId || !apiKey) {
+    return errorResponse('DETERMINISTIC_ENGINE_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
+  }
+  
+  const execRes = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+      body: JSON.stringify({
+        async: true,
+        body: JSON.stringify(body),
+      }),
+    }
+  );
+  
+  if (!execRes.ok) {
+    const errText = await execRes.text().catch(() => '');
+    return errorResponse(`Appwrite execution failed: ${execRes.status} ${errText}`, 502);
+  }
+  
+  const execData = await execRes.json();
+  return jsonResponse({ execution_id: execData.$id, status: 'accepted' });
+}
+
+async function handleDrakonExecuteDeterministicStatus(request, env) {
+  const url = new URL(request.url);
+  const executionId = url.searchParams.get('execution_id');
+  if (!executionId) return errorResponse('execution_id required', 400);
+  
+  const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f';
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+  
+  if (!functionId || !apiKey) return errorResponse('not configured', 503);
+  
+  const res = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    {
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+    }
+  );
+  
+  if (!res.ok) return errorResponse(`Appwrite status check failed: ${res.status}`, 502);
+  const data = await res.json();
+  
+  let output = undefined;
+  if (data.status === 'completed') {
+    if (data.responseBody) {
+      try { output = JSON.parse(data.responseBody); } catch (_) {}
+    }
+    if (!output || !Array.isArray(output.events)) {
+      const logs = data.logs || '';
+      const m = logs.match(/DETERMINISTIC_ENGINE_RESULT:([A-Za-z0-9+/=]+)/);
+      if (m) {
+        try {
+          const decoded = atob(m[1]);
+          output = JSON.parse(decoded);
+        } catch (_) {
+          output = undefined;
+        }
+      }
+    }
+  }
+  
+  return jsonResponse({
+    execution_id: data.$id,
+    status: data.status,
+    events: output ? output.events : [],
+    error: data.status === 'failed' ? (data.errors || 'Function failed') : undefined,
+  });
+}

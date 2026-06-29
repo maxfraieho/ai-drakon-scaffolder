@@ -1,10 +1,9 @@
 import { useState, useRef, useCallback } from "react";
-import {
-  startExecution,
-  streamExecution,
-  resumeExecution,
-  type ExecutionEvent,
-} from "@/lib/graph-pipeline-api";
+import { startExecution, streamExecution, resumeExecution, type ExecutionEvent } from "@/lib/graph-pipeline-api";
+import { DeterministicPipelineClient } from "@/lib/harness/pipeline-client";
+import { createDefaultSpec } from "@/lib/harness/harness-spec";
+import { useDiagramStore } from "@/store/useDiagramStore";
+import { convertDiagramToIr } from "@/lib/htse/diagram-to-ir";
 
 export interface PipelineExecutionLog {
   timestamp: string;
@@ -47,6 +46,78 @@ export function usePipelineExecution() {
       initialState: Record<string, unknown> = {},
       breakpoints: string[] = []
     ) => {
+      const useDeterministic = import.meta.env.VITE_USE_DETERMINISTIC === "true";
+
+      if (useDeterministic) {
+        stopPipeline();
+        setIsRunning(true);
+        setError(null);
+        setActiveNode(null);
+        setCompletedNodes(new Set());
+        setBreakpointNode(null);
+        setBreakpointState(null);
+        setLogs([]);
+
+        addLog("info", `Запуск детермінованого пайплайну '${pipelineName}'...`);
+        try {
+          const client = new DeterministicPipelineClient({
+            workerBaseUrl: import.meta.env.VITE_WORKER_URL || "https://drakon-antigravity-worker.vokov.workers.dev",
+          });
+          
+          const spec = createDefaultSpec(pipelineName);
+          
+          // Отримуємо поточну DrakonDiagram зі стору
+          const currentDiagram = useDiagramStore.getState().currentDiagram;
+          if (!currentDiagram) {
+            throw new Error("Немає активної діаграми для запуску.");
+          }
+          
+          // Конвертуємо у IR (канонічний формат)
+          const ir = convertDiagramToIr(currentDiagram);
+          
+          client.execute(
+            ir,
+            spec,
+            {
+              onEvent: (ev) => {
+                if (ev.event === "node_start") {
+                  setActiveNode(ev.node_id);
+                  addLog("info", `Початок виконання вузла '${ev.node_id}'...`);
+                } else if (ev.event === "node_done") {
+                  setCompletedNodes((prev) => new Set(prev).add(ev.node_id));
+                  setActiveNode(ev.node_id); // update active node reference
+                  addLog("node", `Вузол '${ev.node_id}' успішно виконано.`);
+                } else if (ev.event === "breakpoint") {
+                  setBreakpointNode(ev.node_id);
+                  setActiveNode(null);
+                  addLog("warning", `Зупинка на Точці Зупинки у вузлі '${ev.node_id}'.`);
+                } else if (ev.event === "gate_blocked") {
+                  addLog("error", `Блокування Gate [${ev.gate}]: ${ev.reason}`);
+                }
+              },
+              onComplete: (events) => {
+                setIsRunning(false);
+                setActiveNode(null);
+                addLog("success", "Детермінований пайплайн завершив виконання успішно.");
+              },
+              onError: (err) => {
+                setIsRunning(false);
+                setActiveNode(null);
+                setError(err.message);
+                addLog("error", `Помилка виконання: ${err.message}`);
+              }
+            },
+            breakpoints
+          );
+        } catch (err) {
+          setIsRunning(false);
+          const errMsg = err instanceof Error ? err.message : String(err);
+          setError(errMsg);
+          addLog("error", `Не вдалося запустити пайплайн: ${errMsg}`);
+        }
+        return;
+      }
+
       stopPipeline();
       setIsRunning(true);
       setError(null);

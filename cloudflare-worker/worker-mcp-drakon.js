@@ -3770,6 +3770,12 @@ async function handleCompileStatus(request, env) {
       }
 
       // ─── Pipeline proxy (/v1/pipeline/* → architect-agent) ─────────────
+      if (method === 'POST' && path === '/v1/pipeline/execute-deterministic') {
+        return await handleDrakonExecuteDeterministic(request, env);
+      }
+      if (method === 'GET' && path === '/v1/pipeline/execute-deterministic/status') {
+        return await handleDrakonExecuteDeterministicStatus(request, env);
+      }
       if (method === 'POST' && path === '/v1/pipeline/analyze') {
         return await handlePipeline('analyze', request, env, ctx);
       }
@@ -4400,4 +4406,100 @@ async function getGithubTokenForUser(userId, userJwt, env) {
     throw new Error('GitHub token not found in user profile');
   }
   return githubToken;
+}
+
+async function handleDrakonExecuteDeterministic(request, env) {
+  const payload = await verifyOwnerAuth(request, env);
+  if (!payload) return errorResponse('Unauthorized', 401);
+  
+  let body = {};
+  try {
+    const text = await request.text();
+    if (text) body = JSON.parse(text);
+  } catch (_) {
+    return errorResponse('Invalid JSON body', 400);
+  }
+  
+  const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f';
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+  
+  if (!functionId || !apiKey) {
+    return errorResponse('DETERMINISTIC_ENGINE_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
+  }
+  
+  const execRes = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+      body: JSON.stringify({
+        async: true,
+        body: JSON.stringify(body),
+      }),
+    }
+  );
+  
+  if (!execRes.ok) {
+    const errText = await execRes.text().catch(() => '');
+    return errorResponse(`Appwrite execution failed: ${execRes.status} ${errText}`, 502);
+  }
+  
+  const execData = await execRes.json();
+  return jsonResponse({ execution_id: execData.$id, status: 'accepted' });
+}
+
+async function handleDrakonExecuteDeterministicStatus(request, env) {
+  const url = new URL(request.url);
+  const executionId = url.searchParams.get('execution_id');
+  if (!executionId) return errorResponse('execution_id required', 400);
+  
+  const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f';
+  const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
+  const apiKey = env.APPWRITE_API_KEY;
+  
+  if (!functionId || !apiKey) return errorResponse('not configured', 503);
+  
+  const res = await fetch(
+    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    {
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+    }
+  );
+  
+  if (!res.ok) return errorResponse(`Appwrite status check failed: ${res.status}`, 502);
+  const data = await res.json();
+  
+  let output = undefined;
+  if (data.status === 'completed') {
+    if (data.responseBody) {
+      try { output = JSON.parse(data.responseBody); } catch (_) {}
+    }
+    if (!output || !Array.isArray(output.events)) {
+      const logs = data.logs || '';
+      const m = logs.match(/DETERMINISTIC_ENGINE_RESULT:([A-Za-z0-9+/=]+)/);
+      if (m) {
+        try {
+          const decoded = atob(m[1]);
+          output = JSON.parse(decoded);
+        } catch (_) {
+          output = undefined;
+        }
+      }
+    }
+  }
+  
+  return jsonResponse({
+    execution_id: data.$id,
+    status: data.status,
+    events: output ? output.events : [],
+    error: data.status === 'failed' ? (data.errors || 'Function failed') : undefined,
+  });
 }
