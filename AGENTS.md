@@ -225,3 +225,22 @@ This project is indexed by GitNexus as **ai-drakon-scaffolder** (7875 symbols, 1
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+## Feature: Chrome DevTools Protocol (CDP) Laptop Tunnel
+
+### Architecture
+- **Windows Laptop IP**: `100.68.179.102` (via Tailscale) / `192.168.3.30` (local LAN)
+- **Local Forwarding Port**: `19222` (mapped to remote Chrome CDP `9222`)
+- **Systemd User Service**: `chrome-tunnel.service` keeps the SSH tunnel alive automatically in the background.
+
+### Managing the Tunnel
+The tunnel runs as a user-level Systemd service under user `vokov`.
+- **Status**: `systemctl --user status chrome-tunnel.service`
+- **Restart**: `systemctl --user restart chrome-tunnel.service`
+- **Logs**: `journalctl --user -u chrome-tunnel.service -n 50`
+
+### Browser Automation / CDP Control
+If the `chrome-win` MCP server fails or returns `EOF` (due to cached connection errors in the session), you can use raw WebSocket CDP controls directly over `http://127.0.0.1:19222`.
+- Active tabs list: `http://127.0.0.1:19222/json`
+- Open new tab: `PUT http://127.0.0.1:19222/json/new?URL`
+- Connect to tab `webSocketDebuggerUrl` via Python's `websocket-client` library. **Important**: Always pass `suppress_origin=True` to `websocket.create_connection` to bypass Chrome origin security checks.
