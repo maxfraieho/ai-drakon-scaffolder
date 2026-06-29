@@ -6,5 +6,6 @@ export const Route = createFileRoute("/p/$slug/agents")({
 });
 
 function ProjectAgentsRoute() {
-  return <AgentsPage />;
+  const { slug } = Route.useParams();
+  return <AgentsPage slug={slug} />;
 }

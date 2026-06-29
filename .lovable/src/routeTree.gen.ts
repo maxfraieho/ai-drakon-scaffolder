@@ -18,7 +18,6 @@ import { Route as PipelineRouteImport } from './routes/pipeline'
 import { Route as NotebooksRouteImport } from './routes/notebooks'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
-import { Route as GithubRouteImport } from './routes/github'
 import { Route as DiagramsRouteImport } from './routes/diagrams'
 import { Route as DevcycleRouteImport } from './routes/devcycle'
 import { Route as CodegenRouteImport } from './routes/codegen'
@@ -88,11 +87,6 @@ const LoginRoute = LoginRouteImport.update({
 const KnowledgeRoute = KnowledgeRouteImport.update({
   id: '/knowledge',
   path: '/knowledge',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GithubRoute = GithubRouteImport.update({
-  id: '/github',
-  path: '/github',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DiagramsRoute = DiagramsRouteImport.update({
@@ -231,7 +225,6 @@ export interface FileRoutesByFullPath {
   '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
-  '/github': typeof GithubRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
@@ -268,7 +261,6 @@ export interface FileRoutesByTo {
   '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
-  '/github': typeof GithubRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
@@ -306,7 +298,6 @@ export interface FileRoutesById {
   '/codegen': typeof CodegenRoute
   '/devcycle': typeof DevcycleRoute
   '/diagrams': typeof DiagramsRoute
-  '/github': typeof GithubRoute
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
@@ -345,7 +336,6 @@ export interface FileRouteTypes {
     | '/codegen'
     | '/devcycle'
     | '/diagrams'
-    | '/github'
     | '/knowledge'
     | '/login'
     | '/notebooks'
@@ -382,7 +372,6 @@ export interface FileRouteTypes {
     | '/codegen'
     | '/devcycle'
     | '/diagrams'
-    | '/github'
     | '/knowledge'
     | '/login'
     | '/notebooks'
@@ -419,7 +408,6 @@ export interface FileRouteTypes {
     | '/codegen'
     | '/devcycle'
     | '/diagrams'
-    | '/github'
     | '/knowledge'
     | '/login'
     | '/notebooks'
@@ -457,7 +445,6 @@ export interface RootRouteChildren {
   CodegenRoute: typeof CodegenRoute
   DevcycleRoute: typeof DevcycleRoute
   DiagramsRoute: typeof DiagramsRoute
-  GithubRoute: typeof GithubRoute
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   NotebooksRoute: typeof NotebooksRoute
@@ -539,13 +526,6 @@ declare module '@tanstack/react-router' {
       path: '/knowledge'
       fullPath: '/knowledge'
       preLoaderRoute: typeof KnowledgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/github': {
-      id: '/github'
-      path: '/github'
-      fullPath: '/github'
-      preLoaderRoute: typeof GithubRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/diagrams': {
@@ -830,7 +810,6 @@ const rootRouteChildren: RootRouteChildren = {
   CodegenRoute: CodegenRoute,
   DevcycleRoute: DevcycleRoute,
   DiagramsRoute: DiagramsRoute,
-  GithubRoute: GithubRoute,
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   NotebooksRoute: NotebooksRoute,

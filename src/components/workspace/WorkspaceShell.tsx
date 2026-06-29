@@ -83,7 +83,6 @@ const NAV_WORKSPACE: NavItem[] = [
   { to: "/workspace", label: "Робоча область", icon: Braces },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
   { to: "/architect", label: "Architect", icon: Layers },
-  { to: "/github", label: "GitHub", icon: GitBranch },
   { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },
   { to: "/codegen", label: "Codegen", icon: Code2 },
 ];

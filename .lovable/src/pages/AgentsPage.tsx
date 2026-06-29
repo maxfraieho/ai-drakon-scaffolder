@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { AlertCircle, Bot, Loader2, Plus, Settings, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -29,14 +29,11 @@ function studioPath(slug: string, agentName: string) {
   return `/p/${slug}/agents/${encodeURIComponent(agentName)}/studio`;
 }
 
-export function AgentsPage() {
-  const { slug } = (() => {
-    try {
-      return useParams({ strict: false }) as { slug?: string };
-    } catch {
-      return { slug: undefined };
-    }
-  })();
+interface AgentsPageProps {
+  slug?: string;
+}
+
+export function AgentsPage({ slug }: AgentsPageProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
