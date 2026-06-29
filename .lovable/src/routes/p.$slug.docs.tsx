@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ProjectSectionPlaceholder } from "@/components/projects/ProjectSectionPlaceholder";
+import { GardenPage } from "@/pages/GardenPage";
 
 export const Route = createFileRoute("/p/$slug/docs")({
   component: ProjectDocsRoute,
@@ -7,10 +7,8 @@ export const Route = createFileRoute("/p/$slug/docs")({
 
 function ProjectDocsRoute() {
   return (
-    <ProjectSectionPlaceholder
-      title="Docs"
-      subtitle="Store architectural notes, runbooks, and technical context relevant to the project lifecycle."
-      chips={["Knowledge base", "Runbooks", "References"]}
-    />
+    <div className="h-full min-h-[500px]">
+      <GardenPage />
+    </div>
   );
 }

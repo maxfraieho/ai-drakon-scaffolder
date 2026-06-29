@@ -15,7 +15,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as PipelinesRouteImport } from './routes/pipelines'
 import { Route as PipelineRouteImport } from './routes/pipeline'
-import { Route as ObservabilityRouteImport } from './routes/observability'
 import { Route as NotebooksRouteImport } from './routes/notebooks'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KnowledgeRouteImport } from './routes/knowledge'
@@ -74,11 +73,6 @@ const PipelinesRoute = PipelinesRouteImport.update({
 const PipelineRoute = PipelineRouteImport.update({
   id: '/pipeline',
   path: '/pipeline',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ObservabilityRoute = ObservabilityRouteImport.update({
-  id: '/observability',
-  path: '/observability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotebooksRoute = NotebooksRouteImport.update({
@@ -241,7 +235,6 @@ export interface FileRoutesByFullPath {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
-  '/observability': typeof ObservabilityRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
@@ -279,7 +272,6 @@ export interface FileRoutesByTo {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
-  '/observability': typeof ObservabilityRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
@@ -318,7 +310,6 @@ export interface FileRoutesById {
   '/knowledge': typeof KnowledgeRoute
   '/login': typeof LoginRoute
   '/notebooks': typeof NotebooksRoute
-  '/observability': typeof ObservabilityRoute
   '/pipeline': typeof PipelineRouteWithChildren
   '/pipelines': typeof PipelinesRoute
   '/settings': typeof SettingsRoute
@@ -358,7 +349,6 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/notebooks'
-    | '/observability'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
@@ -396,7 +386,6 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/notebooks'
-    | '/observability'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
@@ -434,7 +423,6 @@ export interface FileRouteTypes {
     | '/knowledge'
     | '/login'
     | '/notebooks'
-    | '/observability'
     | '/pipeline'
     | '/pipelines'
     | '/settings'
@@ -473,7 +461,6 @@ export interface RootRouteChildren {
   KnowledgeRoute: typeof KnowledgeRoute
   LoginRoute: typeof LoginRoute
   NotebooksRoute: typeof NotebooksRoute
-  ObservabilityRoute: typeof ObservabilityRoute
   PipelineRoute: typeof PipelineRouteWithChildren
   PipelinesRoute: typeof PipelinesRoute
   SettingsRoute: typeof SettingsRoute
@@ -531,13 +518,6 @@ declare module '@tanstack/react-router' {
       path: '/pipeline'
       fullPath: '/pipeline'
       preLoaderRoute: typeof PipelineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/observability': {
-      id: '/observability'
-      path: '/observability'
-      fullPath: '/observability'
-      preLoaderRoute: typeof ObservabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notebooks': {
@@ -854,7 +834,6 @@ const rootRouteChildren: RootRouteChildren = {
   KnowledgeRoute: KnowledgeRoute,
   LoginRoute: LoginRoute,
   NotebooksRoute: NotebooksRoute,
-  ObservabilityRoute: ObservabilityRoute,
   PipelineRoute: PipelineRouteWithChildren,
   PipelinesRoute: PipelinesRoute,
   SettingsRoute: SettingsRoute,

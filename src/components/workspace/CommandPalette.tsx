@@ -28,7 +28,6 @@ const NAV_ITEMS = [
   { label: "Код", to: "/code", icon: FileCode, shortcut: "G C" },
   { label: "Architect", to: "/architect", icon: Layers, shortcut: "G R" },
   { label: "GitHub", to: "/github", icon: GitBranch, shortcut: "G H" },
-  { label: "Observability", to: "/observability", icon: Activity, shortcut: "G O" },
   { label: "Sync", to: "/sync", icon: Activity, shortcut: "G Y" },
   { label: "Workspace", to: "/workspace", icon: Layers, shortcut: "G W" },
   { label: "Агенти", to: "/agents", icon: Cpu, shortcut: "G A" },

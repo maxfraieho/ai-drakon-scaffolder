@@ -33,7 +33,6 @@ export function AppLayout() {
     { to: "/knowledge", label: "Knowledge", icon: Brain },
     { to: "/architect", label: "Architect", icon: Building2 },
     { to: "/notebooks", label: "Notebooks", icon: Notebook },
-    { to: "/observability", label: "Observability", icon: Activity },
   ];
 
   return (

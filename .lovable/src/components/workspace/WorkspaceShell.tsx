@@ -99,7 +99,7 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/diagrams")) return { section: "Diagrams", sectionPath: "/diagrams" };
   if (pathname.startsWith("/architect")) return { section: "Architect", sectionPath: "/architect" };
   if (pathname.startsWith("/github")) return { section: "GitHub", sectionPath: "/github" };
-  if (pathname.startsWith("/observability")) return { section: "Observability", sectionPath: "/observability" };
+
   if (pathname.startsWith("/sync")) return { section: "Sync", sectionPath: "/sync" };
   if (pathname.startsWith("/devcycle")) return { section: "DevCycle", sectionPath: "/devcycle" };
   if (pathname.startsWith("/settings")) return { section: "Settings", sectionPath: "/settings" };
@@ -183,7 +183,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     { id: "ribosome", to: "/agents", label: "Ribosome", icon: Cpu, enabled: true },
     { id: "protein", to: "/pipelines", label: "Protein", icon: Braces, enabled: true },
     { id: "knowledge", to: "/knowledge", label: "Knowledge", icon: BookOpen, enabled: true },
-    { id: "runtime", to: "/observability", label: "Runtime", icon: Activity, enabled: true },
+
   ];
 
   useEffect(() => {

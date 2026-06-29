@@ -64,6 +64,8 @@ export function useProjectLayout() {
   return context;
 }
 
+import { useProject } from "@/context/ProjectContext";
+
 export function ProjectLayout({ slug, children }: { slug: string; children: ReactNode }) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -71,6 +73,7 @@ export function ProjectLayout({ slug, children }: { slug: string; children: Reac
   const { theme, setTheme } = useTheme();
   const [cmdOpen, setCmdOpen] = useState(false);
   const [agentsOpen, setAgentsOpen] = useState(false);
+  const { activeProject, setActiveProject } = useProject();
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -120,13 +123,33 @@ export function ProjectLayout({ slug, children }: { slug: string; children: Reac
       setIsCreating(false);
     }
   };
-
   const { data: project, isLoading, isError, error } = useQuery({
     queryKey: ["project", slug],
     queryFn: () => getProject(slug),
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
+
+  useEffect(() => {
+    if (project) {
+      const mapped = {
+        slug: project.slug,
+        name: project.name,
+        description: project.description ?? "",
+        exists: true,
+        hasDrakonIr: true,
+        hasDocs: true,
+        github: project.githubOwner && project.githubRepo ? {
+          owner: project.githubOwner,
+          repo: project.githubRepo,
+          branch: project.githubBranch || "main"
+        } : undefined
+      };
+      if (activeProject?.slug !== mapped.slug) {
+        setActiveProject(mapped);
+      }
+    }
+  }, [project, activeProject, setActiveProject]);
 
   const sectionKey = location.pathname.split("/").filter(Boolean).at(-1) ?? "overview";
   const currentSection = sectionLabels[sectionKey] ?? "Overview";

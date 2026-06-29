@@ -249,18 +249,7 @@ active
           Панель виконання завдань розробки.
         </span>
       </Link>
-      <Link
-        to="/observability"
-        className="flex flex-col gap-1 rounded-md p-2 hover:bg-white/5 transition-all text-left"
-      >
-        <span className="flex items-center gap-1.5 text-xs font-semibold text-zinc-100">
-          <Activity className="h-3.5 w-3.5 text-emerald-400" />
-          Моніторинг
-        </span>
-        <span className="text-[10px] text-zinc-400 leading-tight">
-          Логи системи та активність.
-        </span>
-      </Link>
+
       <Link
         to="/pipelines"
         className="flex flex-col gap-1 rounded-md p-2 hover:bg-white/5 transition-all text-left"
