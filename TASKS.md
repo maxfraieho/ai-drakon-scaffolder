@@ -166,3 +166,24 @@
    }
    ```
 3. Перевірити синтаксис файлу.
+
+---
+
+## TASK-V3-P2-B1: Implement PlayPipe and N8N push endpoints (FastAPI -> Appwrite Functions)
+
+**Виконавець:** AGY rpi3b (Raspberry Pi 3B)  
+**Пріоритет:** HIGH  
+**Статус:** PENDING  
+
+### 📋 Що зробити:
+1. Створити роутер `services/architect-agent/playpipe_route.py` для FastAPI з префіксом `/architect`:
+   - `POST /architect/decompose` (повертає JSON декомпозиції додатку через LLM).
+   - `POST /architect/build-parallel` (ініціює паралельний білд).
+   - `GET /architect/playpipe/build/{buildId}/stream` (повертає SSE з оновленням статусу білду).
+   - `POST /architect/playpipe/build/{buildId}/retry`
+   - `POST /architect/playpipe/build/{buildId}/stop`
+2. Зареєструвати роутер у `services/architect-agent/main.py`.
+3. Додати проксі-маршрути в `cloudflare-worker/worker-mcp-drakon.js` перед загальним Architect proxy:
+   - Проксі для `path.startsWith('/v1/playpipe/')` -> `env.ARCHITECT_AGENT_URL/architect/playpipe/*` (зберегти streaming/SSE).
+   - Додати обробник `POST /v1/compiler/n8n/push` (локальна компіляція + імпорт в n8n REST API).
+4. Оновити файли документації: замінити згадки `architect-agent-flue.maxfraieho.workers.dev` на `[Appwrite Function URL — env.ARCHITECT_AGENT_URL]`.
