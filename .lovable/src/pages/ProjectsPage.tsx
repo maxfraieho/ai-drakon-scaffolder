@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, Loader2, PlusCircle } from "lucide-react";
+import { AlertCircle, Loader2, PlusCircle, Plus } from "lucide-react";
 
 import { ProjectCard, type ProjectCardProps } from "@/components/projects/ProjectCard";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -129,9 +129,19 @@ export function ProjectsPage() {
       <div className="absolute -bottom-12 right-1/4 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-6xl space-y-6">
-        <header className="space-y-1">
-          <h1 className="text-2xl font-semibold text-foreground md:text-3xl">Projects</h1>
-          <p className="text-sm text-muted-foreground">Your active workspaces and deployment status.</p>
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/5 pb-5">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-semibold text-foreground md:text-3xl">Projects</h1>
+            <p className="text-sm text-muted-foreground">Your active workspaces and deployment status.</p>
+          </div>
+          <Button
+            id="new-project-btn"
+            onClick={() => navigate({ to: "/project/new" })}
+            className="self-start sm:self-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_4px_12px_rgba(99,102,241,0.2)]"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Button>
         </header>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">

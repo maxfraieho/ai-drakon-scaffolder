@@ -171,8 +171,9 @@ export function NewProjectWizard() {
       name: values.name,
       description: values.description,
       mode: values.mode,
+      aiAssisted: values.aiAssisted,
     }).success;
-  }, [values.name, values.description, values.mode]);
+  }, [values.name, values.description, values.mode, values.aiAssisted]);
 
   const isStepTwoValid = useMemo(() => {
     if (autoCreateRepo) return true;
