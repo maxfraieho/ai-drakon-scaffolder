@@ -123,7 +123,6 @@ export function ProjectLayout({ slug, children }: { slug: string; children: Reac
       setIsCreating(false);
     }
   };
-
   const { data: project, isLoading, isError, error } = useQuery({
     queryKey: ["project", slug],
     queryFn: () => getProject(slug),

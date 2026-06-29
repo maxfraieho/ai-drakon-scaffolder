@@ -18,8 +18,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    account
-      .get()
+    const authPromise = account.get();
+    const timeoutPromise = new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error("Auth request timed out")), 5000)
+    );
+
+    Promise.race([authPromise, timeoutPromise])
       .then(async (u) => {
         setUser(u);
         if (u) {
@@ -34,7 +38,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         }
       })
-      .catch(() => setUser(null))
+      .catch((err) => {
+        console.warn("Auth initialization failed or timed out:", err);
+        setUser(null);
+      })
       .finally(() => setIsLoading(false));
   }, []);
 
