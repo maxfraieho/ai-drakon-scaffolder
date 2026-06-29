@@ -33,6 +33,7 @@ const stepOneSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters").max(50, "Name must be at most 50 characters"),
   description: z.string().max(200, "Description must be at most 200 characters").optional().or(z.literal("")),
   mode: z.enum(["agent", "playpipe", "n8n"]),
+  aiAssisted: z.boolean(),
 });
 
 const wizardSchema = stepOneSchema
@@ -156,6 +157,7 @@ export function NewProjectWizard() {
       name: "",
       description: "",
       mode: "agent",
+      aiAssisted: true,
       autoCreateRepo: true,
       manualRepoUrl: "",
     },
@@ -217,6 +219,8 @@ export function NewProjectWizard() {
         path: `/projects/${slug}`,
         description: formValues.description?.trim() || undefined,
         github: githubInfo,
+        hasDrakonIr: formValues.aiAssisted,
+        hasDocs: formValues.aiAssisted,
       });
 
       if (!result.success) {
@@ -405,6 +409,22 @@ export function NewProjectWizard() {
                     );
                   })}
                 </div>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-white/10 bg-white/5 px-4 py-3">
+                <div>
+                  <p className="font-[Outfit] text-sm text-slate-100">ШІ-асистування (AI Assistance)</p>
+                  <p className="text-xs text-slate-400">
+                    Автоматично підключити Docs-Agent та Architect-Agent для аналізу вимог та проектування схем.
+                  </p>
+                </div>
+                <Switch
+                  id="ai-assisted"
+                  checked={form.watch("aiAssisted")}
+                  onCheckedChange={(checked) => {
+                    form.setValue("aiAssisted", checked, { shouldValidate: true });
+                  }}
+                />
               </div>
 
               <div className="flex justify-end">

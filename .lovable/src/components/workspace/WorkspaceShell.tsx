@@ -80,17 +80,11 @@ type NavItem = {
 };
 
 const NAV_WORKSPACE: NavItem[] = [
-  { to: "/pipelines", label: "Pipeline", icon: Workflow },
+  { to: "/workspace", label: "Робоча область", icon: Braces },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
-  { to: "/docs", label: "Документація", icon: FileText },
-  { to: "/code", label: "Код", icon: FileCode },
   { to: "/architect", label: "Architect", icon: Layers },
   { to: "/github", label: "GitHub", icon: GitBranch },
-  { to: "/knowledge", label: "Знання", icon: Brain }, // Added Knowledge item
   { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },
-  { to: "/observability", label: "Observability", icon: Activity },
-  { to: "/sync", label: "Sync", icon: Loader2 },
-  { to: "/workspace", label: "Workspace", icon: Layers },
   { to: "/codegen", label: "Codegen", icon: Code2 },
 ];
 
@@ -105,7 +99,6 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/diagrams")) return { section: "Diagrams", sectionPath: "/diagrams" };
   if (pathname.startsWith("/architect")) return { section: "Architect", sectionPath: "/architect" };
   if (pathname.startsWith("/github")) return { section: "GitHub", sectionPath: "/github" };
-  if (pathname.startsWith("/docs")) return { section: "Документація", sectionPath: "/docs" };
   if (pathname.startsWith("/observability")) return { section: "Observability", sectionPath: "/observability" };
   if (pathname.startsWith("/sync")) return { section: "Sync", sectionPath: "/sync" };
   if (pathname.startsWith("/devcycle")) return { section: "DevCycle", sectionPath: "/devcycle" };
@@ -115,9 +108,8 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/knowledge")) return { section: "Знання", sectionPath: "/knowledge" };
   if (pathname.startsWith("/notebooks")) return { section: "Knowledge Agents", sectionPath: "/notebooks" };
   if (pathname.startsWith("/codegen")) return { section: "Codegen", sectionPath: "/codegen" };
-  if (pathname.startsWith("/code")) return { section: "Код", sectionPath: "/code" };
-  if (pathname.startsWith("/workspace")) return { section: "Workspace", sectionPath: "/workspace" };
-  return { section: "Workspace", sectionPath: "/" };
+  if (pathname.startsWith("/workspace")) return { section: "Робоча область", sectionPath: "/workspace" };
+  return { section: "Робоча область", sectionPath: "/" };
 }
 
 function NavSection({ items, isActive, onClick }: {
@@ -381,7 +373,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
         </Sheet>
 
         <Link
-          to="/pipelines"
+          to="/diagrams"
           className="flex items-center gap-2 font-semibold text-[13px] text-[var(--text-primary)] tracking-wide"
         >
           <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
@@ -730,3 +722,4 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     </div>
   );
 }
+

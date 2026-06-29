@@ -80,9 +80,8 @@ type NavItem = {
 };
 
 const NAV_WORKSPACE: NavItem[] = [
+  { to: "/workspace", label: "Робоча область", icon: Braces },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
-  { to: "/docs", label: "Документація", icon: FileText },
-  { to: "/code", label: "Код", icon: FileCode },
   { to: "/architect", label: "Architect", icon: Layers },
   { to: "/github", label: "GitHub", icon: GitBranch },
   { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },
@@ -100,7 +99,6 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/diagrams")) return { section: "Diagrams", sectionPath: "/diagrams" };
   if (pathname.startsWith("/architect")) return { section: "Architect", sectionPath: "/architect" };
   if (pathname.startsWith("/github")) return { section: "GitHub", sectionPath: "/github" };
-  if (pathname.startsWith("/docs")) return { section: "Документація", sectionPath: "/docs" };
   if (pathname.startsWith("/observability")) return { section: "Observability", sectionPath: "/observability" };
   if (pathname.startsWith("/sync")) return { section: "Sync", sectionPath: "/sync" };
   if (pathname.startsWith("/devcycle")) return { section: "DevCycle", sectionPath: "/devcycle" };
@@ -110,9 +108,8 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/knowledge")) return { section: "Знання", sectionPath: "/knowledge" };
   if (pathname.startsWith("/notebooks")) return { section: "Knowledge Agents", sectionPath: "/notebooks" };
   if (pathname.startsWith("/codegen")) return { section: "Codegen", sectionPath: "/codegen" };
-  if (pathname.startsWith("/code")) return { section: "Код", sectionPath: "/code" };
-  if (pathname.startsWith("/workspace")) return { section: "Workspace", sectionPath: "/workspace" };
-  return { section: "Workspace", sectionPath: "/" };
+  if (pathname.startsWith("/workspace")) return { section: "Робоча область", sectionPath: "/workspace" };
+  return { section: "Робоча область", sectionPath: "/" };
 }
 
 function NavSection({ items, isActive, onClick }: {

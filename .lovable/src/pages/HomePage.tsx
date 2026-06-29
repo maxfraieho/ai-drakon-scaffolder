@@ -18,14 +18,14 @@ export function HomePage() {
     {
       name: "Docs Agent",
       healthUrl: `${workerUrl}/v1/agents/docs/health`,
-      route: "/docs",
+      route: "/workspace",
       icon: FileText,
       description: "Documentation crawler, reader, and writing assistant",
     },
     {
       name: "Architect Agent",
       healthUrl: `${workerUrl}/v1/agents/architect/health`,
-      route: "/pipelines",
+      route: "/architect",
       icon: Building2,
       description: "Pipeline blueprint architect and infrastructure assistant",
     },
