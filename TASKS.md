@@ -52,7 +52,7 @@ SESSION:2026-06-30|TASK-V2-03:tutorial-game|commit:<hash>|feat:added-interactive
 3. Запусти `npm run build` для оновлення роутів.
 4. git commit + push від AGY.
 
-## [ ] TASK-TEST-SPRINT-2
+## [x] TASK-TEST-SPRINT-2
 
 **UI Testing using Windows Chrome (MCP chrome-win)**
 
