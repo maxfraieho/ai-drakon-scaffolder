@@ -1,7 +1,112 @@
-import { validateIrDeterministic } from '../src/lib/htse/ir-validator-core';
-import { convertDiagramToIr } from '../src/lib/htse/diagram-to-ir';
-import { convertIrToDiagram } from '../src/lib/htse/ir-to-diagram';
-import { PRE_ANALYZED_ANALYSIS } from './generated-analysis-cache';
+// ── Inlined htse lib (ir-types, ir-validator-core, diagram-to-ir, ir-to-diagram) ──
+
+const VALID_IR_ITEM_TYPES = new Set([
+  'action','question','select','case','header','end','address',
+  'branch','insertion','input','output','shelf','process','timer','duration',
+]);
+
+function _isObject(v) { return v !== null && typeof v === 'object' && !Array.isArray(v); }
+
+function _normalizeIr(ir) {
+  const src = _isObject(ir) ? ir : {};
+  const items = _isObject(src.items) ? src.items : {};
+  const normalizedItems = {};
+  for (const [id, item] of Object.entries(items)) {
+    if (!_isObject(item)) continue;
+    normalizedItems[String(id)] = {
+      type: String(item.type || '').trim(),
+      content: String(item.content || '').trim(),
+      secondary: item.secondary === undefined ? undefined : String(item.secondary).trim(),
+      one: item.one === undefined ? undefined : String(item.one).trim(),
+      two: item.two === undefined ? undefined : String(item.two).trim(),
+      side: item.side === undefined ? undefined : String(item.side).trim(),
+      flag1: item.flag1 === undefined ? undefined : Boolean(item.flag1),
+      branchId: item.branchId === undefined ? undefined : String(item.branchId).trim(),
+      style: _isObject(item.style) ? item.style : undefined,
+    };
+  }
+  return {
+    name: String(src.name || '').trim(),
+    access: String(src.access || 'private').trim(),
+    params: Array.isArray(src.params) ? src.params.map(p => String(p).trim()).filter(Boolean) : [],
+    items: normalizedItems,
+  };
+}
+
+function validateIrDeterministic(irPayload) {
+  const issues = [];
+  const autofixes = [];
+  const normalizedIr = _normalizeIr(irPayload);
+  if (!normalizedIr.name) issues.push({ code: 'SCHEMA_REQUIRED_FIELD', severity: 'error', message: 'Field "name" is required.' });
+  if (!_isObject(normalizedIr.items) || Object.keys(normalizedIr.items).length === 0)
+    issues.push({ code: 'SCHEMA_REQUIRED_FIELD', severity: 'error', message: 'Field "items" is required and must be a non-empty object.' });
+  const itemIdSet = new Set(Object.keys(normalizedIr.items));
+  for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
+    if (!VALID_IR_ITEM_TYPES.has(item.type))
+      issues.push({ code: 'INVALID_ITEM_TYPE', severity: 'error', message: `Invalid item type "${item.type}"`, nodeId });
+    for (const field of ['one','two']) {
+      const val = item[field];
+      if (val !== undefined && !itemIdSet.has(val))
+        issues.push({ code: 'DANGLING_REFERENCE', severity: 'error', message: `${field} references unknown node "${val}"`, nodeId });
+    }
+  }
+  return { success: issues.filter(i => i.severity === 'error').length === 0, valid: issues.filter(i => i.severity === 'error').length === 0, normalizedIr, issues, autofixes };
+}
+
+function convertDiagramToIr(diagram) {
+  const items = {};
+  for (const [id, item] of Object.entries(diagram.items || {})) {
+    const style = {};
+    try { const p = JSON.parse(item.style || '{}'); if (_isObject(p)) Object.assign(style, p); } catch {}
+    if (item.link !== undefined) style.link = item.link;
+    if (item.margin !== undefined) style.margin = item.margin;
+    if (!VALID_IR_ITEM_TYPES.has(item.type)) style.originalType = item.type;
+    const irItem = {
+      type: VALID_IR_ITEM_TYPES.has(item.type) ? item.type : 'action',
+      content: item.content ?? '',
+      secondary: item.secondary,
+      one: item.one,
+      two: item.two,
+      side: item.side,
+      flag1: item.flag1 === undefined ? undefined : item.flag1 !== 0,
+      branchId: item.branchId === undefined ? undefined : String(item.branchId),
+    };
+    if (Object.keys(style).length > 0) irItem.style = style;
+    items[id] = irItem;
+  }
+  const acc = diagram.access === 'write' ? 'private' : 'public';
+  const params = (diagram.params || '').split(',').map(p => p.trim()).filter(Boolean);
+  return { name: diagram.name, access: acc, params, items };
+}
+
+function convertIrToDiagram(ir) {
+  const items = {};
+  for (const [id, item] of Object.entries(ir.items || {})) {
+    const d = {
+      type: item.type,
+      content: item.content,
+      secondary: item.secondary,
+      one: item.one,
+      two: item.two,
+      side: item.side,
+      flag1: item.flag1 === undefined ? undefined : (item.flag1 ? 1 : 0),
+      branchId: item.branchId === undefined ? undefined : Number(item.branchId),
+    };
+    if (item.style && Object.keys(item.style).length > 0) d.style = JSON.stringify(item.style);
+    items[id] = d;
+  }
+  return {
+    name: ir.name,
+    access: ir.access === 'private' ? 'write' : 'read',
+    params: (ir.params ?? []).join(', '),
+    items,
+  };
+}
+
+// PRE_ANALYZED_ANALYSIS — inlined as empty stub (generated at build time)
+const PRE_ANALYZED_ANALYSIS = { summary: {}, plannedDiagrams: [] };
+
+
 
 // ============================================
 // DRAKON MCP Worker v1.0
