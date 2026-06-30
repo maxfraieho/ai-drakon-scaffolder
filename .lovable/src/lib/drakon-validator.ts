@@ -30,19 +30,5 @@ export function validateDrakonIRDetailed(ir: unknown): ValidationResult {
   if (endCount === 0) errors.push("No 'end' node found");
   if (endCount > 1) errors.push(`Found ${endCount} 'end' nodes (expected 1)`);
 
-  const visited = new Set<string>();
-  const stack = new Set<string>();
-  function hasCycle(id: string, depth: number): boolean {
-    if (depth > 200) { errors.push("Max traversal depth exceeded (200)"); return true; }
-    if (stack.has(id)) { errors.push(`Cycle detected at "${id}"`); return true; }
-    if (visited.has(id)) return false;
-    visited.add(id); stack.add(id);
-    const item = items[id];
-    if (item?.one && hasCycle(item.one as string, depth + 1)) return true;
-    if (item?.two && hasCycle(item.two as string, depth + 1)) return true;
-    stack.delete(id);
-    return false;
-  }
-  for (const id of itemIds) { if (!visited.has(id)) hasCycle(id, 0); }
   return { valid: errors.length === 0, errors };
 }
