@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { ArrowLeft, ShieldCheck, Plus, Sliders, Workflow, Loader2 } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Plus, Sliders, Workflow, Loader2, Play } from "lucide-react";
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { DrakonEditor } from "@/components/drakon/DrakonEditor";
@@ -292,6 +292,13 @@ className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 
 <span className="ml-auto font-mono text-[10px] tabular-nums text-[var(--text-tertiary)]">
 v{config.version}
 </span>
+<Link
+to={`/pitch/${config.name}`}
+className="ml-2 inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-3 font-mono text-[11px] uppercase tracking-wider text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300 transition-colors duration-150"
+>
+<Play className="h-3.5 w-3.5" />
+Pitch Mode
+</Link>
 <button
 type="button"
 onClick={handleValidate}
