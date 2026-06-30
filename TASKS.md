@@ -51,3 +51,29 @@ SESSION:2026-06-30|TASK-V2-03:tutorial-game|commit:<hash>|feat:added-interactive
 2. Імплементуй файли.
 3. Запусти `npm run build` для оновлення роутів.
 4. git commit + push від AGY.
+
+## [ ] TASK-TEST-SPRINT-2
+
+**UI Testing using Windows Chrome (MCP chrome-win)**
+
+### Проблема
+Потрібно протестувати всі внесені зміни (Sprint 1 та 2) на ноутбуці з Windows через браузер. 
+
+### Де запускати
+AGY на RPi3B (192.168.3.234)
+
+### Що зробити
+1. Використай MCP `chrome-win` (якщо налаштований), який дозволяє підключитися до Chrome на Windows-ноутбуці по локальній мережі (або використовуй інший доступний MCP/браузер, що є на RPi3B для віддаленого тестування).
+2. Відкрий локальну версію або задеплоєний сайт (наприклад, http://localhost:5173 або Cloudflare URL).
+3. Протестуй наступний флоу:
+   - Відкрити `/magic` (Magic Demo) і перевірити генерацію.
+   - Відкрити `/templates` (Gallery) і створити проект з шаблону.
+   - Відкрити редактор і натиснути "Поділитись", після чого відкрити нову вкладку з лінком `/s/<short_id>` і перевірити, чи завантажилась Read-only схема.
+   - Перевірити відображення "Review Changes overlay" (в ручному режимі або симулювавши diff, якщо є можливість).
+   - Запустити щойно створений `TutorialGame` (TASK-V2-03) і пройти його.
+4. Якщо виявиш баги — зафіксуй їх у файл `development/findings/TEST_BUGS.md`.
+
+### Коміт
+```
+chore(test): document testing results for Sprint 2 via MCP
+```
