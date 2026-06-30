@@ -2526,6 +2526,18 @@ export default {
       return corsResponse();
     }
 
+    if (path.startsWith('/ws/room/')) {
+      if (!env.ROOM_DO) {
+        return errorResponse('ROOM_DO binding missing', 500);
+      }
+      const roomId = path.split('/')[3];
+      if (!roomId) return errorResponse('Missing room ID', 400);
+      
+      const id = env.ROOM_DO.idFromName(roomId);
+      const stub = env.ROOM_DO.get(id);
+      return stub.fetch(request);
+    }
+
     try {
       if (!env.JWT_SECRET) {
         return errorResponse('JWT_SECRET is not configured', 500, undefined, 'SERVER_CONFIG_ERROR');
@@ -4612,4 +4624,54 @@ async function handleDrakonExecuteDeterministicStatus(request, env) {
     events: output ? output.events : [],
     error: data.status === 'failed' ? (data.errors || 'Function failed') : undefined,
   });
+}
+
+export class RoomDO {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+    this.sessions = new Map(); // Set of active WebSockets
+  }
+
+  async fetch(request) {
+    const upgradeHeader = request.headers.get('Upgrade');
+    if (!upgradeHeader || upgradeHeader !== 'websocket') {
+      return new Response('Expected Upgrade: websocket', { status: 426 });
+    }
+
+    const [client, server] = Object.values(new WebSocketPair());
+
+    this.handleSession(server);
+
+    return new Response(null, {
+      status: 101,
+      webSocket: client,
+    });
+  }
+
+  handleSession(webSocket) {
+    webSocket.accept();
+    this.sessions.set(webSocket, true);
+
+    webSocket.addEventListener('message', (event) => {
+      // Broadcast to all other sessions
+      for (const session of this.sessions.keys()) {
+        if (session !== webSocket) {
+          try {
+            session.send(event.data);
+          } catch (e) {
+            this.sessions.delete(session);
+          }
+        }
+      }
+    });
+
+    webSocket.addEventListener('close', () => {
+      this.sessions.delete(webSocket);
+    });
+    
+    webSocket.addEventListener('error', () => {
+      this.sessions.delete(webSocket);
+    });
+  }
 }

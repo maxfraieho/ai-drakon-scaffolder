@@ -6,3 +6,11 @@ account_id = "c354ea45a11a1e1c14f1f41fe780cb34"
 [vars]
 DRAKON_CODEGEN_FUNCTION_ID = "6a33b6050037a2fff34e"
 MCP_API_KEY = "drakon-mcp-2026"
+
+[[durable_objects.bindings]]
+name = "ROOM_DO"
+class_name = "RoomDO"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["RoomDO"]

@@ -123,7 +123,7 @@ AGY на RPi3B (192.168.3.234)
 ### Виконавець
 Claude (OrangePi) - In progress
 
-## [ ] TASK-V2-09a
+## [x] TASK-V2-09a
 
 **Realtime Multi-user: Backend Infra**
 
