@@ -109,3 +109,16 @@ AGY3 (Termux tablet)
 
 ### Де запускати
 Termux на AGY3 (192.168.3.204)
+
+## [x] TASK-V2-08
+
+**Pitch Mode Presentation**
+
+### Що зробити
+1. Route `/pitch/$diagramId`
+2. Fullscreen mode + ESC для виходу
+3. Анімація виконання (таймер/шлях по вузлах)
+4. SpeechSynthesis API для AI-коментарів (коментар до кожного вузла)
+
+### Виконавець
+Claude (OrangePi) - In progress
