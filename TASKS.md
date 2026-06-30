@@ -160,3 +160,15 @@ AGY3 (Termux tablet) - React
 
 ### Виконавець
 AGY3 (Termux tablet) - React UI
+
+## [ ] TASK-V2-10
+
+**Community Gallery**
+
+### Що зробити
+1. Сторінка `/gallery` з карточками публічних схем.
+2. API для лайків (`Like` button).
+3. Пошук і фільтрація за тегами.
+
+### Виконавець
+Claude (OrangePi) - Orchestrator
