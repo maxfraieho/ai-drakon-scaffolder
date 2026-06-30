@@ -1,189 +1,53 @@
-# V3 INTEGRATION TASKS
+## [ ] TASK-V2-05-FIX
 
-## TASK-V3-P1-B1: Integrate DeterministicPipelineClient into usePipelineExecution.ts
+**Make Pipelines and Trace UI visible in the App**
 
-**Виконавець:** AGY rpi3b (Raspberry Pi 3B)  
-**Пріоритет:** HIGH  
-**Статус:** COMPLETED  
+### Проблема
+Користувач після авторизації через GitHub не бачить жодних змін в UI (немає пайплайнів, гейтів, чи панелі trace). Компоненти `PipelineDrakonView`, `EvidenceDrawer`, `GateIndicators` та роут `/trace` були створені, але вони не інтегровані в основну навігацію (Sidebar / Dashboard) або роутер `@tanstack/react-router` не згенерував їх.
 
-### 📋 Що зробити:
-1. Імпортувати `DeterministicPipelineClient` та `DrakonHarnessSpec` з нових модулів:
-   ```typescript
-   import { DeterministicPipelineClient } from "@/lib/harness/pipeline-client";
-   import { createDefaultSpec } from "@/lib/harness/harness-spec";
-   ```
-2. У хуці `usePipelineExecution` перевіряти feature flag:
-   ```typescript
-   const useDeterministic = import.meta.env.VITE_USE_DETERMINISTIC === "true";
-   ```
-3. У методі `runPipeline`:
-   - Якщо `useDeterministic === true`, використати `DeterministicPipelineClient` для запуску та полінгу:
-     ```typescript
-     if (useDeterministic) {
-       addLog("info", `Запуск детермінованого пайплайну '${pipelineName}'...`);
-       const client = new DeterministicPipelineClient({
-         workerBaseUrl: import.meta.env.VITE_WORKER_URL || "https://drakon-antigravity-worker.vokov.workers.dev",
-       });
-       
-       // Для тестування створюємо дефолтний HarnessSpec
-       const spec = createDefaultSpec(pipelineName);
-       
-       // Тут drakonIr має передаватися з нашого store або стану.
-       // Для сумісності з поточним методом беремо заглушку або існуючий IR.
-       const drakonIr = initialState.drakonIr || {}; 
-       
-       client.execute(
-         drakonIr,
-         spec,
-         {
-           onEvent: (ev) => {
-             if (ev.event === "node_start") {
-               setActiveNode(ev.node_id);
-               addLog("info", `Початок виконання вузла '${ev.node_id}'...`);
-             } else if (evt => ev.event === "node_done") {
-               setCompletedNodes((prev) => new Set(prev).add(ev.node_id));
-               setActiveNode(null);
-               addLog("node", `Вузол '${ev.node_id}' успішно виконано.`);
-             } else if (ev.event === "breakpoint") {
-               setBreakpointNode(ev.node_id);
-               setActiveNode(null);
-               addLog("warning", `Зупинка на Точці Зупинки у вузлі '${ev.node_id}'.`);
-             } else if (ev.event === "gate_blocked") {
-               addLog("error", `Блокування Gate [${ev.gate}]: ${ev.reason}`);
-             }
-           },
-           onComplete: (events) => {
-             setIsRunning(false);
-             setActiveNode(null);
-             addLog("success", "Детермінований пайплайн завершив виконання успішно.");
-           },
-           onError: (err) => {
-             setIsRunning(false);
-             setActiveNode(null);
-             setError(err.message);
-             addLog("error", `Помилка виконання: ${err.message}`);
-           }
-         },
-         breakpoints
-       );
-       return;
-     }
-     ```
-   - Якщо `useDeterministic === false`, залишити поточний SSE stream до FastAPI.
-4. Перевірити збірку проекту:
-   `npx -y -p typescript tsc --noEmit src/hooks/usePipelineExecution.ts`
+### Файли для зміни
+`src/components/workspace/WorkspaceShell.tsx` (додати посилання на Pipelines та Trace у навігацію)
+`src/pages/Index.tsx` або `src/routes/index.tsx` (додати посилання з головного дашборду)
+`src/routeTree.gen.ts` (потребує регенерації)
+`package.json` (можливо, додати скрипт `tsr generate`)
 
-### 🧪 Acceptance Criteria:
-- [x] Файл `src/hooks/usePipelineExecution.ts` успішно компілюється.
-- [x] При `VITE_USE_DETERMINISTIC=false` логіка SSE не змінюється.
-- [x] При `VITE_USE_DETERMINISTIC=true` робиться fetch до `/v1/pipeline/execute-deterministic`.
+### Що зробити
 
----
+1. **Регенерація роутингу**:
+   Запустити генератор `@tanstack/react-router` (зазвичай це відбувається автоматично при `npm run dev` або `npm run build`), щоб `/trace` з'явився у `routeTree.gen.ts`.
+   
+2. **Навігація (Sidebar)**:
+   У `WorkspaceShell.tsx` (або `AppSidebar.tsx`, якщо він там є), переконатися, що є видимі кнопки/посилання на:
+   - `/pipelines` (PipelinesPage)
+   - `/trace` (Execution Trace)
+   
+3. **Dashboard (Index)**:
+   На головній сторінці (де відображається список "Projects"), додати кнопку "Open Pipelines" та "View Traces", щоб користувач міг туди клікнути одразу після входу.
 
-## TASK-V3-P1-B2: Add routes to worker-mcp-drakon.js
+4. **Тестування UI**:
+   Переконатися, що при переході на сторінку пайплайну відображається `PipelineDrakonView` з `GateIndicators` та `EvidenceDrawer`.
 
-**Виконавець:** AGY rpi3b (Raspberry Pi 3B)  
-**Пріоритет:** HIGH  
-**Статус:** COMPLETED  
+### Верифікація
+```bash
+npm run build && echo OK
+```
+Та перевірка наявності `/trace` у `src/routeTree.gen.ts`.
 
-### 📋 Що зробити:
-1. У `cloudflare-worker/worker-mcp-drakon.js` знайти секцію `// ─── Pipeline proxy` та додати:
-   ```javascript
-   if (method === 'POST' && path === '/v1/pipeline/execute-deterministic') {
-     return await handleDrakonExecuteDeterministic(request, env);
-   }
-   if (method === 'GET' && path === '/v1/pipeline/execute-deterministic/status') {
-     return await handleDrakonExecuteDeterministicStatus(request, env);
-   }
-   ```
-2. Додати реалізацію в кінець файлу:
-   ```javascript
-   async function handleDrakonExecuteDeterministic(request, env) {
-     const payload = await verifyOwnerAuth(request, env);
-     if (!payload) return errorResponse('Unauthorized', 401);
-     
-     let body = {};
-     try { body = await request.json(); } catch (_) { return errorResponse('Invalid JSON body', 400); }
-     
-     const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f'; // placeholder
-     const projectId = env.APPWRITE_PROJECT_ID;
-     const apiKey = env.APPWRITE_API_KEY;
-     
-     const execRes = await fetch(
-       `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
-       {
-         method: 'POST',
-         headers: {
-           'Content-Type': 'application/json',
-           'X-Appwrite-Project': projectId,
-           'X-Appwrite-Key': apiKey,
-         },
-         body: JSON.stringify({
-           async: true,
-           body: JSON.stringify(body),
-         }),
-       }
-     );
-     
-     if (!execRes.ok) return errorResponse(`Execution failed: ${execRes.status}`, 502);
-     const execData = await execRes.json();
-     return jsonResponse({ execution_id: execData.$id, status: 'accepted' });
-   }
+### Деплой
+Коміт та пуш в `main` (Cloudflare Pages підхопить автоматично).
 
-   async function handleDrakonExecuteDeterministicStatus(request, env) {
-     const url = new URL(request.url);
-     const executionId = url.searchParams.get('execution_id');
-     if (!executionId) return errorResponse('execution_id required', 400);
-     
-     const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f';
-     const projectId = env.APPWRITE_PROJECT_ID;
-     const apiKey = env.APPWRITE_API_KEY;
-     
-     const res = await fetch(
-       `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
-       {
-         headers: {
-           'X-Appwrite-Project': projectId,
-           'X-Appwrite-Key': apiKey,
-         },
-       }
-     );
-     
-     if (!res.ok) return errorResponse(`Status check failed: ${res.status}`, 502);
-     const data = await res.json();
-     
-     let output = undefined;
-     if (data.status === 'completed' && data.responseBody) {
-       try { output = JSON.parse(data.responseBody); } catch (_) {}
-     }
-     
-     return jsonResponse({
-       execution_id: data.$id,
-       status: data.status,
-       events: output ? output.events : [],
-       error: data.status === 'failed' ? (data.errors || 'Function failed') : undefined,
-     });
-   }
-   ```
-3. Перевірити синтаксис файлу.
+### Коміт
+```
+fix(ui): integrate pipelines and trace routes into main navigation (TASK-V2-05-FIX)
+```
 
----
+### Diary
+```
+SESSION:2026-06-30|TASK-V2-05-FIX:ui-integration|commit:<hash>|fix:make-pipelines-visible|★★★
+```
 
-## TASK-V3-P2-B1: Implement PlayPipe and N8N push endpoints (FastAPI -> Appwrite Functions)
-
-**Виконавець:** AGY rpi3b (Raspberry Pi 3B)  
-**Пріоритет:** HIGH  
-**Статус:** COMPLETED  
-
-### 📋 Що зробити:
-1. Створити роутер `services/architect-agent/playpipe_route.py` для FastAPI з префіксом `/architect`:
-   - `POST /architect/decompose` (повертає JSON декомпозиції додатку через LLM).
-   - `POST /architect/build-parallel` (ініціює паралельний білд).
-   - `GET /architect/playpipe/build/{buildId}/stream` (повертає SSE з оновленням статусу білду).
-   - `POST /architect/playpipe/build/{buildId}/retry`
-   - `POST /architect/playpipe/build/{buildId}/stop`
-2. Зареєструвати роутер у `services/architect-agent/main.py`.
-3. Додати проксі-маршрути в `cloudflare-worker/worker-mcp-drakon.js` перед загальним Architect proxy:
-   - Проксі для `path.startsWith('/v1/playpipe/')` -> `env.ARCHITECT_AGENT_URL/architect/playpipe/*` (зберегти streaming/SSE).
-   - Додати обробник `POST /v1/compiler/n8n/push` (локальна компіляція + імпорт в n8n REST API).
-4. Оновити файли документації: замінити згадки `architect-agent-flue.maxfraieho.workers.dev` на `[Appwrite Function URL — env.ARCHITECT_AGENT_URL]`.
+### !!IMPORTANT!! Де запускати
+1. ЛОКАЛЬНО на AGY (Termux на 192.168.3.234): `cd ~/workspace/ai-drakon-scaffolder && git pull`
+2. Зроби необхідні зміни.
+3. Запусти генерацію роутів: `npm run build` або `npm run dev` на пару секунд.
+4. git commit + push від AGY.
