@@ -122,3 +122,41 @@ Termux на AGY3 (192.168.3.204)
 
 ### Виконавець
 Claude (OrangePi) - In progress
+
+## [ ] TASK-V2-09a
+
+**Realtime Multi-user: Backend Infra**
+
+### Що зробити
+1. Налаштувати Cloudflare Durable Objects (`RoomDO`) у `cloudflare-worker/`.
+2. Реалізувати WebSocket endpoints для підключення до `RoomDO`.
+3. Broadcast повідомлень (курсори, зміни) між підключеними клієнтами.
+
+### Виконавець
+Copilot (Dev Server) - Backend / Infra
+
+---
+
+## [ ] TASK-V2-09b
+
+**Realtime Multi-user: Sync & OT**
+
+### Що зробити
+1. Інтегрувати `Yjs` (чи OT) для синхронізації стану Drakon IR.
+2. Прив'язати Yjs до існуючого `DrakonEditor.tsx` (onEdit/onChange).
+
+### Виконавець
+AGY3 (Termux tablet) - React
+
+---
+
+## [ ] TASK-V2-09c
+
+**Realtime Multi-user: Cursors & UI**
+
+### Що зробити
+1. Відображення `Cursor presence` інших користувачів на canvas.
+2. Система "Comments" у `EVIDENCE drawer` (залишати нотатки на вузлах).
+
+### Виконавець
+AGY3 (Termux tablet) - React UI
