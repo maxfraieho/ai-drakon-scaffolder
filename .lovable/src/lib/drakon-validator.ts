@@ -22,7 +22,7 @@ export function validateDrakonIRDetailed(ir: unknown): ValidationResult {
   let endCount = 0;
   for (const [id, item] of Object.entries(items)) {
     if (typeof item.type !== "string") errors.push(`Item "${id}": missing or non-string type`);
-    if (typeof item.content !== "string") errors.push(`Item "${id}": missing or non-string content`);
+    if (item.content !== undefined && typeof item.content !== "string") errors.push(`Item "${id}": content must be a string`);
     if (item.one !== undefined && !items[item.one as string]) errors.push(`Item "${id}": 'one' points to non-existent "${item.one}"`);
     if (item.two !== undefined && !items[item.two as string]) errors.push(`Item "${id}": 'two' points to non-existent "${item.two}"`);
     if (item.type === "end") endCount++;
