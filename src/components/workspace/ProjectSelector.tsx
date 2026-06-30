@@ -398,10 +398,11 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
                   size="sm"
                   type="button"
                   onClick={() => {
+                    sessionStorage.setItem("oauth_redirect_back", window.location.pathname + window.location.search);
                     account.createOAuth2Token(
                       OAuthProvider.Github,
-                      window.location.href, // Redirect back to this exact page
-                      window.location.href,
+                      window.location.origin + "/diagrams",
+                      window.location.origin + "/login",
                       ["user:email", "repo", "read:org"]
                     );
                   }}

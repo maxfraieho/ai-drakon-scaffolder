@@ -62,7 +62,13 @@ function DiagramsRoute() {
           setAccessToken(jwtObj.jwt);
         } catch {}
 
-        window.location.replace("/diagrams");
+        const redirectBack = sessionStorage.getItem("oauth_redirect_back");
+        if (redirectBack) {
+          sessionStorage.removeItem("oauth_redirect_back");
+          window.location.replace(redirectBack);
+        } else {
+          window.location.replace("/diagrams");
+        }
       })
       .catch(() => {
         window.location.replace("/login");
