@@ -77,3 +77,19 @@ AGY на RPi3B (192.168.3.234)
 ```
 chore(test): document testing results for Sprint 2 via MCP
 ```
+
+## [ ] TASK-V2-06
+
+**PWA with Voice & Offline**
+
+### Що зробити
+1. `manifest.json` + Service Worker (використати Vite PWA).
+2. Web Speech API для voice input.
+3. IndexedDB для offline storage IR.
+4. Push notifications.
+
+### Виконавець
+AGY phone
+
+### Де запускати
+Termux на AGY phone (192.168.3.25)
