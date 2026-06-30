@@ -1,17 +1,25 @@
 import { useState } from "react";
-import { History, RotateCcw, Clock } from "lucide-react";
+import { History, RotateCcw, Clock, GitCompare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { uk } from "date-fns/locale";
 import type { DiagramVersion } from "@/lib/drakon/history";
 
 interface TimelineProps {
-  diagram: Diagram | null;
+  diagram: any;
   versions: DiagramVersion[];
   onRestore: (versionId: string) => void;
+  onCompare: (versionId: string | null) => void;
+  diffVersionId: string | null;
 }
 
-export function DiagramTimeline({ diagram, versions, onRestore }: TimelineProps) {
+export function DiagramTimeline({ 
+  diagram, 
+  versions, 
+  onRestore, 
+  onCompare, 
+  diffVersionId 
+}: TimelineProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   if (!diagram) return null;
@@ -36,7 +44,9 @@ export function DiagramTimeline({ diagram, versions, onRestore }: TimelineProps)
               {versions.map((version, idx) => (
                 <div 
                   key={version.id}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 group transition-colors"
+                  className={`flex items-center justify-between p-2 rounded-lg hover:bg-white/5 group transition-colors ${
+                    diffVersionId === version.id ? "bg-indigo-500/10 border border-indigo-500/20" : ""
+                  }`}
                 >
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
@@ -50,17 +60,33 @@ export function DiagramTimeline({ diagram, versions, onRestore }: TimelineProps)
                     <span className="text-xs text-slate-400 mt-0.5">{version.changes}</span>
                   </div>
                   
-                  {idx !== 0 && (
+                  <div className="flex items-center gap-1">
                     <Button 
                       variant="ghost" 
                       size="icon"
-                      className="h-7 w-7 opacity-0 group-hover:opacity-100 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20"
-                      onClick={() => onRestore(version.id)}
-                      title="Відновити цю версію"
+                      className={`h-7 w-7 transition-opacity ${
+                        diffVersionId === version.id 
+                          ? "opacity-100 text-indigo-400 bg-indigo-500/20" 
+                          : "opacity-0 group-hover:opacity-100 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10"
+                      }`}
+                      onClick={() => onCompare(diffVersionId === version.id ? null : version.id)}
+                      title={diffVersionId === version.id ? "Вимкнути порівняння" : "Порівняти з поточною версією"}
                     >
-                      <RotateCcw className="h-3.5 w-3.5" />
+                      <GitCompare className="h-3.5 w-3.5" />
                     </Button>
-                  )}
+
+                    {idx !== 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-7 w-7 opacity-0 group-hover:opacity-100 text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/20"
+                        onClick={() => onRestore(version.id)}
+                        title="Відновити цю версію"
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
