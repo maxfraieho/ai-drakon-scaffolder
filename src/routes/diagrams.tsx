@@ -31,6 +31,9 @@ function DiagramsRoute() {
     account
       .createSession(userId, secret)
       .then(async (session) => {
+        try {
+          localStorage.setItem("debug_session", JSON.stringify(session));
+        } catch {}
         if (session.provider === "github" && session.providerAccessToken) {
           const token = session.providerAccessToken;
           try {
