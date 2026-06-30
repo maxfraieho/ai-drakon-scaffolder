@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ArrowRight,
@@ -145,6 +145,7 @@ function parseGithubFromUrl(url: string): { owner: string; repo: string; branch:
 
 export function NewProjectWizard() {
   const navigate = useNavigate();
+  const search = useSearch({ from: '/project/new', strict: false }) as any;
   const [step, setStep] = useState<WizardStep>(1);
   const [stepError, setStepError] = useState<string | null>(null);
   const [successState, setSuccessState] = useState<SuccessState | null>(null);
@@ -154,8 +155,8 @@ export function NewProjectWizard() {
   const form = useForm<WizardFormValues>({
     mode: "onChange",
     defaultValues: {
-      name: "",
-      description: "",
+      name: search?.template ? `${search.template}-app` : "",
+      description: search?.template ? `Generated from ${search.template} template` : "",
       mode: "agent",
       aiAssisted: true,
       autoCreateRepo: true,
