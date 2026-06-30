@@ -4,10 +4,14 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { NodeStateInspector } from "./NodeStateInspector";
+import { useState } from "react";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
 import { upsertDiagramInStorage } from "@/lib/diagram-storage";
 import { usePipelineExecution } from "@/hooks/usePipelineExecution";
+import { GateIndicators } from "@/components/harness/GateIndicators";
+import { EvidenceDrawer } from "@/components/harness/EvidenceDrawer";
 import type { IrDiagram } from "@/lib/graph-pipeline-api";
+import type { GateVerdict } from "@/lib/harness/pipeline-client";
 import type { Diagram } from "@/types/drakon";
 
 interface Props {
@@ -31,6 +35,9 @@ type ExecStatus = "idle" | "running" | "breakpoint" | "done" | "error";
 
 export function PipelineDrakonView({ pipelineName, ir }: Props) {
   const navigate = useNavigate();
+  const [drawerGate, setDrawerGate] = useState<string | null>(null);
+  const [drawerVerdict, setDrawerVerdict] = useState<GateVerdict | null>(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const {
     isRunning,
@@ -38,6 +45,7 @@ export function PipelineDrakonView({ pipelineName, ir }: Props) {
     completedNodes,
     breakpointNode,
     breakpointState,
+    nodeVerdicts,
     error: execError,
     runPipeline,
     stopPipeline,
@@ -211,6 +219,20 @@ export function PipelineDrakonView({ pipelineName, ir }: Props) {
 
                   {isActive && <Zap className="h-3 w-3 text-[var(--accent-amber)] animate-pulse shrink-0" />}
                   {isDone && <CheckCircle2 className="h-3 w-3 text-green-500/60 shrink-0" />}
+
+                  <div className="ml-auto flex items-center pl-4">
+                    {nodeVerdicts[id] && nodeVerdicts[id].length > 0 && (
+                      <GateIndicators 
+                        verdicts={nodeVerdicts[id]} 
+                        onClick={(gate) => {
+                          const verdict = nodeVerdicts[id].find(v => v.gate === gate) || null;
+                          setDrawerGate(gate);
+                          setDrawerVerdict(verdict);
+                          setIsDrawerOpen(true);
+                        }}
+                      />
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -227,6 +249,12 @@ export function PipelineDrakonView({ pipelineName, ir }: Props) {
           />
         )}
       </div>
+      <EvidenceDrawer
+        isOpen={isDrawerOpen}
+        onOpenChange={setIsDrawerOpen}
+        gate={drawerGate}
+        verdict={drawerVerdict}
+      />
     </div>
   );
 }

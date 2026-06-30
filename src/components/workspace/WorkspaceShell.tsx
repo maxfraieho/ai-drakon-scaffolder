@@ -85,6 +85,7 @@ const NAV_WORKSPACE: NavItem[] = [
   { to: "/architect", label: "Architect", icon: Layers },
   { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },
   { to: "/codegen", label: "Codegen", icon: Code2 },
+  { to: "/trace", label: "Execution Trace", icon: Activity },
 ];
 
 const NAV_SYSTEM: NavItem[] = [
@@ -107,6 +108,7 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
   if (pathname.startsWith("/knowledge")) return { section: "Знання", sectionPath: "/knowledge" };
   if (pathname.startsWith("/notebooks")) return { section: "Knowledge Agents", sectionPath: "/notebooks" };
   if (pathname.startsWith("/codegen")) return { section: "Codegen", sectionPath: "/codegen" };
+  if (pathname.startsWith("/trace")) return { section: "Execution Trace", sectionPath: "/trace" };
   if (pathname.startsWith("/workspace")) return { section: "Робоча область", sectionPath: "/workspace" };
   return { section: "Робоча область", sectionPath: "/" };
 }

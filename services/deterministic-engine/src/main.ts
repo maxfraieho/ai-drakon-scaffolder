@@ -14,6 +14,7 @@ export interface GateVerdict {
   allowed: boolean;
   score?: number;
   reason?: string;
+  metadata?: Record<string, any>;
 }
 
 export type PipelineEvent =
@@ -233,10 +234,26 @@ export default async function main(context: {
       // 3. CONFIDENCE GATE (LLM Nodes)
       let confidencePassed = true;
       let finalScore = 1.0;
+      let injectedContext = "";
+
       if (safetyPassed && policyPassed && node.nodeKind === "llm") {
         const minScore = harness_spec.gates.confidence.min_score || 0.7;
         const maxRetries = harness_spec.gates.confidence.critique_max_retries || 2;
         
+        // NotebookLM Context Injection
+        try {
+          // Simulate NotebookLM Bridge API call
+          const notebookId = context.req.headers["x-notebooklm-id"] || "default-notebook";
+          context.log(`[NotebookLM Bridge] Fetching context for node ${id} from notebook ${notebookId}...`);
+          
+          // Here we would make a real fetch to process.env.NOTEBOOKLM_API_URL
+          // For deterministic execution, we mock the retrieved context
+          injectedContext = `[NotebookLM Context]: System architecture guidelines require strict type safety and pure functions.`;
+          context.log(`[NotebookLM Bridge] Injected context into system prompt: ${injectedContext}`);
+        } catch (err) {
+          context.error(`[NotebookLM Bridge] Failed to inject context: ${err}`);
+        }
+
         // Simulating LLM confidence score
         // We deterministic-mock it: normally passes (0.85), but if retry triggers we log it
         let score = 0.65; // start low to simulate a critique-correction loop
@@ -255,11 +272,13 @@ export default async function main(context: {
           blockedGateName = "confidence";
         }
       }
+      
       verdicts.push({
         gate: "confidence",
         allowed: confidencePassed,
         score: node.nodeKind === "llm" ? finalScore : undefined,
         reason: confidencePassed ? undefined : blockReason,
+        metadata: injectedContext ? { notebooklm_context: injectedContext } : undefined
       });
 
       // 4. COST GATE (Token limit checking)
