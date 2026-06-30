@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { Loader2, Copy, Check, Code2 } from "lucide-react";
+import { Loader2, Copy, Check, Code2, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 import {
   Accordion,
   AccordionContent,
@@ -47,6 +48,7 @@ export function CodegenPage() {
   const [language, setLanguage] = useState("JS2604");
 
   const [loading, setLoading] = useState(false);
+  const [listening, setListening] = useState(false);
   const [result, setResult] = useState<CodegenResponse | null>(null);
   const [pseudocode, setPseudocode] = useState<string>("");
   const [error, setError] = useState<string>("");
@@ -103,6 +105,38 @@ export function CodegenPage() {
       setTimeout(() => setCopied(null), 1500);
     });
   }
+
+  const toggleListen = () => {
+    if (listening) {
+      setListening(false);
+      return;
+    }
+    
+    // @ts-ignore
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Ваш браузер не підтримує Web Speech API");
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = "uk-UA";
+    recognition.interimResults = true;
+    
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onerror = () => setListening(false);
+    
+    recognition.onresult = (event: any) => {
+      const transcript = Array.from(event.results)
+        .map((result: any) => result[0].transcript)
+        .join("");
+      
+      setDescription(transcript);
+    };
+    
+    recognition.start();
+  };
 
   const jsonString = result ? JSON.stringify(result.drakon_json, null, 2) : "";
 
@@ -161,7 +195,20 @@ export function CodegenPage() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fn-desc">Опис</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor="fn-desc">Опис</Label>
+              <button
+                type="button"
+                onClick={toggleListen}
+                className={cn(
+                  "flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md transition-colors",
+                  listening ? "bg-rose-500/20 text-rose-500 animate-pulse" : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
+                )}
+              >
+                <Mic className="h-3.5 w-3.5" />
+                {listening ? "Слухаю..." : "Диктувати"}
+              </button>
+            </div>
             <Textarea
               id="fn-desc"
               value={description}
