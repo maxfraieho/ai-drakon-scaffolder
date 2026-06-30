@@ -68,6 +68,8 @@ DrakonConfig, DrakonConfigTheme } from '@/types/drakonwidget';
 import { convertDiagramToIrWithValidation } from '@/lib/htse/diagram-to-ir';
 import type { ValidationIssue } from '@/lib/htse/ir-validator-core';
 import type { DiagramDiff } from '@/lib/drakon/diff';
+import { DiagramTimeline } from './DiagramTimeline';
+import { saveDiagramVersion, getDiagramVersions, type DiagramVersion } from '@/lib/drakon/history';
 
 interface DrakonEditorProps {
 diagram?: DrakonDiagram;
@@ -155,20 +157,57 @@ return { folderSlug: d.folderSlug || folderSlug || '', saveToGit: d.saveToGit };
 });
 const [knownFolders, setKnownFolders] = useState<string[]>([]);
 useEffect(() => {
-let alive = true;
-listProjects().then((list) => {
-if (alive) setKnownFolders(list);
-});
-return () => { alive = false; };
+  let alive = true;
+  listProjects().then((list) => {
+    if (alive) setKnownFolders(list);
+  });
+  return () => { alive = false; };
 }, []);
 
-const editSender: DrakonEditSender = {
-pushEdit: (edit) => {
-setHasChanges(true);
-console.log('[DrakonEditor] Edit:', edit);
-},
-stop: () => {},
-};
+const [historyVersions, setHistoryVersions] = useState<DiagramVersion[]>([]);
+const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+useEffect(() => {
+  if (diagramId && !isNew) {
+    getDiagramVersions(diagramId).then(setHistoryVersions).catch(console.error);
+  }
+}, [diagramId, isNew]);
+
+const handleRestoreVersion = useCallback((versionId: string) => {
+  const version = historyVersions.find(v => v.id === versionId);
+  if (version && widgetRef.current) {
+    widgetRef.current.importJson(JSON.stringify(version.diagramData));
+    setDiagramName(version.diagramData.name || '');
+    setHasChanges(true); // Treat restore as a change to allow saving
+    toast.success(`Відновлено версію від ${new Date(version.timestamp).toLocaleString()}`);
+  }
+}, [historyVersions]);
+
+const editSender = useMemo<DrakonEditSender>(() => ({
+  pushEdit: (edit) => {
+    setHasChanges(true);
+    console.log('[DrakonEditor] Edit:', edit);
+    
+    // Auto-save history every 30s of inactivity
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(() => {
+      if (!widgetRef.current || !diagramId) return;
+      try {
+        const jsonString = widgetRef.current.exportJson();
+        const diagramData = JSON.parse(jsonString);
+        saveDiagramVersion(diagramId, diagramData, 'Автозбереження')
+          .then(() => getDiagramVersions(diagramId))
+          .then(setHistoryVersions)
+          .catch(console.error);
+      } catch (e) {
+        console.error('[DrakonEditor] Auto-save to history failed', e);
+      }
+    }, 30000);
+  },
+  stop: () => {
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+  },
+}), [diagramId]);
 
 // CRITICAL: memoize these so buildConfig dependencies stay stable across renders.
 // Without this, every setState (e.g. closing context menu) triggers full widget re-init,
@@ -1131,6 +1170,13 @@ uiStateRef.current = 'default';
 <div
 ref={containerRef}
 className="drakon-container rounded-lg border overflow-hidden h-full"
+/>
+
+{/* Timeline Overlay */}
+<DiagramTimeline 
+  diagram={widgetRef.current ? (JSON.parse(widgetRef.current.exportJson() || "null") || diagram) : diagram} 
+  versions={historyVersions} 
+  onRestore={handleRestoreVersion} 
 />
 
 {/* Context menu */}

@@ -94,7 +94,7 @@ Claude (OrangePi)
 ### Де запускати
 Claude IDE
 
-## [ ] TASK-V2-07
+## [x] TASK-V2-07
 
 **Time Travel for Diagrams**
 
@@ -105,10 +105,10 @@ Claude IDE
 4. "Restore" → повертає до попередньої версії (оновлює поточний файл).
 
 ### Виконавець
-AGY RPi3B
+Claude (OrangePi)
 
 ### Де запускати
-AGY на RPi3B (192.168.3.234)
+Claude IDE
 
 ## [x] TASK-V2-08
 
@@ -146,7 +146,7 @@ Claude (OrangePi) - Backend / Infra
 2. Прив'язати Yjs до існуючого `DrakonEditor.tsx` (onEdit/onChange).
 
 ### Виконавець
-AGY RPi3B - React
+Claude (OrangePi) - React
 
 ---
 
@@ -159,7 +159,7 @@ AGY RPi3B - React
 2. Система "Comments" у `EVIDENCE drawer` (залишати нотатки на вузлах).
 
 ### Виконавець
-AGY RPi3B - React UI
+Claude (OrangePi) - React UI
 
 ## [x] TASK-V2-10
 
