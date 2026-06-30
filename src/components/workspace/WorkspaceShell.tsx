@@ -27,6 +27,7 @@ import {
   Braces,
   Activity,
   ChevronUp,
+  Gamepad2,
 } from "lucide-react";
 import {
   Sheet,
@@ -81,6 +82,7 @@ type NavItem = {
 
 const NAV_WORKSPACE: NavItem[] = [
   { to: "/workspace", label: "Робоча область", icon: Braces },
+  { to: "/tutorial", label: "🕹️ Tutorial", icon: Gamepad2 },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
   { to: "/architect", label: "Architect", icon: Layers },
   { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },

@@ -1,4 +1,4 @@
-## [ ] TASK-V2-03
+## [x] TASK-V2-03
 
 **"DRAKON for Kids" — інтерактивний туторіал**
 
@@ -78,7 +78,7 @@ AGY на RPi3B (192.168.3.234)
 chore(test): document testing results for Sprint 2 via MCP
 ```
 
-## [ ] TASK-V2-06
+## [x] TASK-V2-06
 
 **PWA with Voice & Offline**
 
@@ -89,10 +89,10 @@ chore(test): document testing results for Sprint 2 via MCP
 4. Push notifications.
 
 ### Виконавець
-AGY phone
+Claude (OrangePi)
 
 ### Де запускати
-Termux на AGY phone (192.168.3.25)
+Claude IDE
 
 ## [ ] TASK-V2-07
 
@@ -105,10 +105,10 @@ Termux на AGY phone (192.168.3.25)
 4. "Restore" → повертає до попередньої версії (оновлює поточний файл).
 
 ### Виконавець
-AGY3 (Termux tablet)
+AGY RPi3B
 
 ### Де запускати
-Termux на AGY3 (192.168.3.204)
+AGY на RPi3B (192.168.3.234)
 
 ## [x] TASK-V2-08
 
@@ -133,7 +133,7 @@ Claude (OrangePi) - In progress
 3. Broadcast повідомлень (курсори, зміни) між підключеними клієнтами.
 
 ### Виконавець
-Copilot (Dev Server) - Backend / Infra
+Claude (OrangePi) - Backend / Infra
 
 ---
 
@@ -146,7 +146,7 @@ Copilot (Dev Server) - Backend / Infra
 2. Прив'язати Yjs до існуючого `DrakonEditor.tsx` (onEdit/onChange).
 
 ### Виконавець
-AGY3 (Termux tablet) - React
+AGY RPi3B - React
 
 ---
 
@@ -159,9 +159,9 @@ AGY3 (Termux tablet) - React
 2. Система "Comments" у `EVIDENCE drawer` (залишати нотатки на вузлах).
 
 ### Виконавець
-AGY3 (Termux tablet) - React UI
+AGY RPi3B - React UI
 
-## [ ] TASK-V2-10
+## [x] TASK-V2-10
 
 **Community Gallery**
 
