@@ -67,6 +67,7 @@ import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender,
 DrakonConfig, DrakonConfigTheme } from '@/types/drakonwidget';
 import { convertDiagramToIrWithValidation } from '@/lib/htse/diagram-to-ir';
 import type { ValidationIssue } from '@/lib/htse/ir-validator-core';
+import type { DiagramDiff } from '@/lib/drakon/diff';
 
 interface DrakonEditorProps {
 diagram?: DrakonDiagram;
@@ -77,6 +78,7 @@ onSaved?: (diagramId: string) => void;
 onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>;
 onSelectionChanged?: (items: any[] | null) => void;
 className?: string;
+diff?: DiagramDiff;
 }
 
 // Empty diagram template for new diagrams
@@ -108,6 +110,7 @@ onSaved,
 onSaveOverride,
 onSelectionChanged,
 className,
+diff,
 }: DrakonEditorProps) {
 const { theme } = useTheme();
 const { t, locale } = useLocale();
@@ -183,6 +186,16 @@ const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon
         };
       }
     });
+
+    if (diff) {
+      Object.entries(diff.nodes).forEach(([id, result]) => {
+        if (result.status === "added") {
+           issuesIcons[id] = { ...issuesIcons[id], iconBorder: '#2da44e', lineWidth: 3, iconFill: '#e6ffed' };
+        } else if (result.status === "modified") {
+           issuesIcons[id] = { ...issuesIcons[id], iconBorder: '#d4a72c', lineWidth: 3, iconFill: '#fff8c5' };
+        }
+      });
+    }
 
     const baseTheme = getGardenDrakonTheme(isDark);
     const themeWithIssues = {
@@ -292,7 +305,7 @@ const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon
         setZoomLevel(newZoom);
       },
     };
-  }, [isDark, panMode, drakonLabels, drakonTranslate, t.drakon, conversionIssues]);
+  }, [isDark, panMode, drakonLabels, drakonTranslate, t.drakon, conversionIssues, diff]);
 
 // Initialize widget
 useEffect(() => {
@@ -1064,6 +1077,30 @@ disabled={isLoading}
     </div>
   );
 })()}
+
+{/* Diff Review Changes overlay */}
+{diff && (
+  <div className="shrink-0 border-b bg-indigo-950/20 px-3 py-2 flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--text-primary)]">
+        <span className="w-2 h-2 rounded-full bg-[#2da44e]" />
+        {diff.summary.added} added
+      </div>
+      <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--text-primary)]">
+        <span className="w-2 h-2 rounded-full bg-[#d4a72c]" />
+        {diff.summary.modified} modified
+      </div>
+      <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--text-primary)]">
+        <span className="w-2 h-2 rounded-full bg-[#cf222e]" />
+        {diff.summary.removed} removed
+      </div>
+    </div>
+    
+    <div className="text-xs text-[var(--text-secondary)] font-mono">
+      AI Changes Review Mode
+    </div>
+  </div>
+)}
 
 {/* Editor layout with toolbar at bottom */}
 <div className="flex flex-col flex-1 min-h-0 gap-2">
