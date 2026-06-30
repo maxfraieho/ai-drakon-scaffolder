@@ -284,7 +284,7 @@ async function verifyJWT(token, secret) {
 
 async function verifyAppwriteJwt(token) {
   try {
-    const resp = await fetch('https://fra.cloud.appwrite.io/v1/account', {
+    const resp = await fetch('https://auth.aidrakon.tech/v1/account', {
       headers: {
         'X-Appwrite-Project': '6a23420a003a04b4997b',
         'X-Appwrite-JWT': token,
@@ -2359,7 +2359,7 @@ async function handleGithubAuthCallback(request, env) {
   }
 
   // Save to Appwrite user_profiles
-  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech/v1';
   const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
   const appwriteApiKey = env.APPWRITE_API_KEY;
 
@@ -3038,7 +3038,7 @@ async function handleKbIndex(request, env) {
   }
 
   // Appwrite Config
-  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech/v1';
   const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
   const appwriteApiKey = env.APPWRITE_API_KEY;
   if (!appwriteApiKey) return errorResponse('APPWRITE_API_KEY secret not configured', 500);
@@ -3220,7 +3220,7 @@ async function handleKbSearch(request, env) {
   }
 
   // 2. Fetch all embeddings for project from Appwrite kb_embeddings
-  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech/v1';
   const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
   const appwriteApiKey = env.APPWRITE_API_KEY;
   if (!appwriteApiKey) return errorResponse('APPWRITE_API_KEY secret not configured', 500);
@@ -3540,7 +3540,7 @@ async function handleNotesBuildSemanticGraph(request, env) {
   if (github_token) graphBody.github_token = github_token;
 
   const execRes = await fetch(
-    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    `https://auth.aidrakon.tech/v1/functions/${functionId}/executions`,
     {
       method: 'POST',
       headers: {
@@ -3579,7 +3579,7 @@ async function handleSemanticGraphStatus(request, env) {
   if (!functionId || !apiKey) return errorResponse('not configured', 503);
 
   const res = await fetch(
-    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    `https://auth.aidrakon.tech/v1/functions/${functionId}/executions/${executionId}`,
     {
       headers: {
         'X-Appwrite-Project': projectId,
@@ -3662,7 +3662,7 @@ async function handleDrakonCodegen(request, env) {
   }
 
   const execRes = await fetch(
-    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    `https://auth.aidrakon.tech/v1/functions/${functionId}/executions`,
     {
       method: 'POST',
       headers: {
@@ -3701,7 +3701,7 @@ async function handleCodegenStatus(request, env) {
   if (!functionId || !apiKey) return errorResponse('not configured', 503);
 
   const res = await fetch(
-    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    `https://auth.aidrakon.tech/v1/functions/${functionId}/executions/${executionId}`,
     {
       headers: {
         'X-Appwrite-Project': projectId,
@@ -3792,7 +3792,7 @@ async function handleDrakonCompile(request, env) {
   }
 
   const execRes = await fetch(
-    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    `https://auth.aidrakon.tech/v1/functions/${functionId}/executions`,
     {
       method: 'POST',
       headers: {
@@ -3831,7 +3831,7 @@ async function handleCompileStatus(request, env) {
   if (!functionId || !apiKey) return errorResponse('not configured', 503);
 
   const res = await fetch(
-    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    `https://auth.aidrakon.tech/v1/functions/${functionId}/executions/${executionId}`,
     {
       headers: {
         'X-Appwrite-Project': projectId,
@@ -4503,7 +4503,7 @@ function createZip(files) {
 }
 
 async function getGithubTokenForUser(userId, userJwt, env) {
-  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
+  const appwriteEndpoint = env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech/v1';
   const appwriteProjectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
   const appwriteApiKey = env.APPWRITE_API_KEY;
 
@@ -4551,7 +4551,7 @@ async function handleDrakonExecuteDeterministic(request, env) {
   }
   
   const execRes = await fetch(
-    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions`,
+    `https://auth.aidrakon.tech/v1/functions/${functionId}/executions`,
     {
       method: 'POST',
       headers: {
@@ -4587,7 +4587,7 @@ async function handleDrakonExecuteDeterministicStatus(request, env) {
   if (!functionId || !apiKey) return errorResponse('not configured', 503);
   
   const res = await fetch(
-    `https://fra.cloud.appwrite.io/v1/functions/${functionId}/executions/${executionId}`,
+    `https://auth.aidrakon.tech/v1/functions/${functionId}/executions/${executionId}`,
     {
       headers: {
         'X-Appwrite-Project': projectId,
