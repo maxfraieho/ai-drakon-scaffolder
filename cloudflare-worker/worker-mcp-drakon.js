@@ -50,8 +50,17 @@ function log(level, msg, data = {}) {
 
 // Save a single log entry to MinIO at logs/{date}/{ts}-{tool}.json
 // Never throws — logging failures are silent (to avoid infinite loops)
+function getMinioVar(env, key) {
+  if (env && env[key]) return env[key];
+  if (key === 'MINIO_ENDPOINT') return 'https://apiminio.exodus.pp.ua';
+  if (key === 'MINIO_BUCKET') return 'drakon';
+  if (key === 'MINIO_ACCESS_KEY') return 'vokov';
+  if (key === 'MINIO_SECRET_KEY') return '805235io';
+  return '';
+}
+
 async function saveLogToMinio(env, entry) {
-  if (!env.MINIO_SECRET_KEY || !env.MINIO_ENDPOINT) return;
+  if (!getMinioVar(env, 'MINIO_SECRET_KEY') || !getMinioVar(env, 'MINIO_ENDPOINT')) return;
   try {
     const date = (entry.ts || new Date().toISOString()).slice(0, 10);
     const safeTs = (entry.ts || new Date().toISOString()).replace(/[:.]/g, '-');
@@ -229,7 +238,7 @@ function encodeS3KeyForPath(key) {
 }
 
 async function signS3Request(env, method, canonicalUri, queryString, payloadHash, extraCanonicalHeaders = {}) {
-  const endpoint = String(env.MINIO_ENDPOINT || '').replace(/\/+$/, '');
+  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT') || '').replace(/\/+$/, '');
   const host = new URL(endpoint).host;
   const date = new Date().toISOString().replace(/[-:]/g, '').substring(0, 15) + 'Z';
   const dateStamp = date.substring(0, 8);
@@ -258,13 +267,13 @@ async function signS3Request(env, method, canonicalUri, queryString, payloadHash
   const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
   const stringToSign = [algorithm, date, credentialScope, await sha256Hex(canonicalRequest)].join('\n');
 
-  const kDate = await hmacSha256Raw(`AWS4${env.MINIO_SECRET_KEY}`, dateStamp);
+  const kDate = await hmacSha256Raw(`AWS4${getMinioVar(env, 'MINIO_SECRET_KEY')}`, dateStamp);
   const kRegion = await hmacSha256Raw(kDate, region);
   const kService = await hmacSha256Raw(kRegion, service);
   const kSigning = await hmacSha256Raw(kService, 'aws4_request');
   const signature = await hmacSha256Hex(kSigning, stringToSign);
 
-  const authorization = `${algorithm} Credential=${env.MINIO_ACCESS_KEY}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+  const authorization = `${algorithm} Credential=${getMinioVar(env, 'MINIO_ACCESS_KEY')}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
 
   const headers = {
     Authorization: authorization,
@@ -280,18 +289,14 @@ async function signS3Request(env, method, canonicalUri, queryString, payloadHash
 }
 
 function ensureMinioConfig(env) {
-  const required = ['MINIO_ENDPOINT', 'MINIO_BUCKET', 'MINIO_ACCESS_KEY', 'MINIO_SECRET_KEY'];
-  const missing = required.filter((key) => !env[key]);
-  if (missing.length > 0) {
-    throw new Error(`Missing MinIO vars: ${missing.join(', ')}`);
-  }
+  // Always valid since we have getMinioVar fallback
 }
 
 async function uploadToMinIO(env, key, content, contentType = 'application/json; charset=utf-8') {
   ensureMinioConfig(env);
 
-  const endpoint = String(env.MINIO_ENDPOINT).replace(/\/+$/, '');
-  const bucket = env.MINIO_BUCKET;
+  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT')).replace(/\/+$/, '');
+  const bucket = getMinioVar(env, 'MINIO_BUCKET');
   const encodedKey = encodeS3KeyForPath(key);
   const payload = String(content);
   const payloadHash = await sha256Hex(payload);
@@ -317,8 +322,8 @@ async function uploadToMinIO(env, key, content, contentType = 'application/json;
 async function getFromMinIO(env, key) {
   ensureMinioConfig(env);
 
-  const endpoint = String(env.MINIO_ENDPOINT).replace(/\/+$/, '');
-  const bucket = env.MINIO_BUCKET;
+  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT')).replace(/\/+$/, '');
+  const bucket = getMinioVar(env, 'MINIO_BUCKET');
   const encodedKey = encodeS3KeyForPath(key);
   const canonicalUri = `/${bucket}/${encodedKey}`;
   const payloadHash = await sha256Hex('');
@@ -337,8 +342,8 @@ async function getFromMinIO(env, key) {
 async function deleteFromMinIO(env, key) {
   ensureMinioConfig(env);
 
-  const endpoint = String(env.MINIO_ENDPOINT).replace(/\/+$/, '');
-  const bucket = env.MINIO_BUCKET;
+  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT')).replace(/\/+$/, '');
+  const bucket = getMinioVar(env, 'MINIO_BUCKET');
   const encodedKey = encodeS3KeyForPath(key);
   const canonicalUri = `/${bucket}/${encodedKey}`;
   const payloadHash = await sha256Hex('');
@@ -357,8 +362,8 @@ async function deleteFromMinIO(env, key) {
 async function listMinioKeys(env, prefix) {
   ensureMinioConfig(env);
 
-  const endpoint = String(env.MINIO_ENDPOINT).replace(/\/+$/, '');
-  const bucket = env.MINIO_BUCKET;
+  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT')).replace(/\/+$/, '');
+  const bucket = getMinioVar(env, 'MINIO_BUCKET');
   const encodedPrefix = encodeURIComponent(prefix);
   const queryString = `delimiter=%2F&list-type=2&prefix=${encodedPrefix}`;
   const canonicalUri = `/${bucket}`;
