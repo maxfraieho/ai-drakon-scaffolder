@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { ExternalLink, Play, StopCircle, Zap, CheckCircle2 } from "lucide-react";
+import { ExternalLink, Play, StopCircle, Zap, CheckCircle2, Share2, Copy, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { NodeStateInspector } from "./NodeStateInspector";
 import { useState } from "react";
 import { convertIrToDiagram } from "@/lib/htse/ir-to-diagram";
 import { upsertDiagramInStorage } from "@/lib/diagram-storage";
+import { createShareLink } from "@/lib/share-api";
 import { usePipelineExecution } from "@/hooks/usePipelineExecution";
 import { GateIndicators } from "@/components/harness/GateIndicators";
 import { EvidenceDrawer } from "@/components/harness/EvidenceDrawer";
@@ -38,6 +39,9 @@ export function PipelineDrakonView({ pipelineName, ir }: Props) {
   const [drawerGate, setDrawerGate] = useState<string | null>(null);
   const [drawerVerdict, setDrawerVerdict] = useState<GateVerdict | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   const {
     isRunning,
@@ -98,6 +102,31 @@ export function PipelineDrakonView({ pipelineName, ir }: Props) {
     }
   };
 
+  const handleShare = async () => {
+    setIsSharing(true);
+    try {
+      const shortId = await createShareLink({
+        ir: ir,
+        title: ir.name || pipelineName
+      });
+      const link = `${window.location.origin}/s/${shortId}`;
+      setShareLink(link);
+      toast.success("Посилання створено!");
+    } catch (e) {
+      toast.error("Помилка створення посилання");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const copyLink = async () => {
+    if (!shareLink) return;
+    await navigator.clipboard.writeText(shareLink);
+    setCopied(true);
+    toast.success("Скопійовано в буфер");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   return (
     <div className="flex h-full flex-col">
       {/* Toolbar */}
@@ -137,6 +166,35 @@ export function PipelineDrakonView({ pipelineName, ir }: Props) {
           <ExternalLink className="h-3 w-3 mr-1" />
           Схеми
         </Button>
+
+        {shareLink ? (
+          <div className="flex items-center gap-1 ml-2">
+            <input 
+              readOnly 
+              value={shareLink} 
+              className="h-7 w-48 rounded bg-black/40 px-2 text-[10px] font-mono text-[var(--text-secondary)] border border-[var(--border-subtle)] focus:outline-none" 
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyLink}
+              className="h-7 w-7 p-0"
+            >
+              {copied ? <Check className="h-3 w-3 text-green-400" /> : <Copy className="h-3 w-3" />}
+            </Button>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleShare}
+            disabled={isSharing}
+            className="h-7 text-[11px] font-mono ml-1"
+          >
+            <Share2 className="h-3 w-3 mr-1 text-indigo-400" />
+            {isSharing ? "..." : "Поділитись"}
+          </Button>
+        )}
 
         <div className="ml-auto flex items-center gap-3">
           {activeNode && (
