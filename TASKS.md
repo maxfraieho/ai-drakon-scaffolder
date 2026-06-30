@@ -173,7 +173,7 @@
 
 **Виконавець:** AGY rpi3b (Raspberry Pi 3B)  
 **Пріоритет:** HIGH  
-**Статус:** PENDING  
+**Статус:** COMPLETED  
 
 ### 📋 Що зробити:
 1. Створити роутер `services/architect-agent/playpipe_route.py` для FastAPI з префіксом `/architect`:
