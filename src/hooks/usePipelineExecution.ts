@@ -63,7 +63,7 @@ export function usePipelineExecution() {
         addLog("info", `Запуск детермінованого пайплайну '${pipelineName}'...`);
         try {
           const client = new DeterministicPipelineClient({
-            workerBaseUrl: import.meta.env.VITE_WORKER_URL || "https://drakon-antigravity-worker.vokov.workers.dev",
+            workerBaseUrl: import.meta.env.VITE_WORKER_URL || "https://drakon-antigravity-worker.maxfraieho.workers.dev",
           });
           
           const spec = createDefaultSpec(pipelineName);
