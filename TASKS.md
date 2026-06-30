@@ -93,3 +93,19 @@ AGY phone
 
 ### Де запускати
 Termux на AGY phone (192.168.3.25)
+
+## [ ] TASK-V2-07
+
+**Time Travel for Diagrams**
+
+### Що зробити
+1. Авто-коміт `.drakon.json` файлів кожні 30с під час редагування (використати debounce).
+2. UI: Timeline компонент знизу canvas (`src/components/drakon/DiagramTimeline.tsx`).
+3. Diff-view між commits.
+4. "Restore" → повертає до попередньої версії (оновлює поточний файл).
+
+### Виконавець
+AGY3 (Termux tablet)
+
+### Де запускати
+Termux на AGY3 (192.168.3.204)
