@@ -137,7 +137,7 @@ Claude (OrangePi) - Backend / Infra
 
 ---
 
-## [ ] TASK-V2-09b
+## [x] TASK-V2-09b
 
 **Realtime Multi-user: Sync & OT**
 
@@ -150,7 +150,7 @@ Claude (OrangePi) - React
 
 ---
 
-## [ ] TASK-V2-09c
+## [x] TASK-V2-09c
 
 **Realtime Multi-user: Cursors & UI**
 
