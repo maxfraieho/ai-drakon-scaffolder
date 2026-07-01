@@ -165,7 +165,7 @@ interface WorkspaceShellProps {
 export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout: appwriteLogout } = useAuth();
+  const { user, logout: appwriteLogout } = useAuth();
   const [agentsOpen, setAgentsOpen] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, setTheme } = useTheme();
@@ -181,6 +181,50 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     try { return localStorage.getItem("evidence_last") || null; } catch { return null; }
   });
   const [evidenceLoading, setEvidenceLoading] = useState(false);
+  
+  const [selectedNode, setSelectedNode] = useState<{ id: string; content: string } | null>(null);
+  const [allComments, setAllComments] = useState<Record<string, any[]>>({});
+  const [activeTab, setActiveTab] = useState<'evidence' | 'comments'>('evidence');
+  const [newCommentText, setNewCommentText] = useState('');
+
+  useEffect(() => {
+    const handleSelection = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail.selectedNodeId) {
+        setSelectedNode({
+          id: detail.selectedNodeId,
+          content: detail.selectedNodeContent || `Вузол #${detail.selectedNodeId}`
+        });
+      } else {
+        setSelectedNode(null);
+      }
+    };
+
+    const handleComments = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setAllComments(detail.comments || {});
+    };
+
+    document.addEventListener('drakon-selection-changed', handleSelection);
+    document.addEventListener('drakon-comments-updated', handleComments);
+
+    return () => {
+      document.removeEventListener('drakon-selection-changed', handleSelection);
+      document.removeEventListener('drakon-comments-updated', handleComments);
+    };
+  }, []);
+
+  const handlePostComment = () => {
+    if (!selectedNode || !newCommentText.trim()) return;
+    const author = user?.name || 'Гість';
+    if ((window as any).addDrakonComment) {
+      (window as any).addDrakonComment(selectedNode.id, newCommentText, author);
+      setNewCommentText('');
+    } else {
+      console.warn("Realtime sync comment function not bound yet. Is the diagram loaded?");
+    }
+  };
+
 
   const iconRailItems = [
     { id: "logic", to: "/diagrams", label: "Logic", icon: GitBranch, enabled: true },
@@ -694,31 +738,110 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           <div
             className={cn(
               "w-full bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] transition-[height] duration-200 overflow-hidden flex flex-col shrink-0",
-              evidenceCollapsed ? "h-0 border-t-0" : "h-64",
+              evidenceCollapsed ? "h-0 border-t-0" : "h-[300px]",
             )}
           >
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-3 py-1 bg-[var(--bg-surface)] shrink-0">
-              <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-[var(--text-muted)] font-semibold">
-                EVIDENCE
-              </span>
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('evidence')}
+                  className={cn(
+                    "font-mono text-[10px] uppercase tracking-[0.2em] font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors",
+                    activeTab === 'evidence' 
+                      ? "text-[var(--accent-amber)] border-[var(--accent-amber)]" 
+                      : "text-[var(--text-muted)] border-transparent hover:text-[var(--text-secondary)]"
+                  )}
+                >
+                  EVIDENCE
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('comments')}
+                  className={cn(
+                    "font-mono text-[10px] uppercase tracking-[0.2em] font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors",
+                    activeTab === 'comments' 
+                      ? "text-[var(--accent-amber)] border-[var(--accent-amber)]" 
+                      : "text-[var(--text-muted)] border-transparent hover:text-[var(--text-secondary)]"
+                  )}
+                >
+                  COMMENTS {selectedNode && `(#${selectedNode.id})`}
+                </button>
+              </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-3 font-mono text-[11px] text-[var(--text-secondary)]">
-              {evidenceLoading ? (
-                <div className="flex items-center justify-center h-full gap-2 text-[var(--text-muted)]">
-                  <span className="animate-spin h-3 w-3 border-b-2 border-amber-500 rounded-full inline-block" />
-                  Аналіз впливу…
-                </div>
-              ) : evidenceData ? (
-                <div className="p-3 font-mono text-[11px] text-gray-300 overflow-auto">
-                  <pre className="whitespace-pre-wrap leading-relaxed">{evidenceData}</pre>
-                </div>
+            
+            <div className="flex-1 overflow-y-auto p-3 text-[var(--text-secondary)] flex flex-col min-h-0">
+              {activeTab === 'evidence' ? (
+                evidenceLoading ? (
+                  <div className="flex items-center justify-center h-full gap-2 text-[var(--text-muted)] font-mono text-[11px]">
+                    <span className="animate-spin h-3 w-3 border-b-2 border-amber-500 rounded-full inline-block" />
+                    Аналіз впливу…
+                  </div>
+                ) : evidenceData ? (
+                  <div className="p-3 font-mono text-[11px] text-gray-300 overflow-auto">
+                    <pre className="whitespace-pre-wrap leading-relaxed">{evidenceData}</pre>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center h-full text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)] text-[11px] font-mono">
+                    Збережіть діаграму, щоб побачити аналіз впливу змін.
+                  </div>
+                )
               ) : (
-                <div className="flex items-center justify-center h-full text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)] text-[11px]">
-                  Збережіть діаграму, щоб побачити аналіз впливу змін.
+                /* Comments tab */
+                <div className="flex-1 flex flex-col gap-3 min-h-0">
+                  {!selectedNode ? (
+                    <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)] text-[11px] font-mono">
+                      Виберіть один вузол на діаграмі, щоб переглянути або залишити коментарі.
+                    </div>
+                  ) : (
+                    <div className="flex-1 flex flex-col gap-2 min-h-0">
+                      {/* Comments List */}
+                      <div className="flex-1 overflow-y-auto border border-[var(--border-subtle)] rounded p-2 bg-[var(--bg-elevated)] flex flex-col gap-2">
+                        {(!allComments[selectedNode.id] || allComments[selectedNode.id].length === 0) ? (
+                          <div className="text-[var(--text-muted)] text-[11px] italic p-2 font-mono">
+                            Коментарів до вузла {selectedNode.content} ще немає. Будьте першим!
+                          </div>
+                        ) : (
+                          allComments[selectedNode.id].map((c: any) => (
+                            <div key={c.id} className="text-[11px] border-b border-[var(--border-subtle)] pb-1.5 last:border-b-0 font-mono">
+                              <div className="flex justify-between text-[10px] text-[var(--text-muted)] mb-0.5">
+                                <span className="font-semibold text-[var(--text-secondary)]">{c.author}</span>
+                                <span>{new Date(c.timestamp).toLocaleTimeString()}</span>
+                              </div>
+                              <div className="text-[var(--text-secondary)]">{c.text}</div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                      
+                      {/* Add comment form */}
+                      <div className="flex gap-2 items-center mt-auto shrink-0">
+                        <input
+                          type="text"
+                          value={newCommentText}
+                          onChange={(e) => setNewCommentText(e.target.value)}
+                          placeholder={`Коментар до вузла "${selectedNode.content}"...`}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handlePostComment();
+                          }}
+                          className="flex-1 px-3 py-1.5 text-xs bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-white focus:outline-none focus:border-amber-500 font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={handlePostComment}
+                          disabled={!newCommentText.trim()}
+                          className="px-3 py-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded cursor-pointer transition-colors font-mono"
+                        >
+                          Надіслати
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           </div>
+
         </div>
       </div>
 

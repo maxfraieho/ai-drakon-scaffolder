@@ -72,6 +72,8 @@ import { DiagramTimeline } from './DiagramTimeline';
 import { saveDiagramVersion, getDiagramVersions, type DiagramVersion } from '@/lib/drakon/history';
 import * as Y from 'yjs';
 import { WebsocketProvider } from 'y-websocket';
+import { useAuth } from '@/context/AuthContext';
+
 
 
 interface DrakonEditorProps {
@@ -103,8 +105,22 @@ function normWidgetDiagram<T extends { params?: unknown }>(d: T | null | undefin
 | undefined {
 if (!d) return d;
 if (Array.isArray(d.params)) return { ...d, params: (d.params as string[]).join(', ') } as T;
-return d;
+  return d;
 }
+
+const colors = ['#f43f5e', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'];
+const hashCode = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return hash;
+};
+const getUserColor = (userId: string) => {
+  const hash = Math.abs(hashCode(userId));
+  return colors[hash % colors.length];
+};
+
 
 export function DrakonEditor({
 diagram,
@@ -135,6 +151,24 @@ const [zoomLevel, setZoomLevel] = useState(5000);
 const [contextMenu, setContextMenu] = useState<{ x: number; y: number; items: Array<{ text:
 string; action?: () => void; type?: string }> } | null>(null);
 const [panMode, setPanMode] = useState(false);
+const { user } = useAuth();
+const [guestId] = useState(() => 'guest-' + Math.random().toString(36).substr(2, 9));
+const [cursors, setCursors] = useState<Record<string, { x: number; y: number; name: string; color: string }>>({});
+const lastUpdateRef = useRef<number>(0);
+
+const handlePointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+  if (!wsProviderRef.current || import.meta.env.VITE_USE_REALTIME_SYNC !== 'true') return;
+  const now = Date.now();
+  if (now - lastUpdateRef.current < 50) return; // limit to 20 fps
+  lastUpdateRef.current = now;
+
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  
+  wsProviderRef.current.awareness.setLocalStateField('cursor', { x, y });
+}, []);
+
 // Track UI state to guard against unwanted selection/pasteMode resets
 const uiStateRef = useRef<'default' | 'contextMenuOpen' | 'pasteMode'>('default');
 // Track contextmenu target so Copy/Cut can use it as fallback when selection is lost
@@ -193,7 +227,31 @@ useEffect(() => {
   const provider = new WebsocketProvider(wsUrl, diagramId, ydoc);
   wsProviderRef.current = provider;
 
+  // Set user awareness state
+  const name = user?.name || 'Гість';
+  const color = user ? getUserColor(user.$id) : getUserColor(guestId);
+  provider.awareness.setLocalStateField('user', { name, color, id: user?.$id || guestId });
+
+  // Listen to other users' awareness
+  provider.awareness.on('change', () => {
+    const states = provider.awareness.getStates();
+    const nextCursors: Record<string, any> = {};
+    states.forEach((state: any, clientID: number) => {
+      if (clientID === provider.awareness.clientID) return;
+      if (state.cursor && state.user) {
+        nextCursors[state.user.id] = {
+          x: state.cursor.x,
+          y: state.cursor.y,
+          name: state.user.name,
+          color: state.user.color,
+        };
+      }
+    });
+    setCursors(nextCursors);
+  });
+
   const yDiagram = ydoc.getMap('diagram');
+  const yComments = ydoc.getMap('comments');
   
   yDiagram.observe((event, transaction) => {
     // Only import changes that come from network (not locally applied)
@@ -205,11 +263,32 @@ useEffect(() => {
     }
   });
 
+  yComments.observe(() => {
+    // Dispatch event to notify comments drawer
+    document.dispatchEvent(new CustomEvent('drakon-comments-updated', {
+      detail: { comments: yComments.toJSON() }
+    }));
+  });
+
+  // Global helper for WorkspaceShell to post comments
+  (window as any).addDrakonComment = (nodeId: string, text: string, author: string) => {
+    const currentComments = (yComments.get(nodeId) as any[]) || [];
+    const newComment = {
+      id: Math.random().toString(36).substr(2, 9),
+      text,
+      author,
+      timestamp: new Date().toISOString()
+    };
+    yComments.set(nodeId, [...currentComments, newComment]);
+  };
+
   return () => {
     provider.destroy();
     ydoc.destroy();
+    delete (window as any).addDrakonComment;
   };
-}, [diagramId, isNew]);
+}, [diagramId, isNew, user, guestId]);
+
 
 
 const activeDiff = useMemo(() => {
@@ -511,7 +590,15 @@ const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon
         if (onSelectionChanged) {
           onSelectionChanged(items);
         }
+        
+        // Dispatch custom event for WorkspaceShell / EVIDENCE Comments tab
+        const selectedNodeId = items && items.length === 1 ? items[0].id : null;
+        const selectedNodeContent = items && items.length === 1 ? items[0].content : null;
+        document.dispatchEvent(new CustomEvent('drakon-selection-changed', {
+          detail: { selectedNodeId, selectedNodeContent }
+        }));
       },
+
       onZoomChanged: (newZoom) => {
         setZoomLevel(newZoom);
       },
@@ -1328,7 +1415,11 @@ disabled={isLoading}
 {/* Editor layout with toolbar at bottom */}
 <div className="flex flex-col flex-1 min-h-0 gap-2">
 {/* Widget container */}
-<div className="relative flex-1 min-h-0" onClick={(e) => {
+<div 
+  className="relative flex-1 min-h-0" 
+  onPointerMove={handlePointerMove}
+  onClick={(e) => {
+
 // Don't interfere when context menu is open
 if (uiStateRef.current === 'contextMenuOpen') return;
 // In paste mode, click on empty canvas exits paste mode
@@ -1352,9 +1443,35 @@ uiStateRef.current = 'default';
 </div>
 )}
 <div
-ref={containerRef}
-className="drakon-container rounded-lg border overflow-hidden h-full"
+  ref={containerRef}
+  className="drakon-container rounded-lg border overflow-hidden h-full"
 />
+
+{/* Collaborative Cursors Overlay */}
+{Object.entries(cursors).map(([id, cursor]) => (
+  <div
+    key={id}
+    className="absolute pointer-events-none z-40 transition-[left,top] duration-75 flex flex-col items-start"
+    style={{ left: cursor.x, top: cursor.y }}
+  >
+    <svg
+      className="h-5 w-5 drop-shadow-[0_2px_2px_rgba(0,0,0,0.4)]"
+      viewBox="0 0 24 24"
+      fill={cursor.color}
+      stroke="white"
+      strokeWidth="1.5"
+    >
+      <path d="M4.5 3V17L9 12.5H16.5L4.5 3Z" />
+    </svg>
+    <span
+      className="mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium text-white shadow-sm whitespace-nowrap"
+      style={{ backgroundColor: cursor.color }}
+    >
+      {cursor.name}
+    </span>
+  </div>
+))}
+
 
 {/* Timeline Overlay */}
 <DiagramTimeline 
