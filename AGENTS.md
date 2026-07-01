@@ -244,3 +244,17 @@ If the `chrome-win` MCP server fails or returns `EOF` (due to cached connection 
 - Active tabs list: `http://127.0.0.1:19222/json`
 - Open new tab: `PUT http://127.0.0.1:19222/json/new?URL`
 - Connect to tab `webSocketDebuggerUrl` via Python's `websocket-client` library. **Important**: Always pass `suppress_origin=True` to `websocket.create_connection` to bypass Chrome origin security checks.
+
+## ОБОВ'ЯЗКОВІ ПРАВИЛА ДЛЯ АГЕНТІВ (Orange Pi PC2)
+
+### ЗАБОРОНЕНО локально на orange pi:
+- npm install / npm i / bun install
+- tsc / npx tsc / npm exec tsc
+- yarn / pnpm install
+- будь-який build-процес
+
+### НАТОМІСТЬ — тільки через SSH:
+ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-scaffolder && npx tsc --noEmit"
+ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-scaffolder && npm install <package>"
+
+Причина: Orange Pi має лише 1GB RAM. Локальний tsc/npm вбиває процес агента через swap thrashing.

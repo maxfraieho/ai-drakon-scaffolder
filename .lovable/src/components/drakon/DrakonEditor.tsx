@@ -67,6 +67,12 @@ import type { DrakonDiagram, DrakonWidget as DrakonWidgetType, DrakonEditSender,
 DrakonConfig, DrakonConfigTheme } from '@/types/drakonwidget';
 import { convertDiagramToIrWithValidation } from '@/lib/htse/diagram-to-ir';
 import type { ValidationIssue } from '@/lib/htse/ir-validator-core';
+import { compareDiagrams, type DiagramDiff } from '@/lib/drakon/diff';
+import { DiagramTimeline } from './DiagramTimeline';
+import { saveDiagramVersion, getDiagramVersions, type DiagramVersion } from '@/lib/drakon/history';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
+
 
 interface DrakonEditorProps {
 diagram?: DrakonDiagram;
@@ -77,6 +83,7 @@ onSaved?: (diagramId: string) => void;
 onSaveOverride?: (diagram: DrakonDiagram) => Promise<boolean>;
 onSelectionChanged?: (items: any[] | null) => void;
 className?: string;
+diff?: DiagramDiff;
 }
 
 // Empty diagram template for new diagrams
@@ -108,6 +115,7 @@ onSaved,
 onSaveOverride,
 onSelectionChanged,
 className,
+diff,
 }: DrakonEditorProps) {
 const { theme } = useTheme();
 const { t, locale } = useLocale();
@@ -152,20 +160,225 @@ return { folderSlug: d.folderSlug || folderSlug || '', saveToGit: d.saveToGit };
 });
 const [knownFolders, setKnownFolders] = useState<string[]>([]);
 useEffect(() => {
-let alive = true;
-listProjects().then((list) => {
-if (alive) setKnownFolders(list);
-});
-return () => { alive = false; };
+  let alive = true;
+  listProjects().then((list) => {
+    if (alive) setKnownFolders(list);
+  });
+  return () => { alive = false; };
 }, []);
 
-const editSender: DrakonEditSender = {
-pushEdit: (edit) => {
-setHasChanges(true);
-console.log('[DrakonEditor] Edit:', edit);
-},
-stop: () => {},
-};
+const [historyVersions, setHistoryVersions] = useState<DiagramVersion[]>([]);
+const [diffVersionId, setDiffVersionId] = useState<string | null>(null);
+const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+useEffect(() => {
+  if (diagramId && !isNew) {
+    getDiagramVersions(diagramId).then(setHistoryVersions).catch(console.error);
+  }
+}, [diagramId, isNew]);
+
+// Task-V2-09b: Realtime Sync (Cloudflare DO)
+const yDocRef = useRef<Y.Doc | null>(null);
+const wsProviderRef = useRef<WebsocketProvider | null>(null);
+
+useEffect(() => {
+  if (import.meta.env.VITE_USE_REALTIME_SYNC !== 'true') return;
+  if (!diagramId || isNew) return;
+
+  const ydoc = new Y.Doc();
+  yDocRef.current = ydoc;
+
+  const wsUrl = `${import.meta.env.VITE_WORKER_URL || 'https://drakon-antigravity-worker.maxfraieho.workers.dev'}`.replace(/^http/, 'ws') + `/v1/diagram/${diagramId}/sync`;
+  
+  const provider = new WebsocketProvider(wsUrl, diagramId, ydoc);
+  wsProviderRef.current = provider;
+
+  const yDiagram = ydoc.getMap('diagram');
+  
+  yDiagram.observe((event, transaction) => {
+    // Only import changes that come from network (not locally applied)
+    if (!transaction.local && widgetRef.current) {
+      const state = yDiagram.get('state') as string;
+      if (state) {
+        widgetRef.current.importJson(state);
+      }
+    }
+  });
+
+  return () => {
+    provider.destroy();
+    ydoc.destroy();
+  };
+}, [diagramId, isNew]);
+
+
+const activeDiff = useMemo(() => {
+  if (diff) return diff;
+  if (!diffVersionId || !widgetRef.current) return undefined;
+  const version = historyVersions.find(v => v.id === diffVersionId);
+  if (!version) return undefined;
+  
+  try {
+    const currentJson = widgetRef.current.exportJson();
+    if (!currentJson) return undefined;
+    const currentDiagram = JSON.parse(currentJson) as DrakonDiagram;
+    
+    const oldResult = convertDiagramToIrWithValidation(version.diagramData);
+    const newResult = convertDiagramToIrWithValidation(currentDiagram);
+    
+    return compareDiagrams(oldResult.ir, newResult.ir);
+  } catch (e) {
+    console.error('[DrakonEditor] Failed to compute diff:', e);
+    return undefined;
+  }
+}, [diff, diffVersionId, historyVersions]);
+
+const handleRestoreVersion = useCallback(async (versionId: string) => {
+  const version = historyVersions.find(v => v.id === versionId);
+  if (version && widgetRef.current) {
+    try {
+      widgetRef.current.importJson(JSON.stringify(version.diagramData));
+      setDiagramName(version.diagramData.name || '');
+      setHasChanges(true);
+      
+      const targetFolder = (projectFolder.folderSlug || '').trim() || folderSlug || 'general';
+      const effectiveId = diagramId;
+      if (effectiveId) {
+        const diagramData = JSON.parse(JSON.stringify(version.diagramData));
+        diagramData.name = version.diagramData.name;
+        if (diagramData && Array.isArray(diagramData.params)) {
+          diagramData.params = (diagramData.params as string[]).join(', ');
+        }
+        
+        try {
+          await saveDiagramToMinio(targetFolder, effectiveId, diagramData);
+        } catch {
+          await api.saveDiagram(targetFolder, effectiveId, diagramData);
+        }
+        
+        if (projectFolder.saveToGit) {
+          const ghCfg = getGithubConfig();
+          if (ghCfg.token.trim() && ghCfg.repo.trim()) {
+            const ownerRepo = parseOwnerRepo(`${ghCfg.owner}/${ghCfg.repo}`);
+            if (ownerRepo) {
+              await saveDiagramToGit({
+                owner: ownerRepo.owner,
+                repo: ownerRepo.repo,
+                branch: ghCfg.branch || 'main',
+                diagramId: effectiveId,
+                diagram: diagramData,
+                token: ghCfg.token,
+              });
+            }
+          }
+        }
+        
+        await saveDiagramVersion(effectiveId, diagramData, `Відновлено версію від ${new Date(version.timestamp).toLocaleString()}`);
+        const updated = await getDiagramVersions(effectiveId);
+        setHistoryVersions(updated);
+        setHasChanges(false);
+        setDiffVersionId(null); // Reset comparison
+        toast.success(`Відновлено та збережено версію від ${new Date(version.timestamp).toLocaleString()}`);
+        
+        document.dispatchEvent(
+          new CustomEvent("diagram-saved", {
+            detail: {
+              changedFiles: [`drn/${effectiveId}.json`],
+            },
+          }),
+        );
+      }
+    } catch (err) {
+      console.error('[DrakonEditor] Restore failed:', err);
+      toast.error('Не вдалося відновити та зберегти версію');
+    }
+  }
+}, [historyVersions, diagramId, folderSlug, projectFolder]);
+
+const editSender = useMemo<DrakonEditSender>(() => ({
+  pushEdit: (edit) => {
+    setHasChanges(true);
+    console.log('[DrakonEditor] Edit:', edit);
+    
+    // Broadcast via Yjs
+    if (yDocRef.current && import.meta.env.VITE_USE_REALTIME_SYNC === 'true') {
+      const jsonString = widgetRef.current?.exportJson();
+      if (jsonString) {
+        const yDiagram = yDocRef.current.getMap('diagram');
+        yDocRef.current.transact(() => {
+          yDiagram.set('state', jsonString);
+        });
+      }
+    }
+
+    
+    // Auto-save history every 30s of inactivity
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      if (!widgetRef.current || !diagramId) return;
+      try {
+        const jsonString = widgetRef.current.exportJson();
+        const diagramData = JSON.parse(jsonString);
+        await saveDiagramVersion(diagramId, diagramData, 'Автозбереження');
+        const updated = await getDiagramVersions(diagramId);
+        setHistoryVersions(updated);
+        
+        // Also save/commit the actual file (.drakon.json)
+        const targetFolder = (projectFolder.folderSlug || '').trim() || folderSlug || 'general';
+        const raw = JSON.parse(jsonString);
+        raw.name = diagramName;
+        if (raw && Array.isArray(raw.params)) {
+          raw.params = (raw.params as string[]).join(', ');
+        }
+        
+        // Validate silently
+        const { issues } = convertDiagramToIrWithValidation(raw);
+        if (!issues.some(i => i.severity === 'error')) {
+          try {
+            await saveDiagramToMinio(targetFolder, diagramId, raw);
+          } catch {
+            await api.saveDiagram(targetFolder, diagramId, raw);
+          }
+          
+          if (projectFolder.saveToGit) {
+            const ghCfg = getGithubConfig();
+            if (ghCfg.token.trim() && ghCfg.repo.trim()) {
+              const ownerRepo = parseOwnerRepo(`${ghCfg.owner}/${ghCfg.repo}`);
+              if (ownerRepo) {
+                try {
+                  await saveDiagramToGit({
+                    owner: ownerRepo.owner,
+                    repo: ownerRepo.repo,
+                    branch: ghCfg.branch || 'main',
+                    diagramId: diagramId,
+                    diagram: raw,
+                    token: ghCfg.token,
+                  });
+                } catch (gitErr) {
+                  console.error('[DrakonEditor] Auto-commit to Git failed', gitErr);
+                }
+              }
+            }
+          }
+          
+            setHasChanges(false);
+            document.dispatchEvent(
+              new CustomEvent("diagram-saved", {
+                detail: {
+                  changedFiles: [`drn/${diagramId}.json`],
+                },
+              }),
+            );
+          }
+        } catch (e) {
+          console.error('[DrakonEditor] Auto-save to history failed', e);
+        }
+      }, 2000);
+    },
+    stop: () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    },
+  }), [diagramId, diagramName, folderSlug, projectFolder]);
 
 // CRITICAL: memoize these so buildConfig dependencies stay stable across renders.
 // Without this, every setState (e.g. closing context menu) triggers full widget re-init,
@@ -183,6 +396,17 @@ const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon
         };
       }
     });
+
+    if (activeDiff) {
+      Object.entries(activeDiff.nodes).forEach(([id, res]) => {
+        const result = res as any;
+        if (result.status === "added") {
+           issuesIcons[id] = { ...issuesIcons[id], iconBorder: '#2da44e', lineWidth: 3, iconFill: '#e6ffed' };
+        } else if (result.status === "modified") {
+           issuesIcons[id] = { ...issuesIcons[id], iconBorder: '#d4a72c', lineWidth: 3, iconFill: '#fff8c5' };
+        }
+      });
+    }
 
     const baseTheme = getGardenDrakonTheme(isDark);
     const themeWithIssues = {
@@ -292,7 +516,7 @@ const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon
         setZoomLevel(newZoom);
       },
     };
-  }, [isDark, panMode, drakonLabels, drakonTranslate, t.drakon, conversionIssues]);
+  }, [isDark, panMode, drakonLabels, drakonTranslate, t.drakon, conversionIssues, activeDiff]);
 
 // Initialize widget
 useEffect(() => {
@@ -1065,6 +1289,42 @@ disabled={isLoading}
   );
 })()}
 
+{/* Diff Review Changes overlay */}
+{activeDiff && (
+  <div className="shrink-0 border-b bg-indigo-950/20 px-3 py-2 flex items-center justify-between animate-in fade-in duration-200">
+    <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--text-primary)]">
+        <span className="w-2 h-2 rounded-full bg-[#2da44e]" />
+        {activeDiff.summary.added} added
+      </div>
+      <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--text-primary)]">
+        <span className="w-2 h-2 rounded-full bg-[#d4a72c]" />
+        {activeDiff.summary.modified} modified
+      </div>
+      <div className="flex items-center gap-1.5 font-mono text-xs font-medium text-[var(--text-primary)]">
+        <span className="w-2 h-2 rounded-full bg-[#cf222e]" />
+        {activeDiff.summary.removed} removed
+      </div>
+    </div>
+    
+    <div className="flex items-center gap-3">
+      <div className="text-xs text-[var(--text-secondary)] font-mono">
+        {diff ? "AI Changes Review Mode" : `Порівняння з версією від ${new Date(historyVersions.find(v => v.id === diffVersionId)?.timestamp || 0).toLocaleString()}`}
+      </div>
+      {!diff && (
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-6 px-2 text-[10px] text-red-400 hover:text-red-300 hover:bg-red-500/10"
+          onClick={() => setDiffVersionId(null)}
+        >
+          Закрити порівняння
+        </Button>
+      )}
+    </div>
+  </div>
+)}
+
 {/* Editor layout with toolbar at bottom */}
 <div className="flex flex-col flex-1 min-h-0 gap-2">
 {/* Widget container */}
@@ -1094,6 +1354,15 @@ uiStateRef.current = 'default';
 <div
 ref={containerRef}
 className="drakon-container rounded-lg border overflow-hidden h-full"
+/>
+
+{/* Timeline Overlay */}
+<DiagramTimeline 
+  diagram={widgetRef.current ? (JSON.parse(widgetRef.current.exportJson() || "null") || diagram) : diagram} 
+  versions={historyVersions} 
+  onRestore={handleRestoreVersion} 
+  onCompare={setDiffVersionId}
+  diffVersionId={diffVersionId}
 />
 
 {/* Context menu */}

@@ -2538,6 +2538,19 @@ export default {
       return stub.fetch(request);
     }
 
+    if (path.startsWith('/v1/diagram/') && path.endsWith('/sync')) {
+      if (!env.DIAGRAM_SYNC) {
+        return errorResponse('DIAGRAM_SYNC binding missing', 500);
+      }
+      const parts = path.split('/');
+      const diagramId = parts[3];
+      if (!diagramId) return errorResponse('Missing diagram ID', 400);
+      
+      const id = env.DIAGRAM_SYNC.idFromName(diagramId);
+      const stub = env.DIAGRAM_SYNC.get(id);
+      return stub.fetch(request);
+    }
+
     try {
       if (!env.JWT_SECRET) {
         return errorResponse('JWT_SECRET is not configured', 500, undefined, 'SERVER_CONFIG_ERROR');
@@ -4672,6 +4685,46 @@ export class RoomDO {
     
     webSocket.addEventListener('error', () => {
       this.sessions.delete(webSocket);
+    });
+  }
+}
+export class DiagramSyncDO {
+  constructor(state, env) {
+    this.state = state;
+    this.env = env;
+    this.sessions = new Set();
+  }
+
+  async fetch(request) {
+    const upgradeHeader = request.headers.get('Upgrade');
+    if (!upgradeHeader || upgradeHeader !== 'websocket') {
+      return new Response('Expected Upgrade: websocket', { status: 426 });
+    }
+
+    const [client, server] = Object.values(new WebSocketPair());
+
+    server.accept();
+    this.sessions.add(server);
+
+    server.addEventListener('message', (event) => {
+      // Broadcast to all other sessions (Yjs update relay)
+      for (const session of this.sessions) {
+        if (session !== server) {
+          try {
+            session.send(event.data);
+          } catch (e) {
+            this.sessions.delete(session);
+          }
+        }
+      }
+    });
+
+    server.addEventListener('close', () => this.sessions.delete(server));
+    server.addEventListener('error', () => this.sessions.delete(server));
+
+    return new Response(null, {
+      status: 101,
+      webSocket: client,
     });
   }
 }

@@ -397,13 +397,17 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
                 <Button
                   size="sm"
                   type="button"
-                  onClick={() => {
-                    account.createOAuth2Token(
-                      OAuthProvider.Github,
-                      window.location.href, // Redirect back to this exact page
-                      window.location.href,
-                      ["user:email", "repo", "read:org"]
-                    );
+                  onClick={async () => {
+                    try {
+                      sessionStorage.setItem("oauth_redirect_back", window.location.pathname + window.location.search);
+                      const jwtObj = await account.createJWT();
+                      const settings = readSettings();
+                      const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+                      const authUrl = `${workerUrl}/auth/github/start?token=${encodeURIComponent(jwtObj.jwt)}&popup=false`;
+                      window.location.href = authUrl;
+                    } catch (err) {
+                      toast.error("Не вдалося запустити авторизацію GitHub");
+                    }
                   }}
                   className="bg-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/80 text-black text-[10px] font-semibold h-8 mt-1 gap-1.5 w-full rounded-[var(--radius-sm)] border-0"
                 >

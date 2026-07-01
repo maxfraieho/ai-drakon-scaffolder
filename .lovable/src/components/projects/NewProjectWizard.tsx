@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,7 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/lib/api";
 import { createGithubRepo } from "@/lib/github-api";
-import { getGithubConfig } from "@/lib/settings-storage";
+import { getGithubConfig, readSettings } from "@/lib/settings-storage";
 import { cn } from "@/lib/utils";
 import type { KnowledgeGraph } from "@/lib/understand/types";
 import { account } from "@/lib/appwrite";
@@ -145,6 +145,7 @@ function parseGithubFromUrl(url: string): { owner: string; repo: string; branch:
 
 export function NewProjectWizard() {
   const navigate = useNavigate();
+  const search = useSearch({ from: '/project/new', strict: false }) as any;
   const [step, setStep] = useState<WizardStep>(1);
   const [stepError, setStepError] = useState<string | null>(null);
   const [successState, setSuccessState] = useState<SuccessState | null>(null);
@@ -154,8 +155,8 @@ export function NewProjectWizard() {
   const form = useForm<WizardFormValues>({
     mode: "onChange",
     defaultValues: {
-      name: "",
-      description: "",
+      name: search?.template ? `${search.template}-app` : "",
+      description: search?.template ? `Generated from ${search.template} template` : "",
       mode: "agent",
       aiAssisted: true,
       autoCreateRepo: true,
@@ -496,13 +497,17 @@ export function NewProjectWizard() {
                     <Button
                       type="button"
                       size="sm"
-                      onClick={() => {
-                        account.createOAuth2Token(
-                          OAuthProvider.Github,
-                          window.location.href,
-                          window.location.href,
-                          ["user:email", "repo", "read:org"]
-                        );
+                      onClick={async () => {
+                        try {
+                          sessionStorage.setItem("oauth_redirect_back", window.location.pathname + window.location.search);
+                          const jwtObj = await account.createJWT();
+                          const settings = readSettings();
+                          const workerUrl = (settings.app.workerUrl || "https://drakon-antigravity-worker.maxfraieho.workers.dev").replace(/\/$/, "");
+                          const authUrl = `${workerUrl}/auth/github/start?token=${encodeURIComponent(jwtObj.jwt)}&popup=false`;
+                          window.location.href = authUrl;
+                        } catch (err) {
+                          // Ignore or log
+                        }
                       }}
                       className="bg-amber-600 hover:bg-amber-500 text-black text-xs font-semibold h-8 gap-1.5 rounded-[var(--radius-sm)] border-0 mt-1"
                     >

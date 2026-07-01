@@ -18,6 +18,7 @@ export interface GateVerdict {
   allowed: boolean;
   score?: number;
   reason?: string;
+  metadata?: Record<string, any>;
 }
 
 export interface PipelineClientOptions {

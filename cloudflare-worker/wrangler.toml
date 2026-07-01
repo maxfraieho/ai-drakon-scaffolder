@@ -11,6 +11,14 @@ MCP_API_KEY = "drakon-mcp-2026"
 name = "ROOM_DO"
 class_name = "RoomDO"
 
+[[durable_objects.bindings]]
+name = "DIAGRAM_SYNC"
+class_name = "DiagramSyncDO"
+
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["RoomDO"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["DiagramSyncDO"]

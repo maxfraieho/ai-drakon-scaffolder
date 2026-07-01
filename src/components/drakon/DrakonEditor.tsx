@@ -70,6 +70,9 @@ import type { ValidationIssue } from '@/lib/htse/ir-validator-core';
 import { compareDiagrams, type DiagramDiff } from '@/lib/drakon/diff';
 import { DiagramTimeline } from './DiagramTimeline';
 import { saveDiagramVersion, getDiagramVersions, type DiagramVersion } from '@/lib/drakon/history';
+import * as Y from 'yjs';
+import { WebsocketProvider } from 'y-websocket';
+
 
 interface DrakonEditorProps {
 diagram?: DrakonDiagram;
@@ -166,13 +169,48 @@ useEffect(() => {
 
 const [historyVersions, setHistoryVersions] = useState<DiagramVersion[]>([]);
 const [diffVersionId, setDiffVersionId] = useState<string | null>(null);
-const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
 useEffect(() => {
   if (diagramId && !isNew) {
     getDiagramVersions(diagramId).then(setHistoryVersions).catch(console.error);
   }
 }, [diagramId, isNew]);
+
+// Task-V2-09b: Realtime Sync (Cloudflare DO)
+const yDocRef = useRef<Y.Doc | null>(null);
+const wsProviderRef = useRef<WebsocketProvider | null>(null);
+
+useEffect(() => {
+  if (import.meta.env.VITE_USE_REALTIME_SYNC !== 'true') return;
+  if (!diagramId || isNew) return;
+
+  const ydoc = new Y.Doc();
+  yDocRef.current = ydoc;
+
+  const wsUrl = `${import.meta.env.VITE_WORKER_URL || 'https://drakon-antigravity-worker.maxfraieho.workers.dev'}`.replace(/^http/, 'ws') + `/v1/diagram/${diagramId}/sync`;
+  
+  const provider = new WebsocketProvider(wsUrl, diagramId, ydoc);
+  wsProviderRef.current = provider;
+
+  const yDiagram = ydoc.getMap('diagram');
+  
+  yDiagram.observe((event, transaction) => {
+    // Only import changes that come from network (not locally applied)
+    if (!transaction.local && widgetRef.current) {
+      const state = yDiagram.get('state') as string;
+      if (state) {
+        widgetRef.current.importJson(state);
+      }
+    }
+  });
+
+  return () => {
+    provider.destroy();
+    ydoc.destroy();
+  };
+}, [diagramId, isNew]);
+
 
 const activeDiff = useMemo(() => {
   if (diff) return diff;
@@ -262,6 +300,18 @@ const editSender = useMemo<DrakonEditSender>(() => ({
     setHasChanges(true);
     console.log('[DrakonEditor] Edit:', edit);
     
+    // Broadcast via Yjs
+    if (yDocRef.current && import.meta.env.VITE_USE_REALTIME_SYNC === 'true') {
+      const jsonString = widgetRef.current?.exportJson();
+      if (jsonString) {
+        const yDiagram = yDocRef.current.getMap('diagram');
+        yDocRef.current.transact(() => {
+          yDiagram.set('state', jsonString);
+        });
+      }
+    }
+
+    
     // Auto-save history every 30s of inactivity
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
@@ -311,24 +361,24 @@ const editSender = useMemo<DrakonEditSender>(() => ({
             }
           }
           
-          setHasChanges(false);
-          document.dispatchEvent(
-            new CustomEvent("diagram-saved", {
-              detail: {
-                changedFiles: [`drn/${diagramId}.json`],
-              },
-            }),
-          );
+            setHasChanges(false);
+            document.dispatchEvent(
+              new CustomEvent("diagram-saved", {
+                detail: {
+                  changedFiles: [`drn/${diagramId}.json`],
+                },
+              }),
+            );
+          }
+        } catch (e) {
+          console.error('[DrakonEditor] Auto-save to history failed', e);
         }
-      } catch (e) {
-        console.error('[DrakonEditor] Auto-save to history failed', e);
-      }
-    }, 30000);
-  },
-  stop: () => {
-    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-  },
-}), [diagramId, diagramName, folderSlug, projectFolder]);
+      }, 2000);
+    },
+    stop: () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    },
+  }), [diagramId, diagramName, folderSlug, projectFolder]);
 
 // CRITICAL: memoize these so buildConfig dependencies stay stable across renders.
 // Without this, every setState (e.g. closing context menu) triggers full widget re-init,
@@ -348,7 +398,8 @@ const drakonTranslate = useMemo(() => createDrakonTranslate(t.drakon), [t.drakon
     });
 
     if (activeDiff) {
-      Object.entries(activeDiff.nodes).forEach(([id, result]) => {
+      Object.entries(activeDiff.nodes).forEach(([id, res]) => {
+        const result = res as any;
         if (result.status === "added") {
            issuesIcons[id] = { ...issuesIcons[id], iconBorder: '#2da44e', lineWidth: 3, iconFill: '#e6ffed' };
         } else if (result.status === "modified") {

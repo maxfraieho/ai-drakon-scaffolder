@@ -18,6 +18,7 @@ import {
   Terminal,
   Activity,
   Wand2,
+  Globe,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -42,13 +43,14 @@ import { clearAccessToken } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
 
 type NavItem = {
-  to: "/diagrams" | "/workspace" | "/docs" | "/settings";
+  to: "/diagrams" | "/workspace" | "/docs" | "/settings" | "/gallery";
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 };
 
 const NAV: NavItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutGrid },
+  { to: "/gallery", label: "Спільнота", icon: Globe },
   { to: "/workspace", label: "Код & Знання", icon: FileCode },
   { to: "/docs", label: "Документація", icon: FileText },
   { to: "/settings", label: "Налаштування", icon: SettingsIcon },

@@ -37,6 +37,7 @@ color?: string;
 commentBack?: string;
 iconBack?: string;
 iconBorder?: string;
+iconFill?: string;
 icons?: Record<string, Partial<DrakonConfigTheme>>;
 internalLine?: string;
 lines?: string;
@@ -135,6 +136,7 @@ redraw: () => void;
 setDiagram: (diagramId: string, diagram: DrakonDiagram, editSender: DrakonEditSender) =>
 Promise<string[]>;
 exportJson: () => string;
+importJson: (json: string) => void;
 exportCanvas: (zoom100: number) => HTMLCanvasElement;
 setContent: (itemId: string, content: string) => string[];
 setSecondary: (itemId: string, content: string) => string[];

@@ -213,7 +213,10 @@ export function NewAgentWizard({
 
   const openStudio = (agentName: string) => {
     onOpenChange(false);
-    navigate({ to: studioPath(slug, agentName) as never });
+    navigate({ 
+      to: "/p/$slug/agents/$agentId/studio",
+      params: { slug, agentId: agentName }
+    } as any);
   };
 
   const values = form.getValues();

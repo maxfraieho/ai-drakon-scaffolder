@@ -31,6 +31,9 @@ function DiagramsRoute() {
     account
       .createSession(userId, secret)
       .then(async (session) => {
+        try {
+          localStorage.setItem("debug_session", JSON.stringify(session));
+        } catch {}
         if (session.provider === "github" && session.providerAccessToken) {
           const token = session.providerAccessToken;
           try {
@@ -62,7 +65,13 @@ function DiagramsRoute() {
           setAccessToken(jwtObj.jwt);
         } catch {}
 
-        window.location.replace("/diagrams");
+        const redirectBack = sessionStorage.getItem("oauth_redirect_back");
+        if (redirectBack) {
+          sessionStorage.removeItem("oauth_redirect_back");
+          window.location.replace(redirectBack);
+        } else {
+          window.location.replace("/diagrams");
+        }
       })
       .catch(() => {
         window.location.replace("/login");

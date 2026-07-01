@@ -19,6 +19,7 @@ export function usePipelineExecution() {
   const [breakpointNode, setBreakpointNode] = useState<string | null>(null);
   const [breakpointState, setBreakpointState] = useState<Record<string, unknown> | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [nodeVerdicts, setNodeVerdicts] = useState<Record<string, import("@/lib/harness/pipeline-client").GateVerdict[]>>({});
   const [error, setError] = useState<string | null>(null);
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -56,12 +57,13 @@ export function usePipelineExecution() {
         setCompletedNodes(new Set());
         setBreakpointNode(null);
         setBreakpointState(null);
+        setNodeVerdicts({});
         setLogs([]);
 
         addLog("info", `Запуск детермінованого пайплайну '${pipelineName}'...`);
         try {
           const client = new DeterministicPipelineClient({
-            workerBaseUrl: import.meta.env.VITE_WORKER_URL || "https://drakon-antigravity-worker.vokov.workers.dev",
+            workerBaseUrl: import.meta.env.VITE_WORKER_URL || "https://drakon-antigravity-worker.maxfraieho.workers.dev",
           });
           
           const spec = createDefaultSpec(pipelineName);
@@ -85,6 +87,9 @@ export function usePipelineExecution() {
                   addLog("info", `Початок виконання вузла '${ev.node_id}'...`);
                 } else if (ev.event === "node_done") {
                   setCompletedNodes((prev) => new Set(prev).add(ev.node_id));
+                  if (ev.gate_verdicts) {
+                    setNodeVerdicts((prev) => ({ ...prev, [ev.node_id]: ev.gate_verdicts }));
+                  }
                   setActiveNode(ev.node_id); // update active node reference
                   addLog("node", `Вузол '${ev.node_id}' успішно виконано.`);
                 } else if (ev.event === "breakpoint") {
@@ -213,6 +218,7 @@ export function usePipelineExecution() {
     logs,
     breakpointNode,
     breakpointState,
+    nodeVerdicts,
     error,
     runPipeline,
     stopPipeline,
