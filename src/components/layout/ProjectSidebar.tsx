@@ -21,16 +21,9 @@ type NavItem = {
 function getNavItems(mode?: ProjectMode): NavItem[] {
   const base: NavItem[] = [
     { key: "overview", label: "Overview", to: "/p/$slug/overview", icon: LayoutDashboard },
+    { key: "agents", label: "Agents", to: "/p/$slug/agents", icon: Bot },
+    { key: "playpipe", label: "PlayPipe", to: "/p/$slug/playpipe", icon: Package },
   ];
-
-  if (mode === "agent") {
-    base.push({ key: "agents", label: "Agents", to: "/p/$slug/agents", icon: Bot });
-  }
-
-  if (mode === "playpipe") {
-    base.push({ key: "playpipe", label: "PlayPipe", to: "/p/$slug/playpipe", icon: Package });
-    base.push({ key: "agents", label: "Agents", to: "/p/$slug/agents", icon: Bot });
-  }
 
   if (mode === "n8n") {
     base.push({ key: "automations", label: "Automations", to: "/p/$slug/automations", icon: Workflow });

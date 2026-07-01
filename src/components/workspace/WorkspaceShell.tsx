@@ -28,6 +28,7 @@ import {
   Activity,
   ChevronUp,
   Gamepad2,
+  GitPullRequest,
 } from "lucide-react";
 import {
   Sheet,
@@ -85,7 +86,8 @@ const NAV_WORKSPACE: NavItem[] = [
   { to: "/tutorial", label: "🕹️ Tutorial", icon: Gamepad2 },
   { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
   { to: "/architect", label: "Architect", icon: Layers },
-  { to: "/notebooks", label: "Knowledge Agents", icon: BookOpen },
+  { to: "/notebooks", label: "NotebookLM", icon: BookOpen },
+  { to: "/pipelines", label: "Pipelines", icon: GitPullRequest },
   { to: "/codegen", label: "Codegen", icon: Code2 },
   { to: "/trace", label: "Execution Trace", icon: Activity },
 ];
@@ -269,7 +271,14 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
               AI-DRAKON
             </Link>
 
-            <div className="ml-auto flex items-center gap-1">
+            <div className="ml-auto flex items-center gap-2">
+              <nav className="hidden md:flex items-center gap-4 mr-4 text-sm text-[var(--text-secondary)]">
+                <Link to="/diagrams" className="hover:text-[var(--text-primary)] transition-colors">Схеми</Link>
+                <Link to="/notebooks" className="hover:text-[var(--text-primary)] transition-colors">NotebookLM</Link>
+                <Link to="/pipelines" className="hover:text-[var(--text-primary)] transition-colors">Pipelines</Link>
+                <Link to="/agents" className="hover:text-[var(--text-primary)] transition-colors">Агенти</Link>
+              </nav>
+
               <button
                 type="button"
                 onClick={() => setCmdOpen(true)}
