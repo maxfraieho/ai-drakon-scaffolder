@@ -1,0 +1,33 @@
+{
+  "version": "1.0",
+  "kind": "codebase",
+  "project": {
+    "name": "Test Project KG 9fbc48be",
+    "languages": [
+      "typescript",
+      "javascript"
+    ],
+    "frameworks": [
+      "ai-drakon"
+    ],
+    "description": "Testing Knowledge Graph push",
+    "analyzedAt": "2026-07-01T04:13:22.903Z",
+    "gitCommitHash": ""
+  },
+  "nodes": [
+    {
+      "id": "root-project",
+      "type": "module",
+      "name": "Test Project KG 9fbc48be",
+      "summary": "Testing Knowledge Graph push",
+      "tags": [
+        "project-root",
+        "agent"
+      ],
+      "complexity": "simple"
+    }
+  ],
+  "edges": [],
+  "layers": [],
+  "tour": []
+}
