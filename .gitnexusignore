@@ -1,9 +1,9 @@
-/node_modules/
-/.lovable/node_modules/
+/.lovable/
+/services/
 /public/
 /import/
+/node_modules/
 /dist/
-/.lovable/dist/
 /development/
 /scratch/
 *.png
@@ -16,3 +16,6 @@
 *.woff2
 *.ttf
 *.eot
+*.mp3
+*.mp4
+*.wav
