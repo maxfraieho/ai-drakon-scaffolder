@@ -44,3 +44,12 @@ This project is indexed by GitNexus as **ai-drakon-scaffolder** (7875 symbols, 1
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 
 <!-- gitnexus:end -->
+
+# Astryx UI Framework Guidelines
+
+This project uses the **Astryx Design System** (Meta/Facebook agent-ready standard).
+
+- **CSS Tokens:** Import `@/styles/astryx.css` with `[data-astryx-theme="astryx"]` / `[data-astryx-theme="dark"]`.
+- **Layout Shell:** Use `WorkspaceShell` with `AstryxHeader` and `AstryxSideNav`.
+- **Buttons & Badges:** Use `astryx-button` (`primary`, `ghost`, `sm`, `md`) and `astryx-badge` (`primary`, `success`).
+- **Semantic Selectors:** Always include `data-variant`, `data-size`, and `data-testid` attributes on new components to preserve agent-readiness.
