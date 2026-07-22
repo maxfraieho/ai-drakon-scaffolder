@@ -74,6 +74,8 @@ import { MobileNavigationDock } from "@/components/mobile/MobileNavigationDock";
 import { loadKnowledgeGraph } from "@/lib/understand/agent-context";
 import { buildDiffContext, formatDiffAnalysis } from "@/lib/understand/diff";
 import { getGithubConfig } from "@/lib/settings-storage";
+import { AstryxHeader } from "@/components/astryx/AstryxHeader";
+import { AstryxSideNav } from "@/components/astryx/AstryxSideNav";
 
 type NavItem = {
   to: string;
