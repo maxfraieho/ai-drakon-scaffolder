@@ -1,0 +1,176 @@
+/* ===================================================================
+   ASTRYX DESIGN SYSTEM TOKENS & STYLES (Meta / Facebook Design Standard)
+   Agent-Ready UI Tokens for AI-DRAKON
+   =================================================================== */
+
+/* ── Light / Default Theme Tokens ── */
+:root, [data-astryx-theme="astryx"], [data-astryx-theme="light"] {
+  --astryx-color-brand: #0064d1;
+  --astryx-color-brand-hover: #0052ad;
+  --astryx-color-brand-light: #e7f3ff;
+
+  --astryx-surface-page: #f0f2f5;
+  --astryx-surface-primary: #ffffff;
+  --astryx-surface-secondary: #f7f8fa;
+  --astryx-surface-elevated: #ffffff;
+
+  --astryx-text-primary: #1c1e21;
+  --astryx-text-secondary: #65676b;
+  --astryx-text-muted: #8a8d91;
+
+  --astryx-border-subtle: #e4e6eb;
+  --astryx-border-focus: #0064d1;
+
+  --astryx-radius-sm: 6px;
+  --astryx-radius-md: 10px;
+  --astryx-radius-lg: 16px;
+
+  --astryx-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --astryx-shadow-dropdown: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+  --astryx-font-sans: 'Albert Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --astryx-font-mono: 'JetBrains Mono', monospace;
+}
+
+/* ── Dark Theme Tokens ── */
+[data-astryx-theme="dark"], .dark {
+  --astryx-color-brand: #2374e1;
+  --astryx-color-brand-hover: #3982e5;
+  --astryx-color-brand-light: rgba(35, 116, 225, 0.15);
+
+  --astryx-surface-page: #18191a;
+  --astryx-surface-primary: #242526;
+  --astryx-surface-secondary: #1c1e21;
+  --astryx-surface-elevated: #3a3b3c;
+
+  --astryx-text-primary: #e4e6eb;
+  --astryx-text-secondary: #b0b3b8;
+  --astryx-text-muted: #8a8d91;
+
+  --astryx-border-subtle: #393a3b;
+  --astryx-border-focus: #4599ff;
+
+  --astryx-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --astryx-shadow-dropdown: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Astryx AppShell & Layout Primitives ── */
+.astryx-app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--astryx-surface-page);
+  color: var(--astryx-text-primary);
+  font-family: var(--astryx-font-sans);
+  overflow: hidden;
+}
+
+.astryx-app-shell-header {
+  height: 44px;
+  background-color: var(--astryx-surface-primary);
+  border-bottom: 1px solid var(--astryx-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 20;
+}
+
+.astryx-top-nav-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--astryx-text-primary);
+  text-decoration: none;
+}
+
+.astryx-top-nav-item {
+  padding: 6px 12px;
+  border-radius: var(--astryx-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--astryx-text-secondary);
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.astryx-top-nav-item:hover {
+  background-color: var(--astryx-surface-secondary);
+  color: var(--astryx-text-primary);
+}
+
+.astryx-top-nav-item.selected {
+  background-color: var(--astryx-color-brand-light);
+  color: var(--astryx-color-brand);
+  font-weight: 600;
+}
+
+/* ── Astryx Buttons ── */
+.astryx-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: var(--astryx-radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.astryx-button.sm {
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.astryx-button.md {
+  height: 36px;
+  padding: 0 16px;
+  font-size: 13px;
+}
+
+.astryx-button.primary {
+  background-color: var(--astryx-color-brand);
+  color: #ffffff;
+}
+
+.astryx-button.primary:hover {
+  background-color: var(--astryx-color-brand-hover);
+}
+
+.astryx-button.ghost {
+  background-color: transparent;
+  color: var(--astryx-text-secondary);
+}
+
+.astryx-button.ghost:hover {
+  background-color: var(--astryx-surface-secondary);
+  color: var(--astryx-text-primary);
+}
+
+/* ── Astryx Badges ── */
+.astryx-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--astryx-font-mono);
+}
+
+.astryx-badge.primary {
+  background-color: var(--astryx-color-brand-light);
+  color: var(--astryx-color-brand);
+}
+
+.astryx-badge.success {
+  background-color: rgba(46, 160, 67, 0.15);
+  color: #2ea043;
+}

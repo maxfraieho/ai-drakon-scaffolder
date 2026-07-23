@@ -13,6 +13,7 @@ Scripts,
 } from "@tanstack/react-router";
 
 import appCss from "../styles.css?url";
+import astryxCss from "../styles/astryx.css?url";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -99,6 +100,10 @@ links: [
 {
 rel: "stylesheet",
 href: appCss,
+},
+{
+rel: "stylesheet",
+href: astryxCss,
 },
 ],
 }),
