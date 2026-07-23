@@ -52,3 +52,15 @@ entities.json
 # flue-vite dev artifacts (Termux)
 services/*/.flue-vite/
 services/*/.flue-vite.wrangler.jsonc
+
+# Scratch dev scripts and assets
+mock_worker.js
+qwen_mcp_config.json
+development/
+*.png
+*.html
+*.py
+execution-prompt-ua-integration.md
+services/deterministic-engine/package-lock.json
+
+

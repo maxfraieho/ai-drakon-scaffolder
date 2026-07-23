@@ -55,4 +55,10 @@ if (!sourceInsideTarget) {
 
 copyRecursive(sourceDir, targetDir);
 
+// Guarantee _redirects for SPA routing on Cloudflare Pages
+const redirectsPath = path.join(targetDir, "_redirects");
+if (!fs.existsSync(redirectsPath)) {
+  fs.writeFileSync(redirectsPath, "/*  /index.html  200\n", "utf8");
+}
+
 console.log(`Prepared Cloudflare Pages assets at ${targetDir}`);
