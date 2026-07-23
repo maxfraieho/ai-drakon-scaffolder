@@ -71,9 +71,14 @@ async function mcpCall(toolName: string, args: Record<string, unknown>) {
   try { return JSON.parse(content); } catch { return content; }
 }
 
+export const DOCS_NOTEBOOK_ID = "5795bbbe-fcf8-48f5-bc2c-daff5bcb798a";
+
 export const nlmMcp = {
   listNotebooks: (): Promise<Array<{ id: string; title: string }>> =>
     mcpCall("notebooks_list", {}),
   chat: (notebookId: string, question: string): Promise<string> =>
-    mcpCall("chat_ask", { notebook_id: notebookId, question }),
+    mcpCall("chat_ask", { notebook_id: notebookId || DOCS_NOTEBOOK_ID, question }),
+  consultDocsNotebook: (question: string): Promise<string> =>
+    mcpCall("chat_ask", { notebook_id: DOCS_NOTEBOOK_ID, question }),
 };
+

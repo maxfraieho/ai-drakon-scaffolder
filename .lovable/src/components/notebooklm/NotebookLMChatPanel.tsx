@@ -35,10 +35,13 @@ interface Message {
   citations?: { title: string; url: string }[];
 }
 
+export const DEFAULT_DOCS_NOTEBOOK_ID = "5795bbbe-fcf8-48f5-bc2c-daff5bcb798a";
+
 export function NotebookLMChatPanel() {
   const [notebookId, setNotebookId] = useState(() => {
-    try { return localStorage.getItem("notebooklm_id") || ""; } catch { return ""; }
+    try { return localStorage.getItem("notebooklm_id") || DEFAULT_DOCS_NOTEBOOK_ID; } catch { return DEFAULT_DOCS_NOTEBOOK_ID; }
   });
+
   const [kind, setKind] = useState<"answer" | "summary" | "study_guide" | "flashcards">("answer");
   const [initialQuestion, setInitialQuestion] = useState("");
   const [followUpQuestion, setFollowUpQuestion] = useState("");
