@@ -12,14 +12,19 @@ const serverCandidates = [
 const serverDir = serverCandidates.find((candidate) => fs.existsSync(candidate));
 
 if (!serverDir) {
-  if (fs.existsSync(path.join(distDir, "_worker.js"))) {
-    console.log("Cloudflare Pages worker already exists at target. Skipping server wrap.");
+  if (
+    fs.existsSync(path.join(distDir, "_worker.js")) ||
+    fs.existsSync(path.join(distDir, "index.html")) ||
+    fs.existsSync(path.join(distDir, "assets"))
+  ) {
+    console.log("Cloudflare Pages static/client build found at target. Skipping server wrap.");
     process.exit(0);
   }
   throw new Error(
     `Server build output not found. Checked: ${serverCandidates.join(", ")}`
   );
 }
+
 
 // Видаляємо functions/ — НЕ використовуємо!
 fs.rmSync(path.join(root, "functions"), { recursive: true, force: true });
