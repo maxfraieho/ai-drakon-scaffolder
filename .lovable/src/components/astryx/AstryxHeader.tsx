@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { Terminal, Moon, Sun, Search, Bot, LogOut } from "lucide-react";
 import { useTheme } from "@/components/theme-provider";
+import { ASTRYX_NAV_ITEMS } from "./astryx-nav-config";
 
 interface AstryxHeaderProps {
   onOpenCmd: () => void;
@@ -35,42 +36,17 @@ export const AstryxHeader: React.FC<AstryxHeaderProps> = ({
 
       {/* Top Nav Items */}
       <nav className="hidden md:flex items-center gap-1">
-        <Link
-          to="/workspace"
-          className={`astryx-top-nav-item ${isNavActive("/workspace") ? "selected" : ""}`}
-        >
-          Робоча область
-        </Link>
-        <Link
-          to="/diagrams"
-          className={`astryx-top-nav-item ${isNavActive("/diagrams") ? "selected" : ""}`}
-        >
-          Схеми ДРАКОН
-        </Link>
-        <Link
-          to="/architect"
-          className={`astryx-top-nav-item ${isNavActive("/architect") ? "selected" : ""}`}
-        >
-          Architect
-        </Link>
-        <Link
-          to="/notebooks"
-          className={`astryx-top-nav-item ${isNavActive("/notebooks") ? "selected" : ""}`}
-        >
-          NotebookLM
-        </Link>
-        <Link
-          to="/pipelines"
-          className={`astryx-top-nav-item ${isNavActive("/pipelines") ? "selected" : ""}`}
-        >
-          Pipelines
-        </Link>
-        <Link
-          to="/agents"
-          className={`astryx-top-nav-item ${isNavActive("/agents") ? "selected" : ""}`}
-        >
-          Агенти
-        </Link>
+        {ASTRYX_NAV_ITEMS.filter((item) => item.headerVisible !== false).map(
+          (item) => (
+            <Link
+              key={item.id}
+              to={item.path}
+              className={`astryx-top-nav-item ${isNavActive(item.path) ? "selected" : ""}`}
+            >
+              {item.label}
+            </Link>
+          )
+        )}
       </nav>
 
       {/* Actions */}
