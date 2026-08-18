@@ -314,7 +314,7 @@ const itemCount = selectedDiagram?.diagram.items
 const level = selectedDiagram?.diagram.metadata?.diagramLevel;
 
 return (
-<div className="flex h-full w-full flex-col overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="diagrams-page">
+<div className="astryx-migrated flex h-full w-full flex-col overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="diagrams-page">
   {/* Page Header */}
   <div className="border-b border-white/5 px-6 py-5 shrink-0">
     <div className="flex items-center gap-3 mb-1">

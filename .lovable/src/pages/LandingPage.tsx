@@ -2,7 +2,7 @@ import { CheckCircle, Sprout, Diamond, ArrowRight, BookOpen, Cpu, Zap } from "lu
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-gray-950 text-white font-sans">
+    <div className="astryx-migrated min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] font-sans">
       {/* NAV */}
       <nav className="sticky top-0 z-50 bg-gray-950/80 backdrop-blur border-b border-white/10">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">

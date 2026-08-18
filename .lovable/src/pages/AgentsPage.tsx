@@ -116,7 +116,7 @@ export function AgentsPage({ slug }: AgentsPageProps) {
   };
 
   return (
-    <section className="relative min-h-[calc(100vh-8rem)] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="agents-page">
+    <section className="astryx-migrated relative min-h-[calc(100vh-8rem)] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="agents-page">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(99,102,241,0.2),transparent_38%),radial-gradient(circle_at_90%_12%,rgba(168,85,247,0.23),transparent_42%),radial-gradient(circle_at_60%_100%,rgba(79,70,229,0.2),transparent_38%)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:28px_28px]" />
 

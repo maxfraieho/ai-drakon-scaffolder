@@ -20,7 +20,7 @@ export function WorkspacePage() {
   const token = ghCfg.token || "";
 
   return (
-    <div className="flex flex-col h-full w-full bg-[var(--bg-base)] text-[var(--text-primary)]">
+    <div className="astryx-migrated flex flex-col h-full w-full bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]">
       <div className="flex items-center px-2 h-8 shrink-0 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)]">
         {(
           [

@@ -576,7 +576,7 @@ export default function AgentStudioPage() {
 
       <Sheet open={rightPanelMobileOpen} onOpenChange={setRightPanelMobileOpen}>
         <SheetContent side="right" className="w-[92vw] max-w-[420px] p-0 border-l border-[var(--border-subtle)] bg-[var(--bg-base)]">
-          <div className="flex h-full min-h-0 flex-col">
+    <div className="astryx-migrated flex h-full min-h-0 flex-col">
             <div className="min-h-0 flex-1">
               <PropertiesPanel
                 diagramName={activeDiagram?.name || ""}

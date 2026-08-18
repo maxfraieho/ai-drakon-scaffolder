@@ -61,7 +61,7 @@ analyzePath: path || "src",
 };
 
 return (
-<div className="flex min-h-screen flex-col bg-[var(--bg-base)] text-[var(--text-primary)]">
+<div className="astryx-migrated flex min-h-screen flex-col bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]">
 {/* Editor toolbar */}
 <div className="flex h-12 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3 md:px-4">
 <Link

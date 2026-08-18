@@ -11,7 +11,7 @@ export function PlayPipeBuildPage() {
 
   if (!buildId) {
     return (
-      <div className="rounded-xl border border-rose-400/30 bg-rose-500/10 p-6 text-rose-100 backdrop-blur-xl">
+      <div className="astryx-migrated rounded-xl border border-rose-400/30 bg-rose-500/10 p-6 text-rose-100 backdrop-blur-xl">
         <div className="mb-4 flex items-center gap-2">
           <AlertTriangle className="h-5 w-5" />
           <h1 className="font-[Outfit] text-xl">Missing buildId</h1>

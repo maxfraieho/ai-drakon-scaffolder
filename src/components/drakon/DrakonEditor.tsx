@@ -1142,7 +1142,7 @@ className
 }
 
 return (
-<div className={cn('flex h-full flex-col', className)}>
+<div className={cn('astryx-migrated flex h-full flex-col', className)}>
 {/* Toolbar */}
 <div className="flex flex-wrap items-center gap-2 shrink-0 border-b pb-1">
 <div className="flex items-center gap-2">

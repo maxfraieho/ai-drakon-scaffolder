@@ -242,7 +242,7 @@ return (
 }
 
 return (
-<div className="flex min-h-screen flex-col bg-background text-foreground">
+<div className="astryx-migrated flex min-h-screen flex-col bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]">
 <header className="flex h-14 items-center justify-between border-b border-border px-4">
 <div className="flex items-center gap-3">
 <Button type="button" variant="ghost" onClick={() => navigate({ to: "/diagrams" })}>

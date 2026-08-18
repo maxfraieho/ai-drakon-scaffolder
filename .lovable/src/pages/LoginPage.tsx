@@ -234,7 +234,7 @@ export function LoginPage() {
   };
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-gray-950 px-4 overflow-hidden">
+    <div className="astryx-migrated relative flex min-h-screen items-center justify-center bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] px-4 overflow-hidden">
       <NetworkBackground />
 
       {/* Radial center glow */}

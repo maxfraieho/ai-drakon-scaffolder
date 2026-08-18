@@ -157,7 +157,7 @@ function RootComponent() {
           <ProjectProvider>
             <TooltipProvider delayDuration={200}>
               {hideChrome ? (
-                <div className="min-h-screen bg-[var(--bg-base)]">
+                <div className="astryx-migrated min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]">
                   <Outlet />
                 </div>
               ) : (

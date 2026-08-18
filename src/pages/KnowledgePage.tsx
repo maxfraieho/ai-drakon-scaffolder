@@ -8,7 +8,7 @@ export function KnowledgePage() {
   const [isCreationDialogOpen, setIsCreationDialogOpen] = useState(false);
 
   return (
-    <div className="flex flex-col h-full bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="knowledge-page">
+    <div className="astryx-migrated flex flex-col h-full bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="knowledge-page">
       {/* Page Header */}
       <div className="border-b border-white/5 px-6 py-5 flex items-center justify-between shrink-0">
         <div>

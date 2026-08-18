@@ -127,7 +127,7 @@ export function PlayPipePage() {
   };
 
   return (
-    <section className="relative min-h-[calc(100vh-8rem)] overflow-hidden">
+    <section className="astryx-migrated relative min-h-[calc(100vh-8rem)] overflow-hidden">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(99,102,241,0.2),transparent_38%),radial-gradient(circle_at_90%_12%,rgba(168,85,247,0.2),transparent_40%),radial-gradient(circle_at_50%_95%,rgba(59,130,246,0.17),transparent_38%)]" />
 
       <div className="relative z-10 grid grid-cols-1 gap-4 xl:grid-cols-10">

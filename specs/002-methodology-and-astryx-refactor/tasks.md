@@ -27,5 +27,5 @@
 - [x] T-233 Змонтувати Astryx shell за feature flag.
 - [x] T-234 Зафіксувати legacy-shell як operator-go debt; видалення відкладено.
 - [x] T-235 Виконати хвилю page migration для найпростіших сторінок.
-- [ ] T-236–T-238 Продовжити хвилі page migration.
+- [x] T-236–T-238 Продовжити хвилі page migration.
 - [ ] T-239 Прибрати legacy tokens і додати Astryx enforcement.

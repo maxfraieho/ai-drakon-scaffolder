@@ -18,8 +18,8 @@ function LoginRoute() {
   // Show spinner while auth is loading to prevent flash of empty page
   if (!hydrated || isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-950">
-        <Loader2 className="h-8 w-8 animate-spin text-teal-400" />
+      <div className="astryx-migrated flex min-h-screen items-center justify-center bg-[var(--astryx-surface-page)]">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--astryx-color-brand)]" />
       </div>
     );
   }

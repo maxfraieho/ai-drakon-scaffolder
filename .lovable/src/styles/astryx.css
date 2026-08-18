@@ -3,6 +3,63 @@
    Agent-Ready UI Tokens for AI-DRAKON
    =================================================================== */
 
+/* Page migration bridge: keeps legacy utility markup on Astryx tokens while
+   individual toolbar/panel controls migrate. Scope prevents global changes. */
+.astryx-migrated {
+  --background: var(--astryx-surface-page);
+  --foreground: var(--astryx-text-primary);
+  --card: var(--astryx-surface-primary);
+  --card-foreground: var(--astryx-text-primary);
+  --border: var(--astryx-border-subtle);
+  --input: var(--astryx-border-subtle);
+  --primary: var(--astryx-color-brand);
+  --primary-foreground: var(--astryx-color-on-brand);
+  --muted: var(--astryx-surface-secondary);
+  --muted-foreground: var(--astryx-text-secondary);
+  --ring: var(--astryx-border-focus);
+}
+
+.astryx-migrated .bg-gray-950,
+.astryx-migrated .bg-gray-900,
+.astryx-migrated .bg-slate-900,
+.astryx-migrated .bg-slate-950 { background-color: var(--astryx-surface-page) !important; }
+.astryx-migrated .bg-white\/5,
+.astryx-migrated .bg-white\/10,
+.astryx-migrated .bg-slate-900\/30,
+.astryx-migrated .bg-slate-900\/40,
+.astryx-migrated .bg-slate-900\/50,
+.astryx-migrated .bg-slate-900\/75 { background-color: color-mix(in srgb, var(--astryx-surface-primary) 88%, transparent) !important; }
+.astryx-migrated .text-white,
+.astryx-migrated .text-gray-100,
+.astryx-migrated .text-gray-200,
+.astryx-migrated .text-slate-100 { color: var(--astryx-text-primary) !important; }
+.astryx-migrated .text-gray-300,
+.astryx-migrated .text-gray-400,
+.astryx-migrated .text-slate-300,
+.astryx-migrated .text-slate-400 { color: var(--astryx-text-secondary) !important; }
+.astryx-migrated .text-gray-500,
+.astryx-migrated .text-gray-600,
+.astryx-migrated .text-slate-500 { color: var(--astryx-text-muted) !important; }
+.astryx-migrated .text-teal-400,
+.astryx-migrated .text-indigo-300,
+.astryx-migrated .text-indigo-400 { color: var(--astryx-color-brand) !important; }
+.astryx-migrated .bg-teal-500,
+.astryx-migrated .bg-indigo-600 { background-color: var(--astryx-color-brand) !important; color: var(--astryx-color-on-brand) !important; }
+.astryx-migrated .hover\:bg-teal-400:hover,
+.astryx-migrated .hover\:bg-indigo-500:hover { background-color: var(--astryx-color-brand-hover) !important; }
+.astryx-migrated .border-white\/5,
+.astryx-migrated .border-white\/10,
+.astryx-migrated .border-white\/15 { border-color: var(--astryx-border-subtle) !important; }
+.astryx-migrated .text-teal-500,
+.astryx-migrated .text-teal-300 { color: var(--astryx-color-brand) !important; }
+.astryx-migrated .border-teal-400,
+.astryx-migrated .border-teal-400\/20,
+.astryx-migrated .border-teal-400\/30,
+.astryx-migrated .border-teal-400\/60 { border-color: color-mix(in srgb, var(--astryx-color-brand) 55%, transparent) !important; }
+.astryx-migrated .bg-teal-400\/10,
+.astryx-migrated .bg-teal-400\/20,
+.astryx-migrated .bg-teal-500\/10 { background-color: var(--astryx-color-brand-light) !important; }
+
 /* ── Light / Default Theme Tokens ── */
 :root, [data-astryx-theme="astryx"], [data-astryx-theme="light"] {
   --astryx-color-brand: #f59e0b;
