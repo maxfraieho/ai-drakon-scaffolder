@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Loader2, Copy, Check, Code2, Mic } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { generateDrakonCode, type CodegenResponse } from "@/lib/codegen/codegenApi";
+import { upsertDiagramInStorage } from "@/lib/diagram-storage";
+import type { Diagram, DrakonDiagram } from "@/types/drakon";
 
 const LANGUAGES = [
   { value: "JS2604", label: "JavaScript" },
@@ -42,6 +45,7 @@ function loadScriptOnce(src: string): Promise<void> {
 }
 
 export function CodegenPage() {
+  const navigate = useNavigate();
   const [description, setDescription] = useState("");
   const [functionName, setFunctionName] = useState("myFunction");
   const [params, setParams] = useState("");
@@ -104,6 +108,27 @@ export function CodegenPage() {
       setCopied(which);
       setTimeout(() => setCopied(null), 1500);
     });
+  }
+
+  function handleOpenInEditor() {
+    if (!result) return;
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+    const raw = result.drakon_json;
+    const diagram: Diagram = {
+      id,
+      name: typeof raw.name === "string" ? raw.name : functionName,
+      folderId: "general",
+      createdAt: now,
+      updatedAt: now,
+      diagram: {
+        ...raw,
+        name: typeof raw.name === "string" ? raw.name : functionName,
+        items: raw.items && typeof raw.items === "object" ? raw.items : {},
+      } as DrakonDiagram,
+    };
+    upsertDiagramInStorage(diagram);
+    navigate({ to: "/diagram/editor", search: { diagramId: id } });
   }
 
   const toggleListen = () => {
@@ -279,7 +304,12 @@ export function CodegenPage() {
 
           <Accordion type="single" collapsible defaultValue="json">
             <AccordionItem value="json">
-              <AccordionTrigger>.drakon JSON</AccordionTrigger>
+              <div className="flex items-center justify-between">
+                <AccordionTrigger>.drakon JSON</AccordionTrigger>
+                <Button onClick={handleOpenInEditor} size="sm" className="mr-2">
+                  Відкрити в редакторі
+                </Button>
+              </div>
               <AccordionContent>
                 <div className="flex justify-end">
                   <Button

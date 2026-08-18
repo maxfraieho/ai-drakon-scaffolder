@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Wand2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { toast } from 'sonner';
+import { parseOwnerRepo, saveDiagramToGit } from '@/lib/mcp/projects';
+import { getGithubConfig } from '@/lib/settings-storage';
 
 export const Route = createFileRoute('/magic')({
   component: MagicDemoPage,
@@ -13,6 +16,7 @@ function MagicDemoPage() {
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -40,6 +44,32 @@ function MagicDemoPage() {
       console.error(error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleSaveToGithub = async () => {
+    const config = getGithubConfig();
+    const ownerRepo = parseOwnerRepo(`${config.owner}/${config.repo}`);
+    if (!config.token.trim() || !ownerRepo) {
+      toast.error('Налаштуйте GitHub token і репозиторій у Settings');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const diagramId = String(result?.diagramId || result?.id || crypto.randomUUID());
+      await saveDiagramToGit({
+        ...ownerRepo,
+        branch: config.branch || 'main',
+        diagramId,
+        diagram: result?.diagram || result,
+        token: config.token,
+      });
+      toast.success(`Схему збережено в GitHub: drn/${diagramId}.json`);
+    } catch (error) {
+      toast.error(`Помилка збереження в GitHub: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -104,8 +134,8 @@ function MagicDemoPage() {
                 <pre>{JSON.stringify(result, null, 2)}</pre>
               </div>
               <div className="mt-4 flex justify-end">
-                <Button variant="outline" className="border-[var(--accent-amber)] text-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/10">
-                  Зберегти в GitHub
+                <Button onClick={handleSaveToGithub} disabled={isSaving} variant="outline" className="border-[var(--accent-amber)] text-[var(--accent-amber)] hover:bg-[var(--accent-amber)]/10">
+                  {isSaving ? 'Зберігаємо...' : 'Зберегти в GitHub'}
                 </Button>
               </div>
             </CardContent>
