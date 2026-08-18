@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# SDD pre-commit hook — advisory LLM arbiter check.
+#
+# Fail-open by design: this hook is easily bypassed with `git commit
+# --no-verify`, so it is NOT a hard gate for a protected-branch invariant
+# (that gate belongs in the build/test pipeline before merge/push, via
+# `bin/sdd_verify.sh --arbiter`). This hook exists to give fast, local,
+# advisory feedback.
+#
+# Mode is controlled by SDD_JUDGE_SHADOW: "1" (default at bootstrap =
+# shadow) logs verdicts without blocking; "0" enforces FAIL.
+# Promoting shadow -> blocking is an explicit operator decision, not
+# something this hook decides on its own.
+REPO_DIR="$(cd "$(git rev-parse --show-toplevel)" && pwd)"
+cd "$REPO_DIR" || exit 0
+
+if [ ! -f "scripts/sdd_llm_judge.py" ]; then
+    exit 0
+fi
+
+if [ "${SDD_JUDGE_SHADOW:-1}" = "1" ]; then
+    python3 scripts/sdd_llm_judge.py --staged --dry-run
+else
+    python3 scripts/sdd_llm_judge.py --staged
+fi

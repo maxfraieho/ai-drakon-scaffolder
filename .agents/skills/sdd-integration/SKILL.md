@@ -1,0 +1,16 @@
+---
+name: sdd-integration
+description: Guide and execute the SDD Integration / External Service Adapter workflow (Template 4) for ai-drakon-scaffolder — hard timeouts, fault tolerance.
+---
+
+# SDD Integration Skill
+
+When activated for an integration/adapter task:
+
+1. Read `docs/for-agents/sdd-development-methodology.md`, section "ШАБЛОН 4" (Integration / Adapter), and follow it literally.
+3. Set a hard timeout based on real p95 measurements (e.g. 150ms HTTP, 1000ms subprocess).
+4. On failure (connection refused / timeout), fail fast and let the caller continue without blocking.
+5. Read the real service contract (Swagger/OpenAPI/JSON-RPC) before writing the adapter — do not invent the API from memory.
+6. Implement the adapter in its own module (`<service>_adapter.py`), record metrics/failures for observability.
+7. Create a round-trip verification script (write → read back → compare) and a regression test.
+8. Final report must state: adapter file, round-trip verification result, regression-test result, and whether `bash bin/sdd_verify.sh` passed.

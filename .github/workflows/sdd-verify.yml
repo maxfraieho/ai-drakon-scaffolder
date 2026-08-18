@@ -1,0 +1,17 @@
+name: SDD Verify
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SDD structure verification
+        run: bash bin/sdd_verify.sh
+
+      - name: Test suite
+        run: python3 -m pytest tests/

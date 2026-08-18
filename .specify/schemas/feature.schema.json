@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "SDD Feature Handoff Pointer",
+  "description": "Machine-readable pointer to the active SDD feature, read by every agent (Claude Code, Codex CLI, AGY, ...) before starting work, to prevent context drift between agents.",
+  "type": "object",
+  "required": ["schema_version", "feature_id", "spec_dir", "branch", "phase"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "feature_id": { "type": "string", "description": "e.g. 021-multiagent-sdd-extension" },
+    "spec_dir": { "type": "string", "description": "e.g. specs/021-multiagent-sdd-extension" },
+    "branch": { "type": "string", "description": "Git branch this feature is being developed on. An agent MUST stop if this does not match the checked-out branch." },
+    "phase": {
+      "type": "string",
+      "enum": ["specify", "clarify", "plan", "tasks", "implement", "verify"]
+    },
+    "phases_done": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "owner_agent": { "type": "string", "description": "e.g. claude-code, codex-cli, agy" },
+    "host": { "type": "string" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "notes": { "type": "string" }
+  }
+}
