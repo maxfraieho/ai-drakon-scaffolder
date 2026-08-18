@@ -249,5 +249,4 @@ describe("generateDrakonCode", () => {
     await expect(promise).rejects.toThrow("Timeout: генерація коду не завершилася за 3 хвилини");
     vi.useRealTimers();
   });
-  });
 });
