@@ -6,7 +6,7 @@ const FALLBACK_PROJECTS = [
   {
     slug: 'sharon-global',
     name: 'Sharon Global',
-    path: '/home/vokov/workspace/sharon-global',
+    path: 'sharon-global',
     description: 'AI-система моніторингу повітряних загроз',
     hasDrakonIr: true,
     hasDocs: true,
@@ -15,7 +15,7 @@ const FALLBACK_PROJECTS = [
   {
     slug: 'uav-watcher',
     name: 'UAV Watcher',
-    path: '/home/vokov/projects/uav-watcher',
+    path: 'uav-watcher',
     description: 'Telegram-бот моніторингу БПЛА',
     hasDrakonIr: true,
     hasDocs: true,
@@ -24,7 +24,7 @@ const FALLBACK_PROJECTS = [
   {
     slug: 'code-proxy',
     name: 'Code Proxy',
-    path: '/home/vokov/workspace/code-proxy',
+    path: 'code-proxy',
     description: 'LM streaming proxy для агентів',
     hasDrakonIr: false,
     hasDocs: false,
@@ -33,7 +33,7 @@ const FALLBACK_PROJECTS = [
   {
     slug: 'ai-drakon-setup',
     name: 'AI-DRAKON Platform',
-    path: '/home/vokov/workspace/ai-drakon-setup',
+    path: 'ai-drakon-setup',
     description: 'DRAKON editor + agent pipeline UI',
     hasDrakonIr: false,
     hasDocs: true,

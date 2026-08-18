@@ -11,12 +11,16 @@
 
 ## Наступні планові задачі
 
-- [ ] T-220 Замінити production metadata «Lovable App».
-- [ ] T-221 Додати CTA до `/trace` empty state.
-- [ ] T-222 Узгодити `/sync` planned route і breadcrumb.
-- [ ] T-223 Змонтувати або видалити orphan Astryx imports.
-- [ ] T-224 Активувати `data-astryx-theme`.
-- [ ] T-225–T-229 Виправити backend security/reliability findings.
+- [x] T-220 Замінити production metadata «Lovable App».
+- [x] T-221 Додати CTA до `/trace` empty state.
+- [x] T-222 Узгодити `/sync` planned route і breadcrumb.
+- [ ] T-223 Змонтувати або видалити orphan Astryx imports. (перенесено до T-233)
+- [x] T-224 Активувати `data-astryx-theme`.
+- [x] T-225 Прибрати hardcoded MCP secret.
+- [x] T-226 Прибрати hardcoded absolute paths.
+- [x] T-227 Розширити LLM retry-логіку.
+- [x] T-228 Прибрати повторну KB init-вартість.
+- [x] T-229 Обмежити CORS origins у 3 сервісах.
 - [ ] T-230–T-232 Виконати Astryx foundation phase.
 - [ ] T-233 Змонтувати Astryx shell за feature flag.
 - [ ] T-234 Прибрати legacy shell після operator go.

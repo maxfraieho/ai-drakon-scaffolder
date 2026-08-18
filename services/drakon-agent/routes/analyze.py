@@ -15,23 +15,24 @@ from validator.ir_validator import validate_ir
 
 router = APIRouter()
 
-_kb_ready = False
+_kb_state = "uninitialized"
 
 def _reset_kb():
-    global _kb_ready
-    _kb_ready = False
+    global _kb_state
+    _kb_state = "uninitialized"
 
 KNOWLEDGE_DIR = os.path.join(os.path.dirname(__file__), "..", "knowledge")
 
 
 def _ensure_kb():
-    global _kb_ready
-    if not _kb_ready:
-        try:
-            kb_init(KNOWLEDGE_DIR)
-            _kb_ready = True
-        except Exception:
-            pass  # KB optional — degrade gracefully
+    global _kb_state
+    if _kb_state != "uninitialized":
+        return
+    try:
+        kb_init(KNOWLEDGE_DIR)
+        _kb_state = "ready"
+    except Exception:
+        _kb_state = "failed"  # KB optional; avoid init cost on every request
 
 
 class AnalyzeRequest(BaseModel):

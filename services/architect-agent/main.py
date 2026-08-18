@@ -58,7 +58,8 @@ app.include_router(graph_pipeline_router)
 app.include_router(project_router)
 app.include_router(gitnexus_router)
 app.include_router(playpipe_router)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+_cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "https://aidrakon.tech,https://www.aidrakon.tech,http://localhost:5173,http://localhost:4173").split(",") if origin.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_methods=["*"], allow_headers=["*"])
 
 
 class ChatRequest(BaseModel):
@@ -207,7 +208,7 @@ from fastapi import Request
 
 ANALYTICS_LOG = Path(__file__).parent / "kb" / "sonate-solidaire" / "analytics.jsonl"
 if not ANALYTICS_LOG.exists():
-    ANALYTICS_LOG = Path(os.getenv("REPO_ROOT", "/home/vokov/workspace/ai-drakon-scaffolder")) \
+    ANALYTICS_LOG = Path(os.getenv("REPO_ROOT", _REPO_ROOT)) \
         / "services/architect-agent/kb/sonate-solidaire/analytics.jsonl"
 
 @app.get("/agents/ss/analytics")
@@ -230,7 +231,8 @@ async def ss_analytics_summary():
 async def ss_analytics_questions(request: Request, limit: int = 100):
     """Recent questions — requires auth."""
     auth = request.headers.get("Authorization", "")
-    if auth != f"Bearer {os.getenv('MCP_API_KEY', 'drakon-mcp-2026')}":
+    configured_key = os.getenv("MCP_API_KEY")
+    if not configured_key or auth != f"Bearer {configured_key}":
         raise HTTPException(status_code=401)
     if not ANALYTICS_LOG.exists():
         return {"questions": []}
@@ -241,7 +243,8 @@ async def ss_analytics_questions(request: Request, limit: int = 100):
 async def ss_analytics_gaps(request: Request):
     """Questions with weak responses — potential KB gaps."""
     auth = request.headers.get("Authorization", "")
-    if auth != f"Bearer {os.getenv('MCP_API_KEY', 'drakon-mcp-2026')}":
+    configured_key = os.getenv("MCP_API_KEY")
+    if not configured_key or auth != f"Bearer {configured_key}":
         raise HTTPException(status_code=401)
     if not ANALYTICS_LOG.exists():
         return {"gaps": []}

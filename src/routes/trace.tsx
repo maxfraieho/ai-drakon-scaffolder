@@ -1,5 +1,4 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { WorkspaceShell } from '@/components/workspace/WorkspaceShell';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { Activity } from 'lucide-react';
 
 export const Route = createFileRoute('/trace')({
@@ -29,6 +28,9 @@ function ExecutionTracePage() {
             Трасування виконується безпосередньо у вікні PipelineDrakonView під час запуску схеми. 
             Запустіть пайплайн, щоб побачити логі виконання.
           </p>
+          <Link to="/pipelines" className="mt-5 inline-flex items-center rounded-md bg-[var(--accent-amber)] px-4 py-2 text-sm font-medium text-black transition-opacity hover:opacity-90">
+            Перейти до пайплайнів
+          </Link>
         </div>
       </div>
     </div>

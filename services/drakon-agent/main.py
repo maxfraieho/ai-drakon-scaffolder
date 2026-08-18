@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
+import os
 load_dotenv()
 
 from routes.health import router as health_router
@@ -10,7 +11,8 @@ from routes.chat import router as chat_router
 
 app = FastAPI(title="drakon-agent", version="0.1.0")
 
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+_cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "https://aidrakon.tech,https://www.aidrakon.tech,http://localhost:5173,http://localhost:4173").split(",") if origin.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_methods=["*"], allow_headers=["*"])
 
 app.include_router(health_router)
 app.include_router(analyze_router)

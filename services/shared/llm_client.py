@@ -5,6 +5,7 @@ import json
 import os
 import urllib.request
 import urllib.error
+import socket
 from typing import Any
 
 
@@ -78,7 +79,12 @@ def chat(
                     return block["text"]
             return ""
         except urllib.error.HTTPError as e:
-            if e.code == 429 and attempt < 2:
+            if e.code in {408, 409, 425, 429, 500, 502, 503, 504} and attempt < 2:
+                import time; time.sleep(2 ** attempt)
+                continue
+            raise
+        except (urllib.error.URLError, socket.timeout):
+            if attempt < 2:
                 import time; time.sleep(2 ** attempt)
                 continue
             raise

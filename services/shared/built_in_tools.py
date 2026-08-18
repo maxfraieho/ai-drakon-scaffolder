@@ -15,10 +15,11 @@ def search_kb(state: dict) -> dict:
     cache_key = (slug, agent)
 
     # Find KB directory
-    kb_dir = Path(f"/home/vokov/projects/{slug}/agents/{agent}/kb")
+    projects_root = Path(os.getenv("PROJECTS_ROOT", str(Path.cwd())))
+    kb_dir = projects_root / slug / "agents" / agent / "kb"
     if not kb_dir.exists() or not list(kb_dir.glob("*.md")):
         # fallback to docs/kb/
-        kb_dir = Path("/home/vokov/workspace/ai-drakon-scaffolder/docs/kb")
+        kb_dir = Path(os.getenv("REPO_ROOT", str(Path(__file__).resolve().parents[2]))) / "docs" / "kb"
 
     # Re-index if not cached or docs changed
     if cache_key not in _kb_cache:
@@ -67,7 +68,7 @@ def save_to_project(state: dict) -> dict:
     agent = state.get("agent_name", "default")
     output = state.get("output", str(state))
     import json, datetime
-    out_dir = Path(f"/home/vokov/projects/{slug}/agents/{agent}/results")
+    out_dir = Path(os.getenv("PROJECTS_ROOT", str(Path.cwd()))) / slug / "agents" / agent / "results"
     out_dir.mkdir(parents=True, exist_ok=True)
     ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     out_file = out_dir / f"result_{ts}.json"
@@ -89,7 +90,7 @@ def github_write(state: dict) -> dict:
     file_path = state.get("path", state.get("file_path", ""))
     file_content = state.get("content", state.get("output", ""))
     commit_msg = state.get("message", state.get("commit_message", f"agent: update {file_path}"))
-    repo_root = state.get("git_repo_path") or _os.getenv("GIT_REPO_PATH", "/home/vokov/workspace/ai-drakon-scaffolder")
+    repo_root = state.get("git_repo_path") or _os.getenv("GIT_REPO_PATH", str(Path(__file__).resolve().parents[2]))
 
     if not file_path:
         return {**state, "github_result": "Error: path is required"}

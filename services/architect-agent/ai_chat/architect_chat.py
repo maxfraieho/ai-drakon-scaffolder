@@ -176,7 +176,7 @@ def _execute_tool(tool: str, args: dict) -> str:
         elif tool == "github_write":
             import subprocess as _sp, os as _os, base64
             # Try git-based approach first (uses SSH key, no token needed)
-            repo_root = _os.getenv("GIT_REPO_PATH", "/home/vokov/workspace/ai-drakon-scaffolder")
+            repo_root = _os.getenv("GIT_REPO_PATH", str(Path(__file__).resolve().parents[2]))
             file_path = args.get("path", "")
             file_content = args.get("content", "")
             commit_msg = args.get("message", f"agent: update {file_path}")

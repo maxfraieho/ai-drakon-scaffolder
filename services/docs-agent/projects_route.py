@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+_PROJECTS_ROOT = Path(os.getenv("PROJECTS_ROOT", str(Path.cwd())))
 
 _DEFAULT_CONFIG = Path(os.getenv(
     "PROJECTS_CONFIG",
@@ -17,7 +18,7 @@ _FALLBACK_PROJECTS = [
     {
         "slug": "sharon-global",
         "name": "Sharon Global",
-        "path": "/home/vokov/workspace/sharon-global",
+        "path": str(_PROJECTS_ROOT / "sharon-global"),
         "description": "AI-система моніторингу повітряних загроз",
         "hasDrakonIr": True,
         "hasDocs": True,
@@ -26,7 +27,7 @@ _FALLBACK_PROJECTS = [
     {
         "slug": "uav-watcher",
         "name": "UAV Watcher",
-        "path": "/home/vokov/projects/uav-watcher",
+        "path": str(_PROJECTS_ROOT / "uav-watcher"),
         "description": "Telegram-бот моніторингу БПЛА",
         "hasDrakonIr": True,
         "hasDocs": True,
@@ -35,7 +36,7 @@ _FALLBACK_PROJECTS = [
     {
         "slug": "code-proxy",
         "name": "Code Proxy",
-        "path": "/home/vokov/workspace/code-proxy",
+        "path": str(_PROJECTS_ROOT / "code-proxy"),
         "description": "LM streaming proxy для агентів",
         "hasDrakonIr": False,
         "hasDocs": False,
@@ -44,7 +45,7 @@ _FALLBACK_PROJECTS = [
     {
         "slug": "ai-drakon-setup",
         "name": "AI-DRAKON Platform",
-        "path": "/home/vokov/workspace/ai-drakon-setup",
+        "path": str(_PROJECTS_ROOT / "ai-drakon-setup"),
         "description": "DRAKON editor + agent pipeline UI",
         "hasDrakonIr": False,
         "hasDocs": True,

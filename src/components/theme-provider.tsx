@@ -19,6 +19,7 @@ function applyThemeToDOM(theme: ThemeMode) {
       ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
       : theme;
   document.documentElement.setAttribute("data-theme", resolved);
+  document.documentElement.setAttribute("data-astryx-theme", resolved === "dark" ? "dark" : "astryx");
   document.documentElement.classList.toggle("dark", resolved === "dark");
 }
 

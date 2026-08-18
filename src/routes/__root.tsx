@@ -83,18 +83,16 @@ head: () => ({
 meta: [
 { charSet: "utf-8" },
 { name: "viewport", content: "width=device-width, initial-scale=1" },
-{ title: "Lovable App" },
-{ name: "description", content: "A minimalist web page displaying a centered welcome message." },
-{ name: "author", content: "Lovable" },
-{ property: "og:title", content: "Lovable App" },
-{ property: "og:description", content: "A minimalist web page displaying a centered welcome message." },
+{ title: "AI-DRAKON | Visual Programming" },
+{ name: "description", content: "Create, analyze, and generate executable DRAKON diagrams with AI." },
+{ name: "author", content: "AI-DRAKON" },
+{ property: "og:title", content: "AI-DRAKON | Visual Programming" },
+{ property: "og:description", content: "Create, analyze, and generate executable DRAKON diagrams with AI." },
 { property: "og:type", content: "website" },
 { name: "twitter:card", content: "summary" },
-{ name: "twitter:site", content: "@Lovable" },
-{ name: "twitter:title", content: "Lovable App" },
-{ name: "twitter:description", content: "A minimalist web page displaying a centered welcome message." },
-{ property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/61db44f4-ec8b-4361-9e86-aa142b96fe38/id-preview-5dd7e079--3299f4c7-cffc-4145-a763-3584e1c5292e.lovable.app-1782485108699.png" },
-{ name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/61db44f4-ec8b-4361-9e86-aa142b96fe38/id-preview-5dd7e079--3299f4c7-cffc-4145-a763-3584e1c5292e.lovable.app-1782485108699.png" },
+{ name: "twitter:site", content: "@aidrakon" },
+{ name: "twitter:title", content: "AI-DRAKON | Visual Programming" },
+{ name: "twitter:description", content: "Create, analyze, and generate executable DRAKON diagrams with AI." },
 ],
 links: [
 {
@@ -115,7 +113,7 @@ errorComponent: ErrorComponent,
 
 function RootShell({ children }: { children: ReactNode }) {
 return (
-<html lang="en" className="dark">
+<html lang="en" className="dark" data-astryx-theme="dark">
 <head>
 <HeadContent />
 <link rel="preconnect" href="https://fonts.googleapis.com" />

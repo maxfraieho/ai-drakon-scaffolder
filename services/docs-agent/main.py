@@ -40,7 +40,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="docs-agent", version="0.1.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+_cors_origins = [origin.strip() for origin in os.getenv("CORS_ORIGINS", "https://aidrakon.tech,https://www.aidrakon.tech,http://localhost:5173,http://localhost:4173").split(",") if origin.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=_cors_origins, allow_methods=["*"], allow_headers=["*"])
 app.include_router(docs_router)
 app.include_router(notes_router)
 app.include_router(drakon_ir_router)
