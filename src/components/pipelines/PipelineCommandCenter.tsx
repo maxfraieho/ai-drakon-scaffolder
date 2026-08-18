@@ -129,7 +129,7 @@ function StepIndicator({ step, index, steps, currentStep, doneSteps }: {
         <div className={cn(
           "h-5 w-5 shrink-0 rounded-full flex items-center justify-center font-mono text-[9px] border transition-all duration-200",
           isDone ? "bg-green-500/15 border-green-500/60 text-green-400"
-          : isActive ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[#1a0a00] shadow-[0_0_6px_var(--accent-amber)]"
+          : isActive ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] shadow-[0_0_6px_var(--accent-amber)]"
           : "bg-transparent border-[var(--border-subtle)] text-[var(--text-muted)]",
         )}>
           {isDone ? <Check className="h-2.5 w-2.5" /> : index + 1}
@@ -174,7 +174,7 @@ function PanelCode({ code, setCode, filePath, setFilePath, onNext, loading, btnL
         spellCheck={false} />
       <div className="flex justify-end px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
         <Button onClick={onNext} disabled={!code.trim() || loading}
-          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[#1a0a00] hover:brightness-110">
+          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] hover:brightness-110">
           <Play className="h-3 w-3" />{loading ? "Аналізую..." : (btnLabel ?? "Аналізувати")}
         </Button>
       </div>
@@ -224,7 +224,7 @@ function PanelAnalyzeBase({ analyzing, result, selected, setSelected, onNext, bt
                   <div className={cn("h-3.5 w-3.5 rounded border flex items-center justify-center shrink-0",
                     selected.has(fn.name) ? "bg-[var(--accent-amber)] border-[var(--accent-amber)]"
                     : "border-[var(--border-subtle)]")}>
-                    {selected.has(fn.name) && <Check className="h-2 w-2 text-[#1a0a00]" />}
+                    {selected.has(fn.name) && <Check className="h-2 w-2 text-[var(--astryx-color-on-brand)]" />}
                   </div>
                   <span className="font-mono text-[11px] text-[var(--text-primary)] flex-1 truncate">
                     {fn.name.split(".").pop()}
@@ -247,7 +247,7 @@ function PanelAnalyzeBase({ analyzing, result, selected, setSelected, onNext, bt
         <div className="flex items-center justify-between gap-2 px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
           <span className="font-mono text-[10px] text-[var(--text-muted)]">{selected.size} обрано</span>
           <Button onClick={onNext} disabled={selected.size === 0}
-            className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[#1a0a00] hover:brightness-110">
+            className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] hover:brightness-110">
             {btnLabel ?? "Далі"} <ChevronRight className="h-3 w-3" />
           </Button>
         </div>
@@ -279,7 +279,7 @@ function PanelIR({ fns, onNext }: { fns: AnalyzedFunction[]; onNext: () => void 
       </div>
       <div className="flex justify-end px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
         <Button onClick={onNext}
-          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[#1a0a00] hover:brightness-110">
+          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] hover:brightness-110">
           Редагувати <ChevronRight className="h-3 w-3" />
         </Button>
       </div>
@@ -309,7 +309,7 @@ function PanelEdit({ irText, setIrText, language, setLanguage, onNext, generatin
         spellCheck={false} />
       <div className="flex justify-end px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
         <Button onClick={onNext} disabled={!irText.trim() || generating}
-          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[#1a0a00] hover:brightness-110">
+          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] hover:brightness-110">
           <Play className="h-3 w-3" />{generating ? "Генерую..." : "Генерувати"}
         </Button>
       </div>
@@ -384,7 +384,7 @@ function PanelIdea({ idea, setIdea, language, setLanguage, onNext, loading }: {
         spellCheck={false} />
       <div className="flex justify-end px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
         <Button onClick={onNext} disabled={!idea.trim() || loading}
-          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[#1a0a00] hover:brightness-110">
+          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] hover:brightness-110">
           <Play className="h-3 w-3" />{loading ? "Генерую IR..." : "Генерувати IR"}
         </Button>
       </div>
@@ -421,7 +421,7 @@ function PanelIRGen({ loading, irText, error, onNext }: {
       {!loading && irText && (
         <div className="flex justify-end px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
           <Button onClick={onNext}
-            className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[#1a0a00] hover:brightness-110">
+            className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] hover:brightness-110">
             Редагувати <ChevronRight className="h-3 w-3" />
           </Button>
         </div>
@@ -498,7 +498,7 @@ function PanelRefactorPlan({ loading, plan, error, onNext, generating }: {
       {!loading && plan && (
         <div className="flex justify-end px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
           <Button onClick={onNext} disabled={generating}
-            className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[#1a0a00] hover:brightness-110">
+            className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] hover:brightness-110">
             <Play className="h-3 w-3" />{generating ? "Генерую..." : "Рефакторити"}
           </Button>
         </div>
@@ -569,7 +569,7 @@ function PanelSpec({ spec, setSpec, language, setLanguage, onNext, loading }: {
         spellCheck={false} />
       <div className="flex justify-end px-3 py-2 border-t border-[var(--border-subtle)] bg-[var(--bg-surface)] shrink-0">
         <Button onClick={onNext} disabled={!spec.trim() || loading}
-          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[#1a0a00] hover:brightness-110">
+          className="h-7 gap-1.5 font-mono text-[11px] bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)] hover:brightness-110">
           <Play className="h-3 w-3" />{loading ? "Генерую IR..." : "Генерувати IR"}
         </Button>
       </div>
@@ -972,7 +972,7 @@ export function PipelineCommandCenter() {
               )}>
               <div className={cn(
                 "h-5 w-5 rounded flex items-center justify-center shrink-0 font-mono text-[9px] font-bold",
-                active ? "bg-[var(--accent-amber)] text-[#1a0a00]" : "bg-[var(--border-subtle)] text-[var(--text-muted)]"
+                active ? "bg-[var(--accent-amber)] text-[var(--astryx-color-on-brand)]" : "bg-[var(--border-subtle)] text-[var(--text-muted)]"
               )}>
                 {s}
               </div>
@@ -1071,7 +1071,7 @@ export function PipelineCommandCenter() {
                   className={cn(
                     "shrink-0 flex items-center gap-1 px-2 py-1 rounded font-mono text-[9px] font-bold transition-colors border",
                     active
-                      ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[#1a0a00]"
+                      ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[var(--astryx-color-on-brand)]"
                       : "bg-transparent border-[var(--border-subtle)] text-[var(--text-muted)]",
                   )}
                 >
@@ -1095,7 +1095,7 @@ export function PipelineCommandCenter() {
                     <div className={cn(
                       "h-3.5 w-3.5 rounded-full flex items-center justify-center text-[7px] border shrink-0",
                       isDone ? "bg-green-500/15 border-green-500/60 text-green-400"
-                        : isActive ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[#1a0a00]"
+                        : isActive ? "bg-[var(--accent-amber)] border-[var(--accent-amber)] text-[var(--astryx-color-on-brand)]"
                         : "border-[var(--border-subtle)] text-[var(--text-muted)]",
                     )}>
                       {isDone ? <Check className="h-1.5 w-1.5" /> : i + 1}

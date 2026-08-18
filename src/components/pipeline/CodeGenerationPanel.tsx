@@ -250,28 +250,26 @@ const disabled = !diagramIr || running;
 return (
 <section
 className={cn(
-"antialiased flex shrink-0 flex-col border-t bg-background z-20 transition-[height] duration-200 ease-in-out shadow-[0_-4px_24px_rgba(0,0,0,0.5)]",
+"astryx-migrated antialiased flex shrink-0 flex-col border-t bg-background z-20 transition-[height] duration-200 ease-in-out shadow-[0_-4px_24px_rgba(0,0,0,0.5)]",
 panelHeight,
 )}
-style={{ borderColor: "var(--color-outline-variant, #534434)" }}
+style={{ borderColor: "var(--astryx-border-subtle)" }}
 >
 {/* Header */}
 <header
 className="flex h-10 shrink-0 items-center justify-between px-4 border-b bg-muted"
 style={{
-borderColor: "var(--color-outline-variant, #534434)",
+borderColor: "var(--astryx-border-subtle)",
 }}
 >
 <div className="flex items-center gap-2">
 <span
-className="material-symbols-outlined text-[18px]"
-style={{ color: "var(--color-primary-container, #f59e0b)" }}
+className="material-symbols-outlined text-[18px] text-[var(--astryx-color-brand)]"
 >
 code
 </span>
 <span
-className="font-mono text-[11px] font-semibold uppercase tracking-widest"
-style={{ color: "var(--color-primary-container, #f59e0b)" }}
+className="font-mono text-[11px] font-semibold uppercase tracking-widest text-[var(--astryx-color-brand)]"
 >
 Генерувати код
 </span>
@@ -280,8 +278,8 @@ style={{ color: "var(--color-primary-container, #f59e0b)" }}
 <div
 className="flex rounded-sm border p-px"
 style={{
-background: "var(--color-surface-container-highest, #353534)",
-borderColor: "var(--color-outline-variant, #534434)",
+background: "var(--astryx-surface-secondary)",
+borderColor: "var(--astryx-border-subtle)",
 }}
 >
 {LANGS.map((l) => (
@@ -292,12 +290,12 @@ onClick={() => setLang(l.id)}
 className={cn(
 "px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider rounded-[2px] transition-colors active:scale-[0.96] transition-transform duration-75 min-h-[28px]",
 lang === l.id
-? "text-black"
-: "text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)]",
+? "text-[var(--astryx-color-on-brand)]"
+: "text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)]",
 )}
 style={
 lang === l.id
-? { background: "var(--color-primary-container, #f59e0b)" }
+? { background: "var(--astryx-color-brand)" }
 : undefined
 }
 >
@@ -309,7 +307,7 @@ lang === l.id
 type="button"
 onClick={onClose}
 aria-label="Закрити панель"
-className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] transition-colors active:scale-[0.96] duration-75"
+className="text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)] transition-colors active:scale-[0.96] duration-75"
 >
 <span className="material-symbols-outlined text-[20px]">close</span>
 </button>
@@ -322,22 +320,22 @@ className="text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-sur
 {/* Left form */}
 <div
 className="flex flex-1 flex-col gap-2 p-3 border-r"
-style={{ borderColor: "var(--color-outline-variant, #534434)" }}
+style={{ borderColor: "var(--astryx-border-subtle)" }}
 >
 {/* Scheme row */}
 <div className="flex items-center gap-2">
-<span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--color-on-surface-variant)]">
+<span className="font-mono text-[11px] font-semibold uppercase tracking-wider text-[var(--astryx-text-secondary)]">
 СХЕМА:
 </span>
 <div
 className={cn(
 "flex flex-1 items-center justify-between rounded-sm border px-2 h-[32px] font-mono text-[12px] bg-background",
 diagramIr
-? "text-[var(--color-on-surface)]"
-: "text-[var(--color-on-surface-variant)] opacity-60",
+? "text-[var(--astryx-text-primary)]"
+: "text-[var(--astryx-text-secondary)] opacity-60",
 )}
 style={{
-borderColor: "var(--color-outline-variant, #534434)",
+borderColor: "var(--astryx-border-subtle)",
 }}
 >
 <span className="truncate">
@@ -353,16 +351,16 @@ value={description}
 onChange={(e) => setDescription(e.target.value)}
 disabled={running}
 placeholder="Опис поведінки (необов'язково)…"
-className="flex-1 w-full resize-none rounded-sm border p-2 font-mono text-[12px] text-[var(--color-on-surface)] bg-background outline-none placeholder:text-[var(--color-on-surface-variant)]/50 focus:border-[var(--color-primary-container)] focus:ring-1 focus:ring-[var(--color-primary-container)]"
+className="flex-1 w-full resize-none rounded-sm border p-2 font-mono text-[12px] text-[var(--astryx-text-primary)] bg-background outline-none placeholder:text-[var(--astryx-text-muted)] focus:border-[var(--astryx-border-focus)] focus:ring-1 focus:ring-[var(--astryx-border-focus)]"
 style={{
-borderColor: "var(--color-outline-variant, #534434)",
+borderColor: "var(--astryx-border-subtle)",
 }}
 />
 </div>
 
 {/* Action row */}
 <div className="flex items-center justify-between gap-2">
-<span className="font-mono text-[10px] italic text-[var(--color-on-surface-variant)]">
+<span className="font-mono text-[10px] italic text-[var(--astryx-text-secondary)]">
 {!diagramIr
 ? "Виберіть схему для початку генерації"
 : running
@@ -380,8 +378,8 @@ disabled
 : "hover:brightness-110",
 )}
 style={{
-background: "var(--color-primary-container, #f59e0b)",
-color: "#2a1700",
+background: "var(--astryx-color-brand)",
+color: "var(--astryx-color-on-brand)",
 }}
 >
 {running ? (
@@ -400,14 +398,14 @@ progress_activity
 className="w-[320px] flex flex-col bg-muted/40"
 >
 <div
-className="h-8 flex items-center px-4 border-b font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--color-on-surface-variant)]"
-style={{ borderColor: "var(--color-outline-variant, #534434)" }}
+className="h-8 flex items-center px-4 border-b font-mono text-[10px] font-semibold uppercase tracking-widest text-[var(--astryx-text-secondary)]"
+style={{ borderColor: "var(--astryx-border-subtle)" }}
 >
 Останні генерації
 </div>
 <div className="flex-1 overflow-y-auto p-1 flex flex-col gap-1">
 {history.length === 0 ? (
-<div className="p-3 font-mono text-[11px] italic text-[var(--color-on-surface-variant)]/70">
+<div className="p-3 font-mono text-[11px] italic text-[var(--astryx-text-muted)]">
 Історія порожня
 </div>
 ):(
@@ -416,7 +414,7 @@ history.map((item) => (
 key={item.id}
 type="button"
 onClick={() => replayHistory(item)}
-className="group flex items-center justify-between gap-2 p-2 rounded-sm border border-transparent cursor-pointer text-left min-h-[40px] hover:bg-[var(--color-surface-container-high)] hover:border-[var(--color-outline-variant)] transition-colors duration-150"
+className="group flex items-center justify-between gap-2 p-2 rounded-sm border border-transparent cursor-pointer text-left min-h-[40px] hover:bg-[var(--astryx-surface-secondary)] hover:border-[var(--astryx-border-subtle)] transition-colors duration-150"
 >
 <div className="flex items-center gap-2 overflow-hidden">
 <span
@@ -424,26 +422,26 @@ className="px-1.5 py-0.5 rounded-[2px] text-[10px] font-bold font-mono uppercase
 style={{
 background:
 item.language === "python"
-? "var(--color-primary-container, #f59e0b)"
-: "var(--color-surface-container-highest, #353534)",
+? "var(--astryx-color-brand)"
+: "var(--astryx-surface-secondary)",
 color:
 item.language === "python"
-? "#2a1700"
-: "var(--color-on-surface)",
+? "var(--astryx-color-on-brand)"
+: "var(--astryx-text-primary)",
 }}
 >
 {item.language.slice(0, 2)}
 </span>
 <div className="flex flex-col truncate">
-<span className="font-mono text-[12px] text-[var(--color-on-surface)] truncate">
+<span className="font-mono text-[12px] text-[var(--astryx-text-primary)] truncate">
 {item.scheme}
 </span>
-<span className="font-mono text-[10px] text-[var(--color-on-surface-variant)] tabular-nums">
+<span className="font-mono text-[10px] text-[var(--astryx-text-secondary)] tabular-nums">
 {formatTime(item.timestamp)} · {item.iterations} iter
 </span>
 </div>
 </div>
-<span className="opacity-0 group-hover:opacity-100 text-[var(--color-on-surface-variant)] hover:text-[var(--color-primary-container)] transition-opacity p-1">
+<span className="opacity-0 group-hover:opacity-100 text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)] transition-opacity p-1">
 <span className="material-symbols-outlined text-[16px]">
 refresh
 </span>
@@ -460,22 +458,22 @@ refresh
 <div
 className="flex items-center justify-between px-4 py-1.5 border-b shrink-0 bg-muted"
 style={{
-borderColor: "var(--color-outline-variant, #534434)",
+borderColor: "var(--astryx-border-subtle)",
 }}
 >
 <div className="flex items-center gap-2 font-mono text-[11px] font-semibold uppercase tracking-wider">
 {status === "done" ? (
 <>
-<span className="text-[#4ade80]">✓</span>
-<span className="text-[#4ade80]">КОД ЗГЕНЕРОВАНО</span>
+<span className="text-emerald-400">✓</span>
+<span className="text-emerald-400">КОД ЗГЕНЕРОВАНО</span>
 <span className="opacity-40 mx-1">·</span>
-<span className="text-[var(--color-on-surface-variant)]">
+<span className="text-[var(--astryx-text-secondary)]">
 syntax:{" "}
 <span
 className={
 result && result.syntax_errors.length === 0
-? "text-[#4ade80]"
-: "text-[#ffb4ab]"
+? "text-emerald-400"
+: "text-rose-400"
 }
 >
 {result && result.syntax_errors.length === 0
@@ -486,17 +484,17 @@ result && result.syntax_errors.length === 0
 </>
 ):(
 <>
-<span className="text-[#ffb4ab]">✗</span>
-<span className="text-[#ffb4ab]">ПОМИЛКА</span>
+<span className="text-rose-400">✗</span>
+<span className="text-rose-400">ПОМИЛКА</span>
 <span className="opacity-40 mx-1">·</span>
-<span className="text-[var(--color-on-surface-variant)] normal-case">
+<span className="text-[var(--astryx-text-secondary)] normal-case">
 {errorMsg}
 </span>
 </>
 )}
 </div>
 <div className="flex items-center gap-3 font-mono text-[11px]">
-<span className="tabular-nums text-[var(--color-on-surface-variant)]">
+<span className="tabular-nums text-[var(--astryx-text-secondary)]">
 {elapsed}s
 <span className="opacity-40 mx-1">|</span>
 {result?.iterations ?? 0} iter
@@ -505,7 +503,7 @@ result && result.syntax_errors.length === 0
 type="button"
 onClick={copyCode}
 disabled={!result?.code}
-className="flex items-center gap-1 px-2 py-1 rounded-[2px] opacity-60 hover:opacity-100 transition-opacity active:scale-[0.96] duration-75 min-h-[32px] text-[var(--color-on-surface-variant)] hover:text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container-highest)]"
+className="flex items-center gap-1 px-2 py-1 rounded-[2px] opacity-60 hover:opacity-100 transition-opacity active:scale-[0.96] duration-75 min-h-[32px] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)] hover:bg-[var(--astryx-surface-secondary)]"
 >
 <span className="material-symbols-outlined text-[14px]">
 content_copy
@@ -516,7 +514,7 @@ COPY
 type="button"
 onClick={handleSaveToKb}
 disabled={kbSaving || kbSaved || !result?.code}
-className="flex items-center gap-1 rounded border border-[var(--color-primary-container)]/40 px-2 py-1 min-h-[32px] font-mono text-[11px] uppercase text-[var(--color-primary-container)] transition-colors hover:bg-[var(--color-primary-container)]/10 disabled:opacity-50"
+className="flex items-center gap-1 rounded border border-[var(--astryx-color-brand)]/40 px-2 py-1 min-h-[32px] font-mono text-[11px] uppercase text-[var(--astryx-color-brand)] transition-colors hover:bg-[var(--astryx-color-brand-light)] disabled:opacity-50"
 >
 {kbSaved ? "✓ Збережено" : kbSaving ? "..." : "Save to KB"}
 </button>

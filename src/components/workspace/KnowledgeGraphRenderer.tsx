@@ -278,7 +278,7 @@ export function KnowledgeGraphRenderer({
   const nodeMap = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes, renderTick]);
 
   return (
-    <div ref={containerRef} className="relative w-full h-full overflow-hidden bg-[#0a0a0a]">
+    <div ref={containerRef} className="astryx-migrated relative w-full h-full overflow-hidden bg-[var(--astryx-surface-page)]">
       <svg
         ref={svgRef}
         width="100%"
@@ -354,7 +354,7 @@ export function KnowledgeGraphRenderer({
                 r={n.radius}
                 fill={color}
                 fillOpacity={0.85}
-                stroke={isSelected ? "#f59e0b" : "rgba(255,255,255,0.15)"}
+                stroke={isSelected ? "var(--astryx-color-brand)" : "rgba(255,255,255,0.15)"}
                 strokeWidth={isSelected ? 3 : 1}
               />
               <text

@@ -84,8 +84,11 @@ const NAV_SYSTEM = ASTRYX_NAV_ITEMS.filter((item) => item.section === "system");
 
 const ASTRYX_SHELL_FLAG = "astryx_shell";
 function isAstryxShellEnabled() {
-  if (import.meta.env.VITE_ASTRYX_SHELL === "true") return true;
-  try { return localStorage.getItem(ASTRYX_SHELL_FLAG) === "true"; } catch { return false; }
+  if (import.meta.env.VITE_ASTRYX_SHELL === "false") return false;
+  try {
+    const v = localStorage.getItem(ASTRYX_SHELL_FLAG);
+    return v === null ? true : v !== "false";
+  } catch { return true; }
 }
 
 

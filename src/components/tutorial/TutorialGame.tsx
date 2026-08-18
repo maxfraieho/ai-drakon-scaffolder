@@ -58,7 +58,7 @@ export function TutorialGame() {
 
   if (completed) {
     return (
-      <div className="flex h-full flex-col items-center justify-center p-8 text-center animate-in fade-in duration-1000">
+      <div className="astryx-migrated flex h-full flex-col items-center justify-center p-8 text-center animate-in fade-in duration-1000">
         <Award className="h-32 w-32 text-yellow-400 mb-6 drop-shadow-[0_0_20px_rgba(250,204,21,0.5)]" />
         <h1 className="text-4xl font-bold text-slate-100 mb-4">Вітаємо!</h1>
         <p className="text-lg text-slate-400 mb-8 max-w-md">
@@ -74,7 +74,7 @@ export function TutorialGame() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col md:flex-row">
+    <div className="astryx-migrated flex h-full w-full flex-col md:flex-row">
       {/* Sidebar Info */}
       <div className="w-full md:w-1/3 border-r border-slate-800 bg-slate-900/50 p-8 flex flex-col justify-between">
         <div>
@@ -131,7 +131,7 @@ export function TutorialGame() {
       {/* Main Canvas Area (Mocked for tutorial) */}
       <div className="flex-1 bg-slate-950 relative overflow-hidden flex items-center justify-center">
         {/* Decorative Grid */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(128,128,128,0.07)_1px,transparent_1px),linear-gradient(to_bottom,rgba(128,128,128,0.07)_1px,transparent_1px)] bg-[size:24px_24px]"></div>
         
         {/* Playful Interactive Area */}
         <div className="relative z-10 w-full max-w-lg p-12 flex flex-col items-center">

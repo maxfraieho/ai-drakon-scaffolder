@@ -201,7 +201,7 @@ active
       <ChevronDown className="h-3.5 w-3.5 text-[var(--text-muted)]" />
     </Button>
   </DropdownMenuTrigger>
-  <DropdownMenuContent align="start" className="w-80 p-2 bg-[#09090b] border-white/10 shadow-2xl">
+  <DropdownMenuContent align="start" className="w-80 p-2 bg-[var(--astryx-surface-elevated)] border-white/10 shadow-2xl">
     <div className="grid grid-cols-2 gap-1.5">
       <Link
         to="/codegen"

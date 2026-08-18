@@ -39,7 +39,7 @@ export function UnsavedChangesGuard({ isDirty }: UnsavedChangesGuardProps) {
 
   return (
     <AlertDialog open={blocker.status === "blocked"}>
-      <AlertDialogContent className="border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)]">
+      <AlertDialogContent className="astryx-migrated border-[var(--border-default)] bg-[var(--bg-surface)] text-[var(--text-primary)]">
         <AlertDialogHeader>
           <AlertDialogTitle className="font-mono text-sm uppercase tracking-wider text-[var(--accent-amber)]">
             Незбережені зміни
@@ -57,7 +57,7 @@ export function UnsavedChangesGuard({ isDirty }: UnsavedChangesGuardProps) {
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => blocker.proceed?.()}
-            className="bg-[#ef4444] text-white hover:bg-[#ef4444]/90 text-xs h-8"
+            className="bg-red-500 text-white hover:bg-red-600 text-xs h-8"
           >
             Залишити сторінку
           </AlertDialogAction>

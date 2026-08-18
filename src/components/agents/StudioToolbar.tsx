@@ -69,7 +69,7 @@ export function StudioToolbar({
               size="sm"
               onClick={onResume}
               className="flex items-center gap-1.5 h-7 px-2 text-white"
-              style={{ backgroundColor: "var(--accent-amber)", color: "#111827" }}
+              style={{ backgroundColor: "var(--astryx-color-brand)", color: "var(--astryx-color-on-brand)" }}
               title="Продовжити"
             >
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />

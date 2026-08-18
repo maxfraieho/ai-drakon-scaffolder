@@ -90,7 +90,7 @@ className="font-mono text-[12px] gap-2"
 <CommandItem
 value="logout вийти"
 onSelect={() => { onLogout(); onOpenChange(false); }}
-className="font-mono text-[12px] gap-2 text-[var(--accent-red,#ffb4ab)]"
+className="font-mono text-[12px] gap-2 text-red-400"
 >
 <LogOut className="h-4 w-4" />
 <span>Вийти з системи</span>

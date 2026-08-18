@@ -76,7 +76,7 @@ export function ExecutionPanel({
       {isOpen && (
         <div
           ref={containerRef}
-          className="flex-1 overflow-y-auto p-3 font-mono text-xs space-y-1.5 bg-[#0a0f1d] selection:bg-accent/40"
+          className="flex-1 overflow-y-auto p-3 font-mono text-xs space-y-1.5 bg-[var(--astryx-surface-page)] selection:bg-accent/40"
         >
           {logs.length === 0 ? (
             <div className="flex h-full items-center justify-center text-muted-foreground italic">
