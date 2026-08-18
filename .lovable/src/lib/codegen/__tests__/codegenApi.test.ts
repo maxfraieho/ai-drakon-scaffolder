@@ -170,8 +170,9 @@ describe("generateDrakonCode", () => {
       functionName: "testFunc",
       params: "a, b",
     });
+    const assertion = expect(promise).rejects.toThrow("validation failed");
     await vi.runAllTimersAsync();
-    await expect(promise).rejects.toThrow("validation failed");
+    await assertion;
     vi.useRealTimers();
   });
 
@@ -201,8 +202,9 @@ describe("generateDrakonCode", () => {
       functionName: "testFunc",
       params: "a, b",
     });
+    const assertion = expect(promise).rejects.toThrow("Codegen failed: llm timeout upstream");
     await vi.runAllTimersAsync();
-    await expect(promise).rejects.toThrow("Codegen failed: llm timeout upstream");
+    await assertion;
     vi.useRealTimers();
   });
 
@@ -245,8 +247,9 @@ describe("generateDrakonCode", () => {
       functionName: "testFunc",
       params: "a, b",
     });
+    const assertion = expect(promise).rejects.toThrow("Timeout: генерація коду не завершилася за 3 хвилини");
     await vi.runAllTimersAsync();
-    await expect(promise).rejects.toThrow("Timeout: генерація коду не завершилася за 3 хвилини");
+    await assertion;
     vi.useRealTimers();
   });
 });
