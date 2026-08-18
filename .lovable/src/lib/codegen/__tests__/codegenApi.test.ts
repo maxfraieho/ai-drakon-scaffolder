@@ -143,4 +143,111 @@ describe("generateDrakonCode", () => {
       })
     ).rejects.toThrow("codegen HTTP 500: Server Error");
   });
+
+  it("should throw when polling reaches completed status but output.success is false", async () => {
+    let fetchCallCount = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      fetchCallCount++;
+      if (fetchCallCount === 1) {
+        return new Response(JSON.stringify({ execution_id: "exec-123" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          status: "completed",
+          output: { success: false, error: "validation failed" },
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }));
+    vi.useFakeTimers();
+    const { generateDrakonCode } = await import("../codegenApi");
+    const promise = generateDrakonCode({
+      description: "Test description",
+      language: "js",
+      functionName: "testFunc",
+      params: "a, b",
+    });
+    await vi.runAllTimersAsync();
+    await expect(promise).rejects.toThrow("validation failed");
+    vi.useRealTimers();
+  });
+
+  it("should throw when polling reaches failed status", async () => {
+    let fetchCallCount = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      fetchCallCount++;
+      if (fetchCallCount === 1) {
+        return new Response(JSON.stringify({ execution_id: "exec-123" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      return new Response(
+        JSON.stringify({
+          status: "failed",
+          error: "llm timeout upstream",
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }));
+    vi.useFakeTimers();
+    const { generateDrakonCode } = await import("../codegenApi");
+    const promise = generateDrakonCode({
+      description: "Test description",
+      language: "js",
+      functionName: "testFunc",
+      params: "a, b",
+    });
+    await vi.runAllTimersAsync();
+    await expect(promise).rejects.toThrow("Codegen failed: llm timeout upstream");
+    vi.useRealTimers();
+  });
+
+  it("should throw when worker response has neither success boolean nor execution_id", async () => {
+    vi.stubGlobal("fetch", vi.fn(async () =>
+      new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    ));
+    const { generateDrakonCode } = await import("../codegenApi");
+    await expect(
+      generateDrakonCode({
+        description: "Test description",
+        language: "js",
+        functionName: "testFunc",
+        params: "a, b",
+      })
+    ).rejects.toThrow("Немає execution_id у відповіді worker");
+  });
+
+  it("should ignore transient network failures during polling and eventually time out", async () => {
+    let fetchCallCount = 0;
+    vi.stubGlobal("fetch", vi.fn(async () => {
+      fetchCallCount++;
+      if (fetchCallCount === 1) {
+        return new Response(JSON.stringify({ execution_id: "exec-123" }), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      // Імітуємо збій мережі під час поллінгу
+      throw new Error("Network error");
+    }));
+    vi.useFakeTimers();
+    const { generateDrakonCode } = await import("../codegenApi");
+    const promise = generateDrakonCode({
+      description: "Test description",
+      language: "js",
+      functionName: "testFunc",
+      params: "a, b",
+    });
+    await vi.runAllTimersAsync();
+    await expect(promise).rejects.toThrow("Timeout: генерація коду не завершилася за 3 хвилини");
+    vi.useRealTimers();
+  });
+  });
 });
