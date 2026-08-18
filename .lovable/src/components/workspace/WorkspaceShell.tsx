@@ -76,28 +76,17 @@ import { buildDiffContext, formatDiffAnalysis } from "@/lib/understand/diff";
 import { getGithubConfig } from "@/lib/settings-storage";
 import { AstryxHeader } from "@/components/astryx/AstryxHeader";
 import { AstryxSideNav } from "@/components/astryx/AstryxSideNav";
+import { ASTRYX_NAV_ITEMS, type AstryxNavItem } from "@/components/astryx/astryx-nav-config";
 
-type NavItem = {
-  to: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-};
+type NavItem = AstryxNavItem;
+const NAV_WORKSPACE = ASTRYX_NAV_ITEMS.filter((item) => item.section === "workspace");
+const NAV_SYSTEM = ASTRYX_NAV_ITEMS.filter((item) => item.section === "system");
 
-const NAV_WORKSPACE: NavItem[] = [
-  { to: "/workspace", label: "Робоча область", icon: Braces },
-  { to: "/tutorial", label: "🕹️ Tutorial", icon: Gamepad2 },
-  { to: "/diagrams", label: "Схеми", icon: LayoutDashboard },
-  { to: "/architect", label: "Architect", icon: Layers },
-  { to: "/notebooks", label: "NotebookLM", icon: BookOpen },
-  { to: "/pipelines", label: "Pipelines", icon: GitPullRequest },
-  { to: "/codegen", label: "Codegen", icon: Code2 },
-  { to: "/trace", label: "Execution Trace", icon: Activity },
-];
-
-const NAV_SYSTEM: NavItem[] = [
-  { to: "/agents", label: "Агенти", icon: Cpu },
-  { to: "/settings", label: "Налаштування", icon: Cog },
-];
+const ASTRYX_SHELL_FLAG = "astryx_shell";
+function isAstryxShellEnabled() {
+  if (import.meta.env.VITE_ASTRYX_SHELL === "true") return true;
+  try { return localStorage.getItem(ASTRYX_SHELL_FLAG) === "true"; } catch { return false; }
+}
 
 
 function getBreadcrumb(pathname: string): { section: string; sectionPath: string; sub?: string } {
@@ -121,18 +110,18 @@ function getBreadcrumb(pathname: string): { section: string; sectionPath: string
 
 function NavSection({ items, isActive, onClick }: {
   items: NavItem[];
-  isActive: (to: string) => boolean;
+  isActive: (path: string) => boolean;
   onClick?: () => void;
 }) {
   return (
     <div className="flex flex-col gap-0.5">
       {items.map((item) => {
         const Icon = item.icon;
-        const active = isActive(item.to);
+        const active = isActive(item.path);
         return (
           <Link
-            key={item.to}
-            to={item.to}
+            key={item.path}
+            to={item.path}
             onClick={onClick}
             className={cn(
               "flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors",
@@ -172,6 +161,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [cmdOpen, setCmdOpen] = useState(false);
+  const [astryxShellEnabled] = useState(isAstryxShellEnabled);
   const { activeProject, setActiveProject, projects, loading: projectsLoading } = useProject();
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("nav_collapsed") === "true"; } catch { return false; }
@@ -395,6 +385,13 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
       {/* TOP BAR */}
+      {astryxShellEnabled ? (
+        <AstryxHeader
+          onOpenCmd={() => setCmdOpen(true)}
+          onLogout={logout}
+          onOpenAgentChat={() => setAgentsOpen(true)}
+        />
+      ) : (
       <header className="flex h-10 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
         <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
           <SheetTrigger asChild>
@@ -631,6 +628,18 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           </AlertDialog>
         </div>
       </header>
+      )}
+
+      {astryxShellEnabled && (
+        <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+          <SheetContent side="right" className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)]">
+            <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
+              <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">AI-агенти</SheetTitle>
+            </SheetHeader>
+            <div className="h-[calc(100%-3.25rem)]"><AgentChatPanel className="h-full" /></div>
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* WORKSPACE BODY */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
@@ -687,16 +696,22 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           "hidden lg:flex h-full shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
           navCollapsed ? "w-0 border-r-0" : "w-64",
         )}>
-          <div className="border-b border-[var(--border-subtle)]">
-            <ProjectSelector />
-          </div>
-
-          <nav aria-label="Основна навігація" className="flex-1 overflow-y-auto p-2">
-            <NavDivider label="Робочий простір" />
-            <NavSection items={NAV_WORKSPACE} isActive={isActive} />
-            <NavDivider label="Система" />
-            <NavSection items={NAV_SYSTEM} isActive={isActive} />
-          </nav>
+          {astryxShellEnabled ? (
+            <>
+              <div className="border-b border-[var(--border-subtle)]"><ProjectSelector /></div>
+              <AstryxSideNav />
+            </>
+          ) : (
+            <>
+              <div className="border-b border-[var(--border-subtle)]"><ProjectSelector /></div>
+              <nav aria-label="Основна навігація" className="flex-1 overflow-y-auto p-2">
+                <NavDivider label="Робочий простір" />
+                <NavSection items={NAV_WORKSPACE} isActive={isActive} />
+                <NavDivider label="Система" />
+                <NavSection items={NAV_SYSTEM} isActive={isActive} />
+              </nav>
+            </>
+          )}
 
           <DevCyclePanel />
           <AgentStatusBar />

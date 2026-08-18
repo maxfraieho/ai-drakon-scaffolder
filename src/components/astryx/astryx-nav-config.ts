@@ -8,6 +8,8 @@ import {
   Activity,
   Cpu,
   Cog,
+  Gamepad2,
+  RefreshCw,
   type LucideIcon,
 } from "lucide-react";
 
@@ -36,6 +38,14 @@ export const ASTRYX_NAV_ITEMS: AstryxNavItem[] = [
     icon: LayoutDashboard,
     section: "workspace",
     headerVisible: true,
+  },
+  {
+    id: "tutorial",
+    label: "🕹️ Tutorial",
+    path: "/tutorial",
+    icon: Gamepad2,
+    section: "workspace",
+    headerVisible: false,
   },
   {
     id: "architect",
@@ -90,6 +100,14 @@ export const ASTRYX_NAV_ITEMS: AstryxNavItem[] = [
     label: "Налаштування",
     path: "/settings",
     icon: Cog,
+    section: "system",
+    headerVisible: false,
+  },
+  {
+    id: "sync",
+    label: "Sync",
+    path: "/sync",
+    icon: RefreshCw,
     section: "system",
     headerVisible: false,
   },

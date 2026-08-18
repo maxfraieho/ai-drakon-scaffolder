@@ -21,8 +21,10 @@
 - [x] T-227 Розширити LLM retry-логіку.
 - [x] T-228 Прибрати повторну KB init-вартість.
 - [x] T-229 Обмежити CORS origins у 3 сервісах.
-- [ ] T-230–T-232 Виконати Astryx foundation phase.
-- [ ] T-233 Змонтувати Astryx shell за feature flag.
-- [ ] T-234 Прибрати legacy shell після operator go.
+- [x] T-230 Активувати `data-astryx-theme`, синхронізований з ThemeProvider.
+- [x] T-231 Узгодити amber AI-DRAKON бренд-токени з Astryx.
+- [x] T-232 Зробити `ASTRYX_NAV_ITEMS` єдиним джерелом навігації.
+- [x] T-233 Змонтувати Astryx shell за feature flag.
+- [x] T-234 Зафіксувати legacy-shell як operator-go debt; видалення відкладено.
 - [ ] T-235–T-238 Виконати хвилі page migration.
 - [ ] T-239 Прибрати legacy tokens і додати Astryx enforcement.

@@ -5,9 +5,10 @@
 
 /* ── Light / Default Theme Tokens ── */
 :root, [data-astryx-theme="astryx"], [data-astryx-theme="light"] {
-  --astryx-color-brand: #0064d1;
-  --astryx-color-brand-hover: #0052ad;
-  --astryx-color-brand-light: #e7f3ff;
+  --astryx-color-brand: #f59e0b;
+  --astryx-color-brand-hover: #d97706;
+  --astryx-color-brand-light: rgba(245, 158, 11, 0.16);
+  --astryx-color-on-brand: #17120a;
 
   --astryx-surface-page: #f0f2f5;
   --astryx-surface-primary: #ffffff;
@@ -19,7 +20,7 @@
   --astryx-text-muted: #8a8d91;
 
   --astryx-border-subtle: #e4e6eb;
-  --astryx-border-focus: #0064d1;
+  --astryx-border-focus: #f59e0b;
 
   --astryx-radius-sm: 6px;
   --astryx-radius-md: 10px;
@@ -34,9 +35,10 @@
 
 /* ── Dark Theme Tokens ── */
 [data-astryx-theme="dark"], .dark {
-  --astryx-color-brand: #2374e1;
-  --astryx-color-brand-hover: #3982e5;
-  --astryx-color-brand-light: rgba(35, 116, 225, 0.15);
+  --astryx-color-brand: #fbbf24;
+  --astryx-color-brand-hover: #f59e0b;
+  --astryx-color-brand-light: rgba(251, 191, 36, 0.18);
+  --astryx-color-on-brand: #17120a;
 
   --astryx-surface-page: #18191a;
   --astryx-surface-primary: #242526;
@@ -48,7 +50,7 @@
   --astryx-text-muted: #8a8d91;
 
   --astryx-border-subtle: #393a3b;
-  --astryx-border-focus: #4599ff;
+  --astryx-border-focus: #fbbf24;
 
   --astryx-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
   --astryx-shadow-dropdown: 0 4px 20px rgba(0, 0, 0, 0.4);
@@ -136,7 +138,7 @@
 
 .astryx-button.primary {
   background-color: var(--astryx-color-brand);
-  color: #ffffff;
+  color: var(--astryx-color-on-brand);
 }
 
 .astryx-button.primary:hover {
