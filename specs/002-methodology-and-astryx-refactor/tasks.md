@@ -28,4 +28,4 @@
 - [x] T-234 Зафіксувати legacy-shell як operator-go debt; видалення відкладено.
 - [x] T-235 Виконати хвилю page migration для найпростіших сторінок.
 - [x] T-236–T-238 Продовжити хвилі page migration.
-- [ ] T-239 Прибрати legacy tokens і додати Astryx enforcement.
+- [ ] T-239 Прибрати legacy tokens і додати Astryx enforcement (часткова: enforcement lint + design context зроблено, legacy-токени в canvas-сторінках (DiagramsPage/DiagramEditorPage/WorkspacePage/AgentStudioPage/GardenPage/PipelineEditorPage) лишаються — окрема задача).
