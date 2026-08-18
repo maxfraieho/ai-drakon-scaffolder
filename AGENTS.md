@@ -264,4 +264,3 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-scaffolder && npm in
 - Згенеровувати PDF артефакт проекту через `/home/vokov/resume/run_md_service.sh --batch --source <path> --output <pdf_path> --structure-only`.
 - Ініціалізувати записник у NotebookLM MCP (`notebooks_create`), підключати PDF та посилання GitNexus (`gitnexus://repo/...`), консультуватися з агентом NotebookLM (`chat_ask`).
 - Після модифікації будь-якого файлу `src/` обов'язково виконувати `rsync -av --delete src/ .lovable/src/` для 100% синхронізації з Cloudflare Pages.
-

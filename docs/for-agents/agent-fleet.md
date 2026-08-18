@@ -27,7 +27,7 @@
 
 ## Доступні MCP-сервери
 
-- **GitNexus MCP (`gitnexus`)** — аналіз зв'язків у коді, blast radius (`impact`), семантичний пошук, виявлення регресій (`detect_changes`). **Індексує `~/workspace/ai-drakon-scaffolder`** (застарілий чекаут) — врахуй це, коли результати запиту виглядають "не знаходить" нового SDD/ADR-коду.
+- **GitNexus MCP (`gitnexus`)** — аналіз зв'язків у коді, blast radius (`impact`), семантичний пошук, виявлення регресій (`detect_changes`). Перед використанням перевір `list_repos`: має бути `ai-drakon-scaffolder` з відповідними branch і last commit. Якщо серверний індекс stale або відсутній, переіндексуй checkout; якщо це неможливо, явно позначай результати прямого читання коду як fallback і не приписуй їх графу.
 - **MemPalace MCP (`mempalace`)** — контекст розробки, щоденники агентів (`diary_write`/`diary_read`).
 - **NotebookLM MCP (`notebooklm`)** — блокноти й аналіз документації.
 

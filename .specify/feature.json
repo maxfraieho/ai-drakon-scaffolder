@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "feature_id": "001-backend-agents-baseline",
-  "spec_dir": "specs/001-backend-agents-baseline",
+  "feature_id": "002-methodology-and-astryx-refactor",
+  "spec_dir": "specs/002-methodology-and-astryx-refactor",
   "branch": "main",
-  "phase": "specify",
-  "phases_done": ["specify"],
-  "owner_agent": "claude-code",
+  "phase": "implement",
+  "phases_done": ["specify", "plan", "tasks"],
+  "owner_agent": "codex",
   "host": "dev-184",
-  "updated_at": "2026-08-18T13:45:00Z",
-  "notes": "Full SDD bootstrap for ai-drakon-scaffolder complete across frontend (specs/000-baseline) and backend (specs/001-backend-agents-baseline): 5 ADRs total (0001-0004 infra/frontend, 0005 three-FastAPI-microservices), Phase 1-3 brownfield migration done, characterization tests added+verified. ~/projects/ai-drakon-scaffolder and ~/workspace/ai-drakon-scaffolder (live FastAPI services architect/drakon/docs-agent, ports 8766/8765/8767) both synced to aaf43f3b. GitNexus deliberately excludes /services/ (.gitnexusignore, commit 4c60ef4) — backend investigated via direct code reading, delegated drafting to AGY .234 throughout. -flue TS/Cloudflare service variants (architect/drakon/docs-agent-flue) are operator's separate active WIP on .30 laptop (git stash) — deliberately out of scope here, not touched. Phase 4 (debt paydown, arbiter shadow->blocking) still deliberately deferred to operator judgment."
+  "updated_at": "2026-08-18T23:59:00Z",
+  "notes": "Task 1 (T-201..T-208) completed by Codex. GitNexus local index rebuilt on 33d890b8; MCP index freshness must be checked before use. Backend services and -flue WIP remain out of scope. Task 2 and Task 3 remain planned."
 }

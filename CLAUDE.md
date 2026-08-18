@@ -3,9 +3,9 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **ai-drakon-scaffolder** (7875 symbols, 19981 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project may be indexed by GitNexus as **ai-drakon-scaffolder**. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely only when the index exists and matches the checkout.
 
-> Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
+> Index unavailable or stale? Run `node .gitnexus/run.cjs analyze` from the project root (or `npx gitnexus analyze`) and verify repository name, branch, and last commit before relying on results. If reindexing is impossible, report the limitation and use direct code reading as a documented fallback; never claim an unavailable/stale graph is current.
 
 ## Always Do
 
@@ -61,4 +61,3 @@ For complex refactoring, multi-file feature development, or architectural review
 - Generate project PDF via `/home/vokov/resume/run_md_service.sh --batch --source <path> --output <pdf_path> --structure-only`.
 - Initialize a NotebookLM notebook (`notebooks_create`), attach PDF and GitNexus graph link (`gitnexus://repo/...`), and consult the built-in NotebookLM agent (`chat_ask`) for developer recommendations.
 - **MUST enforce `rsync -av --delete src/ .lovable/src/`** after modifying any source file to guarantee 100% sync before committing for Cloudflare Pages deployment.
-

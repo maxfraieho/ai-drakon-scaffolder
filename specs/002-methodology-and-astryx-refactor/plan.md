@@ -13,21 +13,28 @@
 
 ## 0. БЛОКЕРИ — рішення оператора ПЕРЕД стартом Codex
 
+### Верифікація GitNexus (2026-08-18, Codex)
+
+- Перевірено через `list_repos`, `query`, `context` та `impact` frontend-твердження T-205 і T-220–T-224, а також поточний Astryx inventory для T-230–T-239.
+- Підтверджено: `WorkspaceShell` викликається з `RootComponent` (1 direct upstream caller, LOW risk); `AstryxHeader` і `AstryxSideNav` мають 0 upstream callers, тому T-223 і твердження про незмонтований shell точні. Поточні рядки імпортів — 77–78, `AstryxHeader` — 13, `AstryxSideNav` — 5.
+- Підтверджено: `__root.tsx:118` жорстко задає `className="dark"`; `theme-provider.tsx:16–23` оновлює лише `data-theme` і `.dark`, а `data-astryx-theme` відсутній — T-224 точний.
+- Підтверджено: `generateDrakonCode` лишається `src/lib/codegen/codegenApi.ts:48–97` (GWT reference у baseline ще має legacy start line 47); `CodegenPage` викликає його на 76–81, тому T-205 не переписує API-сценарії. Обидва `routeTree.gen.ts` містять `TraceRoute`/`TutorialRoute`/`SyncRoute`.
+- Виправлено: T-222 посилання на `src/routes/sync.tsx:9–11` як текст «наступне оновлення» застаріло; поточний текст каже «після готовності backend-контракту». Також D-1 нижче більше не є фактом: локальний індекс перебудовано на `33d890b8`, але MCP-серверний індекс потребує оновлення.
+- Додано нового: GitNexus показав нуль викликачів для обох Astryx-shell компонентів; це посилює T-223, але не створює окремої T-задачі поза ним. Значущих розірваних frontend-імпортів або дубліката логіки, які план пропустив, не виявлено.
+
 Ці пункти треба закрити рішенням оператора, інакше частина задач не виконувана або виконується наосліп.
 
-### D-1 — GitNexus НЕ індексує `ai-drakon-scaffolder` (критично)
+### D-1 — GitNexus index freshness (закрито для локального checkout; MCP потребує refresh)
 
-**Факт (перевірено `mcp__gitnexus__list_repos` + `query` цієї сесії):** живий GitNexus-сервер (`192.168.3.184:4747`) НЕ містить репозиторію `ai-drakon-scaffolder`. `query({repo:"ai-drakon-scaffolder"})` повертає:
-`Error: Repository "ai-drakon-scaffolder" not found. Available: Understand-Anything, agent-harness-generator, agent-onboarding-kit, drakon-tech, exodus-infra, kindle-butch-gen, sonate-solidsite, uav-watcher, vydra-swiss-survey, vydra-termux-lab, free-claude-code`.
-Локального індексу теж немає: каталог `.gitnexus/` у чекауті відсутній.
+**Факт (перевірено `list_repos` + `query` + локальним analyzer):** MCP-сервер містить `ai-drakon-scaffolder`, але показує індекс commit `9c7e01bf` (`commitsBehind: 3`). Локальний `.gitnexus/` перебудовано успішно на `33d890b8` (4,002 nodes, 9,484 edges, 300 flows; FTS extension недоступний).
 
-**Наслідок:** інструкція CLAUDE.md «MUST run `impact()` before editing any symbol» і конституція §1 (`gitnexus http://192.168.3.184:4747`) — **не виконувані** для цього репо. Будь-який агент, що слідує CLAUDE.md буквально, або впаде, або мовчки пропустить gate.
+**Наслідок:** GitNexus gates виконувані локально після перевірки freshness; віддалені MCP-результати треба маркувати як stale до refresh. Інструкції тепер містять процедуру перевірки/переіндексації та документований fallback.
 
 **Рішення оператора (обрати одне):**
 - (a) Переіндексувати: запустити `npx gitnexus analyze` (або `node .gitnexus/run.cjs analyze` після bootstrap) у `~/projects/ai-drakon-scaffolder`, підтвердити, що `list_repos` показує репо, і лише тоді Codex застосовує gitnexus-gates у Task 2/Task 3.
 - (b) Формально послабити CLAUDE.md/конституцію: позначити gitnexus-gate як «best-effort, коли індекс присутній», без блокування. Тоді Task 2/Task 3 спираються на пряме читання коду (як цей план).
 
-> Весь Task 2 і Task 3 нижче складено через **пряме читання коду**, бо GitNexus недоступний. Кожне твердження має `файл:рядок`.
+> Task 2 і Task 3 спочатку складалися прямим читанням; у цій сесії frontend-твердження додатково звірені GitNexus. Backend `services/*` лишається поза індексом за `.gitnexusignore`.
 
 ### D-2 — Роль Astryx у Task 3: UI-фреймворк поверх бренду
 
@@ -84,7 +91,7 @@ NotebookLM також підтвердив роль Impeccable як процес
 
 #### T-205: Актуалізація baseline specs після F2/F3/F5
 - **Файли:** `specs/000-baseline/spec.md`.
-- **Що робити:** (1) додати нотатку в §5 (Out of Scope), що F3 змінив UI-handoff у `src/pages/CodegenPage.tsx` (codegen→editor), але ядро спеки (`src/lib/codegen/codegenApi.ts:47-96`, `generateDrakonCode`) НЕ змінене й лишається чинним as-is; (2) до інваріанта 2 (рядок 104) додати посилання на ADR-0006/0007 і процедуру регенерації routeTree. `specs/001-backend-agents-baseline/spec.md` — UI-фікси його не торкаються, лишити, але перевірити інваріант 1.4 (див. T-226 spec-drift).
+- **Що робити:** (1) додати нотатку в §5 (Out of Scope), що F3 змінив UI-handoff у `src/pages/CodegenPage.tsx` (codegen→editor), але ядро спеки (`src/lib/codegen/codegenApi.ts:48-97`, `generateDrakonCode`) НЕ змінене й лишається чинним as-is; (2) до інваріанта 2 (рядок 104) додати посилання на ADR-0006/0007 і процедуру регенерації routeTree. `specs/001-backend-agents-baseline/spec.md` — UI-фікси його не торкаються, лишити, але перевірити інваріант 1.4 (див. T-226 spec-drift).
 - **AC:** spec 000 не суперечить поточному коду; посилання на ADR-0006/0007 присутні; жодних Given-When-Then для codegenApi не переписано (він не змінювався).
 
 #### T-206: Узгодити документацію з реальним станом GitNexus
@@ -121,7 +128,7 @@ NotebookLM також підтвердив роль Impeccable як процес
 - **AC:** empty state містить робочу кнопку-посилання на `/pipelines`; синхронізовано в `.lovable`.
 
 #### T-222 (F6): `/sync` рекламує недоступну функцію + orphan-route
-- **Файл:рядок:** `src/routes/sync.tsx:9-11` — «Функція синхронізації... буде доступна в наступному оновленні». Дрейф: `/sync` присутній у `src/routeTree.gen.ts` (grep → є `SyncRoute`), але відсутній у `NAV_WORKSPACE`/`NAV_SYSTEM` (`WorkspaceShell.tsx:86-100`) і в `ASTRYX_NAV_ITEMS` (`astryx-nav-config.ts:23-96`) — досяжний лише прямим URL.
+- **Файл:рядок:** `src/routes/sync.tsx:9-11` — «Функція синхронізації репозиторію ще не реалізована. Вона з’явиться після готовності backend-контракту». Дрейф: `/sync` присутній у `src/routeTree.gen.ts` (є `SyncRoute`), але відсутній у `NAV_WORKSPACE`/`NAV_SYSTEM` (`WorkspaceShell.tsx:86-100`) і в `ASTRYX_NAV_ITEMS` (`astryx-nav-config.ts:23-96`) — досяжний лише прямим URL.
 - **Дія:** за рішенням D-3 — або (a) прибрати route і посилання з breadcrumb (`WorkspaceShell.tsx:109`), або (b) позначити `planned` з чітким виходом до доступної альтернативи (`/pipelines`/`/diagrams`).
 - **AC:** немає досяжної поверхні, що обіцяє неіснуючу функцію без виходу; breadcrumb для `/sync` узгоджено з рішенням.
 

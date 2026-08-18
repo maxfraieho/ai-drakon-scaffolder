@@ -6,7 +6,7 @@
 ## 2. Реальний вихідний код (Implementation Reference)
 
 ```typescript
-// src/lib/codegen/codegenApi.ts:47-96
+// src/lib/codegen/codegenApi.ts:48-97
 export async function generateDrakonCode(input: CodegenParams): Promise<CodegenResponse> {
   const token = await getToken();
   const res = await fetch(`${workerUrl()}/v1/codegen`, {
@@ -105,6 +105,7 @@ export async function generateDrakonCode(input: CodegenParams): Promise<CodegenR
 > "ALL changes to `src/` must be mirrored to `.lovable/src/`. CF Pages builds from `.lovable/`."
 
 Порушення цього інваріанта призводить до розбіжності між локальним середовищем розробки та фінальним продакшн-білдом на Cloudflare Pages.
+Нормативні ADR: [ADR-0006](../../docs/adr/0006-lovable-mirror-sync-build-contract.md) і [ADR-0007](../../docs/adr/0007-tanstack-start-routetree-contract.md). Перед комітом після змін у `src/` виконати `rsync -av --delete src/ .lovable/src/`; після додавання route file також регенерувати `routeTree.gen.ts` і перевірити parity обох checkout-ів.
 
 ---
 
@@ -113,3 +114,4 @@ export async function generateDrakonCode(input: CodegenParams): Promise<CodegenR
 - UI-компоненти редактора схем (`drakonwidget`), візуальні віджети та полотно рендерингу схем.
 - Обробка подій маніпулятора миші, перетягування (drag-and-drop) та малювання ліній зв'язків.
 - Внутрішня реалізація нейромережевих моделей кодогенерації (NIM / LLM backend).
+- UI-handoff F3 у `src/pages/CodegenPage.tsx` (codegen → editor) не змінює чинний контракт `generateDrakonCode` у `src/lib/codegen/codegenApi.ts:47-96`; GWT-сценарії цього API залишаються as-is.
