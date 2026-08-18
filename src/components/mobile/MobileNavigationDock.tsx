@@ -1,20 +1,25 @@
 import React from "react";
 import { Link as NavLink } from "@tanstack/react-router";
 import { Workflow, Bot, GitMerge, BookOpen, Home, Code2 } from "lucide-react";
+import { useProject } from "@/context/ProjectContext";
 
 interface NavItem {
   label: string;
   icon: React.ComponentType<{ className?: string }>;
   to: string;
+  params?: Record<string, string>;
 }
 
 export const MobileNavigationDock: React.FC = () => {
+  const { activeProject } = useProject();
   const items: NavItem[] = [
     { label: "Diagrams", icon: Workflow, to: "/diagrams" },
     { label: "Agents", icon: Bot, to: "/agents" },
     { label: "Pipelines", icon: GitMerge, to: "/pipelines" },
     { label: "Codegen", icon: Code2, to: "/codegen" },
-    { label: "Docs", icon: BookOpen, to: "/docs" },
+    activeProject
+      ? { label: "Docs", icon: BookOpen, to: "/p/$slug/docs", params: { slug: activeProject.slug } }
+      : { label: "Docs", icon: BookOpen, to: "/workspace" },
     { label: "Home", icon: Home, to: "/" },
   ];
 
@@ -26,7 +31,8 @@ export const MobileNavigationDock: React.FC = () => {
           return (
             <NavLink
               key={item.to}
-              to={item.to}
+              to={item.to as any}
+              params={item.params as any}
               activeOptions={{ exact: item.to === "/" }}
               activeProps={{ className: "text-indigo-400" }}
               inactiveProps={{ className: "text-zinc-500" }}

@@ -31,15 +31,21 @@ export default function PipelineEditorPage() {
   // States for list view
   const [pipelinesList, setPipelinesList] = useState<PipelineInfo[]>([]);
   const [loadingList, setLoadingList] = useState(!pipelineId);
+  const [listError, setListError] = useState<string | null>(null);
   const [newPipelineName, setNewPipelineName] = useState("");
   const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!pipelineId) {
       setLoadingList(true);
+      setListError(null);
       listPipelines()
         .then(setPipelinesList)
-        .catch(() => toast.error("Помилка завантаження списку пайплайнів"))
+        .catch(() => {
+          const message = "Помилка завантаження списку пайплайнів";
+          setListError(message);
+          toast.error(message);
+        })
         .finally(() => setLoadingList(false));
     }
   }, [pipelineId]);
@@ -200,6 +206,10 @@ const handleExportMrna = async () => {
             {loadingList ? (
               <div className="flex items-center justify-center p-12 border border-zinc-800 rounded-xl bg-zinc-900/40">
                 <Loader2 className="h-6 w-6 animate-spin text-rose-500" />
+              </div>
+            ) : listError ? (
+              <div className="flex items-center justify-center p-12 border border-red-500/30 rounded-xl bg-red-500/10 text-center">
+                <p className="text-sm text-red-300">{listError}</p>
               </div>
             ) : pipelinesList.length === 0 ? (
               <div className="flex flex-col items-center justify-center p-12 border border-zinc-800 border-dashed rounded-xl bg-zinc-900/10 text-center gap-2">

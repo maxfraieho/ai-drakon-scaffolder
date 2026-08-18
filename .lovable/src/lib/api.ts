@@ -200,14 +200,30 @@ const githubRequestHeaders = (owner?: string, token?: string): HeadersInit => ({
 });
 
 async function parseResponse<T>(response: Response): Promise<T> {
-  const data = (await response.json()) as T;
+  const raw = await response.text();
+  const contentType = response.headers.get("content-type") ?? "";
+  let data: T | { error?: string; message?: string } | null = null;
 
-  if (!response.ok) {
-    const maybeError = data as { error?: string; message?: string };
-    throw new Error(maybeError.message || maybeError.error || `HTTP ${response.status}`);
+  if (raw && contentType.toLowerCase().includes("application/json")) {
+    try {
+      data = JSON.parse(raw) as T;
+    } catch {
+      data = null;
+    }
   }
 
-  return data;
+  if (!response.ok) {
+    const maybeError = data as { error?: string; message?: string } | null;
+    throw new Error(
+      maybeError?.message || maybeError?.error || `Сервер тимчасово недоступний (HTTP ${response.status})`,
+    );
+  }
+
+  if (data === null) {
+    throw new Error("Сервер повернув некоректну відповідь");
+  }
+
+  return data as T;
 }
 
 export const api = {
@@ -304,8 +320,10 @@ export const api = {
     return parseResponse<AnalysisJob[]>(response);
   },
 
-  listProjects: (): Promise<{ success: boolean; projects: unknown[] }> =>
-    fetch(`${resolveApiBase()}/v1/projects/list`, { headers: headers() }).then((r) => r.json()),
+  listProjects: async (): Promise<{ success: boolean; projects: unknown[] }> => {
+    const response = await fetch(`${resolveApiBase()}/v1/projects/list`, { headers: headers() });
+    return parseResponse<{ success: boolean; projects: unknown[] }>(response);
+  },
 
   listDrakonIr: (project?: string): Promise<{ success: boolean; diagrams: string[]; count: number
   }> => {

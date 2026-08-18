@@ -28,11 +28,15 @@ import type { AgentId, AgentMessage } from "@/types/agent-chat";
 import type { DrakonDiagram } from "@/types/drakon";
 
 
+const DEFAULT_LLM_SLOTS: Record<string, string> = {
+  drakon: "drakon-assistant-proxy",
+};
+
 function hasLlmConfig(agentId: string): boolean {
   if (typeof window === "undefined") return true;
   const protocol = localStorage.getItem(`${agentId}_llm_protocol`) ?? localStorage.getItem("agent_llm_protocol");
   const apiKey = localStorage.getItem(`${agentId}_llm_api_key`) ?? localStorage.getItem("agent_llm_api_key");
-  return !!(protocol || apiKey);
+  return !!(protocol || apiKey || DEFAULT_LLM_SLOTS[agentId]);
 }
 
 const AGENTS: AgentId[] = ["drakon", "architect", "docs"];
