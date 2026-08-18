@@ -7,7 +7,8 @@ function SyncPage() {
       <RefreshCw className="h-12 w-12 text-teal-400/40" />
       <h2 className="text-xl font-semibold text-white/80">Синхронізація</h2>
       <p className="text-sm text-white/40 max-w-sm">
-        Функція синхронізації репозиторію буде доступна в наступному оновленні.
+        Функція синхронізації репозиторію ще не реалізована. Вона з’явиться після
+        готовності backend-контракту.
       </p>
     </div>
   );
