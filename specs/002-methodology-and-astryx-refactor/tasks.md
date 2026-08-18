@@ -14,7 +14,7 @@
 - [x] T-220 Замінити production metadata «Lovable App».
 - [x] T-221 Додати CTA до `/trace` empty state.
 - [x] T-222 Узгодити `/sync` planned route і breadcrumb.
-- [ ] T-223 Змонтувати або видалити orphan Astryx imports. (перенесено до T-233)
+- [x] T-223 Змонтувати або видалити orphan Astryx imports. (виконано через T-233)
 - [x] T-224 Активувати `data-astryx-theme`.
 - [x] T-225 Прибрати hardcoded MCP secret.
 - [x] T-226 Прибрати hardcoded absolute paths.
