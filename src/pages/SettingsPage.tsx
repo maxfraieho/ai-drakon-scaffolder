@@ -470,11 +470,11 @@ export function SettingsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50 p-6 space-y-8 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 space-y-8 max-w-5xl mx-auto" data-testid="settings-page">
       {/* Header */}
       <div className="flex items-center justify-between border-b border-zinc-800 pb-5">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500 border border-amber-500/20">
+          <div className="p-2 bg-[var(--astryx-color-brand-light)] rounded-lg text-[var(--astryx-color-brand)] border border-[var(--astryx-border-subtle)]">
             <Settings className="w-7 h-7" />
           </div>
           <div>
@@ -499,7 +499,7 @@ export function SettingsPage() {
         <div className="md:col-span-2 space-y-6">
 
           {/* API Keys Card */}
-          <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-sm shadow-xl">
+          <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
             <CardHeader className="border-b border-zinc-800/80 pb-4">
               <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
                 <Cpu className="w-5 h-5 text-amber-500" />
@@ -571,7 +571,7 @@ export function SettingsPage() {
           </Card>
 
           {/* LLM Proxy Server Card */}
-          <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-sm shadow-xl">
+          <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
             <CardHeader className="border-b border-zinc-800/80 pb-4">
               <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
                 <Globe className="w-5 h-5 text-amber-500" />
@@ -670,7 +670,7 @@ export function SettingsPage() {
           </Card>
 
           {/* N8N Integration Card */}
-          <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-sm shadow-xl">
+          <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
             <CardHeader className="border-b border-zinc-800/80 pb-4">
               <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
                 <Globe className="w-5 h-5 text-amber-500" />
@@ -786,7 +786,7 @@ export function SettingsPage() {
           </Card>
 
           {/* Agent Configuration Card */}
-          <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-sm shadow-xl">
+          <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
             <CardHeader className="border-b border-zinc-800/80 pb-4">
               <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
                 <ToggleLeft className="w-5 h-5 text-amber-500" />

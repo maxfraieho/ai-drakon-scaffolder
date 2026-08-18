@@ -47,13 +47,13 @@ export default function GalleryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-8">
+    <div className="min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-8" data-testid="gallery-page">
       <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-[Outfit] tracking-tight bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--astryx-color-brand)]">
             Community Gallery
           </h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-[var(--astryx-text-secondary)] mt-1">
             Discover, fork, and learn from DRAKON pipelines created by the community.
           </p>
         </div>
@@ -68,7 +68,7 @@ export default function GalleryPage() {
               className="pl-9 bg-slate-900 border-slate-800 focus-visible:ring-indigo-500/50 h-10 w-full rounded-xl"
             />
           </div>
-          <button className="flex h-10 items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900 px-4 text-sm font-medium hover:bg-slate-800 transition-colors">
+          <button className="astryx-button ghost md" data-variant="ghost" data-size="md" data-testid="gallery-filters-button">
             <Filter className="h-4 w-4" />
             <span className="hidden md:inline">Filters</span>
           </button>
@@ -82,7 +82,7 @@ export default function GalleryPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(item => (
-            <div key={item.id} className="group relative rounded-2xl border border-slate-800 bg-slate-900/50 p-5 transition-all hover:border-indigo-500/50 hover:bg-slate-900 hover:shadow-xl hover:shadow-indigo-500/10">
+            <div key={item.id} className="group relative rounded-[var(--astryx-radius-lg)] border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] p-5 transition-all hover:border-[var(--astryx-color-brand)]" data-variant="card">
               <div className="flex items-start justify-between mb-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition-transform">
                   <Workflow className="h-6 w-6" />
@@ -109,7 +109,7 @@ export default function GalleryPage() {
               
               <div className="flex flex-wrap gap-2 mb-4">
                 {item.tags.map(tag => (
-                  <Badge key={tag} variant="secondary" className="bg-slate-800 text-slate-300 hover:bg-slate-700 font-mono text-[10px]">
+                  <Badge key={tag} variant="secondary" className="astryx-badge primary font-mono text-[10px]" data-variant="primary">
                     #{tag}
                   </Badge>
                 ))}
@@ -122,7 +122,7 @@ export default function GalleryPage() {
                 >
                   View full screen →
                 </Link>
-                <button className="text-xs font-semibold bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition-colors">
+                <button className="astryx-button ghost sm" data-variant="ghost" data-size="sm" data-testid={`gallery-fork-${item.id}`}>
                   Fork Pipeline
                 </button>
               </div>
@@ -142,7 +142,9 @@ export default function GalleryPage() {
           </p>
           <button 
             onClick={() => setSearchQuery("")}
-            className="mt-6 text-indigo-400 hover:text-indigo-300 font-medium"
+            className="astryx-button ghost md mt-6"
+            data-variant="ghost"
+            data-size="md"
           >
             Clear filters
           </button>

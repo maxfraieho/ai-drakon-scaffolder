@@ -166,7 +166,7 @@ export function CodegenPage() {
   const jsonString = result ? JSON.stringify(result.drakon_json, null, 2) : "";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-6 text-[var(--astryx-text-primary)]" data-testid="codegen-page">
       <div className="flex items-center gap-3">
         <Code2 className="h-7 w-7 text-primary" />
         <div>
@@ -306,7 +306,7 @@ export function CodegenPage() {
             <AccordionItem value="json">
               <div className="flex items-center justify-between">
                 <AccordionTrigger>.drakon JSON</AccordionTrigger>
-                <Button onClick={handleOpenInEditor} size="sm" className="mr-2">
+                <Button onClick={handleOpenInEditor} size="sm" className="astryx-button primary sm mr-2" data-variant="primary" data-size="sm" data-testid="codegen-open-editor">
                   Відкрити в редакторі
                 </Button>
               </div>

@@ -64,7 +64,7 @@ export function ProjectsPage() {
 
   if (isLoading) {
     return (
-      <section className="relative min-h-[70vh] overflow-hidden p-6 md:p-10">
+      <section className="relative min-h-[70vh] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 md:p-10" data-testid="projects-page">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
         <div className="absolute -top-16 left-1/4 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-12 right-1/4 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
@@ -86,7 +86,7 @@ export function ProjectsPage() {
                             errorMsg.toLowerCase().includes("cors");
 
     return (
-      <section className="relative min-h-[70vh] overflow-hidden p-6 md:p-10">
+      <section className="relative min-h-[70vh] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 md:p-10" data-testid="projects-page">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
         <div className="relative z-10 mx-auto max-w-2xl pt-10">
           <div className="rounded-xl border border-red-500/20 bg-slate-900/80 p-6 text-slate-100 backdrop-blur-xl shadow-2xl space-y-6">
@@ -158,7 +158,7 @@ export function ProjectsPage() {
 
   if (projects.length === 0) {
     return (
-      <section className="relative min-h-[70vh] overflow-hidden p-6 md:p-10">
+      <section className="relative min-h-[70vh] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 md:p-10" data-testid="projects-page">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
         <div className="absolute -top-20 left-1/3 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
         <div className="absolute -bottom-12 right-1/3 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
@@ -184,7 +184,7 @@ export function ProjectsPage() {
   }
 
   return (
-    <section className="relative min-h-[70vh] overflow-hidden p-6 md:p-10">
+    <section className="relative min-h-[70vh] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 md:p-10" data-testid="projects-page">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
       <div className="absolute -top-20 left-1/4 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
       <div className="absolute -bottom-12 right-1/4 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />

@@ -110,9 +110,9 @@ function renderProposedDiff(before: string, after: string) {
   const afterLines = after.split("\n");
   const addedLines = afterLines.filter(line => !beforeLines.includes(line) && line.trim().length > 0);
   return (
-    <div className="rounded border border-zinc-800 bg-zinc-950 p-2 font-mono text-[10px] leading-relaxed">
+    <div className="rounded border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-secondary)] p-2 font-mono text-[10px] leading-relaxed" data-variant="card">
       {addedLines.map((line, idx) => (
-        <div key={idx} className="text-emerald-400 bg-emerald-950/20 px-1 py-0.5 rounded-sm">
+        <div key={idx} className="text-emerald-400 bg-emerald-950/20 px-1 py-0.5 rounded-sm" data-variant="success">
           + {line}
         </div>
       ))}
@@ -256,9 +256,9 @@ export function GardenPage() {
   const showList = viewMode === "list" || viewMode === "split";
 
   return (
-    <div className="flex h-full flex-col bg-[var(--bg-base)] text-[var(--text-primary)]">
+    <div className="flex h-full flex-col bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="garden-page">
       {/* TOP BAR */}
-      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
+      <div className="flex h-9 shrink-0 items-center gap-2 border-b border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] px-3">
         <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
           Garden
         </span>
@@ -271,6 +271,8 @@ export function GardenPage() {
                 key={m}
                 type="button"
                 onClick={() => setViewMode(m)}
+                data-variant={viewMode === m ? "primary" : "ghost"}
+                data-size="sm"
                 className={cn(
                   "inline-flex h-5 w-5 items-center justify-center rounded text-[var(--text-muted)] transition-colors",
                   viewMode === m
@@ -293,7 +295,10 @@ export function GardenPage() {
             variant="ghost"
             onClick={() => void handleBuildSemanticGraphStart()}
             disabled={isBuildingGraph || loading}
-            className="h-6 gap-1 px-2 font-mono text-[9px] text-[var(--text-muted)] hover:text-[var(--text-primary)] border border-[var(--border-subtle)] bg-transparent hover:bg-white/5"
+            className="astryx-button ghost sm h-6 gap-1 px-2 font-mono text-[9px]"
+            data-variant="ghost"
+            data-size="sm"
+            data-testid="garden-build-graph"
           >
             {isBuildingGraph ? (
               <>
@@ -311,7 +316,9 @@ export function GardenPage() {
             type="button"
             onClick={() => void loadNotes()}
             disabled={loading}
-            className="inline-flex h-5 w-5 items-center justify-center rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-40"
+            className="astryx-button ghost sm inline-flex h-5 w-5 p-0 disabled:opacity-40"
+            data-variant="ghost"
+            data-size="sm"
             title="Оновити список"
           >
             <RefreshCw className={cn("h-3 w-3", loading && "animate-spin")} />
@@ -324,7 +331,7 @@ export function GardenPage() {
         <div className="flex flex-1 items-center justify-center gap-2 text-red-400">
           <AlertCircle className="h-4 w-4" />
           <span className="font-mono text-[12px]">{error}</span>
-          <Button size="sm" variant="outline" onClick={() => void loadNotes()} className="ml-2 h-6 text-[11px]">
+          <Button size="sm" variant="outline" onClick={() => void loadNotes()} className="astryx-button ghost sm ml-2 h-6 text-[11px]" data-variant="ghost" data-size="sm">
             Повторити
           </Button>
         </div>
@@ -348,7 +355,7 @@ export function GardenPage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Пошук…"
-                    className="h-6 pl-6 text-[11px] font-mono bg-[var(--bg-base)] border-[var(--border-subtle)]"
+                    className="h-6 pl-6 text-[11px] font-mono bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)]"
                   />
                 </div>
               </div>
@@ -414,7 +421,7 @@ export function GardenPage() {
 
           {/* NOTE PANEL */}
           {selectedSlug && (
-            <div className="flex w-[400px] shrink-0 flex-col border-l border-[var(--border-subtle)] bg-[var(--bg-surface)]">
+            <div className="flex w-[400px] shrink-0 flex-col border-l border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)]" data-variant="card">
               <div className="flex h-9 items-center justify-between border-b border-[var(--border-subtle)] px-3">
                 <span className="font-mono text-[10px] text-[var(--text-muted)] truncate flex-1">
                   {selectedSlug}
@@ -481,14 +488,18 @@ export function GardenPage() {
             <Button
               variant="ghost"
               onClick={() => setShowDiffDialog(false)}
-              className="h-7 text-[11px] font-medium hover:bg-zinc-800 hover:text-zinc-100 text-zinc-400 border border-zinc-800"
+              className="astryx-button ghost sm h-7 text-[11px]"
+              data-variant="ghost"
+              data-size="sm"
             >
               Скасувати
             </Button>
             <Button
               onClick={() => void handleApplySemanticGraph()}
               disabled={isApplyingGraph}
-              className="h-7 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-900/20"
+              className="astryx-button primary sm h-7 text-[11px]"
+              data-variant="primary"
+              data-size="sm"
             >
               {isApplyingGraph ? (
                 <>

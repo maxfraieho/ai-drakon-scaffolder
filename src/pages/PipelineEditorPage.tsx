@@ -183,7 +183,7 @@ const handleExportMrna = async () => {
 
   if (!pipelineId) {
     return (
-      <div className="min-h-screen bg-zinc-950 text-zinc-100 p-8 font-sans">
+      <div className="min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-8 font-sans" data-testid="pipeline-editor-page">
         <header className="mb-8 flex items-center justify-between border-b border-white/10 pb-4">
           <div className="flex items-center gap-3">
             <Sliders className="w-8 h-8 text-rose-500 animate-pulse" />
@@ -272,7 +272,7 @@ const handleExportMrna = async () => {
     );
   }
   return (
-<div className="flex h-screen flex-col bg-[var(--bg-base)] antialiased">
+<div className="flex h-screen flex-col bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] antialiased" data-testid="pipeline-editor-page">
 <CompilerToolbar
   onAnalyze={handleValidate}
   onExportMrna={handleExportMrna}

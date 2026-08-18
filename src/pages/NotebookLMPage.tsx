@@ -3,7 +3,7 @@ import { Notebook, Info, BookOpen } from "lucide-react";
 
 export function NotebookLMPage() {
   return (
-    <div className="flex flex-col h-full min-h-0 bg-background text-foreground">
+    <div className="flex flex-col h-full min-h-0 bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="notebooklm-page">
       {/* Page Header */}
       <div className="border-b border-white/5 px-6 py-5 shrink-0">
         <div className="flex items-center gap-3 mb-1">
