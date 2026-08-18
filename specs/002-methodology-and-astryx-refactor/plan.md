@@ -29,13 +29,13 @@
 
 > Весь Task 2 і Task 3 нижче складено через **пряме читання коду**, бо GitNexus недоступний. Кожне твердження має `файл:рядок`.
 
-### D-2 — Бренд-ідентичність при переході на Astryx (для Task 3)
+### D-2 — Роль Astryx у Task 3: UI-фреймворк поверх бренду
 
-Astryx-токени (`src/styles/astryx.css:8`) задають бренд **Facebook-blue `#0064d1`** і шрифт `Albert Sans`. Поточний живий застосунок використовує **інший** дизайн-словник — бурштиново-термінальний (`--accent-amber`, `--bg-base`, `--text-primary` з `src/styles.css`) і шрифти IBM Plex Sans / JetBrains Mono (`src/routes/__root.tsx:125`). Це два паралельні дизайн-системи.
+NotebookLM підтвердив, що Astryx — не бренд-рішення і не вибір між палітрами, а дизайн-система/UI-фреймворк/design language: компоненти, токени, теми, патерни та конвенції для узгодженої роботи людей і AI. У джерелі Astryx це сформульовано як **"One system for humans and AI"**; воно також описує **"150+ React components"**, токени кольору/відступів/типографіки/радіусів/тіней і battle-tested патерни навігації, таблиць, detail pages, форм та data-entry flows. Для AI-DRAKON Astryx застосовується **поверх наявної бурштинової ідентичності**: брендове amber треба оформити через тему та похідні токени (зокрема контрастний `--color-on-accent`), а не замінювати випадковим синім.
 
-**Рішення оператора:** повний перехід на Astryx означає (обрати одне):
-- (a) Прийняти Astryx-палітру як є (синій FB-стиль) — зміна візуальної ідентичності продукту.
-- (b) Зберегти бурштинову ідентичність AI-DRAKON, **перевизначивши** `--astryx-*` токени в темі (Astryx як структура компонентів, AI-DRAKON як палітра). Рекомендація архітектора — **(b)**: зберігає впізнаваність, використовує Astryx як систему компонентів/патернів, а не як бренд.
+NotebookLM також підтвердив роль Impeccable як процесного шару для AI coding agents: `/impeccable clarify` покращує UX-копі, `harden` перевіряє помилки/i18n/переповнення/edge cases, `adapt` — адаптивність, `typeset` — шрифти/ієрархію/розміри, а `polish` — фінальне вирівнювання з дизайн-системою та readiness до релізу. Його правила вимагають фіксувати продуктову палітру й компоненти в design context, використовувати токени замість сирих HEX і не вигадувати сторонній стиль. Тому Task 3 — структурне впровадження Astryx-компонентів, токенів, патернів і Impeccable-команд у реальний код; він **не** передбачає A/B-рішення «amber проти Facebook-blue».
+
+**Рішення для плану:** зберегти amber AI-DRAKON як брендове джерело кольору та типографічний контекст, а Astryx зробити канонічним UI-шаром. Значення в `src/styles/astryx.css` — поточний кодовий стан, який треба узгодити з брендом у T-231, а не наперед прийнята нова ідентичність. IBM Plex Sans / JetBrains Mono з `src/routes/__root.tsx:125` і legacy-токени `--accent-amber`/`--bg-base` не видаляються до завершення міграції та перевірки контрасту.
 
 ### D-3 — Доля orphan-поверхонь `/sync` і паралельних `-flue` сервісів
 
@@ -160,18 +160,18 @@ Astryx-токени (`src/styles/astryx.css:8`) задають бренд **Face
 
 ---
 
-## Завдання 3 — Повний перехід на Astryx (поетапна Two-Speed міграція)
+## Завдання 3 — Структурне впровадження Astryx (поетапна Two-Speed brownfield-міграція)
 
 ### Поточний стан Astryx (перевірено)
 
 **Що вже є:**
-- Токени: `src/styles/astryx.css` (176 рядків) — `--astryx-*` (бренд `#0064d1`, `Albert Sans`), теми `[data-astryx-theme="astryx"|"light"|"dark"]`, класи `astryx-button`, `astryx-badge`, `astryx-app-shell-header`, `astryx-top-nav-*`.
-- Компоненти: `src/components/astryx/{AstryxHeader,AstryxSideNav,astryx-nav-config}.ts(x)` — повний альтернативний shell на Astryx-класах.
-- Підключення CSS: `src/routes/__root.tsx:16,105-107` (`astryx.css` як stylesheet link).
+- Токени й layout primitives: `src/styles/astryx.css` (176 рядків) — `--astryx-*`, теми `[data-astryx-theme="astryx"|"light"|"dark"]`, класи `astryx-button`, `astryx-badge`, `astryx-app-shell-header`, `astryx-top-nav-*`. Значення кольорів/шрифтів — ще не узгоджений із брендом implementation state, не рішення про новий бренд.
+- Компоненти: `src/components/astryx/{AstryxHeader,AstryxSideNav,astryx-nav-config}.ts(x)` — альтернативний shell на Astryx-класах.
+- Підключення CSS: `src/routes/__root.tsx:16,105-107` (`astryx.css` як stylesheet link); `<html>` використовує IBM Plex Sans / JetBrains Mono (`src/routes/__root.tsx:125`) і поки що не встановлює `data-astryx-theme`.
 
-**Що НЕ так (корінь «повного переходу»):**
+**Що НЕ так (корінь структурного впровадження):**
 1. **Astryx-shell не змонтований** — `WorkspaceShell.tsx:77-78` імпортує `AstryxHeader`/`AstryxSideNav`, але рендерить bespoke UI на legacy-токенах `--accent-amber`/`--bg-base` (T-223).
-2. **Жодна сторінка не вживає Astryx** — `grep` по `src/pages/*.tsx`: 0 входжень `astryx-*`/`data-astryx-theme` у всіх 23 сторінках. Класи `astryx-button`/`astryx-badge` вживаються ЛИШЕ в `astryx.css` (визначення) і `AstryxHeader.tsx` (не змонтований).
+2. **Жодна сторінка не вживає Astryx** — перевірка GitNexus/прямим читанням показує 0 входжень `astryx-*`/`data-astryx-theme` у всіх 23 файлах `src/pages/*.tsx`: `AgentsPage`, `AgentStudioPage`, `ArchitectPage`, `CodegenPage`, `DiagramEditorPage`, `DiagramsPage`, `EditorPage`, `GalleryPage`, `GardenPage`, `HomePage`, `KnowledgePage`, `LandingPage`, `LoginPage`, `N8NAutomationsPage`, `NotebookLMPage`, `NotFound`, `PipelineEditorPage`, `PlayPipeBuildPage`, `PlayPipePage`, `ProjectNewPage`, `ProjectsPage`, `SettingsPage`, `WorkspacePage`. Класи `astryx-button`/`astryx-badge` вживаються ЛИШЕ у визначеннях Astryx і `AstryxHeader.tsx` (не змонтований).
 3. **`data-astryx-theme` не активний** (T-224) — світла Astryx-тема недосяжна.
 4. **Два джерела навігації** — `NAV_WORKSPACE`/`NAV_SYSTEM` (`WorkspaceShell.tsx:86-100`, містить `/tutorial 🕹️`, «Схеми») vs `ASTRYX_NAV_ITEMS` (`astryx-nav-config.ts:23-96`, без tutorial, «Схеми ДРАКОН») — дрейф міток і складу.
 
@@ -189,10 +189,10 @@ Astryx-токени (`src/styles/astryx.css:8`) задають бренд **Face
 - **Дія:** встановлювати `data-astryx-theme` на `<html>` синхронно з темою (`dark`→`dark`, `light`→`astryx`). Не ламати наявний `.dark` alias.
 - **AC:** обидві Astryx-теми активуються; перемикач теми міняє атрибут; візуал legacy-сторінок не змінюється (токени `--accent-amber` ще діють).
 
-#### T-231: рішення D-2 + узгодження токенів (ADR-0009 / T-204)
+#### T-231: бренд-тема Astryx і узгодження токенів (ADR-0009 / T-204)
 - **Файли:** `src/styles/astryx.css`, `src/styles.css`; дзеркала.
-- **Дія:** за D-2(b) (рекомендація) — перевизначити `--astryx-color-brand*` і поверхневі токени під бурштинову ідентичність AI-DRAKON, або створити міст legacy→astryx (`--accent-amber` → `--astryx-color-brand`). За D-2(a) — прийняти синій. Зафіксувати в ADR-0009.
-- **AC:** один канонічний набір токенів; legacy-змінні або alias-нуться на Astryx, або мають план видалення.
+- **Дія:** за D-2 оформити amber AI-DRAKON через Astryx theme/token layer: узгодити `--astryx-color-brand*`, surface/text/border tokens, шрифти й похідні контрастні значення; де потрібно, створити явний міст `--accent-amber` → Astryx tokens. Не вводити A/B вибір палітри. Перевірити правила Impeccable щодо токенізації, контрасту й відсутності gray text на кольоровому фоні; зафіксувати канонічні назви в ADR-0009.
+- **AC:** один канонічний набір Astryx-токенів, що зберігає amber-ідентичність; похідні токени мають коректний контраст; legacy-змінні або alias-нуться на Astryx, або мають план видалення.
 
 #### T-232: єдине джерело навігації
 - **Файли:** `src/components/astryx/astryx-nav-config.ts`, `src/components/workspace/WorkspaceShell.tsx`.
@@ -204,7 +204,7 @@ Astryx-токени (`src/styles/astryx.css:8`) задають бренд **Face
 #### T-233: змонтувати `AstryxHeader` + `AstryxSideNav` у `WorkspaceShell`
 - **Файли:** `src/components/workspace/WorkspaceShell.tsx` (замінити bespoke header рядки 398–633 і aside 686–703 на `<AstryxHeader>`/`<AstryxSideNav>`), передати наявні хендлери (`onOpenCmd`, `onOpenAgentChat`, `onLogout`, `toggleTheme`). Зберегти Evidence-drawer, IconRail, MobileNavigationDock, CommandPalette.
 - **Ризик:** ВИСОКИЙ — shell на кожній авторизованій сторінці. Робити за feature-flag (env/localStorage `astryx_shell`), щоб можна було відкотити без деплою; лишити legacy-гілку до підтвердження.
-- **Дія:** переконатися, що `AstryxHeader`/`AstryxSideNav` покривають ProjectSelector, breadcrumb, agent-chat, theme, logout, mobile Sheet. Доповнити компоненти відсутнім (напр. `AstryxSideNav` наразі не рендериться взагалі — перевірити його вміст перед монтуванням).
+- **Дія:** переконатися, що `AstryxHeader`/`AstryxSideNav` покривають ProjectSelector, breadcrumb, agent-chat, theme, logout, mobile Sheet. Доповнити компоненти відсутнім (напр. `AstryxSideNav` наразі не рендериться взагалі — перевірити його вміст перед монтуванням). Прогнати `/impeccable adapt` для responsive shell і `/impeccable harden` для keyboard/focus, empty/error та overflow states.
 - **AC:** за flag=on усі авторизовані маршрути показують Astryx-shell без регресій (навігація, cmd-palette ⌘K, вихід, mobile-dock, evidence-drawer); flag=off → legacy. Vitest 33/33 зелені; білд `.lovable` успішний.
 
 #### T-234: прибрати мертвий legacy-shell після підтвердження
@@ -218,29 +218,29 @@ Astryx-токени (`src/styles/astryx.css:8`) задають бренд **Face
 
 #### T-235: хвиля 1 — прості/статичні поверхні
 - **Файли:** `src/routes/trace.tsx` (разом із T-221 CTA), `src/routes/sync.tsx` (T-222), `src/pages/{NotFound,SettingsPage,GalleryPage,GardenPage}.tsx`.
-- **Дія:** перевести сирі Tailwind/legacy-класи на `astryx-button`/`astryx-badge`/Card-патерни й Astryx-токени; додати `data-variant`/`data-size`/`data-testid` (agent-readiness, вимога CLAUDE.md Astryx-секції).
+- **Дія:** перевести сирі Tailwind/legacy-класи на `astryx-button`/`astryx-badge`/Card-патерни й Astryx-токени; додати `data-variant`/`data-size`/`data-testid` (agent-readiness, вимога CLAUDE.md Astryx-секції). Прогнати `/impeccable harden` для empty/error/overflow станів і `/impeccable polish` для узгодження з Astryx без зміни amber-бренду.
 - **AC:** кожна сторінка вживає Astryx-класи; `data-*` семантичні атрибути присутні; візуальна регресія перевірена (Comet screenshot, коли доступний).
 
 #### T-236: хвиля 2 — робочі сторінки середньої складності
 - **Файли:** `src/pages/{CodegenPage,DiagramsPage,AgentsPage,ArchitectPage,NotebookLMPage,PipelineEditorPage,ProjectsPage,KnowledgePage}.tsx`.
-- **Дія:** як T-235; для CodegenPage зберегти F3-handoff (codegen→editor), не регресувати.
+- **Дія:** як T-235; для CodegenPage зберегти F3-handoff (codegen→editor), не регресувати. Прогнати `/impeccable clarify` для copy, `/impeccable typeset` для ієрархії та `/impeccable polish` для alignment із Astryx.
 - **AC:** Astryx-патерни; F3 не зламано; vitest зелений.
 
 #### T-237: хвиля 3 — складні редактори/канвас
 - **Файли:** `src/pages/{DiagramEditorPage,EditorPage,WorkspacePage,PlayPipePage,PlayPipeBuildPage,AgentStudioPage}.tsx`, `src/components/drakon/DrakonEditor.tsx` (вживає WorkspaceShell/astryx).
-- **Дія:** обережно — тут drakonwidget/канвас; мігрувати обгортки/панелі/toolbar на Astryx, НЕ чіпати логіку канвасу (поза Astryx-scope). Astryx `/impeccable polish`/`typeset` для консистентності.
+- **Дія:** обережно — тут drakonwidget/канвас; мігрувати обгортки/панелі/toolbar на Astryx, НЕ чіпати логіку канвасу (поза Astryx-scope). Застосувати `/impeccable adapt`, `/impeccable harden`, `/impeccable polish` і `/impeccable typeset` до оболонки, toolbar та станів, не до diagram semantics.
 - **AC:** обрамлення на Astryx; канвас-функціональність не регресує; ручний тест drag/draw.
 
 #### T-238: publiч/landing/login
 - **Файли:** `src/pages/{LandingPage,LoginPage}.tsx`, `src/routes/{index.tsx,login.tsx}` (hideChrome-гілка `__root.tsx:161-164`).
-- **Дія:** привести до Astryx з урахуванням D-2 бренду; ці поверхні поза WorkspaceShell.
+- **Дія:** привести до Astryx з урахуванням D-2 amber-теми; ці поверхні поза WorkspaceShell. `/impeccable clarify` і `/impeccable polish` мають зберігати AI-DRAKON voice та не вводити сторонню палітру.
 - **AC:** брендовано; узгоджено з T-220 метаданими.
 
 ### Phase 3 — Прибирання й enforcement
 
 #### T-239: видалити legacy-токени та закріпити Astryx-only
 - **Файли:** `src/styles.css` (legacy `--accent-amber` тощо), `src/styles/drakon.css`, lint-конфіг.
-- **Дія:** після міграції всіх сторінок — прибрати або alias-нути legacy-токени; додати lint/CI-правило проти сирих hex/несанкціонованих класів поза Astryx (enforcement ADR-0009). Оновити CLAUDE.md Astryx-секцію під фактичний стан.
+- **Дія:** після міграції всіх сторінок — прибрати або alias-нути legacy-токени; додати lint/CI-правило проти сирих hex/несанкціонованих класів поза Astryx (enforcement ADR-0009), але дозволити брендове amber лише через канонічні theme tokens. Закріпити Impeccable design context (`PRODUCT.md`/`DESIGN.md` або еквівалент у репозиторії), щоб AI-агенти не вигадували іншу палітру. Оновити CLAUDE.md Astryx-секцію під фактичний стан.
 - **AC:** grep legacy-токенів у `src/pages` = 0 (крім явних alias); CI ловить нові non-Astryx компоненти; `rsync src/ .lovable/src/` виконано; білд зелений.
 
 ---
