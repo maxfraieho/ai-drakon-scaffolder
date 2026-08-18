@@ -22,7 +22,7 @@
 ## Можливості вузла dev-сервер (192.168.3.184)
 
 - **Служби та бази даних:** MemPalace (ChromaDB) на порту `49374`, GitNexus Code Intelligence на порту `4747`.
-- **Backend-мікросервіси (FastAPI):** `architect-agent` (порт `8766`), `drakon-agent` (порт `8765`), `docs-agent` (порт `8767`). **Працюють з `~/workspace/ai-drakon-scaffolder/services/*`** — окремий чекаут репозиторію, ЗАСТАРІЛИЙ відносно `~/projects/ai-drakon-scaffolder` (де ведеться SDD-робота) станом на 2026-08-18. Синхронізація цих двох чекаутів — відкрите питання, не вирішене автоматично.
+- **Backend:** `services/architect-agent` і `services/drakon-agent` містять FastAPI/Python реалізації; `services/crisis-bot` має окремий LangGraph-план. Порти `8765–8767` та `~/workspace` — historical operational context, не підтверджений поточним checkout. Для актуальних адрес див. Worker secrets/config.
 - **Хмарні функції:** `deterministic-engine` розгорнутий як Appwrite Function.
 
 ## Доступні MCP-сервери

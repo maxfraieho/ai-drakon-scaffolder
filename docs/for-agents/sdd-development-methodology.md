@@ -251,3 +251,28 @@
 
 ### AGY (Antigravity CLI)
 Немає механічної підстановки аргументів — семантична активація через `.agents/skills/sdd-*/SKILL.md` (Progressive Disclosure). Сформулюй задачу природною мовою, AGY сам розпізнає релевантний скіл.
+## CI/CD pipeline reality
+
+### Automated in GitHub Actions
+
+`.github/workflows/sdd-verify.yml` runs on `push` and `pull_request`:
+
+1. `actions/checkout@v4`.
+2. `bash bin/sdd_verify.sh` — repository/spec structure check.
+3. `python3 -m pytest tests/` — root Python tests.
+
+No workflow here runs frontend build, deploys Cloudflare Pages, deploys Worker, or deploys Appwrite Functions.
+
+### Local/manual gates
+
+`bin/sdd_verify.sh --gate` reads `.specify/feature.json`, checks branch/spec phase artifacts, and checks unfinished tasks at `verify`. `bin/sdd_verify.sh --arbiter` runs `scripts/sdd_llm_judge.py --staged` when script exists; otherwise it skips. Default mode can run `SDD_EXTRA_VERIFY_SCRIPT`.
+
+GitNexus `query`, `context`, `impact` are engineering gates before source changes; `detect_changes()` is pre-commit review. They are not wired into `.github/workflows/sdd-verify.yml`.
+
+### Cloudflare Pages
+
+Frontend build contract is external Cloudflare Pages configuration: build from `.lovable/`, normally `npm --prefix .lovable run build`. Repository contains no Pages deploy workflow or build hook definition. Push/deploy behavior must be verified in Cloudflare dashboard; current branch is `main`.
+
+### Worker and Appwrite
+
+Worker deployment uses manual Wrangler command documented in `AGENTS.md` and `cloudflare-worker/worker-wrangler.toml`. Appwrite Functions use manual console/CLI deployment per function config; no repository workflow automates either path.

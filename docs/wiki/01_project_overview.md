@@ -16,7 +16,7 @@
 
 Проект побудований на сучасному стеку технологій, що забезпечує високу продуктивність, SSR (серверний рендеринг) та безпеку:
 * **Frontend**: React 18/19.
-* **Роутинг та SSR**: TanStack Start та TanStack Router для обробки серверного рендерингу та маршрутизації.
+* **Роутинг**: TanStack Router; committed frontend contract не підтверджує TanStack Start SSR як runtime.
 * **UI Framework**: Дизайн-система Astryx Design System у поєднанні з Tailwind CSS.
 * **Backend та Авторизація**: Appwrite Cloud (Auth/Functions).
 * **API Gateway / Proxy**: Cloudflare Worker (компонент `drakon-antigravity-worker`).

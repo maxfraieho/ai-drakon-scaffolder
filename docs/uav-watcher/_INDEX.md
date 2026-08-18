@@ -6,11 +6,11 @@ project: uav-watcher
 tags: [uav-watcher, index, moc, sharon]
 related: []
 created: 2026-05-29
-status: documented
+status: historical-reference
 ---
 
 ## Призначення
-Цей модуль є центральним навігаційним хабом (MOC) проекту uav-watcher.
+Цей модуль є historical reference для uav-watcher; current repository не містить повного runtime модуля цього проекту.
 Він описує структуру системи моніторингу загроз, що базується на
 аналізі даних з Telegram-каналів та геопросторових патернів.
 

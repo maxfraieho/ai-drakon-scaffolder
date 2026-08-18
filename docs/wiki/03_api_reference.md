@@ -42,7 +42,7 @@ Authorization: Bearer <jwt>
   {
     "execution_id": "string",
     "status": "completed | in_progress | failed",
-    "result": "string (generated code)"
+  "output": { "success": true, "drakon_json": {}, "language": "JS2604", "functionName": "factorial" }
   }
   ```
 
@@ -67,6 +67,10 @@ Authorization: Bearer <jwt>
 ### 2.4. Документація API
 **GET** `/v1/docs/*`
 * Проксі до `docs-agent` для читання документації, вікі-посилань та нотаток.
+
+### 2.5. Semantic graph
+
+**POST** `/v1/notes/build-semantic-graph` starts or returns semantic-graph work. **GET** `/v1/notes/semantic-graph-status?execution_id={id}` polls async work. Request can include `github_owner`, `github_repo`, `github_branch`, `github_token`, `apply`, and `model`.
 
 ---
 

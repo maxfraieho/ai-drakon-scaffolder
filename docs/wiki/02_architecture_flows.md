@@ -31,7 +31,7 @@ sequenceDiagram
     deactivate Worker
 
     loop Status Polling (Опитування статусу)
-        Client->>Worker: GET /v1/codegen/status/{Job ID}
+        Client->>Worker: GET /v1/codegen-status?execution_id={Job ID}
         activate Worker
         Worker->>Backend: Запит статусу виконання
         activate Backend
@@ -41,7 +41,7 @@ sequenceDiagram
         deactivate Worker
     end
 
-    Client->>Worker: GET /v1/codegen/status/{Job ID}
+    Client->>Worker: GET /v1/codegen-status?execution_id={Job ID}
     activate Worker
     Worker->>Backend: Запит статусу виконання
     activate Backend
@@ -55,7 +55,7 @@ sequenceDiagram
 
 ## 3. Обробка SSR та ClientOnly
 
-Оскільки проект використовує **TanStack Start**, рендеринг за замовчуванням відбувається на сервері (SSR).
+Frontend використовує React + TanStack Router; цей repository build не слід описувати як підтверджений TanStack Start SSR runtime.
 
 * **Проблема SSR-гідрації**: Компоненти `DrakonEditor.tsx`, `yjs` (WebRTC) та `@monaco-editor/react` безпосередньо звертаються до `window`, `document` та Canvas API, що під час SSR викликає `ReferenceError`.
 * **Рішення (`ClientOnly.tsx`)**: Використовується захисний компонент `src/components/app/ClientOnly.tsx`, який відкладає рендеринг Canvas, Yjs та Monaco до моменту монтування на клієнті.

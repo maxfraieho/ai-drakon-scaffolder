@@ -141,13 +141,13 @@ function resourceMatches(granted: string | undefined, requested: string | undefi
 
 ---
 
-## 5. Реєстр маршрутів Worker та План міграції з FastAPI
+## 5. Реєстр маршрутів Worker та статус legacy FastAPI-плану
 
-Ми повністю відмовляємося від FastAPI `architect-agent` і перенаправляємо трафік на нові функції Appwrite.
+Таблиця нижче — історичний план міграції, не поточний маршрутний контракт. `architect-agent` і `drakon-agent` реально мають FastAPI/Python-код; Worker також містить async Appwrite paths. Перед зміною маршруту потрібен окремий ADR і контрактна перевірка.
 
 | Маршрут Gateway | Legacy Handler | Новий Handler (Appwrite Function) | Складність |
 |:---|:---|:---|:---|
-| `POST /v1/pipeline/execute` | Proxy to FastAPI `:8766/pipeline/execute` | **`DETERMINISTIC_ENGINE_FUNCTION_ID`** | Medium |
-| `GET /v1/pipeline/status` | Proxy to FastAPI `:8766/pipeline/status/*` | **`DETERMINISTIC_ENGINE_FUNCTION_ID`** status poll | Low |
-| `POST /v1/agents/chat/:agentId`| Proxy to FastAPI `:8766/agents/chat/*` | **`AGENT_CHAT_FUNCTION_ID`** | Medium |
-| `GET /v1/pipeline/stream/:jobId`| Proxy to FastAPI SSE stream | **Полінг статусу** Appwrite executions | Low |
+| `POST /v1/pipeline/execute` | Legacy FastAPI `:8766` (planned migration) | Appwrite target unresolved | Medium |
+| `GET /v1/pipeline/status` | Legacy FastAPI `:8766` (planned migration) | Appwrite target unresolved | Low |
+| `POST /v1/agents/chat/:agentId`| Legacy FastAPI `:8766` (planned migration) | Appwrite target unresolved | Medium |
+| `GET /v1/pipeline/stream/:jobId`| Legacy FastAPI SSE (planned migration) | Appwrite polling is proposed, not verified | Low |

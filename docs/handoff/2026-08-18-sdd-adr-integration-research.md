@@ -1,4 +1,4 @@
-Ось готовий дослідницький звіт та рекомендації у форматі Markdown для впровадження SDD та ADR у проєкт `ai-drakon-scaffolder`.
+Ось дослідницький звіт та source map для впровадження SDD та ADR у проєкт `ai-drakon-scaffolder`. Старі посилання на кореневий `MASTER-CONTEXT.md` замінені архівним `docs/handoff/archive/MASTER-CONTEXT-2026-06-30.md`; canonical decisions живуть у `docs/adr/0001`–`0014`.
 
 ***
 

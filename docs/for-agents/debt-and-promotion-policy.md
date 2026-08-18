@@ -3,7 +3,7 @@
 > Статус: advisory-політика Фази 4 brownfield-міграції.
 >
 > Джерела: `docs/brownfield-migration-guide.md`, `bin/sdd_verify.sh`,
-> `.specify/constitution.md`, ADR-0008 та фактичний стан цього checkout.
+> `.specify/constitution.md`, ADR-0008 та фактичний стан цього checkout. ADR-0008 є decision source; цей файл містить лише procedure, thresholds і operational examples.
 
 Нормативне джерело правила промоції — [ADR-0008](../adr/0008-arbiter-promotion-policy.md); цей документ містить операційну процедуру та приклади підрахунку.
 

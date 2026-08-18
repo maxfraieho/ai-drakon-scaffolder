@@ -16,11 +16,11 @@
 
 ---
 
-## 3. Zustand та React Query канали стану
+## 3. Zustand та React Context канали стану
 
-* **React Query (Серверний стан)**: Кешування діаграм та інформації про користувача.
+* **React Context**: auth/project state через `AuthContext` та `ProjectContext`.
 * **Zustand (Клієнтський UI-стан)**:
-  * *Nav Store*: Єдине джерело правди для `AstryxHeader` та `AstryxSideNav` (`astryx-nav-config.ts`).
+  * *Diagram/agent/chat stores*: Zustand stores у `src/store/`; navigation config не є Zustand store.
   * *Editor Store*: Стан діалогів (`NewDrakonDialog`), палітри та форматирування (`FormatInspector`).
 
 ---

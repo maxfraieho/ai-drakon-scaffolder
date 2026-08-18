@@ -11,5 +11,5 @@
 Компонент `src/components/app/ClientOnly.tsx` відіграє роль захисного механізму (SSR Hydration Guard) під час серверного рендерингу TanStack Start. Він відкладає монтування браузерних API до клієнтського етапу.
 
 ## 4. Компоненти DrakonEditor
-* **Canvas & Monaco Editor**: Використовують HTML5 Canvas API та `@monaco-editor/react`. Загорнуті у `ClientOnly` для безпеки SSR.
+* **Canvas & Monaco Editor**: Використовують browser APIs; `ClientOnly` застосовується там, де компонент його обгортає. Не трактувати каталог як доказ глобального SSR runtime.
 * **NewDrakonDialog & FormatInspector**: Декомпозитовані модальні діалоги та тулбари, винесені у `src/components/drakon/`.

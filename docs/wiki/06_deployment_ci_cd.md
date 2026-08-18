@@ -37,4 +37,4 @@ export NODE_OPTIONS="--max-old-space-size=4096"
 
 * **Cloudflare Worker**: Шлюз `drakon-antigravity-worker` проксіює API запити.
 * **Appwrite Cloud**: Автентифікація користувачів (Auth) та безсерверні функції (Functions).
-* **Git Push Workflow**: Фінальні зміни комітяться та відправляються у гілку `feature/astryx-ui` на GitHub для автоматичного автодеплою в Cloudflare Pages.
+* **Git Push Workflow**: поточний checkout працює на `main`. Cloudflare Pages build hook/deploy належить зовнішній Cloudflare-конфігурації; у репозиторії немає workflow, що деплоїть Pages. Push у `feature/astryx-ui` більше не є правилом.

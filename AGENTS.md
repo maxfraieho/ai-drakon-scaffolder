@@ -9,7 +9,7 @@ AI-DRAKON is a platform for DRAKON visual programming: creating, editing, and ge
 - **AI functions**: Appwrite Functions (node-22 / python-3.12) on `fra.cloud.appwrite.io`
 - **Auth**: Appwrite JWT — stored in `localStorage` as `jwt`
 
-**Critical sync rule**: after every change to `src/`, copy the file to `.lovable/src/` and commit both. Cloudflare Pages builds from `.lovable/`.
+**Critical sync rule**: after every change to `src/`, run `rsync -av --delete src/ .lovable/src/` and commit both trees. Cloudflare Pages builds from `.lovable/`.
 
 ---
 
@@ -179,12 +179,12 @@ Navigation items live in `src/components/workspace/WorkspaceShell.tsx`:
 - `getBreadcrumb()` — maps path prefixes to breadcrumb labels
 - `iconRailItems` — icon rail on the left
 
-After editing, sync: `cp src/components/workspace/WorkspaceShell.tsx .lovable/src/components/workspace/WorkspaceShell.tsx`
+After editing, sync: `rsync -av --delete src/ .lovable/src/`
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **ai-drakon-scaffolder** (7875 symbols, 19981 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **ai-drakon-scaffolder** (4053 symbols, 9554 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 

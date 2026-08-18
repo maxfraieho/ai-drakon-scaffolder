@@ -4,7 +4,7 @@ tags:
   - status:canonical
   - format:index
 created: 2026-05-28
-updated: 2026-06-17
+updated: 2026-08-18
 tier: 1
 title: "Архітектура системи AI-DRAKON — Індекс"
 lang: uk

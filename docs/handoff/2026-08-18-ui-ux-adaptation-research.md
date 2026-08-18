@@ -54,7 +54,7 @@
 
 ### Найперше
 
-1. Вирівняти route source of truth: регенерувати й синхронізувати `src/routeTree.gen.ts` та `.lovable/src/routeTree.gen.ts`; перевірити `/trace`, `/tutorial`, `/templates`, `/magic`, `/gallery` у production build.
+1. Route source of truth remains an open issue: current audit still reports drift between `src/routeTree.gen.ts` and `.lovable/src/routeTree.gen.ts`. Regenerate/synchronize both trees before claiming resolution; verify `/trace`, `/tutorial`, `/templates`, `/magic`, `/gallery` in production build.
 2. Закрити Codegen handoff: після result додати явну дію `Відкрити в редакторі`/`Редагувати схему`, передаючи `drakon_json`; окремо позначити, що actual source code потребує Desktop.
 3. Прибрати або під'єднати `Зберегти в GitHub` у `/magic`; disabled/loading/error state має бути видимим для API failure.
 
