@@ -46,7 +46,7 @@ export function AgentStatusBar() {
   }, []);
 
   return (
-    <div className="flex items-center gap-3 px-2 py-1.5 border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)]">
+    <div className="flex items-center gap-3 px-2 py-1.5 border-t border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]">
       {agents.map((a) => (
         <div key={a.label} className="flex items-center gap-1">
           <span
@@ -55,10 +55,10 @@ export function AgentStatusBar() {
               a.status === "ok" && "bg-green-500",
               a.status === "error" && "bg-red-500 animate-pulse",
               a.status === "checking" && "bg-yellow-400 animate-pulse",
-              a.status === "off" && "bg-[var(--text-muted)]",
+              a.status === "off" && "bg-[var(--astryx-text-muted)]",
             )}
           />
-          <span className="font-mono text-[9px] text-[var(--text-muted)] uppercase tracking-wider">
+          <span className="font-mono text-[9px] text-[var(--astryx-text-muted)] uppercase tracking-wider">
             {a.label}
           </span>
         </div>

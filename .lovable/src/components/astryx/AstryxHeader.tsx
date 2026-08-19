@@ -31,7 +31,6 @@ export const AstryxHeader: React.FC<AstryxHeaderProps> = ({
           </span>
           <span>AI-DRAKON Studio</span>
         </Link>
-        <span className="astryx-badge primary">Astryx Framework</span>
       </div>
 
       {/* Top Nav Items */}

@@ -386,7 +386,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   }
 
   return (
-    <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
+    <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]">
       {/* TOP BAR */}
       {astryxShellEnabled ? (
         <AstryxHeader
@@ -647,7 +647,12 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
       {/* WORKSPACE BODY */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left IconRail */}
-        <div className="hidden lg:flex w-10 h-full shrink-0 flex-col items-center py-4 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] select-none">
+        <div className={cn(
+          "hidden lg:flex w-10 h-full shrink-0 flex-col items-center py-4 select-none",
+          astryxShellEnabled
+            ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]"
+            : "border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]",
+        )}>
           <div className="flex flex-col items-center gap-5 w-full">
             {iconRailItems.map((item) => {
               const Icon = item.icon;
@@ -659,7 +664,12 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                     <TooltipTrigger asChild>
                       <div
                         title={item.tooltip}
-                        className="flex h-7 w-7 cursor-not-allowed items-center justify-center rounded-[var(--radius-sm)] text-[var(--text-muted)] opacity-40"
+                        className={cn(
+                          "flex h-7 w-7 cursor-not-allowed items-center justify-center opacity-40",
+                          astryxShellEnabled
+                            ? "rounded-[var(--astryx-radius-sm)] text-[var(--astryx-text-muted)]"
+                            : "rounded-[var(--radius-sm)] text-[var(--text-muted)]",
+                        )}
                       >
                         <Icon className="h-4 w-4" />
                       </div>
@@ -677,10 +687,20 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                     <Link
                       to={item.to}
                       className={cn(
-                        "flex h-7 w-7 items-center justify-center rounded-[var(--radius-sm)] transition-colors",
-                        active
-                          ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
-                          : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
+                        "flex h-7 w-7 items-center justify-center transition-colors",
+                        astryxShellEnabled
+                          ? cn(
+                              "rounded-[var(--astryx-radius-sm)]",
+                              active
+                                ? "bg-[var(--astryx-color-brand-light)] text-[var(--astryx-color-brand)]"
+                                : "text-[var(--astryx-text-secondary)] hover:bg-[var(--astryx-surface-secondary)] hover:text-[var(--astryx-text-primary)]",
+                            )
+                          : cn(
+                              "rounded-[var(--radius-sm)]",
+                              active
+                                ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
+                                : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
+                            ),
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -696,12 +716,15 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
         </div>
 
         <aside className={cn(
-          "hidden lg:flex h-full shrink-0 flex-col border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-[width] duration-200 overflow-hidden",
+          "hidden lg:flex h-full shrink-0 flex-col transition-[width] duration-200 overflow-hidden",
+          astryxShellEnabled
+            ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]"
+            : "border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]",
           navCollapsed ? "w-0 border-r-0" : "w-64",
         )}>
           {astryxShellEnabled ? (
             <>
-              <div className="border-b border-[var(--border-subtle)]"><ProjectSelector /></div>
+              <div className="border-b border-[var(--astryx-border-subtle)]"><ProjectSelector /></div>
               <AstryxSideNav />
             </>
           ) : (
@@ -729,7 +752,12 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
             setTimeout(() => window.dispatchEvent(new Event("resize")), 210);
           }}
           title={navCollapsed ? "Показати навігацію" : "Сховати навігацію"}
-          className="hidden lg:flex h-full w-2 shrink-0 items-center justify-center border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
+          className={cn(
+            "hidden lg:flex h-full w-2 shrink-0 items-center justify-center transition-colors cursor-pointer",
+            astryxShellEnabled
+              ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)]"
+              : "border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)]",
+          )}
         >
           {navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
@@ -749,7 +777,12 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
               setTimeout(() => window.dispatchEvent(new Event("resize")), 210);
             }}
             title={evidenceCollapsed ? "Показати EVIDENCE" : "Сховати EVIDENCE"}
-            className="flex w-full h-2 shrink-0 items-center justify-center border-t border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] transition-colors cursor-pointer"
+            className={cn(
+              "flex w-full h-2 shrink-0 items-center justify-center transition-colors cursor-pointer",
+              astryxShellEnabled
+                ? "border-t border-b border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)]"
+                : "border-t border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)]",
+            )}
           >
             {evidenceCollapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
