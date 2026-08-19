@@ -470,23 +470,23 @@ export function SettingsPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 space-y-8 max-w-5xl mx-auto" data-testid="settings-page">
+    <div className="astryx-migrated min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 space-y-8 max-w-5xl mx-auto" data-testid="settings-page">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-zinc-800 pb-5">
+      <div className="flex items-center justify-between border-b border-[var(--astryx-border-subtle)] pb-5">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-[var(--astryx-color-brand-light)] rounded-lg text-[var(--astryx-color-brand)] border border-[var(--astryx-border-subtle)]">
             <Settings className="w-7 h-7" />
           </div>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight">Налаштування</h1>
-            <p className="text-sm text-zinc-400 mt-1">Керування ключами доступу, конфігурацією агентів та моніторинг системи</p>
+            <p className="text-sm text-[var(--astryx-text-secondary)] mt-1">Керування ключами доступу, конфігурацією агентів та моніторинг системи</p>
           </div>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={runAllChecks}
-          className="flex items-center gap-2 border-zinc-800 hover:bg-zinc-900 text-zinc-300"
+          className="flex items-center gap-2 border-[var(--astryx-border-subtle)] hover:bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)]"
         >
           <RefreshCw className="w-4 h-4" />
           Оновити статуси
@@ -500,12 +500,12 @@ export function SettingsPage() {
 
           {/* API Keys Card */}
           <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
-            <CardHeader className="border-b border-zinc-800/80 pb-4">
-              <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
-                <Cpu className="w-5 h-5 text-amber-500" />
+            <CardHeader className="border-b border-[var(--astryx-border-subtle)] pb-4">
+              <CardTitle className="text-xl font-medium flex items-center gap-2 text-[var(--astryx-text-primary)]">
+                <Cpu className="w-5 h-5 text-[var(--astryx-color-brand)]" />
                 API Ключі Провайдерів
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-[var(--astryx-text-secondary)]">
                 Встановіть ваші персональні ключі доступу до LLM провайдерів. Ключі зберігаються виключно локально у вашому браузері.
               </CardDescription>
             </CardHeader>
@@ -535,7 +535,7 @@ export function SettingsPage() {
               ].map(({ id, label, storeKey, placeholder, displayName }) => (
                 <div key={id} className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <Label htmlFor={id} className="text-sm font-medium text-zinc-300">
+                    <Label htmlFor={id} className="text-sm font-medium text-[var(--astryx-text-secondary)]">
                       {label}
                     </Label>
                   </div>
@@ -547,12 +547,12 @@ export function SettingsPage() {
                         placeholder={placeholder}
                         value={keys[id as keyof typeof keys]}
                         onChange={e => setKeys(p => ({ ...p, [id]: e.target.value }))}
-                        className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100 pr-10"
+                        className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] pr-10"
                       />
                       <button
                         type="button"
                         onClick={() => setShow(p => ({ ...p, [id]: !p[id] }))}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)] transition-colors"
                       >
                         {show[id] ? <EyeOff size={16}/> : <Eye size={16}/>}
                       </button>
@@ -560,7 +560,7 @@ export function SettingsPage() {
                     <Button
                       size="icon"
                       onClick={() => saveApiKey(storeKey, keys[id as keyof typeof keys], displayName)}
-                      className="bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border border-zinc-700/50 hover:border-zinc-600 shadow-md transition-all shrink-0"
+                      className="bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-primary)] border border-[var(--astryx-border-subtle)] shadow-sm transition-all shrink-0"
                     >
                       <Save size={16} />
                     </Button>
@@ -572,18 +572,18 @@ export function SettingsPage() {
 
           {/* LLM Proxy Server Card */}
           <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
-            <CardHeader className="border-b border-zinc-800/80 pb-4">
-              <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
-                <Globe className="w-5 h-5 text-amber-500" />
+            <CardHeader className="border-b border-[var(--astryx-border-subtle)] pb-4">
+              <CardTitle className="text-xl font-medium flex items-center gap-2 text-[var(--astryx-text-primary)]">
+                <Globe className="w-5 h-5 text-[var(--astryx-color-brand)]" />
                 LLM Proxy Server
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-[var(--astryx-text-secondary)]">
                 Адреса та токен проксі-сервера LLM для AI-агентів. Передаються агентам у кожному запиті.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="proxy-url" className="text-sm font-medium text-zinc-300">
+                <Label htmlFor="proxy-url" className="text-sm font-medium text-[var(--astryx-text-secondary)]">
                   Proxy URL
                 </Label>
                 <Input
@@ -592,11 +592,11 @@ export function SettingsPage() {
                   placeholder="https://llm-proxy.fra.appwrite.run"
                   value={proxyUrl}
                   onChange={e => setProxyUrl(e.target.value)}
-                  className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100 font-mono text-sm"
+                  className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] font-mono text-sm"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proxy-token" className="text-sm font-medium text-zinc-300">
+                <Label htmlFor="proxy-token" className="text-sm font-medium text-[var(--astryx-text-secondary)]">
                   Auth Token
                 </Label>
                 <div className="relative">
@@ -606,20 +606,20 @@ export function SettingsPage() {
                     placeholder="freecc"
                     value={proxyToken}
                     onChange={e => setProxyToken(e.target.value)}
-                    className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100 pr-10"
+                    className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] pr-10"
                   />
                   <button
                     type="button"
                     onClick={() => setShow(p => ({ ...p, "proxy-token": !p["proxy-token"] }))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)] transition-colors"
                   >
                     {show["proxy-token"] ? <EyeOff size={16}/> : <Eye size={16}/>}
                   </button>
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="proxy-model" className="text-sm font-medium text-zinc-300">
-                  Model <span className="text-zinc-500 font-normal">(опційно — залиште порожнім для авто)</span>
+                <Label htmlFor="proxy-model" className="text-sm font-medium text-[var(--astryx-text-secondary)]">
+                  Model <span className="text-[var(--astryx-text-muted)] font-normal">(опційно — залиште порожнім для авто)</span>
                 </Label>
                 <Input
                   id="proxy-model"
@@ -627,13 +627,13 @@ export function SettingsPage() {
                   placeholder="llama-3.3-70b-versatile"
                   value={proxyModel}
                   onChange={e => setProxyModel(e.target.value)}
-                  className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100 font-mono text-sm"
+                  className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] font-mono text-sm"
                 />
               </div>
               <div className="flex items-center gap-2 pt-1">
                 <Button
                   onClick={saveProxySettings}
-                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white border-0"
+                  className="flex-1 bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold border-0"
                 >
                   <Save className="w-4 h-4 mr-2" />
                   Зберегти
@@ -642,10 +642,10 @@ export function SettingsPage() {
                   variant="outline"
                   onClick={testProxyConnection}
                   disabled={proxyStatus === "checking"}
-                  className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                  className="border-[var(--astryx-border-subtle)] hover:bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)]"
                 >
                   {proxyStatus === "checking" ? (
-                    <RefreshCw className="w-4 h-4 animate-spin" />
+                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
                     <Activity className="w-4 h-4" />
                   )}
@@ -658,7 +658,7 @@ export function SettingsPage() {
                     ? "bg-emerald-950/40 text-emerald-400 border border-emerald-800/30"
                     : proxyStatus === "offline"
                     ? "bg-red-950/40 text-red-400 border border-red-800/30"
-                    : "bg-zinc-950/40 text-zinc-400 border border-zinc-800"
+                    : "bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-secondary)] border border-[var(--astryx-border-subtle)]"
                 }`}>
                   {proxyStatus === "online" && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
                   {proxyStatus === "offline" && <ShieldAlert className="w-3.5 h-3.5 shrink-0" />}
@@ -671,12 +671,12 @@ export function SettingsPage() {
 
           {/* N8N Integration Card */}
           <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
-            <CardHeader className="border-b border-zinc-800/80 pb-4">
-              <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
-                <Globe className="w-5 h-5 text-amber-500" />
+            <CardHeader className="border-b border-[var(--astryx-border-subtle)] pb-4">
+              <CardTitle className="text-xl font-medium flex items-center gap-2 text-[var(--astryx-text-primary)]">
+                <Globe className="w-5 h-5 text-[var(--astryx-color-brand)]" />
                 N8N Integration
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-[var(--astryx-text-secondary)]">
                 Configure your N8N instance and API key for workflow compilation and deployment.
               </CardDescription>
             </CardHeader>
@@ -690,12 +690,12 @@ export function SettingsPage() {
                     name="baseUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-zinc-300">N8N Instance URL</FormLabel>
+                        <FormLabel className="text-[var(--astryx-text-secondary)]">N8N Instance URL</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             placeholder="https://your-n8n.instance.com"
-                            className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100"
+                            className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)]"
                           />
                         </FormControl>
                         <FormMessage />
@@ -708,25 +708,25 @@ export function SettingsPage() {
                     name="apiKey"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-zinc-300">API Key</FormLabel>
+                        <FormLabel className="text-[var(--astryx-text-secondary)]">API Key</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <Input
                               {...field}
                               type={showN8nApiKey ? "text" : "password"}
-                              className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100 pr-10"
+                              className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] pr-10"
                             />
                             <button
                               type="button"
                               onClick={() => setShowN8nApiKey((prev) => !prev)}
-                              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 transition-colors"
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)] transition-colors"
                               aria-label="Toggle N8N API key visibility"
                             >
                               {showN8nApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                             </button>
                           </div>
                         </FormControl>
-                        <FormDescription className="text-zinc-500">
+                        <FormDescription className="text-[var(--astryx-text-muted)]">
                           Found in N8N → Settings → API → Create API Key
                         </FormDescription>
                         <FormMessage />
@@ -739,15 +739,15 @@ export function SettingsPage() {
                     name="webhookUrl"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-zinc-300">Webhook Base URL</FormLabel>
+                        <FormLabel className="text-[var(--astryx-text-secondary)]">Webhook Base URL</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
                             placeholder="https://your-n8n.instance.com/webhook"
-                            className="bg-zinc-950/80 border-zinc-800 focus-visible:ring-amber-500/30 focus-visible:border-amber-500 text-zinc-100"
+                            className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)]"
                           />
                         </FormControl>
-                        <FormDescription className="text-zinc-500">
+                        <FormDescription className="text-[var(--astryx-text-muted)]">
                           Optional. If empty, this field is auto-filled from the instance URL.
                         </FormDescription>
                         <FormMessage />
@@ -761,7 +761,7 @@ export function SettingsPage() {
                       variant="outline"
                       onClick={handleTestN8nConnection}
                       disabled={isTestingN8n}
-                      className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+                      className="border-[var(--astryx-border-subtle)] hover:bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)]"
                     >
                       {isTestingN8n ? (
                         <RefreshCw className="w-4 h-4 animate-spin" />
@@ -774,7 +774,7 @@ export function SettingsPage() {
                     <Button
                       type="submit"
                       disabled={n8nForm.formState.isSubmitting}
-                      className="bg-amber-600 hover:bg-amber-700 text-white border-0"
+                      className="bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold border-0"
                     >
                       <Save className="w-4 h-4 mr-2" />
                       Save Settings
@@ -787,12 +787,12 @@ export function SettingsPage() {
 
           {/* Agent Configuration Card */}
           <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
-            <CardHeader className="border-b border-zinc-800/80 pb-4">
-              <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
-                <ToggleLeft className="w-5 h-5 text-amber-500" />
+            <CardHeader className="border-b border-[var(--astryx-border-subtle)] pb-4">
+              <CardTitle className="text-xl font-medium flex items-center gap-2 text-[var(--astryx-text-primary)]">
+                <ToggleLeft className="w-5 h-5 text-[var(--astryx-color-brand)]" />
                 Конфігурація Агента
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-[var(--astryx-text-secondary)]">
                 Налаштуйте поведінку штучного інтелекту та параметри виконання завдань.
               </CardDescription>
             </CardHeader>
@@ -800,29 +800,29 @@ export function SettingsPage() {
 
               {/* Dropdown Selector */}
               <div className="space-y-2">
-                <Label htmlFor="default-model" className="text-sm font-medium text-zinc-300">
+                <Label htmlFor="default-model" className="text-sm font-medium text-[var(--astryx-text-secondary)]">
                   Модель за замовчуванням
                 </Label>
                 <Select value={defaultModel} onValueChange={handleModelChange}>
-                  <SelectTrigger id="default-model" className="bg-zinc-950/80 border-zinc-800 text-zinc-200 focus:ring-amber-500/20">
+                  <SelectTrigger id="default-model" className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)] focus:ring-[var(--astryx-border-focus)]/20">
                     <SelectValue placeholder="Оберіть модель" />
                   </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-zinc-850 text-zinc-100">
-                    <SelectItem value="gemini-2.5-flash" className="hover:bg-zinc-800 focus:bg-zinc-800 cursor-pointer">gemini-2.5-flash</SelectItem>
-                    <SelectItem value="claude-3-5-sonnet" className="hover:bg-zinc-800 focus:bg-zinc-800 cursor-pointer">claude-3-5-sonnet</SelectItem>
-                    <SelectItem value="gpt-4o" className="hover:bg-zinc-800 focus:bg-zinc-800 cursor-pointer">gpt-4o</SelectItem>
+                  <SelectContent className="bg-[var(--astryx-surface-elevated)] border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)]">
+                    <SelectItem value="gemini-2.5-flash" className="hover:bg-[var(--astryx-surface-secondary)] focus:bg-[var(--astryx-surface-secondary)] cursor-pointer">gemini-2.5-flash</SelectItem>
+                    <SelectItem value="claude-3-5-sonnet" className="hover:bg-[var(--astryx-surface-secondary)] focus:bg-[var(--astryx-surface-secondary)] cursor-pointer">claude-3-5-sonnet</SelectItem>
+                    <SelectItem value="gpt-4o" className="hover:bg-[var(--astryx-surface-secondary)] focus:bg-[var(--astryx-surface-secondary)] cursor-pointer">gpt-4o</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Toggles */}
               <div className="space-y-4 pt-2">
-                <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-950/40 border border-zinc-850">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--astryx-surface-secondary)] border border-[var(--astryx-border-subtle)]">
                   <div className="space-y-0.5 pr-4">
-                    <Label htmlFor="auto-retry" className="text-sm font-medium text-zinc-200 cursor-pointer">
+                    <Label htmlFor="auto-retry" className="text-sm font-medium text-[var(--astryx-text-primary)] cursor-pointer">
                       Авто-повтор спроб (Auto-retry)
                     </Label>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-[var(--astryx-text-secondary)]">
                       Автоматично повторювати невдалі запити до API провайдерів при помилках мережі чи лімітів.
                     </p>
                   </div>
@@ -830,16 +830,16 @@ export function SettingsPage() {
                     id="auto-retry"
                     checked={autoRetry}
                     onCheckedChange={handleAutoRetryChange}
-                    className="data-[state=checked]:bg-amber-500"
+                    className="data-[state=checked]:bg-[var(--astryx-color-brand)]"
                   />
                 </div>
 
-                <div className="flex items-center justify-between p-3 rounded-lg bg-zinc-950/40 border border-zinc-850">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--astryx-surface-secondary)] border border-[var(--astryx-border-subtle)]">
                   <div className="space-y-0.5 pr-4">
-                    <Label htmlFor="debug-mode" className="text-sm font-medium text-zinc-200 cursor-pointer">
+                    <Label htmlFor="debug-mode" className="text-sm font-medium text-[var(--astryx-text-primary)] cursor-pointer">
                       Режим відладки (Debug Mode)
                     </Label>
-                    <p className="text-xs text-zinc-400">
+                    <p className="text-xs text-[var(--astryx-text-secondary)]">
                       Логувати детальні кроки та системні події в консоль розробника для швидкої діагностики.
                     </p>
                   </div>
@@ -847,7 +847,7 @@ export function SettingsPage() {
                     id="debug-mode"
                     checked={debugMode}
                     onCheckedChange={handleDebugModeChange}
-                    className="data-[state=checked]:bg-amber-500"
+                    className="data-[state=checked]:bg-[var(--astryx-color-brand)]"
                   />
                 </div>
               </div>
@@ -859,13 +859,13 @@ export function SettingsPage() {
         {/* Right Column - System Info and Health Statuses */}
         <div className="space-y-6">
 
-          <Card className="bg-zinc-900/60 border-zinc-800 backdrop-blur-sm shadow-xl">
-            <CardHeader className="border-b border-zinc-800/80 pb-4">
-              <CardTitle className="text-xl font-medium flex items-center gap-2 text-zinc-100">
-                <Info className="w-5 h-5 text-amber-500" />
+          <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
+            <CardHeader className="border-b border-[var(--astryx-border-subtle)] pb-4">
+              <CardTitle className="text-xl font-medium flex items-center gap-2 text-[var(--astryx-text-primary)]">
+                <Info className="w-5 h-5 text-[var(--astryx-color-brand)]" />
                 Інформація про систему
               </CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-[var(--astryx-text-secondary)]">
                 Основні версії та підключені сервіси платформи.
               </CardDescription>
             </CardHeader>
@@ -873,13 +873,13 @@ export function SettingsPage() {
 
               {/* App Version & Build info */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 bg-zinc-950/80 rounded-lg border border-zinc-850">
-                  <span className="text-xs text-zinc-500 block mb-0.5">Версія додатку</span>
-                  <span className="text-sm font-semibold text-zinc-200 font-mono">v1.2.4-alpha</span>
+                <div className="p-3 bg-[var(--astryx-surface-secondary)] rounded-lg border border-[var(--astryx-border-subtle)]">
+                  <span className="text-xs text-[var(--astryx-text-muted)] block mb-0.5">Версія додатку</span>
+                  <span className="text-sm font-semibold text-[var(--astryx-text-primary)] font-mono">v1.2.4-alpha</span>
                 </div>
-                <div className="p-3 bg-zinc-950/80 rounded-lg border border-zinc-850">
-                  <span className="text-xs text-zinc-500 block mb-0.5">Дата збірки</span>
-                  <span className="text-sm font-semibold text-zinc-200 font-mono">2026-06-07</span>
+                <div className="p-3 bg-[var(--astryx-surface-secondary)] rounded-lg border border-[var(--astryx-border-subtle)]">
+                  <span className="text-xs text-[var(--astryx-text-muted)] block mb-0.5">Дата збірки</span>
+                  <span className="text-sm font-semibold text-[var(--astryx-text-primary)] font-mono">2026-06-07</span>
                 </div>
               </div>
 
@@ -887,29 +887,29 @@ export function SettingsPage() {
               <div className="space-y-4 pt-2">
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Activity className="w-3.5 h-3.5 text-zinc-500" />
+                    <span className="text-xs font-semibold text-[var(--astryx-text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-[var(--astryx-text-muted)]" />
                       GitNexus Status
                     </span>
                     <button
                       onClick={checkGitNexusHealth}
-                      className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                      className="text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)] transition-colors p-1"
                       title="Перевірити знову"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${gitNexusStatus === "checking" ? "animate-spin text-amber-500" : ""}`} />
+                      <RefreshCw className={`w-3.5 h-3.5 ${gitNexusStatus === "checking" ? "animate-spin text-[var(--astryx-color-brand)]" : ""}`} />
                     </button>
                   </div>
-                  <div className="p-3 bg-zinc-950/80 rounded-lg border border-zinc-850 flex items-center gap-3">
+                  <div className="p-3 bg-[var(--astryx-surface-secondary)] rounded-lg border border-[var(--astryx-border-subtle)] flex items-center gap-3">
                     <div className="shrink-0">
                       {gitNexusStatus === "online" && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                       {gitNexusStatus === "offline" && <ShieldAlert className="w-5 h-5 text-red-500" />}
-                      {gitNexusStatus === "checking" && <RefreshCw className="w-5 h-5 text-amber-500 animate-spin" />}
+                      {gitNexusStatus === "checking" && <RefreshCw className="w-5 h-5 text-[var(--astryx-color-brand)] animate-spin" />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-zinc-200 capitalize">
+                      <div className="text-sm font-medium text-[var(--astryx-text-primary)] capitalize">
                         {gitNexusStatus === "online" ? "Підключено" : gitNexusStatus === "offline" ? "Помилка" : "Перевірка..."}
                       </div>
-                      <div className="text-xs text-zinc-500 truncate font-mono">
+                      <div className="text-xs text-[var(--astryx-text-muted)] truncate font-mono">
                         {gitNexusDetail}
                       </div>
                     </div>
@@ -918,29 +918,29 @@ export function SettingsPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Server className="w-3.5 h-3.5 text-zinc-500" />
+                    <span className="text-xs font-semibold text-[var(--astryx-text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                      <Server className="w-3.5 h-3.5 text-[var(--astryx-text-muted)]" />
                       Cloudflare Status
                     </span>
                     <button
                       onClick={checkCfHealth}
-                      className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                      className="text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)] transition-colors p-1"
                       title="Перевірити знову"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${cfStatus === "checking" ? "animate-spin text-amber-500" : ""}`} />
+                      <RefreshCw className={`w-3.5 h-3.5 ${cfStatus === "checking" ? "animate-spin text-[var(--astryx-color-brand)]" : ""}`} />
                     </button>
                   </div>
-                  <div className="p-3 bg-zinc-950/80 rounded-lg border border-zinc-850 flex items-center gap-3">
+                  <div className="p-3 bg-[var(--astryx-surface-secondary)] rounded-lg border border-[var(--astryx-border-subtle)] flex items-center gap-3">
                     <div className="shrink-0">
                       {cfStatus === "online" && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                       {cfStatus === "offline" && <ShieldAlert className="w-5 h-5 text-red-500" />}
-                      {cfStatus === "checking" && <RefreshCw className="w-5 h-5 text-amber-500 animate-spin" />}
+                      {cfStatus === "checking" && <RefreshCw className="w-5 h-5 text-[var(--astryx-color-brand)] animate-spin" />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-zinc-200 capitalize">
+                      <div className="text-sm font-medium text-[var(--astryx-text-primary)] capitalize">
                         {cfStatus === "online" ? "Підключено" : cfStatus === "offline" ? "Помилка" : "Перевірка..."}
                       </div>
-                      <div className="text-xs text-zinc-500 truncate font-mono">
+                      <div className="text-xs text-[var(--astryx-text-muted)] truncate font-mono">
                         {cfDetail}
                       </div>
                     </div>
@@ -949,30 +949,30 @@ export function SettingsPage() {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <ShieldAlert className="w-3.5 h-3.5 text-zinc-500" />
+                    <span className="text-xs font-semibold text-[var(--astryx-text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                      <ShieldAlert className="w-3.5 h-3.5 text-[var(--astryx-text-muted)]" />
                       JWT Auth Status (/me)
                     </span>
                     <button
                       onClick={checkAuthStatus}
-                      className="text-zinc-500 hover:text-zinc-300 transition-colors p-1"
+                      className="text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)] transition-colors p-1"
                       title="Перевірити знову"
                     >
-                      <RefreshCw className={`w-3.5 h-3.5 ${authStatus === "checking" ? "animate-spin text-amber-500" : ""}`} />
+                      <RefreshCw className={`w-3.5 h-3.5 ${authStatus === "checking" ? "animate-spin text-[var(--astryx-color-brand)]" : ""}`} />
                     </button>
                   </div>
-                  <div className="p-3 bg-zinc-950/80 rounded-lg border border-zinc-850 flex items-center gap-3">
+                  <div className="p-3 bg-[var(--astryx-surface-secondary)] rounded-lg border border-[var(--astryx-border-subtle)] flex items-center gap-3">
                     <div className="shrink-0">
                       {authStatus === "online" && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
                       {authStatus === "offline" && <ShieldAlert className="w-5 h-5 text-red-500" />}
-                      {authStatus === "checking" && <RefreshCw className="w-5 h-5 text-amber-500 animate-spin" />}
-                      {authStatus === "idle" && <HelpCircle className="w-5 h-5 text-zinc-500" />}
+                      {authStatus === "checking" && <RefreshCw className="w-5 h-5 text-[var(--astryx-color-brand)] animate-spin" />}
+                      {authStatus === "idle" && <HelpCircle className="w-5 h-5 text-[var(--astryx-text-muted)]" />}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm font-medium text-zinc-200 capitalize">
+                      <div className="text-sm font-medium text-[var(--astryx-text-primary)] capitalize">
                         {authStatus === "online" ? "Авторизовано" : authStatus === "offline" ? "Помилка" : authStatus === "checking" ? "Перевірка..." : "Не перевірено"}
                       </div>
-                      <div className="text-xs text-zinc-500 truncate font-mono" title={authDetail}>
+                      <div className="text-xs text-[var(--astryx-text-muted)] truncate font-mono" title={authDetail}>
                         {authDetail}
                       </div>
                     </div>

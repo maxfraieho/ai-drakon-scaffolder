@@ -66,13 +66,13 @@ export function ProjectsPage() {
     return (
       <section className="astryx-migrated relative min-h-[70vh] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 md:p-10" data-testid="projects-page">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
-        <div className="absolute -top-16 left-1/4 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 right-1/4 h-72 w-72 rounded-full bg-indigo-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-16 left-1/4 h-72 w-72 rounded-full bg-[var(--astryx-color-brand-light)] blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 right-1/4 h-72 w-72 rounded-full bg-[var(--astryx-color-brand-light)] blur-3xl pointer-events-none" />
 
         <div className="relative z-10 mx-auto flex min-h-[70vh] max-w-6xl items-center justify-center">
-          <div className="flex items-center gap-3 rounded-lg border border-white/10 bg-card/45 px-6 py-4 backdrop-blur-sm shadow-[0_14px_44px_rgba(0,0,0,0.35)]">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" aria-hidden="true" />
-            <span className="text-sm text-foreground/90">Loading projects…</span>
+          <div className="flex items-center gap-3 rounded-lg border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] px-6 py-4 backdrop-blur-sm shadow-xl">
+            <Loader2 className="h-5 w-5 animate-spin text-[var(--astryx-color-brand)]" aria-hidden="true" />
+            <span className="text-sm text-[var(--astryx-text-primary)]">Loading projects…</span>
           </div>
         </div>
       </section>
@@ -89,31 +89,31 @@ export function ProjectsPage() {
       <section className="astryx-migrated relative min-h-[70vh] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 md:p-10" data-testid="projects-page">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
         <div className="relative z-10 mx-auto max-w-2xl pt-10">
-          <div className="rounded-xl border border-red-500/20 bg-slate-900/80 p-6 text-slate-100 backdrop-blur-xl shadow-2xl space-y-6">
+          <div className="rounded-xl border border-red-500/20 bg-[var(--astryx-surface-primary)] p-6 text-[var(--astryx-text-primary)] backdrop-blur-xl shadow-2xl space-y-6">
             <div className="flex items-center gap-3 border-b border-red-500/20 pb-4">
               <AlertCircle className="h-6 w-6 text-rose-400" />
               <div>
-                <h2 className="text-xl font-semibold text-slate-100">Помилка завантаження проектів</h2>
+                <h2 className="text-xl font-semibold text-[var(--astryx-text-primary)]">Помилка завантаження проектів</h2>
                 <p className="text-xs text-rose-300 font-mono mt-0.5">Деталі: {errorMsg}</p>
               </div>
             </div>
 
             {isNetworkOrCors ? (
               <div className="space-y-4">
-                <p className="text-sm text-slate-300">
+                <p className="text-sm text-[var(--astryx-text-secondary)]">
                   Помилка типу <strong>"Failed to fetch"</strong> зазвичай означає відсутність налаштованого CORS у вашому кабінеті Appwrite. Будь ласка, виконайте ці прості кроки для вирішення:
                 </p>
-                <div className="space-y-3 text-sm text-slate-300">
+                <div className="space-y-3 text-sm text-[var(--astryx-text-secondary)]">
                   <div className="flex gap-2.5 items-start">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">1</span>
                     <p>
-                      Відкрийте консоль Appwrite: <a href="https://auth.aidrakon.tech" target="_blank" rel="noreferrer" className="text-indigo-300 hover:text-indigo-200 underline font-medium">auth.aidrakon.tech</a>
+                      Відкрийте консоль Appwrite: <a href="https://auth.aidrakon.tech" target="_blank" rel="noreferrer" className="text-[var(--astryx-color-brand)] hover:underline font-medium">auth.aidrakon.tech</a>
                     </p>
                   </div>
                   <div className="flex gap-2.5 items-start">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">2</span>
                     <p>
-                      Перейдіть до вашого проекту (Project ID: <code className="bg-white/10 px-1 py-0.5 rounded text-xs font-mono">6a23420a003a04b4997b</code>).
+                      Перейдіть до вашого проекту (Project ID: <code className="bg-[var(--astryx-surface-secondary)] px-1 py-0.5 rounded text-xs font-mono">6a23420a003a04b4997b</code>).
                     </p>
                   </div>
                   <div className="flex gap-2.5 items-start">
@@ -125,7 +125,7 @@ export function ProjectsPage() {
                   <div className="flex gap-2.5 items-start">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-red-500/20 text-xs font-bold text-red-400 mt-0.5">4</span>
                     <p>
-                      У полі <strong>Hostname</strong> вкажіть домен цього сайту: <code className="bg-white/10 px-1.5 py-0.5 rounded text-xs font-mono">{typeof window !== "undefined" ? window.location.hostname : "aidrakon.tech"}</code>
+                      У полі <strong>Hostname</strong> вкажіть домен цього сайту: <code className="bg-[var(--astryx-surface-secondary)] px-1.5 py-0.5 rounded text-xs font-mono">{typeof window !== "undefined" ? window.location.hostname : "aidrakon.tech"}</code>
                     </p>
                   </div>
                   <div className="flex gap-2.5 items-start">
@@ -137,16 +137,16 @@ export function ProjectsPage() {
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-[var(--astryx-text-secondary)]">
                 Виникла помилка під час зв'язку із сервером бази даних Appwrite. Переконайтеся, що ви авторизовані та хост працює.
               </p>
             )}
 
-            <div className="flex flex-wrap gap-3 pt-4 border-t border-white/5">
-              <Button onClick={() => window.location.reload()} className="bg-indigo-600 text-white hover:bg-indigo-500">
+            <div className="flex flex-wrap gap-3 pt-4 border-t border-[var(--astryx-border-subtle)]">
+              <Button onClick={() => window.location.reload()} className="bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold">
                 Повторити запит
               </Button>
-              <Button onClick={() => navigate({ to: "/login" })} variant="outline" className="border-white/15 bg-transparent text-slate-200 hover:bg-white/5">
+              <Button onClick={() => navigate({ to: "/login" })} variant="outline" className="border-[var(--astryx-border-subtle)] bg-transparent text-[var(--astryx-text-primary)] hover:bg-[var(--astryx-surface-secondary)]">
                 Перейти до авторизації
               </Button>
             </div>
@@ -160,19 +160,19 @@ export function ProjectsPage() {
     return (
       <section className="astryx-migrated relative min-h-[70vh] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 md:p-10" data-testid="projects-page">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
-        <div className="absolute -top-20 left-1/3 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-12 right-1/3 h-72 w-72 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+        <div className="absolute -top-20 left-1/3 h-72 w-72 rounded-full bg-[var(--astryx-color-brand-light)] blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-12 right-1/3 h-72 w-72 rounded-full bg-[var(--astryx-color-brand-light)] blur-3xl pointer-events-none" />
 
         <div className="relative z-10 mx-auto flex min-h-[70vh] max-w-6xl items-center justify-center">
-          <div className="w-full max-w-md rounded-lg border border-white/15 bg-card/50 p-8 text-center shadow-[0_18px_54px_rgba(0,0,0,0.38)] backdrop-blur-sm">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/15 shadow-[0_0_45px_rgba(99,102,241,0.35)]">
-              <PlusCircle className="h-10 w-10 text-primary" aria-hidden="true" />
+          <div className="w-full max-w-md rounded-lg border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] p-8 text-center shadow-xl backdrop-blur-sm">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[var(--astryx-color-brand-light)] shadow-sm">
+              <PlusCircle className="h-10 w-10 text-[var(--astryx-color-brand)]" aria-hidden="true" />
             </div>
-            <h1 className="text-2xl font-semibold text-foreground">Create your first project</h1>
-            <p className="mt-2 text-sm text-muted-foreground">Start by creating a new workspace project.</p>
+            <h1 className="text-2xl font-semibold text-[var(--astryx-text-primary)]">Create your first project</h1>
+            <p className="mt-2 text-sm text-[var(--astryx-text-secondary)]">Start by creating a new workspace project.</p>
             <Button
               id="new-project-btn"
-              className="mt-6"
+              className="mt-6 bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold"
               onClick={() => navigate({ to: "/project/new" })}
             >
               New Project
@@ -186,19 +186,19 @@ export function ProjectsPage() {
   return (
     <section className="astryx-migrated relative min-h-[70vh] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-6 md:p-10" data-testid="projects-page">
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800f_1px,transparent_1px),linear-gradient(to_bottom,#8080800f_1px,transparent_1px)] bg-[size:14px_24px] pointer-events-none" />
-      <div className="absolute -top-20 left-1/4 h-72 w-72 rounded-full bg-primary/10 blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-12 right-1/4 h-72 w-72 rounded-full bg-fuchsia-500/10 blur-3xl pointer-events-none" />
+      <div className="absolute -top-20 left-1/4 h-72 w-72 rounded-full bg-[var(--astryx-color-brand-light)] blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-12 right-1/4 h-72 w-72 rounded-full bg-[var(--astryx-color-brand-light)] blur-3xl pointer-events-none" />
 
       <div className="relative z-10 mx-auto max-w-6xl space-y-6">
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/5 pb-5">
+        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-[var(--astryx-border-subtle)] pb-5">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold text-foreground md:text-3xl">Projects</h1>
-            <p className="text-sm text-muted-foreground">Your active workspaces and deployment status.</p>
+            <h1 className="text-2xl font-semibold text-[var(--astryx-text-primary)] md:text-3xl">Projects</h1>
+            <p className="text-sm text-[var(--astryx-text-secondary)]">Your active workspaces and deployment status.</p>
           </div>
           <Button
             id="new-project-btn"
             onClick={() => navigate({ to: "/project/new" })}
-            className="self-start sm:self-auto bg-primary hover:bg-primary/90 text-primary-foreground shadow-[0_4px_12px_rgba(99,102,241,0.2)]"
+            className="self-start sm:self-auto bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold shadow-sm"
           >
             <Plus className="mr-2 h-4 w-4" />
             New Project

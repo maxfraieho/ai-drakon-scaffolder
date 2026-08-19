@@ -57,7 +57,7 @@ export function UnsavedChangesGuard({ isDirty }: UnsavedChangesGuardProps) {
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={() => blocker.proceed?.()}
-            className="bg-red-500 text-white hover:bg-red-600 text-xs h-8"
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 text-xs h-8"
           >
             Залишити сторінку
           </AlertDialogAction>

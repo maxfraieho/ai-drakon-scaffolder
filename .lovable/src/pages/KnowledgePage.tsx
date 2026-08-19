@@ -10,18 +10,18 @@ export function KnowledgePage() {
   return (
     <div className="astryx-migrated flex flex-col h-full bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="knowledge-page">
       {/* Page Header */}
-      <div className="border-b border-white/5 px-6 py-5 flex items-center justify-between shrink-0">
+      <div className="border-b border-[var(--astryx-border-subtle)] px-6 py-5 flex items-center justify-between shrink-0">
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <Brain className="h-5 w-5 text-teal-400" />
-            <h1 className="text-lg font-semibold text-white">Знання</h1>
+            <Brain className="h-5 w-5 text-[var(--astryx-color-brand)]" />
+            <h1 className="text-lg font-semibold text-[var(--astryx-text-primary)]">Знання</h1>
           </div>
-          <p className="text-sm text-gray-400">Knowledge zones з Garden Bloom — джерела знань для ваших агентів</p>
+          <p className="text-sm text-[var(--astryx-text-secondary)]">Knowledge zones з Garden Bloom — джерела знань для ваших агентів</p>
         </div>
         <Button
           onClick={() => setIsCreationDialogOpen(true)}
           size="sm"
-          className="inline-flex items-center gap-1.5 rounded-xl bg-teal-500 hover:bg-teal-400 px-4 py-2 font-semibold text-black active:scale-[0.96] transition-all"
+          className="inline-flex items-center gap-1.5 rounded-[var(--astryx-radius-sm)] bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] px-4 py-2 font-semibold text-[var(--astryx-color-on-brand)] active:scale-[0.96] transition-all"
         >
           <PlusCircle className="h-4 w-4" />
           Create Zone

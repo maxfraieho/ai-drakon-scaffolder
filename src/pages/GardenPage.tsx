@@ -256,7 +256,7 @@ export function GardenPage() {
   const showList = viewMode === "list" || viewMode === "split";
 
   return (
-    <div className="flex h-full flex-col bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="garden-page">
+    <div className="astryx-migrated flex h-full flex-col bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="garden-page">
       {/* TOP BAR */}
       <div className="flex h-9 shrink-0 items-center gap-2 border-b border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] px-3">
         <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-[var(--text-muted)]">
@@ -402,7 +402,7 @@ export function GardenPage() {
           {/* GRAPH */}
           {showGraph && (
             <div className={cn(
-              "relative min-h-0 bg-zinc-950",
+              "relative min-h-0 bg-[var(--astryx-surface-page)]",
               viewMode === "graph" ? "flex-1" : "flex-1",
             )}>
               {graph.nodes.length > 0 ? (
@@ -461,12 +461,12 @@ export function GardenPage() {
       )}
 
       <Dialog open={showDiffDialog} onOpenChange={setShowDiffDialog}>
-        <DialogContent className="max-w-xl bg-zinc-900 text-zinc-100 border border-zinc-800 shadow-2xl">
+        <DialogContent className="max-w-xl bg-[var(--astryx-surface-primary)] text-[var(--astryx-text-primary)] border border-[var(--astryx-border-subtle)] shadow-2xl">
           <DialogHeader>
-            <DialogTitle className="text-sm font-semibold tracking-tight text-amber-500">
+            <DialogTitle className="text-sm font-semibold tracking-tight text-[var(--astryx-color-brand)]">
               Запропоновані семантичні зв'язки
             </DialogTitle>
-            <DialogDescription className="text-[11px] text-zinc-400">
+            <DialogDescription className="text-[11px] text-[var(--astryx-text-secondary)]">
               LLM проаналізував {graphStats?.notes} нотаток та запропонував додати наступні перехресні зв'язки:
             </DialogDescription>
           </DialogHeader>
@@ -475,7 +475,7 @@ export function GardenPage() {
             {proposedChanges && proposedChanges.map((change) => (
               <div key={change.slug} className="space-y-1.5">
                 <div className="flex items-center gap-1.5">
-                  <span className="font-semibold text-[11px] text-zinc-300 font-mono">{change.slug}</span>
+                  <span className="font-semibold text-[11px] text-[var(--astryx-text-primary)] font-mono">{change.slug}</span>
                 </div>
                 {change.before && change.after
                   ? renderProposedDiff(change.before, change.after)
@@ -484,7 +484,7 @@ export function GardenPage() {
             ))}
           </div>
 
-          <DialogFooter className="flex items-center justify-end gap-2 border-t border-zinc-800 pt-3">
+          <DialogFooter className="flex items-center justify-end gap-2 border-t border-[var(--astryx-border-subtle)] pt-3">
             <Button
               variant="ghost"
               onClick={() => setShowDiffDialog(false)}

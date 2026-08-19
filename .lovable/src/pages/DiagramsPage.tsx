@@ -316,12 +316,12 @@ const level = selectedDiagram?.diagram.metadata?.diagramLevel;
 return (
 <div className="astryx-migrated flex h-full w-full flex-col overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="diagrams-page">
   {/* Page Header */}
-  <div className="border-b border-white/5 px-6 py-5 shrink-0">
+  <div className="border-b border-[var(--astryx-border-subtle)] px-6 py-5 shrink-0">
     <div className="flex items-center gap-3 mb-1">
-      <LayoutDashboard className="h-5 w-5 text-teal-400" />
-      <h1 className="text-lg font-semibold text-white">Схеми</h1>
+      <LayoutDashboard className="h-5 w-5 text-[var(--astryx-color-brand)]" />
+      <h1 className="text-lg font-semibold text-[var(--astryx-text-primary)]">Схеми</h1>
     </div>
-    <p className="text-sm text-gray-400">DRAKON-схеми та алгоритмічні потоки вашого проекту</p>
+    <p className="text-sm text-[var(--astryx-text-secondary)]">DRAKON-схеми та алгоритмічні потоки вашого проекту</p>
   </div>
 
   <div className="flex flex-1 min-h-0 w-full flex-col md:flex-row overflow-hidden">

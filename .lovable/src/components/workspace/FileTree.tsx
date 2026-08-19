@@ -82,7 +82,7 @@ export function FileTreeItem({
             <Button
               variant="ghost"
               size="icon"
-              className="h-5 w-5 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors p-1"
+              className="h-5 w-5 text-[var(--text-secondary)] hover:text-[var(--astryx-text-primary)] hover:bg-white/5 rounded transition-colors p-1"
               title="Analyze"
               onClick={(e) => { e.stopPropagation(); void onAnalyze(node); }}
             >
@@ -91,7 +91,7 @@ export function FileTreeItem({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onAddFile(node.path); }}
-              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-[var(--astryx-text-primary)] hover:bg-white/5 rounded transition-colors"
               title="Новий файл"
             >
               <FilePlus className="h-3 w-3" />
@@ -99,7 +99,7 @@ export function FileTreeItem({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onAddFolder(node.path); }}
-              className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors"
+              className="p-1 text-[var(--text-secondary)] hover:text-[var(--astryx-text-primary)] hover:bg-white/5 rounded transition-colors"
               title="Нова папка"
             >
               <FolderPlus className="h-3 w-3" />
@@ -175,7 +175,7 @@ export function FileTreeItem({
         <Button
           variant="ghost"
           size="icon"
-          className="h-5 w-5 text-[var(--text-secondary)] hover:text-white hover:bg-white/5 rounded transition-colors p-1"
+          className="h-5 w-5 text-[var(--text-secondary)] hover:text-[var(--astryx-text-primary)] hover:bg-white/5 rounded transition-colors p-1"
           title="Analyze"
           onClick={(e) => { e.stopPropagation(); void onAnalyze(node); }}
         >

@@ -377,10 +377,10 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
             <div className="flex flex-col gap-3.5 p-4 font-sans border-t border-[var(--border-subtle)] bg-[var(--bg-base)]">
               <div className="flex flex-col items-center justify-center text-center gap-1">
                 <Github className="h-8 w-8 text-[var(--accent-amber)] mb-1" />
-                <p className="text-[12px] font-bold text-zinc-100 uppercase tracking-wide">
+                <p className="text-[12px] font-bold text-[var(--astryx-text-primary)] uppercase tracking-wide">
                   Підключення GitHub
                 </p>
-                <p className="text-[10px] text-zinc-400 max-w-[280px]">
+                <p className="text-[10px] text-[var(--astryx-text-secondary)] max-w-[280px]">
                   Оберіть швидкий вхід без генерації токенів або введіть Personal Access Token вручну.
                 </p>
               </div>
@@ -391,7 +391,7 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
                   <span className="text-[10px] font-bold text-[var(--accent-amber)] font-mono">ВАРІАНТ 1 (Швидкий)</span>
                   <span className="text-[9px] px-1 bg-[var(--accent-amber)]/20 text-[var(--accent-amber)] rounded">Рекомендовано</span>
                 </div>
-                <p className="text-[9px] text-zinc-400">
+                <p className="text-[9px] text-[var(--astryx-text-secondary)]">
                   Пряма авторизація через GitHub OAuth для автоматичного доступу до ваших репозиторіїв.
                 </p>
                 <Button
@@ -417,9 +417,9 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
               </div>
 
               {/* Option 2: Manual Personal Access Token */}
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950/40 p-3 flex flex-col gap-2">
-                <span className="text-[10px] font-bold text-zinc-400 font-mono">ВАРІАНТ 2 (Вручну)</span>
-                <p className="text-[9px] text-zinc-400">
+              <div className="rounded-lg border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] p-3 flex flex-col gap-2">
+                <span className="text-[10px] font-bold text-[var(--astryx-text-secondary)] font-mono">ВАРІАНТ 2 (Вручну)</span>
+                <p className="text-[9px] text-[var(--astryx-text-secondary)]">
                   Введіть свій Personal Access Token (Classic) з доступом до репозиторіїв.
                 </p>
                 <div className="flex gap-2 mt-1">
@@ -429,13 +429,13 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
                     value={patInput}
                     onChange={(e) => setPatInput(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && void savePatToken()}
-                    className="font-mono text-[10px] bg-zinc-950 border-zinc-850 h-8 flex-1 focus-visible:ring-amber-500/20 text-zinc-200"
+                    className="font-mono text-[10px] bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] h-8 flex-1 focus-visible:ring-[var(--astryx-border-focus)]/20 text-[var(--astryx-text-primary)]"
                   />
                   <Button
                     size="sm"
                     onClick={() => void savePatToken()}
                     disabled={savingPat || !patInput.trim()}
-                    className="font-mono text-[10px] bg-zinc-800 hover:bg-zinc-700 text-zinc-200 h-8 shrink-0 border border-zinc-700"
+                    className="font-mono text-[10px] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-primary)] h-8 shrink-0 border border-[var(--astryx-border-subtle)]"
                   >
                     {savingPat ? <Loader2 className="h-3 w-3 animate-spin" /> : "OK"}
                   </Button>

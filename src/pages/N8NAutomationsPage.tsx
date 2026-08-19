@@ -393,7 +393,7 @@ export function N8NAutomationsPage() {
   const n8nPushDisabled = !n8nConfig.baseUrl.trim() || !n8nConfig.apiKey.trim() || pushMutation.isPending;
 
   return (
-    <section className="space-y-4">
+    <section className="astryx-migrated space-y-4">
       <header className="rounded-xl border border-white/10 bg-slate-900/45 p-4 backdrop-blur-xl md:p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="space-y-2">

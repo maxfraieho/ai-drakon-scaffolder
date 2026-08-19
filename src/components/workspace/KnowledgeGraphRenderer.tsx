@@ -379,30 +379,30 @@ export function KnowledgeGraphRenderer({
         if (!n) return null;
         return (
           <div
-            className="absolute top-3 right-3 max-w-[280px] bg-gray-900/95 backdrop-blur-sm border border-white/10 rounded-lg p-3 pointer-events-none z-10"
+            className="absolute top-3 right-3 max-w-[280px] bg-[var(--astryx-surface-elevated)] backdrop-blur-sm border border-[var(--astryx-border-subtle)] rounded-lg p-3 pointer-events-none z-10 shadow-lg"
           >
             <div className="flex items-center gap-2 mb-1">
               <span
                 className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: NODE_COLORS[n.node.type] ?? DEFAULT_COLOR }}
               />
-              <span className="text-[11px] font-mono font-semibold text-white truncate">
+              <span className="text-[11px] font-mono font-semibold text-[var(--astryx-text-primary)] truncate">
                 {n.node.name}
               </span>
-              <span className="text-[9px] font-mono text-gray-400 uppercase ml-auto">
+              <span className="text-[9px] font-mono text-[var(--astryx-text-secondary)] uppercase ml-auto">
                 {n.node.type}
               </span>
             </div>
-            <p className="text-[10px] text-gray-400 leading-relaxed">{n.node.summary}</p>
+            <p className="text-[10px] text-[var(--astryx-text-secondary)] leading-relaxed">{n.node.summary}</p>
             {n.node.filePath && (
-              <p className="text-[9px] text-gray-500 mt-1 font-mono truncate">
+              <p className="text-[9px] text-[var(--astryx-text-muted)] mt-1 font-mono truncate">
                 📄 {n.node.filePath}
               </p>
             )}
             {n.node.tags.length > 0 && (
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {n.node.tags.slice(0, 5).map((t) => (
-                  <span key={t} className="text-[8px] px-1.5 py-0.5 rounded bg-white/5 text-gray-400 font-mono">
+                  <span key={t} className="text-[8px] px-1.5 py-0.5 rounded bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-secondary)] font-mono">
                     {t}
                   </span>
                 ))}

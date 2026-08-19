@@ -831,7 +831,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                     Аналіз впливу…
                   </div>
                 ) : evidenceData ? (
-                  <div className="p-3 font-mono text-[11px] text-gray-300 overflow-auto">
+                  <div className="p-3 font-mono text-[11px] text-[var(--astryx-text-secondary)] overflow-auto">
                     <pre className="whitespace-pre-wrap leading-relaxed">{evidenceData}</pre>
                   </div>
                 ) : (
@@ -877,13 +877,13 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handlePostComment();
                           }}
-                          className="flex-1 px-3 py-1.5 text-xs bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-white focus:outline-none focus:border-amber-500 font-mono"
+                          className="flex-1 px-3 py-1.5 text-xs bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--astryx-text-primary)] focus:outline-none focus:border-[var(--astryx-border-focus)] font-mono"
                         />
                         <button
                           type="button"
                           onClick={handlePostComment}
                           disabled={!newCommentText.trim()}
-                          className="px-3 py-1.5 text-xs bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white rounded cursor-pointer transition-colors font-mono"
+                          className="px-3 py-1.5 text-xs bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] disabled:opacity-50 text-[var(--astryx-color-on-brand)] font-semibold rounded cursor-pointer transition-colors font-mono"
                         >
                           Надіслати
                         </button>

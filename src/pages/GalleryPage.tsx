@@ -47,7 +47,7 @@ export default function GalleryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-8" data-testid="gallery-page">
+    <div className="astryx-migrated min-h-screen bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] p-8" data-testid="gallery-page">
       <header className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-[var(--astryx-color-brand)]">
@@ -60,12 +60,12 @@ export default function GalleryPage() {
         
         <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--astryx-text-muted)]" />
             <Input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search pipelines or tags..."
-              className="pl-9 bg-slate-900 border-slate-800 focus-visible:ring-indigo-500/50 h-10 w-full rounded-xl"
+              className="pl-9 bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/50 text-[var(--astryx-text-primary)] h-10 w-full rounded-[var(--astryx-radius-md)]"
             />
           </div>
           <button className="astryx-button ghost md" data-variant="ghost" data-size="md" data-testid="gallery-filters-button">
@@ -77,17 +77,17 @@ export default function GalleryPage() {
 
       {loading ? (
         <div className="flex h-64 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--astryx-color-brand)]" />
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filtered.map(item => (
             <div key={item.id} className="group relative rounded-[var(--astryx-radius-lg)] border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] p-5 transition-all hover:border-[var(--astryx-color-brand)]" data-variant="card">
               <div className="flex items-start justify-between mb-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500/10 text-indigo-400 group-hover:scale-110 transition-transform">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[var(--astryx-color-brand-light)] text-[var(--astryx-color-brand)] group-hover:scale-110 transition-transform">
                   <Workflow className="h-6 w-6" />
                 </div>
-                <div className="flex items-center gap-3 text-sm text-slate-400">
+                <div className="flex items-center gap-3 text-sm text-[var(--astryx-text-secondary)]">
                   <span className="flex items-center gap-1 hover:text-rose-400 cursor-pointer transition-colors">
                     <Heart className="h-4 w-4" /> {item.likes}
                   </span>
@@ -98,13 +98,13 @@ export default function GalleryPage() {
               </div>
               
               <Link to={`/s/${item.id}`} className="block mb-2">
-                <h3 className="font-semibold text-lg font-[Outfit] text-slate-200 group-hover:text-indigo-300 transition-colors line-clamp-1">
+                <h3 className="font-semibold text-lg font-[Outfit] text-[var(--astryx-text-primary)] group-hover:text-[var(--astryx-color-brand)] transition-colors line-clamp-1">
                   {item.title}
                 </h3>
               </Link>
               
-              <p className="text-xs text-slate-500 mb-4">
-                by <span className="font-medium text-slate-300">@{item.author}</span> • {new Date(item.date).toLocaleDateString()}
+              <p className="text-xs text-[var(--astryx-text-muted)] mb-4">
+                by <span className="font-medium text-[var(--astryx-text-secondary)]">@{item.author}</span> • {new Date(item.date).toLocaleDateString()}
               </p>
               
               <div className="flex flex-wrap gap-2 mb-4">
@@ -115,10 +115,10 @@ export default function GalleryPage() {
                 ))}
               </div>
               
-              <div className="mt-4 pt-4 border-t border-slate-800/50 flex justify-between items-center">
+              <div className="mt-4 pt-4 border-t border-[var(--astryx-border-subtle)] flex justify-between items-center">
                 <Link 
                   to={`/s/${item.id}`}
-                  className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+                  className="text-sm font-medium text-[var(--astryx-color-brand)] hover:underline transition-colors"
                 >
                   View full screen →
                 </Link>
@@ -133,11 +133,11 @@ export default function GalleryPage() {
       
       {filtered.length === 0 && !loading && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <div className="h-16 w-16 rounded-full bg-slate-900 flex items-center justify-center mb-4">
-            <Search className="h-8 w-8 text-slate-600" />
+          <div className="h-16 w-16 rounded-full bg-[var(--astryx-surface-secondary)] flex items-center justify-center mb-4">
+            <Search className="h-8 w-8 text-[var(--astryx-text-muted)]" />
           </div>
           <h3 className="text-xl font-semibold mb-2">No pipelines found</h3>
-          <p className="text-slate-500 max-w-sm">
+          <p className="text-[var(--astryx-text-muted)] max-w-sm">
             We couldn't find any community pipelines matching your search criteria.
           </p>
           <button 

@@ -75,7 +75,7 @@ function NetworkBackground() {
             ctx.beginPath();
             ctx.moveTo(nodes[i].x, nodes[i].y);
             ctx.lineTo(nodes[j].x, nodes[j].y);
-            ctx.strokeStyle = `rgba(45, 212, 191, ${alpha})`;
+            ctx.strokeStyle = `rgba(245, 158, 11, ${alpha})`;
             ctx.lineWidth = bothHub ? 1.5 : anyHub ? 0.8 : 0.4;
             ctx.stroke();
           }
@@ -86,12 +86,12 @@ function NetworkBackground() {
         if (n.hub) {
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(45, 212, 191, ${n.opacity * 0.15})`;
+          ctx.fillStyle = `rgba(245, 158, 11, ${n.opacity * 0.15})`;
           ctx.fill();
         }
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(45, 212, 191, ${n.opacity})`;
+        ctx.fillStyle = `rgba(245, 158, 11, ${n.opacity})`;
         ctx.fill();
 
         n.x += n.vx;
@@ -234,14 +234,14 @@ export function LoginPage() {
   };
 
   return (
-    <div className="astryx-migrated relative flex min-h-screen items-center justify-center bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] px-4 overflow-hidden">
+    <div className="astryx-migrated relative flex min-h-screen items-center justify-center bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] px-4 overflow-hidden" data-testid="login-page">
       <NetworkBackground />
 
       {/* Radial center glow */}
       <div
         className="fixed inset-0 pointer-events-none"
         style={{
-          background: "radial-gradient(ellipse at center, rgba(45,212,191,0.04) 0%, transparent 65%)",
+          background: "radial-gradient(ellipse at center, rgba(245,158,11,0.04) 0%, transparent 65%)",
           zIndex: 1,
         }}
       />
@@ -253,22 +253,22 @@ export function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-400/10 border border-teal-400/20">
-            <Bot className="h-7 w-7 text-teal-400" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--astryx-color-brand-light)] border border-[var(--astryx-color-brand)]/20">
+            <Bot className="h-7 w-7 text-[var(--astryx-color-brand)]" />
           </div>
-          <h1 className="text-3xl font-bold tracking-tight text-white">AI-DRAKON</h1>
-          <p className="text-gray-400 text-sm mt-1">Платформа розробки та візуалізації алгоритмів</p>
+          <h1 className="text-3xl font-bold tracking-tight text-[var(--astryx-text-primary)]">AI-DRAKON</h1>
+          <p className="text-[var(--astryx-text-secondary)] text-sm mt-1">Платформа розробки та візуалізації алгоритмів</p>
         </div>
 
         {/* Mode tabs */}
-        <div className="flex rounded-xl border border-white/10 overflow-hidden mb-6 bg-white/5 backdrop-blur-sm">
+        <div className="flex rounded-[var(--astryx-radius-md)] border border-[var(--astryx-border-subtle)] overflow-hidden mb-6 bg-[var(--astryx-surface-primary)] backdrop-blur-sm">
           <button
             type="button"
             onClick={() => { setMode("login"); setErrorMsg(null); }}
             className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
               mode === "login"
-                ? "bg-teal-500 text-black"
-                : "text-gray-400 hover:text-white"
+                ? "bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] font-semibold"
+                : "text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)]"
             }`}
           >
             Увійти
@@ -278,8 +278,8 @@ export function LoginPage() {
             onClick={() => { setMode("register"); setErrorMsg(null); }}
             className={`flex-1 py-2.5 text-sm font-medium transition-colors ${
               mode === "register"
-                ? "bg-teal-500 text-black"
-                : "text-gray-400 hover:text-white"
+                ? "bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] font-semibold"
+                : "text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)]"
             }`}
           >
             <UserPlus className="h-3.5 w-3.5 inline mr-1" />
@@ -288,33 +288,33 @@ export function LoginPage() {
         </div>
 
         {/* Form container */}
-        <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl p-6 space-y-4">
+        <div className="bg-[var(--astryx-surface-primary)] backdrop-blur-md border border-[var(--astryx-border-subtle)] rounded-[var(--astryx-radius-lg)] p-6 space-y-4 shadow-xl">
           {mode === "register" ? (
             <form className="space-y-4" onSubmit={handleRegister}>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300 font-medium font-sans">Ім'я (необов'язково)</label>
+                <label className="text-sm text-[var(--astryx-text-secondary)] font-medium font-sans">Ім'я (необов'язково)</label>
                 <Input
                   type="text"
                   placeholder="Ваше ім'я"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11"
+                  className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)] placeholder:text-[var(--astryx-text-muted)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] h-11"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300 font-medium font-sans">Email</label>
+                <label className="text-sm text-[var(--astryx-text-secondary)] font-medium font-sans">Email</label>
                 <Input
                   type="email"
                   autoComplete="email"
                   placeholder="email@example.com"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11"
+                  className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)] placeholder:text-[var(--astryx-text-muted)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] h-11"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300 font-medium font-sans">Пароль</label>
+                <label className="text-sm text-[var(--astryx-text-secondary)] font-medium font-sans">Пароль</label>
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
@@ -322,14 +322,14 @@ export function LoginPage() {
                     placeholder="Мінімум 8 символів"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11 pr-10"
+                    className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)] placeholder:text-[var(--astryx-text-muted)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] h-11 pr-10"
                     required
                     minLength={8}
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)]"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -341,7 +341,7 @@ export function LoginPage() {
                 </p>
               )}
               <Button
-                className="w-full h-11 bg-teal-500 hover:bg-teal-400 text-black font-semibold transition-all"
+                className="w-full h-11 bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold transition-all rounded-[var(--astryx-radius-sm)]"
                 type="submit"
                 disabled={isSubmitting}
               >
@@ -351,19 +351,19 @@ export function LoginPage() {
           ) : (
             <form className="space-y-4" onSubmit={handleLogin}>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300 font-medium font-sans">Логін або Email</label>
+                <label className="text-sm text-[var(--astryx-text-secondary)] font-medium font-sans">Логін або Email</label>
                 <Input
                   type="text"
                   autoComplete="username"
                   placeholder="email@example.com"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11"
+                  className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)] placeholder:text-[var(--astryx-text-muted)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] h-11"
                   required
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm text-gray-300 font-medium font-sans">Пароль</label>
+                <label className="text-sm text-[var(--astryx-text-secondary)] font-medium font-sans">Пароль</label>
                 <div className="relative">
                   <Input
                     type={showPassword ? "text" : "password"}
@@ -371,13 +371,13 @@ export function LoginPage() {
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="bg-white/5 border-white/10 text-white placeholder:text-gray-600 focus-visible:ring-teal-400/30 focus-visible:border-teal-400/50 h-11 pr-10"
+                    className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)] placeholder:text-[var(--astryx-text-muted)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] h-11 pr-10"
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)]"
                   >
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
@@ -389,7 +389,7 @@ export function LoginPage() {
                 </p>
               )}
               <Button
-                className="w-full h-11 bg-teal-500 hover:bg-teal-400 text-black font-semibold transition-all"
+                className="w-full h-11 bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold transition-all rounded-[var(--astryx-radius-sm)]"
                 type="submit"
                 disabled={isSubmitting}
               >
@@ -399,24 +399,24 @@ export function LoginPage() {
           )}
 
           <div className="relative flex py-2 items-center">
-            <div className="flex-grow border-t border-white/10"></div>
-            <span className="flex-shrink mx-4 text-gray-400 text-xs font-sans">або</span>
-            <div className="flex-grow border-t border-white/10"></div>
+            <div className="flex-grow border-t border-[var(--astryx-border-subtle)]"></div>
+            <span className="flex-shrink mx-4 text-[var(--astryx-text-muted)] text-xs font-sans">або</span>
+            <div className="flex-grow border-t border-[var(--astryx-border-subtle)]"></div>
           </div>
 
           <Button
             type="button"
             variant="outline"
-            className="w-full h-11 border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white transition-all font-semibold"
+            className="w-full h-11 border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-primary)] hover:bg-[var(--astryx-surface-elevated)] transition-all font-semibold rounded-[var(--astryx-radius-sm)]"
             onClick={handleGithubLogin}
           >
-            <Github className="mr-2 h-4 w-4 text-white" />
+            <Github className="mr-2 h-4 w-4 text-[var(--astryx-text-primary)]" />
             Увійти через GitHub
           </Button>
         </div>
 
         {/* Footer */}
-        <p className="text-center text-gray-600 text-xs mt-6 tracking-wider uppercase">
+        <p className="text-center text-[var(--astryx-text-muted)] text-xs mt-6 tracking-wider uppercase">
           DRAKON Suite · Knowledge Platform
         </p>
       </div>

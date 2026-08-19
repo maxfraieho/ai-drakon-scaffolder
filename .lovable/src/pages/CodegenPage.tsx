@@ -166,7 +166,7 @@ export function CodegenPage() {
   const jsonString = result ? JSON.stringify(result.drakon_json, null, 2) : "";
 
   return (
-    <div className="astryx-migrated mx-auto max-w-4xl space-y-6 p-6 text-[var(--astryx-text-primary)]" data-testid="codegen-page">
+    <div className="astryx-migrated mx-auto max-w-4xl space-y-6 p-6 bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)] min-h-full" data-testid="codegen-page">
       <div className="flex items-center gap-3">
         <Code2 className="h-7 w-7 text-primary" />
         <div>
@@ -227,7 +227,7 @@ export function CodegenPage() {
                 onClick={toggleListen}
                 className={cn(
                   "flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-md transition-colors",
-                  listening ? "bg-rose-500/20 text-rose-500 animate-pulse" : "bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
+                  listening ? "bg-rose-500/20 text-rose-500 animate-pulse" : "bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)] hover:bg-[var(--astryx-surface-elevated)]"
                 )}
               >
                 <Mic className="h-3.5 w-3.5" />
