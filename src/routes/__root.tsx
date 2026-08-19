@@ -113,8 +113,13 @@ errorComponent: ErrorComponent,
 
 function RootShell({ children }: { children: ReactNode }) {
 return (
-<html lang="en" className="dark" data-astryx-theme="dark">
+<html lang="en" className="dark" data-theme="dark" data-astryx-theme="dark" suppressHydrationWarning>
 <head>
+<script
+dangerouslySetInnerHTML={{
+__html: `(function(){try{var raw=localStorage.getItem("drakon.settings");var theme="system";if(raw){var parsed=JSON.parse(raw);if(parsed&&parsed.app&&parsed.app.theme){theme=parsed.app.theme;}}var isDark=theme==="dark"||(theme==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);var root=document.documentElement;if(isDark){root.classList.add("dark");root.setAttribute("data-theme","dark");root.setAttribute("data-astryx-theme","dark");}else{root.classList.remove("dark");root.setAttribute("data-theme","light");root.setAttribute("data-astryx-theme","astryx");}}catch(e){}})();`,
+}}
+/>
 <HeadContent />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

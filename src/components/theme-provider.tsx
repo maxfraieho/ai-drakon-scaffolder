@@ -14,13 +14,18 @@ const ThemeContext = createContext<ThemeContextValue>({
 });
 
 function applyThemeToDOM(theme: ThemeMode) {
-  const resolved =
+  if (typeof document === "undefined") return;
+  const isDark =
     theme === "system"
-      ? window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
-      : theme;
-  document.documentElement.setAttribute("data-theme", resolved);
-  document.documentElement.setAttribute("data-astryx-theme", resolved === "dark" ? "dark" : "astryx");
-  document.documentElement.classList.toggle("dark", resolved === "dark");
+      ? typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches
+      : theme === "dark";
+
+  const resolved = isDark ? "dark" : "light";
+  const root = document.documentElement;
+
+  root.setAttribute("data-theme", resolved);
+  root.setAttribute("data-astryx-theme", isDark ? "dark" : "astryx");
+  root.classList.toggle("dark", isDark);
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
@@ -34,6 +39,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     applyThemeToDOM(theme);
+
+    if (theme === "system" && typeof window !== "undefined" && window.matchMedia) {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = () => {
+        applyThemeToDOM("system");
+      };
+
+      if (typeof mediaQuery.addEventListener === "function") {
+        mediaQuery.addEventListener("change", handleChange);
+        return () => mediaQuery.removeEventListener("change", handleChange);
+      } else if (typeof (mediaQuery as any).addListener === "function") {
+        (mediaQuery as any).addListener(handleChange);
+        return () => (mediaQuery as any).removeListener(handleChange);
+      }
+    }
   }, [theme]);
 
   const setTheme = (next: ThemeMode) => {
