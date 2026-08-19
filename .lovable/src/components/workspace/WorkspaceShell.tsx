@@ -387,48 +387,96 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]">
-      {/* TOP BAR */}
-      {astryxShellEnabled ? (
-        <AstryxHeader
-          onOpenCmd={() => setCmdOpen(true)}
-          onLogout={logout}
-          onOpenAgentChat={() => setAgentsOpen(true)}
-        />
-      ) : (
-      <header className="flex h-10 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
-        <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
-          <SheetTrigger asChild>
-            <button
-              type="button"
-              className="lg:hidden inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
-              aria-label="Меню"
+      {/* Mobile Navigation Sheet (Hoisted for both Astryx and legacy branches) */}
+      <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
+        <SheetContent
+          side="left"
+          className={cn(
+            "w-64 p-0",
+            astryxShellEnabled
+              ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] text-[var(--astryx-text-primary)]"
+              : "border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)]",
+          )}
+        >
+          <SheetHeader
+            className={cn(
+              "px-3 py-2",
+              astryxShellEnabled
+                ? "border-b border-[var(--astryx-border-subtle)]"
+                : "border-b border-[var(--border-subtle)]",
+            )}
+          >
+            <SheetTitle
+              className={cn(
+                "font-mono text-[10px] uppercase tracking-[0.18em]",
+                astryxShellEnabled ? "text-[var(--astryx-text-muted)]" : "text-[var(--text-muted)]",
+              )}
             >
-              <Menu className="h-4 w-4" />
-            </button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-64 border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] p-0">
-            <SheetHeader className="border-b border-[var(--border-subtle)] px-3 py-2">
-              <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                Навігація
-              </SheetTitle>
-            </SheetHeader>
-            <div className="flex h-[calc(100%-2.5rem)] flex-col overflow-hidden">
-              <div className="border-b border-[var(--border-subtle)] shrink-0">
-                <ProjectSelector withDialogs={false} />
+              Навігація
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex h-[calc(100%-2.5rem)] flex-col overflow-hidden">
+            <div
+              className={cn(
+                "shrink-0",
+                astryxShellEnabled
+                  ? "border-b border-[var(--astryx-border-subtle)]"
+                  : "border-b border-[var(--border-subtle)]",
+              )}
+            >
+              <ProjectSelector withDialogs={false} />
+            </div>
+            {astryxShellEnabled ? (
+              <div className="flex-1 overflow-y-auto">
+                <AstryxSideNav
+                  aria-label="Мобільна навігація"
+                  onItemClick={() => setMobileNavOpen(false)}
+                />
               </div>
+            ) : (
               <nav aria-label="Мобільна навігація" className="flex-1 overflow-y-auto p-2">
                 <NavDivider label="Робочий простір" />
                 <NavSection items={NAV_WORKSPACE} isActive={isActive} onClick={() => setMobileNavOpen(false)} />
                 <NavDivider label="Система" />
                 <NavSection items={NAV_SYSTEM} isActive={isActive} onClick={() => setMobileNavOpen(false)} />
               </nav>
-              <div className="shrink-0 border-t border-[var(--border-subtle)]">
-                <DevCyclePanel />
-                <AgentStatusBar />
-              </div>
+            )}
+            <div
+              className={cn(
+                "shrink-0",
+                astryxShellEnabled
+                  ? "border-t border-[var(--astryx-border-subtle)]"
+                  : "border-t border-[var(--border-subtle)]",
+              )}
+            >
+              <DevCyclePanel />
+              <AgentStatusBar />
             </div>
-          </SheetContent>
-        </Sheet>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* TOP BAR */}
+      {astryxShellEnabled ? (
+        <AstryxHeader
+          onOpenCmd={() => setCmdOpen(true)}
+          onLogout={logout}
+          onOpenAgentChat={() => setAgentsOpen(true)}
+          onOpenMobileNav={() => setMobileNavOpen(true)}
+        />
+      ) : (
+      <header className="flex h-10 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
+        <button
+          type="button"
+          onClick={() => setMobileNavOpen(true)}
+          className="lg:hidden inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+          aria-label="Меню"
+          data-variant="ghost"
+          data-size="sm"
+          data-testid="workspace-mobile-nav-toggle"
+        >
+          <Menu className="h-4 w-4" />
+        </button>
 
         <Link
           to="/diagrams"
@@ -635,9 +683,9 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
       {astryxShellEnabled && (
         <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
-          <SheetContent side="right" className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)]">
-            <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
-              <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">AI-агенти</SheetTitle>
+          <SheetContent side="right" className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--astryx-surface-elevated)] border-l border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)]">
+            <SheetHeader className="border-b border-[var(--astryx-border-subtle)] px-4 py-3">
+              <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--astryx-text-muted)]">AI-агенти</SheetTitle>
             </SheetHeader>
             <div className="h-[calc(100%-3.25rem)]"><AgentChatPanel className="h-full" /></div>
           </SheetContent>
@@ -664,8 +712,14 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                     <TooltipTrigger asChild>
                       <div
                         title={item.tooltip}
+                        role="button"
+                        aria-disabled="true"
+                        tabIndex={-1}
+                        data-variant="ghost"
+                        data-size="sm"
+                        data-testid={`iconrail-item-${item.id}-disabled`}
                         className={cn(
-                          "flex h-7 w-7 cursor-not-allowed items-center justify-center opacity-40",
+                          "flex h-7 w-7 cursor-not-allowed items-center justify-center opacity-40 select-none",
                           astryxShellEnabled
                             ? "rounded-[var(--astryx-radius-sm)] text-[var(--astryx-text-muted)]"
                             : "rounded-[var(--radius-sm)] text-[var(--text-muted)]",
@@ -686,17 +740,20 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                   <TooltipTrigger asChild>
                     <Link
                       to={item.to}
+                      data-variant="ghost"
+                      data-size="sm"
+                      data-testid={`iconrail-item-${item.id}`}
                       className={cn(
-                        "flex h-7 w-7 items-center justify-center transition-colors",
+                        "flex h-7 w-7 items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2",
                         astryxShellEnabled
                           ? cn(
-                              "rounded-[var(--astryx-radius-sm)]",
+                              "rounded-[var(--astryx-radius-sm)] focus-visible:ring-[var(--astryx-border-focus)]",
                               active
                                 ? "bg-[var(--astryx-color-brand-light)] text-[var(--astryx-color-brand)]"
                                 : "text-[var(--astryx-text-secondary)] hover:bg-[var(--astryx-surface-secondary)] hover:text-[var(--astryx-text-primary)]",
                             )
                           : cn(
-                              "rounded-[var(--radius-sm)]",
+                              "rounded-[var(--radius-sm)] focus-visible:ring-[var(--accent-amber)]",
                               active
                                 ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
                                 : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
@@ -752,18 +809,21 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
             setTimeout(() => window.dispatchEvent(new Event("resize")), 210);
           }}
           title={navCollapsed ? "Показати навігацію" : "Сховати навігацію"}
+          data-variant="ghost"
+          data-size="sm"
+          data-testid="nav-collapse-toggle"
           className={cn(
-            "hidden lg:flex h-full w-2 shrink-0 items-center justify-center transition-colors cursor-pointer",
+            "hidden lg:flex h-full w-2 shrink-0 items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1",
             astryxShellEnabled
-              ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)]"
-              : "border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)]",
+              ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)] focus-visible:ring-[var(--astryx-border-focus)]"
+              : "border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] focus-visible:ring-[var(--accent-amber)]",
           )}
         >
           {navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
 
         <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
-          <main className="flex-1 min-h-0 overflow-y-auto pb-16 lg:pb-0">
+          <main className="flex-1 min-h-0 overflow-y-auto">
             {children}
           </main>
 
@@ -777,11 +837,14 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
               setTimeout(() => window.dispatchEvent(new Event("resize")), 210);
             }}
             title={evidenceCollapsed ? "Показати EVIDENCE" : "Сховати EVIDENCE"}
+            data-variant="ghost"
+            data-size="sm"
+            data-testid="evidence-collapse-toggle"
             className={cn(
-              "flex w-full h-2 shrink-0 items-center justify-center transition-colors cursor-pointer",
+              "flex w-full h-2 shrink-0 items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1",
               astryxShellEnabled
-                ? "border-t border-b border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)]"
-                : "border-t border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)]",
+                ? "border-t border-b border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)] focus-visible:ring-[var(--astryx-border-focus)]"
+                : "border-t border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] focus-visible:ring-[var(--accent-amber)]",
             )}
           >
             {evidenceCollapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
