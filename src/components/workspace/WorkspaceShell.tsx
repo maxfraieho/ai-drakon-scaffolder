@@ -1,49 +1,26 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
-  Bot,
   ChevronLeft,
   ChevronRight,
-  Cog,
-  Cpu,
-  FileCode,
-  FileText,
-  Layers,
-  LayoutDashboard,
-  LogOut,
-  Menu,
-  Moon,
-  Sun,
-  Terminal,
-  Workflow,
-  Brain,
-  BookOpen,
-  ChevronDown,
-  GitBranch,
-  Loader2,
-  Plus,
-  FileCode2,
-  Code2,
-  Braces,
-  Activity,
   ChevronUp,
-  Gamepad2,
-  GitPullRequest,
+  ChevronDown,
+  Cpu,
+  BookOpen,
+  GitBranch,
+  FileCode2,
+  Braces,
+  Terminal,
+  Sun,
+  Moon,
+  LogOut,
 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-  SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -76,81 +53,6 @@ import { buildDiffContext, formatDiffAnalysis } from "@/lib/understand/diff";
 import { getGithubConfig } from "@/lib/settings-storage";
 import { AstryxHeader } from "@/components/astryx/AstryxHeader";
 import { AstryxSideNav } from "@/components/astryx/AstryxSideNav";
-import { ASTRYX_NAV_ITEMS, type AstryxNavItem } from "@/components/astryx/astryx-nav-config";
-
-type NavItem = AstryxNavItem;
-const NAV_WORKSPACE = ASTRYX_NAV_ITEMS.filter((item) => item.section === "workspace");
-const NAV_SYSTEM = ASTRYX_NAV_ITEMS.filter((item) => item.section === "system");
-
-const ASTRYX_SHELL_FLAG = "astryx_shell";
-function isAstryxShellEnabled() {
-  if (import.meta.env.VITE_ASTRYX_SHELL === "false") return false;
-  try {
-    const v = localStorage.getItem(ASTRYX_SHELL_FLAG);
-    return v === null ? true : v !== "false";
-  } catch { return true; }
-}
-
-
-function getBreadcrumb(pathname: string): { section: string; sectionPath: string; sub?: string } {
-  if (pathname.startsWith("/diagram/editor")) return { section: "Diagrams", sectionPath: "/diagrams", sub: "Editor" };
-  if (pathname.startsWith("/diagrams")) return { section: "Diagrams", sectionPath: "/diagrams" };
-  if (pathname.startsWith("/architect")) return { section: "Architect", sectionPath: "/architect" };
-  if (pathname.startsWith("/github")) return { section: "GitHub", sectionPath: "/github" };
-
-  if (pathname.startsWith("/sync")) return { section: "Sync", sectionPath: "/sync" };
-  if (pathname.startsWith("/devcycle")) return { section: "DevCycle", sectionPath: "/devcycle" };
-  if (pathname.startsWith("/settings")) return { section: "Settings", sectionPath: "/settings" };
-  if (pathname.startsWith("/agents")) return { section: "Агенти", sectionPath: "/agents" };
-  if (pathname.startsWith("/pipelines")) return { section: "Pipeline", sectionPath: "/pipelines" };
-  if (pathname.startsWith("/knowledge")) return { section: "Знання", sectionPath: "/knowledge" };
-  if (pathname.startsWith("/notebooks")) return { section: "Knowledge Agents", sectionPath: "/notebooks" };
-  if (pathname.startsWith("/codegen")) return { section: "Codegen", sectionPath: "/codegen" };
-  if (pathname.startsWith("/trace")) return { section: "Execution Trace", sectionPath: "/trace" };
-  if (pathname.startsWith("/workspace")) return { section: "Робоча область", sectionPath: "/workspace" };
-  return { section: "Робоча область", sectionPath: "/" };
-}
-
-function NavSection({ items, isActive, onClick }: {
-  items: NavItem[];
-  isActive: (path: string) => boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-0.5">
-      {items.map((item) => {
-        const Icon = item.icon;
-        const active = isActive(item.path);
-        return (
-          <Link
-            key={item.path}
-            to={item.path}
-            onClick={onClick}
-            className={cn(
-              "flex items-center gap-2 rounded-lg px-3 py-2 text-[13px] transition-colors",
-              active
-                ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
-                : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
-            )}
-          >
-            <Icon className="h-3.5 w-3.5" />
-            {item.label}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
-function NavDivider({ label }: { label: string }) {
-  return (
-    <div className="px-2 pt-3 pb-1">
-      <span className="text-[10px] uppercase tracking-widest text-[var(--text-muted)] opacity-50 font-medium">
-        {label}
-      </span>
-    </div>
-  );
-}
 
 interface WorkspaceShellProps {
   children: ReactNode;
@@ -164,8 +66,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const [cmdOpen, setCmdOpen] = useState(false);
-  const [astryxShellEnabled] = useState(isAstryxShellEnabled);
-  const { activeProject, setActiveProject, projects, loading: projectsLoading } = useProject();
+  const { activeProject } = useProject();
   const [navCollapsed, setNavCollapsed] = useState(() => {
     try { return localStorage.getItem("nav_collapsed") === "true"; } catch { return false; }
   });
@@ -220,14 +121,12 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     }
   };
 
-
   const iconRailItems = [
     { id: "logic", to: "/diagrams", label: "Logic", icon: GitBranch, enabled: true },
     { id: "mrna", to: "#", label: "mRNA", icon: FileCode2, enabled: false, tooltip: "Sprint 3" },
     { id: "ribosome", to: "/agents", label: "Ribosome", icon: Cpu, enabled: true },
     { id: "protein", to: "/pipelines", label: "Protein", icon: Braces, enabled: true },
     { id: "knowledge", to: "/knowledge", label: "Knowledge", icon: BookOpen, enabled: true },
-
   ];
 
   useEffect(() => {
@@ -292,37 +191,39 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
   const isActive = (to: string) =>
     location.pathname === to || location.pathname.startsWith(to + "/");
 
-  const crumb = getBreadcrumb(location.pathname);
   const isProjectHubView = location.pathname.startsWith("/p/");
   const isProjectsListView = location.pathname === "/";
   const isCleanView = isProjectsListView || isProjectHubView;
 
   if (isCleanView) {
     return (
-      <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--bg-base)] text-[var(--text-primary)]">
+      <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]">
         {isProjectsListView ? (
-          <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-4">
+          <header className="flex h-12 shrink-0 items-center justify-between border-b border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] px-4">
             <Link
               to="/"
-              className="flex items-center gap-2 font-semibold text-[13px] text-[var(--text-primary)] tracking-wide"
+              className="flex items-center gap-2 font-semibold text-[13px] text-[var(--astryx-text-primary)] tracking-wide"
             >
-              <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
+              <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--astryx-color-brand)]" />
               AI-DRAKON
             </Link>
 
             <div className="ml-auto flex items-center gap-2">
-              <nav className="hidden md:flex items-center gap-4 mr-4 text-sm text-[var(--text-secondary)]">
-                <Link to="/diagrams" className="hover:text-[var(--text-primary)] transition-colors">Схеми</Link>
-                <Link to="/notebooks" className="hover:text-[var(--text-primary)] transition-colors">NotebookLM</Link>
-                <Link to="/pipelines" className="hover:text-[var(--text-primary)] transition-colors">Pipelines</Link>
-                <Link to="/agents" className="hover:text-[var(--text-primary)] transition-colors">Агенти</Link>
+              <nav aria-label="Верхня навігація проєктів" className="hidden md:flex items-center gap-4 mr-4 text-sm text-[var(--astryx-text-secondary)]">
+                <Link to="/diagrams" className="hover:text-[var(--astryx-text-primary)] transition-colors">Схеми</Link>
+                <Link to="/notebooks" className="hover:text-[var(--astryx-text-primary)] transition-colors">NotebookLM</Link>
+                <Link to="/pipelines" className="hover:text-[var(--astryx-text-primary)] transition-colors">Pipelines</Link>
+                <Link to="/agents" className="hover:text-[var(--astryx-text-primary)] transition-colors">Агенти</Link>
               </nav>
 
               <button
                 type="button"
                 onClick={() => setCmdOpen(true)}
-                className="inline-flex h-8 items-center gap-1.5 rounded border border-[var(--border-subtle)] px-2 font-mono text-[11px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors"
+                className="inline-flex h-8 items-center gap-1.5 rounded-[var(--astryx-radius-sm)] border border-[var(--astryx-border-subtle)] px-2 font-mono text-[11px] text-[var(--astryx-text-muted)] hover:bg-[var(--astryx-surface-secondary)] hover:text-[var(--astryx-text-primary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--astryx-border-focus)]"
                 aria-label="Відкрити command palette"
+                data-variant="ghost"
+                data-size="sm"
+                data-testid="clean-view-search-btn"
               >
                 <span>⌘K</span>
               </button>
@@ -331,7 +232,10 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                 type="button"
                 onClick={toggleTheme}
                 aria-label={theme === "dark" ? "Світла тема" : "Темна тема"}
-                className="inline-flex h-8 w-8 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--astryx-radius-sm)] text-[var(--astryx-text-muted)] hover:bg-[var(--astryx-surface-secondary)] hover:text-[var(--astryx-text-primary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--astryx-border-focus)]"
+                data-variant="ghost"
+                data-size="sm"
+                data-testid="clean-view-theme-btn"
               >
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
@@ -341,27 +245,30 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                   <button
                     type="button"
                     aria-label="Вийти"
-                    className="inline-flex h-8 w-8 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+                    className="inline-flex h-8 w-8 items-center justify-center rounded-[var(--astryx-radius-sm)] text-[var(--astryx-text-muted)] hover:bg-[var(--astryx-surface-secondary)] hover:text-[var(--astryx-text-primary)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--astryx-border-focus)]"
+                    data-variant="ghost"
+                    data-size="sm"
+                    data-testid="clean-view-logout-btn"
                   >
                     <LogOut className="h-4 w-4" />
                   </button>
                 </AlertDialogTrigger>
-                <AlertDialogContent className="bg-[var(--bg-surface)] border border-white/10 rounded-2xl font-sans shadow-2xl">
+                <AlertDialogContent className="bg-[var(--astryx-surface-elevated)] border border-[var(--astryx-border-subtle)] rounded-[var(--astryx-radius-lg)] font-sans shadow-2xl">
                   <AlertDialogHeader>
-                    <AlertDialogTitle className="text-[var(--text-primary)] text-base font-semibold">
+                    <AlertDialogTitle className="text-[var(--astryx-text-primary)] text-base font-semibold">
                       Вийти з системи?
                     </AlertDialogTitle>
-                    <AlertDialogDescription className="text-[var(--text-muted)] text-sm">
+                    <AlertDialogDescription className="text-[var(--astryx-text-muted)] text-sm">
                       JWT-токен буде видалено. Потрібно буде увійти знову.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel className="text-sm bg-transparent border border-white/10 text-[var(--text-secondary)] hover:bg-white/5 rounded-xl">
+                    <AlertDialogCancel className="text-sm bg-transparent border border-[var(--astryx-border-subtle)] text-[var(--astryx-text-secondary)] hover:bg-[var(--astryx-surface-secondary)] rounded-[var(--astryx-radius-md)]">
                       Скасувати
                     </AlertDialogCancel>
                     <AlertDialogAction
                       onClick={logout}
-                      className="text-sm bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded-xl"
+                      className="text-sm bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold rounded-[var(--astryx-radius-md)]"
                     >
                       Вийти
                     </AlertDialogAction>
@@ -387,68 +294,28 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
 
   return (
     <div className="flex h-screen w-full flex-col overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]">
-      {/* Mobile Navigation Sheet (Hoisted for both Astryx and legacy branches) */}
+      {/* Mobile Navigation Sheet */}
       <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
         <SheetContent
           side="left"
-          className={cn(
-            "w-64 p-0",
-            astryxShellEnabled
-              ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] text-[var(--astryx-text-primary)]"
-              : "border-r border-[var(--border-subtle)] bg-[var(--bg-surface)] text-[var(--text-primary)]",
-          )}
+          className="w-64 p-0 border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] text-[var(--astryx-text-primary)]"
         >
-          <SheetHeader
-            className={cn(
-              "px-3 py-2",
-              astryxShellEnabled
-                ? "border-b border-[var(--astryx-border-subtle)]"
-                : "border-b border-[var(--border-subtle)]",
-            )}
-          >
-            <SheetTitle
-              className={cn(
-                "font-mono text-[10px] uppercase tracking-[0.18em]",
-                astryxShellEnabled ? "text-[var(--astryx-text-muted)]" : "text-[var(--text-muted)]",
-              )}
-            >
+          <SheetHeader className="px-3 py-2 border-b border-[var(--astryx-border-subtle)]">
+            <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--astryx-text-muted)]">
               Навігація
             </SheetTitle>
           </SheetHeader>
           <div className="flex h-[calc(100%-2.5rem)] flex-col overflow-hidden">
-            <div
-              className={cn(
-                "shrink-0",
-                astryxShellEnabled
-                  ? "border-b border-[var(--astryx-border-subtle)]"
-                  : "border-b border-[var(--border-subtle)]",
-              )}
-            >
+            <div className="shrink-0 border-b border-[var(--astryx-border-subtle)]">
               <ProjectSelector withDialogs={false} />
             </div>
-            {astryxShellEnabled ? (
-              <div className="flex-1 overflow-y-auto">
-                <AstryxSideNav
-                  aria-label="Мобільна навігація"
-                  onItemClick={() => setMobileNavOpen(false)}
-                />
-              </div>
-            ) : (
-              <nav aria-label="Мобільна навігація" className="flex-1 overflow-y-auto p-2">
-                <NavDivider label="Робочий простір" />
-                <NavSection items={NAV_WORKSPACE} isActive={isActive} onClick={() => setMobileNavOpen(false)} />
-                <NavDivider label="Система" />
-                <NavSection items={NAV_SYSTEM} isActive={isActive} onClick={() => setMobileNavOpen(false)} />
-              </nav>
-            )}
-            <div
-              className={cn(
-                "shrink-0",
-                astryxShellEnabled
-                  ? "border-t border-[var(--astryx-border-subtle)]"
-                  : "border-t border-[var(--border-subtle)]",
-              )}
-            >
+            <div className="flex-1 overflow-y-auto">
+              <AstryxSideNav
+                aria-label="Мобільна навігація"
+                onItemClick={() => setMobileNavOpen(false)}
+              />
+            </div>
+            <div className="shrink-0 border-t border-[var(--astryx-border-subtle)]">
               <DevCyclePanel />
               <AgentStatusBar />
             </div>
@@ -457,250 +324,34 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
       </Sheet>
 
       {/* TOP BAR */}
-      {astryxShellEnabled ? (
-        <AstryxHeader
-          onOpenCmd={() => setCmdOpen(true)}
-          onLogout={logout}
-          onOpenAgentChat={() => setAgentsOpen(true)}
-          onOpenMobileNav={() => setMobileNavOpen(true)}
-        />
-      ) : (
-      <header className="flex h-10 shrink-0 items-center gap-2 border-b border-[var(--border-subtle)] bg-[var(--bg-surface)] px-3">
-        <button
-          type="button"
-          onClick={() => setMobileNavOpen(true)}
-          className="lg:hidden inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
-          aria-label="Меню"
-          data-variant="ghost"
-          data-size="sm"
-          data-testid="workspace-mobile-nav-toggle"
+      <AstryxHeader
+        onOpenCmd={() => setCmdOpen(true)}
+        onLogout={logout}
+        onOpenAgentChat={() => setAgentsOpen(true)}
+        onOpenMobileNav={() => setMobileNavOpen(true)}
+      />
+
+      {/* AGENT CHAT DRAWER */}
+      <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
+        <SheetContent
+          side="right"
+          className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--astryx-surface-elevated)] border-l border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)]"
         >
-          <Menu className="h-4 w-4" />
-        </button>
-
-        <Link
-          to="/diagrams"
-          className="flex items-center gap-2 font-semibold text-[13px] text-[var(--text-primary)] tracking-wide"
-        >
-          <Terminal aria-hidden="true" className="h-3.5 w-3.5 text-[var(--accent-amber)]" />
-          AI-DRAKON
-        </Link>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="hidden lg:flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] hover:border-[var(--accent-amber)]/40 transition-colors max-w-[200px]"
-            >
-              <GitBranch className="h-3 w-3 shrink-0 text-[var(--accent-amber)]" />
-              <span className="truncate">
-                {projectsLoading
-                  ? "..."
-                  : activeProject
-                    ? (activeProject.github
-                        ? `${activeProject.github.owner}/${activeProject.github.repo}`
-                        : activeProject.name)
-                    : "Select repo"}
-              </span>
-              <ChevronDown className="h-3 w-3 shrink-0 ml-auto" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            sideOffset={4}
-            className="min-w-[240px] bg-[var(--bg-surface)] border-[var(--border-subtle)] font-mono z-50"
-          >
-            {projectsLoading ? (
-              <DropdownMenuItem disabled className="text-[10px] text-[var(--text-muted)] gap-1.5">
-                <Loader2 className="h-3 w-3 animate-spin" />
-                Завантаження...
-              </DropdownMenuItem>
-            ) : projects.length === 0 ? (
-              <>
-                <DropdownMenuItem disabled className="text-[10px] text-[var(--text-muted)]">
-                  Репозиторії не додані
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  className="text-[10px] text-[var(--accent-amber)] cursor-pointer gap-1.5"
-                  onClick={() => document.dispatchEvent(new CustomEvent("open-add-repo"))}
-                >
-                  <Plus className="h-3 w-3" />
-                  Додати репозиторій
-                </DropdownMenuItem>
-              </>
-            ) : (
-              projects.map((p) => (
-                <DropdownMenuItem
-                  key={p.slug}
-                  onClick={() => setActiveProject(p)}
-                  className={`text-[10px] cursor-pointer gap-2 ${
-                    p.slug === activeProject?.slug
-                      ? "text-[var(--accent-amber)] bg-[var(--accent-dim)]"
-                      : "text-[var(--text-secondary)]"
-                  }`}
-                >
-                  <span className="truncate">
-                    {p.github
-                      ? `${p.github.owner}/${p.github.repo}`
-                      : p.name}
-                  </span>
-                  {p.slug === activeProject?.slug && (
-                    <span className="ml-auto text-[8px] text-[var(--accent-amber)]">✓</span>
-                  )}
-                </DropdownMenuItem>
-              ))
-            )}
-            {!projectsLoading && (
-              <>
-                <DropdownMenuSeparator className="bg-[var(--border-subtle)]" />
-                <DropdownMenuItem
-                  className="text-[10px] text-[var(--text-muted)] cursor-pointer gap-1.5"
-                  onClick={() => document.dispatchEvent(new CustomEvent("open-project-manager"))}
-                >
-                  <Plus className="h-3 w-3" />
-                  Управління репозиторіями
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <span aria-hidden="true" className="hidden lg:block h-3 w-px bg-[var(--border-subtle)] mx-1" />
-
-        <div className="hidden lg:flex items-center gap-1.5 font-mono text-[11px] text-[var(--text-muted)] min-w-0">
-          <Link
-            to={crumb.sectionPath}
-            className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors duration-150"
-          >
-            {crumb.section}
-          </Link>
-          {crumb.sub ? (
-            <>
-              <span>/</span>
-              <span className="truncate">{crumb.sub}</span>
-            </>
-          ) : null}
-        </div>
-
-        <button
-          type="button"
-          onClick={() => setCmdOpen(true)}
-          className="hidden lg:inline-flex items-center gap-1.5 h-5 px-2 rounded border border-[var(--border-subtle)] font-mono text-[10px] text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] transition-colors ml-2"
-          aria-label="Відкрити command palette"
-        >
-          <span>⌘K</span>
-        </button>
-
-        <div className="ml-auto flex items-center gap-0.5">
-          {!location.pathname.startsWith("/agents") && (
-            <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <SheetTrigger asChild>
-                    <button
-                      type="button"
-                      aria-label="Чат з агентом"
-                      className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
-                    >
-                      <Bot className="h-4 w-4" />
-                    </button>
-                  </SheetTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="font-mono text-[11px]">Чат з агентом</TooltipContent>
-              </Tooltip>
-              <SheetContent
-                side="right"
-                className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--bg-surface)] border-l border-[var(--border-subtle)]"
-              >
-                <SheetHeader className="border-b border-[var(--border-subtle)] px-4 py-3">
-                  <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--text-muted)]">
-                    AI-агенти
-                  </SheetTitle>
-                </SheetHeader>
-                <div className="h-[calc(100%-3.25rem)]">
-                  <AgentChatPanel className="h-full" />
-                </div>
-              </SheetContent>
-            </Sheet>
-          )}
-
-          <Tooltip delayDuration={300}>
-            <TooltipTrigger asChild>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-label={theme === "dark" ? "Світла тема" : "Темна тема"}
-                className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)]"
-              >
-                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" className="font-mono text-[11px]">
-              {theme === "dark" ? "Світла тема" : "Темна тема"}
-            </TooltipContent>
-          </Tooltip>
-
-          <AlertDialog>
-            <Tooltip delayDuration={300}>
-              <TooltipTrigger asChild>
-                <AlertDialogTrigger asChild>
-                  <button
-                    type="button"
-                    aria-label="Вийти"
-                    className="inline-flex h-6 w-6 items-center justify-center rounded text-[var(--text-muted)] hover:bg-white/5 hover:text-[var(--text-primary)] active:scale-[0.96] transition-transform duration-75"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </button>
-                </AlertDialogTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="font-mono text-[11px]">Вийти</TooltipContent>
-            </Tooltip>
-            <AlertDialogContent className="bg-[var(--bg-surface)] border border-white/10 rounded-2xl font-sans shadow-2xl">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-[var(--text-primary)] text-base font-semibold">
-                  Вийти з системи?
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-[var(--text-muted)] text-sm">
-                  JWT-токен буде видалено. Потрібно буде увійти знову.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel className="text-sm bg-transparent border border-white/10 text-[var(--text-secondary)] hover:bg-white/5 rounded-xl">
-                  Скасувати
-                </AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={logout}
-                  className="text-sm bg-teal-500 hover:bg-teal-400 text-black font-semibold rounded-xl"
-                >
-                  Вийти
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
-      </header>
-      )}
-
-      {astryxShellEnabled && (
-        <Sheet open={agentsOpen} onOpenChange={setAgentsOpen}>
-          <SheetContent side="right" className="w-full p-0 sm:max-w-[480px] sm:w-[480px] bg-[var(--astryx-surface-elevated)] border-l border-[var(--astryx-border-subtle)] text-[var(--astryx-text-primary)]">
-            <SheetHeader className="border-b border-[var(--astryx-border-subtle)] px-4 py-3">
-              <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--astryx-text-muted)]">AI-агенти</SheetTitle>
-            </SheetHeader>
-            <div className="h-[calc(100%-3.25rem)]"><AgentChatPanel className="h-full" /></div>
-          </SheetContent>
-        </Sheet>
-      )}
+          <SheetHeader className="border-b border-[var(--astryx-border-subtle)] px-4 py-3">
+            <SheetTitle className="font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--astryx-text-muted)]">
+              AI-агенти
+            </SheetTitle>
+          </SheetHeader>
+          <div className="h-[calc(100%-3.25rem)]">
+            <AgentChatPanel className="h-full" />
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* WORKSPACE BODY */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left IconRail */}
-        <div className={cn(
-          "hidden lg:flex w-10 h-full shrink-0 flex-col items-center py-4 select-none",
-          astryxShellEnabled
-            ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]"
-            : "border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]",
-        )}>
+        <div className="hidden lg:flex w-10 h-full shrink-0 flex-col items-center py-4 select-none border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]">
           <div className="flex flex-col items-center gap-5 w-full">
             {iconRailItems.map((item) => {
               const Icon = item.icon;
@@ -718,12 +369,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                         data-variant="ghost"
                         data-size="sm"
                         data-testid={`iconrail-item-${item.id}-disabled`}
-                        className={cn(
-                          "flex h-7 w-7 cursor-not-allowed items-center justify-center opacity-40 select-none",
-                          astryxShellEnabled
-                            ? "rounded-[var(--astryx-radius-sm)] text-[var(--astryx-text-muted)]"
-                            : "rounded-[var(--radius-sm)] text-[var(--text-muted)]",
-                        )}
+                        className="flex h-7 w-7 cursor-not-allowed items-center justify-center opacity-40 select-none rounded-[var(--astryx-radius-sm)] text-[var(--astryx-text-muted)]"
                       >
                         <Icon className="h-4 w-4" />
                       </div>
@@ -744,20 +390,10 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                       data-size="sm"
                       data-testid={`iconrail-item-${item.id}`}
                       className={cn(
-                        "flex h-7 w-7 items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2",
-                        astryxShellEnabled
-                          ? cn(
-                              "rounded-[var(--astryx-radius-sm)] focus-visible:ring-[var(--astryx-border-focus)]",
-                              active
-                                ? "bg-[var(--astryx-color-brand-light)] text-[var(--astryx-color-brand)]"
-                                : "text-[var(--astryx-text-secondary)] hover:bg-[var(--astryx-surface-secondary)] hover:text-[var(--astryx-text-primary)]",
-                            )
-                          : cn(
-                              "rounded-[var(--radius-sm)] focus-visible:ring-[var(--accent-amber)]",
-                              active
-                                ? "bg-[var(--accent-dim)] text-[var(--accent-amber)]"
-                                : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]",
-                            ),
+                        "flex h-7 w-7 items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 rounded-[var(--astryx-radius-sm)] focus-visible:ring-[var(--astryx-border-focus)]",
+                        active
+                          ? "bg-[var(--astryx-color-brand-light)] text-[var(--astryx-color-brand)]"
+                          : "text-[var(--astryx-text-secondary)] hover:bg-[var(--astryx-surface-secondary)] hover:text-[var(--astryx-text-primary)]",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -772,34 +408,20 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           </div>
         </div>
 
+        {/* Sidebar */}
         <aside className={cn(
-          "hidden lg:flex h-full shrink-0 flex-col transition-[width] duration-200 overflow-hidden",
-          astryxShellEnabled
-            ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]"
-            : "border-r border-[var(--border-subtle)] bg-[var(--bg-surface)]",
+          "hidden lg:flex h-full shrink-0 flex-col transition-[width] duration-200 overflow-hidden border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]",
           navCollapsed ? "w-0 border-r-0" : "w-64",
         )}>
-          {astryxShellEnabled ? (
-            <>
-              <div className="border-b border-[var(--astryx-border-subtle)]"><ProjectSelector /></div>
-              <AstryxSideNav />
-            </>
-          ) : (
-            <>
-              <div className="border-b border-[var(--border-subtle)]"><ProjectSelector /></div>
-              <nav aria-label="Основна навігація" className="flex-1 overflow-y-auto p-2">
-                <NavDivider label="Робочий простір" />
-                <NavSection items={NAV_WORKSPACE} isActive={isActive} />
-                <NavDivider label="Система" />
-                <NavSection items={NAV_SYSTEM} isActive={isActive} />
-              </nav>
-            </>
-          )}
-
+          <div className="border-b border-[var(--astryx-border-subtle)]">
+            <ProjectSelector />
+          </div>
+          <AstryxSideNav />
           <DevCyclePanel />
           <AgentStatusBar />
         </aside>
 
+        {/* Navigation Collapse Toggle Button */}
         <button
           type="button"
           onClick={() => {
@@ -812,12 +434,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           data-variant="ghost"
           data-size="sm"
           data-testid="nav-collapse-toggle"
-          className={cn(
-            "hidden lg:flex h-full w-2 shrink-0 items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1",
-            astryxShellEnabled
-              ? "border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)] focus-visible:ring-[var(--astryx-border-focus)]"
-              : "border-r border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] focus-visible:ring-[var(--accent-amber)]",
-          )}
+          className="hidden lg:flex h-full w-2 shrink-0 items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)] focus-visible:ring-[var(--astryx-border-focus)]"
         >
           {navCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
         </button>
@@ -840,12 +457,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
             data-variant="ghost"
             data-size="sm"
             data-testid="evidence-collapse-toggle"
-            className={cn(
-              "flex w-full h-2 shrink-0 items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1",
-              astryxShellEnabled
-                ? "border-t border-b border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)] focus-visible:ring-[var(--astryx-border-focus)]"
-                : "border-t border-b border-[var(--border-subtle)] bg-[var(--bg-elevated)] hover:bg-[var(--accent-dim)] text-[var(--text-secondary)] hover:text-[var(--accent-amber)] focus-visible:ring-[var(--accent-amber)]",
-            )}
+            className="flex w-full h-2 shrink-0 items-center justify-center transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-1 border-t border-b border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)] hover:bg-[var(--astryx-color-brand-light)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-color-brand)] focus-visible:ring-[var(--astryx-border-focus)]"
           >
             {evidenceCollapsed ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </button>
@@ -853,11 +465,11 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           {/* Evidence Drawer Content Panel */}
           <div
             className={cn(
-              "w-full bg-[var(--bg-surface)] border-t border-[var(--border-subtle)] transition-[height] duration-200 overflow-hidden flex flex-col shrink-0",
+              "w-full bg-[var(--astryx-surface-elevated)] border-t border-[var(--astryx-border-subtle)] transition-[height] duration-200 overflow-hidden flex flex-col shrink-0",
               evidenceCollapsed ? "h-0 border-t-0" : "h-[300px]",
             )}
           >
-            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] px-3 py-1 bg-[var(--bg-surface)] shrink-0">
+            <div className="flex items-center justify-between border-b border-[var(--astryx-border-subtle)] px-3 py-1 bg-[var(--astryx-surface-elevated)] shrink-0">
               <div className="flex gap-4">
                 <button
                   type="button"
@@ -865,8 +477,8 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                   className={cn(
                     "font-mono text-[10px] uppercase tracking-[0.2em] font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors",
                     activeTab === 'evidence' 
-                      ? "text-[var(--accent-amber)] border-[var(--accent-amber)]" 
-                      : "text-[var(--text-muted)] border-transparent hover:text-[var(--text-secondary)]"
+                      ? "text-[var(--astryx-color-brand)] border-[var(--astryx-color-brand)]"
+                      : "text-[var(--astryx-text-muted)] border-transparent hover:text-[var(--astryx-text-secondary)]"
                   )}
                 >
                   EVIDENCE
@@ -877,8 +489,8 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                   className={cn(
                     "font-mono text-[10px] uppercase tracking-[0.2em] font-semibold cursor-pointer pb-0.5 border-b-2 transition-colors",
                     activeTab === 'comments' 
-                      ? "text-[var(--accent-amber)] border-[var(--accent-amber)]" 
-                      : "text-[var(--text-muted)] border-transparent hover:text-[var(--text-secondary)]"
+                      ? "text-[var(--astryx-color-brand)] border-[var(--astryx-color-brand)]"
+                      : "text-[var(--astryx-text-muted)] border-transparent hover:text-[var(--astryx-text-secondary)]"
                   )}
                 >
                   COMMENTS {selectedNode && `(#${selectedNode.id})`}
@@ -886,11 +498,11 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-3 text-[var(--text-secondary)] flex flex-col min-h-0">
+            <div className="flex-1 overflow-y-auto p-3 text-[var(--astryx-text-secondary)] flex flex-col min-h-0">
               {activeTab === 'evidence' ? (
                 evidenceLoading ? (
-                  <div className="flex items-center justify-center h-full gap-2 text-[var(--text-muted)] font-mono text-[11px]">
-                    <span className="animate-spin h-3 w-3 border-b-2 border-amber-500 rounded-full inline-block" />
+                  <div className="flex items-center justify-center h-full gap-2 text-[var(--astryx-text-muted)] font-mono text-[11px]">
+                    <span className="animate-spin h-3 w-3 border-b-2 border-[var(--astryx-color-brand)] rounded-full inline-block" />
                     Аналіз впливу…
                   </div>
                 ) : evidenceData ? (
@@ -898,7 +510,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                     <pre className="whitespace-pre-wrap leading-relaxed">{evidenceData}</pre>
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-full text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)] text-[11px] font-mono">
+                  <div className="flex items-center justify-center h-full text-[var(--astryx-text-muted)] border border-dashed border-[var(--astryx-border-subtle)] rounded-[var(--astryx-radius-sm)] text-[11px] font-mono">
                     Збережіть діаграму, щоб побачити аналіз впливу змін.
                   </div>
                 )
@@ -906,25 +518,25 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                 /* Comments tab */
                 <div className="flex-1 flex flex-col gap-3 min-h-0">
                   {!selectedNode ? (
-                    <div className="flex-1 flex items-center justify-center text-[var(--text-muted)] border border-dashed border-[var(--border-subtle)] rounded-[var(--radius-sm)] text-[11px] font-mono">
+                    <div className="flex-1 flex items-center justify-center text-[var(--astryx-text-muted)] border border-dashed border-[var(--astryx-border-subtle)] rounded-[var(--astryx-radius-sm)] text-[11px] font-mono">
                       Виберіть один вузол на діаграмі, щоб переглянути або залишити коментарі.
                     </div>
                   ) : (
                     <div className="flex-1 flex flex-col gap-2 min-h-0">
                       {/* Comments List */}
-                      <div className="flex-1 overflow-y-auto border border-[var(--border-subtle)] rounded p-2 bg-[var(--bg-elevated)] flex flex-col gap-2">
+                      <div className="flex-1 overflow-y-auto border border-[var(--astryx-border-subtle)] rounded-[var(--astryx-radius-sm)] p-2 bg-[var(--astryx-surface-page)] flex flex-col gap-2">
                         {(!allComments[selectedNode.id] || allComments[selectedNode.id].length === 0) ? (
-                          <div className="text-[var(--text-muted)] text-[11px] italic p-2 font-mono">
+                          <div className="text-[var(--astryx-text-muted)] text-[11px] italic p-2 font-mono">
                             Коментарів до вузла {selectedNode.content} ще немає. Будьте першим!
                           </div>
                         ) : (
                           allComments[selectedNode.id].map((c: any) => (
-                            <div key={c.id} className="text-[11px] border-b border-[var(--border-subtle)] pb-1.5 last:border-b-0 font-mono">
-                              <div className="flex justify-between text-[10px] text-[var(--text-muted)] mb-0.5">
-                                <span className="font-semibold text-[var(--text-secondary)]">{c.author}</span>
+                            <div key={c.id} className="text-[11px] border-b border-[var(--astryx-border-subtle)] pb-1.5 last:border-b-0 font-mono">
+                              <div className="flex justify-between text-[10px] text-[var(--astryx-text-muted)] mb-0.5">
+                                <span className="font-semibold text-[var(--astryx-text-secondary)]">{c.author}</span>
                                 <span>{new Date(c.timestamp).toLocaleTimeString()}</span>
                               </div>
-                              <div className="text-[var(--text-secondary)]">{c.text}</div>
+                              <div className="text-[var(--astryx-text-secondary)]">{c.text}</div>
                             </div>
                           ))
                         )}
@@ -940,13 +552,13 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handlePostComment();
                           }}
-                          className="flex-1 px-3 py-1.5 text-xs bg-[var(--bg-elevated)] border border-[var(--border-subtle)] rounded text-[var(--astryx-text-primary)] focus:outline-none focus:border-[var(--astryx-border-focus)] font-mono"
+                          className="flex-1 px-3 py-1.5 text-xs bg-[var(--astryx-surface-page)] border border-[var(--astryx-border-subtle)] rounded-[var(--astryx-radius-sm)] text-[var(--astryx-text-primary)] focus:outline-none focus:border-[var(--astryx-border-focus)] font-mono"
                         />
                         <button
                           type="button"
                           onClick={handlePostComment}
                           disabled={!newCommentText.trim()}
-                          className="px-3 py-1.5 text-xs bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] disabled:opacity-50 text-[var(--astryx-color-on-brand)] font-semibold rounded cursor-pointer transition-colors font-mono"
+                          className="px-3 py-1.5 text-xs bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] disabled:opacity-50 text-[var(--astryx-color-on-brand)] font-semibold rounded-[var(--astryx-radius-sm)] cursor-pointer transition-colors font-mono"
                         >
                           Надіслати
                         </button>
