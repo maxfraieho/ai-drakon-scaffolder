@@ -35,10 +35,10 @@
 3. Зберігати файл як `{diagramId}.svg`
 
 **Acceptance criteria:**
-- [ ] Кнопка "Export SVG" в toolbar download-секції
-- [ ] Скачується .svg файл
-- [ ] SVG відкривається в браузері та показує діаграму
-- [ ] SVG можна вставити в markdown: `![diagram](./file.svg)`
+- [x] Кнопка "Export SVG" в toolbar download-секції
+- [x] Скачується .svg файл
+- [x] SVG відкривається в браузері та показує діаграму
+- [x] SVG можна вставити в markdown: `![diagram](./file.svg)`
 
 ---
 
@@ -61,8 +61,8 @@
    ```
 
 **Acceptance criteria:**
-- [ ] `docs/adr/assets/` існує з `.gitkeep`
-- [ ] README або CONTRIBUTING документує конвенцію іменування SVG
+- [x] `docs/adr/assets/` існує з `.gitkeep`
+- [x] README або CONTRIBUTING документує конвенцію іменування SVG
 
 ---
 
@@ -95,11 +95,11 @@
 3. Інтеграція з git hooks (через `.husky/` або `scripts/install-hooks.sh`)
 
 **Acceptance criteria:**
-- [ ] `scripts/adr-immutability-check.sh` існує, виконуваний, протестований
-- [ ] Спроба змінити accepted ADR → hook блокує з зрозумілим повідомленням
-- [ ] Зміна `superseded-by` поля в accepted ADR → дозволено
-- [ ] CI workflow проходить на PR що не чіпає accepted ADRs
-- [ ] CI workflow fail на PR що модифікує accepted ADR
+- [x] `scripts/adr-immutability-check.sh` існує, виконуваний, протестований
+- [x] Спроба змінити accepted ADR → hook блокує з зрозумілим повідомленням
+- [x] Зміна `superseded-by` поля в accepted ADR → дозволено
+- [x] CI workflow проходить на PR що не чіпає accepted ADRs
+- [x] CI workflow fail на PR що модифікує accepted ADR
 
 ---
 
@@ -134,11 +134,11 @@
    - Client-side grep (файли вже в bundle або fetch з API)
 
 **Acceptance criteria:**
-- [ ] `/adr` route відображає timeline всіх 15 ADR
-- [ ] Фільтр за статусом працює
-- [ ] Клік по ADR → показує повний markdown
-- [ ] Search фільтрує по тексту
-- [ ] Supersedes/superseded-by зв'язки видимі
+- [x] `/adr` route відображає timeline всіх 15 ADR
+- [x] Фільтр за статусом працює
+- [x] Клік по ADR → показує повний markdown
+- [x] Search фільтрує по тексту
+- [x] Supersedes/superseded-by зв'язки видимі
 
 ---
 
@@ -159,10 +159,10 @@
    - Якщо superseded → link на заміщуючий ADR
 
 **Acceptance criteria:**
-- [ ] ADR відображається з frontmatter badges
-- [ ] SVG діаграма рендериться inline
-- [ ] Deep-link веде в редактор з правильною діаграмою
-- [ ] Immutability banner для accepted ADR
+- [x] ADR відображається з frontmatter badges
+- [x] SVG діаграма рендериться inline
+- [x] Deep-link веде в редактор з правильною діаграмою
+- [x] Immutability banner для accepted ADR
 
 ---
 

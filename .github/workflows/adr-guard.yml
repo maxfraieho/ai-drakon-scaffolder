@@ -1,0 +1,27 @@
+name: ADR Immutability Guard
+
+on:
+  pull_request:
+    paths:
+      - 'docs/adr/**'
+  push:
+    paths:
+      - 'docs/adr/**'
+
+jobs:
+  adr-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check ADR immutability
+        run: |
+          BASE_REF="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          CHANGED=$(git diff --name-only "$BASE_REF"...HEAD -- 'docs/adr/0*.md' 'docs/adr/assets/0*.svg' 2>/dev/null || git diff --name-only HEAD~1 -- 'docs/adr/0*.md' 'docs/adr/assets/0*.svg' 2>/dev/null || true)
+          if [ -n "$CHANGED" ]; then
+            DIFF_BASE="$BASE_REF...HEAD" bash scripts/adr-immutability-check.sh $CHANGED
+          else
+            echo "✅ No ADR files modified."
+          fi

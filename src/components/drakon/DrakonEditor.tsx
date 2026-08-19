@@ -1100,6 +1100,25 @@ console.error('Export pseudocode failed:', err);
 }
 }, [diagramId, diagramName]);
 
+const handleExportSvg = useCallback(() => {
+    if (!widgetRef.current) return;
+    try {
+      const canvas = widgetRef.current.exportCanvas(10000);
+      const pngDataUrl = canvas.toDataURL('image/png');
+      const w = canvas.width;
+      const h = canvas.height;
+      const svgContent = `<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">\n  <image xlink:href="${pngDataUrl}" width="${w}" height="${h}"/>\n</svg>`;
+      const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+      const link = document.createElement('a');
+      link.download = `${diagramId}.svg`;
+      link.href = URL.createObjectURL(blob);
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch {
+      console.error('Export SVG failed - may require canvasIcons mode');
+    }
+  }, [diagramId]);
+
 // DRAKON icon types for the toolbar — standard DRAKON notation icons
 const iconButtons = [
 { type: 'action', img: iconAction, label: t.drakonEditor.action },
@@ -1293,6 +1312,10 @@ disabled={isLoading}
 <Button variant="outline" size="sm" onClick={handleExportPng} disabled={isLoading} title="Зберегти як PNG">
 <Download className="h-4 w-4 md:mr-1" />
 <span className="hidden md:inline">Зберегти як PNG</span>
+</Button>
+<Button variant="outline" size="sm" onClick={handleExportSvg} disabled={isLoading} title="Зберегти як SVG">
+<Download className="h-4 w-4 md:mr-1" />
+<span className="hidden md:inline">SVG</span>
 </Button>
 </div>
 </div>
