@@ -1,8 +1,7 @@
 import { Navigate, createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
-import { hasClientJwt } from "@/lib/route-auth";
+import { hasClientJwt, useHydrated } from "@/lib/route-auth";
 import { LoginPage } from "@/pages/LoginPage";
 import { useAuth } from "@/context/AuthContext";
 
@@ -11,9 +10,8 @@ component: LoginRoute,
 });
 
 function LoginRoute() {
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useHydrated();
   const { isAuthenticated, isLoading } = useAuth();
-  useEffect(() => setHydrated(true), []);
 
   // Show spinner while auth is loading to prevent flash of empty page
   if (!hydrated || isLoading) {

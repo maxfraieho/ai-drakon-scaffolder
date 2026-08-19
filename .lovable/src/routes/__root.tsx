@@ -1,5 +1,5 @@
-import { type ReactNode, useEffect, useState } from "react";
-import { hasClientJwt } from "@/lib/route-auth";
+import { type ReactNode, useEffect } from "react";
+import { hasClientJwt, HydratedProvider, useHydrated } from "@/lib/route-auth";
 import { client } from "@/lib/appwrite";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
@@ -147,10 +147,16 @@ function RootComponent() {
 
   useEffect(() => { client.ping(); }, []);
 
+  return (
+    <HydratedProvider>
+      <RootProviders queryClient={queryClient} />
+    </HydratedProvider>
+  );
+}
 
+function RootProviders({ queryClient }: { queryClient: QueryClient }) {
   const location = useLocation();
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
+  const hydrated = useHydrated();
   const isPublicLanding = hydrated && location.pathname === "/" && !hasClientJwt();
   const hideChrome =
     location.pathname === "/login" || location.pathname.startsWith("/pipeline/") || isPublicLanding;
