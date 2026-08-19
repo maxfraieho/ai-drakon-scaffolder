@@ -9,6 +9,8 @@
 
 ## T-401: SVG Export у DrakonEditor
 
+**РІШЕННЯ ОПЕРАТОРА (2026-08-19): PNG-в-SVG wrapper, найшвидший MVP.** НЕ витрачати час на "чистий SVG з DRAKON JSON" підхід — canvas → PNG base64 → `<svg><image xlink:href="data:image/png;base64,..."/></svg>` wrapper і все. Легше замінити на нативний SVG пізніше окремим ADR/задачею, якщо знадобиться.
+
 **Файл:** `src/components/drakon/DrakonEditor.tsx`
 **Рядки:** після `handleExportPng` (L1071-1082) та `handleExportPseudocode` (L1084-1101)
 
