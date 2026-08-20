@@ -127,6 +127,16 @@ export const ADR_FILES: { filename: string; number: string }[] = [
   { filename: '0013-single-github-project-config.md', number: '0013' },
   { filename: '0014-pilot-project-vydra-swiss-survey.md', number: '0014' },
   { filename: '0015-drakon-embedded-adr-documentation.md', number: '0015' },
+  { filename: '0016-product-reframing-spec-driven-meta-harness-saas.md', number: '0016' },
+  { filename: '0017-monorepo-with-workspace-tooling.md', number: '0017' },
+  { filename: '0018-appwrite-cloudflare-responsibility-split.md', number: '0018' },
+  { filename: '0019-mcp-exposure-model.md', number: '0019' },
+  { filename: '0020-policy-engine-design.md', number: '0020' },
+  { filename: '0021-knowledge-plane-design.md', number: '0021' },
+  { filename: '0022-harness-adapter-abstraction.md', number: '0022' },
+  { filename: '0023-model-provider-routing-strategy.md', number: '0023' },
+  { filename: '0024-audit-and-trace-model.md', number: '0024' },
+  { filename: '0025-tenancy-boundary.md', number: '0025' },
 ];
 
 /**
