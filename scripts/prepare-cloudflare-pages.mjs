@@ -5,9 +5,8 @@ const root = process.cwd();
 const targetDir = path.join(root, "dist");
 
 const sourceCandidates = [
-  path.join(root, ".lovable", "dist", "client"),
+  path.join(root, ".output", "public"),
   path.join(root, "dist", "client"),
-  path.join(root, ".lovable", "dist"),
   path.join(root, "dist"),
 ];
 
@@ -48,7 +47,9 @@ if (sourceDir === targetDir) {
 
 const sourceInsideTarget = sourceDir.startsWith(`${targetDir}${path.sep}`);
 
-// Якщо source знаходиться всередині dist (наприклад dist/client), не чистимо весь dist.
+// Only wipe the target dist/ dir when the source lives outside of it
+// (e.g. .output/public or a legacy dist/client), never when copying from
+// a nested dist subfolder into dist itself.
 if (!sourceInsideTarget) {
   fs.rmSync(targetDir, { recursive: true, force: true });
 }

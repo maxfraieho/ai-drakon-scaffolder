@@ -31,18 +31,16 @@ dist-ssr
 *.sln
 *.sw?
 
-# Lovable — platform-specific lockfile/modules not committed
-.lovable/package-lock.json
-.lovable/node_modules/
-
 # Environment secrets (never commit)
 .env
 .env.local
 
-# Python caches
+# Python caches & virtual environments
 **/__pycache__/
 *.pyc
 *.pyo
+.venv/
+**/.venv/
 services/**/.env
 
 # MemPalace per-project files (issue #185)
@@ -53,7 +51,7 @@ entities.json
 services/*/.flue-vite/
 services/*/.flue-vite.wrangler.jsonc
 
-# Scratch dev scripts and assets
+# Scratch dev scripts, analysis cache and assets
 mock_worker.js
 qwen_mcp_config.json
 development/
@@ -62,5 +60,8 @@ development/
 *.py
 execution-prompt-ua-integration.md
 services/deterministic-engine/package-lock.json
-
-
+res.txt
+gn_res.txt
+tools_raw.txt
+cloudflare-worker/generated-analysis-cache.js
+.lovable/

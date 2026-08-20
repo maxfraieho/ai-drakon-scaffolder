@@ -5,7 +5,7 @@ const root = process.cwd();
 const distDir = path.join(root, "dist");
 
 const serverCandidates = [
-  path.join(root, ".lovable", "dist", "server"),
+  path.join(root, ".output", "server"),
   path.join(root, "dist", "server"),
 ];
 
@@ -25,12 +25,11 @@ if (!serverDir) {
   );
 }
 
-
-// Видаляємо functions/ — НЕ використовуємо!
+// Remove any stale functions/ dir -- it conflicts with the _worker.js approach!
 fs.rmSync(path.join(root, "functions"), { recursive: true, force: true });
 
-// ТанStack Start/Nitro (vite 7) генерує server bundle як index.mjs + _libs/_ssr/_chunks.
-// Копіюємо весь server bundle в dist/server, щоб _worker.js міг імпортувати entry напряму.
+// TanStack Start/Nitro (vite 7) emits a server bundle as index.mjs + _libs/_ssr/_chunks.
+// Copy that server bundle into dist/server, then write a _worker.js that wraps its entry.
 const targetServerDir = path.join(distDir, "server");
 const sourceInsideTarget =
   serverDir === targetServerDir ||
@@ -50,10 +49,10 @@ if (!serverEntry) {
   throw new Error(`Cannot detect server entry in ${targetServerDir}`);
 }
 
-// Створюємо _worker.js
-// worker-entry експортує handler як named export (напр. `w`),
-// а index.js re-експортує його як default. Імпортуємо ВСІ named exports
-// і шукаємо той, у якого є .fetch().
+// Write _worker.js
+// The worker-entry may export the handler as a named export (e.g. `w`),
+// while index.js re-exports it as default. Check both named exports
+// and default, then fall back to .fetch().
 const importPath = `./server/${serverEntry}`;
 const workerCode = `import * as entry from "${importPath}";
 
@@ -79,7 +78,7 @@ export default {
     const url = new URL(request.url);
     const pathname = url.pathname;
 
-    // Статичні assets (JS/CSS/шрифти тощо) — завжди через env.ASSETS
+    // Static assets (JS/CSS/images etc.) -- serve directly via env.ASSETS
     if (STATIC_PATH_RE.test(pathname) || STATIC_EXT_RE.test(pathname)) {
       const assetRes = await env.ASSETS.fetch(request);
       if (assetRes.status !== 404) return assetRes;
@@ -94,7 +93,7 @@ export default {
       }
     }
 
-    // Fallback — спробувати знайти статичний файл (наприклад favicon.ico з кореня)
+    // Fallback -- serve raw static asset (e.g. favicon.ico etc.)
     return env.ASSETS.fetch(request);
   },
 };

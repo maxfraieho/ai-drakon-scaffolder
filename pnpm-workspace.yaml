@@ -1,0 +1,11 @@
+packages:
+  - 'services/*'
+onlyBuiltDependencies:
+  - '@google/genai'
+  - '@mongodb-js/zstd'
+  - core-js-pure
+  - esbuild
+  - node-liblzma
+  - protobufjs
+  - workerd
+nodeLinker: hoisted
