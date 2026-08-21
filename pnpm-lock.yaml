@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@ai-drakon/harness-contract':
+        specifier: workspace:*
+        version: link:packages/harness-contract
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.9.1(@standard-schema/spec@1.1.0)(ajv@8.20.0)(react-hook-form@7.85.0(react@19.2.8))(valibot@1.4.2(typescript@5.9.3))(zod@3.25.76)
@@ -262,6 +265,8 @@ importers:
         specifier: ^4.90.0
         version: 4.124.0(@cloudflare/workers-types@4.20260702.1)
 
+  packages/harness-contract: {}
+
   services/architect-agent-flue:
     dependencies:
       '@flue/runtime':
@@ -300,6 +305,10 @@ importers:
         version: 4.124.0(@cloudflare/workers-types@4.20260702.1)
 
   services/deterministic-engine:
+    dependencies:
+      '@ai-drakon/harness-contract':
+        specifier: workspace:*
+        version: link:../../packages/harness-contract
     devDependencies:
       '@types/node':
         specifier: ^22.0.0
@@ -3890,6 +3899,7 @@ packages:
   eslint@9.39.5:
     resolution: {integrity: sha512-DgZS62aPLXKlnxILS/AYCoRvHaZeXceIzlXPkkGGzJWSow1aEk0lbTlxUSlyjC8jcaKxAdOnTDz+o1JFSBsyjw==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
+    deprecated: This version is no longer supported. Please see https://eslint.org/version-support for other options.
     hasBin: true
     peerDependencies:
       jiti: '*'

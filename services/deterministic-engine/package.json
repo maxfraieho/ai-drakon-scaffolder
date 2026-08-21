@@ -7,7 +7,9 @@
     "start": "node dist/main.js",
     "test": "vitest run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@ai-drakon/harness-contract": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "typescript": "^5.0.0",

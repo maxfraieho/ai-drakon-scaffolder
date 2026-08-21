@@ -3,23 +3,11 @@
 // Replaces: SSE direct connection to FastAPI architect-agent
 // Uses: Appwrite Function async execution + polling (same pattern as codegen/compile)
 
-import type { DrakonHarnessSpec } from './harness-spec';
-
-export type PipelineEvent =
-  | { event: 'node_start'; node_id: string; node_type: string }
-  | { event: 'node_done'; node_id: string; tokens: number; gate_verdicts: GateVerdict[] }
-  | { event: 'gate_blocked'; node_id: string; gate: string; reason: string }
-  | { event: 'breakpoint'; node_id: string; error?: string }
-  | { event: 'done'; total_tokens: number; nodes_executed: number }
-  | { event: 'error'; message: string };
-
-export interface GateVerdict {
-  gate: 'confidence' | 'policy' | 'cost' | 'safety';
-  allowed: boolean;
-  score?: number;
-  reason?: string;
-  metadata?: Record<string, any>;
-}
+// DrakonHarnessSpec, GateVerdict and PipelineEvent moved to
+// @ai-drakon/harness-contract (Phase 2 Slice 2) -- re-exported here so
+// every existing import of this module keeps working unchanged.
+export type { DrakonHarnessSpec, GateVerdict, PipelineEvent } from '@ai-drakon/harness-contract';
+import type { DrakonHarnessSpec, PipelineEvent } from '@ai-drakon/harness-contract';
 
 export interface PipelineClientOptions {
   workerBaseUrl: string;
@@ -105,7 +93,7 @@ export class DeterministicPipelineClient {
           callbacks.onError(new Error(poll.error ?? 'Execution failed'));
           return;
         }
-        
+
         // If status === 'processing' or 'waiting', keep polling
       }
 

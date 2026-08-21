@@ -4,43 +4,18 @@
 
 import type { IrItemType } from '../htse/ir-types';
 
-export interface DrakonHarnessSpec {
-  $schema?: string;
-  agent_name: string;
-  version: string;
-  description?: string;
-  mcp_servers: Record<string, {
-    endpoint: string;
-    required: boolean;
-    timeout_ms?: number;
-  }>;
-  allowed_tools: string[];              // capability strings
-  resources: Record<string, string[]>;  // resource scope per domain
-  permissions: {
-    max_tokens_per_hour: number;
-    max_tokens_per_node: number;
-    max_execution_time_seconds: number;
-    max_github_commits_per_day?: number;
-  };
-  runtime: {
-    entrypoint: string;                 // path to .drakon file
-    execution_mode: 'deterministic' | 'hybrid';
-    confidence_threshold: number;       // 0-1, default 0.75
-  };
-  gates: {
-    confidence: { min_score: number; critique_max_retries: number };
-    policy: { allowed_capabilities: string[]; deny_patterns: string[] };
-    cost: { max_tokens_per_node: number; warn_at_percent: number };
-    safety: { blocked_patterns: string[]; require_human_approval: string[] };
-  };
-}
+// DrakonHarnessSpec moved to @ai-drakon/harness-contract (Phase 2 Slice 2)
+// -- re-exported here so every existing import of this module keeps
+// working unchanged.
+export type { DrakonHarnessSpec } from '@ai-drakon/harness-contract';
+import type { DrakonHarnessSpec } from '@ai-drakon/harness-contract';
 
 // Basic runtime validator for DrakonHarnessSpec
 export function validateHarnessSpec(spec: unknown): spec is DrakonHarnessSpec {
   if (typeof spec !== 'object' || spec === null) return false;
-  
+
   const s = spec as Record<string, unknown>;
-  
+
   if (typeof s.agent_name !== 'string' || !s.agent_name) return false;
   if (typeof s.version !== 'string') return false;
   if (typeof s.mcp_servers !== 'object' || s.mcp_servers === null) return false;
@@ -48,7 +23,7 @@ export function validateHarnessSpec(spec: unknown): spec is DrakonHarnessSpec {
   if (typeof s.permissions !== 'object' || s.permissions === null) return false;
   if (typeof s.runtime !== 'object' || s.runtime === null) return false;
   if (typeof s.gates !== 'object' || s.gates === null) return false;
-  
+
   return true;
 }
 

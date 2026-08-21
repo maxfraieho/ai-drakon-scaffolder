@@ -9,21 +9,20 @@
 
 import { Buffer } from "buffer";
 
-export interface GateVerdict {
-  gate: "confidence" | "policy" | "cost" | "safety";
-  allowed: boolean;
-  score?: number;
-  reason?: string;
-  metadata?: Record<string, any>;
-}
-
-export type PipelineEvent =
-  | { event: "node_start"; node_id: string; node_type: string }
-  | { event: "node_done"; node_id: string; tokens: number; gate_verdicts: GateVerdict[] }
-  | { event: "gate_blocked"; node_id: string; gate: string; reason: string }
-  | { event: "breakpoint"; node_id: string; error?: string }
-  | { event: "done"; total_tokens: number; nodes_executed: number }
-  | { event: "error"; message: string };
+// GateVerdict, PipelineEvent and the harness spec shape moved to
+// @ai-drakon/harness-contract (Phase 2 Slice 2). This engine previously
+// declared a narrower local `HarnessSpec` interface (missing $schema,
+// description, mcp_servers, permissions, runtime, and with `resources`
+// optional rather than required); it now imports the canonical, richer
+// `DrakonHarnessSpec` instead. This is a compile-time-only change: nothing
+// in this file constructs a HarnessSpec object literal that the stricter
+// shape would reject, and no runtime behavior depends on which fields are
+// declared required vs optional here. Fields not read by this file's
+// runtime logic today (require_human_approval, $schema, description,
+// mcp_servers, permissions, runtime, allowed_tools) remain unread -- this
+// change does not wire any of them in.
+import type { GateVerdict, PipelineEvent, DrakonHarnessSpec } from "@ai-drakon/harness-contract";
+export type { GateVerdict, PipelineEvent } from "@ai-drakon/harness-contract";
 
 interface DrakonNode {
   type: string;
@@ -39,19 +38,6 @@ interface DrakonNode {
 interface DrakonIr {
   items: Record<string, DrakonNode>;
   [key: string]: any;
-}
-
-interface HarnessSpec {
-  agent_name: string;
-  version: string;
-  gates: {
-    confidence: { min_score: number; critique_max_retries: number };
-    policy: { allowed_capabilities: string[]; deny_patterns: string[] };
-    cost: { max_tokens_per_node: number; warn_at_percent: number };
-    safety: { blocked_patterns: string[]; require_human_approval: string[] };
-  };
-  allowed_tools: string[];
-  resources?: Record<string, string[]>;
 }
 
 // Capability wildcard matching logic
@@ -88,7 +74,7 @@ export default async function main(context: {
 
     let payload: {
       drakon_ir?: DrakonIr;
-      harness_spec?: HarnessSpec;
+      harness_spec?: DrakonHarnessSpec;
       breakpoints?: string[];
     };
 
