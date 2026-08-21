@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { ArrowLeft, Code2, FolderTree, PanelLeftClose, PanelLeftOpen, ShieldCheck } from
 "lucide-react";
@@ -27,11 +27,24 @@ const diagramId = search.diagramId || "";
 const folderId = search.folderId || "general";
 const isNew = search.isNew === "true";
 
-const diagramData = useMemo(() => {
+const storedDiagram = useMemo(() => {
 if (isNew || !diagramId) return undefined;
-const stored = readDiagramsFromStorage().find((d) => d.id === diagramId);
-return stored?.diagram;
+return readDiagramsFromStorage().find((d) => d.id === diagramId);
 }, [isNew, diagramId]);
+
+const diagramData = storedDiagram?.diagram;
+
+// ValidationPanel and MutationLogPanel read from useDiagramStore, which this
+// page never populated -- Validate stayed permanently disabled regardless of
+// backend state. Sync the locally-loaded diagram in so those panels have
+// something to validate. Does not cover unsaved in-widget edits on a brand
+// new diagram before its first save (DrakonEditor keeps that state
+// internally and has no callback that reports the live diagram back out).
+useEffect(() => {
+if (storedDiagram) {
+useDiagramStore.getState().setDiagram(storedDiagram);
+}
+}, [storedDiagram]);
 
 const [validationOpen, setValidationOpen] = useState(false);
 const [codeGenOpen, setCodeGenOpen] = useState(false);
