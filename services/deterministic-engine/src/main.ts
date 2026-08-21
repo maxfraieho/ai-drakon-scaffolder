@@ -24,6 +24,18 @@ import { Buffer } from "buffer";
 import type { GateVerdict, PipelineEvent, DrakonHarnessSpec } from "@ai-drakon/harness-contract";
 export type { GateVerdict, PipelineEvent } from "@ai-drakon/harness-contract";
 
+// Pure 4-gate evaluation logic moved to @ai-drakon/policy-engine (Phase 2
+// Slice 3). Orchestration -- logging, event sequencing, the NotebookLM
+// context-injection mock, and the Math.random()-driven token/branch
+// simulation -- stays here unchanged. See that package's header comment
+// for the exact split rationale.
+import {
+  evaluateSafetyGate,
+  evaluatePolicyGate,
+  evaluateConfidenceGate,
+  evaluateCostGate,
+} from "@ai-drakon/policy-engine";
+
 interface DrakonNode {
   type: string;
   one?: string;
@@ -38,16 +50,6 @@ interface DrakonNode {
 interface DrakonIr {
   items: Record<string, DrakonNode>;
   [key: string]: any;
-}
-
-// Capability wildcard matching logic
-function capabilityMatches(granted: string, requested: string): boolean {
-  if (granted === "*" || granted === requested) return true;
-  if (granted.endsWith(".*")) {
-    const prefix = granted.slice(0, -2);
-    return requested === prefix || requested.startsWith(prefix + ".");
-  }
-  return false;
 }
 
 function sleep(ms: number): Promise<void> {
@@ -157,81 +159,36 @@ export default async function main(context: {
       // Run 4-Gate Control Plane checks
       const verdicts: GateVerdict[] = [];
       let blocked = false;
-      let blockReason = "";
       let blockedGateName: "confidence" | "policy" | "cost" | "safety" | "" = "";
 
       // 1. SAFETY GATE
-      let safetyPassed = true;
-      const nodeContent = (node.content || "") + " " + (node.secondary || "");
-      for (const regex of safetyRegexes) {
-        if (regex.test(nodeContent)) {
-          safetyPassed = false;
-          blockReason = `Safety check failed: node content matched blocked pattern ${regex.source}`;
-          blockedGateName = "safety";
-          break;
-        }
-      }
-      verdicts.push({
-        gate: "safety",
-        allowed: safetyPassed,
-        reason: safetyPassed ? undefined : blockReason,
-      });
+      const safetyVerdict = evaluateSafetyGate((node.content || "") + " " + (node.secondary || ""), safetyRegexes);
+      const safetyPassed = safetyVerdict.allowed;
+      if (!safetyPassed) blockedGateName = "safety";
+      verdicts.push(safetyVerdict);
 
       // 2. POLICY GATE (MCP Capabilities)
-      let policyPassed = true;
-      if (safetyPassed && (node.type === "action" || node.type === "process")) {
-        const isTool = node.nodeKind === "tool" || /tool|mcp/i.test(node.content || "");
-        if (isTool) {
-          // Deduce requested capability, e.g., mcp.gitnexus.query
-          let requestedCap = "tool.invoke.unknown";
-          const content = (node.content || "").trim();
-          
-          // Match capability names from node content or default
-          if (/gitnexus/i.test(content)) {
-            requestedCap = "tool.invoke.gitnexus.query";
-            if (/impact/i.test(content)) requestedCap = "tool.invoke.gitnexus.impact";
-          } else if (/notebooklm/i.test(content)) {
-            requestedCap = "tool.invoke.notebooklm.chat_ask";
-          } else if (/github/i.test(content)) {
-            requestedCap = "github.repo.commit";
-          }
-
-          // Check if capability is authorized
-          const isAllowed = (harness_spec.gates.policy.allowed_capabilities || []).some((pattern) =>
-            capabilityMatches(pattern, requestedCap)
-          );
-          const isDenied = (harness_spec.gates.policy.deny_patterns || []).some((pattern) =>
-            capabilityMatches(pattern, requestedCap)
-          );
-
-          if (!isAllowed || isDenied) {
-            policyPassed = false;
-            blockReason = `Policy check failed: capability '${requestedCap}' is not allowed or explicitly denied.`;
-            blockedGateName = "policy";
-          }
-        }
-      }
-      verdicts.push({
-        gate: "policy",
-        allowed: policyPassed,
-        reason: policyPassed ? undefined : blockReason,
+      const policyVerdict = evaluatePolicyGate({
+        nodeType: node.type,
+        nodeKind: node.nodeKind,
+        nodeContent: node.content || "",
+        safetyPassed,
+        allowedCapabilities: harness_spec.gates.policy.allowed_capabilities,
+        denyPatterns: harness_spec.gates.policy.deny_patterns,
       });
+      const policyPassed = policyVerdict.allowed;
+      if (!policyPassed) blockedGateName = "policy";
+      verdicts.push(policyVerdict);
 
       // 3. CONFIDENCE GATE (LLM Nodes)
-      let confidencePassed = true;
-      let finalScore = 1.0;
       let injectedContext = "";
-
       if (safetyPassed && policyPassed && node.nodeKind === "llm") {
-        const minScore = harness_spec.gates.confidence.min_score || 0.7;
-        const maxRetries = harness_spec.gates.confidence.critique_max_retries || 2;
-        
         // NotebookLM Context Injection
         try {
           // Simulate NotebookLM Bridge API call
           const notebookId = context.req.headers["x-notebooklm-id"] || "default-notebook";
           context.log(`[NotebookLM Bridge] Fetching context for node ${currentNodeId} from notebook ${notebookId}...`);
-          
+
           // Here we would make a real fetch to process.env.NOTEBOOKLM_API_URL
           // For deterministic execution, we mock the retrieved context
           injectedContext = `[NotebookLM Context]: System architecture guidelines require strict type safety and pure functions.`;
@@ -239,36 +196,24 @@ export default async function main(context: {
         } catch (err) {
           context.error(`[NotebookLM Bridge] Failed to inject context: ${err}`);
         }
-
-        // Simulating LLM confidence score
-        // We deterministic-mock it: normally passes (0.85), but if retry triggers we log it
-        let score = 0.65; // start low to simulate a critique-correction loop
-        let retries = 0;
-        
-        while (score < minScore && retries < maxRetries) {
-          retries++;
-          context.log(`[deterministic-engine] Confidence score (${score}) below threshold (${minScore}). Triggering critique retry ${retries}/${maxRetries}...`);
-          score += 0.15; // simulate correction improvement
-        }
-
-        finalScore = score;
-        if (finalScore < minScore) {
-          confidencePassed = false;
-          blockReason = `Confidence check failed: score (${finalScore}) below minimum threshold (${minScore}) after ${retries} critique loops.`;
-          blockedGateName = "confidence";
-        }
       }
-      
-      verdicts.push({
-        gate: "confidence",
-        allowed: confidencePassed,
-        score: node.nodeKind === "llm" ? finalScore : undefined,
-        reason: confidencePassed ? undefined : blockReason,
-        metadata: injectedContext ? { notebooklm_context: injectedContext } : undefined
+
+      const minScore = harness_spec.gates.confidence.min_score || 0.7;
+      const maxRetries = harness_spec.gates.confidence.critique_max_retries || 2;
+      const confidenceResult = evaluateConfidenceGate({
+        shouldEvaluate: safetyPassed && policyPassed && node.nodeKind === "llm",
+        minScore,
+        maxRetries,
+        injectedContext: injectedContext || undefined,
       });
+      for (const attempt of confidenceResult.attempts) {
+        context.log(`[deterministic-engine] Confidence score (${attempt.scoreBefore}) below threshold (${minScore}). Triggering critique retry ${attempt.retry}/${maxRetries}...`);
+      }
+      const confidencePassed = confidenceResult.verdict.allowed;
+      if (!confidencePassed) blockedGateName = "confidence";
+      verdicts.push(confidenceResult.verdict);
 
       // 4. COST GATE (Token limit checking)
-      let costPassed = true;
       let simulatedTokens = 0;
       if (safetyPassed && policyPassed && confidencePassed) {
         if (node.nodeKind === "llm") {
@@ -276,28 +221,29 @@ export default async function main(context: {
         } else if (node.nodeKind === "tool") {
           simulatedTokens = 200; // tool calls cost less
         }
+      }
 
-        const maxTokens = harness_spec.gates.cost.max_tokens_per_node || 8000;
-        const warnPercent = harness_spec.gates.cost.warn_at_percent || 80;
-
-        if (simulatedTokens > maxTokens) {
-          costPassed = false;
-          blockReason = `Cost check failed: node used ${simulatedTokens} tokens, exceeding max limit ${maxTokens}`;
-          blockedGateName = "cost";
-        } else if (simulatedTokens > (maxTokens * warnPercent) / 100) {
-          context.log(`[WARNING] Node '${currentNodeId}' used ${simulatedTokens} tokens, exceeding warning threshold (${warnPercent}% of ${maxTokens})`);
-        }
-
+      const maxTokens = harness_spec.gates.cost.max_tokens_per_node || 8000;
+      const warnPercent = harness_spec.gates.cost.warn_at_percent || 80;
+      const costResult = evaluateCostGate({
+        shouldEvaluate: safetyPassed && policyPassed && confidencePassed,
+        simulatedTokens,
+        maxTokensPerNode: maxTokens,
+        warnAtPercent: warnPercent,
+      });
+      if (costResult.shouldWarn) {
+        context.log(`[WARNING] Node '${currentNodeId}' used ${simulatedTokens} tokens, exceeding warning threshold (${warnPercent}% of ${maxTokens})`);
+      }
+      if (safetyPassed && policyPassed && confidencePassed) {
         totalTokens += simulatedTokens;
       }
-      verdicts.push({
-        gate: "cost",
-        allowed: costPassed,
-        reason: costPassed ? undefined : blockReason,
-      });
+      const costPassed = costResult.verdict.allowed;
+      if (!costPassed) blockedGateName = "cost";
+      verdicts.push(costResult.verdict);
 
       // Check if any gate failed
       blocked = verdicts.some((v) => !v.allowed);
+      const blockReason = verdicts.find((v) => !v.allowed)?.reason || "";
 
       if (blocked) {
         context.log(`[deterministic-engine] Execution blocked at node '${currentNodeId}' by ${blockedGateName} gate. Reason: ${blockReason}`);
@@ -381,15 +327,15 @@ export default async function main(context: {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     context.error(`[deterministic-engine] Critical error: ${msg}`);
-    
+
     const response = {
       success: false,
       events: [{ event: "error", message: msg } as PipelineEvent],
     };
-    
+
     const resultBase64 = Buffer.from(JSON.stringify(response)).toString("base64");
     context.log(`DETERMINISTIC_ENGINE_RESULT:${resultBase64}`);
-    
+
     return context.res.json(response, 500);
   }
 }

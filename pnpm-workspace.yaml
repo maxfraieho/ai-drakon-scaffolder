@@ -1,6 +1,7 @@
 packages:
   - 'services/*'
   - 'packages/harness-contract'
+  - 'packages/policy-engine'
 onlyBuiltDependencies:
   - '@google/genai'
   - '@mongodb-js/zstd'
