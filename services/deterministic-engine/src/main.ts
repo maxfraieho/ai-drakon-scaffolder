@@ -244,7 +244,7 @@ export default async function main(context: {
         try {
           // Simulate NotebookLM Bridge API call
           const notebookId = context.req.headers["x-notebooklm-id"] || "default-notebook";
-          context.log(`[NotebookLM Bridge] Fetching context for node ${id} from notebook ${notebookId}...`);
+          context.log(`[NotebookLM Bridge] Fetching context for node ${currentNodeId} from notebook ${notebookId}...`);
           
           // Here we would make a real fetch to process.env.NOTEBOOKLM_API_URL
           // For deterministic execution, we mock the retrieved context
