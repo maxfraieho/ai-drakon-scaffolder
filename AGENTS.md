@@ -222,6 +222,27 @@ This project is indexed by GitNexus as **ai-drakon-scaffolder** (4053 symbols, 9
 
 <!-- gitnexus:end -->
 
+## GitNexus-First Rule for Agents (ЗАКОН — added 2026-08-21)
+
+**ПЕРЕД читанням будь-якого файлу цього репозиторію** (Read/cat/grep напряму,
+без винятків для Gemini/AGY чи Codex) — спочатку `query`/`context`/`cypher`
+через GitNexus MCP:
+
+```
+query({search_query: "...", repo: "ai-drakon-scaffolder"})
+```
+
+Тільки якщо GitNexus не дав релевантного результату (порожньо / target: N/A) —
+читати файл напряму через `Read(file, offset)`.
+
+**Перед серйозною роботою (рефакторинг, нова фіча, UI-інтеграція)** — перевірити
+свіжість індексу: `gitnexus://repo/ai-drakon-scaffolder/context` або
+`list` (CLI) → звірити `Commit` з `git log -1`. Якщо застарілий — `analyze --force`
+до початку роботи, не після.
+
+Це правило рівнозначно застосовується і до Gemini/antigravity-cli (AGY),
+і до Claude Code, і до Codex — незалежно від того, який агент читає цей файл.
+
 ## Feature: Chrome DevTools Protocol (CDP) Laptop Tunnel
 
 ### Architecture
