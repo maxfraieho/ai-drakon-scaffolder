@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Activity } from 'lucide-react';
+import { ProvenanceChip } from '@/components/harness/ProvenanceChip';
 
 export const Route = createFileRoute('/trace')({
   component: ExecutionTracePage,
@@ -15,7 +16,14 @@ function ExecutionTracePage() {
           </div>
           <div>
             <h1 className="font-mono text-sm uppercase tracking-wider text-[var(--astryx-text-primary)]">Execution Trace</h1>
-            <p className="text-[11px] text-[var(--astryx-text-muted)]">Перегляд історії виконання та вердиктів 4-Gate Control Plane</p>
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] text-[var(--astryx-text-muted)]">Перегляд історії виконання та вердиктів 4-Gate Control Plane</p>
+              <ProvenanceChip
+                label="runtime"
+                detail="policy-engine"
+                title="Gate verdicts shown during pipeline execution are streamed live from the deterministic-engine service (not indexed, not cached)."
+              />
+            </div>
           </div>
         </div>
       </header>
