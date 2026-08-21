@@ -9,138 +9,59 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as WorkspaceRouteImport } from './routes/workspace'
-import { Route as TutorialRouteImport } from './routes/tutorial'
-import { Route as TraceRouteImport } from './routes/trace'
-import { Route as TemplatesRouteImport } from './routes/templates'
-import { Route as SyncRouteImport } from './routes/sync'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as PipelinesRouteImport } from './routes/pipelines'
-import { Route as PipelineRouteImport } from './routes/pipeline'
-import { Route as NotebooksRouteImport } from './routes/notebooks'
-import { Route as MagicRouteImport } from './routes/magic'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as KnowledgeRouteImport } from './routes/knowledge'
-import { Route as GalleryRouteImport } from './routes/gallery'
-import { Route as DiagramsRouteImport } from './routes/diagrams'
-import { Route as DevcycleRouteImport } from './routes/devcycle'
-import { Route as CodegenRouteImport } from './routes/codegen'
-import { Route as ArchitectRouteImport } from './routes/architect'
-import { Route as AgentsRouteImport } from './routes/agents'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as SSlugRouteImport } from './routes/s.$slug'
-import { Route as ProjectNewRouteImport } from './routes/project.new'
-import { Route as PitchDiagramIdRouteImport } from './routes/pitch.$diagramId'
-import { Route as PSlugRouteImport } from './routes/p.$slug'
-import { Route as EditorIdRouteImport } from './routes/editor.$id'
-import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
+import { Route as AdrRouteImport } from './routes/adr'
+import { Route as AgentsRouteImport } from './routes/agents'
+import { Route as ArchitectRouteImport } from './routes/architect'
+import { Route as CodegenRouteImport } from './routes/codegen'
+import { Route as DevcycleRouteImport } from './routes/devcycle'
+import { Route as DiagramsRouteImport } from './routes/diagrams'
+import { Route as GalleryRouteImport } from './routes/gallery'
+import { Route as KnowledgeRouteImport } from './routes/knowledge'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as MagicRouteImport } from './routes/magic'
+import { Route as NotebooksRouteImport } from './routes/notebooks'
+import { Route as PipelineRouteImport } from './routes/pipeline'
+import { Route as PipelinesRouteImport } from './routes/pipelines'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SyncRouteImport } from './routes/sync'
+import { Route as TemplatesRouteImport } from './routes/templates'
+import { Route as TraceRouteImport } from './routes/trace'
+import { Route as TutorialRouteImport } from './routes/tutorial'
+import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as ApiKnowledgeGraphRouteImport } from './routes/api.knowledge-graph'
-import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
-import { Route as PSlugSettingsRouteImport } from './routes/p.$slug.settings'
-import { Route as PSlugPlaypipeRouteImport } from './routes/p.$slug.playpipe'
-import { Route as PSlugOverviewRouteImport } from './routes/p.$slug.overview'
-import { Route as PSlugDocsRouteImport } from './routes/p.$slug.docs'
-import { Route as PSlugAutomationsRouteImport } from './routes/p.$slug.automations'
-import { Route as ApiNotebooklmNotebooksRouteImport } from './routes/api.notebooklm.notebooks'
-import { Route as ApiNotebooklmChatRouteImport } from './routes/api.notebooklm.chat'
-import { Route as ApiMagicGenerateRouteImport } from './routes/api.magic.generate'
+import { Route as DiagramEditorRouteImport } from './routes/diagram.editor'
+import { Route as EditorIdRouteImport } from './routes/editor.$id'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
+import { Route as PitchDiagramIdRouteImport } from './routes/pitch.$diagramId'
+import { Route as ProjectNewRouteImport } from './routes/project.new'
+import { Route as SSlugRouteImport } from './routes/s.$slug'
 import { Route as ApiKnowledgeZonesRouteImport } from './routes/api.knowledge.zones'
+import { Route as ApiMagicGenerateRouteImport } from './routes/api.magic.generate'
+import { Route as ApiNotebooklmChatRouteImport } from './routes/api.notebooklm.chat'
+import { Route as ApiNotebooklmNotebooksRouteImport } from './routes/api.notebooklm.notebooks'
+import { Route as PSlugAutomationsRouteImport } from './routes/p.$slug.automations'
+import { Route as PSlugDocsRouteImport } from './routes/p.$slug.docs'
+import { Route as PSlugOverviewRouteImport } from './routes/p.$slug.overview'
+import { Route as PSlugPlaypipeRouteImport } from './routes/p.$slug.playpipe'
+import { Route as PSlugSettingsRouteImport } from './routes/p.$slug.settings'
+import { Route as PipelinePipelineIdEditRouteImport } from './routes/pipeline.$pipelineId.edit'
+import { Route as ApiKnowledgeZonesZoneIdRouteImport } from './routes/api.knowledge.zones.$zoneId'
 import { Route as PSlugAgentsIndexRouteImport } from './routes/p.$slug.agents.index'
 import { Route as PSlugPlaypipeBuildRouteImport } from './routes/p.$slug.playpipe.build'
-import { Route as ApiKnowledgeZonesZoneIdRouteImport } from './routes/api.knowledge.zones.$zoneId'
-import { Route as PSlugAgentsAgentIdStudioRouteImport } from './routes/p.$slug.agents.$agentId.studio'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm'
+import { Route as PSlugAgentsAgentIdStudioRouteImport } from './routes/p.$slug.agents.$agentId.studio'
 import { Route as ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport } from './routes/api.knowledge.zones.$zoneId.notebooklm.retry'
 
-const WorkspaceRoute = WorkspaceRouteImport.update({
-  id: '/workspace',
-  path: '/workspace',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const TutorialRoute = TutorialRouteImport.update({
-  id: '/tutorial',
-  path: '/tutorial',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TraceRoute = TraceRouteImport.update({
-  id: '/trace',
-  path: '/trace',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TemplatesRoute = TemplatesRouteImport.update({
-  id: '/templates',
-  path: '/templates',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SyncRoute = SyncRouteImport.update({
-  id: '/sync',
-  path: '/sync',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SettingsRoute = SettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PipelinesRoute = PipelinesRouteImport.update({
-  id: '/pipelines',
-  path: '/pipelines',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PipelineRoute = PipelineRouteImport.update({
-  id: '/pipeline',
-  path: '/pipeline',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NotebooksRoute = NotebooksRouteImport.update({
-  id: '/notebooks',
-  path: '/notebooks',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MagicRoute = MagicRouteImport.update({
-  id: '/magic',
-  path: '/magic',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KnowledgeRoute = KnowledgeRouteImport.update({
-  id: '/knowledge',
-  path: '/knowledge',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GalleryRoute = GalleryRouteImport.update({
-  id: '/gallery',
-  path: '/gallery',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiagramsRoute = DiagramsRouteImport.update({
-  id: '/diagrams',
-  path: '/diagrams',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DevcycleRoute = DevcycleRouteImport.update({
-  id: '/devcycle',
-  path: '/devcycle',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CodegenRoute = CodegenRouteImport.update({
-  id: '/codegen',
-  path: '/codegen',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ArchitectRoute = ArchitectRouteImport.update({
-  id: '/architect',
-  path: '/architect',
+const AdrRoute = AdrRouteImport.update({
+  id: '/adr',
+  path: '/adr',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AgentsRoute = AgentsRouteImport.update({
@@ -148,39 +69,94 @@ const AgentsRoute = AgentsRouteImport.update({
   path: '/agents',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ArchitectRoute = ArchitectRouteImport.update({
+  id: '/architect',
+  path: '/architect',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SSlugRoute = SSlugRouteImport.update({
-  id: '/s/$slug',
-  path: '/s/$slug',
+const CodegenRoute = CodegenRouteImport.update({
+  id: '/codegen',
+  path: '/codegen',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ProjectNewRoute = ProjectNewRouteImport.update({
-  id: '/project/new',
-  path: '/project/new',
+const DevcycleRoute = DevcycleRouteImport.update({
+  id: '/devcycle',
+  path: '/devcycle',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PitchDiagramIdRoute = PitchDiagramIdRouteImport.update({
-  id: '/pitch/$diagramId',
-  path: '/pitch/$diagramId',
+const DiagramsRoute = DiagramsRouteImport.update({
+  id: '/diagrams',
+  path: '/diagrams',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PSlugRoute = PSlugRouteImport.update({
-  id: '/p/$slug',
-  path: '/p/$slug',
+const GalleryRoute = GalleryRouteImport.update({
+  id: '/gallery',
+  path: '/gallery',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EditorIdRoute = EditorIdRouteImport.update({
-  id: '/editor/$id',
-  path: '/editor/$id',
+const KnowledgeRoute = KnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DiagramEditorRoute = DiagramEditorRouteImport.update({
-  id: '/diagram/editor',
-  path: '/diagram/editor',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MagicRoute = MagicRouteImport.update({
+  id: '/magic',
+  path: '/magic',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotebooksRoute = NotebooksRouteImport.update({
+  id: '/notebooks',
+  path: '/notebooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelineRoute = PipelineRouteImport.update({
+  id: '/pipeline',
+  path: '/pipeline',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PipelinesRoute = PipelinesRouteImport.update({
+  id: '/pipelines',
+  path: '/pipelines',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SyncRoute = SyncRouteImport.update({
+  id: '/sync',
+  path: '/sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TemplatesRoute = TemplatesRouteImport.update({
+  id: '/templates',
+  path: '/templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TraceRoute = TraceRouteImport.update({
+  id: '/trace',
+  path: '/trace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TutorialRoute = TutorialRouteImport.update({
+  id: '/tutorial',
+  path: '/tutorial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const WorkspaceRoute = WorkspaceRouteImport.update({
+  id: '/workspace',
+  path: '/workspace',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiKnowledgeGraphRoute = ApiKnowledgeGraphRouteImport.update({
@@ -188,44 +164,39 @@ const ApiKnowledgeGraphRoute = ApiKnowledgeGraphRouteImport.update({
   path: '/api/knowledge-graph',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
-  id: '/$pipelineId/edit',
-  path: '/$pipelineId/edit',
-  getParentRoute: () => PipelineRoute,
-} as any)
-const PSlugSettingsRoute = PSlugSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => PSlugRoute,
-} as any)
-const PSlugPlaypipeRoute = PSlugPlaypipeRouteImport.update({
-  id: '/playpipe',
-  path: '/playpipe',
-  getParentRoute: () => PSlugRoute,
-} as any)
-const PSlugOverviewRoute = PSlugOverviewRouteImport.update({
-  id: '/overview',
-  path: '/overview',
-  getParentRoute: () => PSlugRoute,
-} as any)
-const PSlugDocsRoute = PSlugDocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => PSlugRoute,
-} as any)
-const PSlugAutomationsRoute = PSlugAutomationsRouteImport.update({
-  id: '/automations',
-  path: '/automations',
-  getParentRoute: () => PSlugRoute,
-} as any)
-const ApiNotebooklmNotebooksRoute = ApiNotebooklmNotebooksRouteImport.update({
-  id: '/api/notebooklm/notebooks',
-  path: '/api/notebooklm/notebooks',
+const DiagramEditorRoute = DiagramEditorRouteImport.update({
+  id: '/diagram/editor',
+  path: '/diagram/editor',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiNotebooklmChatRoute = ApiNotebooklmChatRouteImport.update({
-  id: '/api/notebooklm/chat',
-  path: '/api/notebooklm/chat',
+const EditorIdRoute = EditorIdRouteImport.update({
+  id: '/editor/$id',
+  path: '/editor/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PitchDiagramIdRoute = PitchDiagramIdRouteImport.update({
+  id: '/pitch/$diagramId',
+  path: '/pitch/$diagramId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectNewRoute = ProjectNewRouteImport.update({
+  id: '/project/new',
+  path: '/project/new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SSlugRoute = SSlugRouteImport.update({
+  id: '/s/$slug',
+  path: '/s/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiKnowledgeZonesRoute = ApiKnowledgeZonesRouteImport.update({
+  id: '/api/knowledge/zones',
+  path: '/api/knowledge/zones',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMagicGenerateRoute = ApiMagicGenerateRouteImport.update({
@@ -233,10 +204,50 @@ const ApiMagicGenerateRoute = ApiMagicGenerateRouteImport.update({
   path: '/api/magic/generate',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiKnowledgeZonesRoute = ApiKnowledgeZonesRouteImport.update({
-  id: '/api/knowledge/zones',
-  path: '/api/knowledge/zones',
+const ApiNotebooklmChatRoute = ApiNotebooklmChatRouteImport.update({
+  id: '/api/notebooklm/chat',
+  path: '/api/notebooklm/chat',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNotebooklmNotebooksRoute = ApiNotebooklmNotebooksRouteImport.update({
+  id: '/api/notebooklm/notebooks',
+  path: '/api/notebooklm/notebooks',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugAutomationsRoute = PSlugAutomationsRouteImport.update({
+  id: '/automations',
+  path: '/automations',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugDocsRoute = PSlugDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugOverviewRoute = PSlugOverviewRouteImport.update({
+  id: '/overview',
+  path: '/overview',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugPlaypipeRoute = PSlugPlaypipeRouteImport.update({
+  id: '/playpipe',
+  path: '/playpipe',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PSlugSettingsRoute = PSlugSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => PSlugRoute,
+} as any)
+const PipelinePipelineIdEditRoute = PipelinePipelineIdEditRouteImport.update({
+  id: '/$pipelineId/edit',
+  path: '/$pipelineId/edit',
+  getParentRoute: () => PipelineRoute,
+} as any)
+const ApiKnowledgeZonesZoneIdRoute = ApiKnowledgeZonesZoneIdRouteImport.update({
+  id: '/$zoneId',
+  path: '/$zoneId',
+  getParentRoute: () => ApiKnowledgeZonesRoute,
 } as any)
 const PSlugAgentsIndexRoute = PSlugAgentsIndexRouteImport.update({
   id: '/agents/',
@@ -248,22 +259,17 @@ const PSlugPlaypipeBuildRoute = PSlugPlaypipeBuildRouteImport.update({
   path: '/build',
   getParentRoute: () => PSlugPlaypipeRoute,
 } as any)
-const ApiKnowledgeZonesZoneIdRoute = ApiKnowledgeZonesZoneIdRouteImport.update({
-  id: '/$zoneId',
-  path: '/$zoneId',
-  getParentRoute: () => ApiKnowledgeZonesRoute,
-} as any)
-const PSlugAgentsAgentIdStudioRoute =
-  PSlugAgentsAgentIdStudioRouteImport.update({
-    id: '/agents/$agentId/studio',
-    path: '/agents/$agentId/studio',
-    getParentRoute: () => PSlugRoute,
-  } as any)
 const ApiKnowledgeZonesZoneIdNotebooklmRoute =
   ApiKnowledgeZonesZoneIdNotebooklmRouteImport.update({
     id: '/notebooklm',
     path: '/notebooklm',
     getParentRoute: () => ApiKnowledgeZonesZoneIdRoute,
+  } as any)
+const PSlugAgentsAgentIdStudioRoute =
+  PSlugAgentsAgentIdStudioRouteImport.update({
+    id: '/agents/$agentId/studio',
+    path: '/agents/$agentId/studio',
+    getParentRoute: () => PSlugRoute,
   } as any)
 const ApiKnowledgeZonesZoneIdNotebooklmRetryRoute =
   ApiKnowledgeZonesZoneIdNotebooklmRetryRouteImport.update({
@@ -274,6 +280,7 @@ const ApiKnowledgeZonesZoneIdNotebooklmRetryRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/adr': typeof AdrRoute
   '/agents': typeof AgentsRoute
   '/architect': typeof ArchitectRoute
   '/codegen': typeof CodegenRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/adr': typeof AdrRoute
   '/agents': typeof AgentsRoute
   '/architect': typeof ArchitectRoute
   '/codegen': typeof CodegenRoute
@@ -365,6 +373,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/adr': typeof AdrRoute
   '/agents': typeof AgentsRoute
   '/architect': typeof ArchitectRoute
   '/codegen': typeof CodegenRoute
@@ -412,6 +421,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/adr'
     | '/agents'
     | '/architect'
     | '/codegen'
@@ -457,6 +467,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/adr'
     | '/agents'
     | '/architect'
     | '/codegen'
@@ -502,6 +513,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/adr'
     | '/agents'
     | '/architect'
     | '/codegen'
@@ -548,6 +560,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdrRoute: typeof AdrRoute
   AgentsRoute: typeof AgentsRoute
   ArchitectRoute: typeof ArchitectRoute
   CodegenRoute: typeof CodegenRoute
@@ -582,130 +595,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/workspace': {
-      id: '/workspace'
-      path: '/workspace'
-      fullPath: '/workspace'
-      preLoaderRoute: typeof WorkspaceRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/tutorial': {
-      id: '/tutorial'
-      path: '/tutorial'
-      fullPath: '/tutorial'
-      preLoaderRoute: typeof TutorialRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/trace': {
-      id: '/trace'
-      path: '/trace'
-      fullPath: '/trace'
-      preLoaderRoute: typeof TraceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/templates': {
-      id: '/templates'
-      path: '/templates'
-      fullPath: '/templates'
-      preLoaderRoute: typeof TemplatesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sync': {
-      id: '/sync'
-      path: '/sync'
-      fullPath: '/sync'
-      preLoaderRoute: typeof SyncRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/settings': {
-      id: '/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pipelines': {
-      id: '/pipelines'
-      path: '/pipelines'
-      fullPath: '/pipelines'
-      preLoaderRoute: typeof PipelinesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pipeline': {
-      id: '/pipeline'
-      path: '/pipeline'
-      fullPath: '/pipeline'
-      preLoaderRoute: typeof PipelineRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/notebooks': {
-      id: '/notebooks'
-      path: '/notebooks'
-      fullPath: '/notebooks'
-      preLoaderRoute: typeof NotebooksRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/magic': {
-      id: '/magic'
-      path: '/magic'
-      fullPath: '/magic'
-      preLoaderRoute: typeof MagicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/knowledge': {
-      id: '/knowledge'
-      path: '/knowledge'
-      fullPath: '/knowledge'
-      preLoaderRoute: typeof KnowledgeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/gallery': {
-      id: '/gallery'
-      path: '/gallery'
-      fullPath: '/gallery'
-      preLoaderRoute: typeof GalleryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/diagrams': {
-      id: '/diagrams'
-      path: '/diagrams'
-      fullPath: '/diagrams'
-      preLoaderRoute: typeof DiagramsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/devcycle': {
-      id: '/devcycle'
-      path: '/devcycle'
-      fullPath: '/devcycle'
-      preLoaderRoute: typeof DevcycleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/codegen': {
-      id: '/codegen'
-      path: '/codegen'
-      fullPath: '/codegen'
-      preLoaderRoute: typeof CodegenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/architect': {
-      id: '/architect'
-      path: '/architect'
-      fullPath: '/architect'
-      preLoaderRoute: typeof ArchitectRouteImport
+    '/adr': {
+      id: '/adr'
+      path: '/adr'
+      fullPath: '/adr'
+      preLoaderRoute: typeof AdrRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/agents': {
@@ -715,53 +616,130 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AgentsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/architect': {
+      id: '/architect'
+      path: '/architect'
+      fullPath: '/architect'
+      preLoaderRoute: typeof ArchitectRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/s/$slug': {
-      id: '/s/$slug'
-      path: '/s/$slug'
-      fullPath: '/s/$slug'
-      preLoaderRoute: typeof SSlugRouteImport
+    '/codegen': {
+      id: '/codegen'
+      path: '/codegen'
+      fullPath: '/codegen'
+      preLoaderRoute: typeof CodegenRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/project/new': {
-      id: '/project/new'
-      path: '/project/new'
-      fullPath: '/project/new'
-      preLoaderRoute: typeof ProjectNewRouteImport
+    '/devcycle': {
+      id: '/devcycle'
+      path: '/devcycle'
+      fullPath: '/devcycle'
+      preLoaderRoute: typeof DevcycleRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pitch/$diagramId': {
-      id: '/pitch/$diagramId'
-      path: '/pitch/$diagramId'
-      fullPath: '/pitch/$diagramId'
-      preLoaderRoute: typeof PitchDiagramIdRouteImport
+    '/diagrams': {
+      id: '/diagrams'
+      path: '/diagrams'
+      fullPath: '/diagrams'
+      preLoaderRoute: typeof DiagramsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/p/$slug': {
-      id: '/p/$slug'
-      path: '/p/$slug'
-      fullPath: '/p/$slug'
-      preLoaderRoute: typeof PSlugRouteImport
+    '/gallery': {
+      id: '/gallery'
+      path: '/gallery'
+      fullPath: '/gallery'
+      preLoaderRoute: typeof GalleryRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/editor/$id': {
-      id: '/editor/$id'
-      path: '/editor/$id'
-      fullPath: '/editor/$id'
-      preLoaderRoute: typeof EditorIdRouteImport
+    '/knowledge': {
+      id: '/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof KnowledgeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/diagram/editor': {
-      id: '/diagram/editor'
-      path: '/diagram/editor'
-      fullPath: '/diagram/editor'
-      preLoaderRoute: typeof DiagramEditorRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/magic': {
+      id: '/magic'
+      path: '/magic'
+      fullPath: '/magic'
+      preLoaderRoute: typeof MagicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notebooks': {
+      id: '/notebooks'
+      path: '/notebooks'
+      fullPath: '/notebooks'
+      preLoaderRoute: typeof NotebooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipeline': {
+      id: '/pipeline'
+      path: '/pipeline'
+      fullPath: '/pipeline'
+      preLoaderRoute: typeof PipelineRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pipelines': {
+      id: '/pipelines'
+      path: '/pipelines'
+      fullPath: '/pipelines'
+      preLoaderRoute: typeof PipelinesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sync': {
+      id: '/sync'
+      path: '/sync'
+      fullPath: '/sync'
+      preLoaderRoute: typeof SyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/templates': {
+      id: '/templates'
+      path: '/templates'
+      fullPath: '/templates'
+      preLoaderRoute: typeof TemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/trace': {
+      id: '/trace'
+      path: '/trace'
+      fullPath: '/trace'
+      preLoaderRoute: typeof TraceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/tutorial': {
+      id: '/tutorial'
+      path: '/tutorial'
+      fullPath: '/tutorial'
+      preLoaderRoute: typeof TutorialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/workspace': {
+      id: '/workspace'
+      path: '/workspace'
+      fullPath: '/workspace'
+      preLoaderRoute: typeof WorkspaceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/knowledge-graph': {
@@ -771,60 +749,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiKnowledgeGraphRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pipeline/$pipelineId/edit': {
-      id: '/pipeline/$pipelineId/edit'
-      path: '/$pipelineId/edit'
-      fullPath: '/pipeline/$pipelineId/edit'
-      preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
-      parentRoute: typeof PipelineRoute
-    }
-    '/p/$slug/settings': {
-      id: '/p/$slug/settings'
-      path: '/settings'
-      fullPath: '/p/$slug/settings'
-      preLoaderRoute: typeof PSlugSettingsRouteImport
-      parentRoute: typeof PSlugRoute
-    }
-    '/p/$slug/playpipe': {
-      id: '/p/$slug/playpipe'
-      path: '/playpipe'
-      fullPath: '/p/$slug/playpipe'
-      preLoaderRoute: typeof PSlugPlaypipeRouteImport
-      parentRoute: typeof PSlugRoute
-    }
-    '/p/$slug/overview': {
-      id: '/p/$slug/overview'
-      path: '/overview'
-      fullPath: '/p/$slug/overview'
-      preLoaderRoute: typeof PSlugOverviewRouteImport
-      parentRoute: typeof PSlugRoute
-    }
-    '/p/$slug/docs': {
-      id: '/p/$slug/docs'
-      path: '/docs'
-      fullPath: '/p/$slug/docs'
-      preLoaderRoute: typeof PSlugDocsRouteImport
-      parentRoute: typeof PSlugRoute
-    }
-    '/p/$slug/automations': {
-      id: '/p/$slug/automations'
-      path: '/automations'
-      fullPath: '/p/$slug/automations'
-      preLoaderRoute: typeof PSlugAutomationsRouteImport
-      parentRoute: typeof PSlugRoute
-    }
-    '/api/notebooklm/notebooks': {
-      id: '/api/notebooklm/notebooks'
-      path: '/api/notebooklm/notebooks'
-      fullPath: '/api/notebooklm/notebooks'
-      preLoaderRoute: typeof ApiNotebooklmNotebooksRouteImport
+    '/diagram/editor': {
+      id: '/diagram/editor'
+      path: '/diagram/editor'
+      fullPath: '/diagram/editor'
+      preLoaderRoute: typeof DiagramEditorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/notebooklm/chat': {
-      id: '/api/notebooklm/chat'
-      path: '/api/notebooklm/chat'
-      fullPath: '/api/notebooklm/chat'
-      preLoaderRoute: typeof ApiNotebooklmChatRouteImport
+    '/editor/$id': {
+      id: '/editor/$id'
+      path: '/editor/$id'
+      fullPath: '/editor/$id'
+      preLoaderRoute: typeof EditorIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pitch/$diagramId': {
+      id: '/pitch/$diagramId'
+      path: '/pitch/$diagramId'
+      fullPath: '/pitch/$diagramId'
+      preLoaderRoute: typeof PitchDiagramIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/project/new': {
+      id: '/project/new'
+      path: '/project/new'
+      fullPath: '/project/new'
+      preLoaderRoute: typeof ProjectNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/s/$slug': {
+      id: '/s/$slug'
+      path: '/s/$slug'
+      fullPath: '/s/$slug'
+      preLoaderRoute: typeof SSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/knowledge/zones': {
+      id: '/api/knowledge/zones'
+      path: '/api/knowledge/zones'
+      fullPath: '/api/knowledge/zones'
+      preLoaderRoute: typeof ApiKnowledgeZonesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/magic/generate': {
@@ -834,12 +805,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMagicGenerateRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/knowledge/zones': {
-      id: '/api/knowledge/zones'
-      path: '/api/knowledge/zones'
-      fullPath: '/api/knowledge/zones'
-      preLoaderRoute: typeof ApiKnowledgeZonesRouteImport
+    '/api/notebooklm/chat': {
+      id: '/api/notebooklm/chat'
+      path: '/api/notebooklm/chat'
+      fullPath: '/api/notebooklm/chat'
+      preLoaderRoute: typeof ApiNotebooklmChatRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/api/notebooklm/notebooks': {
+      id: '/api/notebooklm/notebooks'
+      path: '/api/notebooklm/notebooks'
+      fullPath: '/api/notebooklm/notebooks'
+      preLoaderRoute: typeof ApiNotebooklmNotebooksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug/automations': {
+      id: '/p/$slug/automations'
+      path: '/automations'
+      fullPath: '/p/$slug/automations'
+      preLoaderRoute: typeof PSlugAutomationsRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/docs': {
+      id: '/p/$slug/docs'
+      path: '/docs'
+      fullPath: '/p/$slug/docs'
+      preLoaderRoute: typeof PSlugDocsRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/overview': {
+      id: '/p/$slug/overview'
+      path: '/overview'
+      fullPath: '/p/$slug/overview'
+      preLoaderRoute: typeof PSlugOverviewRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/playpipe': {
+      id: '/p/$slug/playpipe'
+      path: '/playpipe'
+      fullPath: '/p/$slug/playpipe'
+      preLoaderRoute: typeof PSlugPlaypipeRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/p/$slug/settings': {
+      id: '/p/$slug/settings'
+      path: '/settings'
+      fullPath: '/p/$slug/settings'
+      preLoaderRoute: typeof PSlugSettingsRouteImport
+      parentRoute: typeof PSlugRoute
+    }
+    '/pipeline/$pipelineId/edit': {
+      id: '/pipeline/$pipelineId/edit'
+      path: '/$pipelineId/edit'
+      fullPath: '/pipeline/$pipelineId/edit'
+      preLoaderRoute: typeof PipelinePipelineIdEditRouteImport
+      parentRoute: typeof PipelineRoute
+    }
+    '/api/knowledge/zones/$zoneId': {
+      id: '/api/knowledge/zones/$zoneId'
+      path: '/$zoneId'
+      fullPath: '/api/knowledge/zones/$zoneId'
+      preLoaderRoute: typeof ApiKnowledgeZonesZoneIdRouteImport
+      parentRoute: typeof ApiKnowledgeZonesRoute
     }
     '/p/$slug/agents/': {
       id: '/p/$slug/agents/'
@@ -855,12 +882,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PSlugPlaypipeBuildRouteImport
       parentRoute: typeof PSlugPlaypipeRoute
     }
-    '/api/knowledge/zones/$zoneId': {
-      id: '/api/knowledge/zones/$zoneId'
-      path: '/$zoneId'
-      fullPath: '/api/knowledge/zones/$zoneId'
-      preLoaderRoute: typeof ApiKnowledgeZonesZoneIdRouteImport
-      parentRoute: typeof ApiKnowledgeZonesRoute
+    '/api/knowledge/zones/$zoneId/notebooklm': {
+      id: '/api/knowledge/zones/$zoneId/notebooklm'
+      path: '/notebooklm'
+      fullPath: '/api/knowledge/zones/$zoneId/notebooklm'
+      preLoaderRoute: typeof ApiKnowledgeZonesZoneIdNotebooklmRouteImport
+      parentRoute: typeof ApiKnowledgeZonesZoneIdRoute
     }
     '/p/$slug/agents/$agentId/studio': {
       id: '/p/$slug/agents/$agentId/studio'
@@ -868,13 +895,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$slug/agents/$agentId/studio'
       preLoaderRoute: typeof PSlugAgentsAgentIdStudioRouteImport
       parentRoute: typeof PSlugRoute
-    }
-    '/api/knowledge/zones/$zoneId/notebooklm': {
-      id: '/api/knowledge/zones/$zoneId/notebooklm'
-      path: '/notebooklm'
-      fullPath: '/api/knowledge/zones/$zoneId/notebooklm'
-      preLoaderRoute: typeof ApiKnowledgeZonesZoneIdNotebooklmRouteImport
-      parentRoute: typeof ApiKnowledgeZonesZoneIdRoute
     }
     '/api/knowledge/zones/$zoneId/notebooklm/retry': {
       id: '/api/knowledge/zones/$zoneId/notebooklm/retry'
@@ -975,6 +995,7 @@ const ApiKnowledgeZonesRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdrRoute: AdrRoute,
   AgentsRoute: AgentsRoute,
   ArchitectRoute: ArchitectRoute,
   CodegenRoute: CodegenRoute,
