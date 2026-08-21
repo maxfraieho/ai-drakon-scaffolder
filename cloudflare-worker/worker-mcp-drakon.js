@@ -33,24 +33,159 @@ function _normalizeIr(ir) {
   };
 }
 
-function validateIrDeterministic(irPayload) {
+// Reconciled with src/lib/htse/ir-validator-core.ts (Phase 2 Slice 4). This
+// used to be a 4-rule subset (SCHEMA_REQUIRED_FIELD x2, INVALID_ITEM_TYPE,
+// DANGLING_REFERENCE) missing MULTIPLE_TERMINAL_CANDIDATE, MISSING_HEADER,
+// ORPHAN_NODE (BFS reachability) and MISSING_ALT_VECTOR entirely, and always
+// returned an empty `autofixes` array. It now runs the exact same rule set,
+// in the exact same order, as the canonical validator -- this is the single
+// source of truth for IR validation logic.
+//
+// Real, user-visible consequences of this reconciliation (named explicitly,
+// not hidden): src/components/htse/ValidationPanel.tsx already has UI code
+// for previewing/applying `autofixes` (Preview fixes button, autofix list)
+// that has been dead since it shipped, because the remote validator (this
+// function, via POST /v1/drakon/validate-ir) never populated that array --
+// only local/canonical validation did. That UI will start working for the
+// first time once this ships. Also, `issue.code` is rendered directly in
+// that panel, so the DANGLING_REFERENCE -> DANGLING_POINTER rename below is
+// a visible label change, not just an internal one.
+//
+// One intentional, narrow deviation from canonical: canonical's `success`
+// field is hardcoded `true` regardless of validity. Confirmed via direct
+// grep across the whole repo (worker call sites, src/lib/htse/diagram-to-ir.ts,
+// src/store/useDiagramStore.ts, src/components/htse/ValidationPanel.tsx, and
+// every existing test) that nothing anywhere reads `.success` from this
+// function's result -- only `.valid`, `.issues`, `.autofixes` and
+// `.normalizedIr` are ever consulted. This function's result is exposed
+// directly as an HTTP response body (POST .../validate-ir) and as the
+// `drakon.validateir` MCP tool result, both externally visible to callers
+// outside this repo, so `success` is deliberately kept meaningful (`= valid`)
+// here rather than adopting canonical's always-true quirk, to avoid a silent
+// external contract change for anything that might reasonably check it.
+export function validateIrDeterministic(irPayload) {
   const issues = [];
   const autofixes = [];
   const normalizedIr = _normalizeIr(irPayload);
-  if (!normalizedIr.name) issues.push({ code: 'SCHEMA_REQUIRED_FIELD', severity: 'error', message: 'Field "name" is required.' });
-  if (!_isObject(normalizedIr.items) || Object.keys(normalizedIr.items).length === 0)
+
+  if (!normalizedIr.name) {
+    issues.push({ code: 'SCHEMA_REQUIRED_FIELD', severity: 'error', message: 'Field "name" is required.' });
+  }
+
+  if (!_isObject(normalizedIr.items) || Object.keys(normalizedIr.items).length === 0) {
     issues.push({ code: 'SCHEMA_REQUIRED_FIELD', severity: 'error', message: 'Field "items" is required and must be a non-empty object.' });
-  const itemIdSet = new Set(Object.keys(normalizedIr.items));
+  }
+
+  const itemIds = Object.keys(normalizedIr.items);
+  const itemIdSet = new Set(itemIds);
+
   for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
-    if (!VALID_IR_ITEM_TYPES.has(item.type))
-      issues.push({ code: 'INVALID_ITEM_TYPE', severity: 'error', message: `Invalid item type "${item.type}"`, nodeId });
-    for (const field of ['one','two']) {
-      const val = item[field];
-      if (val !== undefined && !itemIdSet.has(val))
-        issues.push({ code: 'DANGLING_REFERENCE', severity: 'error', message: `${field} references unknown node "${val}"`, nodeId });
+    if (!VALID_IR_ITEM_TYPES.has(item.type)) {
+      issues.push({ code: 'INVALID_ITEM_TYPE', severity: 'error', message: `Node has invalid type: ${item.type || '(empty)'}`, nodeId });
     }
   }
-  return { success: issues.filter(i => i.severity === 'error').length === 0, valid: issues.filter(i => i.severity === 'error').length === 0, normalizedIr, issues, autofixes };
+
+  const terminalCandidates = [];
+  for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
+    if (item.type !== 'end' && !item.one) {
+      terminalCandidates.push(nodeId);
+      issues.push({
+        code: 'MULTIPLE_TERMINAL_CANDIDATE',
+        severity: 'warning',
+        message: 'Non-end node has no main vector (one) and should be merged into a single terminal end.',
+        nodeId,
+        autofix: 'merge_terminals',
+      });
+    }
+  }
+
+  if (terminalCandidates.length > 0) {
+    autofixes.push({
+      type: 'merge_terminals',
+      description: 'Merge all terminal candidates into one shared end node.',
+      safeToApply: true,
+    });
+  }
+
+  for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
+    for (const pointerName of ['one', 'two']) {
+      const target = item[pointerName];
+      if (target && !itemIdSet.has(target)) {
+        issues.push({
+          code: 'DANGLING_POINTER',
+          severity: 'error',
+          message: `Node ${pointerName} points to missing node id: ${target}`,
+          nodeId,
+        });
+      }
+    }
+  }
+
+  const hasBranch = Object.values(normalizedIr.items).some((item) => item.type === 'branch');
+  const hasHeader = Object.values(normalizedIr.items).some((item) => item.type === 'header');
+  if (hasBranch && !hasHeader) {
+    issues.push({
+      code: 'MISSING_HEADER',
+      severity: 'warning',
+      message: 'Silhouette-like diagram with branches should include at least one header node.',
+    });
+  }
+
+  if (itemIds.length > 0) {
+    const startId = itemIds[0];
+    const visited = new Set();
+    const queue = [startId];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      if (!currentId || visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      const current = normalizedIr.items[currentId];
+      if (!current) continue;
+
+      const nextIds = [current.one, current.two].filter((id) => Boolean(id));
+      for (const nextId of nextIds) {
+        if (itemIdSet.has(nextId) && !visited.has(nextId)) {
+          queue.push(nextId);
+        }
+      }
+    }
+
+    const orphans = itemIds.filter((id) => !visited.has(id));
+    for (const nodeId of orphans) {
+      issues.push({
+        code: 'ORPHAN_NODE',
+        severity: 'warning',
+        message: 'Node is unreachable from the start node.',
+        nodeId,
+        autofix: 'remove_orphan',
+      });
+    }
+
+    if (orphans.length > 0) {
+      autofixes.push({
+        type: 'remove_orphan',
+        description: 'Remove nodes unreachable from BFS traversal start node.',
+        safeToApply: true,
+      });
+    }
+  }
+
+  for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
+    if ((item.type === 'question' || item.type === 'case') && item.one && !item.two) {
+      issues.push({
+        code: 'MISSING_ALT_VECTOR',
+        severity: 'warning',
+        message: 'Question/case node has main path but misses alternate vector (two).',
+        nodeId,
+      });
+    }
+  }
+
+  const valid = !issues.some((issue) => issue.severity === 'error');
+
+  return { success: valid, valid, normalizedIr, issues, autofixes };
 }
 
 function convertDiagramToIr(diagram) {
