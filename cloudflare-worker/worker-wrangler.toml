@@ -7,6 +7,11 @@ account_id = "c354ea45a11a1e1c14f1f41fe780cb34"
 DRAKON_CODEGEN_FUNCTION_ID = "6a33b6050037a2fff34e"
 MCP_API_KEY = "drakon-mcp-2026"
 
+[[d1_databases]]
+binding = "D1_DB"
+database_name = "ai-drakon-saas"
+database_id = "743d5bb0-d09d-4dcc-8329-8ebae8d533f4"
+
 [[services]]
 binding = "DOCS_AGENT"
 service = "docs-agent-flue"
@@ -14,3 +19,7 @@ service = "docs-agent-flue"
 [[services]]
 binding = "ARCHITECT_AGENT"
 service = "architect-agent-flue"
+
+[[durable_objects.bindings]]
+name = "ROOM_DO"
+class_name = "RoomDO"
