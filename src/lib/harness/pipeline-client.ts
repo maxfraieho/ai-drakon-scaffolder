@@ -11,6 +11,7 @@ import type { DrakonHarnessSpec, PipelineEvent } from '@ai-drakon/harness-contra
 
 export interface PipelineClientOptions {
   workerBaseUrl: string;
+  authToken?: string;         // Bearer token sent on both execute and status-poll requests
   pollingIntervalMs?: number;  // default: 2500
   maxPollingAttempts?: number; // default: 120 (5 minutes)
 }
@@ -34,7 +35,7 @@ export class DeterministicPipelineClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Authorization token injected by auth layer
+          ...(this.opts.authToken ? { Authorization: `Bearer ${this.opts.authToken}` } : {}),
         },
         body: JSON.stringify({
           drakon_ir: drakonIr,
@@ -65,7 +66,10 @@ export class DeterministicPipelineClient {
         attempts++;
 
         const pollRes = await fetch(
-          `${this.opts.workerBaseUrl}/v1/pipeline/execute-deterministic/status?execution_id=${execution_id}`
+          `${this.opts.workerBaseUrl}/v1/pipeline/execute-deterministic/status?execution_id=${execution_id}`,
+          {
+            headers: this.opts.authToken ? { Authorization: `Bearer ${this.opts.authToken}` } : {},
+          }
         );
 
         if (!pollRes.ok) {

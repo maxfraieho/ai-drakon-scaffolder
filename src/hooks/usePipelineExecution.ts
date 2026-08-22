@@ -64,6 +64,7 @@ export function usePipelineExecution() {
         try {
           const client = new DeterministicPipelineClient({
             workerBaseUrl: import.meta.env.VITE_WORKER_URL || "https://drakon-antigravity-worker.maxfraieho.workers.dev",
+            authToken: localStorage.getItem("jwt") || undefined,
           });
           
           const spec = createDefaultSpec(pipelineName);
