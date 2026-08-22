@@ -10,11 +10,13 @@
 
 `exodus-infra/services/cloudflared/config.yml:19-23` routes `apiminio.exodus.pp.ua`/`minio.exodus.pp.ua` to `192.168.3.161:9100`/`:9001` (the OrangePi PC2). Nothing listens there (verified: `ss -tlnp` empty, no MinIO Docker container present or past). **Q confirmed directly**: MinIO's real last location was the Oracle Cloud VM (100.66.97.93). The cloudflared config is stale — left over from before/after a topology change, never updated when MinIO moved to (or was set up fresh on) Oracle.
 
+**Q confirmed separately: there is no data to migrate.** No production diagrams, user configs, or logs currently exist that need to be rescued or carried forward — the new storage backend starts empty, from the code only. This removes the data-rescue step entirely from the migration sequence (see Migration Slices below — no "S0" exists in this plan).
+
 ## Fleet roles used
 
-- **Agent A (coordinator):** Oracle Claude via `edgee launch claude --model opus`, two rounds — reconciliation/verification pass, then final synthesis.
+- **Agent A (coordinator):** Oracle Claude via `edgee launch claude --model opus`, three rounds — reconciliation/verification pass, final synthesis, then this Appwrite-Storage addendum folded in by the orchestrator directly (see below).
 - **Agent B (storage contract investigator):** AGY on `.234`, read-only source analysis.
-- **Agent C (hosting-options researcher):** `agy.exe` on `.30`.
+- **Agent C (hosting-options researcher):** `agy.exe` on `.30` — round 1 (R2/B2/self-host comparison) and round 2 (Appwrite Storage deep-dive, requested by Q after round 1 concluded).
 - **Agent M (memory bootstrap):** performed directly by the orchestrator.
 
 ## Memory bootstrap
@@ -60,6 +62,20 @@ One nuance found during the cross-check: R2's native `list()` caps at 1000 keys/
 
 **Agent A's own verification note on Agent C's research:** two of Agent C's specific figures were flagged as likely stale (Oracle A1 "downsized to 2 OCPU/12GB" conflicts with the long-standing 4 OCPU/24GB allocation; AWS S3's cited "5GB/20K-GET/2K-PUT" tier is the legacy pre-2025 plan, since replaced by a credit-based free plan) — **neither affects the decision**, since the Oracle path is rejected regardless and AWS S3 was never the leading candidate. R2's own cited figures were cross-checked against Agent A's independent knowledge and held.
 
+## Appwrite Cloud Storage — investigated and rejected (Agent C, round 2)
+
+Q raised a genuine third option not covered in round 1: the project's existing Appwrite Cloud account already includes a Storage service (buckets/files), separate from its Database collections, and using it would mean zero new provider signup at all. Investigated in depth, with a concrete side-by-side code comparison — **rejected, not just deprioritized**, for real technical reasons rather than "R2 is already the frontrunner":
+
+- **Immutable file content.** Appwrite's `POST /files` returns `409 Conflict` if the file ID already exists; `PUT /files/{fileId}` updates *metadata only*, never binary content. Every `put(key, data)` call on an existing key requires a delete-then-recreate sequence — 2-3 sequential HTTPS round-trips instead of one atomic write, with a real race window in between.
+- **Key-format incompatibility.** Appwrite file IDs forbid `/` entirely and cap at 36 characters. The project's actual keys (`users/{userId}/config.json`, `logs/{date}/{ts}-{tool}.json`) violate both constraints — every key needs a synthetic `sha256Hex(key).slice(0,32)` ID, with the real key stashed in a separate `name` field purely for the list-query workaround (`startsWith("name", [prefix])`).
+- **Multipart-only uploads.** Unlike R2/S3's raw-body `PUT`, every write requires constructing `multipart/form-data` inside the Worker.
+- **Latency.** R2 runs in-process on Cloudflare's edge (5-20ms per call); Appwrite Storage is an external HTTPS round-trip to Frankfurt (100-250ms per call, 200-600ms on an overwrite given the delete-then-recreate pattern above).
+- **Commercial terms risk, unrelated to the technical mismatch:** the account's Education/Student-Pack plan is explicitly non-commercial-use only — a real compliance question for this project's own stated SaaS ambitions, independent of which storage backend gets picked, worth the architect's separate attention.
+
+Plan limits confirmed generous either way (150GB storage / 2TB bandwidth on the Education plan) — the rejection is architectural, not quota-driven. One caveat: whether the existing `APPWRITE_API_KEY` secret already has Storage scopes (`files.read`/`files.write`) enabled is an unverified dashboard-only fact, moot now given the rejection.
+
+**Verdict stands, now more confidently: Cloudflare R2 primary, Backblaze B2 fallback.** A real, already-available alternative was investigated on its technical merits and found clearly worse for this specific workload, not merely unexplored.
+
 ---
 
 ## Recommendation
@@ -101,11 +117,10 @@ elsewhere), not merely due for rotation. Retire the identity; new provider gets 
 identity with no fallback default in code.
 
 Immediate next storage slice:
-S0 — read-only incident record and data rescue, before any provisioning. Bring MinIO back up
-on the Oracle VM bound to LOOPBACK ONLY (no tunnel, no public port, no DNS change), inventory
-and export the `drakon` bucket to a local archive outside the repo, record object count and
-total bytes. This is the only time-sensitive step (a closing window against disk loss) and
-resolves the one unknown both delegate reports flagged as unverifiable from the repo alone.
+S1 — populate the existing BlobStore scaffold (packages/storage is currently an empty
+export {} stub with dangling doc references). No data migration is required — Q confirmed
+there is nothing in the old MinIO bucket worth carrying forward; the new backend starts
+empty, from code only. Proceed straight to S1, no incident-record/data-rescue step needed.
 
 Phase 3 relationship:
 Parallel, not blocking — corrected from the coordinator's own first-pass finding: the D1
@@ -118,14 +133,13 @@ collision to reconcile.
 
 Do not:
 - Reuse the disclosed access key or secret value on any new provider, under any name.
-- Open the MinIO port publicly or repoint cloudflared during S0 — loopback only.
-- Delete, wipe, or reprovision the Oracle VM disk or the old bucket until an exported copy is
-  verified restorable at the new provider.
 - Create an Oracle account under a family member's identity.
+- Build an Appwrite Storage adapter — investigated and rejected on technical grounds
+  (immutable file content, forbidden key characters, multipart-only uploads, latency);
+  do not revisit unless R2 and B2 both become genuinely unavailable.
 - Populate packages/storage against the ADR-0018 / phase2-boundary-inventory references in
   its own README — both point at unrelated/empty documents; write real provenance instead.
-- Change key schema, delimiter semantics, or saveLogToMinio's silent-failure contract during
-  cutover. One variable at a time.
+- Change key schema or delimiter semantics during cutover. One variable at a time.
 - Rewrite git history to purge the secret without a separate, explicit decision — treat the
   credential as burned instead; history rewrite has its own blast radius.
 - Bind r2_buckets into wrangler-antigravity.jsonc — that file is not the deployed config.
@@ -135,12 +149,11 @@ Do not:
 
 | Slice | Changes | Untouched | Gate/Note |
 |---|---|---|---|
-| **S0 — Incident record + data rescue** | New incident note; local export archive (outside repo) | All code, all config, cloudflared, DNS | Only time-sensitive slice — do first |
 | **S1 — Populate the BlobStore scaffold** | `packages/storage/src/index.ts` (interface + MemoryAdapter + S3Adapter lifted from `worker-mcp-drakon.js:464-631`), fix the README's dangling doc pointers, add `packages/storage` to `pnpm-workspace.yaml` (currently absent) | Worker call sites, wrangler configs, live endpoint | Prove `wrangler deploy --dry-run` resolves the workspace import first — the Worker has never done this |
-| **S2 — Route Worker through BlobStore, still on S3 adapter** | The four wrappers become adapter calls; `getMinioVar` loses its hardcoded fallback, fails loudly on missing config | Key schema, HTTP routes, frontend, provider | Pure refactor — verify against S0's exported data in a local/dev bucket |
-| **S3 — Provision R2 + adapter + data copy** | R2 bucket created; `cloudflare-worker/worker-wrangler.toml` gains `r2_buckets`; `R2BlobStoreAdapter` added; S0 archive uploaded with exact keys preserved | Worker call sites (already abstracted in S2), frontend, old MinIO | Gated on the payment-method check; falls back to B2 (same slice shape, adapter already exists from S1) if blocked |
-| **S4 — Cutover** | Adapter selection flips to R2; old `MINIO_*` vars removed; `handleHealth` reports new backend | Old MinIO data (left intact as rollback) | Verify save/load/delete/list + user config + a log write; rollback = flip adapter back |
-| **S5 — Retirement + cleanup** | Delete `signS3Request`/`s3UriEncode`/`encodeS3KeyForPath`/`ensureMinioConfig` + the four fetch wrappers (~170 lines); drop the dead client-side `minio` settings struct; fix the stale cloudflared entry; decommission the MinIO container | Keep the S3 adapter in `packages/storage` — it's the B2 escape hatch | Only after S4 is stable. Optional follow-up (not part of retirement): add conditional-put/etag to close a pre-existing read-modify-write race in `handleMcpMutateDiagram` |
+| **S2 — Route Worker through BlobStore, still on S3 adapter** | The four wrappers become adapter calls; `getMinioVar` loses its hardcoded fallback, fails loudly on missing config | Key schema, HTTP routes, frontend, provider | Pure refactor — verify behavior is unchanged against a local/dev bucket (no production data exists to preserve) |
+| **S3 — Provision R2 + adapter** | R2 bucket created; `cloudflare-worker/worker-wrangler.toml` gains `r2_buckets`; `R2BlobStoreAdapter` added | Worker call sites (already abstracted in S2), frontend, old MinIO endpoint | Gated on the payment-method check; falls back to B2 (same slice shape, adapter already exists from S1) if blocked |
+| **S4 — Cutover** | Adapter selection flips to R2; old `MINIO_*` vars removed; `handleHealth` reports new backend | — | Verify save/load/delete/list + user config + a log write against the new empty bucket; rollback = flip adapter back |
+| **S5 — Retirement + cleanup** | Delete `signS3Request`/`s3UriEncode`/`encodeS3KeyForPath`/`ensureMinioConfig` + the four fetch wrappers (~170 lines); drop the dead client-side `minio` settings struct; fix the stale cloudflared entry; decommission the MinIO container/endpoint | Keep the S3 adapter in `packages/storage` — it's the B2 escape hatch | Only after S4 is stable. Optional follow-up (not part of retirement): add conditional-put/etag to close a pre-existing read-modify-write race in `handleMcpMutateDiagram` |
 
 ## Corrections made during reconciliation
 
@@ -150,8 +163,7 @@ Do not:
 ## Evidence limitations
 
 - Whether the Cloudflare account has a payment method enabled (the gating fact for R2) was not checked live in this investigation — flagged as the first concrete action item.
-- Actual data volume in the old MinIO bucket is unknown from the repository alone; S0 is designed specifically to answer this before anything else happens.
-- Whether MinIO on the Oracle VM still has its underlying disk/volume intact (vs. having been torn down) was not verified — S0 will surface this immediately.
+- Appwrite Storage's Education-plan quota figures (150GB storage / 2TB bandwidth) were cited from generic documentation-root URLs, not deep-linked to the specific numbers — moot given the rejection was architectural, not quota-driven, but noted for completeness.
 
 ---
 
