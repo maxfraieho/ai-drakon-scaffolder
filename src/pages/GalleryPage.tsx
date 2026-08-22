@@ -97,7 +97,7 @@ export default function GalleryPage() {
                 </div>
               </div>
               
-              <Link to={`/s/${item.id}`} className="block mb-2">
+              <Link to="/s/$slug" params={{ slug: item.id }} className="block mb-2">
                 <h3 className="font-semibold text-lg font-[Outfit] text-[var(--astryx-text-primary)] group-hover:text-[var(--astryx-color-brand)] transition-colors line-clamp-1">
                   {item.title}
                 </h3>
@@ -116,8 +116,9 @@ export default function GalleryPage() {
               </div>
               
               <div className="mt-4 pt-4 border-t border-[var(--astryx-border-subtle)] flex justify-between items-center">
-                <Link 
-                  to={`/s/${item.id}`}
+                <Link
+                  to="/s/$slug"
+                  params={{ slug: item.id }}
                   className="text-sm font-medium text-[var(--astryx-color-brand)] hover:underline transition-colors"
                 >
                   View full screen →

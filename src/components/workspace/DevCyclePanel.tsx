@@ -58,8 +58,11 @@ setStatuses((prev) => ({ ...prev, [key]: "error" }));
 
 const openReview = () => {
 setStatuses((prev) => ({ ...prev, review: "done" }));
-const target = activeProject?.hasDocs ? "/docs" : "/diagrams";
-void navigate({ to: target });
+if (activeProject?.hasDocs) {
+void navigate({ to: "/p/$slug/docs", params: { slug: activeProject.slug } });
+} else {
+void navigate({ to: "/diagrams" });
+}
 };
 
 return (

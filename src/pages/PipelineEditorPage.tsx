@@ -303,7 +303,8 @@ className="inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-2 
 v{config.version}
 </span>
 <Link
-to={`/pitch/${config.name}`}
+to="/pitch/$diagramId"
+params={{ diagramId: config.name }}
 className="ml-2 inline-flex h-8 items-center gap-1.5 rounded-[var(--radius-sm)] px-3 font-mono text-[11px] uppercase tracking-wider text-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-light)] transition-colors duration-150"
 >
 <Play className="h-3.5 w-3.5" />
