@@ -7,6 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { ProvenanceChip } from '@/components/harness/ProvenanceChip';
 
 interface GateIndicatorsProps {
   verdicts: GateVerdict[];
@@ -74,6 +75,12 @@ export function GateIndicators({ verdicts, onClick }: GateIndicatorsProps) {
           );
         })}
       </TooltipProvider>
+      <ProvenanceChip
+        label="runtime"
+        detail="policy-engine"
+        title="Gate verdicts are streamed live from the deterministic-engine service, which evaluates them via the @ai-drakon/policy-engine package (Phase 2 Slice 3)."
+        className="ml-1"
+      />
     </div>
   );
 }

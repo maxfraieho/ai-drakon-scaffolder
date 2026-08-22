@@ -4,12 +4,10 @@
 
 AI-DRAKON is a platform for DRAKON visual programming: creating, editing, and generating flowchart-based diagrams from natural language or code. The stack is:
 
-- **Frontend**: React + TanStack Router, deployed on Cloudflare Pages (builds from `.lovable/`)
+- **Frontend**: React + TanStack Router, deployed on Cloudflare Pages
 - **Backend logic**: Cloudflare Worker (`drakon-antigravity-worker`) — all authenticated API calls go through it
 - **AI functions**: Appwrite Functions (node-22 / python-3.12) on `fra.cloud.appwrite.io`
 - **Auth**: Appwrite JWT — stored in `localStorage` as `jwt`
-
-**Critical sync rule**: after every change to `src/`, run `rsync -av --delete src/ .lovable/src/` and commit both trees. Cloudflare Pages builds from `.lovable/`.
 
 ---
 
@@ -27,7 +25,7 @@ Generates a valid `.drakon` JSON flowchart from a natural-language function desc
 | `Lua2604` | Lua |
 | `Clj2604` | Clojure |
 
-To add a language, add an entry to `LANGUAGES` in `src/pages/CodegenPage.tsx` (and sync to `.lovable/src/pages/CodegenPage.tsx`).
+To add a language, add an entry to `LANGUAGES` in `src/pages/CodegenPage.tsx`.
 
 ### Architecture
 
@@ -162,7 +160,7 @@ Scans all Markdown files in a GitHub repository and uses LLM to build semantic l
 
 ## Routing rules (TanStack Router)
 
-Routes are file-based under `src/routes/`. After adding a new route file, **manually update `routeTree.gen.ts`** in both `src/` and `.lovable/src/` — add:
+Routes are file-based under `src/routes/`. After adding a new route file, **manually update `routeTree.gen.ts`** in `src/` — add:
 1. The `import` near the top
 2. A `const XxxRoute = XxxRouteImport.update({ id: '/xxx', path: '/xxx', getParentRoute: () => rootRouteImport } as any)` block
 3. `XxxRoute: XxxRoute,` in `rootRouteChildren`
@@ -178,8 +176,6 @@ Navigation items live in `src/components/workspace/WorkspaceShell.tsx`:
 - `NAV_WORKSPACE` array — sidebar links
 - `getBreadcrumb()` — maps path prefixes to breadcrumb labels
 - `iconRailItems` — icon rail on the left
-
-After editing, sync: `rsync -av --delete src/ .lovable/src/`
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
@@ -226,6 +222,27 @@ This project is indexed by GitNexus as **ai-drakon-scaffolder** (4053 symbols, 9
 
 <!-- gitnexus:end -->
 
+## GitNexus-First Rule for Agents (ЗАКОН — added 2026-08-21)
+
+**ПЕРЕД читанням будь-якого файлу цього репозиторію** (Read/cat/grep напряму,
+без винятків для Gemini/AGY чи Codex) — спочатку `query`/`context`/`cypher`
+через GitNexus MCP:
+
+```
+query({search_query: "...", repo: "ai-drakon-scaffolder"})
+```
+
+Тільки якщо GitNexus не дав релевантного результату (порожньо / target: N/A) —
+читати файл напряму через `Read(file, offset)`.
+
+**Перед серйозною роботою (рефакторинг, нова фіча, UI-інтеграція)** — перевірити
+свіжість індексу: `gitnexus://repo/ai-drakon-scaffolder/context` або
+`list` (CLI) → звірити `Commit` з `git log -1`. Якщо застарілий — `analyze --force`
+до початку роботи, не після.
+
+Це правило рівнозначно застосовується і до Gemini/antigravity-cli (AGY),
+і до Claude Code, і до Codex — незалежно від того, який агент читає цей файл.
+
 ## Feature: Chrome DevTools Protocol (CDP) Laptop Tunnel
 
 ### Architecture
@@ -263,4 +280,4 @@ ssh vokov@192.168.3.184 "cd /home/vokov/workspace/ai-drakon-scaffolder && npm in
 - Для складного рефакторингу, розробки фіч або архітектурних рев'ю обов'язково активувати скіл `notebooklm-gitnexus-copilot`.
 - Згенеровувати PDF артефакт проекту через `/home/vokov/resume/run_md_service.sh --batch --source <path> --output <pdf_path> --structure-only`.
 - Ініціалізувати записник у NotebookLM MCP (`notebooks_create`), підключати PDF та посилання GitNexus (`gitnexus://repo/...`), консультуватися з агентом NotebookLM (`chat_ask`).
-- Після модифікації будь-якого файлу `src/` обов'язково виконувати `rsync -av --delete src/ .lovable/src/` для 100% синхронізації з Cloudflare Pages.
+

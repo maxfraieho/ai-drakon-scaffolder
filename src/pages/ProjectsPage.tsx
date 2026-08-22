@@ -173,7 +173,7 @@ export function ProjectsPage() {
             <Button
               id="new-project-btn"
               className="mt-6 bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold"
-              onClick={() => navigate({ to: "/project/new" })}
+              onClick={() => navigate({ to: "/project/new", search: { template: undefined } })}
             >
               New Project
             </Button>
@@ -197,7 +197,7 @@ export function ProjectsPage() {
           </div>
           <Button
             id="new-project-btn"
-            onClick={() => navigate({ to: "/project/new" })}
+            onClick={() => navigate({ to: "/project/new", search: { template: undefined } })}
             className="self-start sm:self-auto bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold shadow-sm"
           >
             <Plus className="mr-2 h-4 w-4" />

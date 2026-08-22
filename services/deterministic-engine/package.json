@@ -3,12 +3,17 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "node node_modules/typescript/bin/tsc",
-    "start": "node dist/main.js"
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/main.js",
+    "test": "vitest run"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@ai-drakon/harness-contract": "workspace:*",
+    "@ai-drakon/policy-engine": "workspace:*"
+  },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.5"
   }
 }

@@ -33,24 +33,159 @@ function _normalizeIr(ir) {
   };
 }
 
-function validateIrDeterministic(irPayload) {
+// Reconciled with src/lib/htse/ir-validator-core.ts (Phase 2 Slice 4). This
+// used to be a 4-rule subset (SCHEMA_REQUIRED_FIELD x2, INVALID_ITEM_TYPE,
+// DANGLING_REFERENCE) missing MULTIPLE_TERMINAL_CANDIDATE, MISSING_HEADER,
+// ORPHAN_NODE (BFS reachability) and MISSING_ALT_VECTOR entirely, and always
+// returned an empty `autofixes` array. It now runs the exact same rule set,
+// in the exact same order, as the canonical validator -- this is the single
+// source of truth for IR validation logic.
+//
+// Real, user-visible consequences of this reconciliation (named explicitly,
+// not hidden): src/components/htse/ValidationPanel.tsx already has UI code
+// for previewing/applying `autofixes` (Preview fixes button, autofix list)
+// that has been dead since it shipped, because the remote validator (this
+// function, via POST /v1/drakon/validate-ir) never populated that array --
+// only local/canonical validation did. That UI will start working for the
+// first time once this ships. Also, `issue.code` is rendered directly in
+// that panel, so the DANGLING_REFERENCE -> DANGLING_POINTER rename below is
+// a visible label change, not just an internal one.
+//
+// One intentional, narrow deviation from canonical: canonical's `success`
+// field is hardcoded `true` regardless of validity. Confirmed via direct
+// grep across the whole repo (worker call sites, src/lib/htse/diagram-to-ir.ts,
+// src/store/useDiagramStore.ts, src/components/htse/ValidationPanel.tsx, and
+// every existing test) that nothing anywhere reads `.success` from this
+// function's result -- only `.valid`, `.issues`, `.autofixes` and
+// `.normalizedIr` are ever consulted. This function's result is exposed
+// directly as an HTTP response body (POST .../validate-ir) and as the
+// `drakon.validateir` MCP tool result, both externally visible to callers
+// outside this repo, so `success` is deliberately kept meaningful (`= valid`)
+// here rather than adopting canonical's always-true quirk, to avoid a silent
+// external contract change for anything that might reasonably check it.
+export function validateIrDeterministic(irPayload) {
   const issues = [];
   const autofixes = [];
   const normalizedIr = _normalizeIr(irPayload);
-  if (!normalizedIr.name) issues.push({ code: 'SCHEMA_REQUIRED_FIELD', severity: 'error', message: 'Field "name" is required.' });
-  if (!_isObject(normalizedIr.items) || Object.keys(normalizedIr.items).length === 0)
+
+  if (!normalizedIr.name) {
+    issues.push({ code: 'SCHEMA_REQUIRED_FIELD', severity: 'error', message: 'Field "name" is required.' });
+  }
+
+  if (!_isObject(normalizedIr.items) || Object.keys(normalizedIr.items).length === 0) {
     issues.push({ code: 'SCHEMA_REQUIRED_FIELD', severity: 'error', message: 'Field "items" is required and must be a non-empty object.' });
-  const itemIdSet = new Set(Object.keys(normalizedIr.items));
+  }
+
+  const itemIds = Object.keys(normalizedIr.items);
+  const itemIdSet = new Set(itemIds);
+
   for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
-    if (!VALID_IR_ITEM_TYPES.has(item.type))
-      issues.push({ code: 'INVALID_ITEM_TYPE', severity: 'error', message: `Invalid item type "${item.type}"`, nodeId });
-    for (const field of ['one','two']) {
-      const val = item[field];
-      if (val !== undefined && !itemIdSet.has(val))
-        issues.push({ code: 'DANGLING_REFERENCE', severity: 'error', message: `${field} references unknown node "${val}"`, nodeId });
+    if (!VALID_IR_ITEM_TYPES.has(item.type)) {
+      issues.push({ code: 'INVALID_ITEM_TYPE', severity: 'error', message: `Node has invalid type: ${item.type || '(empty)'}`, nodeId });
     }
   }
-  return { success: issues.filter(i => i.severity === 'error').length === 0, valid: issues.filter(i => i.severity === 'error').length === 0, normalizedIr, issues, autofixes };
+
+  const terminalCandidates = [];
+  for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
+    if (item.type !== 'end' && !item.one) {
+      terminalCandidates.push(nodeId);
+      issues.push({
+        code: 'MULTIPLE_TERMINAL_CANDIDATE',
+        severity: 'warning',
+        message: 'Non-end node has no main vector (one) and should be merged into a single terminal end.',
+        nodeId,
+        autofix: 'merge_terminals',
+      });
+    }
+  }
+
+  if (terminalCandidates.length > 0) {
+    autofixes.push({
+      type: 'merge_terminals',
+      description: 'Merge all terminal candidates into one shared end node.',
+      safeToApply: true,
+    });
+  }
+
+  for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
+    for (const pointerName of ['one', 'two']) {
+      const target = item[pointerName];
+      if (target && !itemIdSet.has(target)) {
+        issues.push({
+          code: 'DANGLING_POINTER',
+          severity: 'error',
+          message: `Node ${pointerName} points to missing node id: ${target}`,
+          nodeId,
+        });
+      }
+    }
+  }
+
+  const hasBranch = Object.values(normalizedIr.items).some((item) => item.type === 'branch');
+  const hasHeader = Object.values(normalizedIr.items).some((item) => item.type === 'header');
+  if (hasBranch && !hasHeader) {
+    issues.push({
+      code: 'MISSING_HEADER',
+      severity: 'warning',
+      message: 'Silhouette-like diagram with branches should include at least one header node.',
+    });
+  }
+
+  if (itemIds.length > 0) {
+    const startId = itemIds[0];
+    const visited = new Set();
+    const queue = [startId];
+
+    while (queue.length > 0) {
+      const currentId = queue.shift();
+      if (!currentId || visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      const current = normalizedIr.items[currentId];
+      if (!current) continue;
+
+      const nextIds = [current.one, current.two].filter((id) => Boolean(id));
+      for (const nextId of nextIds) {
+        if (itemIdSet.has(nextId) && !visited.has(nextId)) {
+          queue.push(nextId);
+        }
+      }
+    }
+
+    const orphans = itemIds.filter((id) => !visited.has(id));
+    for (const nodeId of orphans) {
+      issues.push({
+        code: 'ORPHAN_NODE',
+        severity: 'warning',
+        message: 'Node is unreachable from the start node.',
+        nodeId,
+        autofix: 'remove_orphan',
+      });
+    }
+
+    if (orphans.length > 0) {
+      autofixes.push({
+        type: 'remove_orphan',
+        description: 'Remove nodes unreachable from BFS traversal start node.',
+        safeToApply: true,
+      });
+    }
+  }
+
+  for (const [nodeId, item] of Object.entries(normalizedIr.items)) {
+    if ((item.type === 'question' || item.type === 'case') && item.one && !item.two) {
+      issues.push({
+        code: 'MISSING_ALT_VECTOR',
+        severity: 'warning',
+        message: 'Question/case node has main path but misses alternate vector (two).',
+        nodeId,
+      });
+    }
+  }
+
+  const valid = !issues.some((issue) => issue.severity === 'error');
+
+  return { success: valid, valid, normalizedIr, issues, autofixes };
 }
 
 function convertDiagramToIr(diagram) {
@@ -157,10 +292,6 @@ function log(level, msg, data = {}) {
 // Never throws — logging failures are silent (to avoid infinite loops)
 function getMinioVar(env, key) {
   if (env && env[key]) return env[key];
-  if (key === 'MINIO_ENDPOINT') return 'https://apiminio.exodus.pp.ua';
-  if (key === 'MINIO_BUCKET') return 'drakon';
-  if (key === 'MINIO_ACCESS_KEY') return 'vokov';
-  if (key === 'MINIO_SECRET_KEY') return '805235io';
   return '';
 }
 
@@ -240,7 +371,7 @@ async function hashPassword(password, secret) {
   return [...new Uint8Array(hashBuffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function generateJWT(payload, secret, ttlMs = 7 * 24 * 60 * 60 * 1000) {
+export async function generateJWT(payload, secret, ttlMs = 7 * 24 * 60 * 60 * 1000) {
   const now = Date.now();
   const fullPayload = { ...payload, iat: now, exp: now + ttlMs };
   const header = b64urlEncodeJson({ alg: 'HS256', typ: 'JWT' });
@@ -300,7 +431,7 @@ async function verifyAppwriteJwt(token) {
   }
 }
 
-async function verifyOwnerAuth(request, env) {
+export async function verifyOwnerAuth(request, env) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
 
@@ -320,7 +451,25 @@ async function verifyOwnerAuth(request, env) {
   // Appwrite JWT (для email-авторизованих користувачів)
   const appwriteUser = await verifyAppwriteJwt(token);
   if (appwriteUser) {
-    return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
+    const allowedOwners = (env.OWNER_EMAILS || env.OWNER_EMAIL || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const userEmail = String(appwriteUser.email || '').toLowerCase();
+    const hasOwnerLabel = Array.isArray(appwriteUser.labels) && appwriteUser.labels.includes('owner');
+
+    if (allowedOwners.length === 0 && !hasOwnerLabel) {
+      // OWNER_EMAILS/OWNER_EMAIL not configured — fail safe-visible (grant owner, warn loudly)
+      // rather than fail-closed-silent (locking out every Appwrite user with no signal).
+      console.warn('[verifyOwnerAuth] OWNER_EMAILS/OWNER_EMAIL is not set — granting owner to all Appwrite-authenticated users. Set OWNER_EMAILS to restrict access.');
+      return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
+    }
+
+    const isOwner = hasOwnerLabel || allowedOwners.includes(userEmail);
+    if (isOwner) {
+      return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
+    }
+    return { role: 'user', sub: appwriteUser.$id, email: appwriteUser.email };
   }
 
   return null;
@@ -2648,30 +2797,8 @@ export default {
       }
       // ──────────────────────────────────────────────────────────────────────
 
-      // ─── GitHub read-only routes (no auth needed — Worker uses server-side token) ─────
-      if (method === 'GET' && path === '/v1/github/tree') {
-        const owner = url.searchParams.get('owner') || '';
-        const repo = url.searchParams.get('repo') || '';
-        const treePath = url.searchParams.get('path') || '';
-        const branch = url.searchParams.get('branch') || 'main';
-        const requestToken = request.headers.get('X-Github-Token') || '';
-        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env, requestToken));
-      }
-      if (method === 'GET' && path === '/v1/github/file') {
-        const owner = url.searchParams.get('owner') || '';
-        const repo = url.searchParams.get('repo') || '';
-        const filePath = url.searchParams.get('path') || '';
-        const branch = url.searchParams.get('branch') || 'main';
-        const requestToken = request.headers.get('X-Github-Token') || '';
-        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env, requestToken));
-      }
-      if (method === 'GET' && path === '/v1/github/branches') {
-        const owner = url.searchParams.get('owner') || '';
-        const repo = url.searchParams.get('repo') || '';
-        const requestToken = request.headers.get('X-Github-Token') || '';
-        return jsonResponse(await handleGithubListBranches({ owner, repo }, env, requestToken));
-      }
-      // ─────────────────────────────────────────────────────────────────────
+      // (Unauthenticated GitHub read routes removed — the authenticated versions
+      // below the global auth gate now serve /v1/github/{tree,file,branches})
 
       // ─── Pipeline SSE (auth via ?token= query param — EventSource не підтримує headers) ─
       const pipelineStreamMatch = path.match(/^\/v1\/pipeline\/stream\/([^\/]+)$/);
@@ -2756,7 +2883,7 @@ export default {
       }
 
       const ownerPayload = await verifyOwnerAuth(request, env);
-      if (!ownerPayload) {
+      if (!ownerPayload || ownerPayload.role !== 'owner') {
         return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
       }
 
@@ -3440,14 +3567,8 @@ async function handleNotesGraph(request) {
 }
 
 async function handleNotesCommit(request, env) {
-  const authHeader = request.headers.get('Authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  if (!token) return errorResponse('Authorization required', 401);
-  try {
-    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
-  } catch {
-    return errorResponse('Invalid or expired token', 401);
-  }
+  const authPayload = await verifyOwnerAuth(request, env);
+  if (!authPayload) return errorResponse('Invalid or expired token', 401);
 
   let body;
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
@@ -3495,14 +3616,8 @@ async function handleNotesCommit(request, env) {
 }
 
 async function handleNotesDelete(request, env) {
-  const authHeader = request.headers.get('Authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  if (!token) return errorResponse('Authorization required', 401);
-  try {
-    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
-  } catch {
-    return errorResponse('Invalid or expired token', 401);
-  }
+  const authPayload = await verifyOwnerAuth(request, env);
+  if (!authPayload) return errorResponse('Invalid or expired token', 401);
 
   let body;
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
@@ -4589,10 +4704,13 @@ async function handleDrakonExecuteDeterministic(request, env) {
 }
 
 async function handleDrakonExecuteDeterministicStatus(request, env) {
+  const authPayload = await verifyOwnerAuth(request, env);
+  if (!authPayload || authPayload.role !== 'owner') return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+
   const url = new URL(request.url);
   const executionId = url.searchParams.get('execution_id');
   if (!executionId) return errorResponse('execution_id required', 400);
-  
+
   const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f';
   const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
   const apiKey = env.APPWRITE_API_KEY;

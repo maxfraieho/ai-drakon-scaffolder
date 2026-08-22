@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Shield, FileText, CheckCircle, Coins, AlertTriangle } from 'lucide-react';
 import { GateVerdict } from '@/lib/harness/pipeline-client';
+import { ProvenanceChip } from '@/components/harness/ProvenanceChip';
 
 interface EvidenceDrawerProps {
   gate: string | null;
@@ -48,6 +49,11 @@ export function EvidenceDrawer({ gate, verdict, isOpen, onOpenChange }: Evidence
             <div className="flex items-center gap-2">
               <Icon className={`w-5 h-5 ${verdict?.allowed ? 'text-green-500' : 'text-red-500'}`} />
               <DrawerTitle>{label}</DrawerTitle>
+              <ProvenanceChip
+                label="runtime"
+                detail="policy-engine"
+                title="This gate verdict is streamed live from the deterministic-engine service, which evaluates it via the @ai-drakon/policy-engine package (Phase 2 Slice 3)."
+              />
             </div>
             <DrawerDescription>
               Детальний звіт перевірки 4-Gate Control Plane для цього вузла.

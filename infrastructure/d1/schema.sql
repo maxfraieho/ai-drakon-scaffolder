@@ -72,3 +72,18 @@ CREATE TABLE IF NOT EXISTS pipeline_runs (
   finished_at   TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_runs_tenant ON pipeline_runs(tenant_id, started_at);
+
+CREATE TABLE IF NOT EXISTS harness_specs (
+  id           TEXT PRIMARY KEY,
+  tenant_id    TEXT NOT NULL,
+  agent_name   TEXT NOT NULL,
+  -- дублює DrakonHarnessSpec.version (TEXT у контракті, packages/harness-contract)
+  version      TEXT NOT NULL,
+  -- серіалізований DrakonHarnessSpec цілком
+  spec_json    TEXT NOT NULL,
+  created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at   TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (tenant_id, agent_name, version)
+);
+CREATE INDEX IF NOT EXISTS idx_harness_specs_tenant
+  ON harness_specs(tenant_id, agent_name);

@@ -8,7 +8,7 @@ import React, {
 
 export type WorkflowScenario = "IDLE" | "REFACTORING" | "NEW_FEATURE";
 export type StepStatus = "PENDING" | "IN_PROGRESS" | "COMPLETED" | "ERROR";
-export type ViewRoute = "/github" | "/diagrams" | "/agents" | "/docs" | "/devcycle";
+export type ViewRoute = "/github" | "/diagrams" | "/agents" | "/devcycle";
 
 export interface DevStep {
   id: string;

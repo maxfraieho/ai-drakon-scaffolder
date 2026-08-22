@@ -24,6 +24,11 @@ type ValidationAutofix,
 type ValidationIssue,
 type ValidationResult,
 } from "@/lib/htse/ir-validator-client";
+import { validateIrDeterministic } from "@/lib/htse/ir-validator-core";
+import {
+compareValidationResults,
+type CompatibilityResult,
+} from "@/lib/htse/validator-compatibility";
 import type { MutationOp } from "@/types/mutations";
 import { useDiagramStore } from "@/store/useDiagramStore";
 
@@ -38,6 +43,7 @@ const currentDiagram = useDiagramStore((s) => s.currentDiagram);
 const [isOpen, setIsOpen] = useState(false);
 const [isValidating, setIsValidating] = useState(false);
 const [result, setResult] = useState<ValidationResult | null>(null);
+const [compatibility, setCompatibility] = useState<CompatibilityResult | null>(null);
 const [showAutofixes, setShowAutofixes] = useState(false);
 const [selectedFixes, setSelectedFixes] = useState<Set<number>>(new Set());
 const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -48,7 +54,9 @@ const ir = convertDiagramToIr(currentDiagram.diagram as never);
 setIsValidating(true);
 try {
 const res = await validateIrRemote(ir);
+const canonicalResult = validateIrDeterministic(ir);
 setResult(res);
+setCompatibility(compareValidationResults(canonicalResult, res));
 } catch {
 toast.error("Validation request failed");
 } finally {
@@ -123,6 +131,29 @@ className)}>
 {errorCount === 0 && warnCount > 0 && (
 <Badge variant="secondary" className="h-4 min-w-4 px-1 text-[10px]">
 {warnCount}
+</Badge>
+)}
+{compatibility && (
+<Badge
+variant={
+compatibility.state === "divergent"
+? "destructive"
+: compatibility.state === "adapted"
+? "outline"
+: "secondary"
+}
+className="h-4 gap-0.5 px-1 text-[9px] uppercase tracking-wide"
+data-testid="validator-compat-badge"
+data-variant={compatibility.state}
+title={
+compatibility.state === "compatible"
+? "Runtime (worker) verdict matches canonical validator"
+: compatibility.state === "adapted"
+? `Runtime differs from canonical on ${compatibility.onlyInCanonical.length + compatibility.onlyInWorker.length} warning-level issue(s); overall verdict agrees`
+: `Runtime and canonical disagree — ${compatibility.onlyInCanonical.length} issue(s) only in canonical, ${compatibility.onlyInWorker.length} only in runtime`
+}
+>
+{compatibility.state}
 </Badge>
 )}
 <ChevronDown

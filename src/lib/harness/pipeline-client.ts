@@ -3,26 +3,15 @@
 // Replaces: SSE direct connection to FastAPI architect-agent
 // Uses: Appwrite Function async execution + polling (same pattern as codegen/compile)
 
-import type { DrakonHarnessSpec } from './harness-spec';
-
-export type PipelineEvent =
-  | { event: 'node_start'; node_id: string; node_type: string }
-  | { event: 'node_done'; node_id: string; tokens: number; gate_verdicts: GateVerdict[] }
-  | { event: 'gate_blocked'; node_id: string; gate: string; reason: string }
-  | { event: 'breakpoint'; node_id: string; error?: string }
-  | { event: 'done'; total_tokens: number; nodes_executed: number }
-  | { event: 'error'; message: string };
-
-export interface GateVerdict {
-  gate: 'confidence' | 'policy' | 'cost' | 'safety';
-  allowed: boolean;
-  score?: number;
-  reason?: string;
-  metadata?: Record<string, any>;
-}
+// DrakonHarnessSpec, GateVerdict and PipelineEvent moved to
+// @ai-drakon/harness-contract (Phase 2 Slice 2) -- re-exported here so
+// every existing import of this module keeps working unchanged.
+export type { DrakonHarnessSpec, GateVerdict, PipelineEvent } from '@ai-drakon/harness-contract';
+import type { DrakonHarnessSpec, PipelineEvent } from '@ai-drakon/harness-contract';
 
 export interface PipelineClientOptions {
   workerBaseUrl: string;
+  authToken?: string;         // Bearer token sent on both execute and status-poll requests
   pollingIntervalMs?: number;  // default: 2500
   maxPollingAttempts?: number; // default: 120 (5 minutes)
 }
@@ -46,7 +35,7 @@ export class DeterministicPipelineClient {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Authorization token injected by auth layer
+          ...(this.opts.authToken ? { Authorization: `Bearer ${this.opts.authToken}` } : {}),
         },
         body: JSON.stringify({
           drakon_ir: drakonIr,
@@ -77,7 +66,10 @@ export class DeterministicPipelineClient {
         attempts++;
 
         const pollRes = await fetch(
-          `${this.opts.workerBaseUrl}/v1/pipeline/execute-deterministic/status?execution_id=${execution_id}`
+          `${this.opts.workerBaseUrl}/v1/pipeline/execute-deterministic/status?execution_id=${execution_id}`,
+          {
+            headers: this.opts.authToken ? { Authorization: `Bearer ${this.opts.authToken}` } : {},
+          }
         );
 
         if (!pollRes.ok) {
@@ -105,7 +97,7 @@ export class DeterministicPipelineClient {
           callbacks.onError(new Error(poll.error ?? 'Execution failed'));
           return;
         }
-        
+
         // If status === 'processing' or 'waiting', keep polling
       }
 

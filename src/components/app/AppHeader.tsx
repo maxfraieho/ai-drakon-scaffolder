@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Bot,
-  FileText,
   Github,
   LayoutGrid,
   LogOut,
@@ -43,7 +42,7 @@ import { clearAccessToken } from "@/lib/auth";
 import { useAuth } from "@/context/AuthContext";
 
 type NavItem = {
-  to: "/diagrams" | "/workspace" | "/docs" | "/settings" | "/gallery";
+  to: "/diagrams" | "/workspace" | "/settings" | "/gallery";
   label: string;
   icon: React.ComponentType<{ className?: string }>;
 };
@@ -52,7 +51,6 @@ const NAV: NavItem[] = [
   { to: "/diagrams", label: "Схеми", icon: LayoutGrid },
   { to: "/gallery", label: "Спільнота", icon: Globe },
   { to: "/workspace", label: "Код & Знання", icon: FileCode },
-  { to: "/docs", label: "Документація", icon: FileText },
   { to: "/settings", label: "Налаштування", icon: SettingsIcon },
 ];
 

@@ -60,4 +60,3 @@ For complex refactoring, multi-file feature development, or architectural review
 - **MUST activate the `notebooklm-gitnexus-copilot` skill** to offload codebase context and execution flow analysis.
 - Generate project PDF via `/home/vokov/resume/run_md_service.sh --batch --source <path> --output <pdf_path> --structure-only`.
 - Initialize a NotebookLM notebook (`notebooks_create`), attach PDF and GitNexus graph link (`gitnexus://repo/...`), and consult the built-in NotebookLM agent (`chat_ask`) for developer recommendations.
-- **MUST enforce `rsync -av --delete src/ .lovable/src/`** after modifying any source file to guarantee 100% sync before committing for Cloudflare Pages deployment.

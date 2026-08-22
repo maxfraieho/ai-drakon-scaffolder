@@ -1,5 +1,5 @@
 import type { IrDiagram } from "./ir-types";
-import { getAccessToken } from "@/lib/auth";
+import { getAppwriteJwt } from "@/lib/appwrite-jwt";
 
 const BASE = import.meta.env.VITE_WORKER_URL;
 
@@ -25,9 +25,10 @@ issues: ValidationIssue[];
 autofixes: ValidationAutofix[];
 };
 
-function headers() {
+async function headers() {
+const jwt = await getAppwriteJwt();
 return {
-Authorization: `Bearer ${getAccessToken() ?? ""}`,
+Authorization: `Bearer ${jwt ?? ""}`,
 "Content-Type": "application/json",
 };
 }
@@ -35,7 +36,7 @@ Authorization: `Bearer ${getAccessToken() ?? ""}`,
 export async function validateIrRemote(ir: IrDiagram): Promise<ValidationResult> {
 const response = await fetch( `${BASE}/v1/drakon/validate-ir`, {
 method: "POST",
-headers: headers(),
+headers: await headers(),
 body: JSON.stringify({ ir }),
 });
 

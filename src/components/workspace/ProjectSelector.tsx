@@ -337,6 +337,7 @@ className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dash
 
 <Link
 to="/project/new"
+search={{ template: undefined }}
 onClick={() => setManagerOpen(false)}
 className="flex items-center gap-2 rounded-[var(--radius-sm)] border border-dashed border-[var(--border-subtle)] px-3 py-2 text-[11px] text-[var(--accent-amber)] hover:border-[var(--accent-amber)]/40 hover:bg-[var(--accent-dim)] transition-colors w-full mt-2"
 >
