@@ -292,10 +292,6 @@ function log(level, msg, data = {}) {
 // Never throws — logging failures are silent (to avoid infinite loops)
 function getMinioVar(env, key) {
   if (env && env[key]) return env[key];
-  if (key === 'MINIO_ENDPOINT') return 'https://apiminio.exodus.pp.ua';
-  if (key === 'MINIO_BUCKET') return 'drakon';
-  if (key === 'MINIO_ACCESS_KEY') return 'vokov';
-  if (key === 'MINIO_SECRET_KEY') return '805235io';
   return '';
 }
 
@@ -375,7 +371,7 @@ async function hashPassword(password, secret) {
   return [...new Uint8Array(hashBuffer)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function generateJWT(payload, secret, ttlMs = 7 * 24 * 60 * 60 * 1000) {
+export async function generateJWT(payload, secret, ttlMs = 7 * 24 * 60 * 60 * 1000) {
   const now = Date.now();
   const fullPayload = { ...payload, iat: now, exp: now + ttlMs };
   const header = b64urlEncodeJson({ alg: 'HS256', typ: 'JWT' });
@@ -435,7 +431,7 @@ async function verifyAppwriteJwt(token) {
   }
 }
 
-async function verifyOwnerAuth(request, env) {
+export async function verifyOwnerAuth(request, env) {
   const authHeader = request.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) return null;
 
@@ -455,7 +451,25 @@ async function verifyOwnerAuth(request, env) {
   // Appwrite JWT (для email-авторизованих користувачів)
   const appwriteUser = await verifyAppwriteJwt(token);
   if (appwriteUser) {
-    return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
+    const allowedOwners = (env.OWNER_EMAILS || env.OWNER_EMAIL || '')
+      .split(',')
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    const userEmail = String(appwriteUser.email || '').toLowerCase();
+    const hasOwnerLabel = Array.isArray(appwriteUser.labels) && appwriteUser.labels.includes('owner');
+
+    if (allowedOwners.length === 0 && !hasOwnerLabel) {
+      // OWNER_EMAILS/OWNER_EMAIL not configured — fail safe-visible (grant owner, warn loudly)
+      // rather than fail-closed-silent (locking out every Appwrite user with no signal).
+      console.warn('[verifyOwnerAuth] OWNER_EMAILS/OWNER_EMAIL is not set — granting owner to all Appwrite-authenticated users. Set OWNER_EMAILS to restrict access.');
+      return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
+    }
+
+    const isOwner = hasOwnerLabel || allowedOwners.includes(userEmail);
+    if (isOwner) {
+      return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
+    }
+    return { role: 'user', sub: appwriteUser.$id, email: appwriteUser.email };
   }
 
   return null;
@@ -2783,30 +2797,8 @@ export default {
       }
       // ──────────────────────────────────────────────────────────────────────
 
-      // ─── GitHub read-only routes (no auth needed — Worker uses server-side token) ─────
-      if (method === 'GET' && path === '/v1/github/tree') {
-        const owner = url.searchParams.get('owner') || '';
-        const repo = url.searchParams.get('repo') || '';
-        const treePath = url.searchParams.get('path') || '';
-        const branch = url.searchParams.get('branch') || 'main';
-        const requestToken = request.headers.get('X-Github-Token') || '';
-        return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env, requestToken));
-      }
-      if (method === 'GET' && path === '/v1/github/file') {
-        const owner = url.searchParams.get('owner') || '';
-        const repo = url.searchParams.get('repo') || '';
-        const filePath = url.searchParams.get('path') || '';
-        const branch = url.searchParams.get('branch') || 'main';
-        const requestToken = request.headers.get('X-Github-Token') || '';
-        return jsonResponse(await handleGithubGetFile({ owner, repo, path: filePath, branch }, env, requestToken));
-      }
-      if (method === 'GET' && path === '/v1/github/branches') {
-        const owner = url.searchParams.get('owner') || '';
-        const repo = url.searchParams.get('repo') || '';
-        const requestToken = request.headers.get('X-Github-Token') || '';
-        return jsonResponse(await handleGithubListBranches({ owner, repo }, env, requestToken));
-      }
-      // ─────────────────────────────────────────────────────────────────────
+      // (Unauthenticated GitHub read routes removed — the authenticated versions
+      // below the global auth gate now serve /v1/github/{tree,file,branches})
 
       // ─── Pipeline SSE (auth via ?token= query param — EventSource не підтримує headers) ─
       const pipelineStreamMatch = path.match(/^\/v1\/pipeline\/stream\/([^\/]+)$/);
@@ -2891,7 +2883,7 @@ export default {
       }
 
       const ownerPayload = await verifyOwnerAuth(request, env);
-      if (!ownerPayload) {
+      if (!ownerPayload || ownerPayload.role !== 'owner') {
         return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
       }
 
@@ -3575,14 +3567,8 @@ async function handleNotesGraph(request) {
 }
 
 async function handleNotesCommit(request, env) {
-  const authHeader = request.headers.get('Authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  if (!token) return errorResponse('Authorization required', 401);
-  try {
-    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
-  } catch {
-    return errorResponse('Invalid or expired token', 401);
-  }
+  const authPayload = await verifyOwnerAuth(request, env);
+  if (!authPayload) return errorResponse('Invalid or expired token', 401);
 
   let body;
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
@@ -3630,14 +3616,8 @@ async function handleNotesCommit(request, env) {
 }
 
 async function handleNotesDelete(request, env) {
-  const authHeader = request.headers.get('Authorization') || '';
-  const token = authHeader.replace(/^Bearer\s+/i, '');
-  if (!token) return errorResponse('Authorization required', 401);
-  try {
-    await verifyJWT(token, env.JWT_SECRET || env.AUTH_SECRET || '');
-  } catch {
-    return errorResponse('Invalid or expired token', 401);
-  }
+  const authPayload = await verifyOwnerAuth(request, env);
+  if (!authPayload) return errorResponse('Invalid or expired token', 401);
 
   let body;
   try { body = await request.json(); } catch { return errorResponse('Invalid JSON', 400); }
@@ -4724,10 +4704,13 @@ async function handleDrakonExecuteDeterministic(request, env) {
 }
 
 async function handleDrakonExecuteDeterministicStatus(request, env) {
+  const authPayload = await verifyOwnerAuth(request, env);
+  if (!authPayload || authPayload.role !== 'owner') return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+
   const url = new URL(request.url);
   const executionId = url.searchParams.get('execution_id');
   if (!executionId) return errorResponse('execution_id required', 400);
-  
+
   const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f';
   const projectId = env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b';
   const apiKey = env.APPWRITE_API_KEY;
