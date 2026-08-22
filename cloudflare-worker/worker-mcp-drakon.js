@@ -1,5 +1,7 @@
 // ── Inlined htse lib (ir-types, ir-validator-core, diagram-to-ir, ir-to-diagram) ──
 
+import { S3BlobStoreAdapter } from '@ai-drakon/storage';
+
 const VALID_IR_ITEM_TYPES = new Set([
   'action','question','select','case','header','end','address',
   'branch','insertion','input','output','shelf','process','timer','duration',
@@ -546,102 +548,63 @@ function ensureMinioConfig(env) {
   // Always valid since we have getMinioVar fallback
 }
 
-async function uploadToMinIO(env, key, content, contentType = 'application/json; charset=utf-8') {
-  ensureMinioConfig(env);
-
-  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT')).replace(/\/+$/, '');
-  const bucket = getMinioVar(env, 'MINIO_BUCKET');
-  const encodedKey = encodeS3KeyForPath(key);
-  const payload = String(content);
-  const payloadHash = await sha256Hex(payload);
-  const canonicalUri = `/${bucket}/${encodedKey}`;
-  const headers = await signS3Request(env, 'PUT', canonicalUri, '', payloadHash, {
-    'content-type': contentType,
+// S2: thin wrappers over @ai-drakon/storage's S3BlobStoreAdapter (Slice S1).
+// Behavior-preserving: same env var names, same return semantics (null on
+// missing GET, true on successful/already-absent PUT/DELETE), same error
+// text (adapter throws "S3 X failed: ..."; rewrapped to "MinIO X failed: ..."
+// to match every existing caller/log line that expects the old wording).
+// The old signS3Request/encodeS3KeyForPath/sha256Hex/hmacSha256* helpers
+// below are left in place, unused by these four functions now, until a
+// later slice proves it's safe to remove them.
+export function getBlobStore(env) {
+  return new S3BlobStoreAdapter({
+    endpoint: getMinioVar(env, 'MINIO_ENDPOINT'),
+    bucket: getMinioVar(env, 'MINIO_BUCKET'),
+    accessKeyId: getMinioVar(env, 'MINIO_ACCESS_KEY'),
+    secretAccessKey: getMinioVar(env, 'MINIO_SECRET_KEY'),
   });
-
-  const response = await fetch(`${endpoint}/${bucket}/${encodedKey}`, {
-    method: 'PUT',
-    headers,
-    body: payload,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`MinIO PUT failed: ${response.status} ${text}`);
-  }
-
-  return true;
 }
 
-async function getFromMinIO(env, key) {
-  ensureMinioConfig(env);
-
-  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT')).replace(/\/+$/, '');
-  const bucket = getMinioVar(env, 'MINIO_BUCKET');
-  const encodedKey = encodeS3KeyForPath(key);
-  const canonicalUri = `/${bucket}/${encodedKey}`;
-  const payloadHash = await sha256Hex('');
-  const headers = await signS3Request(env, 'GET', canonicalUri, '', payloadHash);
-
-  const response = await fetch(`${endpoint}/${bucket}/${encodedKey}`, { method: 'GET', headers });
-  if (response.status === 404) return null;
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`MinIO GET failed: ${response.status} ${text}`);
-  }
-
-  return await response.text();
+function rewrapMinioError(err) {
+  return new Error(String(err && err.message).replace(/^S3 /, 'MinIO '));
 }
 
-async function deleteFromMinIO(env, key) {
+export async function uploadToMinIO(env, key, content, contentType = 'application/json; charset=utf-8') {
   ensureMinioConfig(env);
-
-  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT')).replace(/\/+$/, '');
-  const bucket = getMinioVar(env, 'MINIO_BUCKET');
-  const encodedKey = encodeS3KeyForPath(key);
-  const canonicalUri = `/${bucket}/${encodedKey}`;
-  const payloadHash = await sha256Hex('');
-  const headers = await signS3Request(env, 'DELETE', canonicalUri, '', payloadHash);
-
-  const response = await fetch(`${endpoint}/${bucket}/${encodedKey}`, { method: 'DELETE', headers });
-  if (response.status === 404) return true;
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`MinIO DELETE failed: ${response.status} ${text}`);
+  try {
+    await getBlobStore(env).put(key, String(content), contentType);
+    return true;
+  } catch (err) {
+    throw rewrapMinioError(err);
   }
-
-  return true;
 }
 
-async function listMinioKeys(env, prefix) {
+export async function getFromMinIO(env, key) {
   ensureMinioConfig(env);
-
-  const endpoint = String(getMinioVar(env, 'MINIO_ENDPOINT')).replace(/\/+$/, '');
-  const bucket = getMinioVar(env, 'MINIO_BUCKET');
-  const encodedPrefix = encodeURIComponent(prefix);
-  const queryString = `delimiter=%2F&list-type=2&prefix=${encodedPrefix}`;
-  const canonicalUri = `/${bucket}`;
-  const payloadHash = await sha256Hex('');
-  const headers = await signS3Request(env, 'GET', canonicalUri, queryString, payloadHash);
-
-  const response = await fetch(`${endpoint}/${bucket}?delimiter=%2F&list-type=2&prefix=${encodedPrefix}`, {
-    method: 'GET',
-    headers,
-  });
-
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`MinIO LIST failed: ${response.status} ${text}`);
+  try {
+    return await getBlobStore(env).get(key);
+  } catch (err) {
+    throw rewrapMinioError(err);
   }
+}
 
-  const xml = await response.text();
-  const keys = [];
-  const matches = xml.matchAll(/<Key>([^<]+)<\/Key>/g);
-  for (const match of matches) {
-    keys.push(match[1]);
+export async function deleteFromMinIO(env, key) {
+  ensureMinioConfig(env);
+  try {
+    await getBlobStore(env).delete(key);
+    return true;
+  } catch (err) {
+    throw rewrapMinioError(err);
   }
+}
 
-  return keys;
+export async function listMinioKeys(env, prefix) {
+  ensureMinioConfig(env);
+  try {
+    return await getBlobStore(env).list(prefix);
+  } catch (err) {
+    throw rewrapMinioError(err);
+  }
 }
 
 async function handleDrakonValidateIr(request) {
