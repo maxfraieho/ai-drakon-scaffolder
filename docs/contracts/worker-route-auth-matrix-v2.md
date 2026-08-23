@@ -79,8 +79,8 @@
 | 10 | GET | `/v1/drakon-ir/list` | 2738–2740 | none | high | Public read-only route; proxies to docs-agent at `DOCS_AGENT_URL + '/drakon-ir/list'`. |
 | 11 | GET | `/v1/drakon-ir/:name` | 2741–2744 | none | high | Public read-only route; matched via regex `^\/v1\/drakon-ir\/([^/]+)$`. Proxies to docs-agent at `/drakon-ir/get?name=...`. |
 | 12 | GET | `/v1/notes/list` | 2746–2748 | none | high | Public read-only route; proxies to docs-agent at `/notes/list?flat=...&project=...`. |
-| 13 | GET | `/v1/notes/get` | 2749–2751 | none | high | Public read-only route; handled in combined `if (path === '/v1/notes/get' \|\| path === '/v1/notes/read')` branch. Proxies to docs-agent at `/notes/read?slug=...`. |
-| 14 | GET | `/v1/notes/read` | 2749–2751 | none | high | Public read-only route; handled in combined `if (path === '/v1/notes/get' \|\| path === '/v1/notes/read')` branch. Proxies to docs-agent at `/notes/read?slug=...`. |
+| 13 | GET | `/v1/notes/get` | 2749–2751 | none | high | Public read-only route; handled in combined `if (path === '/v1/notes/get' || path === '/v1/notes/read')` branch. Proxies to docs-agent at `/notes/read?slug=...`. |
+| 14 | GET | `/v1/notes/read` | 2749–2751 | none | high | Public read-only route; handled in combined `if (path === '/v1/notes/get' || path === '/v1/notes/read')` branch. Proxies to docs-agent at `/notes/read?slug=...`. |
 | 15 | GET | `/v1/notes/graph` | 2752–2754 | none | high | Public read-only route; proxies to docs-agent at `/notes/graph?project=...`. |
 | 16 | POST | `/v1/notes/commit` | 2755–2757 | weak | high | Dispatches to `handleNotesCommit` (line 3550) which checks `if (!authPayload) return 401` after `verifyOwnerAuth` without checking `authPayload.role === 'owner'`. Non-owner Appwrite users can commit notes. |
 | 17 | DELETE | `/v1/notes/delete` | 2758–2760 | weak | high | Dispatches to `handleNotesDelete` (line 3599) which checks `if (!authPayload) return 401` after `verifyOwnerAuth` without checking `authPayload.role === 'owner'`. Non-owner Appwrite users can delete notes. |
