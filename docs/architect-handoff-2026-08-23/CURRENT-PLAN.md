@@ -164,13 +164,26 @@ until then.
 
 ## Recommended next action
 
-Both `slice/3.4-room-diagram-tenancy` and the diagrams-write-path follow-up are merged to
-main. Nothing is live/deployed yet (`DIAGRAM_SYNC` binding still doesn't exist). Next:
-Slice 3.3's remaining build-sequence steps 6-7 per the architect's plan — retire the 5
+`slice/3.4-room-diagram-tenancy` and the diagrams-write-path follow-up are merged to main,
+AND `DIAGRAM_SYNC` binding is now live (commit 83de6ef47, deployed version 07865171-5a61-
+493e-b366-49db19f2159b, 2026-08-23). Room + diagram tenant-scoped auth, D1 ownership check,
+and the D1 write path are now all fully reachable in production and smoke-tested working
+(/v1/diagram/:id/sync correctly 401s unauthenticated callers instead of 500ing). Next: Slice
+3.3's remaining build-sequence steps 6-7 per the architect's plan — retire the 5
 owner-granting paths (MCP_API_KEY-as-owner chief among them, per ADR-0025 §Decision-5), and
 wire `resolveTenant()` into the central `ROUTE_AUTH_TABLE` gate itself rather than having it
 re-resolved ad hoc per-handler (also fixes the double-Appwrite-round-trip inefficiency noted
-in the §3.4 review). Separately, still open and un-scoped: adding the `DIAGRAM_SYNC` binding
-itself (needs the same SQLite-migration care Slice 3.2's `RoomDO` binding got) to make any
-of tonight's diagram-sync work actually reachable in production.
+in the §3.4 review).
+
+## Note for future DO-binding work: `exports` vs `migrations`
+
+This Worker is now permanently committed to the declarative `exports` flow for Durable
+Object bindings (RoomDO, DiagramSyncDO) — Cloudflare's API rejects any deploy attempt using
+the older `[[migrations]]` block once a Worker has been deployed via `exports` (API code
+100403). Any FUTURE new Durable Object class must be added the same way: a new
+`[exports.ClassName]` block with `type = "durable-object"` and `storage = "sqlite"`,
+never a `[[migrations]]` entry. Always `--dry-run` first — the two failure modes tonight
+(mixing `migrations`+`exports` in one file; attempting to revert to `migrations` at all)
+were both caught before touching live state, but only because dry-run/deploy-time errors
+were checked rather than assumed clean.
 
