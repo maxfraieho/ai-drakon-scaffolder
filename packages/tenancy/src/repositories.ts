@@ -195,6 +195,14 @@ export class DiagramRepository {
       .bind(ir_json, this.tenantId, id)
       .run();
   }
+
+  async upsert(row: Omit<Diagram, 'tenant_id' | 'created_at' | 'updated_at'>): Promise<D1Result> {
+    const existing = await this.get(row.id);
+    if (existing) {
+      return this.update(row.id, row.ir_json);
+    }
+    return this.create(row);
+  }
 }
 
 // ── pipeline_runs ─────────────────────────────────────────────────────────

@@ -1033,7 +1033,7 @@ function applyMutationOnIr(workingIr, mutation) {
   return { ok: false, reason: `Unsupported mutation op: ${op}` };
 }
 
-async function handleMcpMutateDiagram(args, env) {
+async function handleMcpMutateDiagram(args, env, request) {
   const diagramId = String(args?.diagramId || '').trim();
   const folderId = String(args?.folderId || '').trim();
   const mutations = safeArray(args?.mutations);
@@ -1104,6 +1104,28 @@ async function handleMcpMutateDiagram(args, env) {
 
   if (appliedMutations.length > 0) {
     await uploadToMinIO(env, key, JSON.stringify(working, null, 2));
+
+    if (env.D1_DB && request) {
+      const ownerPayload = await verifyOwnerAuth(request, env);
+      const appwriteConfig = {
+        endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
+        projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
+      };
+      const tenantContext = await resolveTenant(request, appwriteConfig);
+      const tenantId = tenantContext?.tenantId || ownerPayload?.tenant_id || ownerPayload?.sub;
+
+      if (tenantId) {
+        const repo = new DiagramRepository(env.D1_DB, tenantId);
+        const irJson = JSON.stringify(working.diagram || ir || {});
+        const diagramName = String(working.diagram?.name || working.name || diagramId || 'Untitled');
+        await repo.upsert({
+          id: diagramId,
+          project_slug: folderId,
+          name: diagramName,
+          ir_json: irJson,
+        });
+      }
+    }
   }
 
   return {
@@ -1244,6 +1266,27 @@ async function handleDrakonCommit(request, env) {
   const normalized = normalizeDiagramPayload(body, folderSlug, diagramId);
   const key = `${folderSlug}/${diagramId}.json`;
   await uploadToMinIO(env, key, JSON.stringify(normalized, null, 2));
+
+  if (env.D1_DB) {
+    const ownerPayload = await verifyOwnerAuth(request, env);
+    const appwriteConfig = {
+      endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
+      projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
+    };
+    const tenantContext = await resolveTenant(request, appwriteConfig);
+    const tenantId = tenantContext?.tenantId || ownerPayload?.tenant_id || ownerPayload?.sub;
+
+    if (tenantId) {
+      const repo = new DiagramRepository(env.D1_DB, tenantId);
+      const irJson = JSON.stringify(normalized.diagram || normalized);
+      await repo.upsert({
+        id: diagramId,
+        project_slug: folderSlug,
+        name: normalized.name,
+        ir_json: irJson,
+      });
+    }
+  }
 
   return jsonResponse({ success: true, folderSlug, diagramId, diagram: normalized });
 }
@@ -2119,9 +2162,12 @@ async function handleMcp(request, env, ctx) {
     }
 
     if (name === 'drakon.savediagram') {
+      const authHeader = request.headers.get('Authorization');
+      const fakeHeaders = { 'Content-Type': 'application/json' };
+      if (authHeader) fakeHeaders['Authorization'] = authHeader;
       const fakeRequest = new Request('https://internal.local/commit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: fakeHeaders,
         body: JSON.stringify({
           folderSlug: String(args.folderSlug || ''),
           diagramId: String(args.diagramId || ''),
@@ -2165,7 +2211,7 @@ async function handleMcp(request, env, ctx) {
     }
 
     if (name === 'drakon.mutatediagram') {
-      const result = await handleMcpMutateDiagram(args, env);
+      const result = await handleMcpMutateDiagram(args, env, request);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 

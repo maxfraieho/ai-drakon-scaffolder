@@ -41,6 +41,10 @@ export interface MockEnvOptions {
 export function mockEnv(opts: MockEnvOptions = {}): Record<string, unknown> {
   const env: Record<string, unknown> = {
     JWT_SECRET,
+    MINIO_ENDPOINT: "https://storage.test.invalid",
+    MINIO_BUCKET: "test-bucket",
+    MINIO_ACCESS_KEY: "test-access-key-do-not-use",
+    MINIO_SECRET_KEY: "test-secret-key-do-not-use",
   };
   if (opts.mcpApiKey !== undefined) env.MCP_API_KEY = opts.mcpApiKey;
   if (opts.ownerEmails !== undefined) env.OWNER_EMAILS = opts.ownerEmails;
