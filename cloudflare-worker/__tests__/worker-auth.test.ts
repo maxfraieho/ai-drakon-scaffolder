@@ -80,43 +80,33 @@ describe("verifyOwnerAuth", () => {
     expect(result).toBeNull();
   });
 
-  it("grants owner for an Appwrite JWT whose email is in OWNER_EMAILS", async () => {
-    const env = { JWT_SECRET, OWNER_EMAILS: "owner@example.com, other@example.com" };
+  it("returns { role: 'user', sub, email } for a valid Appwrite JWT (OWNER_EMAILS/owner-label retired per ADR-0025)", async () => {
+    const env = { JWT_SECRET };
     globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ $id: "user-123", email: "Owner@Example.com" }), { status: 200 })
+      new Response(JSON.stringify({ $id: "user-123", email: "user@example.com" }), { status: 200 })
     );
     const result = await verifyOwnerAuth(requestWithBearer("some-appwrite-jwt"), env);
-    expect(result).toEqual({ role: "owner", sub: "user-123", email: "Owner@Example.com" });
+    expect(result).toEqual({ role: "user", sub: "user-123", email: "user@example.com" });
   });
 
-  it("demotes an Appwrite JWT whose email is NOT in OWNER_EMAILS to role:'user'", async () => {
-    const env = { JWT_SECRET, OWNER_EMAILS: "owner@example.com" };
-    globalThis.fetch = vi.fn().mockResolvedValue(
-      new Response(JSON.stringify({ $id: "user-456", email: "random@example.com" }), { status: 200 })
-    );
-    const result = await verifyOwnerAuth(requestWithBearer("some-appwrite-jwt"), env);
-    expect(result).toEqual({ role: "user", sub: "user-456", email: "random@example.com" });
-  });
-
-  it("grants owner for an Appwrite JWT whose user has the 'owner' label, regardless of OWNER_EMAILS", async () => {
-    const env = { JWT_SECRET, OWNER_EMAILS: "someone-else@example.com" };
+  it("does not grant role:'owner' even if user has 'owner' label or OWNER_EMAILS is provided (both retired)", async () => {
+    const env = { JWT_SECRET, OWNER_EMAILS: "labelled@example.com" };
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ $id: "user-789", email: "labelled@example.com", labels: ["owner"] }), { status: 200 })
     );
     const result = await verifyOwnerAuth(requestWithBearer("some-appwrite-jwt"), env);
-    expect(result).toEqual({ role: "owner", sub: "user-789", email: "labelled@example.com" });
+    expect(result).toEqual({ role: "user", sub: "user-789", email: "labelled@example.com" });
   });
 
-  it("falls back to granting owner (with a warning) when OWNER_EMAILS/OWNER_EMAIL is entirely unset", async () => {
-    const env = { JWT_SECRET }; // no OWNER_EMAILS, no OWNER_EMAIL
+  it("does not emit warning or grant role:'owner' when OWNER_EMAILS is unset", async () => {
+    const env = { JWT_SECRET };
     const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
     globalThis.fetch = vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ $id: "user-999", email: "anyone@example.com" }), { status: 200 })
     );
     const result = await verifyOwnerAuth(requestWithBearer("some-appwrite-jwt"), env);
-    expect(result).toEqual({ role: "owner", sub: "user-999", email: "anyone@example.com" });
-    expect(warnSpy).toHaveBeenCalledTimes(1);
-    expect(warnSpy.mock.calls[0][0]).toMatch(/OWNER_EMAILS/);
+    expect(result).toEqual({ role: "user", sub: "user-999", email: "anyone@example.com" });
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it("returns null when the Appwrite account lookup fails (invalid/expired token)", async () => {

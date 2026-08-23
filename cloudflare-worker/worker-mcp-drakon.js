@@ -454,24 +454,6 @@ export async function verifyOwnerAuth(request, env) {
   // Appwrite JWT (для email-авторизованих користувачів)
   const appwriteUser = await verifyAppwriteJwt(token);
   if (appwriteUser) {
-    const allowedOwners = (env.OWNER_EMAILS || env.OWNER_EMAIL || '')
-      .split(',')
-      .map((e) => e.trim().toLowerCase())
-      .filter(Boolean);
-    const userEmail = String(appwriteUser.email || '').toLowerCase();
-    const hasOwnerLabel = Array.isArray(appwriteUser.labels) && appwriteUser.labels.includes('owner');
-
-    if (allowedOwners.length === 0 && !hasOwnerLabel) {
-      // OWNER_EMAILS/OWNER_EMAIL not configured — fail safe-visible (grant owner, warn loudly)
-      // rather than fail-closed-silent (locking out every Appwrite user with no signal).
-      console.warn('[verifyOwnerAuth] OWNER_EMAILS/OWNER_EMAIL is not set — granting owner to all Appwrite-authenticated users. Set OWNER_EMAILS to restrict access.');
-      return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
-    }
-
-    const isOwner = hasOwnerLabel || allowedOwners.includes(userEmail);
-    if (isOwner) {
-      return { role: 'owner', sub: appwriteUser.$id, email: appwriteUser.email };
-    }
     return { role: 'user', sub: appwriteUser.$id, email: appwriteUser.email };
   }
 
@@ -2746,18 +2728,28 @@ export default {
 
       // Slice 3.2: central declarative auth gate, consulted before any
       // route-specific dispatch below. See ROUTE_AUTH_TABLE and
-      // docs/contracts/worker-route-auth-matrix-v2.md. Existing inline
-      // checks inside individual route branches/handlers are now
-      // redundant (this gate already rejects unauthorized callers before
-      // they're reached) but are left in place as defense-in-depth --
-      // not removed in this slice to keep the diff minimal and
-      // reviewable.
+      // docs/contracts/worker-route-auth-matrix-v2.md.
+      // Slice 3.3 (ADR-0025): 'owner'-level routes pass for either
+      // legacy role === 'owner' (MCP_API_KEY or Worker-JWT owner) OR
+      // a successfully resolved Appwrite tenant via resolveTenant().
       {
         const requiredAuth = resolveRouteAuth(method, path);
         if (requiredAuth !== 'none') {
           const gateAuthPayload = await verifyOwnerAuth(request, env);
-          if (requiredAuth === 'owner' && (!gateAuthPayload || gateAuthPayload.role !== 'owner')) {
-            return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+          if (requiredAuth === 'owner') {
+            const isLegacyOwner = Boolean(gateAuthPayload && gateAuthPayload.role === 'owner');
+            let hasTenant = false;
+            if (!isLegacyOwner) {
+              const appwriteConfig = {
+                endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
+                projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
+              };
+              const tenantContext = await resolveTenant(request, appwriteConfig);
+              hasTenant = Boolean(tenantContext);
+            }
+            if (!isLegacyOwner && !hasTenant) {
+              return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+            }
           }
           if (requiredAuth === 'authenticated' && !gateAuthPayload) {
             return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
@@ -2783,16 +2775,16 @@ export default {
         if (!roomId) return errorResponse('Missing room ID', 400);
 
         const ownerPayload = await verifyOwnerAuth(request, env);
-        if (!ownerPayload || ownerPayload.role !== 'owner') {
-          return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
-        }
-
         const appwriteConfig = {
           endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
           projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
         };
         const tenantContext = await resolveTenant(request, appwriteConfig);
-        const tenantId = tenantContext?.tenantId || ownerPayload.tenant_id || ownerPayload.sub;
+        const isLegacyOwner = Boolean(ownerPayload && ownerPayload.role === 'owner');
+        if (!isLegacyOwner && !tenantContext) {
+          return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+        }
+        const tenantId = tenantContext?.tenantId || ownerPayload?.tenant_id || ownerPayload?.sub;
 
         const id = env.ROOM_DO.idFromName(`${tenantId}:${roomId}`);
         const stub = env.ROOM_DO.get(id);
@@ -2808,16 +2800,16 @@ export default {
         if (!diagramId) return errorResponse('Missing diagram ID', 400);
 
         const ownerPayload = await verifyOwnerAuth(request, env);
-        if (!ownerPayload || ownerPayload.role !== 'owner') {
-          return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
-        }
-
         const appwriteConfig = {
           endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
           projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
         };
         const tenantContext = await resolveTenant(request, appwriteConfig);
-        const tenantId = tenantContext?.tenantId || ownerPayload.tenant_id || ownerPayload.sub;
+        const isLegacyOwner = Boolean(ownerPayload && ownerPayload.role === 'owner');
+        if (!isLegacyOwner && !tenantContext) {
+          return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+        }
+        const tenantId = tenantContext?.tenantId || ownerPayload?.tenant_id || ownerPayload?.sub;
 
         if (env.D1_DB) {
           const repo = new DiagramRepository(env.D1_DB, tenantId);
