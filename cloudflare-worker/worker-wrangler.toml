@@ -27,11 +27,30 @@ service = "architect-agent-flue"
 name = "ROOM_DO"
 class_name = "RoomDO"
 
-# RoomDO is already migrated to SQLite storage live (migration_tag "v1",
-# confirmed via GET /workers/services/drakon-antigravity-worker before
-# this deploy). Declaring it here as an existing sqlite-backed export
-# matches that live state -- this must NOT be a `new_sqlite_classes`
-# migration, which would attempt to re-migrate an already-migrated class.
+[[durable_objects.bindings]]
+name = "DIAGRAM_SYNC"
+class_name = "DiagramSyncDO"
+
+# `migrations` and `exports` are mutually exclusive, AND the live Cloudflare
+# API rejects reverting a Worker from `exports` back to `migrations` once
+# it's been deployed via `exports` (confirmed 2026-08-23: deploy attempt
+# with a [[migrations]] block failed with API code 100403, "This Worker
+# was last deployed using the declarative `exports` flow; reverting to
+# `migrations` is not supported. Please continue to use `exports`." --
+# live state was unaffected, deploy is atomic, nothing broke). So both DO
+# classes must be declared under `exports`, not `migrations`, from here on.
 [exports.RoomDO]
 type = "durable-object"
 storage = "sqlite"
+
+# DiagramSyncDO has never been bound/migrated before -- this is its first
+# declaration. Under the `exports` model this is the same declarative
+# syntax as an already-existing export; wrangler/Cloudflare provisions it
+# on first deploy rather than requiring a separate "new class" migration
+# step the way the legacy `migrations` flow did.
+[exports.DiagramSyncDO]
+type = "durable-object"
+storage = "sqlite"
+
+
+
