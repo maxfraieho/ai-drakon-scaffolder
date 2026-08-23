@@ -58,6 +58,8 @@ development/
 *.png
 *.html
 *.py
+!scripts/sdd_llm_judge.py
+!update_plan.py
 execution-prompt-ua-integration.md
 services/deterministic-engine/package-lock.json
 res.txt
