@@ -3,6 +3,7 @@ packages:
   - 'packages/harness-contract'
   - 'packages/policy-engine'
   - 'packages/storage'
+  - 'packages/tenancy'
   - 'cloudflare-worker'
 onlyBuiltDependencies:
   - '@google/genai'

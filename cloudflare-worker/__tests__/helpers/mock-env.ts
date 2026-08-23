@@ -16,9 +16,12 @@ function fakeDoStub(response: Response) {
 }
 
 /** A fake DurableObjectNamespace binding: idFromName is identity, get() returns a fixed stub. */
-export function fakeDoNamespace(response: Response) {
+export function fakeDoNamespace(response: Response, onIdFromName?: (name: string) => void) {
   return {
-    idFromName: (name: string) => name,
+    idFromName: (name: string) => {
+      onIdFromName?.(name);
+      return name;
+    },
     get: (_id: string) => fakeDoStub(response),
   };
 }
@@ -30,6 +33,9 @@ export interface MockEnvOptions {
   diagramSyncResponse?: Response;
   includeRoomDo?: boolean;
   includeDiagramSync?: boolean;
+  onRoomDoIdFromName?: (name: string) => void;
+  onDiagramSyncIdFromName?: (name: string) => void;
+  d1Db?: unknown;
 }
 
 export function mockEnv(opts: MockEnvOptions = {}): Record<string, unknown> {
@@ -39,10 +45,13 @@ export function mockEnv(opts: MockEnvOptions = {}): Record<string, unknown> {
   if (opts.mcpApiKey !== undefined) env.MCP_API_KEY = opts.mcpApiKey;
   if (opts.ownerEmails !== undefined) env.OWNER_EMAILS = opts.ownerEmails;
   if (opts.includeRoomDo !== false) {
-    env.ROOM_DO = fakeDoNamespace(opts.roomDoResponse ?? new Response(null, { status: 426 }));
+    env.ROOM_DO = fakeDoNamespace(opts.roomDoResponse ?? new Response(null, { status: 426 }), opts.onRoomDoIdFromName);
   }
   if (opts.includeDiagramSync) {
-    env.DIAGRAM_SYNC = fakeDoNamespace(opts.diagramSyncResponse ?? new Response(null, { status: 426 }));
+    env.DIAGRAM_SYNC = fakeDoNamespace(opts.diagramSyncResponse ?? new Response(null, { status: 426 }), opts.onDiagramSyncIdFromName);
+  }
+  if (opts.d1Db !== undefined) {
+    env.D1_DB = opts.d1Db;
   }
   return env;
 }

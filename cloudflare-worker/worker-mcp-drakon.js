@@ -1,6 +1,7 @@
 // ── Inlined htse lib (ir-types, ir-validator-core, diagram-to-ir, ir-to-diagram) ──
 
 import { S3BlobStoreAdapter } from '@ai-drakon/storage';
+import { resolveTenant, DiagramRepository } from '@ai-drakon/tenancy';
 
 const VALID_IR_ITEM_TYPES = new Set([
   'action','question','select','case','header','end','address',
@@ -2722,10 +2723,12 @@ export default {
       // this point -- before JWT_SECRET was even checked, before any auth
       // call. Moved inside the auth boundary and given the same
       // verifyOwnerAuth + role==='owner' check every other authenticated
-      // route uses. This is an interim fix pending real tenant-membership
-      // checks (Slice 3.3) -- room/diagram IDs are still not secret, so
-      // any owner can join any room, but at minimum an unauthenticated
-      // caller can no longer reach either Durable Object at all.
+      // route uses.
+      //
+      // Slice 3.4: room/diagram tenant ownership. Durable Object IDs are
+      // derived from `${tenantId}:${roomId}` and `${tenantId}:${diagramId}` so
+      // tenants cannot cross-talk. Diagram sync also performs an explicit D1
+      // DiagramRepository ownership check before reaching DiagramSyncDO.
       if (path.startsWith('/ws/room/')) {
         if (!env.ROOM_DO) {
           return errorResponse('ROOM_DO binding missing', 500);
@@ -2738,7 +2741,14 @@ export default {
           return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
         }
 
-        const id = env.ROOM_DO.idFromName(roomId);
+        const appwriteConfig = {
+          endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
+          projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
+        };
+        const tenantContext = await resolveTenant(request, appwriteConfig);
+        const tenantId = tenantContext?.tenantId || ownerPayload.tenant_id || ownerPayload.sub;
+
+        const id = env.ROOM_DO.idFromName(`${tenantId}:${roomId}`);
         const stub = env.ROOM_DO.get(id);
         return stub.fetch(request);
       }
@@ -2756,7 +2766,22 @@ export default {
           return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
         }
 
-        const id = env.DIAGRAM_SYNC.idFromName(diagramId);
+        const appwriteConfig = {
+          endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
+          projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
+        };
+        const tenantContext = await resolveTenant(request, appwriteConfig);
+        const tenantId = tenantContext?.tenantId || ownerPayload.tenant_id || ownerPayload.sub;
+
+        if (env.D1_DB) {
+          const repo = new DiagramRepository(env.D1_DB, tenantId);
+          const diagram = await repo.get(diagramId);
+          if (!diagram) {
+            return errorResponse('Forbidden', 403, undefined, 'FORBIDDEN');
+          }
+        }
+
+        const id = env.DIAGRAM_SYNC.idFromName(`${tenantId}:${diagramId}`);
         const stub = env.DIAGRAM_SYNC.get(id);
         return stub.fetch(request);
       }

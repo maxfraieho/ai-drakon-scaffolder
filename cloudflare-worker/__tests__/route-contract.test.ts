@@ -197,4 +197,112 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       expect(res.status).toBe(426);
     });
   });
+
+  describe("Slice 3.4: Room and Diagram tenant isolation (tenant-prefixed DO keys + D1 ownership)", () => {
+    function fakeD1Database(diagrams: Array<{ id: string; tenant_id: string; [k: string]: unknown }>) {
+      return {
+        prepare: vi.fn((_query: string) => ({
+          bind: vi.fn((...args: unknown[]) => ({
+            first: vi.fn(async () => {
+              const [tenantId, id] = args as [string, string];
+              return diagrams.find((d) => d.tenant_id === tenantId && d.id === id) ?? null;
+            }),
+          })),
+        })),
+      };
+    }
+
+    it("derives RoomDO identity from ${tenantId}:${roomId}", async () => {
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      let capturedDoId = "";
+      const env = mockEnv({
+        onRoomDoIdFromName: (name) => {
+          capturedDoId = name;
+        },
+      });
+
+      const res = await worker.fetch(req("/ws/room/collab-room-1", {}, token), env, noopCtx());
+      expect(res.status).toBe(426);
+      expect(capturedDoId).toBe("tenant-alpha:collab-room-1");
+    });
+
+    it("isolates two tenants using the same roomId into distinct RoomDO instances", async () => {
+      const tokenA = await generateJWT({ role: "owner", sub: "tenant-a" }, JWT_SECRET);
+      const tokenB = await generateJWT({ role: "owner", sub: "tenant-b" }, JWT_SECRET);
+
+      const capturedIds: string[] = [];
+      const env = mockEnv({
+        onRoomDoIdFromName: (name) => {
+          capturedIds.push(name);
+        },
+      });
+
+      await worker.fetch(req("/ws/room/shared-room-name", {}, tokenA), env, noopCtx());
+      await worker.fetch(req("/ws/room/shared-room-name", {}, tokenB), env, noopCtx());
+
+      expect(capturedIds).toEqual(["tenant-a:shared-room-name", "tenant-b:shared-room-name"]);
+    });
+
+    it("derives DiagramSyncDO identity from ${tenantId}:${diagramId} and allows sync when caller owns diagram in D1", async () => {
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      let capturedDoId = "";
+      const d1 = fakeD1Database([
+        { id: "diag-100", tenant_id: "tenant-alpha", name: "Alpha Diagram" },
+      ]);
+      const env = mockEnv({
+        includeDiagramSync: true,
+        diagramSyncResponse: new Response(null, { status: 426 }),
+        onDiagramSyncIdFromName: (name) => {
+          capturedDoId = name;
+        },
+        d1Db: d1,
+      });
+
+      const res = await worker.fetch(req("/v1/diagram/diag-100/sync", { method: "POST" }, token), env, noopCtx());
+      expect(res.status).toBe(426);
+      expect(capturedDoId).toBe("tenant-alpha:diag-100");
+    });
+
+    it("rejects sync with 403 Forbidden when diagram belongs to a different tenant in D1", async () => {
+      const token = await generateJWT({ role: "owner", sub: "tenant-beta" }, JWT_SECRET);
+      let doCalled = false;
+      const d1 = fakeD1Database([
+        { id: "diag-100", tenant_id: "tenant-alpha", name: "Alpha Diagram" },
+      ]);
+      const env = mockEnv({
+        includeDiagramSync: true,
+        diagramSyncResponse: new Response(null, { status: 426 }),
+        onDiagramSyncIdFromName: () => {
+          doCalled = true;
+        },
+        d1Db: d1,
+      });
+
+      const res = await worker.fetch(req("/v1/diagram/diag-100/sync", { method: "POST" }, token), env, noopCtx());
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json).toMatchObject({ success: false, error: "Forbidden", errorCode: "FORBIDDEN" });
+      expect(doCalled).toBe(false);
+    });
+
+    it("rejects sync with 403 Forbidden when diagram does not exist in D1", async () => {
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      let doCalled = false;
+      const d1 = fakeD1Database([]);
+      const env = mockEnv({
+        includeDiagramSync: true,
+        diagramSyncResponse: new Response(null, { status: 426 }),
+        onDiagramSyncIdFromName: () => {
+          doCalled = true;
+        },
+        d1Db: d1,
+      });
+
+      const res = await worker.fetch(req("/v1/diagram/non-existent-diag/sync", { method: "POST" }, token), env, noopCtx());
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json).toMatchObject({ success: false, error: "Forbidden", errorCode: "FORBIDDEN" });
+      expect(doCalled).toBe(false);
+    });
+  });
 });
