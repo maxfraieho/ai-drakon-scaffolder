@@ -970,6 +970,7 @@ describe("Route-contract characterization (Slice 3.1)", () => {
         return new Response(null, { status: 502 });
       });
 
+      const testIr = { schema_version: "1.0.0", items: [{ id: "node-1", type: "action", text: "Start" }] };
       const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
       const res = await worker.fetch(
         req(
@@ -977,6 +978,7 @@ describe("Route-contract characterization (Slice 3.1)", () => {
           {
             method: "POST",
             body: JSON.stringify({
+              drakon_ir: testIr,
               specId: "spec-architect",
               breakpoints: ["node-1"],
             }),
@@ -991,6 +993,7 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       const json = await res.json();
       expect(json).toEqual({ execution_id: "exec-123", status: "accepted" });
       expect(forwardedPayload).not.toBeNull();
+      expect(forwardedPayload.drakon_ir).toEqual(testIr);
       expect(forwardedPayload.harness_spec).toMatchObject({
         agent_name: "architect",
         version: "1.0.0",
