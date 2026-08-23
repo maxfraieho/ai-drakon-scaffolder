@@ -21,7 +21,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DiagramRepository, type D1Database } from "@ai-drakon/tenancy";
 import worker, { generateJWT } from "../worker-mcp-drakon.js";
-import { JWT_SECRET, mockEnv, noopCtx } from "./helpers/mock-env.js";
+import { JWT_SECRET, MCP_API_KEY, mockAppwriteTenantSession, mockEnv, noopCtx } from "./helpers/mock-env.js";
 
 async function ownerToken() {
   return generateJWT({ role: "owner", sub: "test-owner" }, JWT_SECRET);
@@ -61,7 +61,7 @@ describe("Route-contract characterization (Slice 3.1)", () => {
     expect(res.status).not.toBe(401);
   });
 
-  describe("POST /mcp -- D13 FIXED (Slice 3.2): now requires role:'owner'", () => {
+  describe("POST /mcp -- (Slice 3.2 & Slice 3.3): owner-gated via tenant or legacy owner", () => {
     it("401s with no Authorization header", async () => {
       const res = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }), mockEnv(), noopCtx());
       expect(res.status).toBe(401);
@@ -73,10 +73,21 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       expect(res.status).not.toBe(401);
     });
 
-    it("D13 FIXED: an Appwrite-authenticated non-owner user now 401s via the central ROUTE_AUTH_TABLE gate", async () => {
+    it("does NOT 401 for a valid static MCP_API_KEY", async () => {
+      const env = mockEnv({ mcpApiKey: MCP_API_KEY });
+      const res = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }, MCP_API_KEY), env, noopCtx());
+      expect(res.status).not.toBe(401);
+    });
+
+    it("passes for an Appwrite-JWT user via resolveTenant()", async () => {
+      mockAppwriteTenantSession();
+      const res = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }, APPWRITE_USER_TOKEN), mockEnv(), noopCtx());
+      expect(res.status).not.toBe(401);
+    });
+
+    it("401s for an Appwrite-JWT user when resolveTenant() fails", async () => {
       mockNonOwnerAppwriteLookup();
-      const env = mockEnv({ ownerEmails: "someone-else@example.com" });
-      const res = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }, APPWRITE_USER_TOKEN), env, noopCtx());
+      const res = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }, APPWRITE_USER_TOKEN), mockEnv(), noopCtx());
       expect(res.status).toBe(401);
     });
   });
@@ -85,16 +96,33 @@ describe("Route-contract characterization (Slice 3.1)", () => {
     ["/v1/notes/commit", "POST"],
     ["/v1/notes/delete", "DELETE"],
     ["/v1/notes/build-semantic-graph", "POST"],
-  ])("%s -- D14 FIXED (Slice 3.2): now requires role:'owner'", (path, method) => {
+  ])("%s -- owner-gated (Slice 3.2 & 3.3)", (path, method) => {
     it("401s with no Authorization header", async () => {
       const res = await worker.fetch(req(path, { method, body: "{}" }), mockEnv(), noopCtx());
       expect(res.status).toBe(401);
     });
 
-    it("D14 FIXED: an Appwrite-authenticated non-owner user now 401s via the central ROUTE_AUTH_TABLE gate", async () => {
+    it("does NOT 401 for a role:'owner' token", async () => {
+      const token = await ownerToken();
+      const res = await worker.fetch(req(path, { method, body: "{}" }, token), mockEnv(), noopCtx());
+      expect(res.status).not.toBe(401);
+    });
+
+    it("does NOT 401 for a valid static MCP_API_KEY", async () => {
+      const env = mockEnv({ mcpApiKey: MCP_API_KEY });
+      const res = await worker.fetch(req(path, { method, body: "{}" }, MCP_API_KEY), env, noopCtx());
+      expect(res.status).not.toBe(401);
+    });
+
+    it("passes for an Appwrite-JWT user via resolveTenant()", async () => {
+      mockAppwriteTenantSession();
+      const res = await worker.fetch(req(path, { method, body: "{}" }, APPWRITE_USER_TOKEN), mockEnv(), noopCtx());
+      expect(res.status).not.toBe(401);
+    });
+
+    it("401s when resolveTenant() fails", async () => {
       mockNonOwnerAppwriteLookup();
-      const env = mockEnv({ ownerEmails: "someone-else@example.com" });
-      const res = await worker.fetch(req(path, { method, body: "{}" }, APPWRITE_USER_TOKEN), env, noopCtx());
+      const res = await worker.fetch(req(path, { method, body: "{}" }, APPWRITE_USER_TOKEN), mockEnv(), noopCtx());
       expect(res.status).toBe(401);
     });
   });
@@ -111,16 +139,27 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       expect(res.status).toBe(401);
     });
 
-    it("401s for an Appwrite-authenticated non-owner user (role:'user', truthy but not owner)", async () => {
+    it("401s when resolveTenant() fails", async () => {
       mockNonOwnerAppwriteLookup();
-      const env = mockEnv({ ownerEmails: "someone-else@example.com" });
-      const res = await worker.fetch(req(path, init(), APPWRITE_USER_TOKEN), env, noopCtx());
+      const res = await worker.fetch(req(path, init(), APPWRITE_USER_TOKEN), mockEnv(), noopCtx());
       expect(res.status).toBe(401);
+    });
+
+    it("passes for an Appwrite-JWT user via resolveTenant()", async () => {
+      mockAppwriteTenantSession();
+      const res = await worker.fetch(req(path, init(), APPWRITE_USER_TOKEN), mockEnv(), noopCtx());
+      expect(res.status).not.toBe(401);
     });
 
     it("does NOT 401 for a role:'owner' token", async () => {
       const token = await ownerToken();
       const res = await worker.fetch(req(path, init(), token), mockEnv(), noopCtx());
+      expect(res.status).not.toBe(401);
+    });
+
+    it("does NOT 401 for a valid static MCP_API_KEY", async () => {
+      const env = mockEnv({ mcpApiKey: MCP_API_KEY });
+      const res = await worker.fetch(req(path, init(), MCP_API_KEY), env, noopCtx());
       expect(res.status).not.toBe(401);
     });
   });
@@ -138,9 +177,9 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       expect(res.status).toBe(401);
     });
 
-    it("401s for an Appwrite-authenticated non-owner user", async () => {
+    it("401s when resolveTenant() fails", async () => {
       mockNonOwnerAppwriteLookup();
-      const env = mockEnv({ ownerEmails: "someone-else@example.com", roomDoResponse: new Response(null, { status: 426 }) });
+      const env = mockEnv({ roomDoResponse: new Response(null, { status: 426 }) });
       const res = await worker.fetch(req("/ws/room/some-guessable-room-id", {}, APPWRITE_USER_TOKEN), env, noopCtx());
       expect(res.status).toBe(401);
     });
@@ -152,6 +191,26 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       // 426 = our fake DO stub's configured response, proving dispatch
       // reached RoomDO.fetch only after clearing the owner check.
       expect(res.status).toBe(426);
+    });
+
+    it("a valid static MCP_API_KEY reaches the Durable Object stub", async () => {
+      const env = mockEnv({ mcpApiKey: MCP_API_KEY, roomDoResponse: new Response(null, { status: 426 }) });
+      const res = await worker.fetch(req("/ws/room/some-guessable-room-id", {}, MCP_API_KEY), env, noopCtx());
+      expect(res.status).toBe(426);
+    });
+
+    it("an Appwrite-JWT user with resolved tenant reaches the Durable Object stub", async () => {
+      mockAppwriteTenantSession({ teamId: "team-room-xyz" });
+      let capturedDoId = "";
+      const env = mockEnv({
+        roomDoResponse: new Response(null, { status: 426 }),
+        onRoomDoIdFromName: (name) => {
+          capturedDoId = name;
+        },
+      });
+      const res = await worker.fetch(req("/ws/room/some-guessable-room-id", {}, APPWRITE_USER_TOKEN), env, noopCtx());
+      expect(res.status).toBe(426);
+      expect(capturedDoId).toBe("team-room-xyz:some-guessable-room-id");
     });
 
     it("401s when ROOM_DO is unbound and caller is unauthenticated (Slice 3.2: central gate now runs before the binding-existence check, so an unauthenticated caller can no longer even learn ROOM_DO is unbound)", async () => {
@@ -195,6 +254,16 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       const token = await ownerToken();
       const env = mockEnv({ includeDiagramSync: true, diagramSyncResponse: new Response(null, { status: 426 }) });
       const res = await worker.fetch(req("/v1/diagram/some-diagram-id/sync", { method: "POST" }, token), env, noopCtx());
+      expect(res.status).toBe(426);
+    });
+
+    it("a valid static MCP_API_KEY reaches the Durable Object stub once DIAGRAM_SYNC is bound", async () => {
+      const env = mockEnv({
+        mcpApiKey: MCP_API_KEY,
+        includeDiagramSync: true,
+        diagramSyncResponse: new Response(null, { status: 426 }),
+      });
+      const res = await worker.fetch(req("/v1/diagram/some-diagram-id/sync", { method: "POST" }, MCP_API_KEY), env, noopCtx());
       expect(res.status).toBe(426);
     });
   });
@@ -695,6 +764,94 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toMatchObject({ success: true, folderSlug: "no-d1-proj", diagramId: "no-d1-diag" });
+    });
+  });
+
+  describe("Slice 3.3 Step 7: Tenancy migration & OWNER_EMAILS retirement (ADR-0025)", () => {
+    it("Appwrite-JWT-only user passes owner-level routes via resolveTenant()", async () => {
+      mockAppwriteTenantSession({ userId: "appwrite-u1", teamId: "team-alpha" });
+      const env = mockEnv();
+
+      const mcpRes = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }, APPWRITE_USER_TOKEN), env, noopCtx());
+      expect(mcpRes.status).not.toBe(401);
+
+      const notesRes = await worker.fetch(
+        req("/v1/notes/commit", { method: "POST", body: JSON.stringify({ slug: "test-note", title: "Note" }) }, APPWRITE_USER_TOKEN),
+        env,
+        noopCtx()
+      );
+      expect(notesRes.status).not.toBe(401);
+
+      const semRes = await worker.fetch(
+        req("/v1/notes/build-semantic-graph", { method: "POST", body: "{}" }, APPWRITE_USER_TOKEN),
+        env,
+        noopCtx()
+      );
+      expect(semRes.status).not.toBe(401);
+
+      const semStatusRes = await worker.fetch(
+        req("/v1/notes/semantic-graph-status?execution_id=exec-1", {}, APPWRITE_USER_TOKEN),
+        env,
+        noopCtx()
+      );
+      expect(semStatusRes.status).not.toBe(401);
+
+      const codegenStatusRes = await worker.fetch(
+        req("/v1/codegen-status?execution_id=exec-2", {}, APPWRITE_USER_TOKEN),
+        env,
+        noopCtx()
+      );
+      expect(codegenStatusRes.status).not.toBe(401);
+
+      const compileStatusRes = await worker.fetch(
+        req("/v1/compile-status?execution_id=exec-3", {}, APPWRITE_USER_TOKEN),
+        env,
+        noopCtx()
+      );
+      expect(compileStatusRes.status).not.toBe(401);
+    });
+
+    it("MCP_API_KEY path still works unchanged across owner routes", async () => {
+      const env = mockEnv({ mcpApiKey: MCP_API_KEY });
+
+      const mcpRes = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }, MCP_API_KEY), env, noopCtx());
+      expect(mcpRes.status).not.toBe(401);
+
+      const notesRes = await worker.fetch(
+        req("/v1/notes/commit", { method: "POST", body: JSON.stringify({ slug: "test-note", title: "Note" }) }, MCP_API_KEY),
+        env,
+        noopCtx()
+      );
+      expect(notesRes.status).not.toBe(401);
+    });
+
+    it("Worker-JWT owner path still works unchanged across owner routes", async () => {
+      const token = await ownerToken();
+      const env = mockEnv();
+
+      const mcpRes = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }, token), env, noopCtx());
+      expect(mcpRes.status).not.toBe(401);
+
+      const notesRes = await worker.fetch(
+        req("/v1/notes/commit", { method: "POST", body: JSON.stringify({ slug: "test-note", title: "Note" }) }, token),
+        env,
+        noopCtx()
+      );
+      expect(notesRes.status).not.toBe(401);
+    });
+
+    it("unauthenticated request 401s on owner routes", async () => {
+      const env = mockEnv();
+
+      const mcpRes = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }), env, noopCtx());
+      expect(mcpRes.status).toBe(401);
+
+      const notesRes = await worker.fetch(
+        req("/v1/notes/commit", { method: "POST", body: JSON.stringify({ slug: "test-note", title: "Note" }) }),
+        env,
+        noopCtx()
+      );
+      expect(notesRes.status).toBe(401);
     });
   });
 });
