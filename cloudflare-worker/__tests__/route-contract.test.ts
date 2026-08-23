@@ -60,7 +60,7 @@ describe("Route-contract characterization (Slice 3.1)", () => {
     expect(res.status).not.toBe(401);
   });
 
-  describe("POST /mcp -- D13: accepts role:'user', not just role:'owner'", () => {
+  describe("POST /mcp -- D13 FIXED (Slice 3.2): now requires role:'owner'", () => {
     it("401s with no Authorization header", async () => {
       const res = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }), mockEnv(), noopCtx());
       expect(res.status).toBe(401);
@@ -72,11 +72,11 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       expect(res.status).not.toBe(401);
     });
 
-    it("CHARACTERIZED BUG: an Appwrite-authenticated non-owner user does NOT 401 either (D13)", async () => {
+    it("D13 FIXED: an Appwrite-authenticated non-owner user now 401s via the central ROUTE_AUTH_TABLE gate", async () => {
       mockNonOwnerAppwriteLookup();
       const env = mockEnv({ ownerEmails: "someone-else@example.com" });
       const res = await worker.fetch(req("/mcp", { method: "POST", body: "{}" }, APPWRITE_USER_TOKEN), env, noopCtx());
-      expect(res.status).not.toBe(401);
+      expect(res.status).toBe(401);
     });
   });
 
@@ -84,17 +84,17 @@ describe("Route-contract characterization (Slice 3.1)", () => {
     ["/v1/notes/commit", "POST"],
     ["/v1/notes/delete", "DELETE"],
     ["/v1/notes/build-semantic-graph", "POST"],
-  ])("%s -- corrected D14: authenticated, but NOT role-checked", (path, method) => {
+  ])("%s -- D14 FIXED (Slice 3.2): now requires role:'owner'", (path, method) => {
     it("401s with no Authorization header", async () => {
       const res = await worker.fetch(req(path, { method, body: "{}" }), mockEnv(), noopCtx());
       expect(res.status).toBe(401);
     });
 
-    it("CHARACTERIZED BUG: an Appwrite-authenticated non-owner user does NOT 401 either (any authenticated caller can commit/delete notes)", async () => {
+    it("D14 FIXED: an Appwrite-authenticated non-owner user now 401s via the central ROUTE_AUTH_TABLE gate", async () => {
       mockNonOwnerAppwriteLookup();
       const env = mockEnv({ ownerEmails: "someone-else@example.com" });
       const res = await worker.fetch(req(path, { method, body: "{}" }, APPWRITE_USER_TOKEN), env, noopCtx());
-      expect(res.status).not.toBe(401);
+      expect(res.status).toBe(401);
     });
   });
 
@@ -153,17 +153,31 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       expect(res.status).toBe(426);
     });
 
-    it("500s when ROOM_DO is unbound, checked before auth (config error, not a security control)", async () => {
+    it("401s when ROOM_DO is unbound and caller is unauthenticated (Slice 3.2: central gate now runs before the binding-existence check, so an unauthenticated caller can no longer even learn ROOM_DO is unbound)", async () => {
       const env = mockEnv({ includeRoomDo: false });
       const res = await worker.fetch(req("/ws/room/some-id"), env, noopCtx());
+      expect(res.status).toBe(401);
+    });
+
+    it("500s when ROOM_DO is unbound but caller IS an authenticated owner (config error surfaces once auth passes)", async () => {
+      const token = await ownerToken();
+      const env = mockEnv({ includeRoomDo: false });
+      const res = await worker.fetch(req("/ws/room/some-id", {}, token), env, noopCtx());
       expect(res.status).toBe(500);
     });
   });
 
   describe("N1/N2 -- FIXED (Slice 3.6): /v1/diagram/*/sync now requires owner auth before reaching DiagramSyncDO", () => {
-    it("500s when DIAGRAM_SYNC is unbound (live-matching default; config error, checked before auth)", async () => {
+    it("401s when DIAGRAM_SYNC is unbound and caller is unauthenticated (Slice 3.2: central gate now runs before the binding-existence check)", async () => {
       const env = mockEnv({ includeDiagramSync: false });
       const res = await worker.fetch(req("/v1/diagram/some-diagram-id/sync", { method: "POST" }), env, noopCtx());
+      expect(res.status).toBe(401);
+    });
+
+    it("500s when DIAGRAM_SYNC is unbound but caller IS an authenticated owner (config error surfaces once auth passes)", async () => {
+      const token = await ownerToken();
+      const env = mockEnv({ includeDiagramSync: false });
+      const res = await worker.fetch(req("/v1/diagram/some-diagram-id/sync", { method: "POST" }, token), env, noopCtx());
       expect(res.status).toBe(500);
     });
 

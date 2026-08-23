@@ -477,6 +477,60 @@ export async function verifyOwnerAuth(request, env) {
   return null;
 }
 
+// Slice 3.2: declarative route-auth table, consulted once before any
+// route-specific dispatch in fetch(). Derived from the exhaustive audit in
+// docs/contracts/worker-route-auth-matrix-v2.md (2026-08-23). Replaces the
+// old positional gate (routes textually before it got no owner check,
+// routes after it always did) and closes two bug classes found by that
+// audit:
+//   - "weak": routes that called verifyOwnerAuth() but checked only
+//     truthiness (`if (!payload)`), not `payload.role === 'owner'` -- any
+//     non-owner Appwrite-authenticated user passed. Marked below with
+//     "was weak".
+//   - zero-auth status routes that leaked Appwrite execution logs to any
+//     caller who could guess/enumerate an execution_id. Marked below with
+//     "was none".
+// Entries are evaluated in the SAME order the old fetch() dispatch used
+// to match them, first match wins. Anything unmatched (all 39 routes that
+// used to sit after the old positional gate, plus the 404 fallback)
+// defaults to 'owner' -- deny by default.
+const ROUTE_AUTH_TABLE = [
+  { method: 'ANY', test: (m, p) => p.startsWith('/ws/room/'), auth: 'owner' },
+  { method: 'ANY', test: (m, p) => p.startsWith('/v1/diagram/') && p.endsWith('/sync'), auth: 'owner' },
+  { method: 'GET', test: (m, p) => p === '/health', auth: 'none' },
+  { method: 'POST', test: (m, p) => p === '/auth/login', auth: 'none' },
+  { method: 'GET', test: (m, p) => p === '/auth/github/start', auth: 'none' },
+  { method: 'GET', test: (m, p) => p === '/auth/github/callback', auth: 'none' },
+  { method: 'GET', test: (m, p) => p === '/mcp', auth: 'none' },
+  { method: 'POST', test: (m, p) => p === '/mcp', auth: 'owner' }, // was weak
+  { method: 'GET', test: (m, p) => p === '/v1/drakon-ir/list', auth: 'none' },
+  { method: 'GET', test: (m, p) => /^\/v1\/drakon-ir\/([^/]+)$/.test(p), auth: 'none' },
+  { method: 'GET', test: (m, p) => p === '/v1/notes/list', auth: 'none' },
+  { method: 'GET', test: (m, p) => p === '/v1/notes/get' || p === '/v1/notes/read', auth: 'none' },
+  { method: 'GET', test: (m, p) => p === '/v1/notes/graph', auth: 'none' },
+  { method: 'POST', test: (m, p) => p === '/v1/notes/commit', auth: 'owner' }, // was weak
+  { method: 'DELETE', test: (m, p) => p === '/v1/notes/delete', auth: 'owner' }, // was weak
+  { method: 'POST', test: (m, p) => p === '/v1/notes/build-semantic-graph', auth: 'owner' }, // was weak
+  { method: 'GET', test: (m, p) => p === '/v1/notes/semantic-graph-status', auth: 'owner' }, // was none
+  { method: 'POST', test: (m, p) => p === '/v1/codegen', auth: 'owner' }, // was weak
+  { method: 'GET', test: (m, p) => p === '/v1/codegen-status', auth: 'owner' }, // was none
+  { method: 'POST', test: (m, p) => p === '/v1/compile', auth: 'owner' }, // was weak
+  { method: 'GET', test: (m, p) => p === '/v1/compile-status', auth: 'owner' }, // was none
+  { method: 'GET', test: (m, p) => /^\/v1\/pipeline\/stream\/([^\/]+)$/.test(p), auth: 'owner' }, // was weak
+  { method: 'POST', test: (m, p) => /^\/v1\/agents\/(sonate-solidaire)\/chat$/.test(p), auth: 'none' },
+  { method: 'GET', test: (m, p) => /^\/v1\/agents\/([^\/]+)\/health$/.test(p), auth: 'none' },
+  { method: 'GET', test: (m, p) => p === '/v1/understand/status', auth: 'none' },
+  { method: 'ANY', test: (m, p) => p === '/v1/user/config', auth: 'authenticated' },
+];
+
+function resolveRouteAuth(method, pathname) {
+  for (const route of ROUTE_AUTH_TABLE) {
+    if (route.method !== 'ANY' && route.method !== method) continue;
+    if (route.test(method, pathname)) return route.auth;
+  }
+  return 'owner';
+}
+
 function s3UriEncode(str) {
   return encodeURIComponent(str)
     .replace(/!/g, '%21')
@@ -2643,6 +2697,27 @@ export default {
         return errorResponse('JWT_SECRET is not configured', 500, undefined, 'SERVER_CONFIG_ERROR');
       }
 
+      // Slice 3.2: central declarative auth gate, consulted before any
+      // route-specific dispatch below. See ROUTE_AUTH_TABLE and
+      // docs/contracts/worker-route-auth-matrix-v2.md. Existing inline
+      // checks inside individual route branches/handlers are now
+      // redundant (this gate already rejects unauthorized callers before
+      // they're reached) but are left in place as defense-in-depth --
+      // not removed in this slice to keep the diff minimal and
+      // reviewable.
+      {
+        const requiredAuth = resolveRouteAuth(method, path);
+        if (requiredAuth !== 'none') {
+          const gateAuthPayload = await verifyOwnerAuth(request, env);
+          if (requiredAuth === 'owner' && (!gateAuthPayload || gateAuthPayload.role !== 'owner')) {
+            return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+          }
+          if (requiredAuth === 'authenticated' && !gateAuthPayload) {
+            return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+          }
+        }
+      }
+
       // Slice 3.6: these two Durable Object paths used to dispatch before
       // this point -- before JWT_SECRET was even checked, before any auth
       // call. Moved inside the auth boundary and given the same
@@ -2863,10 +2938,12 @@ export default {
         if (method === 'PUT') return await handleUserConfigPut(request, env);
       }
 
-      const ownerPayload = await verifyOwnerAuth(request, env);
-      if (!ownerPayload || ownerPayload.role !== 'owner') {
-        return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
-      }
+      // Slice 3.2: the positional owner gate that used to sit here was
+      // removed -- every route reaching this point already required
+      // 'owner' via the central ROUTE_AUTH_TABLE gate above (any route
+      // not explicitly listed there defaults to 'owner'). Keeping a
+      // second verifyOwnerAuth() call here would just double the
+      // Appwrite round-trip for no additional enforcement.
 
       // ─── Docs-agent proxy (/v1/docs/* → docs-agent) ───────────────────────────
       if (path.startsWith('/v1/docs/')) {
