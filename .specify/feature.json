@@ -1,12 +1,12 @@
 {
   "schema_version": 1,
-  "feature_id": "002-methodology-and-astryx-refactor",
-  "spec_dir": "specs/002-methodology-and-astryx-refactor",
+  "feature_id": "006-spec-resolution",
+  "spec_dir": "specs/006-spec-resolution",
   "branch": "main",
-  "phase": "implement",
-  "phases_done": ["specify", "plan", "tasks"],
-  "owner_agent": "codex",
-  "host": "dev-184",
-  "updated_at": "2026-08-18T23:59:00Z",
-  "notes": "Task 1 (T-201..T-208) completed by Codex. GitNexus local index rebuilt on 33d890b8; MCP index freshness must be checked before use. Backend services and -flue WIP remain out of scope. Task 2 and Task 3 remain planned."
+  "phase": "specify",
+  "phases_done": ["specify"],
+  "owner_agent": "claude-code",
+  "host": "192.168.3.234",
+  "updated_at": "2026-08-23T00:00:00Z",
+  "notes": "Repoints the SDD Arbiter's active target off the stale 002-methodology-and-astryx-refactor spec (unrelated Astryx/frontend refactor) onto 006-spec-resolution, which references ADR-0020 (server-resident harness specs and extracted policy engine) and scopes Slice 3.4a: server-resident HarnessSpec resolution for handleDrakonExecuteDeterministic via a tenant-scoped HarnessSpecRepository, dual-accept transition (old harness_spec/gates body deprecation-warns, does not yet 400), and a one-time seed of the harness_specs D1 table. Slice 3.4b (human-approval PEP relocation / Adjustment C) is explicitly out of scope, Oracle-gated, future ADR-0026+. Only spec.md exists so far (no plan.md/tasks.md in this spec_dir yet) — matches the 000-baseline/001-backend-agents-baseline precedent for a freshly-bootstrapped spec, hence phase=specify/phases_done=[specify], not implement. The actual Slice 3.4a implementation plan is being executed by a separate, parallel agy task on host .30, already approved by the operator; this commit only fixes the governance pointer so the SDD Arbiter (scripts/sdd_llm_judge.py, shadow-mode) judges incoming 3.4a commits against the correct spec/ADR instead of the stale 002 entry. NOTE: scripts/sdd_llm_judge.py does not currently exist in this branch/worktree (confirmed via git log and find) — bin/sdd_verify.sh and .githooks/pre-commit both degrade gracefully (skip) when it's absent, so the Arbiter is a no-op today regardless of this fix; this feature.json correction is still necessary groundwork for whenever that script lands. host=192.168.3.234 (not the historical 'dev-184' value used by prior entries) because this branch's worktree and commit for this change physically live on .234, not the dev-184 canonical clone; prior entries' 'dev-184' tracked a different, separate checkout (~/projects/ai-drakon-scaffolder) per the 2026-08-18 bootstrap commit notes."
 }
