@@ -72,6 +72,46 @@ describe('DiagramRepository -- tenant isolation', () => {
     // no tenant_id field at all (Omit<Diagram, 'tenant_id' | ...>).
     expect(statement.bind).toHaveBeenCalledWith('d1', 'tenant-a', 'p', 'n', '{}');
   });
+
+  it('update() binds tenantId from the constructor and updates ir_json', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new DiagramRepository(db, 'tenant-a');
+    await repo.update('d1', '{"updated":true}');
+
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE diagrams SET ir_json = ?'));
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('WHERE tenant_id = ? AND id = ?'));
+    const statement = prepare.mock.results[0].value;
+    expect(statement.bind).toHaveBeenCalledWith('{"updated":true}', 'tenant-a', 'd1');
+  });
+
+  it('upsert() creates a fresh row when the diagram does not exist', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new DiagramRepository(db, 'tenant-a');
+    await repo.upsert({ id: 'd1', project_slug: 'p', name: 'n', ir_json: '{}' });
+
+    // First query is get()
+    expect(prepare).toHaveBeenNthCalledWith(1, expect.stringContaining('SELECT * FROM diagrams WHERE tenant_id = ? AND id = ?'));
+    // Second query is create()
+    expect(prepare).toHaveBeenNthCalledWith(2, expect.stringContaining('INSERT INTO diagrams'));
+    const createStatement = prepare.mock.results[1].value;
+    expect(createStatement.bind).toHaveBeenCalledWith('d1', 'tenant-a', 'p', 'n', '{}');
+  });
+
+  it('upsert() updates ir_json when the diagram already exists', async () => {
+    const bind = vi.fn().mockReturnThis();
+    const first = vi.fn().mockResolvedValue({ id: 'd1', tenant_id: 'tenant-a', project_slug: 'p', name: 'n', ir_json: '{}' });
+    const run = vi.fn().mockResolvedValue({ results: [], success: true });
+    const statement = { bind, first, run };
+    const prepare = vi.fn().mockReturnValue(statement);
+    const db = { prepare } as unknown as D1Database;
+
+    const repo = new DiagramRepository(db, 'tenant-a');
+    await repo.upsert({ id: 'd1', project_slug: 'p', name: 'n', ir_json: '{"version":2}' });
+
+    expect(prepare).toHaveBeenNthCalledWith(1, expect.stringContaining('SELECT * FROM diagrams WHERE tenant_id = ? AND id = ?'));
+    expect(prepare).toHaveBeenNthCalledWith(2, expect.stringContaining('UPDATE diagrams SET ir_json = ?'));
+    expect(statement.bind).toHaveBeenCalledWith('{"version":2}', 'tenant-a', 'd1');
+  });
 });
 
 describe('KnowledgeZoneRepository -- tenant isolation', () => {

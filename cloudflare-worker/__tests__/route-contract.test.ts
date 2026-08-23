@@ -19,6 +19,7 @@
 // blocked by this file's structure -- add a case, not a new harness.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { DiagramRepository, type D1Database } from "@ai-drakon/tenancy";
 import worker, { generateJWT } from "../worker-mcp-drakon.js";
 import { JWT_SECRET, mockEnv, noopCtx } from "./helpers/mock-env.js";
 
@@ -303,6 +304,397 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       const json = await res.json();
       expect(json).toMatchObject({ success: false, error: "Forbidden", errorCode: "FORBIDDEN" });
       expect(doCalled).toBe(false);
+    });
+  });
+
+  describe("Slice 3.3: Diagram write path D1 synchronization", () => {
+    function createMutableD1(
+      initialRows: Array<{
+        id: string;
+        tenant_id: string;
+        project_slug: string;
+        name: string;
+        ir_json: string;
+        created_at: string;
+        updated_at: string;
+      }> = []
+    ) {
+      const table = [...initialRows];
+      const db: D1Database = {
+        prepare: vi.fn((query: string) => ({
+          bind: vi.fn((...args: unknown[]) => ({
+            first: vi.fn(async () => {
+              if (query.includes("WHERE tenant_id = ? AND id = ?")) {
+                const [tenantId, id] = args as [string, string];
+                const row = table.find((r) => r.tenant_id === tenantId && r.id === id);
+                return row ? { ...row } : null;
+              }
+              return null;
+            }),
+            all: vi.fn(async () => {
+              if (query.includes("WHERE tenant_id = ? AND project_slug = ?")) {
+                const [tenantId, projectSlug] = args as [string, string];
+                const rows = table.filter((r) => r.tenant_id === tenantId && r.project_slug === projectSlug);
+                return { results: rows.map((r) => ({ ...r })), success: true };
+              }
+              return { results: [], success: true };
+            }),
+            run: vi.fn(async () => {
+              if (query.includes("INSERT INTO diagrams")) {
+                const [id, tenantId, project_slug, name, ir_json] = args as [string, string, string, string, string];
+                table.push({
+                  id,
+                  tenant_id: tenantId,
+                  project_slug,
+                  name,
+                  ir_json,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                });
+                return { results: [], success: true };
+              }
+              if (query.includes("UPDATE diagrams SET ir_json = ?")) {
+                const [ir_json, tenantId, id] = args as [string, string, string];
+                const row = table.find((r) => r.tenant_id === tenantId && r.id === id);
+                if (row) {
+                  row.ir_json = ir_json;
+                  row.updated_at = new Date().toISOString();
+                }
+                return { results: [], success: true };
+              }
+              return { results: [], success: true };
+            }),
+          })),
+        })),
+      };
+      return { db, table };
+    }
+
+    it("POST /v1/drakon/commit writes diagram to D1, and DiagramRepository.get(id) finds it for the same tenant", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const { db } = createMutableD1();
+      const env = mockEnv({ d1Db: db });
+
+      const commitBody = {
+        folderSlug: "my-project",
+        diagramId: "diag-42",
+        diagram: {
+          name: "Flow 42",
+          items: {
+            "1": { type: "action", content: "Init system" },
+          },
+        },
+      };
+
+      const res = await worker.fetch(
+        req("/v1/drakon/commit", { method: "POST", body: JSON.stringify(commitBody) }, token),
+        env,
+        noopCtx()
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toMatchObject({ success: true, folderSlug: "my-project", diagramId: "diag-42" });
+
+      // Directly verify row via DiagramRepository.get(id) for saving tenant
+      const repoAlpha = new DiagramRepository(db, "tenant-alpha");
+      const saved = await repoAlpha.get("diag-42");
+      expect(saved).not.toBeNull();
+      expect(saved?.id).toBe("diag-42");
+      expect(saved?.tenant_id).toBe("tenant-alpha");
+      expect(saved?.project_slug).toBe("my-project");
+      expect(saved?.name).toBe("Flow 42");
+      expect(JSON.parse(saved!.ir_json).items["1"].content).toBe("Init system");
+
+      // Tenant isolation: a different tenant CANNOT read the row
+      const repoBeta = new DiagramRepository(db, "tenant-beta");
+      const savedBeta = await repoBeta.get("diag-42");
+      expect(savedBeta).toBeNull();
+    });
+
+    it("saved diagram passes the subsequent /v1/diagram/:diagramId/sync ownership check for owner and 403s for other tenants", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+      const tokenAlpha = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const tokenBeta = await generateJWT({ role: "owner", sub: "tenant-beta" }, JWT_SECRET);
+      const { db } = createMutableD1();
+      let syncDoId = "";
+      const env = mockEnv({
+        d1Db: db,
+        includeDiagramSync: true,
+        diagramSyncResponse: new Response(null, { status: 426 }),
+        onDiagramSyncIdFromName: (name) => {
+          syncDoId = name;
+        },
+      });
+
+      // 1. Save diagram as tenant-alpha
+      const commitRes = await worker.fetch(
+        req(
+          "/v1/drakon/commit",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              folderSlug: "proj-1",
+              diagramId: "diag-sync-test",
+              diagram: { name: "Sync Flow", items: {} },
+            }),
+          },
+          tokenAlpha
+        ),
+        env,
+        noopCtx()
+      );
+      expect(commitRes.status).toBe(200);
+
+      // 2. tenant-alpha attempts sync -> passes ownership check and reaches DO
+      const syncResAlpha = await worker.fetch(
+        req("/v1/diagram/diag-sync-test/sync", { method: "POST" }, tokenAlpha),
+        env,
+        noopCtx()
+      );
+      expect(syncResAlpha.status).toBe(426);
+      expect(syncDoId).toBe("tenant-alpha:diag-sync-test");
+
+      // 3. tenant-beta attempts sync on same diagram -> rejected with 403 Forbidden
+      const syncResBeta = await worker.fetch(
+        req("/v1/diagram/diag-sync-test/sync", { method: "POST" }, tokenBeta),
+        env,
+        noopCtx()
+      );
+      expect(syncResBeta.status).toBe(403);
+      const jsonBeta = await syncResBeta.json();
+      expect(jsonBeta).toMatchObject({ success: false, error: "Forbidden", errorCode: "FORBIDDEN" });
+    });
+
+    it("updating an existing diagram with POST /v1/drakon/commit updates the D1 row", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const { db } = createMutableD1();
+      const env = mockEnv({ d1Db: db });
+
+      // First save (create)
+      await worker.fetch(
+        req(
+          "/v1/drakon/commit",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              folderSlug: "proj-1",
+              diagramId: "diag-update-test",
+              diagram: { name: "V1", items: { "1": { type: "action", content: "Original" } } },
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      const repo = new DiagramRepository(db, "tenant-alpha");
+      const v1 = await repo.get("diag-update-test");
+      expect(JSON.parse(v1!.ir_json).items["1"].content).toBe("Original");
+
+      // Second save (update)
+      await worker.fetch(
+        req(
+          "/v1/drakon/commit",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              folderSlug: "proj-1",
+              diagramId: "diag-update-test",
+              diagram: { name: "V1", items: { "1": { type: "action", content: "Modified" } } },
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      const v2 = await repo.get("diag-update-test");
+      expect(JSON.parse(v2!.ir_json).items["1"].content).toBe("Modified");
+    });
+
+    it("resolves Appwrite tenant context when saving a diagram", async () => {
+      const mockFetch = vi.fn((url: string | URL | Request) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/v1/account")) {
+          return Promise.resolve(new Response(JSON.stringify({ $id: "user-123", email: "user@example.com" }), { status: 200 }));
+        }
+        if (urlStr.includes("/v1/teams")) {
+          return Promise.resolve(
+            new Response(JSON.stringify({ teams: [{ $id: "team-personal-123", name: "Personal" }] }), { status: 200 })
+          );
+        }
+        // MinIO PUT
+        return Promise.resolve(new Response(null, { status: 200 }));
+      });
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const { db } = createMutableD1();
+      const env = mockEnv({ d1Db: db });
+
+      const res = await worker.fetch(
+        req(
+          "/v1/drakon/commit",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              folderSlug: "appwrite-proj",
+              diagramId: "appwrite-diag",
+              diagram: { name: "Appwrite Flow", items: {} },
+            }),
+          },
+          APPWRITE_USER_TOKEN
+        ),
+        env,
+        noopCtx()
+      );
+      expect(res.status).toBe(200);
+
+      // The diagram is saved under team-personal-123 (the resolved tenant)
+      const repoTeam = new DiagramRepository(db, "team-personal-123");
+      const saved = await repoTeam.get("appwrite-diag");
+      expect(saved).not.toBeNull();
+      expect(saved?.tenant_id).toBe("team-personal-123");
+    });
+
+    it("MCP tool drakon.savediagram writes diagram to D1", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+      const token = await generateJWT({ role: "owner", sub: "tenant-mcp" }, JWT_SECRET);
+      const { db } = createMutableD1();
+      const env = mockEnv({ d1Db: db });
+
+      const mcpPayload = {
+        jsonrpc: "2.0",
+        id: 1,
+        method: "tools/call",
+        params: {
+          name: "drakon.savediagram",
+          arguments: {
+            folderSlug: "mcp-project",
+            diagramId: "mcp-diag-1",
+            diagram: {
+              name: "MCP Diagram",
+              items: { "1": { type: "action", content: "From MCP" } },
+            },
+          },
+        },
+      };
+
+      const res = await worker.fetch(
+        req("/mcp", { method: "POST", body: JSON.stringify(mcpPayload) }, token),
+        env,
+        noopCtx()
+      );
+      expect(res.status).toBe(200);
+
+      const repo = new DiagramRepository(db, "tenant-mcp");
+      const saved = await repo.get("mcp-diag-1");
+      expect(saved).not.toBeNull();
+      expect(saved?.tenant_id).toBe("tenant-mcp");
+      expect(saved?.project_slug).toBe("mcp-project");
+      expect(saved?.name).toBe("MCP Diagram");
+    });
+
+    it("MCP tool drakon.mutatediagram updates diagram in D1", async () => {
+      const existingDiagram = {
+        id: "mut-diag-1",
+        name: "Mutated Diagram",
+        folderId: "mut-folder",
+        version: 1,
+        diagram: {
+          name: "Mutated Diagram",
+          access: "read",
+          params: "",
+          items: {
+            "1": { type: "action", content: "Original node", one: "2" },
+            "2": { type: "end", content: "Done" },
+          },
+        },
+      };
+
+      const mockFetch = vi.fn((url: string | URL | Request, init?: RequestInit) => {
+        if (init?.method === "PUT") {
+          return Promise.resolve(new Response(null, { status: 200 }));
+        }
+        // GET from MinIO
+        return Promise.resolve(new Response(JSON.stringify(existingDiagram), { status: 200 }));
+      });
+      globalThis.fetch = mockFetch as unknown as typeof fetch;
+
+      const token = await generateJWT({ role: "owner", sub: "tenant-mut" }, JWT_SECRET);
+      const { db } = createMutableD1([
+        {
+          id: "mut-diag-1",
+          tenant_id: "tenant-mut",
+          project_slug: "mut-folder",
+          name: "Mutated Diagram",
+          ir_json: JSON.stringify(existingDiagram.diagram),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+
+      const mcpPayload = {
+        jsonrpc: "2.0",
+        id: 2,
+        method: "tools/call",
+        params: {
+          name: "drakon.mutatediagram",
+          arguments: {
+            folderId: "mut-folder",
+            diagramId: "mut-diag-1",
+            mutations: [
+              {
+                op: "updateNode",
+                nodeId: "1",
+                fields: { content: "Updated node via mutation" },
+              },
+            ],
+          },
+        },
+      };
+
+      const res = await worker.fetch(
+        req("/mcp", { method: "POST", body: JSON.stringify(mcpPayload) }, token),
+        env,
+        noopCtx()
+      );
+      expect(res.status).toBe(200);
+
+      const repo = new DiagramRepository(db, "tenant-mut");
+      const updated = await repo.get("mut-diag-1");
+      expect(updated).not.toBeNull();
+      expect(updated?.ir_json).toContain("Updated node via mutation");
+    });
+
+    it("POST /v1/drakon/commit succeeds when D1_DB is not bound (defensive fallback)", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue(new Response(null, { status: 200 }));
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const env = mockEnv(); // no d1Db
+
+      const res = await worker.fetch(
+        req(
+          "/v1/drakon/commit",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              folderSlug: "no-d1-proj",
+              diagramId: "no-d1-diag",
+              diagram: { name: "No D1", items: {} },
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body).toMatchObject({ success: true, folderSlug: "no-d1-proj", diagramId: "no-d1-diag" });
     });
   });
 });
