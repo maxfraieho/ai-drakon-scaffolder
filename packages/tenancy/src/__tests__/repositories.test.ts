@@ -3,6 +3,7 @@ import {
   DiagramRepository,
   KnowledgeZoneRepository,
   PipelineRunRepository,
+  HarnessSpecRepository,
   type D1Database,
 } from '../repositories';
 
@@ -140,5 +141,70 @@ describe('PipelineRunRepository -- tenant isolation', () => {
     await repo.get('run-123');
 
     expect(prepare.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-b', 'run-123');
+  });
+});
+
+describe('HarnessSpecRepository -- tenant isolation', () => {
+  it('list() scopes to the constructor tenantId', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new HarnessSpecRepository(db, 'tenant-a');
+    await repo.list('architect');
+
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('WHERE tenant_id = ? AND agent_name = ?'));
+    expect(prepare.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-a', 'architect');
+  });
+
+  it('get(id) always scopes to the constructor tenantId', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new HarnessSpecRepository(db, 'tenant-a');
+    await repo.get('spec-123');
+
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('WHERE tenant_id = ? AND (id = ? OR agent_name = ?)'));
+    expect(prepare.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-a', 'spec-123', 'spec-123');
+  });
+
+  it('two repository instances for two tenants never share a bound tenantId', async () => {
+    const { db: dbA, prepare: prepareA } = fakeDb();
+    const { db: dbB, prepare: prepareB } = fakeDb();
+    const repoA = new HarnessSpecRepository(dbA, 'tenant-a');
+    const repoB = new HarnessSpecRepository(dbB, 'tenant-b');
+
+    await repoA.get('shared-spec');
+    await repoB.get('shared-spec');
+
+    expect(prepareA.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-a', 'shared-spec', 'shared-spec');
+    expect(prepareB.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-b', 'shared-spec', 'shared-spec');
+  });
+
+  it('create() binds tenantId from constructor, not from row object', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new HarnessSpecRepository(db, 'tenant-a');
+    await repo.create({ id: 's1', agent_name: 'architect', version: '1.0.0', spec_json: '{}' });
+
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO harness_specs'));
+    const statement = prepare.mock.results[0].value;
+    expect(statement.bind).toHaveBeenCalledWith('s1', 'tenant-a', 'architect', '1.0.0', '{}');
+  });
+
+  it('update() binds tenantId from constructor and updates spec_json', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new HarnessSpecRepository(db, 'tenant-a');
+    await repo.update('s1', '{"updated":true}');
+
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('UPDATE harness_specs SET spec_json = ?'));
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('WHERE tenant_id = ? AND id = ?'));
+    const statement = prepare.mock.results[0].value;
+    expect(statement.bind).toHaveBeenCalledWith('{"updated":true}', 'tenant-a', 's1');
+  });
+
+  it('upsert() creates a fresh row when the spec does not exist', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new HarnessSpecRepository(db, 'tenant-a');
+    await repo.upsert({ id: 's1', agent_name: 'architect', version: '1.0.0', spec_json: '{}' });
+
+    expect(prepare).toHaveBeenNthCalledWith(1, expect.stringContaining('SELECT * FROM harness_specs WHERE tenant_id = ?'));
+    expect(prepare).toHaveBeenNthCalledWith(2, expect.stringContaining('INSERT INTO harness_specs'));
+    const createStatement = prepare.mock.results[1].value;
+    expect(createStatement.bind).toHaveBeenCalledWith('s1', 'tenant-a', 'architect', '1.0.0', '{}');
   });
 });

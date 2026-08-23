@@ -259,14 +259,27 @@ export interface HarnessSpecRow {
 export class HarnessSpecRepository {
   constructor(private db: D1Database, private tenantId: string) {}
 
-  list(agentName: string): Promise<D1Result<HarnessSpecRow>> {
+  list(agentName?: string): Promise<D1Result<HarnessSpecRow>> {
+    if (agentName) {
+      return this.db
+        .prepare('SELECT * FROM harness_specs WHERE tenant_id = ? AND agent_name = ? ORDER BY version DESC')
+        .bind(this.tenantId, agentName)
+        .all<HarnessSpecRow>();
+    }
     return this.db
-      .prepare('SELECT * FROM harness_specs WHERE tenant_id = ? AND agent_name = ? ORDER BY version DESC')
-      .bind(this.tenantId, agentName)
+      .prepare('SELECT * FROM harness_specs WHERE tenant_id = ? ORDER BY agent_name, version DESC')
+      .bind(this.tenantId)
       .all<HarnessSpecRow>();
   }
 
-  get(agentName: string, version: string): Promise<HarnessSpecRow | null> {
+  get(id: string): Promise<HarnessSpecRow | null> {
+    return this.db
+      .prepare('SELECT * FROM harness_specs WHERE tenant_id = ? AND (id = ? OR agent_name = ?) ORDER BY version DESC LIMIT 1')
+      .bind(this.tenantId, id, id)
+      .first<HarnessSpecRow>();
+  }
+
+  getByAgent(agentName: string, version: string): Promise<HarnessSpecRow | null> {
     return this.db
       .prepare('SELECT * FROM harness_specs WHERE tenant_id = ? AND agent_name = ? AND version = ?')
       .bind(this.tenantId, agentName, version)
@@ -280,5 +293,22 @@ export class HarnessSpecRepository {
       )
       .bind(row.id, this.tenantId, row.agent_name, row.version, row.spec_json)
       .run();
+  }
+
+  update(id: string, spec_json: string): Promise<D1Result> {
+    return this.db
+      .prepare(
+        'UPDATE harness_specs SET spec_json = ?, updated_at = datetime(\'now\') WHERE tenant_id = ? AND id = ?'
+      )
+      .bind(spec_json, this.tenantId, id)
+      .run();
+  }
+
+  async upsert(row: Omit<HarnessSpecRow, 'tenant_id' | 'created_at' | 'updated_at'>): Promise<D1Result> {
+    const existing = await this.get(row.id);
+    if (existing) {
+      return this.update(row.id, row.spec_json);
+    }
+    return this.create(row);
   }
 }

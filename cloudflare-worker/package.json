@@ -5,6 +5,7 @@
   "type": "module",
   "dependencies": {
     "@ai-drakon/storage": "workspace:*",
-    "@ai-drakon/tenancy": "workspace:*"
+    "@ai-drakon/tenancy": "workspace:*",
+    "@ai-drakon/harness-contract": "workspace:*"
   }
 }

@@ -21,7 +21,7 @@ export class DeterministicPipelineClient {
 
   async execute(
     drakonIr: unknown,
-    harnessSpec: DrakonHarnessSpec,
+    specId: string,
     callbacks: {
       onEvent: (event: PipelineEvent) => void;
       onComplete: (events: PipelineEvent[]) => void;
@@ -39,7 +39,7 @@ export class DeterministicPipelineClient {
         },
         body: JSON.stringify({
           drakon_ir: drakonIr,
-          harness_spec: harnessSpec,
+          specId,
           breakpoints,
         }),
       });

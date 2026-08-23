@@ -69,3 +69,71 @@ export type PipelineEvent =
   | { event: 'breakpoint'; node_id: string; error?: string }
   | { event: 'done'; total_tokens: number; nodes_executed: number }
   | { event: 'error'; message: string };
+
+// Basic runtime validator for DrakonHarnessSpec
+export function validateHarnessSpec(spec: unknown): spec is DrakonHarnessSpec {
+  if (typeof spec !== 'object' || spec === null) return false;
+
+  const s = spec as Record<string, unknown>;
+
+  if (typeof s.agent_name !== 'string' || !s.agent_name) return false;
+  if (typeof s.version !== 'string') return false;
+  if (typeof s.mcp_servers !== 'object' || s.mcp_servers === null) return false;
+  if (!Array.isArray(s.allowed_tools)) return false;
+  if (typeof s.permissions !== 'object' || s.permissions === null) return false;
+  if (typeof s.runtime !== 'object' || s.runtime === null) return false;
+  if (typeof s.gates !== 'object' || s.gates === null) return false;
+
+  return true;
+}
+
+// Generates sensible defaults for a new agent project spec
+export function createDefaultSpec(agentName: string): DrakonHarnessSpec {
+  return {
+    $schema: "https://aidrakon.tech/schemas/harness-spec-v1.json",
+    agent_name: agentName,
+    version: "1.0.0",
+    description: `AI-DRAKON Agent ${agentName}`,
+    mcp_servers: {
+      gitnexus: { endpoint: "https://gitnexus.exodus.pp.ua/api/mcp", required: false, timeout_ms: 15000 },
+      notebooklm: { endpoint: "https://fra.cloud.appwrite.io/v1/functions/notebooklm", required: false, timeout_ms: 20000 },
+    },
+    allowed_tools: [
+      "mcp.gitnexus.query",
+      "mcp.notebooklm.chat_ask",
+    ],
+    resources: {
+      github: ["*"],
+      appwrite: ["*"],
+    },
+    permissions: {
+      max_tokens_per_hour: 100000,
+      max_tokens_per_node: 10000,
+      max_execution_time_seconds: 300,
+      max_github_commits_per_day: 15,
+    },
+    runtime: {
+      entrypoint: ".drakon/main.drakon",
+      execution_mode: "deterministic",
+      confidence_threshold: 0.75,
+    },
+    gates: {
+      confidence: {
+        min_score: 0.7,
+        critique_max_retries: 2,
+      },
+      policy: {
+        allowed_capabilities: ["mcp.gitnexus.query", "mcp.notebooklm.chat_ask"],
+        deny_patterns: ["mcp.gitnexus.impact"], // block high-risk tools by default
+      },
+      cost: {
+        max_tokens_per_node: 8000,
+        warn_at_percent: 80,
+      },
+      safety: {
+        blocked_patterns: ["rm\\s+-rf", "DROP\\s+TABLE", "DROP\\s+DATABASE", "eval\\("],
+        require_human_approval: ["github.repo.*.commit"],
+      },
+    },
+  };
+}
