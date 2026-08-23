@@ -5,7 +5,10 @@ account_id = "c354ea45a11a1e1c14f1f41fe780cb34"
 
 [vars]
 DRAKON_CODEGEN_FUNCTION_ID = "6a33b6050037a2fff34e"
-MCP_API_KEY = "drakon-mcp-2026"
+# MCP_API_KEY removed 2026-08-23: was committed here in plaintext
+# (D17/N-finding). Rotated live via `wrangler secret put MCP_API_KEY`;
+# now a secret, never checked into source. See
+# docs/reports/2026-08-23-openbot-verifier-final-synthesis.md.
 
 [[durable_objects.bindings]]
 name = "ROOM_DO"
