@@ -23,7 +23,7 @@ a real place in the sequence.
 | 3.2 | DONE, deployed 2026-08-23 (version b84dad42) | declarative ROUTE_AUTH_TABLE, closes weak-auth-bypass (7 routes) + zero-auth-leak (3 routes). See docs/architect-handoff-2026-08-23/HANDOFF.md for full detail. |
 | 3.3 (D1 schema + binding) | DONE | infrastructure/d1/schema.sql applied to live `ai-drakon-saas` (6 tables). `env.D1_DB` binding already existed pre-tonight, reused as-is. |
 | 3.3 (packages/tenancy) | DONE, tested 81/81 on .184+.30 | resolveTenant() (Appwrite Teams, Option A per owner decision), 6 tenant-scoped D1 repositories. Not yet merged to main. |
-| 3.3 §3.4 (room/diagram ownership) | **IMPLEMENTED, PENDING REVIEW — NOT MERGED, NOT DEPLOYED** | branch `slice/3.4-room-diagram-tenancy` (commit 5332188f), built by agy on .30. Tests 81/81 passing on both .184 and .30, tsc clean, wrangler dry-run bundles cleanly. See "Slice 3.3 §3.4 review notes" below for open items before merge. |
+| 3.3 §3.4 (room/diagram ownership) | **MERGED to main (35b681c3), NOT DEPLOYED** | 81/81 tests passing on main post-merge. `DIAGRAM_SYNC` binding still not live — nothing executes in production from this yet. See "Slice 3.3 §3.4 review notes" below for open items before this is deployable/usable end-to-end. |
 | 3.4-old | NOT STARTED | server-resident spec resolution (round-2 synthesis's original numbering) — blocked on 3.3 completing |
 | 3.5 | NOT STARTED | generic runner registry — blocked on 3.3 |
 | 4.4 | NOT STARTED | tenant-filtered MCP (pulled forward in the plan) — blocked on 3.3 |
