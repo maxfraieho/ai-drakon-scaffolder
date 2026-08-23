@@ -65,3 +65,5 @@ gn_res.txt
 tools_raw.txt
 cloudflare-worker/generated-analysis-cache.js
 .lovable/
+docs/architect-handoff-2026-08-23/*.pdf
+docs/architect-handoff-2026-08-23/*code_dump.md
