@@ -23,8 +23,9 @@ a real place in the sequence.
 | 3.2 | DONE, deployed 2026-08-23 (version b84dad42) | declarative ROUTE_AUTH_TABLE, closes weak-auth-bypass (7 routes) + zero-auth-leak (3 routes). See docs/architect-handoff-2026-08-23/HANDOFF.md for full detail. |
 | 3.3 (D1 schema + binding) | DONE | infrastructure/d1/schema.sql applied to live `ai-drakon-saas` (6 tables). `env.D1_DB` binding already existed pre-tonight, reused as-is. |
 | 3.3 (packages/tenancy) | DONE, merged | resolveTenant() (Appwrite Teams, Option A per owner decision), 6 tenant-scoped D1 repositories + upsert(). |
-| 3.3 §3.4 (room/diagram ownership) | **MERGED to main (35b681c3), NOT DEPLOYED** | `DIAGRAM_SYNC` binding still not live — nothing executes in production from this yet. |
-| 3.3 (diagrams-table write path) | **MERGED to main (9cb8fdc06), NOT DEPLOYED** | Wires `handleDrakonCommit` + MCP `drakon.mutatediagram`/`drakon.savediagram` to `DiagramRepository.upsert()`. Closes the "403-forever" gap §3.4 review flagged. 91/91 tests on .184+.30, tsc clean, dry-run bundles clean. See "Slice 3.3 diagrams-write-path review notes" below. |
+| 3.3 §3.4 (room/diagram ownership) | MERGED (35b681c3) + DEPLOYED (DIAGRAM_SYNC binding live, 2026-08-23) | Room + diagram tenant-scoped auth reachable in production, smoke-tested. |
+| 3.3 (diagrams-table write path) | MERGED (9cb8fdc06) + DEPLOYED | Wires `handleDrakonCommit` + MCP `drakon.mutatediagram`/`drakon.savediagram` to `DiagramRepository.upsert()`. Closes the "403-forever" gap §3.4 review flagged. 91/91 tests on .184+.30, tsc clean, dry-run bundles clean. See "Slice 3.3 diagrams-write-path review notes" below. |
+| 3.3 §4 steps 6-7 (retire OWNER_EMAILS, tenant-or-legacy-owner gate) | **MERGED to main (f9e76489b), NOT YET DEPLOYED** | `verifyOwnerAuth()`'s OWNER_EMAILS/OWNER_EMAIL/owner-label branch removed (fail-open warning gone). Central `ROUTE_AUTH_TABLE` gate + room/diagram-sync DO routes now pass `'owner'` on legacy owner (MCP_API_KEY, Worker-JWT) OR a resolved tenant via `resolveTenant()`. MCP_API_KEY retirement and `/auth/login` explicitly deferred per Q ("так, окремим кроком"). Implemented by agy.exe on .30, reviewed (full diff), 220/220 tests on .30, 97/97 cross-verified on .184. Next: deploy to make live (same `--dry-run` discipline as DIAGRAM_SYNC). |
 | 3.4-old | NOT STARTED | server-resident spec resolution (round-2 synthesis's original numbering) — blocked on 3.3 completing |
 | 3.5 | NOT STARTED | generic runner registry — blocked on 3.3 |
 | 4.4 | NOT STARTED | tenant-filtered MCP (pulled forward in the plan) — blocked on 3.3 |
@@ -168,12 +169,12 @@ until then.
 AND `DIAGRAM_SYNC` binding is now live (commit 83de6ef47, deployed version 07865171-5a61-
 493e-b366-49db19f2159b, 2026-08-23). Room + diagram tenant-scoped auth, D1 ownership check,
 and the D1 write path are now all fully reachable in production and smoke-tested working
-(/v1/diagram/:id/sync correctly 401s unauthenticated callers instead of 500ing). Next: Slice
-3.3's remaining build-sequence steps 6-7 per the architect's plan — retire the 5
-owner-granting paths (MCP_API_KEY-as-owner chief among them, per ADR-0025 §Decision-5), and
-wire `resolveTenant()` into the central `ROUTE_AUTH_TABLE` gate itself rather than having it
-re-resolved ad hoc per-handler (also fixes the double-Appwrite-round-trip inefficiency noted
-in the §3.4 review).
+(/v1/diagram/:id/sync correctly 401s unauthenticated callers instead of 500ing). Slice 3.3 §4 steps 6-7 (retire OWNER_EMAILS, tenant-or-legacy-owner central gate) merged to
+main (f9e76489b, 2026-08-23) — reviewed, 220/220 tests on .30, 97/97 cross-verified on .184.
+Not yet deployed. Next: deploy (`--dry-run` first, same discipline as DIAGRAM_SYNC), then
+smoke-test that an Appwrite-JWT-only user can reach owner-gated routes and that MCP_API_KEY/
+Worker-JWT-owner paths still work. After that, MCP_API_KEY retirement (needs new ZoneSecret
+infra, not designed yet) and `/auth/login`'s fate remain explicitly deferred per Q.
 
 ## Note for future DO-binding work: `exports` vs `migrations`
 
