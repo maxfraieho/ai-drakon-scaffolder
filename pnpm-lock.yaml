@@ -267,6 +267,9 @@ importers:
 
   cloudflare-worker:
     dependencies:
+      '@ai-drakon/harness-contract':
+        specifier: workspace:*
+        version: link:../packages/harness-contract
       '@ai-drakon/storage':
         specifier: workspace:*
         version: link:../packages/storage

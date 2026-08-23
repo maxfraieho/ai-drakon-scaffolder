@@ -1,9 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { startExecution, streamExecution, resumeExecution, type ExecutionEvent } from "@/lib/graph-pipeline-api";
 import { DeterministicPipelineClient } from "@/lib/harness/pipeline-client";
-import { createDefaultSpec } from "@/lib/harness/harness-spec";
-import { useDiagramStore } from "@/store/useDiagramStore";
-import { convertDiagramToIr } from "@/lib/htse/diagram-to-ir";
 
 export interface PipelineExecutionLog {
   timestamp: string;
@@ -67,20 +64,8 @@ export function usePipelineExecution() {
             authToken: localStorage.getItem("jwt") || undefined,
           });
           
-          const spec = createDefaultSpec(pipelineName);
-          
-          // Отримуємо поточну DrakonDiagram зі стору
-          const currentDiagram = useDiagramStore.getState().currentDiagram;
-          if (!currentDiagram) {
-            throw new Error("Немає активної діаграми для запуску.");
-          }
-          
-          // Конвертуємо у IR (канонічний формат)
-          const ir = convertDiagramToIr(currentDiagram);
-          
           client.execute(
-            ir,
-            spec,
+            pipelineName,
             {
               onEvent: (ev) => {
                 if (ev.event === "node_start") {

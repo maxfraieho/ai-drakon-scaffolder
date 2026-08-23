@@ -20,8 +20,7 @@ export class DeterministicPipelineClient {
   constructor(private opts: PipelineClientOptions) {}
 
   async execute(
-    drakonIr: unknown,
-    harnessSpec: DrakonHarnessSpec,
+    specId: string,
     callbacks: {
       onEvent: (event: PipelineEvent) => void;
       onComplete: (events: PipelineEvent[]) => void;
@@ -38,8 +37,7 @@ export class DeterministicPipelineClient {
           ...(this.opts.authToken ? { Authorization: `Bearer ${this.opts.authToken}` } : {}),
         },
         body: JSON.stringify({
-          drakon_ir: drakonIr,
-          harness_spec: harnessSpec,
+          specId,
           breakpoints,
         }),
       });

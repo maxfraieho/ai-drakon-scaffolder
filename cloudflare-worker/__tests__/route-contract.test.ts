@@ -19,7 +19,8 @@
 // blocked by this file's structure -- add a case, not a new harness.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DiagramRepository, type D1Database } from "@ai-drakon/tenancy";
+import { DiagramRepository, HarnessSpecRepository, type D1Database } from "@ai-drakon/tenancy";
+import { createDefaultSpec } from "@ai-drakon/harness-contract";
 import worker, { generateJWT } from "../worker-mcp-drakon.js";
 import { JWT_SECRET, MCP_API_KEY, mockAppwriteTenantSession, mockEnv, noopCtx } from "./helpers/mock-env.js";
 
@@ -386,24 +387,48 @@ describe("Route-contract characterization (Slice 3.1)", () => {
         ir_json: string;
         created_at: string;
         updated_at: string;
+      }> = [],
+      initialSpecs: Array<{
+        id: string;
+        tenant_id: string;
+        agent_name: string;
+        version: string;
+        spec_json: string;
+        created_at?: string;
+        updated_at?: string;
       }> = []
     ) {
       const table = [...initialRows];
+      const specTable = [...initialSpecs.map((s) => ({
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...s,
+      }))];
       const db: D1Database = {
         prepare: vi.fn((query: string) => ({
           bind: vi.fn((...args: unknown[]) => ({
             first: vi.fn(async () => {
-              if (query.includes("WHERE tenant_id = ? AND id = ?")) {
+              if (query.includes("FROM diagrams") || (!query.includes("FROM harness_specs") && query.includes("WHERE tenant_id = ? AND id = ?"))) {
                 const [tenantId, id] = args as [string, string];
                 const row = table.find((r) => r.tenant_id === tenantId && r.id === id);
+                return row ? { ...row } : null;
+              }
+              if (query.includes("FROM harness_specs")) {
+                const [tenantId, id] = args as [string, string, string?];
+                const row = specTable.find((r) => r.tenant_id === tenantId && (r.id === id || r.agent_name === id));
                 return row ? { ...row } : null;
               }
               return null;
             }),
             all: vi.fn(async () => {
-              if (query.includes("WHERE tenant_id = ? AND project_slug = ?")) {
+              if (query.includes("FROM diagrams") || (!query.includes("FROM harness_specs") && query.includes("WHERE tenant_id = ? AND project_slug = ?"))) {
                 const [tenantId, projectSlug] = args as [string, string];
                 const rows = table.filter((r) => r.tenant_id === tenantId && r.project_slug === projectSlug);
+                return { results: rows.map((r) => ({ ...r })), success: true };
+              }
+              if (query.includes("FROM harness_specs")) {
+                const [tenantId, agentName] = args as [string, string?];
+                const rows = specTable.filter((r) => r.tenant_id === tenantId && (!agentName || r.agent_name === agentName));
                 return { results: rows.map((r) => ({ ...r })), success: true };
               }
               return { results: [], success: true };
@@ -431,12 +456,34 @@ describe("Route-contract characterization (Slice 3.1)", () => {
                 }
                 return { results: [], success: true };
               }
+              if (query.includes("INSERT INTO harness_specs")) {
+                const [id, tenantId, agent_name, version, spec_json] = args as [string, string, string, string, string];
+                specTable.push({
+                  id,
+                  tenant_id: tenantId,
+                  agent_name,
+                  version,
+                  spec_json,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                });
+                return { results: [], success: true };
+              }
+              if (query.includes("UPDATE harness_specs SET spec_json = ?")) {
+                const [spec_json, tenantId, id] = args as [string, string, string];
+                const row = specTable.find((r) => r.tenant_id === tenantId && (r.id === id || r.agent_name === id));
+                if (row) {
+                  row.spec_json = spec_json;
+                  row.updated_at = new Date().toISOString();
+                }
+                return { results: [], success: true };
+              }
               return { results: [], success: true };
             }),
           })),
         })),
       };
-      return { db, table };
+      return { db, table, specTable };
     }
 
     it("POST /v1/drakon/commit writes diagram to D1, and DiagramRepository.get(id) finds it for the same tenant", async () => {
@@ -852,6 +899,289 @@ describe("Route-contract characterization (Slice 3.1)", () => {
         noopCtx()
       );
       expect(notesRes.status).toBe(401);
+    });
+  });
+
+  describe("Slice 3.4a: POST /v1/pipeline/execute-deterministic -- spec resolution & validation", () => {
+    function createSpecD1(initialSpecs: Array<{
+      id: string;
+      tenant_id: string;
+      agent_name: string;
+      version: string;
+      spec_json: string;
+    }> = []) {
+      const specTable = [...initialSpecs.map(s => ({
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...s,
+      }))];
+      const db: D1Database = {
+        prepare: vi.fn((query: string) => ({
+          bind: vi.fn((...args: unknown[]) => ({
+            first: vi.fn(async () => {
+              if (query.includes("FROM harness_specs")) {
+                const [tenantId, id] = args as [string, string, string?];
+                const row = specTable.find((r) => r.tenant_id === tenantId && (r.id === id || r.agent_name === id));
+                return row ? { ...row } : null;
+              }
+              return null;
+            }),
+            all: vi.fn(async () => {
+              if (query.includes("FROM harness_specs")) {
+                const [tenantId, agentName] = args as [string, string?];
+                const rows = specTable.filter((r) => r.tenant_id === tenantId && (!agentName || r.agent_name === agentName));
+                return { results: rows.map((r) => ({ ...r })), success: true };
+              }
+              return { results: [], success: true };
+            }),
+            run: vi.fn(async () => ({ results: [], success: true })),
+          })),
+        })),
+      };
+      return { db, specTable };
+    }
+
+    it("resolve-by-specId happy path (server resolves from D1 and validates correctly)", async () => {
+      const architectSpec = createDefaultSpec("architect");
+      const { db } = createSpecD1([
+        {
+          id: "spec-architect",
+          tenant_id: "tenant-alpha",
+          agent_name: "architect",
+          version: "1.0.0",
+          spec_json: JSON.stringify(architectSpec),
+        },
+      ]);
+      const env = mockEnv({
+        d1Db: db,
+      });
+      (env as any).APPWRITE_API_KEY = "test-key";
+      (env as any).APPWRITE_PROJECT_ID = "test-project";
+      (env as any).DETERMINISTIC_ENGINE_FUNCTION_ID = "func-123";
+
+      let forwardedPayload: any = null;
+      globalThis.fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/v1/functions/func-123/executions")) {
+          const body = JSON.parse(init?.body as string);
+          forwardedPayload = JSON.parse(body.body);
+          return new Response(JSON.stringify({ $id: "exec-123", status: "accepted" }), { status: 200 });
+        }
+        return new Response(null, { status: 502 });
+      });
+
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const res = await worker.fetch(
+        req(
+          "/v1/pipeline/execute-deterministic",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              specId: "spec-architect",
+              breakpoints: ["node-1"],
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ execution_id: "exec-123", status: "accepted" });
+      expect(forwardedPayload).not.toBeNull();
+      expect(forwardedPayload.harness_spec).toMatchObject({
+        agent_name: "architect",
+        version: "1.0.0",
+      });
+      expect(forwardedPayload.breakpoints).toEqual(["node-1"]);
+    });
+
+    it("dual-accept deprecation warning fires when legacy harness_spec body is sent", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const architectSpec = createDefaultSpec("architect");
+      const { db } = createSpecD1([
+        {
+          id: "spec-architect",
+          tenant_id: "tenant-alpha",
+          agent_name: "architect",
+          version: "1.0.0",
+          spec_json: JSON.stringify(architectSpec),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+      (env as any).APPWRITE_API_KEY = "test-key";
+      (env as any).APPWRITE_PROJECT_ID = "test-project";
+      (env as any).DETERMINISTIC_ENGINE_FUNCTION_ID = "func-123";
+
+      globalThis.fetch = vi.fn(async (url: string | URL | Request) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/v1/functions/func-123/executions")) {
+          return new Response(JSON.stringify({ $id: "exec-legacy-1", status: "accepted" }), { status: 200 });
+        }
+        return new Response(null, { status: 502 });
+      });
+
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const res = await worker.fetch(
+        req(
+          "/v1/pipeline/execute-deterministic",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              harness_spec: architectSpec,
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(200);
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[DEPRECATION] Client-supplied harness_spec is deprecated")
+      );
+      warnSpy.mockRestore();
+    });
+
+    it("forged/altered gates value in a legacy-format request body has NO effect once resolution is server-side (defect D20 closed)", async () => {
+      const authoritativeSpec = createDefaultSpec("architect");
+      authoritativeSpec.gates.confidence.min_score = 0.95; // Authoritative strict gate in D1
+      authoritativeSpec.gates.safety.blocked_patterns = ["rm\\s+-rf", "DROP\\s+TABLE"];
+
+      const { db } = createSpecD1([
+        {
+          id: "spec-architect",
+          tenant_id: "tenant-alpha",
+          agent_name: "architect",
+          version: "1.0.0",
+          spec_json: JSON.stringify(authoritativeSpec),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+      (env as any).APPWRITE_API_KEY = "test-key";
+      (env as any).APPWRITE_PROJECT_ID = "test-project";
+      (env as any).DETERMINISTIC_ENGINE_FUNCTION_ID = "func-123";
+
+      let forwardedPayload: any = null;
+      globalThis.fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/v1/functions/func-123/executions")) {
+          const body = JSON.parse(init?.body as string);
+          forwardedPayload = JSON.parse(body.body);
+          return new Response(JSON.stringify({ $id: "exec-d20", status: "accepted" }), { status: 200 });
+        }
+        return new Response(null, { status: 502 });
+      });
+
+      // Attacker tries to bypass gates by sending forged gates with min_score: 0.01 and empty safety patterns
+      const forgedSpec = createDefaultSpec("architect");
+      forgedSpec.gates.confidence.min_score = 0.01;
+      forgedSpec.gates.safety.blocked_patterns = [];
+
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const res = await worker.fetch(
+        req(
+          "/v1/pipeline/execute-deterministic",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              harness_spec: forgedSpec,
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(200);
+      expect(forwardedPayload).not.toBeNull();
+      // Proves authoritative D1 spec was used and forged gates were ignored!
+      expect(forwardedPayload.harness_spec.gates.confidence.min_score).toBe(0.95);
+      expect(forwardedPayload.harness_spec.gates.safety.blocked_patterns).toContain("rm\\s+-rf");
+    });
+
+    it("two-tenant test: tenant A cannot resolve tenant B's specId (ADR-0025 decision #4)", async () => {
+      const betaSpec = createDefaultSpec("architect");
+      const { db } = createSpecD1([
+        {
+          id: "secret-spec-beta",
+          tenant_id: "tenant-beta", // Belongs ONLY to tenant-beta
+          agent_name: "architect",
+          version: "1.0.0",
+          spec_json: JSON.stringify(betaSpec),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+      (env as any).APPWRITE_API_KEY = "test-key";
+      (env as any).APPWRITE_PROJECT_ID = "test-project";
+      (env as any).DETERMINISTIC_ENGINE_FUNCTION_ID = "func-123";
+
+      const appwriteExecutionFetch = vi.fn();
+      globalThis.fetch = appwriteExecutionFetch;
+
+      // Tenant A tries to execute using Tenant B's specId
+      const tokenAlpha = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const res = await worker.fetch(
+        req(
+          "/v1/pipeline/execute-deterministic",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              specId: "secret-spec-beta",
+            }),
+          },
+          tokenAlpha
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(404);
+      const body = await res.json();
+      expect(body).toMatchObject({ success: false, error: "Harness spec not found" });
+      // Execution was blocked, Appwrite function was never called
+      const executionCalls = appwriteExecutionFetch.mock.calls.filter(([url]) => String(url).includes("/v1/functions/"));
+      expect(executionCalls).toHaveLength(0);
+    });
+
+    it("invalid harness spec fails validation and returns 400", async () => {
+      const { db } = createSpecD1([
+        {
+          id: "invalid-spec",
+          tenant_id: "tenant-alpha",
+          agent_name: "invalid",
+          version: "1.0.0",
+          spec_json: JSON.stringify({ invalid_shape: true }), // Missing required fields
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+      (env as any).APPWRITE_API_KEY = "test-key";
+      (env as any).APPWRITE_PROJECT_ID = "test-project";
+      (env as any).DETERMINISTIC_ENGINE_FUNCTION_ID = "func-123";
+
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const res = await worker.fetch(
+        req(
+          "/v1/pipeline/execute-deterministic",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              specId: "invalid-spec",
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(400);
+      const body = await res.json();
+      expect(body).toMatchObject({ success: false, error: "Invalid harness spec: failed validation" });
     });
   });
 });

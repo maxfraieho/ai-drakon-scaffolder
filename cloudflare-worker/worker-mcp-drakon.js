@@ -1,7 +1,8 @@
 // ── Inlined htse lib (ir-types, ir-validator-core, diagram-to-ir, ir-to-diagram) ──
 
 import { S3BlobStoreAdapter } from '@ai-drakon/storage';
-import { resolveTenant, DiagramRepository } from '@ai-drakon/tenancy';
+import { resolveTenant, DiagramRepository, HarnessSpecRepository } from '@ai-drakon/tenancy';
+import { validateHarnessSpec } from '@ai-drakon/harness-contract';
 
 const VALID_IR_ITEM_TYPES = new Set([
   'action','question','select','case','header','end','address',
@@ -4779,16 +4780,68 @@ async function getGithubTokenForUser(userId, userJwt, env) {
   return githubToken;
 }
 
+// Feature flag: reject client-supplied harness_spec once deprecation window closes.
+// Landed OFF (false) per Slice 3.4a requirement (dual-accept open).
+const REJECT_LEGACY_HARNESS_SPEC = false;
+
 async function handleDrakonExecuteDeterministic(request, env) {
-  const payload = await verifyOwnerAuth(request, env);
-  if (!payload) return errorResponse('Unauthorized', 401);
+  const ownerPayload = await verifyOwnerAuth(request, env);
+  const appwriteConfig = {
+    endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
+    projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
+    apiKey: env.APPWRITE_API_KEY,
+  };
+  const tenantContext = await resolveTenant(request, appwriteConfig);
+  const isLegacyOwner = Boolean(ownerPayload && ownerPayload.role === 'owner');
+  if (!isLegacyOwner && !tenantContext) {
+    return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+  }
+  const tenantId = tenantContext?.tenantId || ownerPayload?.tenant_id || ownerPayload?.sub;
   
   let body = {};
   try {
     const text = await request.text();
     if (text) body = JSON.parse(text);
   } catch (_) {
-    return errorResponse('Invalid JSON body', 400);
+    return errorResponse('Invalid JSON body', 400, undefined, 'INVALID_JSON');
+  }
+
+  const hasLegacySpec = Boolean(body && body.harness_spec);
+  if (hasLegacySpec) {
+    if (REJECT_LEGACY_HARNESS_SPEC) {
+      return errorResponse('Client-supplied harness_spec is deprecated; provide specId instead', 400, undefined, 'DEPRECATED_HARNESS_SPEC');
+    }
+    console.warn('[DEPRECATION] Client-supplied harness_spec is deprecated; pass specId instead');
+  }
+
+  const specId = body.specId || (body.harness_spec && (body.harness_spec.id || body.harness_spec.agent_name));
+  if (!specId) {
+    return errorResponse('specId is required', 400, undefined, 'MISSING_SPEC_ID');
+  }
+
+  let resolvedSpec = null;
+  if (env.D1_DB) {
+    const repo = new HarnessSpecRepository(env.D1_DB, tenantId);
+    const specRow = await repo.get(specId);
+    if (!specRow) {
+      return errorResponse('Harness spec not found', 404, undefined, 'NOT_FOUND');
+    }
+    try {
+      resolvedSpec = JSON.parse(specRow.spec_json);
+    } catch {
+      return errorResponse('Corrupted harness spec in database', 500, undefined, 'CORRUPTED_SPEC');
+    }
+  } else {
+    // If D1 is not bound (fallback for offline mock / test environments without D1)
+    if (body.harness_spec) {
+      resolvedSpec = body.harness_spec;
+    } else {
+      return errorResponse('D1_DB binding required to resolve specId', 500, undefined, 'MISSING_D1_BINDING');
+    }
+  }
+
+  if (!validateHarnessSpec(resolvedSpec)) {
+    return errorResponse('Invalid harness spec: failed validation', 400, undefined, 'INVALID_HARNESS_SPEC');
   }
   
   const functionId = env.DETERMINISTIC_ENGINE_FUNCTION_ID || '6a33b6050037a2fff34f';
@@ -4798,6 +4851,12 @@ async function handleDrakonExecuteDeterministic(request, env) {
   if (!functionId || !apiKey) {
     return errorResponse('DETERMINISTIC_ENGINE_FUNCTION_ID or APPWRITE_API_KEY not configured', 503);
   }
+
+  const enginePayload = {
+    drakon_ir: body.drakon_ir,
+    harness_spec: resolvedSpec,
+    breakpoints: body.breakpoints || [],
+  };
   
   const execRes = await fetch(
     `https://auth.aidrakon.tech/v1/functions/${functionId}/executions`,
@@ -4810,7 +4869,7 @@ async function handleDrakonExecuteDeterministic(request, env) {
       },
       body: JSON.stringify({
         async: true,
-        body: JSON.stringify(body),
+        body: JSON.stringify(enginePayload),
       }),
     }
   );
