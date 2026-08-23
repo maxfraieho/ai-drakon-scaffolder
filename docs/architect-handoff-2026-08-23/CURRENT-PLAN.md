@@ -22,8 +22,9 @@ a real place in the sequence.
 | 3.6 | DONE, deployed | WebSocket/DO auth fix (pulled forward ahead of 3.2-3.5 because it was a live critical hole) |
 | 3.2 | DONE, deployed 2026-08-23 (version b84dad42) | declarative ROUTE_AUTH_TABLE, closes weak-auth-bypass (7 routes) + zero-auth-leak (3 routes). See docs/architect-handoff-2026-08-23/HANDOFF.md for full detail. |
 | 3.3 (D1 schema + binding) | DONE | infrastructure/d1/schema.sql applied to live `ai-drakon-saas` (6 tables). `env.D1_DB` binding already existed pre-tonight, reused as-is. |
-| 3.3 (packages/tenancy) | DONE, tested 81/81 on .184+.30 | resolveTenant() (Appwrite Teams, Option A per owner decision), 6 tenant-scoped D1 repositories. Not yet merged to main. |
-| 3.3 §3.4 (room/diagram ownership) | **MERGED to main (35b681c3), NOT DEPLOYED** | 81/81 tests passing on main post-merge. `DIAGRAM_SYNC` binding still not live — nothing executes in production from this yet. See "Slice 3.3 §3.4 review notes" below for open items before this is deployable/usable end-to-end. |
+| 3.3 (packages/tenancy) | DONE, merged | resolveTenant() (Appwrite Teams, Option A per owner decision), 6 tenant-scoped D1 repositories + upsert(). |
+| 3.3 §3.4 (room/diagram ownership) | **MERGED to main (35b681c3), NOT DEPLOYED** | `DIAGRAM_SYNC` binding still not live — nothing executes in production from this yet. |
+| 3.3 (diagrams-table write path) | **MERGED to main (9cb8fdc06), NOT DEPLOYED** | Wires `handleDrakonCommit` + MCP `drakon.mutatediagram`/`drakon.savediagram` to `DiagramRepository.upsert()`. Closes the "403-forever" gap §3.4 review flagged. 91/91 tests on .184+.30, tsc clean, dry-run bundles clean. See "Slice 3.3 diagrams-write-path review notes" below. |
 | 3.4-old | NOT STARTED | server-resident spec resolution (round-2 synthesis's original numbering) — blocked on 3.3 completing |
 | 3.5 | NOT STARTED | generic runner registry — blocked on 3.3 |
 | 4.4 | NOT STARTED | tenant-filtered MCP (pulled forward in the plan) — blocked on 3.3 |
@@ -53,16 +54,10 @@ cross-platform tests (.184 + .30), tsc, and a wrangler dry-run. Findings:
 to flag instead of deciding:** the task prompt asked whether "diagram doesn't exist yet"
 (first sync before any D1 row exists) should 403 or auto-create a row — agy picked
 "403 always," committed it as final tested behavior, with no comment, no report, no
-flag-back. This is SAFE (deny-by-default, no regression) but currently means the
-diagram-sync feature cannot ever actually complete a first sync in practice, because
-**nothing in the current codebase writes rows into the `diagrams` D1 table** — the table
-has been live since tonight's schema-apply but has zero rows and zero code paths that
-INSERT into it (the existing diagram-save flow writes to MinIO only, via
-`handleDrakonCommit`). This is not a regression (the route isn't even reachable in
-production yet — `DIAGRAM_SYNC` binding still doesn't exist) but it does mean **this
-feature is not actually usable end-to-end without a follow-up piece of work**: something
-needs to call `DiagramRepository.create()` wherever diagrams currently get saved. Not
-started, not scoped yet.
+flag-back. This is SAFE (deny-by-default, no regression) but at the time meant the
+diagram-sync feature could not actually complete a first sync in practice, because nothing
+wrote rows into the `diagrams` D1 table. **RESOLVED same session — see "Slice 3.3
+diagrams-write-path" below.**
 
 **Also worth a look, not blocking:** the tenant-id resolution in both DO branches falls back
 to `ownerPayload.sub` when `resolveTenant()` returns null. For the static `MCP_API_KEY` auth
@@ -88,6 +83,44 @@ via git-bundle relay since .30's push is still broken). Nothing in it is live/de
 `DIAGRAM_SYNC` isn't bound, so none of this executes in production yet regardless of merge
 state. Merging is low-risk (no deploy triggered by merge alone) but I'm holding for an
 explicit go per tonight's established pattern.
+
+**RESOLVED:** Q approved, merged to main (35b681c3).
+
+## Slice 3.3 diagrams-write-path review notes (2026-08-23, after merge)
+
+Follow-up to close the gap the §3.4 review flagged. Implemented by agy on .30, this time in
+an isolated git worktree (`ai-drakon-scaffolder-diagwrite`, own checkout, own branch) rather
+than switching branches in the main working copy — cleaner isolation than the §3.4 round.
+
+**What's correct:**
+- Found and wired BOTH real diagram-write code paths: `handleDrakonCommit` (REST
+  `/v1/drakon/commit`) and the MCP tool `drakon.mutatediagram`. Each calls `resolveTenant()`
+  (same pattern/fallback as §3.4) then `DiagramRepository.upsert(...)` after a successful
+  MinIO write.
+- Added `DiagramRepository.upsert()` (get→update if exists, else create) rather than forcing
+  every call site to duplicate that branching — good factoring, consistent with the class's
+  existing constructor-bound-tenantId style.
+- **Found and fixed a real, separate bug while there**: the MCP tool `drakon.savediagram`
+  built an internal synthetic `Request` to call `handleDrakonCommit` but never forwarded the
+  caller's `Authorization` header — without this fix, `resolveTenant()` would always fail for
+  that specific MCP path (no JWT to verify), silently falling through to a degraded tenant
+  ID every time. Not something I asked for; agy found it by tracing the actual call path.
+- `project_slug`/`name` values are pulled from already-validated data at each call site
+  (`folderSlug`, `normalized.name` in the REST path; `folderId` in the MCP path) — not
+  invented placeholders. `.update()` never touches `project_slug`, so the two write paths
+  can't drift/conflict on that field even if their naming differs.
+- 91/91 tests (cloudflare-worker + packages/tenancy, 10 new: 7 route-contract + 3
+  repositories), passing identically on .30 and .184. tsc clean. `wrangler --dry-run` bundles
+  cleanly, same 5 live bindings as before (still no `DIAGRAM_SYNC` — no production risk).
+- One leftover uncommitted noise file (`src/routeTree.gen.ts`, pure line-ending diff, no
+  content change) found during review and discarded before merge — not part of the feature.
+
+**Merged to main:** commit 9cb8fdc06, 2026-08-23.
+
+**Known residual gaps carried forward (same as §3.4, not reintroduced, not fixed here):**
+MCP_API_KEY callers still collapse to a shared `'mcp-agent'` tenant bucket; Worker-level
+tests still exercise `resolveTenant()`'s fallback path, not its real Appwrite-network happy
+path.
 
 ## Also fixed tonight, outside the numbered slice sequence
 
@@ -122,8 +155,6 @@ explicit go per tonight's established pattern.
 - Non-canonical wrangler configs (wrangler-antigravity.jsonc, cloudflare-worker/wrangler.toml)
   never formally disposed of.
 - CI (`sdd-verify.yml`) red since 2026-08-19 — separate ticket, not blocking, per Q.
-- `packages/tenancy` diagrams-table write path doesn't exist yet (see review notes above) —
-  needed before diagram-sync can actually work end-to-end.
 
 ## Oracle dependency
 
@@ -133,8 +164,13 @@ until then.
 
 ## Recommended next action
 
-Q to decide: merge `slice/3.4-room-diagram-tenancy`? If yes, still nothing goes live (DO
-binding for DIAGRAM_SYNC doesn't exist). After that: scope the diagrams-table write path, or
-move on to the rest of Slice 3.3's build sequence (steps 6-7: retire the 5 owner-granting
-paths, wire resolveTenant() into the ROUTE_AUTH_TABLE gate) per the architect's plan.
+Both `slice/3.4-room-diagram-tenancy` and the diagrams-write-path follow-up are merged to
+main. Nothing is live/deployed yet (`DIAGRAM_SYNC` binding still doesn't exist). Next:
+Slice 3.3's remaining build-sequence steps 6-7 per the architect's plan — retire the 5
+owner-granting paths (MCP_API_KEY-as-owner chief among them, per ADR-0025 §Decision-5), and
+wire `resolveTenant()` into the central `ROUTE_AUTH_TABLE` gate itself rather than having it
+re-resolved ad hoc per-handler (also fixes the double-Appwrite-round-trip inefficiency noted
+in the §3.4 review). Separately, still open and un-scoped: adding the `DIAGRAM_SYNC` binding
+itself (needs the same SQLite-migration care Slice 3.2's `RoomDO` binding got) to make any
+of tonight's diagram-sync work actually reachable in production.
 
