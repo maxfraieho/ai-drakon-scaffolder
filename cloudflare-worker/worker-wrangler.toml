@@ -26,3 +26,12 @@ service = "architect-agent-flue"
 [[durable_objects.bindings]]
 name = "ROOM_DO"
 class_name = "RoomDO"
+
+# RoomDO is already migrated to SQLite storage live (migration_tag "v1",
+# confirmed via GET /workers/services/drakon-antigravity-worker before
+# this deploy). Declaring it here as an existing sqlite-backed export
+# matches that live state -- this must NOT be a `new_sqlite_classes`
+# migration, which would attempt to re-migrate an already-migrated class.
+[exports.RoomDO]
+type = "durable-object"
+storage = "sqlite"
