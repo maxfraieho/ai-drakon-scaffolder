@@ -2638,34 +2638,52 @@ export default {
       return corsResponse();
     }
 
-    if (path.startsWith('/ws/room/')) {
-      if (!env.ROOM_DO) {
-        return errorResponse('ROOM_DO binding missing', 500);
-      }
-      const roomId = path.split('/')[3];
-      if (!roomId) return errorResponse('Missing room ID', 400);
-      
-      const id = env.ROOM_DO.idFromName(roomId);
-      const stub = env.ROOM_DO.get(id);
-      return stub.fetch(request);
-    }
-
-    if (path.startsWith('/v1/diagram/') && path.endsWith('/sync')) {
-      if (!env.DIAGRAM_SYNC) {
-        return errorResponse('DIAGRAM_SYNC binding missing', 500);
-      }
-      const parts = path.split('/');
-      const diagramId = parts[3];
-      if (!diagramId) return errorResponse('Missing diagram ID', 400);
-      
-      const id = env.DIAGRAM_SYNC.idFromName(diagramId);
-      const stub = env.DIAGRAM_SYNC.get(id);
-      return stub.fetch(request);
-    }
-
     try {
       if (!env.JWT_SECRET) {
         return errorResponse('JWT_SECRET is not configured', 500, undefined, 'SERVER_CONFIG_ERROR');
+      }
+
+      // Slice 3.6: these two Durable Object paths used to dispatch before
+      // this point -- before JWT_SECRET was even checked, before any auth
+      // call. Moved inside the auth boundary and given the same
+      // verifyOwnerAuth + role==='owner' check every other authenticated
+      // route uses. This is an interim fix pending real tenant-membership
+      // checks (Slice 3.3) -- room/diagram IDs are still not secret, so
+      // any owner can join any room, but at minimum an unauthenticated
+      // caller can no longer reach either Durable Object at all.
+      if (path.startsWith('/ws/room/')) {
+        if (!env.ROOM_DO) {
+          return errorResponse('ROOM_DO binding missing', 500);
+        }
+        const roomId = path.split('/')[3];
+        if (!roomId) return errorResponse('Missing room ID', 400);
+
+        const ownerPayload = await verifyOwnerAuth(request, env);
+        if (!ownerPayload || ownerPayload.role !== 'owner') {
+          return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+        }
+
+        const id = env.ROOM_DO.idFromName(roomId);
+        const stub = env.ROOM_DO.get(id);
+        return stub.fetch(request);
+      }
+
+      if (path.startsWith('/v1/diagram/') && path.endsWith('/sync')) {
+        if (!env.DIAGRAM_SYNC) {
+          return errorResponse('DIAGRAM_SYNC binding missing', 500);
+        }
+        const parts = path.split('/');
+        const diagramId = parts[3];
+        if (!diagramId) return errorResponse('Missing diagram ID', 400);
+
+        const ownerPayload = await verifyOwnerAuth(request, env);
+        if (!ownerPayload || ownerPayload.role !== 'owner') {
+          return errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED');
+        }
+
+        const id = env.DIAGRAM_SYNC.idFromName(diagramId);
+        const stub = env.DIAGRAM_SYNC.get(id);
+        return stub.fetch(request);
       }
 
       if (method === 'GET' && path === '/health') {
