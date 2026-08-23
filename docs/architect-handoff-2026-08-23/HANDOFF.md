@@ -1,133 +1,138 @@
 SESSION 2026-08-22/23 — ARCHITECT HANDOFF (Claude Sonnet 5 architect, replacing Perplexity Pro)
 
+**Updated 2026-08-23, end of session: Slice 3.3 (tenancy/D1) is now fully complete and
+deployed.** This file previously described the state right as Slice 3.3 was starting — that
+version is obsolete. Everything below reflects the actual end state.
+
 ## What this is
 
-Package this session built for a new architect (Claude-Sonnet-5-based, replacing the prior
-Perplexity-Pro-based one). It replaces the two earlier synthesis reports as the primary
-entry point — read this file first, then dig into the referenced docs only as needed.
+Package this session built for the architect working on `ai-drakon-scaffolder`. Read this
+file first, then CURRENT-PLAN.md for the status table, then the referenced docs only as needed.
 
 ## Where everything lives (all on .184, repo ai-drakon-scaffolder)
 
 - THIS FILE: docs/architect-handoff-2026-08-23/HANDOFF.md
-- Prior architect synthesis (round 1, Opus, still useful for the OpenBot/HarnessAdapter/
-  LLM-as-a-Verifier architecture question — NOT yet re-verified against tonight's Slice 3.2
-  work): docs/reports/2026-08-23-openbot-harnessadapter-revised-plan.md
-- Prior architect synthesis (round 2, Opus, fleet-reconciled, the authoritative source for
-  the full Slice 3.0c-4.5 sequence, Owner Decision Memo, Security Invariants SI-1..SI-12,
-  Contradictions, Open Questions Q-1..Q-17): docs/reports/2026-08-23-openbot-verifier-final-synthesis.md
-- Route-auth matrix v1 (STALE — wrong gate line number, describes N1/N2 as still-broken;
-  kept for history only, do not use): docs/contracts/worker-route-auth-matrix.md
-- Route-auth matrix v2 (CURRENT, 68-route exhaustive audit, basis for Slice 3.2):
-  docs/contracts/worker-route-auth-matrix-v2.md
-- Fresh code dump of the whole repo (generated tonight, see "Code dump" section below)
+- Prior architect synthesis (round 1, Opus): docs/reports/2026-08-23-openbot-harnessadapter-revised-plan.md
+- Prior architect synthesis (round 2, Opus, fleet-reconciled, authoritative for the full
+  Slice 3.0c-4.5 sequence, Owner Decision Memo, Security Invariants SI-1..SI-12): docs/reports/2026-08-23-openbot-verifier-final-synthesis.md
+- ADR-0025 (tenancy boundary, governs everything Slice 3.3 did): docs/adr/0025-tenancy-boundary.md
+- Route-auth matrix v1 (STALE, do not use): docs/contracts/worker-route-auth-matrix.md
+- Route-auth matrix v2 (CURRENT, 68-route audit, basis for Slice 3.2): docs/contracts/worker-route-auth-matrix-v2.md
+- CURRENT-PLAN.md (same directory) — status table + recommended next action, kept current
 
-## What actually happened tonight (chronological, condensed)
+## What shipped this session (chronological, condensed)
 
-1. Two rounds of fleet-coordinated architecture re-planning for OpenBot/HarnessAdapter/
-   LLM-as-a-Verifier integration (see the two synthesis reports above). Owner (Q) accepted
-   all 17 items of the Owner Decision Memo — no further investigation needed on those.
-2. During that work, THREE live production security holes were found and fixed:
-   a. Plaintext MCP_API_KEY committed in wrangler configs — rotated to a Cloudflare secret,
-      removed from source (commit 863985d1).
-   b. OWNER_EMAILS was unset in production — meant verifyOwnerAuth() granted 'owner' to
-      EVERY Appwrite-authenticated user (fail-open by design, loudly logged, but still a
-      real gap in prod). Set live to tukroschu@gmail.com,maxfraieho@gmail.com.
-   c. /ws/room/* and /v1/diagram/*/sync were dispatched BEFORE any auth check at all
-      (unauthenticated callers could reach the Durable Objects directly) — fixed as
-      Slice 3.6 (commit 18da2af9), deployed.
-3. A near-miss config-drop incident during credential rotation: a PATCH to the Workers
-   settings endpoint with only the new MCP_API_KEY in the body silently dropped 5 other
-   live bindings. Caught immediately via a follow-up GET, restored, verified. Lesson:
-   PATCH /workers/scripts/{name}/settings does NOT merge — GET full state first, always.
-4. Slice 3.1 (route-contract characterization tests, commit c056cdc5) and Slice 3.6
-   landed and deployed.
-5. Tonight (2026-08-23), continuing per Q's instruction: Slice 3.2 designed and shipped.
-   - Delegated an exhaustive 68-route audit to agy on the .30 Windows host (using its
-     `agy` CLI) — result: docs/contracts/worker-route-auth-matrix-v2.md. Confirmed the
-     real global gate was at L2866-2869 (not L2848/L2849 as the stale v1 doc said), and
-     found 3 NEW zero-auth routes leaking Appwrite execution logs
-     (/v1/notes/semantic-graph-status, /v1/codegen-status, /v1/compile-status) that
-     neither prior synthesis report had caught.
-   - Implemented a single declarative ROUTE_AUTH_TABLE (method+path matcher -> 'none' |
-     'authenticated' | 'owner'), consulted once at the top of fetch(), replacing the old
-     positional gate entirely (removed, now redundant). Fixed the weak-auth-bypass bug on
-     7 routes and the zero-auth leak on 3 routes, all in one place instead of touching
-     every handler.
-   - 62/62 tests passing on both .184 (Alpine/ARM) and .30 (Windows) before merge.
-   - Merged to main (e8c9097f), deployed live (version b84dad42), smoke-tested via curl:
-     previously-vulnerable routes now correctly 401 unauthenticated callers; /health still 200.
-   - Implementation: cloudflare-worker/worker-mcp-drakon.js (ROUTE_AUTH_TABLE + resolveRouteAuth,
-     inserted after verifyOwnerAuth(); gate call inserted right after the JWT_SECRET check in
-     fetch(), before any route dispatch).
+**Slice 3.2** (declarative ROUTE_AUTH_TABLE, closes weak-auth-bypass on 7 routes + zero-auth
+leak on 3 routes) — merged, deployed (version b84dad42). Full detail in the git log; not
+re-summarized here since it's several sessions old relative to Slice 3.3 below.
 
-## New finding not in either prior synthesis report
+**Slice 3.3 (tenancy/D1, per ADR-0025)** — the main body of tonight's work:
+1. D1 schema applied live to `ai-drakon-saas` (6 tenant-scoped tables).
+2. `packages/tenancy` built: `resolveTenant(request, appwriteConfig)` (real Appwrite Teams —
+   `teams.list()` → `teams.create()` if empty → persist to `user_profiles.teamId`, with
+   retry-on-conflict for concurrent first-provisioning races — Option A, not a fake
+   tenant-of-one), plus 6 tenant-scoped D1 repository classes.
+3. **§3.4 (room/diagram tenant ownership)**: `/ws/room/*` and `/v1/diagram/*/sync` Durable
+   Object keys now prefixed `${tenantId}:${roomId}` instead of bare `roomId` — one tenant can
+   no longer join another tenant's room/diagram session by guessing its ID. Diagram-sync also
+   added an explicit `DiagramRepository.get()` ownership check (403, not 404, on mismatch).
+4. **Diagrams-table D1 write path**: `handleDrakonCommit` and the MCP tools
+   `drakon.mutatediagram`/`drakon.savediagram` now call `DiagramRepository.upsert()` after a
+   successful MinIO write — closes a gap §3.4's review had flagged (diagram ownership checks
+   existed but the D1 row they checked against was never actually written, so sync would 403
+   forever for anyone). Also fixed, as a byproduct: `drakon.savediagram`'s internal synthetic
+   request wasn't forwarding the caller's `Authorization` header, so `resolveTenant()` always
+   failed for that specific MCP tool — real bug, found during review, fixed in the same pass.
+5. **`DIAGRAM_SYNC` Durable Object binding**: existed in code since Slice 3.6 but was NEVER
+   actually bound in the Worker config — confirmed via a live GET showing it absent from
+   `exports`. Meant `/v1/diagram/*/sync` 500'd for everyone regardless of auth, and NONE of
+   §3.4/write-path's diagram-tenancy work was reachable in production until this was fixed.
+   Now declared under `[exports.DiagramSyncDO]` (see "exports vs migrations" note below) and
+   live. Smoke-tested: previously-500ing route now correctly 401s unauthenticated callers.
+6. **Steps 6-7: retire OWNER_EMAILS, tenant-or-legacy-owner central gate.**
+   `verifyOwnerAuth()`'s `OWNER_EMAILS`/`OWNER_EMAIL`/owner-label branch — including its
+   fail-open-with-warning behavior when unset — is gone. There is no more global "owner" role
+   reachable via a plain Appwrite login, full stop, per ADR-0025 ("так, як задумано ADR-0025",
+   explicit owner sign-off, no allowlist). The central `ROUTE_AUTH_TABLE` gate and the two DO
+   dispatch points now accept `'owner'`-level access on EITHER the legacy `role === 'owner'`
+   path (still reachable via `MCP_API_KEY` or a Worker-issued JWT — both intentionally KEPT,
+   these are service/automation credentials, not a user backdoor) OR a successfully
+   `resolveTenant()`-resolved tenant. Implemented by `agy.exe` on the .30 fleet host, reviewed
+   (full diff read, not just the self-report), 220/220 tests passing on .30, 97/97
+   cross-verified on .184. Merged (`f9e76489b`) and deployed live (version
+   `391cdebd-c54d-4354-a498-3237539c5aea`), smoke-tested: `/health`=200,
+   `/v1/diagram/:id/sync` and `/ws/room/:id` both correctly 401 for unauthenticated callers.
 
-**SDD Arbiter pre-commit hook** exists on .184's git config for this repo — runs in
-dry-run/shadow mode (does NOT block commits yet), prints an ADR-drift verdict per commit.
-It gave a false-positive FAIL on a pure-documentation commit (misread a route-audit MARKDOWN
-file's prose describing existing bugs as if it were describing NEW code changes), then a
-clean PASS on the actual Slice 3.2 code commit. Worth the new architect knowing this exists
-before it potentially starts blocking commits for real — nobody on this session's chain
-(Q included) had prior knowledge of when/how this hook was introduced. Find it via
-`git config --get core.hooksPath` or the `.git/hooks/pre-commit` file on .184's clone.
+**Explicitly deferred, not part of this slice** (per Q, "так, окремим кроком"):
+`MCP_API_KEY` retirement (needs new per-tenant `ZoneSecret` infrastructure, not designed
+yet) and `/auth/login`'s fate. Do not silently retire either without a fresh decision.
 
-## Deliberate design decision made tonight, not yet reviewed by Q
+**Small housekeeping, also closed tonight**: the `.gitignore`'s over-broad `*.py` rule was
+swallowing `scripts/sdd_llm_judge.py` (the real SDD Arbiter script) and `update_plan.py` —
+both now explicitly negated and tracked.
 
-Slice 3.2's central gate runs auth BEFORE the /ws/room/* and /v1/diagram/*/sync handlers'
-own binding-existence checks. Net effect: an unauthenticated caller now gets 401 even when
-ROOM_DO/DIAGRAM_SYNC is unbound (previously got 500, leaking a config-error signal
-pre-auth). An authenticated owner still sees 500 if the binding really is missing. This is
-more conservative (denies information to unauthenticated callers) but IS a behavior change
-from what Slice 3.6's tests originally asserted as intentional ("config error, not a
-security control"). Tests were updated to match the new ordering
-(cloudflare-worker/__tests__/route-contract.test.ts) but the underlying judgment call
-("auth-first is strictly better here") has not been explicitly signed off by Q beyond the
-blanket "деплой, у нас досить AI" go-ahead for the whole slice. Flag if this surprises anyone.
+## New finding this session: `wrangler.toml` is a live landmine
 
-## Still open / not done tonight
+`cloudflare-worker/wrangler.toml` (the DEFAULT config wrangler auto-discovers — distinct
+from the CANONICAL `worker-wrangler.toml`) still has a `[[migrations]]` block. Running
+`wrangler deploy` without explicitly passing `--config worker-wrangler.toml` picks this file
+and fails at the Cloudflare API level (error 100403 — this Worker was already committed to
+the declarative `exports` flow earlier this session, and Cloudflare permanently refuses to
+revert). The API rejects it atomically (no live-state corruption happened, verified), but it
+wastes a deploy cycle and will confuse anyone who doesn't already know about the `--config`
+requirement. **Always pass `--config worker-wrangler.toml` explicitly.** Flagged in
+CURRENT-PLAN.md's "Known-not-done" as a cleanup candidate — not fixed tonight, still open.
 
-From the round-2 synthesis's Slice 3.0c-4.5 sequence — everything past 3.2 is untouched:
-- Slice 3.3 (tenancy/D1) — real per-room/per-diagram membership, not just owner-or-nothing.
-  This is the actual fix for the "room IDs are not tenant-isolated" note left in Slice 3.6's
-  code comment (any owner can join any room by guessing/knowing its ID).
-- Slice 3.4 (server-resident spec resolution), 3.5 (generic runner registry), 4.4 (tenant-
-  filtered MCP), 3.7 (OpenBotHarnessAdapter), 4.0-4.3 (RunSnapshot/audit/verifier), 4.5
-  (generic UI) — all still blocked on 3.3's prerequisite infrastructure per the standing plan.
-- 13 routes in the v2 route audit were originally expected to need product-owner judgment
-  calls before classification — in practice agy's audit resolved ALL 68 with "high"
-  confidence and no UNCERTAIN flags, so this turned out to be a non-issue. Worth knowing
-  the earlier fear (from a prior, less-careful pass by a different agent) did not
-  materialize once a careful agent actually did the read.
-- Non-canonical wrangler configs (wrangler-antigravity.jsonc, plain cloudflare-worker/
-  wrangler.toml) still exist alongside the canonical worker-wrangler.toml, never formally
-  disposed of (renamed/removed/documented as dead).
-- docs/contracts/worker-route-auth-matrix.md (v1, stale) still exists alongside v2 — should
-  probably be deleted or clearly marked superseded, not left for a future reader to pick
-  the wrong one.
-- Oracle Cloud Claude instance (used for earlier fleet work) is on a weekly usage limit
-  until 2026-08-25 09:00 Europe/Zurich — anything explicitly deferred to Oracle in the
-  round-2 synthesis (the O-1..O-10 list) is still blocked until then.
+## SDD Arbiter pre-commit hook
 
-## Fleet / infra notes for the new architect
+Exists on .184's git config (`core.hooksPath` → `.githooks/`), calls
+`scripts/sdd_llm_judge.py --staged --dry-run` (shadow mode — prints a verdict, does not
+block commits). Ran correctly all session, including a real PASS verdict on tonight's D1/
+tenancy commits. CI's `sdd-verify.yml` (separate, unfiltered, runs on every push) has been
+red since 2026-08-19 — likely a missing `pip install pytest` step, unconfirmed, not blocking
+per Q, separate ticket.
 
-- .184 = canonical dev server (Alpine Linux, git push/pull authority, GitNexus + ai-memory
-  live here). All real commits should originate from or be relayed through here.
-- .30 = Windows build/test host, has its own `agy` CLI (Google Antigravity) for delegated
-  investigation work, git push from here fails (Windows Credential Manager has no tty over
-  SSH) — pull/test here, but relay pushes through .184.
-- .234 = weak Linux SBC (`agy` CLI too, same product, different install) — used for one
-  route-audit dispatch attempt this session, exited early without a synchronous wait
-  (background job pattern that isn't yet reliable for this specific host/CLI combo).
-- GitNexus reindex requires the FULL volume mapping the live gitnexus-server container
-  uses (`-v gitnexus_gitnexus-data:/data/gitnexus -v /home/vokov/projects:/projects`) — a
-  one-off container missing the /data/gitnexus volume fails with "registry entry ...  was
-  not added" every time. This tripped up this session once; now documented so it doesn't
-  again.
+## Deliberate design decisions this session, worth architect awareness
 
-## Recommendation for the new architect's first move
+- Slice 3.2's central gate runs auth BEFORE route handlers' own binding-existence checks —
+  an unauthenticated caller gets 401 even when a DO binding is missing (previously 500,
+  leaking a config-error signal pre-auth). Still true, unchanged tonight.
+- The tenant-or-legacy-owner OR-logic (steps 6-7) means `MCP_API_KEY` and Worker-JWT-owner
+  remain fully privileged (equivalent to "owner" everywhere `resolveTenant()` would also
+  pass) — this is intentional (service credentials), not an oversight, but it means those
+  two paths are NOT tenant-scoped and can act across all tenants. Worth keeping in mind when
+  MCP_API_KEY retirement is eventually designed.
 
-Read the round-2 synthesis report in full (it's the authoritative Slice 3.0c-4.5 plan,
-Owner Decision Memo, and Security Invariants), then read this file's "Still open" section
-above, then decide whether to proceed straight to Slice 3.3 (tenancy) or revisit anything
-Slice 3.2 touched. Slice 3.3 is the natural next step per the existing plan and is not
-blocked on anything except normal implementation time.
+## Still open / not done
+
+See CURRENT-PLAN.md's "Known-not-done" section — kept as the single source of truth for this
+list so it doesn't drift out of sync between two files. Summary: stale route-auth-matrix v1,
+the wrangler.toml landmine above, ADR-0006 not marked superseded despite `.lovable` being
+deleted, RoomDO's still-unconfirmed frontend usage, CI red ticket, and the two explicitly
+deferred auth items (MCP_API_KEY, /auth/login).
+
+## Fleet / infra notes
+
+- .184 = canonical dev server (Alpine Linux), git push/pull authority, GitNexus + ai-memory
+  live here. All real commits originate from or are relayed through here.
+- .30 = Windows build/test host, `agy.exe` (Antigravity CLI) fleet agent lives here. `git
+  push` from here is broken (Windows Credential Manager has no tty over SSH) — use the
+  git-bundle relay pattern (bundle → scp → .184 → fetch/merge/push) instead. `agy.exe`
+  invoked from THIS orchestrating Claude session's own Bash tool works fine even with
+  `--dangerously-skip-permissions`; invoked from a spawned sub-agent's Bash tool, it can hit
+  that sub-agent's own stricter permission ceiling ("don't ask mode" denial) — if that
+  happens, the orchestrator running the command directly is the fix, not re-authorizing the
+  sub-agent. Also: `agy.exe --print-timeout` defaults to 5 minutes — pass a longer value
+  (e.g. `25m`) for any task involving `pnpm install`/`vitest`/`tsc`, or it aborts mid-run
+  with uncommitted edits still on disk (recoverable via `agy.exe --continue --print '...'`
+  to resume the same conversation and finish the job, rather than restarting from scratch).
+- .234 = Linux SBC, `agy` CLI (same product, different install, GitNexus MCP available).
+- GitNexus reindex after every push to main: `docker exec gitnexus-server node
+  /app/gitnexus/dist/cli/index.js analyze /projects/ai-drakon-scaffolder` on .184.
+
+## Recommendation for the architect's first move
+
+Read CURRENT-PLAN.md's status table and "Recommended next action" section, then
+ARCHITECT-START-PROMPT.md for the concrete task framing. Short version: Slice 3.3 is fully
+done, `slice/3.4-old` / `3.5` / `4.4` are all now unblocked — pick one (or propose a
+different order) and produce an implementation plan at the same detail level Slice 3.2/3.3 got.

@@ -1,4 +1,4 @@
-CURRENT PLAN — ai-drakon-scaffolder, 2026-08-23 (post Slice 3.3 §3.4, pending review)
+CURRENT PLAN — ai-drakon-scaffolder, 2026-08-23 (Slice 3.3 fully DONE + deployed; ready for next slice)
 
 Source of truth for the full slice sequence up to 3.2: docs/reports/2026-08-23-openbot-verifier-final-synthesis.md
 (round-2 Opus synthesis). Source of truth for Slice 3.3 itself (tenancy/D1): the new
@@ -25,7 +25,7 @@ a real place in the sequence.
 | 3.3 (packages/tenancy) | DONE, merged | resolveTenant() (Appwrite Teams, Option A per owner decision), 6 tenant-scoped D1 repositories + upsert(). |
 | 3.3 §3.4 (room/diagram ownership) | MERGED (35b681c3) + DEPLOYED (DIAGRAM_SYNC binding live, 2026-08-23) | Room + diagram tenant-scoped auth reachable in production, smoke-tested. |
 | 3.3 (diagrams-table write path) | MERGED (9cb8fdc06) + DEPLOYED | Wires `handleDrakonCommit` + MCP `drakon.mutatediagram`/`drakon.savediagram` to `DiagramRepository.upsert()`. Closes the "403-forever" gap §3.4 review flagged. 91/91 tests on .184+.30, tsc clean, dry-run bundles clean. See "Slice 3.3 diagrams-write-path review notes" below. |
-| 3.3 §4 steps 6-7 (retire OWNER_EMAILS, tenant-or-legacy-owner gate) | **MERGED to main (f9e76489b), NOT YET DEPLOYED** | `verifyOwnerAuth()`'s OWNER_EMAILS/OWNER_EMAIL/owner-label branch removed (fail-open warning gone). Central `ROUTE_AUTH_TABLE` gate + room/diagram-sync DO routes now pass `'owner'` on legacy owner (MCP_API_KEY, Worker-JWT) OR a resolved tenant via `resolveTenant()`. MCP_API_KEY retirement and `/auth/login` explicitly deferred per Q ("так, окремим кроком"). Implemented by agy.exe on .30, reviewed (full diff), 220/220 tests on .30, 97/97 cross-verified on .184. Next: deploy to make live (same `--dry-run` discipline as DIAGRAM_SYNC). |
+| 3.3 §4 steps 6-7 (retire OWNER_EMAILS, tenant-or-legacy-owner gate) | **MERGED (f9e76489b) + DEPLOYED (version 391cdebd, 2026-08-23)** | `verifyOwnerAuth()`'s OWNER_EMAILS/OWNER_EMAIL/owner-label branch removed (fail-open warning gone). Central `ROUTE_AUTH_TABLE` gate + room/diagram-sync DO routes now pass `'owner'` on legacy owner (MCP_API_KEY, Worker-JWT) OR a resolved tenant via `resolveTenant()`. MCP_API_KEY retirement and `/auth/login` explicitly deferred per Q ("так, окремим кроком"). 220/220 tests on .30, 97/97 cross-verified on .184. Smoke-tested live: /health=200, /v1/diagram/:id/sync and /ws/room/:id both correctly 401 unauthenticated. |
 | 3.4-old | NOT STARTED | server-resident spec resolution (round-2 synthesis's original numbering) — blocked on 3.3 completing |
 | 3.5 | NOT STARTED | generic runner registry — blocked on 3.3 |
 | 4.4 | NOT STARTED | tenant-filtered MCP (pulled forward in the plan) — blocked on 3.3 |
@@ -145,36 +145,59 @@ path.
 
 ## Known-not-done
 
-- `scripts/sdd_llm_judge.py` (the real SDD Arbiter script giving shadow-mode verdicts all
-  night) exists ONLY locally on .184, swallowed by an over-broad `*.py` gitignore rule
-  (line 57, meant for scratch scripts) — never committed, invisible to CI/other clones. Q
-  decided: track it (untangle the gitignore rule), separate commit from 3.3/3.4.
 - Inline auth checks inside individual handler functions (handleNotesCommit etc.) were left
   in place as redundant defense-in-depth, not cleaned up.
 - docs/contracts/worker-route-auth-matrix.md (v1, stale/wrong) still exists alongside v2 —
   should be deleted or marked superseded.
-- Non-canonical wrangler configs (wrangler-antigravity.jsonc, cloudflare-worker/wrangler.toml)
-  never formally disposed of.
+- **`cloudflare-worker/wrangler.toml` (default-discovered, non-canonical) still contains a
+  `[[migrations]]` block and is DANGEROUS** — confirmed live 2026-08-23: running
+  `wrangler deploy` without `--config worker-wrangler.toml` picks THIS file by default and
+  fails at the Cloudflare API (100403, exports-vs-migrations conflict). It didn't corrupt
+  anything (API rejects atomically) but wastes a deploy cycle and could confuse a future
+  operator who doesn't already know to pass `--config`. Should be deleted, renamed to make
+  it obviously non-canonical, or updated to mirror `worker-wrangler.toml`'s `[exports.*]`
+  blocks so either file is safe to use. `wrangler-antigravity.jsonc` also still undisposed.
 - CI (`sdd-verify.yml`) red since 2026-08-19 — separate ticket, not blocking, per Q.
+- ADR-0006 (`.lovable` frontend/backend parity) is stale — `.lovable` was deliberately
+  deleted this session (commit e0f1a779) — but the ADR file itself was never updated to say
+  `superseded-by` or `status: obsolete`. A future reader hitting ADR-0006 cold will think
+  `.lovable` still exists.
+- `RoomDO` still has no confirmed frontend caller (unlike `DiagramSyncDO`, which does, via
+  `y-websocket` in `DrakonEditor.tsx`) — flagged as a possible deletion candidate, still not
+  acted on, still Q's call not the architect's/agent's to make unilaterally.
+
+## Resolved since last version of this doc
+
+- `scripts/sdd_llm_judge.py` / `update_plan.py` gitignore swallow — FIXED (`.gitignore` now
+  has explicit `!scripts/sdd_llm_judge.py` / `!update_plan.py` negations, both files tracked).
+- Slice 3.3 §4 steps 6-7 (OWNER_EMAILS retirement) — merged AND deployed (see Status table).
 
 ## Oracle dependency
 
 Oracle Cloud Claude instance is on a weekly usage limit until 2026-08-25 09:00 Europe/
-Zurich. Anything in the synthesis report's O-1..O-10 Oracle-Deferred list stays blocked
-until then.
+Zurich (still ~1.5 days out as of this writing) — anything in the synthesis report's
+O-1..O-10 Oracle-Deferred list stays blocked until then.
 
 ## Recommended next action
 
-`slice/3.4-room-diagram-tenancy` and the diagrams-write-path follow-up are merged to main,
-AND `DIAGRAM_SYNC` binding is now live (commit 83de6ef47, deployed version 07865171-5a61-
-493e-b366-49db19f2159b, 2026-08-23). Room + diagram tenant-scoped auth, D1 ownership check,
-and the D1 write path are now all fully reachable in production and smoke-tested working
-(/v1/diagram/:id/sync correctly 401s unauthenticated callers instead of 500ing). Slice 3.3 §4 steps 6-7 (retire OWNER_EMAILS, tenant-or-legacy-owner central gate) merged to
-main (f9e76489b, 2026-08-23) — reviewed, 220/220 tests on .30, 97/97 cross-verified on .184.
-Not yet deployed. Next: deploy (`--dry-run` first, same discipline as DIAGRAM_SYNC), then
-smoke-test that an Appwrite-JWT-only user can reach owner-gated routes and that MCP_API_KEY/
-Worker-JWT-owner paths still work. After that, MCP_API_KEY retirement (needs new ZoneSecret
-infra, not designed yet) and `/auth/login`'s fate remain explicitly deferred per Q.
+**Slice 3.3 is now fully complete and deployed end-to-end**: D1 schema, `packages/tenancy`,
+room/diagram tenant ownership (§3.4), the diagrams-table D1 write path, the `DIAGRAM_SYNC`
+binding, and OWNER_EMAILS retirement (steps 6-7) are all merged to `main` and live in
+production (current deployed version: `391cdebd-c54d-4354-a498-3237539c5aea`). There is no
+more global "owner" role reachable via a plain Appwrite login — auth is genuinely
+tenant-scoped now per ADR-0025, with `MCP_API_KEY` and Worker-JWT-owner kept as intentional,
+explicitly-scoped exceptions (service/automation access, not a backdoor for regular users).
+
+Per the round-2 synthesis's slice sequence, `slice/3.4-old` (server-resident spec
+resolution), `3.5` (generic runner registry), and `4.4` (tenant-filtered MCP) were all
+blocked ONLY on Slice 3.3 — that block is now lifted. The new architect's first real job is
+to pick the order among these three (or propose a different one) and produce the same level
+of detail Slice 3.2/3.3 got before implementation — see ARCHITECT-START-PROMPT.md for the
+concrete task framing and proposals to weigh.
+
+Two items explicitly deferred, NOT part of the next slice unless the architect argues
+otherwise: MCP_API_KEY retirement (needs new per-tenant `ZoneSecret` infrastructure, not yet
+designed) and `/auth/login`'s fate.
 
 ## Note for future DO-binding work: `exports` vs `migrations`
 
