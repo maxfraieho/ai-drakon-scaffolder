@@ -2,7 +2,7 @@
 
 import { S3BlobStoreAdapter } from '@ai-drakon/storage';
 import { resolveTenant, DiagramRepository, HarnessSpecRepository } from '@ai-drakon/tenancy';
-import { validateHarnessSpec } from '@ai-drakon/harness-contract';
+import { validateHarnessSpec, createDefaultSpec } from '@ai-drakon/harness-contract';
 
 const VALID_IR_ITEM_TYPES = new Set([
   'action','question','select','case','header','end','address',
@@ -4824,12 +4824,21 @@ async function handleDrakonExecuteDeterministic(request, env) {
     const repo = new HarnessSpecRepository(env.D1_DB, tenantId);
     const specRow = await repo.get(specId);
     if (!specRow) {
-      return errorResponse('Harness spec not found', 404, undefined, 'NOT_FOUND');
-    }
-    try {
-      resolvedSpec = JSON.parse(specRow.spec_json);
-    } catch {
-      return errorResponse('Corrupted harness spec in database', 500, undefined, 'CORRUPTED_SPEC');
+      console.warn(`[HarnessSpec] No spec found for specId=${specId} tenant=${tenantId}, self-healing with createDefaultSpec()`);
+      const defaultSpec = createDefaultSpec(specId);
+      await repo.upsert({
+        id: specId,
+        agent_name: specId,
+        version: defaultSpec.version,
+        spec_json: JSON.stringify(defaultSpec),
+      });
+      resolvedSpec = defaultSpec;
+    } else {
+      try {
+        resolvedSpec = JSON.parse(specRow.spec_json);
+      } catch {
+        return errorResponse('Corrupted harness spec in database', 500, undefined, 'CORRUPTED_SPEC');
+      }
     }
   } else {
     // If D1 is not bound (fallback for offline mock / test environments without D1)
