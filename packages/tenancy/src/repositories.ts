@@ -312,3 +312,48 @@ export class HarnessSpecRepository {
     return this.create(row);
   }
 }
+
+// ── mcp_tool_call_audit ───────────────────────────────────────────────────
+
+export interface McpToolAuditRow {
+  id: string;
+  tenant_id: string;
+  spec_id: string | null;
+  tool_name: string;
+  granted: boolean | number;
+  called_at: string;
+}
+
+export class McpToolAuditRepository {
+  constructor(private db: D1Database, private tenantId: string) {}
+
+  record(
+    specId: string | null,
+    toolName: string,
+    granted: boolean,
+    id?: string
+  ): Promise<D1Result> {
+    const recordId = id || crypto.randomUUID();
+    return this.db
+      .prepare(
+        'INSERT INTO mcp_tool_call_audit (id, tenant_id, spec_id, tool_name, granted, called_at) VALUES (?, ?, ?, ?, ?, datetime(\'now\'))'
+      )
+      .bind(recordId, this.tenantId, specId, toolName, granted ? 1 : 0)
+      .run();
+  }
+
+  listRecent(limit = 50): Promise<D1Result<McpToolAuditRow>> {
+    return this.db
+      .prepare('SELECT * FROM mcp_tool_call_audit WHERE tenant_id = ? ORDER BY called_at DESC LIMIT ?')
+      .bind(this.tenantId, limit)
+      .all<McpToolAuditRow>();
+  }
+
+  listBySpec(specId: string, limit = 50): Promise<D1Result<McpToolAuditRow>> {
+    return this.db
+      .prepare('SELECT * FROM mcp_tool_call_audit WHERE tenant_id = ? AND spec_id = ? ORDER BY called_at DESC LIMIT ?')
+      .bind(this.tenantId, specId, limit)
+      .all<McpToolAuditRow>();
+  }
+}
+
