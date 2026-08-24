@@ -1,0 +1,37 @@
+{
+  "name": "Pipeline B — DRAKON IR → Code",
+  "access": "public",
+  "params": [],
+  "items": {
+    "1": {
+      "type": "header",
+      "content": "Pipeline B",
+      "one": "2"
+    },
+    "2": {
+      "type": "action",
+      "content": "code_gen",
+      "one": "3"
+    },
+    "3": {
+      "type": "action",
+      "content": "check_syntax",
+      "one": "4"
+    },
+    "4": {
+      "type": "question",
+      "content": "route_after_syntax",
+      "one": "5",
+      "two": "2"
+    },
+    "5": {
+      "type": "end",
+      "content": "END"
+    }
+  },
+  "meta": {
+    "state_class": "VibeCodingState",
+    "node_module": "pipeline.nodes_vibe",
+    "router_module": "pipeline.graphs"
+  }
+}

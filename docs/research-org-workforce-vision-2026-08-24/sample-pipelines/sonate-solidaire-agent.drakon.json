@@ -1,0 +1,19 @@
+{
+  "name": "Sonate Solidaire — Assistant",
+  "description": "Sonate Solidaire multi-audience assistant with KB routing",
+  "schema": {"state_class": "SSAgentState"},
+  "items": {
+    "h0": {"type": "header", "one": "n1"},
+    "n1": {"type": "action", "content": "ss_detect_audience", "one": "n2"},
+    "n2": {"type": "action", "content": "ss_load_kb", "one": "n3"},
+    "n3": {"type": "action", "content": "ss_format_prompt", "one": "n4"},
+    "n4": {"type": "action", "content": "llm_call_with_system", "one": "n5"},
+    "n5": {"type": "action", "content": "ss_format_response", "one": "ss_log_analytics"},
+    "ss_log_analytics": {
+      "type": "action",
+      "content": "ss_log_analytics",
+      "one": "end"
+    },
+    "end": {"type": "end"}
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "name": "Pipeline A — Code → DRAKON IR",
+  "access": "public",
+  "params": [],
+  "items": {
+    "1": {
+      "type": "header",
+      "content": "Pipeline A",
+      "one": "2"
+    },
+    "2": {
+      "type": "action",
+      "content": "measure_cc",
+      "one": "3"
+    },
+    "3": {
+      "type": "action",
+      "content": "classify",
+      "one": "4"
+    },
+    "4": {
+      "type": "question",
+      "content": "route_by_complexity",
+      "one": "5",
+      "two": "6"
+    },
+    "5": {
+      "type": "action",
+      "content": "ast_translate",
+      "one": "7"
+    },
+    "6": {
+      "type": "action",
+      "content": "yaml_gen",
+      "one": "8"
+    },
+    "8": {
+      "type": "action",
+      "content": "ir_gen",
+      "one": "7"
+    },
+    "7": {
+      "type": "action",
+      "content": "validate",
+      "one": "9"
+    },
+    "9": {
+      "type": "question",
+      "content": "route_after_validate",
+      "one": "10",
+      "two": "8"
+    },
+    "10": {
+      "type": "end",
+      "content": "END"
+    }
+  },
+  "meta": {
+    "state_class": "AnalysisState",
+    "node_module": "pipeline.nodes_analysis",
+    "router_module": "pipeline.graphs"
+  }
+}
