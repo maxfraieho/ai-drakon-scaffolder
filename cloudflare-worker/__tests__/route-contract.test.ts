@@ -934,7 +934,28 @@ describe("Route-contract characterization (Slice 3.1)", () => {
               }
               return { results: [], success: true };
             }),
-            run: vi.fn(async () => ({ results: [], success: true })),
+            run: vi.fn(async () => {
+              if (query.includes("INSERT INTO harness_specs")) {
+                const [id, tenantId, agentName, version, specJson] = args as [string, string, string, string, string];
+                specTable.push({
+                  id,
+                  tenant_id: tenantId,
+                  agent_name: agentName,
+                  version,
+                  spec_json: specJson,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                });
+              } else if (query.includes("UPDATE harness_specs")) {
+                const [specJson, tenantId, id] = args as [string, string, string];
+                const row = specTable.find((r) => r.tenant_id === tenantId && r.id === id);
+                if (row) {
+                  row.spec_json = specJson;
+                  row.updated_at = new Date().toISOString();
+                }
+              }
+              return { results: [], success: true };
+            }),
           })),
         })),
       };
@@ -999,6 +1020,139 @@ describe("Route-contract characterization (Slice 3.1)", () => {
         version: "1.0.0",
       });
       expect(forwardedPayload.breakpoints).toEqual(["node-1"]);
+    });
+
+    it("missing specId in D1 self-heals via createDefaultSpec, persists to D1, and succeeds with 200", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { db, specTable } = createSpecD1([]); // D1 is completely empty
+      const env = mockEnv({ d1Db: db });
+      (env as any).APPWRITE_API_KEY = "test-key";
+      (env as any).APPWRITE_PROJECT_ID = "test-project";
+      (env as any).DETERMINISTIC_ENGINE_FUNCTION_ID = "func-123";
+
+      let forwardedPayload: any = null;
+      globalThis.fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/v1/functions/func-123/executions")) {
+          const body = JSON.parse(init?.body as string);
+          forwardedPayload = JSON.parse(body.body);
+          return new Response(JSON.stringify({ $id: "exec-selfheal-1", status: "accepted" }), { status: 200 });
+        }
+        return new Response(null, { status: 502 });
+      });
+
+      const expectedSpec = createDefaultSpec("nonexistent-spec");
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const res = await worker.fetch(
+        req(
+          "/v1/pipeline/execute-deterministic",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              specId: "nonexistent-spec",
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json).toEqual({ execution_id: "exec-selfheal-1", status: "accepted" });
+
+      // Check forwarded spec matches createDefaultSpec output
+      expect(forwardedPayload).not.toBeNull();
+      expect(forwardedPayload.harness_spec).toEqual(expectedSpec);
+
+      // Check warning was logged
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining("[HarnessSpec] No spec found for specId=nonexistent-spec tenant=tenant-alpha, self-healing with createDefaultSpec()")
+      );
+
+      // Check row was persisted in mock D1
+      const persisted = specTable.find((r) => r.tenant_id === "tenant-alpha" && r.id === "nonexistent-spec");
+      expect(persisted).toBeDefined();
+      expect(persisted!.agent_name).toBe("nonexistent-spec");
+      expect(persisted!.version).toBe(expectedSpec.version);
+      expect(JSON.parse(persisted!.spec_json)).toEqual(expectedSpec);
+
+      warnSpy.mockRestore();
+    });
+
+    it("subsequent request for same specId resolves directly from D1 without calling createDefaultSpec again", async () => {
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const { db, specTable } = createSpecD1([]); // D1 initially empty
+      const env = mockEnv({ d1Db: db });
+      (env as any).APPWRITE_API_KEY = "test-key";
+      (env as any).APPWRITE_PROJECT_ID = "test-project";
+      (env as any).DETERMINISTIC_ENGINE_FUNCTION_ID = "func-123";
+
+      let forwardedPayloads: any[] = [];
+      globalThis.fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/v1/functions/func-123/executions")) {
+          const body = JSON.parse(init?.body as string);
+          forwardedPayloads.push(JSON.parse(body.body));
+          return new Response(JSON.stringify({ $id: `exec-${forwardedPayloads.length}`, status: "accepted" }), { status: 200 });
+        }
+        return new Response(null, { status: 502 });
+      });
+
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+
+      // Request 1: triggers self-healing
+      const res1 = await worker.fetch(
+        req(
+          "/v1/pipeline/execute-deterministic",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              specId: "auto-spec",
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+      expect(res1.status).toBe(200);
+      expect(warnSpy).toHaveBeenCalledTimes(1);
+      expect(specTable.length).toBe(1);
+
+      // Mutate the persisted row in D1 to prove request 2 loads from D1, not freshly generated
+      const persisted = specTable.find((r) => r.tenant_id === "tenant-alpha" && r.id === "auto-spec")!;
+      const mutatedSpec = JSON.parse(persisted.spec_json);
+      mutatedSpec.description = "Updated persisted spec in D1";
+      persisted.spec_json = JSON.stringify(mutatedSpec);
+
+      warnSpy.mockClear();
+
+      // Request 2: resolves from D1 directly
+      const res2 = await worker.fetch(
+        req(
+          "/v1/pipeline/execute-deterministic",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              specId: "auto-spec",
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+      expect(res2.status).toBe(200);
+      // Warning was NOT logged on the second request because it resolved from D1
+      expect(warnSpy).not.toHaveBeenCalled();
+      // No new row created in D1
+      expect(specTable.length).toBe(1);
+      // Payload has the updated description from D1
+      expect(forwardedPayloads[1].harness_spec.description).toBe("Updated persisted spec in D1");
+
+      warnSpy.mockRestore();
     });
 
     it("dual-accept deprecation warning fires when legacy harness_spec body is sent", async () => {
@@ -1109,7 +1263,8 @@ describe("Route-contract characterization (Slice 3.1)", () => {
 
     it("two-tenant test: tenant A cannot resolve tenant B's specId (ADR-0025 decision #4)", async () => {
       const betaSpec = createDefaultSpec("architect");
-      const { db } = createSpecD1([
+      betaSpec.gates.confidence.min_score = 0.99; // Tenant B custom gate
+      const { db, specTable } = createSpecD1([
         {
           id: "secret-spec-beta",
           tenant_id: "tenant-beta", // Belongs ONLY to tenant-beta
@@ -1123,10 +1278,20 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       (env as any).APPWRITE_PROJECT_ID = "test-project";
       (env as any).DETERMINISTIC_ENGINE_FUNCTION_ID = "func-123";
 
-      const appwriteExecutionFetch = vi.fn();
-      globalThis.fetch = appwriteExecutionFetch;
+      let forwardedPayload: any = null;
+      globalThis.fetch = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
+        const urlStr = String(url);
+        if (urlStr.includes("/v1/functions/func-123/executions")) {
+          const body = JSON.parse(init?.body as string);
+          forwardedPayload = JSON.parse(body.body);
+          return new Response(JSON.stringify({ $id: "exec-123", status: "accepted" }), { status: 200 });
+        }
+        return new Response(null, { status: 502 });
+      });
 
-      // Tenant A tries to execute using Tenant B's specId
+      // Tenant A tries to execute using Tenant B's specId:
+      // Tenant A cannot read Tenant B's spec; Tenant A's D1 lookup returns null and self-heals
+      // a fresh default spec for tenant-alpha instead of leaking tenant-beta's custom spec.
       const tokenAlpha = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
       const res = await worker.fetch(
         req(
@@ -1143,12 +1308,21 @@ describe("Route-contract characterization (Slice 3.1)", () => {
         noopCtx()
       );
 
-      expect(res.status).toBe(404);
-      const body = await res.json();
-      expect(body).toMatchObject({ success: false, error: "Harness spec not found" });
-      // Execution was blocked, Appwrite function was never called
-      const executionCalls = appwriteExecutionFetch.mock.calls.filter(([url]) => String(url).includes("/v1/functions/"));
-      expect(executionCalls).toHaveLength(0);
+      expect(res.status).toBe(200);
+      expect(forwardedPayload).not.toBeNull();
+      // Verifies Tenant A received the default spec (min_score 0.7), NOT Tenant B's custom spec (0.99)
+      expect(forwardedPayload.harness_spec.gates.confidence.min_score).toBe(0.7);
+      expect(forwardedPayload.harness_spec.agent_name).toBe("secret-spec-beta");
+
+      // Verifies Tenant B's row in D1 is preserved unmodified
+      const tenantBRow = specTable.find((r) => r.tenant_id === "tenant-beta" && r.id === "secret-spec-beta");
+      expect(tenantBRow).toBeDefined();
+      expect(JSON.parse(tenantBRow!.spec_json).gates.confidence.min_score).toBe(0.99);
+
+      // Verifies Tenant A now has its own self-healed row
+      const tenantARow = specTable.find((r) => r.tenant_id === "tenant-alpha" && r.id === "secret-spec-beta");
+      expect(tenantARow).toBeDefined();
+      expect(tenantARow!.agent_name).toBe("secret-spec-beta");
     });
 
     it("invalid harness spec fails validation and returns 400", async () => {
