@@ -80,12 +80,10 @@ TBD are open questions this ADR exists partly to surface, not resolve.
    the vision need a more general "actively engaged with the system" state that also
    fits, e.g., a resident interacting with building management occasionally rather than
    during a shift?
-5. **Relationship to the existing AI-DRAKON product surface.** Is this an additional
-   product mode built on the same tenancy/agent infrastructure (AI-DRAKON stays a
-   dev-pipeline tool; this is a separate deployed application using the same backend
-   primitives), or a reframing of what AI-DRAKON's own frontend should become? Affects
-   whether this lives as new `src/` surface area or a wholly separate consumer of the
-   Worker/D1 backend.
+5. **Relationship to the existing AI-DRAKON product surface — RESOLVED (2026-08-24):**
+   this is a reframing of AI-DRAKON's own frontend, not a separate product surface. New
+   `src/` surface area on the existing frontend, consuming the existing Worker/D1
+   backend — not a second deployed app.
 
 ## What would help detail this further
 
@@ -111,7 +109,35 @@ A short strategy note alongside the diagrams — even a few sentences — on Q5 
 product surface or a reframing of AI-DRAKON itself) would let planning start on the right
 side of that fork instead of guessing.
 
-## Decision
+## Organizational structure and billing (added 2026-08-24, second pass)
+
+Q also described the ownership/growth/billing model for a tenant:
+
+- **Project owner** = the tenant's root user, pays for the subscription. Creates the
+  first cohort of participants directly.
+- **Recursive delegation**: users the owner adds can themselves add further users —
+  membership isn't flat owner-creates-everyone, it's a tree. This is how the
+  subdivision/sub-project/department/brigade structure Q described earlier
+  (§Context) actually gets built: each person who onboards others effectively creates
+  their own branch of the org chart within the tenant.
+- **Billing**: time-based, monthly packages priced by participant count, with the
+  explicit note that pricing tiers "can be dynamic" — i.e. cost scaling as
+  participants are added/removed mid-cycle, not just fixed seat blocks purchased
+  upfront.
+
+**New open question this raises (Q6)**: the current tenancy model (ADR-0025) treats a
+`tenant_id` as a flat Appwrite Team — `resolveTenant()` creates one personal team per
+top-level user, with no concept of nested sub-groups within a tenant. This vision needs
+either (a) a hierarchy *within* one Appwrite Team (e.g. via team roles/labels marking
+subdivision membership), or (b) nested tenants (a sub-tenant whose parent is another
+tenant) — a materially bigger change to the tenancy model than (a). Which of these two
+shapes fits depends on whether cross-subdivision boundaries need the SAME hard isolation
+guarantee ADR-0025 gives between top-level tenants (unscoped-query-unrepresentable), or a
+softer "same organization, different visibility" boundary. Worth a dedicated DRAKON
+diagram: **who can see/act-on whose data** across owner → subdivision → individual
+worker, since that's the concrete question the billing/hierarchy model turns on.
+
+
 
 Not yet made. This ADR exists to record the vision as stated and the open questions it
 raises, so the next planning pass (architect-level, once the diagrams above exist) starts
