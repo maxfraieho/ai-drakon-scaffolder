@@ -137,7 +137,22 @@ softer "same organization, different visibility" boundary. Worth a dedicated DRA
 diagram: **who can see/act-on whose data** across owner → subdivision → individual
 worker, since that's the concrete question the billing/hierarchy model turns on.
 
+## Design principle: simplicity for the mass user (added 2026-08-24, third pass)
 
+Q explicitly flagged that the current AI-DRAKON design is too complex for this vision's
+target audience. The redesign must be oriented toward the **mass/general user** (a
+factory-floor worker, a building resident — not a developer), which Q framed as needing
+**simple internal logic**, not just a simplified UI layered over the current complexity.
+This is a constraint on the architecture, not only the frontend: whatever the org-hierarchy
+(Q6) and per-role-agent (§Context) mechanisms end up being, they need to be simple enough
+in their own operation that they don't leak complexity into the user-facing flows — a
+UI can't fully hide a genuinely complicated underlying model. Worth treating as an
+explicit design constraint alongside the open questions above, not an afterthought for
+the eventual frontend pass: when the DRAKON workflow diagrams (§What would help) get
+drawn, simplicity of the diagram itself is a signal of whether the underlying design is
+actually simple, not just prettified.
+
+## Decision
 
 Not yet made. This ADR exists to record the vision as stated and the open questions it
 raises, so the next planning pass (architect-level, once the diagrams above exist) starts
