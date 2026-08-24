@@ -331,12 +331,12 @@ second (larger) research pass is compared against this one:
 
 - **Q2's `tenant_users_private` table name** is invented, not an existing table — fine for
   a proposal, but flag it as new schema, not something already there.
-- **Q2's "vector storage/MemPalace and GitNexus semantic graph"** — MemPalace and GitNexus
-  are this session's OWN tooling (used to investigate/build the codebase), not existing
-  application-layer infrastructure the deployed product uses for its own knowledge base.
-  Reusing them as the PRODUCT's knowledge engine (not just a dev-tool) is a real, bigger
-  architectural claim than this document treats it as — worth scrutinizing in the next
-  pass rather than accepting at face value.
+- **Q2's "vector storage/MemPalace and GitNexus semantic graph" — CONFIRMED WRONG (Q,
+  2026-08-24)**: MemPalace and GitNexus are development tooling only (used by Claude/agy
+  to investigate and build this codebase during sessions) — they are NOT included in the
+  deployed product and are not available as the product's own knowledge engine. Any
+  future research proposing them as product infrastructure should be corrected on sight,
+  not treated as an open question.
 - **Option B (nested sub-groups within one tenant) matches this session's own instinct**
   in ADR-0026 (same conclusion Claude flagged as the lower-risk option relative to
   ADR-0025's hard isolation guarantee) — a real point of agreement between independent
