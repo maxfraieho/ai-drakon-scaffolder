@@ -71,6 +71,83 @@ yet) and `/auth/login`'s fate. Do not silently retire either without a fresh dec
 swallowing `scripts/sdd_llm_judge.py` (the real SDD Arbiter script) and `update_plan.py` —
 both now explicitly negated and tracked.
 
+**Slice 3.4a (server-resident harness spec resolution, ADR-0020)** — shipped after this
+file was first written, now also merged and deployed:
+1. `handleDrakonExecuteDeterministic` in the Worker now resolves and validates
+   `HarnessSpec` server-side via a new tenant-scoped `HarnessSpecRepository` (D1-backed,
+   same repository pattern as `DiagramRepository`), instead of trusting client-supplied
+   `harness_spec`/`gates`. `validateHarnessSpec` (previously written, zero call sites —
+   confirmed via GitNexus before starting) now has its first real call site.
+2. Client (`usePipelineExecution.ts`, `pipeline-client.ts`) no longer mints its own
+   default policy (`createDefaultSpec()` client-side removed); sends `{specId, drakon_ir,
+   breakpoints}`. `validateHarnessSpec`/`createDefaultSpec` relocated from
+   `src/lib/harness/harness-spec.ts` (frontend-only) to `packages/harness-contract` (a
+   shared workspace package the Worker can import), with `harness-spec.ts` re-exporting
+   for backward compat.
+3. Dual-accept transition: `REJECT_LEGACY_HARNESS_SPEC` flag landed OFF — legacy
+   `harness_spec`-body requests still work (deprecation-warned), new `specId`-only
+   requests work too. Flipping to reject-only is a separate, later, one-line change.
+4. **Two real defects found during review, both fixed same night before merge**:
+   - The first implementation dropped `drakon_ir` from the client request entirely
+     (a literal-instruction flaw in the delegation prompt, not agy's fault) — the engine
+     would have received `drakon_ir: undefined`, breaking all real pipeline execution.
+     Fixed same session (commit `3d6d535fa`), verified with a new test asserting
+     `forwardedPayload.drakon_ir` is actually forwarded.
+   - `harness_specs` D1 table was live but empty, with no real tenant_id anywhere in D1
+     yet (confirmed: 0 rows across every tenant-scoped table) — `resolveTenant()` creates
+     a tenant's Appwrite Team lazily on first request, so there was no way to pre-seed a
+     tenant that doesn't exist yet. Without a fix, the first real "run pipeline" attempt
+     by anyone would 404. Closed with a self-healing fallback: if
+     `HarnessSpecRepository.get()` finds nothing, generate via `createDefaultSpec()`,
+     `upsert()` it into D1, and proceed (commit `6d5d1bd79`). **Side effect worth
+     architect awareness**: this changed the two-tenant isolation test's semantics from
+     "wrong specId → 404" to "wrong specId → 200 with the caller's own self-healed
+     default spec (never the other tenant's real spec)". Isolation still holds (verified:
+     tenant A gets `min_score: 0.7` default, never tenant B's real `0.99`, tenant B's row
+     untouched) but a typo'd/wrong specId now silently succeeds instead of erroring —
+     possibly worth an observability/metrics follow-up later, not a blocker.
+5. 147/147 tests (145 baseline + 2 new for the self-heal path), cross-verified on both
+   `.234` and `.184`. Merged (`76a834c36`, `591610d77`), deployed live (version
+   `544a9f89-54ab-4439-b149-a9a22452e389`), smoke-tested: `/health`=200, unauthenticated
+   `/v1/pipeline/execute-deterministic`=401.
+6. New governance artifact: `specs/006-spec-resolution/spec.md` created, references
+   ADR-0020 and ADR-0025, `.specify/feature.json` repointed off the stale
+   `002-methodology-and-astryx-refactor` onto `006-spec-resolution` (was pointing at an
+   unrelated Astryx/frontend spec — the SDD Arbiter had nothing correct to judge Slice
+   3.4a's commits against until this was fixed). **Note for the next architect**:
+   `feature.json`'s `phase` is still `"specify"` — the SDD Arbiter correctly flagged this
+   as a real (shadow-mode, non-blocking) drift once real implementation code landed;
+   worth moving to `"implement"` or adding a `plan.md`/`tasks.md` if picking 3.5/4.4 up
+   under the same feature, or starting a fresh spec number for the next slice.
+
+**Slice 3.4b (human-approval PEP relocation, "Adjustment C")** — explicitly NOT done,
+deliberately held. Oracle Cloud Claude instance (needed to review this PEP-relocation
+design decision per the original synthesis report) is on a weekly usage limit until
+2026-08-25 09:00 Europe/Zurich. Do not implement this without that review.
+
+## Infra note: `.234` stability + `.30` reachability
+
+Mid-session, `.234` (the weaker Linux SBC used for `agy` delegation) became flaky —
+SSH connections timing out on plain `echo`. Root cause: a 3-day-old zombie Chromium/Xvfb
+stack (from an old `agent-workspace` MCP browser-automation session, PIDs from `сер21`/
+Aug 21) pegged at ~95% CPU nonstop on a 897MB-RAM host. Killed (PID 294892 and children,
+Xvfb 12468) — host immediately stabilized. Root-caused further: agy's MCP config
+(`~/.gemini/antigravity-cli/mcp_config.json` on `.234`) spawns EVERY configured MCP
+server on every `agy` invocation regardless of task relevance — the `agent-workspace`
+entry literally SSHes into `.234` itself and launches a headless browser stack. Removed
+`mempalace` and `agent-workspace` entries from that config (unneeded for code-delegation
+tasks broadly, and `agent-workspace`'s browser automation is redundant with the existing
+`.30`-driven browser-proxy pattern) — 10 MCP servers remain (gitnexus, ai-memory, drakon,
+notebooklm, n8n, and several Windows-side chrome/comet SSE endpoints). If a future task
+genuinely needs mempalace or local headless-browser MCP on `.234` specifically, re-add
+the entries rather than assuming they're gone for a good reason unrelated to this.
+
+Separately: `.30` (the Windows `agy.exe` fleet host, used for the bulk of Slice 3.4a's
+actual implementation) is CURRENTLY UNREACHABLE as of this handoff (`No route to host`) —
+unclear if this is a reboot, network change, or something else. Its
+`ai-drakon-scaffolder-spec34a` worktree still exists there with an already-merged branch;
+clean it up (`git worktree remove`) once reachable again, low priority.
+
 ## New finding this session: `wrangler.toml` is a live landmine
 
 `cloudflare-worker/wrangler.toml` (the DEFAULT config wrangler auto-discovers — distinct
@@ -133,6 +210,7 @@ deferred auth items (MCP_API_KEY, /auth/login).
 ## Recommendation for the architect's first move
 
 Read CURRENT-PLAN.md's status table and "Recommended next action" section, then
-ARCHITECT-START-PROMPT.md for the concrete task framing. Short version: Slice 3.3 is fully
-done, `slice/3.4-old` / `3.5` / `4.4` are all now unblocked — pick one (or propose a
-different order) and produce an implementation plan at the same detail level Slice 3.2/3.3 got.
+ARCHITECT-START-PROMPT.md for the concrete task framing. Short version: Slice 3.4a is
+fully done, deployed, and unblocks `3.5` (generic runner registry) and `4.4`
+(tenant-filtered MCP). Plan whichever one goes first, at the same detail level Slice
+3.2/3.3/3.4a got before implementation.
