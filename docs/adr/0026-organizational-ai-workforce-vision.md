@@ -54,36 +54,69 @@ TBD are open questions this ADR exists partly to surface, not resolve.
   that same format for a *worker's* personal knowledge base is a natural, not a novel,
   choice.
 
-## Open questions (TBD — need Q's further input before this becomes actionable)
+## Open questions (round 1) — RESOLVED 2026-08-24, second research pass
 
-1. **Client bootstrap path.** Termux-on-Android is stated as the starting point, "далі
-   застосунком" (later as a proper app). Is Termux a real intended interim distribution
-   channel for actual organizational end-users, or a development/prototyping convenience
-   that shouldn't shape the architecture? This materially affects whether the mobile
-   client is designed as a thin API consumer from day one (portable to a native app
-   later) or something more Termux-specific.
-2. **Personal knowledge base scope and boundary.** "Own specialized knowledge base... from
-   ADR records... processed by AI agents... joined into the overall system" — is a
-   worker's personal KB private-then-promoted (worker authors, reviews, then it merges
-   into the org's shared KB), or live-shared from the start? Does it live in the same D1
-   tenant-scoped tables as everything else, or does per-worker knowledge need its own
-   storage shape (more document/vector-oriented than the current relational
-   `harness_specs`/`diagrams` tables)?
-3. **"AI supervisor" role.** Described as something a worker communicates with about
-   process, needed materials/tools, and reporting. Is this a single per-organization
-   supervisor agent, one per department/brigade, or one per worker (a personal
-   assistant that escalates to a shared supervisor)? This is a harness-spec /
-   `agent_name` design question, not just a UI one.
-4. **Non-industrial generalization.** The building-management example (utilities, legal,
-   administration) suggests the "organization" concept needs to generalize beyond a
-   literal workplace-with-shifts model. Is "on shift" specific to labor contexts, or does
-   the vision need a more general "actively engaged with the system" state that also
-   fits, e.g., a resident interacting with building management occasionally rather than
-   during a shift?
+Full reasoning trail: `docs/research-org-workforce-vision-2026-08-24/SYNTHESIS-round2.md`
+(two independent research passes, cross-examined via NotebookLM chat against this ADR and
+the existing codebase docs). **Not yet GitNexus-verified against live code** — treat as
+proposed pending that pass, same discipline as every other slice.
+
+1. **Client bootstrap path — RESOLVED: PWA, not Termux.** Termux's shell-script/daemon
+   bootstrap contradicts this ADR's own "no dev constructs exposed to frontline
+   personnel" principle. Standard PWA (existing React/Vite/TanStack frontend),
+   IndexedDB/OPFS for offline storage, WebAuthn/passkeys or OTP auth (not corporate
+   email+password), QR-code onboarding, shared-kiosk fast-user-switching mode. A native
+   wrapper (Capacitor/Tauri) is a likely later addition for camera/Bluetooth/push, not
+   day-one scope.
+2. **Personal knowledge base scope and boundary — RESOLVED: on-device tier +
+   deterministic staging queue.** Personal/unverified notes stay on-device (encrypted at
+   rest), promoted only via an explicit `PENDING_REVIEW` → manual-approve D1 staging
+   table — not confidence-score auto-promotion (rejected as non-deterministic and
+   unauditable), not MemPalace/GitNexus (confirmed dev-tooling only, not deployed product
+   infrastructure).
+3. **"AI supervisor" role — RESOLVED: static harness-spec role archetype.** A supervisor
+   is a specialized `agent_name` row (same Slice 3.4a/4.4 pattern already built), not a
+   dynamically-hydrated per-request agent context. Worker requests to a supervisor are
+   ordinary MCP `tools/call`s against that role's `allowed_tools` grant.
+4. **Non-industrial generalization — RESOLVED: both research passes independently
+   converged on the same abstract-primitive vocabulary** (`OrgUnit`/`TeamPod`/
+   `ParticipantRole`/`DutyCycle`/`CoordinatorAgent`/`OperationalRecord`, with
+   per-domain lexicon overlays) — see SYNTHESIS-round2.md for the full mapping table.
 5. **Relationship to the existing AI-DRAKON product surface — RESOLVED (2026-08-24):**
    this is a reframing of AI-DRAKON's own frontend, not a separate product surface. New
    `src/` surface area on the existing frontend, consuming the existing Worker/D1
    backend — not a second deployed app.
+
+## New corrections found during round-2 synthesis (not in either original research pass)
+
+- **`org_path` sub-group scoping must be repository-enforced**, not raw `LIKE`-prefix SQL
+  written in route handlers — otherwise it's a real regression from this ADR's own
+  construction-enforced isolation discipline (§3, mirrors `tenantId`).
+- **New worker-facing actions should be MCP tools (reusing Slice 4.4's filtering/audit
+  machinery), not a parallel REST API** — both research passes proposed new REST routes
+  without considering the MCP surface already built for exactly this purpose.
+- **DRAKON diagrams need state-machine traversal, not flattening to a linear checklist**
+  — real diagrams branch (see `sample-pipelines/*.drakon.json`); both passes' "vertical
+  checklist" framing silently assumed linear-only workflows, which doesn't hold for real
+  factory/building tasks that branch on conditions.
+
+## New open questions (round 2) — surfaced by adversarial review, neither pass addressed
+
+1. **Offline sync conflict resolution.** No policy defined yet for two workers modifying
+   the same task/resource state while both offline (CRDT-style merge vs. checkout/lock
+   lease) — "last write wins" risks silently corrupting physical-world state tracking.
+2. **Device loss/theft.** Needs encryption-at-rest for local storage, a remote-revocation/
+   poison-pill mechanism, and data-minimization (cache only the worker's own `org_path`
+   subtree, not the whole tenant).
+3. **Multilingual runtime.** Q writes Ukrainian; real deployments may involve workers in a
+   third language entirely, while the codebase/tool names are English. Needs per-node
+   DRAKON IR localization and translation middleware for AI-generated content — unaddressed
+   by either research pass.
+4. **Native hardware + battery.** Pure browser PWAs have limited camera/Bluetooth-sensor
+   access and persistent WebSockets drain mobile battery over a shift — likely needs a
+   thin native wrapper and event-driven polling instead of persistent connections, a real
+   tension with the "pure PWA" recommendation above that neither pass weighed.
+
 
 ## What would help detail this further
 
