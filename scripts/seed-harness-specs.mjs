@@ -26,7 +26,133 @@ export const KNOWN_AGENT_NAMES = [
   'docs-chat',
 ];
 
+export const EXTERNAL_DEFAULT_TOOLS = [
+  'mcp.gitnexus.query',
+  'mcp.notebooklm.chat_ask',
+];
+
+export const AGENT_ALLOWED_TOOLS = {
+  architect: [
+    ...EXTERNAL_DEFAULT_TOOLS,
+    'drakon.listdiagrams',
+    'drakon.getdiagram',
+    'drakon.savediagram',
+    'drakon.deletediagram',
+    'drakon.validateir',
+    'drakon.analyzecodebase',
+    'drakon.getanalysissummary',
+    'drakon.mutatediagram',
+    'drakon.diffcodevsdiagram',
+    'drakon.savetogit',
+    'drakon.listgitdiagrams',
+    'drakon.getgitdiagram',
+    'github.listtree',
+    'github.getfile',
+    'github.commitfile',
+    'github.listbranches',
+    'docs.chat',
+    'docs.query',
+    'docs.wikilink',
+    'docs.backlinks',
+    'architect.chat',
+    'architect.analyze',
+    'architect.jobstatus',
+    'drakon.agentchat',
+  ],
+  drakon: [
+    ...EXTERNAL_DEFAULT_TOOLS,
+    'drakon.listdiagrams',
+    'drakon.getdiagram',
+    'drakon.savediagram',
+    'drakon.deletediagram',
+    'drakon.validateir',
+    'drakon.analyzecodebase',
+    'drakon.getanalysissummary',
+    'drakon.mutatediagram',
+    'drakon.diffcodevsdiagram',
+    'drakon.savetogit',
+    'drakon.listgitdiagrams',
+    'drakon.getgitdiagram',
+    'drakon.agentchat',
+    'github.listtree',
+    'github.getfile',
+    'github.listbranches',
+    'architect.chat',
+  ],
+  docs: [
+    ...EXTERNAL_DEFAULT_TOOLS,
+    'docs.chat',
+    'docs.query',
+    'docs.wikilink',
+    'docs.backlinks',
+    'github.listtree',
+    'github.getfile',
+    'github.listbranches',
+    'drakon.listdiagrams',
+    'drakon.getdiagram',
+  ],
+  'sonate-solidaire': [
+    ...EXTERNAL_DEFAULT_TOOLS,
+    'docs.chat',
+    'docs.query',
+    'docs.wikilink',
+    'docs.backlinks',
+    'architect.chat',
+    'github.listtree',
+    'github.getfile',
+    'drakon.listdiagrams',
+    'drakon.getdiagram',
+  ],
+  'architect-a': [
+    ...EXTERNAL_DEFAULT_TOOLS,
+    'drakon.listdiagrams',
+    'drakon.getdiagram',
+    'drakon.savediagram',
+    'drakon.validateir',
+    'drakon.analyzecodebase',
+    'drakon.getanalysissummary',
+    'architect.analyze',
+    'architect.jobstatus',
+    'architect.chat',
+    'github.listtree',
+    'github.getfile',
+  ],
+  'architect-b': [
+    ...EXTERNAL_DEFAULT_TOOLS,
+    'drakon.listdiagrams',
+    'drakon.getdiagram',
+    'drakon.validateir',
+    'github.listtree',
+    'github.getfile',
+    'github.listbranches',
+    'github.commitfile',
+    'architect.chat',
+  ],
+  'drakon-analyze': [
+    ...EXTERNAL_DEFAULT_TOOLS,
+    'drakon.validateir',
+    'drakon.analyzecodebase',
+    'drakon.getanalysissummary',
+    'drakon.getdiagram',
+    'drakon.savediagram',
+    'drakon.agentchat',
+    'github.listtree',
+    'github.getfile',
+  ],
+  'docs-chat': [
+    ...EXTERNAL_DEFAULT_TOOLS,
+    'docs.chat',
+    'docs.query',
+    'docs.wikilink',
+    'docs.backlinks',
+  ],
+};
+
 export function createDefaultSpec(agentName) {
+  const allowedTools = AGENT_ALLOWED_TOOLS[agentName]
+    ? [...AGENT_ALLOWED_TOOLS[agentName]]
+    : [...EXTERNAL_DEFAULT_TOOLS];
+
   return {
     $schema: "https://aidrakon.tech/schemas/harness-spec-v1.json",
     agent_name: agentName,
@@ -36,10 +162,7 @@ export function createDefaultSpec(agentName) {
       gitnexus: { endpoint: "https://gitnexus.exodus.pp.ua/api/mcp", required: false, timeout_ms: 15000 },
       notebooklm: { endpoint: "https://fra.cloud.appwrite.io/v1/functions/notebooklm", required: false, timeout_ms: 20000 }
     },
-    allowed_tools: [
-      "mcp.gitnexus.query",
-      "mcp.notebooklm.chat_ask"
-    ],
+    allowed_tools: allowedTools,
     resources: {
       github: ["*"],
       appwrite: ["*"]
