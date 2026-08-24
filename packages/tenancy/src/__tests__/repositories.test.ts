@@ -4,6 +4,7 @@ import {
   KnowledgeZoneRepository,
   PipelineRunRepository,
   HarnessSpecRepository,
+  McpToolAuditRepository,
   type D1Database,
 } from '../repositories';
 
@@ -208,3 +209,73 @@ describe('HarnessSpecRepository -- tenant isolation', () => {
     expect(createStatement.bind).toHaveBeenCalledWith('s1', 'tenant-a', 'architect', '1.0.0', '{}');
   });
 });
+
+describe('McpToolAuditRepository -- tenant isolation', () => {
+  it('record() binds constructor tenantId, specId, toolName, and granted flag', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new McpToolAuditRepository(db, 'tenant-a');
+    await repo.record('spec-arch', 'drakon.getdiagram', true, 'audit-1');
+
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO mcp_tool_call_audit'));
+    const statement = prepare.mock.results[0].value;
+    expect(statement.bind).toHaveBeenCalledWith('audit-1', 'tenant-a', 'spec-arch', 'drakon.getdiagram', 1);
+  });
+
+  it('record() auto-generates a UUID id when none is provided', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new McpToolAuditRepository(db, 'tenant-a');
+    await repo.record('spec-arch', 'drakon.savediagram', false);
+
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO mcp_tool_call_audit'));
+    const statement = prepare.mock.results[0].value;
+    const boundArgs = statement.bind.mock.calls[0];
+    expect(boundArgs[0]).toEqual(expect.any(String));
+    expect(boundArgs[0].length).toBeGreaterThan(0);
+    expect(boundArgs[1]).toBe('tenant-a');
+    expect(boundArgs[2]).toBe('spec-arch');
+    expect(boundArgs[3]).toBe('drakon.savediagram');
+    expect(boundArgs[4]).toBe(0);
+  });
+
+  it('two repository instances for two tenants never share a bound tenantId', async () => {
+    const { db: dbA, prepare: prepareA } = fakeDb();
+    const { db: dbB, prepare: prepareB } = fakeDb();
+    const repoA = new McpToolAuditRepository(dbA, 'tenant-a');
+    const repoB = new McpToolAuditRepository(dbB, 'tenant-b');
+
+    await repoA.record('spec-1', 'tool-1', true, 'row-1');
+    await repoB.record('spec-1', 'tool-1', true, 'row-2');
+
+    expect(prepareA.mock.results[0].value.bind).toHaveBeenCalledWith('row-1', 'tenant-a', 'spec-1', 'tool-1', 1);
+    expect(prepareB.mock.results[0].value.bind).toHaveBeenCalledWith('row-2', 'tenant-b', 'spec-1', 'tool-1', 1);
+  });
+
+  it('listRecent() scopes to constructor tenantId with default limit', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new McpToolAuditRepository(db, 'tenant-a');
+    await repo.listRecent();
+
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('WHERE tenant_id = ? ORDER BY called_at DESC LIMIT ?'));
+    expect(prepare.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-a', 50);
+  });
+
+  it('listRecent() passes custom limit', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new McpToolAuditRepository(db, 'tenant-a');
+    await repo.listRecent(10);
+
+    expect(prepare.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-a', 10);
+  });
+
+  it('listBySpec() scopes to constructor tenantId and specId', async () => {
+    const { db, prepare } = fakeDb();
+    const repo = new McpToolAuditRepository(db, 'tenant-a');
+    await repo.listBySpec('spec-arch', 25);
+
+    expect(prepare).toHaveBeenCalledWith(
+      expect.stringContaining('WHERE tenant_id = ? AND spec_id = ? ORDER BY called_at DESC LIMIT ?')
+    );
+    expect(prepare.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-a', 'spec-arch', 25);
+  });
+});
+

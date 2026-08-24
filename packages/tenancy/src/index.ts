@@ -87,6 +87,7 @@ export {
   DiagramRepository,
   PipelineRunRepository,
   HarnessSpecRepository,
+  McpToolAuditRepository,
 } from './repositories';
 export type {
   D1Database,
@@ -98,6 +99,8 @@ export type {
   Diagram,
   PipelineRun,
   HarnessSpecRow,
+  McpToolAuditRow,
 } from './repositories';
 export type { AppwriteConfig, AppwriteTeam } from './appwrite-teams';
 export { resolveOrCreateTeam, listTeams, createPersonalTeam } from './appwrite-teams';
+
