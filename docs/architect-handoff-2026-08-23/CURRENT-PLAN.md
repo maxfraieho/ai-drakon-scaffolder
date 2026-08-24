@@ -212,3 +212,36 @@ never a `[[migrations]]` entry. Always `--dry-run` first — the two failure mod
 were both caught before touching live state, but only because dry-run/deploy-time errors
 were checked rather than assumed clean.
 
+## Second strategic track: Organizational AI-Workforce Vision (started 2026-08-24)
+
+A SEPARATE strategic initiative from the tenancy/MCP-filtering slice sequence above — not
+numbered into Slice 3.x/4.x, tracked independently. Origin: Q described a product-direction
+vision live (reframe AI-DRAKON's own frontend around real organizations — factories,
+apartment-building management — with per-worker AI agents, personal knowledge bases, and
+a recursive-delegation billing model). Governed by `docs/adr/0026-organizational-ai-workforce-vision.md`.
+
+**State as of 2026-08-24**:
+- Vision captured, ADR-0026 written, Q1-Q4 and Q6 resolved via a two-pass external research
+  + NotebookLM adversarial cross-examination + GitNexus verification pipeline — see
+  `docs/research-org-workforce-vision-2026-08-24/` (research package, `SYNTHESIS-round2.md`
+  for the reasoning trail, `VERIFICATION-round2.md` for what's been checked against live
+  code). Round-2 open questions remain (offline-conflict resolution, device loss/theft,
+  multilingual runtime, native hardware/battery) — explicitly deferred past the first slice.
+- New process artifact: `.claude/skills/notebooklm-research-pipeline/SKILL.md` — codifies
+  research → NotebookLM cross-examination → GitNexus verification → ADR as a mandatory
+  sequence for any future vision/architecture work sourced from external research. Applies
+  beyond this specific vision track.
+- Tactical (first-slice implementation plan): being drafted by a dedicated architect pass
+  (Opus) as of this writing, grounded in the verified synthesis. Once landed, it will live
+  in `docs/research-org-workforce-vision-2026-08-24/` or a new `specs/` entry (the plan
+  itself decides which, including whether a new SDD spec number is needed — `.specify/
+  feature.json` currently still points at `006-spec-resolution` from the tenancy track).
+- **Relationship to the tenancy/MCP track above**: this vision BUILDS ON that
+  infrastructure (tenant boundary, per-role harness-spec tool grants) rather than
+  replacing it — see SYNTHESIS-round2.md's corrections (reuse MCP tools/harness-spec
+  pattern for the "AI supervisor" role, don't rebuild parallel infrastructure). The two
+  tracks are not blocking each other, but share the same underlying primitives — keep
+  both CURRENT-PLAN docs and both ADR sequences (tenancy: up to 0025; this: 0026+)
+  mentally reconciled when planning either one.
+
+
