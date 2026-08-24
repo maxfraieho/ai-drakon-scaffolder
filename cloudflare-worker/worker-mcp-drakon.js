@@ -1,7 +1,7 @@
 // ── Inlined htse lib (ir-types, ir-validator-core, diagram-to-ir, ir-to-diagram) ──
 
 import { S3BlobStoreAdapter } from '@ai-drakon/storage';
-import { resolveTenant, DiagramRepository, HarnessSpecRepository } from '@ai-drakon/tenancy';
+import { resolveTenant, DiagramRepository, HarnessSpecRepository, McpToolAuditRepository } from '@ai-drakon/tenancy';
 import { validateHarnessSpec, createDefaultSpec } from '@ai-drakon/harness-contract';
 
 const VALID_IR_ITEM_TYPES = new Set([
@@ -2082,6 +2082,51 @@ function toolResultJson(data) {
   };
 }
 
+async function resolveMcpTenantAndSpec(request, env, body, params) {
+  const ownerPayload = await verifyOwnerAuth(request, env);
+  const appwriteConfig = {
+    endpoint: (env.APPWRITE_ENDPOINT || 'https://auth.aidrakon.tech').replace(/\/v1\/?$/, ''),
+    projectId: env.APPWRITE_PROJECT_ID || '6a23420a003a04b4997b',
+    apiKey: env.APPWRITE_API_KEY,
+  };
+  const tenantContext = await resolveTenant(request, appwriteConfig);
+  const isLegacyOwner = Boolean(ownerPayload && ownerPayload.role === 'owner');
+  if (!isLegacyOwner && !tenantContext) {
+    return { error: errorResponse('Unauthorized', 401, undefined, 'UNAUTHORIZED') };
+  }
+  const tenantId = tenantContext?.tenantId || ownerPayload?.tenant_id || ownerPayload?.sub || 'default';
+
+  // Support optional specId in JSON-RPC params, top-level body, or fallback to default agent 'architect'
+  const specId = params?.specId || params?.spec_id || body?.specId || body?.spec_id || 'architect';
+
+  let resolvedSpec = null;
+  if (env.D1_DB) {
+    const repo = new HarnessSpecRepository(env.D1_DB, tenantId);
+    const specRow = await repo.get(specId);
+    if (!specRow) {
+      console.warn(`[HarnessSpec] No spec found for specId=${specId} tenant=${tenantId}, self-healing with createDefaultSpec()`);
+      const defaultSpec = createDefaultSpec(specId);
+      await repo.upsert({
+        id: specId.startsWith('spec-') ? specId : `spec-${specId}`,
+        agent_name: specId,
+        version: defaultSpec.version,
+        spec_json: JSON.stringify(defaultSpec),
+      });
+      resolvedSpec = defaultSpec;
+    } else {
+      try {
+        resolvedSpec = JSON.parse(specRow.spec_json);
+      } catch {
+        return { error: errorResponse('Corrupted harness spec in database', 500, undefined, 'CORRUPTED_SPEC') };
+      }
+    }
+  } else {
+    resolvedSpec = createDefaultSpec(specId);
+  }
+
+  return { tenantId, specId, resolvedSpec };
+}
+
 async function handleMcp(request, env, ctx) {
   let body;
   try {
@@ -2123,15 +2168,47 @@ async function handleMcp(request, env, ctx) {
   }
 
   if (method === 'tools/list') {
-    return jsonResponse({ jsonrpc: '2.0', id, result: { tools: getMcpTools() } });
+    const { tenantId, specId, resolvedSpec, error } = await resolveMcpTenantAndSpec(request, env, body, params);
+    if (error) return error;
+
+    const allowedTools = new Set(resolvedSpec?.allowed_tools || []);
+    const filteredTools = getMcpTools().filter((tool) => allowedTools.has(tool.name));
+    return jsonResponse({ jsonrpc: '2.0', id, result: { tools: filteredTools } });
   }
 
   if (method === 'tools/call') {
+    const { tenantId, specId, resolvedSpec, error } = await resolveMcpTenantAndSpec(request, env, body, params);
+    if (error) return error;
+
     const name = params?.name;
     const args = params?.arguments || {};
     const requestToken = request.headers.get('X-Github-Token') || '';
     const t0 = Date.now();
-    log('info', 'tool.call', { tool: name, hasGhToken: !!requestToken, folderSlug: args.folderSlug, diagramId: args.diagramId, owner: args.owner, repo: args.repo });
+    log('info', 'tool.call', { tool: name, hasGhToken: !!requestToken, folderSlug: args.folderSlug, diagramId: args.diagramId, owner: args.owner, repo: args.repo, specId, tenantId });
+
+    const allowedTools = new Set(resolvedSpec?.allowed_tools || []);
+    const isGranted = Boolean(name && allowedTools.has(name));
+
+    if (!isGranted) {
+      if (env.D1_DB) {
+        const auditRepo = new McpToolAuditRepository(env.D1_DB, tenantId);
+        await auditRepo.record(specId, name || 'unknown', false);
+      }
+      return jsonResponse({
+        jsonrpc: '2.0',
+        id,
+        error: {
+          code: -32003,
+          message: `Forbidden: tool '${name}' is not permitted by harness spec '${specId}'`,
+        },
+      }, 403);
+    }
+
+    if (env.D1_DB) {
+      const auditRepo = new McpToolAuditRepository(env.D1_DB, tenantId);
+      await auditRepo.record(specId, name, true);
+    }
+
     try {
 
     if (name === 'drakon.listdiagrams') {

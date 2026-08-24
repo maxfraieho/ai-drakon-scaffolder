@@ -19,8 +19,8 @@
 // blocked by this file's structure -- add a case, not a new harness.
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DiagramRepository, HarnessSpecRepository, type D1Database } from "@ai-drakon/tenancy";
-import { createDefaultSpec } from "@ai-drakon/harness-contract";
+import { DiagramRepository, HarnessSpecRepository, McpToolAuditRepository, type D1Database } from "@ai-drakon/tenancy";
+import { createDefaultSpec, AGENT_ALLOWED_TOOLS } from "@ai-drakon/harness-contract";
 import worker, { generateJWT } from "../worker-mcp-drakon.js";
 import { JWT_SECRET, MCP_API_KEY, mockAppwriteTenantSession, mockEnv, noopCtx } from "./helpers/mock-env.js";
 
@@ -1359,6 +1359,440 @@ describe("Route-contract characterization (Slice 3.1)", () => {
       expect(res.status).toBe(400);
       const body = await res.json();
       expect(body).toMatchObject({ success: false, error: "Invalid harness spec: failed validation" });
+    });
+  });
+
+  describe("Slice 4.4: MCP tool filtering & audit logging (ADR-0019 / defect D13)", () => {
+    function createMcpD1(initialSpecs: Array<{
+      id: string;
+      tenant_id: string;
+      agent_name: string;
+      version: string;
+      spec_json: string;
+    }> = []) {
+      const specTable = [...initialSpecs.map((s) => ({
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...s,
+      }))];
+      const auditTable: Array<{
+        id: string;
+        tenant_id: string;
+        spec_id: string | null;
+        tool_name: string;
+        granted: number;
+        called_at: string;
+      }> = [];
+
+      const db: D1Database = {
+        prepare: vi.fn((query: string) => ({
+          bind: vi.fn((...args: unknown[]) => ({
+            first: vi.fn(async () => {
+              if (query.includes("FROM harness_specs")) {
+                const [tenantId, id] = args as [string, string, string?];
+                const row = specTable.find((r) => r.tenant_id === tenantId && (r.id === id || r.agent_name === id));
+                return row ? { ...row } : null;
+              }
+              return null;
+            }),
+            all: vi.fn(async () => {
+              if (query.includes("FROM harness_specs")) {
+                const [tenantId, agentName] = args as [string, string?];
+                const rows = specTable.filter((r) => r.tenant_id === tenantId && (!agentName || r.agent_name === agentName));
+                return { results: rows.map((r) => ({ ...r })), success: true };
+              }
+              if (query.includes("FROM mcp_tool_call_audit")) {
+                const [tenantId] = args as [string];
+                const rows = auditTable.filter((r) => r.tenant_id === tenantId);
+                return { results: rows.map((r) => ({ ...r })), success: true };
+              }
+              return { results: [], success: true };
+            }),
+            run: vi.fn(async () => {
+              if (query.includes("INSERT INTO harness_specs")) {
+                const [id, tenantId, agent_name, version, specJson] = args as [string, string, string, string, string];
+                specTable.push({
+                  id,
+                  tenant_id: tenantId,
+                  agent_name,
+                  version,
+                  spec_json: specJson,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                });
+              } else if (query.includes("UPDATE harness_specs")) {
+                const [specJson, tenantId, id] = args as [string, string, string];
+                const row = specTable.find((r) => r.tenant_id === tenantId && (r.id === id || r.agent_name === id));
+                if (row) {
+                  row.spec_json = specJson;
+                  row.updated_at = new Date().toISOString();
+                }
+              } else if (query.includes("INSERT INTO mcp_tool_call_audit")) {
+                const [id, tenantId, specId, toolName, granted] = args as [string, string, string | null, string, number];
+                auditTable.push({
+                  id,
+                  tenant_id: tenantId,
+                  spec_id: specId,
+                  tool_name: toolName,
+                  granted,
+                  called_at: new Date().toISOString(),
+                });
+              }
+              return { results: [], success: true };
+            }),
+          })),
+        })),
+      };
+      return { db, specTable, auditTable };
+    }
+
+    it("tools/list happy path: granted tools appear in response, ungranted tools are omitted", async () => {
+      const docsSpec = createDefaultSpec("docs");
+      const { db } = createMcpD1([
+        {
+          id: "spec-docs",
+          tenant_id: "tenant-alpha",
+          agent_name: "docs",
+          version: "1.0.0",
+          spec_json: JSON.stringify(docsSpec),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+
+      const res = await worker.fetch(
+        req(
+          "/mcp",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "tools/list",
+              params: { specId: "docs" },
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      const toolNames = json.result.tools.map((t: { name: string }) => t.name);
+
+      // Granted tools for docs role
+      expect(toolNames).toContain("docs.chat");
+      expect(toolNames).toContain("docs.query");
+      expect(toolNames).toContain("docs.wikilink");
+      expect(toolNames).toContain("docs.backlinks");
+      expect(toolNames).toContain("github.listtree");
+      expect(toolNames).toContain("github.getfile");
+      expect(toolNames).toContain("drakon.listdiagrams");
+      expect(toolNames).toContain("drakon.getdiagram");
+
+      // Ungranted tools for docs role
+      expect(toolNames).not.toContain("github.commitfile");
+      expect(toolNames).not.toContain("architect.analyze");
+      expect(toolNames).not.toContain("architect.jobstatus");
+      expect(toolNames).not.toContain("drakon.mutatediagram");
+      expect(toolNames).not.toContain("drakon.deletediagram");
+      expect(toolNames).not.toContain("drakon.savediagram");
+    });
+
+    it("Tenant A's tools/list omits tools tenant B's spec would grant (two-tenant isolation)", async () => {
+      // Tenant B has a custom spec that explicitly grants github.commitfile
+      const tenantBSpec = createDefaultSpec("custom-builder");
+      tenantBSpec.allowed_tools = ["github.commitfile", "mcp.gitnexus.query"];
+
+      const { db } = createMcpD1([
+        {
+          id: "custom-builder",
+          tenant_id: "tenant-beta",
+          agent_name: "custom-builder",
+          version: "1.0.0",
+          spec_json: JSON.stringify(tenantBSpec),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+
+      // Tenant A calls tools/list asking for "custom-builder"
+      const tokenAlpha = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+      const resAlpha = await worker.fetch(
+        req(
+          "/mcp",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 1,
+              method: "tools/list",
+              params: { specId: "custom-builder" },
+            }),
+          },
+          tokenAlpha
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(resAlpha.status).toBe(200);
+      const jsonAlpha = await resAlpha.json();
+      const toolsAlpha = jsonAlpha.result.tools.map((t: { name: string }) => t.name);
+      // Tenant A's self-healed spec for unknown custom-builder does NOT have github.commitfile
+      expect(toolsAlpha).not.toContain("github.commitfile");
+
+      // Tenant B calls tools/list asking for "custom-builder"
+      const tokenBeta = await generateJWT({ role: "owner", sub: "tenant-beta" }, JWT_SECRET);
+      const resBeta = await worker.fetch(
+        req(
+          "/mcp",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 2,
+              method: "tools/list",
+              params: { specId: "custom-builder" },
+            }),
+          },
+          tokenBeta
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(resBeta.status).toBe(200);
+      const jsonBeta = await resBeta.json();
+      const toolsBeta = jsonBeta.result.tools.map((t: { name: string }) => t.name);
+      // Tenant B receives github.commitfile as granted by tenant B's spec
+      expect(toolsBeta).toContain("github.commitfile");
+    });
+
+    it("tools/call on an ungranted tool returns 403 and writes granted: false audit row in D1", async () => {
+      const docsSpec = createDefaultSpec("docs");
+      const { db, auditTable } = createMcpD1([
+        {
+          id: "spec-docs",
+          tenant_id: "tenant-alpha",
+          agent_name: "docs",
+          version: "1.0.0",
+          spec_json: JSON.stringify(docsSpec),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+
+      const res = await worker.fetch(
+        req(
+          "/mcp",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 42,
+              method: "tools/call",
+              params: {
+                name: "github.commitfile",
+                specId: "docs",
+                arguments: {
+                  owner: "org",
+                  repo: "repo",
+                  path: "test.md",
+                  content: "content",
+                  message: "commit",
+                },
+              },
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(403);
+      const json = await res.json();
+      expect(json).toMatchObject({
+        jsonrpc: "2.0",
+        id: 42,
+        error: {
+          code: -32003,
+          message: expect.stringContaining("Forbidden"),
+        },
+      });
+
+      // Assert audit row was written to D1 with granted: 0 (false)
+      expect(auditTable.length).toBe(1);
+      expect(auditTable[0]).toMatchObject({
+        tenant_id: "tenant-alpha",
+        spec_id: "docs",
+        tool_name: "github.commitfile",
+        granted: 0,
+      });
+    });
+
+    it("Agent-role escalation within ONE tenant (closes defect D13): docs cannot call architect-only tool, architect can", async () => {
+      const docsSpec = createDefaultSpec("docs");
+      const architectSpec = createDefaultSpec("architect");
+
+      const { db, auditTable } = createMcpD1([
+        {
+          id: "spec-docs",
+          tenant_id: "tenant-alpha",
+          agent_name: "docs",
+          version: "1.0.0",
+          spec_json: JSON.stringify(docsSpec),
+        },
+        {
+          id: "spec-architect",
+          tenant_id: "tenant-alpha",
+          agent_name: "architect",
+          version: "1.0.0",
+          spec_json: JSON.stringify(architectSpec),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+
+      // 1. Caller using specId: "docs" attempts to call "github.commitfile" -> 403 Forbidden
+      const deniedRes = await worker.fetch(
+        req(
+          "/mcp",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 101,
+              method: "tools/call",
+              params: {
+                name: "github.commitfile",
+                specId: "docs",
+                arguments: {
+                  owner: "org",
+                  repo: "repo",
+                  path: "file.txt",
+                  content: "hello",
+                  message: "commit",
+                },
+              },
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(deniedRes.status).toBe(403);
+      const deniedJson = await deniedRes.json();
+      expect(deniedJson.error.code).toBe(-32003);
+
+      expect(auditTable.length).toBe(1);
+      expect(auditTable[0]).toMatchObject({
+        tenant_id: "tenant-alpha",
+        spec_id: "docs",
+        tool_name: "github.commitfile",
+        granted: 0,
+      });
+
+      // 2. Caller using specId: "architect" calls "github.commitfile" -> Granted (authorized, not 403)
+      globalThis.fetch = vi.fn().mockResolvedValue(new Response(JSON.stringify({ commit: { sha: "abc123" } }), { status: 200 }));
+
+      const grantedRes = await worker.fetch(
+        req(
+          "/mcp",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 102,
+              method: "tools/call",
+              params: {
+                name: "github.commitfile",
+                specId: "architect",
+                arguments: {
+                  owner: "org",
+                  repo: "repo",
+                  path: "file.txt",
+                  content: "hello",
+                  message: "commit",
+                },
+              },
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(grantedRes.status).not.toBe(403);
+      expect(auditTable.length).toBe(2);
+      expect(auditTable[1]).toMatchObject({
+        tenant_id: "tenant-alpha",
+        spec_id: "architect",
+        tool_name: "github.commitfile",
+        granted: 1,
+      });
+    });
+
+    it("tools/call on a permitted tool dispatches successfully and writes granted: true audit row in D1", async () => {
+      const docsSpec = createDefaultSpec("docs");
+      const { db, auditTable } = createMcpD1([
+        {
+          id: "spec-docs",
+          tenant_id: "tenant-alpha",
+          agent_name: "docs",
+          version: "1.0.0",
+          spec_json: JSON.stringify(docsSpec),
+        },
+      ]);
+      const env = mockEnv({ d1Db: db });
+      const token = await generateJWT({ role: "owner", sub: "tenant-alpha" }, JWT_SECRET);
+
+      // Mock agent chat response for docs.chat
+      globalThis.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ reply: "Documentation answer", sources: [] }), { status: 200 })
+      );
+
+      const res = await worker.fetch(
+        req(
+          "/mcp",
+          {
+            method: "POST",
+            body: JSON.stringify({
+              jsonrpc: "2.0",
+              id: 201,
+              method: "tools/call",
+              params: {
+                name: "docs.chat",
+                specId: "docs",
+                arguments: {
+                  message: "Explain architecture",
+                },
+              },
+            }),
+          },
+          token
+        ),
+        env,
+        noopCtx()
+      );
+
+      expect(res.status).toBe(200);
+      const json = await res.json();
+      expect(json.result).toBeDefined();
+
+      // Assert audit row was written to D1 with granted: 1 (true)
+      expect(auditTable.length).toBe(1);
+      expect(auditTable[0]).toMatchObject({
+        tenant_id: "tenant-alpha",
+        spec_id: "docs",
+        tool_name: "docs.chat",
+        granted: 1,
+      });
     });
   });
 });

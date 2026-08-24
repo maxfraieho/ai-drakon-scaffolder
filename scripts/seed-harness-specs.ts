@@ -15,8 +15,20 @@
  *   npx tsx scripts/seed-harness-specs.ts [--sql] [--tenant=<tenant_id>]
  */
 
-import { createDefaultSpec, type DrakonHarnessSpec } from '../packages/harness-contract/src/index';
+import { createDefaultSpec, AGENT_ALLOWED_TOOLS, type DrakonHarnessSpec } from '../packages/harness-contract/src/index';
 
+/**
+ * Vocabulary & role mapping for known agents (Slice 4.4):
+ *
+ * 1. 'architect': Full architect role (all 24 Worker tools + git commit + external tools).
+ * 2. 'drakon': Diagram specialist (all drakon.* tools, savetogit, read-only github.*, architect.chat; NO github.commitfile).
+ * 3. 'docs': Documentation specialist (docs.chat, docs.query, docs.wikilink, docs.backlinks, read-only github.* & drakon.*).
+ * 4. 'sonate-solidaire': Community proxy (docs.*, architect.chat, read-only github.* & drakon.*).
+ * 5. 'architect-a': Pipeline A (Code -> IR) analysis, IR generation & validation, saving synthesized diagrams.
+ * 6. 'architect-b': Pipeline B (IR -> Code) code generation, syntax checks, committing generated code (github.commitfile).
+ * 7. 'drakon-analyze': Deterministic AST visitor translation and topological IR validation.
+ * 8. 'docs-chat': Dedicated Docs Q&A pipeline (RAG retrieval & answering).
+ */
 export const KNOWN_AGENT_NAMES: readonly string[] = [
   'architect',
   'drakon',
