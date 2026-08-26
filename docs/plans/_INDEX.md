@@ -34,5 +34,6 @@ lang: uk
 | [[plans/pinchtab-test-results-extended-2026-05-26]] | Розширені результати тестування PinchTab | active | 3 |
 | [[plans/WORKFORCE-UI-REDESIGN-PLAN]] | Специфікація та план редизайну UI: Workforce Vision | active | 2 |
 | [[plans/WORKFORCE-UI-AND-SLICE5-PLAN]] | План редизайну інтерфейсу та реалізації Slice 5.1 | active | 2 |
+| [[plans/org-workforce-vision-2026-08-24/WORKFORCE-UI-CONSOLIDATED-PLAN]] | Гармонізований план + 5 DRAKON-діаграм для ADR-0026 (workforce vision, Slice 5.1 gate) | pending-Q-review | 1 |
 ## Семантичні зв'язки
 **Батьківський індекс:** [[plans/_INDEX]]

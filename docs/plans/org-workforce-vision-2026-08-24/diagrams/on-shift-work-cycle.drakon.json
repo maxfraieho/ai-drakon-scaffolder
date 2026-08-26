@@ -1,0 +1,160 @@
+{
+  "name": "Workforce On-Shift Work Cycle",
+  "access": "private",
+  "params": [],
+  "items": {
+    "h0": {
+      "type": "header",
+      "content": "On-shift work cycle — worker perspective (ADR-0026 diagram 2 of 5, drawn 1st)",
+      "one": "n1"
+    },
+    "n1": {
+      "type": "action",
+      "content": "worker_authenticate: QR onboarding / WebAuthn passkey / OTP (not corporate email+password)",
+      "one": "n2"
+    },
+    "n2": {
+      "type": "action",
+      "content": "load_own_org_path_subtree: cache ONLY worker's own org_path branch, not whole tenant (data-minimization)",
+      "one": "n3"
+    },
+    "n3": {
+      "type": "question",
+      "content": "device online?",
+      "one": "n4",
+      "two": "n5"
+    },
+    "n4": {
+      "type": "action",
+      "content": "fetch_task_queue: MCP tools/call, tenant_id + org_path scoped, allowed_tools per harness_specs.agent_name",
+      "one": "n6"
+    },
+    "n5": {
+      "type": "action",
+      "content": "load_task_queue: from local IndexedDB/OPFS cache (last synced) — data may be stale",
+      "one": "n6"
+    },
+    "n6": {
+      "type": "action",
+      "content": "worker selects/opens a task from queue",
+      "one": "n7"
+    },
+    "n7": {
+      "type": "action",
+      "content": "render_current_step: State-Machine Step Runner shows ONLY current DRAKON IR node, not full canvas",
+      "one": "n8"
+    },
+    "n8": {
+      "type": "question",
+      "content": "current node is a branch (condition/choice)?",
+      "one": "n9",
+      "two": "n10"
+    },
+    "n9": {
+      "type": "action",
+      "content": "worker selects branch (DRAKON question one/two) -> advance current_step_id",
+      "one": "n7"
+    },
+    "n10": {
+      "type": "action",
+      "content": "worker performs physical action / captures evidence (photo, scan, sensor reading)",
+      "one": "n11"
+    },
+    "n11": {
+      "type": "question",
+      "content": "materials, tools, or guidance needed from supervisor?",
+      "one": "n12",
+      "two": "n13"
+    },
+    "n12": {
+      "type": "action",
+      "content": "worker -> AI supervisor: ordinary MCP tools/call against supervisor's harness_specs.allowed_tools (Slice 3.4a/4.4 pattern, not a new agent-hydration mechanism)",
+      "one": "n13"
+    },
+    "n13": {
+      "type": "question",
+      "content": "current DRAKON step complete?",
+      "one": "n7",
+      "two": "n14"
+    },
+    "n14": {
+      "type": "question",
+      "content": "anomaly / unexpected situation encountered during this task?",
+      "one": "n15",
+      "two": "n16"
+    },
+    "n15": {
+      "type": "action",
+      "content": "worker opens Micro-ADR (3 fields: context / action / result + evidence) -> local queue, status PENDING_REVIEW",
+      "one": "n16"
+    },
+    "n16": {
+      "type": "action",
+      "content": "worker finalizes task result + any KB note into local encrypted queue, status PENDING_REVIEW (no auto-promotion, no confidence-score merge)",
+      "one": "n17"
+    },
+    "n17": {
+      "type": "question",
+      "content": "network available now?",
+      "one": "n18",
+      "two": "n19"
+    },
+    "n18": {
+      "type": "action",
+      "content": "sync: workforce.sync_logs + workforce.submit_micro_adr (MCP) -> D1 tenant_work_items / tenant_micro_adrs; LLM-as-a-Verifier K=4 runs advisory-only, does not auto-promote",
+      "one": "n20"
+    },
+    "n19": {
+      "type": "action",
+      "content": "stay in local offline queue, retry on browser 'online' event — event-driven polling, not a persistent WebSocket (battery)",
+      "one": "n20"
+    },
+    "n20": {
+      "type": "question",
+      "content": "more tasks left in shift queue?",
+      "one": "n6",
+      "two": "n21"
+    },
+    "n21": {
+      "type": "action",
+      "content": "worker reports shift-end status (aggregate summary of tasks/notes this shift)",
+      "one": "end"
+    },
+    "end": {
+      "type": "end",
+      "content": "Shift ends. PENDING_REVIEW items now wait in Supervisor Review Queue (separate diagram: KB authoring/promotion, ADR-0026 item 3 — not detailed here)."
+    }
+  },
+  "meta": {
+    "adr_ref": "docs/adr/0026-organizational-ai-workforce-vision.md",
+    "description": "Diagram 2 of ADR-0026's 4-diagram detailing list ('on-shift work cycle'). Drawn FIRST, ahead of onboarding (listed 1st in the ADR text), because it resolves two open questions at once (Q2 KB write-back boundary, Q3 supervisor-as-harness-spec-role) and its branches are exactly where all four round-2 risks below actually surface — onboarding is a one-time linear setup and doesn't exercise them.",
+    "resolves_adr_open_questions": ["Q2_personal_kb_boundary", "Q3_ai_supervisor_role"],
+    "confirmed_against_code": {
+      "harness_specs_allowed_tools_pattern": "cloudflare-worker/worker-mcp-drakon.js:resolveMcpTenantAndSpec, packages/harness-contract/src/index.ts:validateHarnessSpec — verified live via GitNexus, not hypothetical",
+      "verified_by": "mcp__gitnexus__query, repo=ai-drakon-scaffolder"
+    },
+    "round2_risk_checklist": {
+      "offline_sync_conflict": {
+        "nodes": ["n16", "n17", "n19"],
+        "note": "No merge policy decided yet (CRDT vs lease/checkout) for two workers touching the same task/resource while both offline. This diagram shows WHERE the conflict window opens (n16 local write, n19 deferred sync) — does not resolve it."
+      },
+      "device_loss_theft": {
+        "nodes": ["n1", "n2", "n16"],
+        "note": "n1/n2 already reflect the agreed mitigation (passkey/OTP auth, org_path-subtree-only caching). n16's 'local encrypted queue' still needs a remote-revocation/poison-pill mechanism, not yet designed."
+      },
+      "multilingual_runtime": {
+        "nodes": ["n12"],
+        "note": "Supervisor MCP call at n12 is the point where per-node DRAKON IR localization and AI-generated-content translation middleware would need to sit. Not designed here."
+      },
+      "native_hardware_battery": {
+        "nodes": ["n10", "n19"],
+        "note": "n10 (camera/scan/sensor) and n19 (event-driven polling instead of persistent WS) reflect the current PWA-first recommendation; a thin native wrapper (Capacitor/Tauri) remains a likely later addition, not decided here."
+      }
+    },
+    "not_covered_by_this_diagram": [
+      "Worker onboarding/bootstrap (ADR-0026 item 1 — separate diagram, next)",
+      "KB authoring/promotion review flow on the supervisor side beyond the single n18 sync call (ADR-0026 item 3)",
+      "Q6 tenant hierarchy (who can see/act on whose data) — orthogonal data-model question, separate diagram, needed before any Slice 5.1 architect pass"
+    ]
+  }
+}

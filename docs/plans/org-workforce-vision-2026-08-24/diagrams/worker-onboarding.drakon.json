@@ -1,0 +1,163 @@
+{
+  "name": "Worker Onboarding and Bootstrap",
+  "access": "private",
+  "params": [],
+  "items": {
+    "h0": {
+      "type": "header",
+      "content": "Worker onboarding & bootstrap — from org invite to operational agent on mobile device (ADR-0026 diagram 1 of 5, resolves Q1)",
+      "one": "n1"
+    },
+    "n1": {
+      "type": "action",
+      "content": "org_initiate_onboard: Organization root owner or delegated subdivision lead initiates onboarding for a worker role",
+      "one": "n2"
+    },
+    "n2": {
+      "type": "question",
+      "content": "is onboarder the root tenant owner or a delegated subdivision lead?",
+      "one": "n3",
+      "two": "n4"
+    },
+    "n3": {
+      "type": "action",
+      "content": "owner_create_cohort: Root owner specifies target subdivision branch (e.g. '/workshop-1/brigade-a/worker-3') and selects role archetype",
+      "one": "n5"
+    },
+    "n4": {
+      "type": "action",
+      "content": "delegated_lead_invite: Recursive delegation — lead issues invite strictly scoped under own org_path prefix (e.g. '/workshop-1/brigade-a/')",
+      "one": "n5"
+    },
+    "n5": {
+      "type": "question",
+      "content": "does target role spec exist in harness_specs table for this tenant?",
+      "one": "n6",
+      "two": "n7"
+    },
+    "n6": {
+      "type": "action",
+      "content": "bind_existing_spec: Retrieve spec_id & AGENT_ALLOWED_TOOLS grant via HarnessSpecRepository:getByAgent (packages/tenancy/src/repositories.ts)",
+      "one": "n8"
+    },
+    "n7": {
+      "type": "action",
+      "content": "provision_role_spec: Validate and insert role spec via validateHarnessSpec / createDefaultSpec pattern (packages/harness-contract/src/index.ts)",
+      "one": "n8"
+    },
+    "n8": {
+      "type": "action",
+      "content": "generate_invite_artifact: Generate cryptographically signed invite payload (tenant_id, org_path, role_spec_id, nonce) rendered as QR code / deep-link",
+      "one": "n9"
+    },
+    "n9": {
+      "type": "action",
+      "content": "worker_access_entry: Worker scans QR code or taps onboarding link on mobile device (PWA shell, resolves Q1 — not Termux dev environment)",
+      "one": "n10"
+    },
+    "n10": {
+      "type": "question",
+      "content": "is client PWA already installed / cached on device?",
+      "one": "n11",
+      "two": "n12"
+    },
+    "n11": {
+      "type": "action",
+      "content": "load_cached_pwa: Service worker activates from CacheStorage; TanStack router mounts mobile worker workspace view",
+      "one": "n13"
+    },
+    "n12": {
+      "type": "action",
+      "content": "install_pwa_shell: Fetch web app manifest + service worker + frontend assets; initialize local IndexedDB / OPFS storage (no dev tooling exposed)",
+      "one": "n13"
+    },
+    "n13": {
+      "type": "question",
+      "content": "device deployment mode: personal mobile phone or shared workshop kiosk?",
+      "one": "n14",
+      "two": "n15"
+    },
+    "n14": {
+      "type": "action",
+      "content": "register_passkey: Register WebAuthn passkey (FIDO2 / biometric) via browser credential manager, bound to worker user profile",
+      "one": "n16"
+    },
+    "n15": {
+      "type": "action",
+      "content": "register_kiosk_otp: Enroll fast-user-switching PIN / OTP credential for shared multi-operator kiosk profile",
+      "one": "n16"
+    },
+    "n16": {
+      "type": "action",
+      "content": "derive_encryption_key: Derive participant-bound WebCrypto AES-GCM key (WebAuthn PRF or PIN-derived KDF, not device-shared) for local queue encryption",
+      "one": "n17"
+    },
+    "n17": {
+      "type": "action",
+      "content": "bind_credential_to_org_path: Server validates invite token, records member in tenant_members (planned D1 table), binds auth session to org_path",
+      "one": "n18"
+    },
+    "n18": {
+      "type": "action",
+      "content": "provision_local_agent: Seed on-device agent state with role harness spec and allowed MCP tools (resolved via resolveMcpTenantAndSpec pattern)",
+      "one": "n19"
+    },
+    "n19": {
+      "type": "question",
+      "content": "onboarding verification passed & initial offline cache primed?",
+      "one": "n20",
+      "two": "n21"
+    },
+    "n20": {
+      "type": "action",
+      "content": "handoff_to_on_shift: Worker agent initialized and ready. Hands off directly to On-Shift Work Cycle (Diagram 2, nodes n1: worker_authenticate & n2: load_own_org_path_subtree)",
+      "one": "end"
+    },
+    "n21": {
+      "type": "action",
+      "content": "surface_onboarding_error: Display clear frontline error message with invite regeneration QR code; log audit event via McpToolAuditRepository",
+      "one": "n8"
+    },
+    "end": {
+      "type": "end",
+      "content": "Onboarding complete. Worker has a functional PWA agent bound to their org_path. Control transitions seamlessly to Diagram 2 (on-shift work cycle)."
+    }
+  },
+  "meta": {
+    "adr_ref": "docs/adr/0026-organizational-ai-workforce-vision.md",
+    "description": "Diagram 1 of ADR-0026's 4-diagram detailing list ('worker onboarding/bootstrap'). Details the end-to-end flow from organization decision to onboard a worker/role through recursive delegation, QR/passkey provisioning, and personal agent harness-spec binding on mobile PWA, transitioning directly to Diagram 2 (on-shift work cycle nodes n1/n2).",
+    "resolves_adr_open_questions": ["Q1_worker_bootstrap_pwa"],
+    "successor_diagram": "diagrams/on-shift-work-cycle.drakon.json (connects to n1: worker_authenticate, n2: load_own_org_path_subtree)",
+    "confirmed_against_code": {
+      "harness_spec_validation": "packages/harness-contract/src/index.ts:validateHarnessSpec, packages/harness-contract/src/index.ts:createDefaultSpec, packages/tenancy/src/repositories.ts:HarnessSpecRepository — verified live via GitNexus",
+      "agent_allowed_tools_and_roles": "packages/harness-contract/src/index.ts:AGENT_ALLOWED_TOOLS, scripts/seed-harness-specs.mjs:AGENT_ALLOWED_TOOLS, scripts/seed-harness-specs.ts:KNOWN_AGENT_NAMES — verified live via GitNexus (note: workforce roles to be added in Packet P2)",
+      "tenancy_and_mcp_resolution": "packages/tenancy/src/index.ts:resolveTenant, packages/tenancy/src/index.ts:verifyAppwriteSession, cloudflare-worker/worker-mcp-drakon.js:resolveMcpTenantAndSpec — verified live via GitNexus",
+      "audit_logging": "packages/tenancy/src/repositories.ts:McpToolAuditRepository — verified live via GitNexus",
+      "verified_by": "mcp__gitnexus__query, repo=ai-drakon-scaffolder",
+      "planned_unimplemented_symbols_noted": [
+        "tenant_members (planned D1 table, verified absent in migrations)",
+        "ScopedWorkItemRepository (planned repository class, verified absent in packages/tenancy)",
+        "worker role in AGENT_ALLOWED_TOOLS (planned in P2, currently 8 dev roles)"
+      ]
+    },
+    "round2_risk_checklist": {
+      "device_loss_theft": {
+        "nodes": ["n14", "n15", "n16", "n17"],
+        "note": "Encryption key derived per participant (WebAuthn PRF or PIN-derived KDF) rather than device-wide secret, enabling safe multi-user kiosk usage and protecting local IndexedDB/OPFS cache if device is lost."
+      },
+      "native_hardware_battery": {
+        "nodes": ["n9", "n11", "n12"],
+        "note": "Standard PWA bootstrap (manifest.webmanifest + service worker) avoiding heavy shell daemons or Termux scripts, matching mass-user simplicity."
+      },
+      "shared_kiosk_fast_switching": {
+        "nodes": ["n13", "n15", "n16"],
+        "note": "Fast user switching on shared kiosk hardware isolates worker caches and prevents cross-worker session leakage."
+      }
+    },
+    "not_covered_by_this_diagram": [
+      "On-shift execution loop (handled in Diagram 2: diagrams/on-shift-work-cycle.drakon.json)",
+      "KB authoring and supervisor promotion review flow (ADR-0026 item 3)",
+      "Q6 tenant hierarchy and visibility semantics decision (handled in Diagram B: q6-tenant-visibility.drakon.json)"
+    ]
+  }
+}

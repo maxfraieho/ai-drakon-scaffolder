@@ -1,0 +1,135 @@
+{
+  "name": "Workforce Knowledge Base Authoring and Promotion",
+  "access": "private",
+  "params": [],
+  "items": {
+    "h0": {
+      "type": "header",
+      "content": "Knowledge-base authoring and promotion — supervisor review and merge lifecycle (ADR-0026 diagram 3 of 5, resolves Q2)",
+      "one": "n1"
+    },
+    "n1": {
+      "type": "action",
+      "content": "receive_staging_item: Micro-ADR field record arrives from worker sync in D1 staging table (proposed tenant_micro_adrs / ScopedMicroAdrRepository; confirmed 0 live code hits via GitNexus) with status PENDING_REVIEW",
+      "one": "n2"
+    },
+    "n2": {
+      "type": "action",
+      "content": "supervisor_load_queue: Supervisor opens review queue (proposed VerificationQueue UI) filtered by tenant_id and org_path subdivision prefix",
+      "one": "n3"
+    },
+    "n3": {
+      "type": "action",
+      "content": "authenticate_mcp_supervisor: Supervisor capability checked via resolveMcpTenantAndSpec (cloudflare-worker/worker-mcp-drakon.js:2084) against harness_specs.agent_name and AGENT_ALLOWED_TOOLS (packages/harness-contract/src/index.ts:107)",
+      "one": "n4"
+    },
+    "n4": {
+      "type": "action",
+      "content": "render_submission_details: UI presents raw field note (context / action / result) alongside attached evidence photos and telemetry readings",
+      "one": "n5"
+    },
+    "n5": {
+      "type": "question",
+      "content": "invoke AI-agent summarization and standard ADR formatting?",
+      "one": "n6",
+      "two": "n7"
+    },
+    "n6": {
+      "type": "action",
+      "content": "ai_summarize_adr: AI supervisor agent drafts structured ADR representation (title, status, context, decision, consequences matching src/lib/adr/parser.ts:parseAdr / parseFrontmatter convention); output is strictly advisory draft for human reviewer",
+      "one": "n7"
+    },
+    "n7": {
+      "type": "action",
+      "content": "human_supervisor_evaluates: Supervisor reviews technical validity, safety compliance, and operational applicability of the proposed solution",
+      "one": "n8"
+    },
+    "n8": {
+      "type": "question",
+      "content": "supervisor approves record for organizational promotion?",
+      "one": "n9",
+      "two": "n10"
+    },
+    "n9": {
+      "type": "action",
+      "content": "approve_and_promote: Supervisor confirms approval -> status changes PENDING_REVIEW -> PROMOTED; record merges into shared org_path knowledge base repository (accessible to all workers in subtree for future task guidance)",
+      "one": "n13"
+    },
+    "n10": {
+      "type": "question",
+      "content": "return submission for worker rework or reject outright?",
+      "one": "n11",
+      "two": "n12"
+    },
+    "n11": {
+      "type": "action",
+      "content": "return_for_rework: Supervisor adds mandatory feedback comments -> status updated to CHANGES_REQUESTED -> queued in D1 to sync back to authoring worker device",
+      "one": "n13"
+    },
+    "n12": {
+      "type": "action",
+      "content": "reject_record: Supervisor sets status to REJECTED with logged rationale -> record archived in D1 staging, excluded from organizational KB",
+      "one": "n13"
+    },
+    "n13": {
+      "type": "action",
+      "content": "audit_log_review_action: Review transaction recorded via McpToolAuditRepository.record (packages/tenancy/src/repositories.ts:329) with supervisor identity, decision timestamp, and target item_id",
+      "one": "end"
+    },
+    "end": {
+      "type": "end",
+      "content": "Knowledge promotion lifecycle complete. PROMOTED records are immediately active and retrievable by role-scoped workers across the org_path hierarchy."
+    }
+  },
+  "meta": {
+    "adr_ref": "docs/adr/0026-organizational-ai-workforce-vision.md",
+    "description": "Diagram 3 of ADR-0026 detailing list ('knowledge base authoring/promotion'). Details the exact lifecycle and data flow from worker Micro-ADR submission through D1 staging, optional AI-assisted formatting, deterministic manual supervisor review, and final promotion into the shared organizational knowledge base.",
+    "resolves_adr_open_questions": [
+      "Q2_personal_kb_boundary",
+      "Q3_ai_supervisor_role"
+    ],
+    "promotion_mechanism": "Manual supervisor review step with optional AI-agent-assisted ADR summarization draft. Deterministic human sign-off; no confidence-score auto-promotion, adhering to ADR-0026 Q2 and Plan §3.3/§3.5.",
+    "confirmed_against_code": {
+      "verified_by": "mcp__gitnexus__query, repo=ai-drakon-scaffolder",
+      "harness_specs_and_roles": "cloudflare-worker/worker-mcp-drakon.js:resolveMcpTenantAndSpec, packages/harness-contract/src/index.ts:validateHarnessSpec, packages/tenancy/src/repositories.ts:HarnessSpecRepository, packages/harness-contract/src/index.ts:AGENT_ALLOWED_TOOLS",
+      "adr_parsing_machinery": "src/lib/adr/parser.ts:parseAdr, src/lib/adr/parser.ts:parseFrontmatter",
+      "tenancy_and_auditing": "packages/tenancy/src/repositories.ts:McpToolAuditRepository, packages/tenancy/src/index.ts:resolveTenant",
+      "proposed_unimplemented_symbols": "tenant_micro_adrs, ScopedMicroAdrRepository, tenant_work_items, ScopedWorkItemRepository, VerificationQueue, MicroAdrDialog — GitNexus query/context confirmed 0 live code symbols (proposed in 002-workforce-tables.sql and Slice 5.1 plan)"
+    },
+    "round2_risk_checklist": {
+      "offline_sync_conflict": {
+        "nodes": [
+          "n1",
+          "n11"
+        ],
+        "note": "Re-submission after rework uses updated_at version witnesses in D1 staging table to prevent concurrent modification races between supervisor review and offline worker resubmission."
+      },
+      "device_loss_theft": {
+        "nodes": [
+          "n1",
+          "n9"
+        ],
+        "note": "Promoted knowledge base records are distributed back to worker devices scoped strictly by org_path subtrees, maintaining tenant data-minimization."
+      },
+      "multilingual_runtime": {
+        "nodes": [
+          "n4",
+          "n6"
+        ],
+        "note": "Worker field notes captured in local language (e.g. Ukrainian) can be translated or normalized into standard ADR format during the AI summarization step (n6) prior to supervisor review."
+      },
+      "native_hardware_battery": {
+        "nodes": [
+          "n2",
+          "n4"
+        ],
+        "note": "Supervisor review UI is a responsive desktop/tablet dashboard operating over standard HTTPS/MCP queries, not requiring persistent mobile connections."
+      }
+    },
+    "not_covered_by_this_diagram": [
+      "Worker onboarding/bootstrap (ADR-0026 item 1 — separate diagram)",
+      "Cross-tenant knowledge federations (strictly isolated per tenant_id per ADR-0025)",
+      "Automated semantic clustering of duplicate Micro-ADRs across multiple brigades (future enhancement)"
+    ]
+  }
+}

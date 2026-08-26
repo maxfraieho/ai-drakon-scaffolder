@@ -1,0 +1,144 @@
+{
+  "name": "Q6 Tenant Hierarchy and Visibility Semantics",
+  "access": "private",
+  "params": [],
+  "items": {
+    "h0": {
+      "type": "header",
+      "content": "Q6 tenant visibility semantics — who can see/act-on whose data across owner -> subdivision -> worker (ADR-0026 diagram 5 of 5, resolves Q6)",
+      "one": "n1"
+    },
+    "n1": {
+      "type": "action",
+      "content": "current_tenancy_baseline: Client session verified via verifyAppwriteSession(); resolveTenant() resolves flat tenant_id (= Appwrite teamId, ADR-0025 baseline verified in packages/tenancy/src/index.ts:58)",
+      "one": "n2"
+    },
+    "n2": {
+      "type": "action",
+      "content": "query_request_arrives: User query arrives (e.g. fetch task list, micro-ADRs, audit logs, worker status, billing usage) with authenticated user context",
+      "one": "n3"
+    },
+    "n3": {
+      "type": "question",
+      "content": "which tenancy hierarchy architecture is selected (ADR-0026 Q6 decision fork)?",
+      "one": "n4",
+      "two": "n5"
+    },
+    "n4": {
+      "type": "action",
+      "content": "model_a_materialized_path: Model A Architecture: Single Appwrite Team (tenant_id). Subdivisions structured via materialized string path (e.g. org_path='/root/workshop-1/brigade-a/'). ScopedWorkItemRepository binds orgPathPrefix at construction",
+      "one": "n6"
+    },
+    "n5": {
+      "type": "action",
+      "content": "model_b_nested_subtenants: Model B Architecture: Each subdivision is a distinct Appwrite Team and separate D1 tenant_id with parent_tenant_id links (e.g. tenant_root -> tenant_subdiv_1 -> tenant_brigade_a). Hard Appwrite kernel-level boundary per team",
+      "one": "n13"
+    },
+    "n6": {
+      "type": "question",
+      "content": "Model A caller role / tree level: root owner or subdivision lead/worker?",
+      "one": "n7",
+      "two": "n8"
+    },
+    "n7": {
+      "type": "action",
+      "content": "model_a_owner_visibility: [ALLOWED] Project Owner (org_path='/'): queries prefix '/' -> sees ALL subdivisions, all brigade task queues, all Micro-ADRs, and aggregate tenant billing metrics. [FORBIDDEN] Cannot access data belonging to any OTHER tenant_id (hard ADR-0025 boundary across organizations).",
+      "one": "n11"
+    },
+    "n8": {
+      "type": "question",
+      "content": "Model A caller is subdivision lead (intermediate) or frontline worker (leaf)?",
+      "one": "n9",
+      "two": "n10"
+    },
+    "n9": {
+      "type": "action",
+      "content": "model_a_lead_visibility: [ALLOWED] Subdivision Lead (e.g. org_path='/workshop-1/'): queries prefix '/workshop-1/' -> sees/acts on all subordinate brigades and workers (/workshop-1/*), reviews pending Micro-ADRs. [FORBIDDEN] CANNOT query peer subdivisions (e.g. '/workshop-2/' returns 0 rows) or root tenant-level data outside own prefix.",
+      "one": "n11"
+    },
+    "n10": {
+      "type": "action",
+      "content": "model_a_worker_visibility: [ALLOWED] Frontline Worker (e.g. org_path='/workshop-1/brigade-a/worker-3'): queries own leaf path -> receives only assigned tasks (WHERE assigned_user_id = worker_id) & local drafts. [FORBIDDEN] CANNOT query peer worker private drafts or cross-brigade task queues (data-minimization).",
+      "one": "n11"
+    },
+    "n11": {
+      "type": "action",
+      "content": "model_a_semantics_summary: Model A Semantics: Soft boundary inside organization (repository constructor binds orgPathPrefix, fast SQL LIKE prefix queries). Hard isolation across distinct tenant_ids. Simple single-team billing.",
+      "one": "n12"
+    },
+    "n12": {
+      "type": "action",
+      "content": "visibility_decision_synthesis: Comparative Decision Synthesis: Model A aligns with mass-user simplicity and unified single-team billing; Model B offers cryptographic isolation between subdivisions at the expense of complex cross-tenant federation.",
+      "one": "end"
+    },
+    "n13": {
+      "type": "question",
+      "content": "Model B caller role / tree level: root owner or subdivision lead/worker?",
+      "one": "n14",
+      "two": "n15"
+    },
+    "n14": {
+      "type": "action",
+      "content": "model_b_owner_visibility: [ALLOWED] Root Owner (in tenant_root): requires elevated multi-tenant traversal API / token impersonation to query across child tenant_ids (tenant_subdiv_1, tenant_subdiv_2). [FORBIDDEN] Cannot run simple single SQL joins across sub-tenants; requires federated scatter-gather queries across database boundaries.",
+      "one": "n18"
+    },
+    "n15": {
+      "type": "question",
+      "content": "Model B caller is subdivision lead or frontline worker?",
+      "one": "n16",
+      "two": "n17"
+    },
+    "n16": {
+      "type": "action",
+      "content": "model_b_lead_visibility: [ALLOWED] Subdivision Lead (in tenant_subdiv_1): Appwrite session token scoped to tenant_subdiv_1. Full access to all items within that sub-tenant team. [FORBIDDEN] Hard kernel isolation: IMPOSSIBLE to query peer tenant (tenant_subdiv_2) or parent (tenant_root) — Appwrite rejects token at gateway.",
+      "one": "n18"
+    },
+    "n17": {
+      "type": "action",
+      "content": "model_b_worker_visibility: [ALLOWED] Frontline Worker (in tenant_subdiv_1): token restricted to sub-tenant team; queries filtered to own assigned tasks. [FORBIDDEN] Absolute cryptographic & token-level isolation from all other sub-tenants.",
+      "one": "n18"
+    },
+    "n18": {
+      "type": "action",
+      "content": "model_b_semantics_summary: Model B Semantics: Hardest isolation guarantee (ADR-0025 boundary per subdivision). High complexity: recursive billing aggregation across N Appwrite teams, difficult cross-subdivision worker transfers.",
+      "one": "n12"
+    },
+    "end": {
+      "type": "end",
+      "content": "Decision gate: Choice between Model A and Model B remains open for Q. Packet P1 will implement the corresponding repository isolation test suite (prefix isolation vs multi-tenant delegation) once Q rules."
+    }
+  },
+  "meta": {
+    "adr_ref": "docs/adr/0026-organizational-ai-workforce-vision.md",
+    "description": "Diagram 5 of ADR-0026's detailing list (resolving Q6 tenant visibility). Details the visibility semantics (who can query/act on whose data) across owner -> subdivision -> worker under both architectural options (Model A: materialized org_path in single Appwrite team vs Model B: nested sub-tenant Appwrite teams) without pre-empting Q's decision.",
+    "resolves_adr_open_questions": ["Q6_tenant_visibility_hierarchy"],
+    "confirmed_against_code": {
+      "tenancy_resolution_baseline": "packages/tenancy/src/index.ts:resolveTenant, packages/tenancy/src/index.ts:verifyAppwriteSession, packages/tenancy/src/appwrite-teams.ts:resolveOrCreateTeam, packages/tenancy/src/appwrite-teams.ts:createPersonalTeam, packages/tenancy/src/appwrite-teams.ts:listTeams, packages/tenancy/src/appwrite-teams.ts:persistTeamIdOnProfile — verified live via GitNexus (flat Appwrite Team per top-level user, ADR-0025)",
+      "repository_scoping_pattern": "packages/tenancy/src/repositories.ts:HarnessSpecRepository, packages/tenancy/src/repositories.ts:BillingProfileRepository, packages/tenancy/src/repositories.ts:McpToolAuditRepository — verified live via GitNexus (constructor-bound db + tenantId)",
+      "mcp_and_spec_resolution": "cloudflare-worker/worker-mcp-drakon.js:resolveMcpTenantAndSpec — verified live via GitNexus",
+      "verified_by": "mcp__gitnexus__query, repo=ai-drakon-scaffolder",
+      "planned_unimplemented_symbols_noted": [
+        "ScopedWorkItemRepository (planned repository class in packages/tenancy/src/repositories.ts for org_path constructor binding)",
+        "tenant_work_items (planned D1 table with org_path column)",
+        "parent_tenant_id (hypothetical column for Model B nested sub-tenancy, absent in code)"
+      ]
+    },
+    "visibility_semantics_matrix": {
+      "model_a_materialized_path": {
+        "owner": "Allowed: All subtrees (/root/*), tenant-wide tasks, all micro-ADRs, total billing. Forbidden: Any other tenant_id.",
+        "subdivision_lead": "Allowed: Own subtree (/root/subdivA/*), brigade tasks, pending micro-ADRs. Forbidden: Peer subtrees (/root/subdivB/*), root tenant data.",
+        "worker": "Allowed: Own assigned tasks, own draft notes. Forbidden: Peer workers' private drafts, cross-brigade tasks."
+      },
+      "model_b_nested_subtenants": {
+        "owner": "Allowed: Child sub-tenants via elevated traversal API / impersonation tokens. Forbidden: Direct SQL joins across sub-tenants.",
+        "subdivision_lead": "Allowed: Own sub-tenant team items. Forbidden: Peer sub-tenants (tenant_subdivB) or parent tenant (token gateway rejection).",
+        "worker": "Allowed: Own assigned tasks within sub-tenant. Forbidden: All other sub-tenant teams."
+      }
+    },
+    "not_covered_by_this_diagram": [
+      "Worker onboarding flow (covered in Diagram 1: worker-onboarding.drakon.json)",
+      "On-shift task runner loop (covered in Diagram 2: diagrams/on-shift-work-cycle.drakon.json)",
+      "KB authoring/promotion workflow (ADR-0026 item 3)"
+    ]
+  }
+}

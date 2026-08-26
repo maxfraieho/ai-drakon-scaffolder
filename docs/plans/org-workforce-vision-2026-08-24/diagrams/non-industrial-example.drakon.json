@@ -1,0 +1,189 @@
+{
+  "name": "Workforce Non-Industrial Work Cycle — Building Management",
+  "access": "private",
+  "params": [],
+  "items": {
+    "h0": {
+      "type": "header",
+      "content": "Non-industrial work cycle — building maintenance technician perspective (ADR-0026 diagram 4 of 5, resolves Q4)",
+      "one": "n1"
+    },
+    "n1": {
+      "type": "action",
+      "content": "technician_authenticate: QR onboarding / WebAuthn passkey / OTP on technician mobile PWA (not corporate email+password)",
+      "one": "n2"
+    },
+    "n2": {
+      "type": "action",
+      "content": "load_own_org_path_subtree: cache ONLY technician's assigned property zone (e.g. /building-12/plumbing-hvac/), not full property portfolio (data-minimization)",
+      "one": "n3"
+    },
+    "n3": {
+      "type": "question",
+      "content": "technician device online (e.g. in basement utility room)?",
+      "one": "n4",
+      "two": "n5"
+    },
+    "n4": {
+      "type": "action",
+      "content": "fetch_work_order_queue: MCP tools/call, tenant_id + org_path scoped, allowed_tools per harness_specs.agent_name",
+      "one": "n6"
+    },
+    "n5": {
+      "type": "action",
+      "content": "load_work_order_queue: from local encrypted IndexedDB/OPFS cache (last synced) — displays cached maintenance tickets (data may be stale)",
+      "one": "n6"
+    },
+    "n6": {
+      "type": "action",
+      "content": "technician selects/opens maintenance ticket (e.g. resident reported pipe leak in Apt 4B)",
+      "one": "n7"
+    },
+    "n7": {
+      "type": "action",
+      "content": "render_current_step: State-Machine Step Runner renders ONLY current DRAKON IR node (e.g. 'isolate riser valve 12-B')",
+      "one": "n8"
+    },
+    "n8": {
+      "type": "question",
+      "content": "current step is a diagnostic branch / choice?",
+      "one": "n9",
+      "two": "n10"
+    },
+    "n9": {
+      "type": "action",
+      "content": "technician selects diagnostic branch (DRAKON question one/two) -> advance current_step_id",
+      "one": "n7"
+    },
+    "n10": {
+      "type": "action",
+      "content": "technician performs maintenance action / captures evidence (photo of pipe joint, pressure gauge reading, QR scan of replacement seal)",
+      "one": "n11"
+    },
+    "n11": {
+      "type": "question",
+      "content": "schematics, spare parts, or guidance needed from Property Coordinator Agent?",
+      "one": "n12",
+      "two": "n13"
+    },
+    "n12": {
+      "type": "action",
+      "content": "technician -> AI Property Coordinator Agent: MCP tools/call against coordinator's harness_specs.allowed_tools (Slice 3.4a/4.4 pattern — queries building plumbing schematics and inventory)",
+      "one": "n13"
+    },
+    "n13": {
+      "type": "question",
+      "content": "current maintenance procedure step complete?",
+      "one": "n7",
+      "two": "n14"
+    },
+    "n14": {
+      "type": "question",
+      "content": "anomaly / undocumented building condition encountered (e.g. non-standard copper-to-PEX adapter)?",
+      "one": "n15",
+      "two": "n16"
+    },
+    "n15": {
+      "type": "action",
+      "content": "technician logs Operational Field Record / Micro-ADR (3 fields: context / action / result + photo) -> local queue, status PENDING_REVIEW",
+      "one": "n16"
+    },
+    "n16": {
+      "type": "action",
+      "content": "technician finalizes work order result + field record into local encrypted queue, status PENDING_REVIEW (no auto-promotion, no confidence-score merge)",
+      "one": "n17"
+    },
+    "n17": {
+      "type": "question",
+      "content": "network connectivity available now?",
+      "one": "n18",
+      "two": "n19"
+    },
+    "n18": {
+      "type": "action",
+      "content": "sync_work_order: workforce.synclogs + workforce.submitmicroadr (MCP) -> D1 tenant_work_items (with 5 provenance columns: created_by, created_by_kind, created_at, assigned_by, assigned_at) and tenant_micro_adrs; verifier runs advisory-only",
+      "one": "n20"
+    },
+    "n19": {
+      "type": "action",
+      "content": "remain in local encrypted offline queue, retry on browser 'online' event — event-driven polling, not a persistent WebSocket (battery)",
+      "one": "n20"
+    },
+    "n20": {
+      "type": "question",
+      "content": "more maintenance tickets assigned in today's duty period?",
+      "one": "n6",
+      "two": "n21"
+    },
+    "n21": {
+      "type": "action",
+      "content": "technician reports duty-period status summary (completed work orders, pending supervisor reviews)",
+      "one": "end"
+    },
+    "end": {
+      "type": "end",
+      "content": "Duty period ends. Completed maintenance records and PENDING_REVIEW operational notes wait in Building Operations Manager Review Queue."
+    }
+  },
+  "meta": {
+    "adr_ref": "docs/adr/0026-organizational-ai-workforce-vision.md",
+    "description": "Diagram 4 of ADR-0026 detailing list ('non-industrial example end-to-end: building management'). Pressure-tests the workforce state-machine work cycle against a residential building maintenance use case (resident report -> coordinator dispatch -> technician execution -> field knowledge capture).",
+    "resolves_adr_open_questions": [
+      "Q4_non_industrial_generalization",
+      "Q2_personal_kb_boundary",
+      "Q3_ai_supervisor_role"
+    ],
+    "vocabulary_generalization": {
+      "shift": "duty_period (neutral primitive: DutyCycle — technician's scheduled duty window / on-call period)",
+      "brigade": "team_pod (neutral primitive: TeamPod — e.g. Building 12 HVAC & Plumbing Team)",
+      "supervisor": "coordinator_agent (neutral primitive: CoordinatorAgent — e.g. Property Operations Manager / Dispatcher)",
+      "factory_workshop": "property_zone (neutral primitive: OrgUnit — e.g. Building Complex / Multi-Apartment Building / Utility Core)",
+      "worker": "specialist_participant (neutral primitive: ParticipantRole — e.g. Field Maintenance Technician)",
+      "shift_queue": "duty_work_order_queue (neutral primitive: ScopedWorkItemQueue — e.g. tenant_work_items scoped to /building-12/plumbing/)",
+      "micro_adr": "operational_field_record (neutral primitive: OperationalRecord — e.g. building defect / non-standard fitting log)"
+    },
+    "confirmed_against_code": {
+      "verified_by": "mcp__gitnexus__query, repo=ai-drakon-scaffolder",
+      "harness_specs_and_roles": "cloudflare-worker/worker-mcp-drakon.js:resolveMcpTenantAndSpec, packages/harness-contract/src/index.ts:validateHarnessSpec, packages/tenancy/src/repositories.ts:HarnessSpecRepository, packages/harness-contract/src/index.ts:AGENT_ALLOWED_TOOLS",
+      "ir_validation_and_traversal": "src/lib/htse/ir-validator-core.ts:validateIrDeterministic, src/lib/htse/diagram-to-ir.ts:mapDiagramItemToIrItem",
+      "tenancy_and_audit": "packages/tenancy/src/index.ts:resolveTenant, packages/tenancy/src/repositories.ts:McpToolAuditRepository, packages/tenancy/src/repositories.ts:DiagramRepository",
+      "proposed_unimplemented_symbols": "tenant_work_items, ScopedWorkItemRepository, tenant_micro_adrs, ScopedMicroAdrRepository, DrakonStepRunner, EvidenceCapture, OfflineSyncBanner, useWorkforceStore — GitNexus query/context confirmed 0 live code symbols (proposed in 002-workforce-tables.sql and Slice 5.1 plan)"
+    },
+    "round2_risk_checklist": {
+      "offline_sync_conflict": {
+        "nodes": [
+          "n16",
+          "n17",
+          "n19"
+        ],
+        "note": "Technician working in basement/shielded utility rooms with zero connectivity. Local writes record updated_at version witness; sync compares version on reconnect to prevent overwriting concurrent dispatch changes."
+      },
+      "device_loss_theft": {
+        "nodes": [
+          "n1",
+          "n2",
+          "n16"
+        ],
+        "note": "Local caching limited strictly to technician's assigned property zone (/building-12/); encrypted at rest via WebCrypto over IndexedDB with passkey or PIN-derived key."
+      },
+      "multilingual_runtime": {
+        "nodes": [
+          "n12"
+        ],
+        "note": "Resident maintenance request or coordinator guidance localized via translation catalogue; coordinator MCP queries translate domain terminology seamlessly."
+      },
+      "native_hardware_battery": {
+        "nodes": [
+          "n10",
+          "n19"
+        ],
+        "note": "Evidence captured via standard web APIs (getUserMedia photo, camera barcode scan) with manual fallback; sync is event-driven (online event + visibilitychange) without persistent WebSocket battery drain."
+      }
+    },
+    "not_covered_by_this_diagram": [
+      "Resident-facing ticket submission portal / tenant intake flow (external integration boundary)",
+      "Automated procurement and parts ordering ERP integration",
+      "Q6 multi-building tenant hierarchy visibility rules"
+    ]
+  }
+}
