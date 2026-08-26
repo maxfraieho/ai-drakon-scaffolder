@@ -32,5 +32,7 @@ lang: uk
 | [[plans/2026-05-26-pinchtab-test-plan]] | План тестування PinchTab — Платформа AI-DRAKON | active | 3 |
 | [[plans/Multi-Agent DRAKON System Plan]] | Звіт про реалізацію та архітектуру: Мультиагентна система DRAKON | active | 3 |
 | [[plans/pinchtab-test-results-extended-2026-05-26]] | Розширені результати тестування PinchTab | active | 3 |
+| [[plans/WORKFORCE-UI-REDESIGN-PLAN]] | Специфікація та план редизайну UI: Workforce Vision | active | 2 |
+| [[plans/WORKFORCE-UI-AND-SLICE5-PLAN]] | План редизайну інтерфейсу та реалізації Slice 5.1 | active | 2 |
 ## Семантичні зв'язки
 **Батьківський індекс:** [[plans/_INDEX]]

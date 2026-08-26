@@ -22,6 +22,7 @@ lang: uk
 | [[ux-audit/stitch-prompt]] | Промпт дизайну Stitch: Робоча область та панелі Diagrams | active | 3 |
 | [[ux-audit/stitch-prompt-pipeline-panels]] | Промпт дизайну Stitch: Панелі керування Pipeline A/B | active | 3 |
 | [[ux-audit/stitch-prompt-agent-studio]] | Промпт дизайну Stitch: Візуальна студія логіки агентів | active | 3 |
+| [[ux-audit/WORKFORCE-UI-REDESIGN-PLAN]] | Специфікація та план редизайну UI: Workforce Vision (PWA, Step Runner, Micro-ADR, Review) | active | 2 |
 
 ## Семантичні зв'язки
 **Батьківський індекс:** [[ux-audit/_INDEX]]
