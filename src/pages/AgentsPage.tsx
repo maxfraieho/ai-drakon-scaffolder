@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { api } from "@/lib/api";
+import { fetchPipelines } from "@/lib/pipeline-config-api";
 
 type AgentCardStatus = "live" | "draft" | "error";
 
@@ -54,11 +55,11 @@ export function AgentsPage({ slug }: AgentsPageProps) {
         const res = await api.listDrakonIr(slug);
         return {
           success: true,
-          agents: (res.diagrams || []).map((name) => ({ name, slug })),
+          agents: (res.diagrams || []).map((name) => ({ name, slug, source: "diagram" as const })),
         };
       } else {
         const projects = (projectsData as any)?.projects || [];
-        const allAgents: Array<{ name: string; slug: string }> = [];
+        const allAgents: Array<{ name: string; slug: string; source: "diagram" | "pipeline"; pipelineId?: string }> = [];
 
         await Promise.all(
           projects.map(async (p: any) => {
@@ -66,7 +67,7 @@ export function AgentsPage({ slug }: AgentsPageProps) {
               const res = await api.listDrakonIr(p.slug);
               if (res.success && Array.isArray(res.diagrams)) {
                 res.diagrams.forEach((name) => {
-                  allAgents.push({ name, slug: p.slug });
+                  allAgents.push({ name, slug: p.slug, source: "diagram" });
                 });
               }
             } catch (e) {
@@ -74,6 +75,21 @@ export function AgentsPage({ slug }: AgentsPageProps) {
             }
           })
         );
+
+        // TEST_REPORT.md defect #3: /agents showed empty while /pipelines had a
+        // real list -- both called themselves "agents" from two different data
+        // sources. Diagram-backed agents (above) and pipeline configs are
+        // distinct entities; show both here rather than pretending pipelines
+        // don't exist. Pipeline cards are read-only (no per-project studio/delete
+        // semantics apply to them) -- see the openCard() branch below.
+        try {
+          const pipelines = await fetchPipelines();
+          pipelines.forEach((p) => {
+            allAgents.push({ name: p.name, slug: "", source: "pipeline", pipelineId: p.id });
+          });
+        } catch (e) {
+          console.warn("Failed to load pipeline configs for /agents:", e);
+        }
 
         return {
           success: true,
@@ -108,6 +124,10 @@ export function AgentsPage({ slug }: AgentsPageProps) {
 
   const handleOpenStudio = (agentSlug: string, agentName: string) => {
     navigate({ to: studioPath(agentSlug, agentName) as never });
+  };
+
+  const handleOpenPipeline = (pipelineId: string) => {
+    navigate({ to: "/pipeline/$pipelineId/edit", params: { pipelineId } } as never);
   };
 
   const handleDelete = (agentSlug: string, agentName: string) => {
@@ -193,11 +213,17 @@ export function AgentsPage({ slug }: AgentsPageProps) {
             {agents.map((agent, index) => {
               const status = statusMeta[inferStatus(agent.name, index)];
 
+              const isPipeline = agent.source === "pipeline";
+              const openCard = () =>
+                isPipeline && agent.pipelineId
+                  ? handleOpenPipeline(agent.pipelineId)
+                  : handleOpenStudio(agent.slug, agent.name);
+
               return (
                 <Card
-                  key={`${agent.slug}:${agent.name}`}
+                  key={`${agent.source}:${agent.slug}:${agent.name}`}
                   className="group relative cursor-pointer overflow-hidden border-white/10 bg-slate-900/40 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-slate-900/60"
-                  onClick={() => handleOpenStudio(agent.slug, agent.name)}
+                  onClick={openCard}
                 >
                   <CardHeader className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
@@ -207,14 +233,19 @@ export function AgentsPage({ slug }: AgentsPageProps) {
                         </div>
                         <div>
                           <h3 className="truncate font-medium text-slate-100">{agent.name}</h3>
-                          {!slug && (
+                          {!slug && !isPipeline && (
                             <p className="text-xs text-slate-400 font-mono mt-0.5">Project: {agent.slug}</p>
+                          )}
+                          {isPipeline && (
+                            <p className="text-xs text-slate-400 font-mono mt-0.5">Pipeline config</p>
                           )}
                         </div>
                       </div>
                       <Badge className={status.className}>{status.label}</Badge>
                     </div>
-                    <Badge className="w-fit border-indigo-400/30 bg-indigo-500/10 text-indigo-200">Agent</Badge>
+                    <Badge className="w-fit border-indigo-400/30 bg-indigo-500/10 text-indigo-200">
+                      {isPipeline ? "Pipeline" : "Agent"}
+                    </Badge>
                   </CardHeader>
 
                   <CardContent>
@@ -224,36 +255,40 @@ export function AgentsPage({ slug }: AgentsPageProps) {
                         className="pointer-events-auto bg-indigo-600 text-white hover:bg-indigo-500"
                         onClick={(event) => {
                           event.stopPropagation();
-                          handleOpenStudio(agent.slug, agent.name);
+                          openCard();
                         }}
                       >
-                        Open in Studio
+                        {isPipeline ? "Open Pipeline" : "Open in Studio"}
                       </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="pointer-events-auto border-white/20 bg-transparent text-slate-100 hover:bg-white/10"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleDelete(agent.slug, agent.name);
-                        }}
-                        disabled={deleteMutation.isPending}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="pointer-events-auto ml-auto text-slate-300 hover:text-white"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleOpenStudio(agent.slug, agent.name);
-                        }}
-                        aria-label={`Open settings for ${agent.name}`}
-                      >
-                        <Settings className="h-4 w-4" />
-                      </Button>
+                      {!isPipeline && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="pointer-events-auto border-white/20 bg-transparent text-slate-100 hover:bg-white/10"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleDelete(agent.slug, agent.name);
+                          }}
+                          disabled={deleteMutation.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete
+                        </Button>
+                      )}
+                      {!isPipeline && (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="pointer-events-auto ml-auto text-slate-300 hover:text-white"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenStudio(agent.slug, agent.name);
+                          }}
+                          aria-label={`Open settings for ${agent.name}`}
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
