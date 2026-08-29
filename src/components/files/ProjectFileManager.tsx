@@ -353,7 +353,11 @@ export function ProjectFileManager({ defaultMode = "all" }: ProjectFileManagerPr
           toast.error("Не вдалося завантажити дерево файлів");
         }
       } else if (mode === "docs") {
-        const localTree = await fetchNotesTree(activeProject?.slug || undefined);
+        if (!activeProject?.slug) {
+          setTree([]);
+          return;
+        }
+        const localTree = await fetchNotesTree(activeProject.slug);
         setTree(mapLocalToFSNode(localTree));
       }
     } catch (e) {
