@@ -47,7 +47,7 @@
     },
     "n8": {
       "type": "action",
-      "content": "generate_invite_artifact: Generate cryptographically signed invite payload (tenant_id, org_path, role_spec_id, nonce) rendered as QR code / deep-link",
+      "content": "generate_invite_artifact: Generate cryptographically signed invite payload (tenant_id, org_path, role_spec_id, nonce, expires_at/TTL) rendered as QR code / deep-link",
       "one": "n9"
     },
     "n9": {

@@ -1,8 +1,47 @@
 # Workforce UI — Consolidated Plan (de-duplicated)
 
+## Corrections — 2026-08-29
+
+1. [OPEN CONTRADICTION] Model A/B суперечність між §5/§11 плану і q6-tenant-visibility.drakon.json — НЕ вирішено, задокументовано.
+2. [FIX] on-shift-work-cycle.drakon.json n18 — виправлено назви tools (workforce.synclogs / workforce.submitmicroadr).
+3. [ADD] worker-onboarding.drakon.json n8 — додано TTL/expires_at до invite payload.
+4. [ADD] Новий блокер (before P1): resolveTenant() hardcoded roles:['owner'].
+5. [ADD] Рішення для review-audit колонок (Q10).
+6. [CLOSE] Gate §8 — 5 діаграм закриті, з посиланням на коміти.
+7. [ADD] Critical bug: Save diagram HTTP 500 (harness_specs.id UNIQUE constraint).
+8. [ADD] High-priority defect: /agents порожній vs /pipelines.
+9. [ADD] i18n P0 приклад: /architect, /notebooks.
+10. [ADD] Термінологія (TERMINOLOGY_AUDIT.md таблиця або плейсхолдер).
+
+## Re-verification log — 2026-08-29
+
+Перевірено на живому checkout (dev-184, HEAD eda65238e, GitNexus індекс синхронний):
+
+| # | Символ | Статус | Локація |
+|---|---|---|---|
+| 1 | AGENT_ALLOWED_TOOLS | VERIFIED — існує, рівно 8 ролей (architect, drakon, docs, sonate-solidaire, architect-a, architect-b, drakon-analyze, docs-chat) | packages/harness-contract/src/index.ts:108 |
+| 2 | resolveMcpTenantAndSpec | VERIFIED — існує | cloudflare-worker/worker-mcp-drakon.js:2085 |
+| 3 | resolveTenant() | CONFIRMED — досі `roles: ['owner']` апаратно, коментар в коді явно визнає відсутність membership-lookup ("out of scope for the initial tenant-of-one rollout") | packages/tenancy/src/index.ts:79 |
+| 4 | git log 5 DRAKON-схем + план | ЗМІНИЛОСЬ — вже НЕ "0 commits". 2 реальні коміти: 56fe41cb ("docs(workforce-vision): add 4 DRAKON diagrams + plan copy under docs/plans/"), eda65238 ("docs(workforce-vision): add Pi Agent baseline test plan for current UI"). Усі 5 .drakon.json + WORKFORCE-UI-CONSOLIDATED-PLAN.md закомічені, 0 untracked. | git log --oneline -- docs/plans/org-workforce-vision-2026-08-24/ |
+| 5 | GitNexus FTS/query() | ПРАЦЮЄ — live-перевірено прямими MCP-запитами. Розведення: "GitNexus Status: HTTP 404" у живому Settings UI аудиту стосується ІНШОГО — фронтенд перевіряє `fetch("/api/health")` (SettingsPage.tsx:379), не сам GitNexus MCP/FTS-сервер. Це різні речі. | src/pages/SettingsPage.tsx:374-390 (checkGitNexusHealth) |
+
+## OPEN CONTRADICTION — Model A/B (Q6)
+
+Виявлено пряму суперечність між текстом плану та схемою `diagrams/q6-tenant-visibility.drakon.json`:
+
+- **Цитата з плану (§5 Q6 та §11):**
+  > "Materialized-path `org_path` sub-groups inside one tenant; **repository-enforced**, not ad-hoc `LIKE` in route handlers" (§5 Q6)
+  > "`org_path` as a string materialized path (`/root/workshop-3/assembly-b/`) is **not** an assumption: the alternative was considered and explicitly rejected with reasons — ADR-0026:161-171 raises nested tenants as option (b), 'a materially bigger change to the tenancy model than (a)', and SYNTHESIS-round2:103-105 rejects it because nested tenants 'would fracture ADR-0025's hard isolation guarantee and massively complicate billing aggregation.'" (§11)
+- **Цитата зі схеми (`diagrams/q6-tenant-visibility.drakon.json`, вузол `end`):**
+  > `"Decision gate: Choice between Model A and Model B remains open for Q. Packet P1 will implement the corresponding repository isolation test suite (prefix isolation vs multi-tenant delegation) once Q rules."`
+
+**Статус:** НЕ вирішувати самостійно. Чекає письмового рішення Q.
+
+---
+
 **Status: GATED. NOT cleared for implementation. Do not start Packet 1 / Slice 5.1 code.**
 
-**Date**: 2026-08-25 (consolidated 2026-08-25, verified and harmonized the same day)
+**Date**: 2026-08-25 (consolidated 2026-08-25, verified and harmonized the same day; updated 2026-08-29)
 **Author**: Claude — consolidation pass reconciling two overlapping planning artifacts
 drafted independently on two other machines, followed by a live-code verification pass and
 a harmonization pass.
@@ -10,9 +49,9 @@ a harmonization pass.
 — Decision: **"Not yet made."**
 
 Every factual claim in this document has been checked against the live checkout
-(`phase0-stabilize`, `0f984a12`). What changed between the first consolidation and this
-harmonized version is recorded in [§12, Verification & Corrections Log](#12-verification--corrections-log-2026-08-25);
-the body below is written as settled prose, not as a diff.
+(`main`, `eda65238`). What changed between the first consolidation and this
+harmonized version is recorded in [§12, Verification & Corrections Log](#12-verification--corrections-log-2026-08-25)
+and the 2026-08-29 Corrections log above.
 
 ## The gate (ADR-0026, restated — this is not re-litigated here)
 
@@ -23,17 +62,17 @@ held in escrow**, not a work order.
 
 | # | Diagram required by ADR-0026 | Status | Resolves |
 |---|---|---|---|
-| 1 | Worker onboarding / bootstrap | **NOT DRAWN** | Q1 |
-| 2 | On-shift work cycle | **DRAWN, BUT UNCOMMITTED** — [`diagrams/on-shift-work-cycle.drakon.json`](diagrams/on-shift-work-cycle.drakon.json) exists on disk (6624 bytes) and has **zero commits** in git history | Q2, Q3 |
-| 3 | KB authoring / promotion (supervisor side) | **NOT DRAWN** | Q2 (supervisor half) |
-| 4 | Non-industrial example end-to-end (building management) | **NOT DRAWN** | Q4 |
-| 5 | Q6 tenant hierarchy — who can see/act on whose data | **NOT DRAWN** | Q6 |
+| 1 | Worker onboarding / bootstrap | **DRAWN & COMMITTED** — [`diagrams/worker-onboarding.drakon.json`](diagrams/worker-onboarding.drakon.json) (commit `56fe41cb`) | Q1 |
+| 2 | On-shift work cycle | **DRAWN & COMMITTED** — [`diagrams/on-shift-work-cycle.drakon.json`](diagrams/on-shift-work-cycle.drakon.json) (commit `56fe41cb`) | Q2, Q3 |
+| 3 | KB authoring / promotion (supervisor side) | **DRAWN & COMMITTED** — [`diagrams/kb-authoring.drakon.json`](diagrams/kb-authoring.drakon.json) (commit `56fe41cb`) | Q2 (supervisor half) |
+| 4 | Non-industrial example end-to-end (building management) | **DRAWN & COMMITTED** — [`diagrams/non-industrial-example.drakon.json`](diagrams/non-industrial-example.drakon.json) (commit `56fe41cb`) | Q4 |
+| 5 | Q6 tenant hierarchy — who can see/act on whose data | **DRAWN & COMMITTED** — [`diagrams/q6-tenant-visibility.drakon.json`](diagrams/q6-tenant-visibility.drakon.json) (commit `56fe41cb`) | Q6 |
 
-Diagram 2's own `meta.not_covered_by_this_diagram` states the Q6 hierarchy diagram is
-"needed before any Slice 5.1 architect pass." **Packet 1 below writes the `org_path`
-schema.** Diagram 5 does *not* owe that schema's shape — the shape is already settled
-(materialized path, not nested tenants; see §5, Q6) — but it does owe the **visibility
-semantics** that P1's isolation test encodes. P1 therefore stays blocked on diagram 5.
+All 5 DRAKON diagrams have been drawn and committed to repository history (commits `56fe41cb` and `eda65238`).
+However, as documented in `diagrams/q6-tenant-visibility.drakon.json` (node `end`), the architectural choice between
+Model A (materialized path) and Model B (nested sub-tenants) remains an open decision gate awaiting Q's ruling.
+Furthermore, implementation of P1 is blocked on resolving the hardcoded `roles: ['owner']` behavior in `resolveTenant()`
+(see Re-verification log item 3).
 
 ---
 
@@ -378,6 +417,15 @@ interacts with the still-undesigned remote-revocation mechanism. P0 holds until 
    degrades quietly to `EXTERNAL_DEFAULT_TOOLS` instead of failing loudly — confirming the §5
    Q3 concern is real. Pre-existing and out of scope for this slice, but it means P2's
    acceptance test must assert the **positive** grant, not merely absence of error.
+7. **Review audit schema vs `McpToolAuditRepository` (Q10).**
+   `McpToolAuditRepository.record(specId: string | null, toolName: string, granted: boolean, id?: string)`
+   (`packages/tenancy/src/repositories.ts:327-343`) only records MCP tool execution telemetry into
+   `mcp_tool_call_audit (id, tenant_id, spec_id, tool_name, granted, called_at)`.
+   It does **not** accept `item_id`, `reviewed_by`, `reviewed_at`, or `review_comment`.
+   Supervisor review actions (promotions/rejections of work items and Micro-ADRs) require dedicated
+   review-audit columns (`reviewed_by`, `reviewed_at`, `review_comment`, `item_id`) in
+   `tenant_micro_adrs` / `tenant_work_items` or a dedicated `ReviewAuditRepository` / `tenant_review_audit`
+   table to fulfill supervisory governance and ADR-0024 without overloading low-level MCP tool dispatch telemetry.
 
 ---
 
@@ -426,12 +474,12 @@ costs nothing.
 | # | Packet | Files (≤3) | Acceptance criterion | Gate |
 |---|---|---|---|---|
 | **P0** | **Prerequisites — not in either source plan** | — | Diagrams 1/3/4/5 drawn and committed; diagram 2 committed; GitNexus FTS index repaired; PWA shell decision taken (manifest + service worker + `idb` dependency); encryption-key-source decision taken (§4.3 — now a two-way choice); **i18n runtime chosen and wired** (library + catalogue loading + locale switching) and the fate of the orphaned `src/i18n/locales/` "AegisRoute" stub decided (§9.5 explains why this is a prerequisite and not a P4 detail); work-item producer ruled on (§4.2 Part 1) | **BLOCKING** |
-| **P1** | D1 migration + scoped repositories | `infrastructure/d1/migrations/002-workforce-tables.sql`; append `ScopedWorkItemRepository` + `ScopedMicroAdrRepository` to `packages/tenancy/src/repositories.ts` | `org_path` prefix isolation: `/brigadeA/` queries return zero `/brigadeB/` rows; plus the two-tenant cross-boundary rejection test every D1 route has needed since Slice 3.3. **The migration must include the five provenance columns decided in §4.2** (`created_by`, `created_by_kind`, `created_at`, `assigned_by`, `assigned_at`) — omitting them costs a second migration on this same table. Provenance is stamped by the repository constructor, never accepted from the client | **Blocked on diagram 5 (Q6)** — for the **visibility semantics** (ADR-0026:167-169: hard isolation vs. softer same-org visibility), not for the column shape, which is settled (§5 Q6). That semantics choice is what the isolation test encodes |
-| **P2** | MCP tools + harness-spec roles — **missing from both source plans** | `cloudflare-worker/worker-mcp-drakon.js` (tool defs); `packages/harness-contract/src/index.ts` (`worker`, `supervisor` entries in `AGENT_ALLOWED_TOOLS`); `scripts/seed-harness-specs.mjs` (its own duplicate grant table **and** roster) and `scripts/seed-harness-specs.ts` (roster only — it imports the grant table). ADR-0026 Q3 defines a supervisor *as* a `harness_specs` row, so editing only the contract package grants the role at the type layer while **never creating the D1 row**. That is 4 files, one over the ≤3 atomic-packet rule — either split the MCP tool defs into their own packet or take the exception deliberately (see §6.5) | Worker role's `tools/list` shows only workforce tools; supervisor role's shows the review tools; both audited via existing `McpToolAuditRepository`; **the seeded D1 row matches the contract table**; and the test asserts the **positive** grant, not merely absence of error (§6.6) | Blocked on P1 |
+| **P1** | D1 migration + scoped repositories | `infrastructure/d1/migrations/002-workforce-tables.sql`; append `ScopedWorkItemRepository` + `ScopedMicroAdrRepository` to `packages/tenancy/src/repositories.ts` | `org_path` prefix isolation: `/brigadeA/` queries return zero `/brigadeB/` rows; plus the two-tenant cross-boundary rejection test every D1 route has needed since Slice 3.3. **The migration must include the five provenance columns decided in §4.2** (`created_by`, `created_by_kind`, `created_at`, `assigned_by`, `assigned_at`) — omitting them costs a second migration on this same table. Provenance is stamped by the repository constructor, never accepted from the client | **Blocked on resolving `resolveTenant()` membership-lookup** (Re-verification log item 3, `packages/tenancy/src/index.ts:79`; currently hardcodes `roles: ['owner']` without membership lookup, so non-owner authorization on-ramp is missing) and **blocked on diagram 5 (Q6)** for the **visibility semantics** (ADR-0026:167-169: hard isolation vs. softer same-org visibility; Model A vs Model B) |
+| **P2** | MCP tools + harness-spec roles — **missing from both source plans** | `cloudflare-worker/worker-mcp-drakon.js` (tool defs); `packages/harness-contract/src/index.ts` (`worker`, `supervisor` entries in `AGENT_ALLOWED_TOOLS`); `scripts/seed-harness-specs.mjs` (its own duplicate grant table **and** roster) and `scripts/seed-harness-specs.ts` (roster only — it imports the grant table). ADR-0026 Q3 defines a supervisor *as* a `harness_specs` row, so editing only the contract package grants the role at the type layer while **never creating the D1 row**. That is 4 files, one over the ≤3 atomic-packet rule — either split the MCP tool defs into their own packet or take the exception deliberately (see §6.5) | Worker role's `tools/list` shows only workforce tools; supervisor role's shows the review tools; tool calls audited via existing `McpToolAuditRepository` and review decisions via review-audit columns (§6.7); **the seeded D1 row matches the contract table**; and the test asserts the **positive** grant, not merely absence of error (§6.6) | Blocked on P1 |
 | **P3** | Types + Zustand store + offline layer + sync banner | `src/types/workforce.ts`; `src/store/useWorkforceStore.ts`; `src/components/workforce/OfflineSyncBanner.tsx` | Steps and evidence persist across a network drop; sync fires on the `online` event; **no persistent WebSocket opened**; queue is encrypted at rest; **`localStorage` is explicitly forbidden** (§5 Q2b) | Blocked on P2 (row shapes + tool contract) |
 | **P4** | State-machine step runner | `src/components/workforce/DrakonStepRunner.tsx`; `EvidenceCapture.tsx`; `src/routes/workforce.shift.tsx` | Only the current node renders; picking a `question` branch advances `current_step_id` along the correct IR edge; node text renders through the localization lookup, never the raw `content` string | Blocked on P3 and on P0's i18n decision |
 | **P5** | Micro-ADR field logger | `src/components/workforce/MicroAdrDialog.tsx` | Note saves with status `PENDING_REVIEW` and enters the outbound queue | Blocked on P3 |
-| **P6** | Supervisor review queue | `src/components/workforce/review/VerificationQueue.tsx`; `src/routes/workforce.review.tsx` | Supervisor sees evidence, filters by `org_path`, one click sets `PROMOTED`; **renders fine with no verifier data** | Blocked on P1, P2 |
+| **P6** | Supervisor review queue | `src/components/workforce/review/VerificationQueue.tsx`; `src/routes/workforce.review.tsx` | Supervisor sees evidence, filters by `org_path`, one click sets `PROMOTED` and stamps review audit columns (`reviewed_by`, `reviewed_at`, `review_comment`); **renders fine with no verifier data** | Blocked on P1, P2 |
 | **P7** | Workspace switcher (Worker / Supervisor / Dev Studio) | existing shell — `WorkspaceShell`, `AstryxSideNav` | Dev surfaces invisible to a worker role; integration test of offline → D1 round trip | Blocked on P4, P6. **Touches existing code → run `impact()` first per CLAUDE.md** |
 | **—** | `VerifierScoreBadge` + `tenant_shift_verifications` (K=4 advisory) | — | — | **DEFERRED, not in this slice.** Both source plans place it in the supervisor packet; `ADDENDUM-llm-verifier-workforce.md` explicitly says it is Slice 4.0-4.3 territory, "still blocked on 3.5/3.7 per CURRENT-PLAN.md." Removing it from the critical path resolves that contradiction. |
 | **—** | Worker onboarding / QR provisioning / passkey-OTP auth | — | — | **NOT SPEC'D.** Both plans show "QR авторизація" as screen W1 but neither has a packet for it, because diagram 1 does not exist yet. |
@@ -443,11 +491,11 @@ costs nothing.
 Complete list, ordered by whether Q's input is required. Nothing in §7 may start until items
 1–4 clear.
 
-**Requires Q to draw or decide:**
+**Requires Q to draw or decide / Hard Blockers:**
 
-1. **Draw diagrams 1, 3, 4 and 5** (§gate table). All four are still undrawn. **Diagram 5
-   (Q6 hierarchy) is the hard blocker for P1** — what it owes is the visibility semantics
-   (ADR-0026:167-169), not the column shape.
+0. **[NEW BLOCKER before P1] Membership-lookup in `resolveTenant()`** (Re-verification log п.3, `packages/tenancy/src/index.ts:79`):
+   `resolveTenant()` currently hardcodes `roles: ['owner']` for any caller, explicitly noting in code comments that membership lookup is "out of scope for the initial tenant-of-one rollout". Without real membership-lookup, neither Model A nor Model B has an on-ramp for non-owner worker/supervisor authorization. This must be resolved before P1/P2.
+1. **[CLOSED] Draw diagrams 1, 3, 4 and 5** (§gate table) — all 5 diagrams are drawn and committed (commits `56fe41cb` and `eda65238`, see Re-verification log item 4). **Diagram 5 (Q6 hierarchy Model A/B decision gate) remains open for Q's choice between materialized path and nested sub-tenants.**
 2. **Rule on the work-item producer** (§4.2 Part 1: `CoordinatorAgent` dispatches / human lead
    assigns / external system injects / combination). Now urgent, because P1 writes
    `tenant_work_items` and the ruling determines what values flow into the provenance columns.
@@ -460,10 +508,7 @@ Complete list, ordered by whether Q's input is required. Nothing in §7 may star
 
 **Does not require Q — cheap, unblocked, and should happen now:**
 
-5. **Commit diagram 2.** `docs/research-org-workforce-vision-2026-08-24/diagrams/` is
-   untracked (`??`) and `git log` over the file returns **zero commits**. The one artifact
-   that satisfies part of ADR-0026's gate has never entered git history. Highest
-   value-to-effort item on this list. (This plan document is itself untracked too.)
+5. **[CLOSED] Commit diagram 2** — committed in `56fe41cb` along with diagrams 1, 3, 4, 5 and plan.
 6. **Backport the Q6 resolution into `docs/adr/0026-…md`.** The ADR body still shows Q6 open
    with nested tenants live, despite commit `ca7a2ffd` claiming to have resolved it (§5 Q6).
    Until this lands, the governing ADR contradicts the synthesis it cites at `:59`.
@@ -480,7 +525,7 @@ Complete list, ordered by whether Q's input is required. Nothing in §7 may star
     two remote plan files into the tracked tree or delete the remote duplicates;
     fast-forward `.161`.
 
-Only after 1–4 does the architect-planning pass run — turning this document into
+Only after 0–4 does the architect-planning pass run — turning this document into
 `specs/NNN-…/spec.md` or ADR-0027, and flipping ADR-0026's Decision from "Not yet made."
 
 ---
@@ -539,6 +584,7 @@ working localization system. There isn't one:
   hook body is `return { locale: "uk", t: translations }` — it reports Ukrainian and serves
   English. No switching, no catalogue loading, no interpolation.
 - **No i18n library in `package.json`** (no i18next / react-intl / lingui).
+- **Empirical UX audit findings**: Live UX inspection confirms that `/architect` is completely English amidst an otherwise Ukrainian UI, and `/notebooks` presents a mixed-language interface. This is direct live-code evidence that no working localization system exists.
 
 So the Q4 resolution has nowhere to put the factory words, and P4 cannot satisfy §9.3's "never
 the raw `content` string" constraint. Choosing and wiring an i18n runtime is a **P0
@@ -673,3 +719,25 @@ reads of the live checkout at `phase0-stabilize` / `0f984a12`.
 - No factual claim was added that is not traceable to ADR-0026, `SYNTHESIS-round2.md`,
   diagram 2, or a live-code observation cited inline. The one genuinely new *decision* is
   §4.2 Part 2 (the provenance columns), which is flagged as a decision, not a finding.
+
+---
+
+## 13. Live UX Audit Findings & Pre-existing Defects (2026-08-29)
+
+Живий UX-аудит (2026-08-29) на середовищі dev-184 / baseline тестування виявив такі дефекти та спостереження:
+
+1. **Critical Bug: Save diagram → HTTP 500 (`harness_specs.id` UNIQUE constraint)**
+   - **Симптом:** Спроба зберегти нову DRAKON-схему в редакторі повертає `HTTP 500: UNIQUE constraint failed: harness_specs.id`.
+   - **Класифікація:** Pre-existing bug — blocks baseline, unrelated to redesign but touches the same table (`harness_specs`).
+   - **Пріоритет:** **Critical**.
+2. **High-priority Defect: `/agents` порожній vs `/pipelines`**
+   - **Симптом:** Маршрут `/agents` відображає "No agents found", тоді як `/pipelines` показує реальний робочий список агентів.
+   - **Класифікація:** High-priority дефект — конкретний приклад проблеми "single source of truth" та розсинхронізації списків агентів/ролей (§6.5, Q3/Q4).
+   - **Пріоритет:** **High**.
+3. **i18n P0 Concrete Example: Англомовні та змішані сторінки**
+   - **Симптом:** Сторінка `/architect` є повністю англомовною серед решти україномовного UI; `/notebooks` містить змішану мовну розмітку.
+   - **Класифікація:** Конкретний приклад дефекту локалізації для передумови P0 та §9.5, що підтверджує необхідність повноцінного рантайму i18n перед розробкою інтерфейсу працівника.
+4. **Термінологія в живому nav (Dev-жаргон у навігації)**
+   - **Симптом:** У живій навігації присутній dev-жаргон (`Codegen`, `DEV CYCLE`, `Execution Trace`, `Harness`), який має бути повністю прихований або перекритий для worker-ролі.
+   - **Примітка щодо аудиту термінів:** `TERMINOLOGY_AUDIT.md ще не отримано, буде доповнено (2026-08-29 — джерело не знайдено в репо, потрібно від Q)`.
+

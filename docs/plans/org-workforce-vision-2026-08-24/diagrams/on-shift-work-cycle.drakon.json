@@ -101,7 +101,7 @@
     },
     "n18": {
       "type": "action",
-      "content": "sync: workforce.sync_logs + workforce.submit_micro_adr (MCP) -> D1 tenant_work_items / tenant_micro_adrs; LLM-as-a-Verifier K=4 runs advisory-only, does not auto-promote",
+      "content": "sync: workforce.synclogs + workforce.submitmicroadr (MCP) -> D1 tenant_work_items / tenant_micro_adrs; LLM-as-a-Verifier K=4 runs advisory-only, does not auto-promote",
       "one": "n20"
     },
     "n19": {
