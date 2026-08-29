@@ -375,18 +375,19 @@ export function SettingsPage() {
     setGitNexusStatus("checking");
     setGitNexusDetail("Connecting...");
     try {
-      const resp = await fetch("/api/health", { method: "GET" });
+      const workerUrl = resolveWorkerUrl().replace(/\/$/, "");
+      const resp = await fetch(`${workerUrl}/health/gitnexus`, { method: "GET" });
       if (resp.ok) {
         const data = await resp.json().catch(() => ({}));
-        setGitNexusStatus("online");
-        setGitNexusDetail(data.status || data.message || "Healthy (OK)");
+        setGitNexusStatus(data.success ? "online" : "offline");
+        setGitNexusDetail(data.success ? `Reachable (HTTP ${data.httpStatus})` : (data.message || "Unreachable"));
       } else {
         setGitNexusStatus("offline");
         setGitNexusDetail(`HTTP Error: ${resp.status}`);
       }
     } catch (e) {
       setGitNexusStatus("offline");
-      setGitNexusDetail("Could not connect to /api/health");
+      setGitNexusDetail("Could not reach worker /health/gitnexus");
     }
   };
 

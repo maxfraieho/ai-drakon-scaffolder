@@ -482,6 +482,7 @@ const ROUTE_AUTH_TABLE = [
   { method: 'ANY', test: (m, p) => p.startsWith('/ws/room/'), auth: 'owner' },
   { method: 'ANY', test: (m, p) => p.startsWith('/v1/diagram/') && p.endsWith('/sync'), auth: 'owner' },
   { method: 'GET', test: (m, p) => p === '/health', auth: 'none' },
+  { method: 'GET', test: (m, p) => p === '/health/gitnexus', auth: 'none' },
   { method: 'POST', test: (m, p) => p === '/auth/login', auth: 'none' },
   { method: 'GET', test: (m, p) => p === '/auth/github/start', auth: 'none' },
   { method: 'GET', test: (m, p) => p === '/auth/github/callback', auth: 'none' },
@@ -2387,6 +2388,22 @@ async function handleHealth(env) {
   });
 }
 
+// GitNexus reachability check for Settings UI (TEST_REPORT.md defect #5).
+// Server-side fetch avoids the CORS issue a browser-side check would hit
+// against the cross-origin GitNexus tunnel. Any HTTP response (even 4xx --
+// GitNexus's /api/mcp rejects a bare GET with 400, which is expected and
+// still proves the tunnel+server are up) counts as reachable; only a
+// network-level failure (fetch throws) counts as down.
+async function handleGitNexusHealth(env) {
+  const url = (env && env.GITNEXUS_URL) || 'https://gitnexus.exodus.pp.ua/api/mcp';
+  try {
+    const resp = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(5000) });
+    return jsonResponse({ success: true, status: 'ok', httpStatus: resp.status });
+  } catch (e) {
+    return jsonResponse({ success: false, status: 'error', message: e instanceof Error ? e.message : 'unreachable' });
+  }
+}
+
 // ============================================
 // AGENT PROXY — /v1/agents/:agentId/chat
 // Proxies chat requests to the configured agent URL.
@@ -2904,6 +2921,10 @@ export default {
 
       if (method === 'GET' && path === '/health') {
         return await handleHealth(env);
+      }
+
+      if (method === 'GET' && path === '/health/gitnexus') {
+        return await handleGitNexusHealth(env);
       }
 
       if (method === 'POST' && path === '/auth/login') {
