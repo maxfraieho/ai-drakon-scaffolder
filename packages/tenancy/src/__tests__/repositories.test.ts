@@ -177,12 +177,13 @@ describe('HarnessSpecRepository -- tenant isolation', () => {
     expect(prepareB.mock.results[0].value.bind).toHaveBeenCalledWith('tenant-b', 'shared-spec', 'shared-spec');
   });
 
-  it('create() binds tenantId from constructor, not from row object', async () => {
+  it('create() binds tenantId from constructor, not from row object, and uses atomic ON CONFLICT upsert', async () => {
     const { db, prepare } = fakeDb();
     const repo = new HarnessSpecRepository(db, 'tenant-a');
     await repo.create({ id: 's1', agent_name: 'architect', version: '1.0.0', spec_json: '{}' });
 
     expect(prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO harness_specs'));
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('ON CONFLICT(id) DO UPDATE SET'));
     const statement = prepare.mock.results[0].value;
     expect(statement.bind).toHaveBeenCalledWith('s1', 'tenant-a', 'architect', '1.0.0', '{}');
   });
@@ -198,14 +199,15 @@ describe('HarnessSpecRepository -- tenant isolation', () => {
     expect(statement.bind).toHaveBeenCalledWith('{"updated":true}', 'tenant-a', 's1');
   });
 
-  it('upsert() creates a fresh row when the spec does not exist', async () => {
+  it('upsert() executes atomic ON CONFLICT insert without separate read query', async () => {
     const { db, prepare } = fakeDb();
     const repo = new HarnessSpecRepository(db, 'tenant-a');
     await repo.upsert({ id: 's1', agent_name: 'architect', version: '1.0.0', spec_json: '{}' });
 
-    expect(prepare).toHaveBeenNthCalledWith(1, expect.stringContaining('SELECT * FROM harness_specs WHERE tenant_id = ?'));
-    expect(prepare).toHaveBeenNthCalledWith(2, expect.stringContaining('INSERT INTO harness_specs'));
-    const createStatement = prepare.mock.results[1].value;
+    expect(prepare).toHaveBeenCalledTimes(1);
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('INSERT INTO harness_specs'));
+    expect(prepare).toHaveBeenCalledWith(expect.stringContaining('ON CONFLICT(id) DO UPDATE SET'));
+    const createStatement = prepare.mock.results[0].value;
     expect(createStatement.bind).toHaveBeenCalledWith('s1', 'tenant-a', 'architect', '1.0.0', '{}');
   });
 });

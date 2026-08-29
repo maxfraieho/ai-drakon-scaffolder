@@ -289,7 +289,13 @@ export class HarnessSpecRepository {
   create(row: Omit<HarnessSpecRow, 'tenant_id' | 'created_at' | 'updated_at'>): Promise<D1Result> {
     return this.db
       .prepare(
-        'INSERT INTO harness_specs (id, tenant_id, agent_name, version, spec_json) VALUES (?, ?, ?, ?, ?)'
+        `INSERT INTO harness_specs (id, tenant_id, agent_name, version, spec_json)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           agent_name = excluded.agent_name,
+           version = excluded.version,
+           spec_json = excluded.spec_json,
+           updated_at = datetime('now')`
       )
       .bind(row.id, this.tenantId, row.agent_name, row.version, row.spec_json)
       .run();
@@ -305,10 +311,6 @@ export class HarnessSpecRepository {
   }
 
   async upsert(row: Omit<HarnessSpecRow, 'tenant_id' | 'created_at' | 'updated_at'>): Promise<D1Result> {
-    const existing = await this.get(row.id);
-    if (existing) {
-      return this.update(row.id, row.spec_json);
-    }
     return this.create(row);
   }
 }
