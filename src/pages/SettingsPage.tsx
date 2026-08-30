@@ -17,7 +17,9 @@ import {
   HelpCircle,
   ToggleLeft,
   Info,
-  Globe
+  Globe,
+  Github,
+  FileCode2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +43,7 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { api } from "@/lib/api";
 import { resolveWorkerUrl } from "@/lib/worker-url";
 import { authHeaders } from "@/lib/graph-pipeline-api";
 import { readSettings, writeSettings } from "@/lib/settings-storage";
@@ -169,6 +172,16 @@ export function SettingsPage() {
   );
   const [proxyStatus, setProxyStatus] = useState<"idle" | "checking" | "online" | "offline">("idle");
   const [proxyDetail, setProxyDetail] = useState("");
+
+  // --- GitHub Integration State ---
+  const initialGithub = readScopedSettings(projectSlug).github;
+  const [githubOwner, setGithubOwner] = useState(initialGithub.owner);
+  const [githubRepo, setGithubRepo] = useState(initialGithub.repo);
+  const [githubBranch, setGithubBranch] = useState(initialGithub.branch);
+  const [githubToken, setGithubToken] = useState(initialGithub.token);
+  const [showGithubToken, setShowGithubToken] = useState(false);
+  const [githubTestStatus, setGithubTestStatus] = useState<"idle" | "checking" | "online" | "offline">("idle");
+  const [githubTestDetail, setGithubTestDetail] = useState("");
 
   // --- System Info Status State ---
   const [gitNexusStatus, setGitNexusStatus] = useState<"checking" | "online" | "offline">("checking");
@@ -347,6 +360,53 @@ export function SettingsPage() {
     else localStorage.removeItem("agent_llm_model");
     localStorage.setItem("agent_llm_protocol", "openai");
     toast.success("Налаштування LLM Proxy збережено. Агенти використають при наступному запиті.");
+  };
+
+  // --- GitHub Integration Handlers ---
+  const saveGithubSettings = () => {
+    const persisted = readScopedSettings(projectSlug);
+    writeScopedSettings(projectSlug, {
+      ...persisted,
+      github: {
+        ...persisted.github,
+        owner: githubOwner.trim(),
+        repo: githubRepo.trim(),
+        branch: githubBranch.trim() || "main",
+        token: githubToken.trim(),
+      },
+    });
+    toast.success("GitHub-налаштування збережено");
+  };
+
+  const testGithubConnection = async () => {
+    if (!githubOwner.trim() || !githubRepo.trim()) {
+      toast.error("Вкажіть owner та repo");
+      return;
+    }
+    setGithubTestStatus("checking");
+    setGithubTestDetail("Перевірка з'єднання...");
+    try {
+      const res = await api.listDrakonFiles(
+        githubOwner.trim(),
+        githubRepo.trim(),
+        githubBranch.trim() || "main",
+        githubToken.trim() || undefined,
+      );
+      if (res.success) {
+        setGithubTestStatus("online");
+        setGithubTestDetail(
+          res.truncated
+            ? `OK: ${res.files.length}+ .drakon-файлів (список обрізаний)`
+            : `OK: ${res.files.length} .drakon-файлів`,
+        );
+      } else {
+        setGithubTestStatus("offline");
+        setGithubTestDetail((res as any).error || "Помилка відповіді");
+      }
+    } catch (e) {
+      setGithubTestStatus("offline");
+      setGithubTestDetail((e as Error).message || "Не вдалося з'єднатися");
+    }
   };
 
   const testProxyConnection = async () => {
@@ -665,6 +725,121 @@ export function SettingsPage() {
                   {proxyStatus === "offline" && <ShieldAlert className="w-3.5 h-3.5 shrink-0" />}
                   {proxyStatus === "checking" && <RefreshCw className="w-3.5 h-3.5 shrink-0 animate-spin" />}
                   {proxyDetail}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* GitHub Integration Card */}
+          <Card className="bg-[var(--astryx-surface-primary)] border-[var(--astryx-border-subtle)] backdrop-blur-sm shadow-xl" data-variant="card">
+            <CardHeader className="border-b border-[var(--astryx-border-subtle)] pb-4">
+              <CardTitle className="text-xl font-medium flex items-center gap-2 text-[var(--astryx-text-primary)]">
+                <Github className="w-5 h-5 text-[var(--astryx-color-brand)]" />
+                GitHub Integration
+              </CardTitle>
+              <CardDescription className="text-[var(--astryx-text-secondary)]">
+                Репозиторій, з якого Diagram-сторінка та Робоча область показують
+                .drakon-файли. Токен зберігається локально та передається у заголовку X-Github-Token.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="github-owner" className="text-sm font-medium text-[var(--astryx-text-secondary)]">
+                    Owner
+                  </Label>
+                  <Input
+                    id="github-owner"
+                    type="text"
+                    placeholder="maxfraieho"
+                    value={githubOwner}
+                    onChange={e => setGithubOwner(e.target.value)}
+                    className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] font-mono text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="github-repo" className="text-sm font-medium text-[var(--astryx-text-secondary)]">
+                    Repo
+                  </Label>
+                  <Input
+                    id="github-repo"
+                    type="text"
+                    placeholder="ai-drakon-scaffolder"
+                    value={githubRepo}
+                    onChange={e => setGithubRepo(e.target.value)}
+                    className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] font-mono text-sm"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="github-branch" className="text-sm font-medium text-[var(--astryx-text-secondary)]">
+                  Branch
+                </Label>
+                <Input
+                  id="github-branch"
+                  type="text"
+                  placeholder="main"
+                  value={githubBranch}
+                  onChange={e => setGithubBranch(e.target.value)}
+                  className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="github-token" className="text-sm font-medium text-[var(--astryx-text-secondary)]">
+                  Personal Access Token
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="github-token"
+                    type={showGithubToken ? "text" : "password"}
+                    placeholder="ghp_..."
+                    value={githubToken}
+                    onChange={e => setGithubToken(e.target.value)}
+                    className="bg-[var(--astryx-surface-secondary)] border-[var(--astryx-border-subtle)] focus-visible:ring-[var(--astryx-border-focus)]/30 focus-visible:border-[var(--astryx-border-focus)] text-[var(--astryx-text-primary)] pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowGithubToken(prev => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)] transition-colors"
+                    aria-label="Toggle GitHub token visibility"
+                  >
+                    {showGithubToken ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-1">
+                <Button
+                  onClick={saveGithubSettings}
+                  className="flex-1 bg-[var(--astryx-color-brand)] hover:bg-[var(--astryx-color-brand-hover)] text-[var(--astryx-color-on-brand)] font-semibold border-0"
+                >
+                  <Save className="w-4 h-4 mr-2" />
+                  Зберегти
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => void testGithubConnection()}
+                  disabled={githubTestStatus === "checking"}
+                  className="border-[var(--astryx-border-subtle)] hover:bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-secondary)] hover:text-[var(--astryx-text-primary)]"
+                >
+                  {githubTestStatus === "checking" ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FileCode2 className="w-4 h-4" />
+                  )}
+                  <span className="ml-2">Тест</span>
+                </Button>
+              </div>
+              {githubTestStatus !== "idle" && (
+                <div className={`flex items-center gap-2 p-2 rounded-lg text-xs font-mono ${githubTestStatus === "online"
+                  ? "bg-emerald-950/40 text-emerald-400 border border-emerald-800/30"
+                  : githubTestStatus === "offline"
+                    ? "bg-red-950/40 text-red-400 border border-red-800/30"
+                    : "bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-secondary)] border border-[var(--astryx-border-subtle)]"
+                }`}>
+                  {githubTestStatus === "online" && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
+                  {githubTestStatus === "offline" && <ShieldAlert className="w-3.5 h-3.5 shrink-0" />}
+                  {githubTestStatus === "checking" && <RefreshCw className="w-3.5 h-3.5 shrink-0 animate-spin" />}
+                  {githubTestDetail}
                 </div>
               )}
             </CardContent>
