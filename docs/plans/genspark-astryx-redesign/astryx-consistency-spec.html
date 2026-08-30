@@ -1,0 +1,242 @@
+<title>Astryx Consistency Spec</title>
+<style>
+  :root {
+    --astryx-color-brand: #f59e0b;
+    --astryx-color-brand-hover: #d97706;
+    --astryx-color-brand-light: rgba(245, 158, 11, 0.16);
+    --astryx-color-on-brand: #17120a;
+    --astryx-surface-page: #f0f2f5;
+    --astryx-surface-primary: #ffffff;
+    --astryx-surface-secondary: #f7f8fa;
+    --astryx-surface-elevated: #ffffff;
+    --astryx-text-primary: #1c1e21;
+    --astryx-text-secondary: #65676b;
+    --astryx-text-muted: #8a8d91;
+    --astryx-border-subtle: #e4e6eb;
+    --astryx-border-focus: #f59e0b;
+    --astryx-radius-sm: 6px;
+    --astryx-radius-md: 10px;
+    --astryx-radius-lg: 16px;
+    --astryx-shadow-card: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+    --astryx-shadow-dropdown: 0 4px 16px rgba(0,0,0,.12);
+    --astryx-font-sans: 'Albert Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --astryx-font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --semantic-critical-bg: #fce8e9;
+    --semantic-critical-fg: #b3261e;
+    --semantic-warn-bg: #fdf0e0;
+    --semantic-warn-fg: #a15c00;
+    --semantic-ok-bg: #e6f4ea;
+    --semantic-ok-fg: #1e7d34;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --astryx-color-brand: #fbbf24;
+      --astryx-color-brand-hover: #f59e0b;
+      --astryx-color-brand-light: rgba(251, 191, 36, 0.18);
+      --astryx-surface-page: #18191a;
+      --astryx-surface-primary: #242526;
+      --astryx-surface-secondary: #1c1e21;
+      --astryx-surface-elevated: #3a3b3c;
+      --astryx-text-primary: #e4e6eb;
+      --astryx-text-secondary: #b0b3b8;
+      --astryx-border-subtle: #393a3b;
+      --astryx-border-focus: #fbbf24;
+      --astryx-shadow-card: 0 1px 3px rgba(0,0,0,.3);
+      --astryx-shadow-dropdown: 0 4px 20px rgba(0,0,0,.4);
+      --semantic-critical-bg: #3a1f1f;
+      --semantic-critical-fg: #f5a3a0;
+      --semantic-warn-bg: #3a2f18;
+      --semantic-warn-fg: #f0c674;
+      --semantic-ok-bg: #1c3324;
+      --semantic-ok-fg: #7ed99a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --astryx-color-brand: #fbbf24;
+    --astryx-color-brand-hover: #f59e0b;
+    --astryx-color-brand-light: rgba(251, 191, 36, 0.18);
+    --astryx-surface-page: #18191a;
+    --astryx-surface-primary: #242526;
+    --astryx-surface-secondary: #1c1e21;
+    --astryx-surface-elevated: #3a3b3c;
+    --astryx-text-primary: #e4e6eb;
+    --astryx-text-secondary: #b0b3b8;
+    --astryx-border-subtle: #393a3b;
+    --astryx-border-focus: #fbbf24;
+    --astryx-shadow-card: 0 1px 3px rgba(0,0,0,.3);
+    --astryx-shadow-dropdown: 0 4px 20px rgba(0,0,0,.4);
+    --semantic-critical-bg: #3a1f1f;
+    --semantic-critical-fg: #f5a3a0;
+    --semantic-warn-bg: #3a2f18;
+    --semantic-warn-fg: #f0c674;
+    --semantic-ok-bg: #1c3324;
+    --semantic-ok-fg: #7ed99a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--astryx-surface-page); color: var(--astryx-text-primary); font-family: var(--astryx-font-sans); line-height: 1.5; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 24px 96px; }
+  header.page-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 56px; padding-bottom: 24px; border-bottom: 1px solid var(--astryx-border-subtle); }
+  .eyebrow { font-family: var(--astryx-font-mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--astryx-color-brand); margin: 0 0 8px; }
+  h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.01em; margin: 0 0 8px; text-wrap: balance; }
+  .sub { color: var(--astryx-text-secondary); font-size: 14px; max-width: 60ch; margin: 0; }
+  .theme-toggle { display: flex; gap: 4px; padding: 3px; background: var(--astryx-surface-secondary); border: 1px solid var(--astryx-border-subtle); border-radius: var(--astryx-radius-md); flex-shrink: 0; }
+  .theme-toggle button { font-family: var(--astryx-font-sans); font-size: 12px; font-weight: 600; border: none; background: transparent; color: var(--astryx-text-secondary); padding: 6px 12px; border-radius: var(--astryx-radius-sm); cursor: pointer; }
+  .theme-toggle button[aria-pressed="true"] { background: var(--astryx-surface-primary); color: var(--astryx-text-primary); box-shadow: var(--astryx-shadow-card); }
+  .theme-toggle button:focus-visible { outline: 2px solid var(--astryx-border-focus); outline-offset: 1px; }
+  section { margin-bottom: 56px; }
+  h2 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--astryx-text-secondary); margin: 0 0 20px; }
+  h2 .n { font-family: var(--astryx-font-mono); color: var(--astryx-text-muted); margin-right: 8px; }
+  p.lede { font-size: 14px; color: var(--astryx-text-secondary); max-width: 66ch; margin: -10px 0 24px; }
+  code { font-family: var(--astryx-font-mono); font-size: 12px; background: var(--astryx-surface-secondary); padding: 1px 5px; border-radius: 4px; }
+  .token-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+  .swatch { border: 1px solid var(--astryx-border-subtle); border-radius: var(--astryx-radius-md); overflow: hidden; background: var(--astryx-surface-primary); }
+  .swatch-fill { height: 56px; }
+  .swatch-label { padding: 8px 10px; }
+  .swatch-name { font-family: var(--astryx-font-mono); font-size: 11px; display: block; }
+  .swatch-hex { font-family: var(--astryx-font-mono); font-size: 10px; color: var(--astryx-text-muted); }
+  .scale-row { display: flex; gap: 20px; align-items: flex-end; flex-wrap: wrap; }
+  .scale-item { text-align: center; }
+  .radius-demo { width: 72px; height: 72px; background: var(--astryx-color-brand-light); border: 1.5px solid var(--astryx-color-brand); }
+  .scale-item .caption, .shadow-item .caption { font-family: var(--astryx-font-mono); font-size: 11px; color: var(--astryx-text-secondary); margin-top: 8px; display: block; }
+  .shadow-item { width: 120px; height: 72px; background: var(--astryx-surface-primary); border-radius: var(--astryx-radius-md); text-align: center; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 640px) { .compare { grid-template-columns: 1fr; } }
+  .compare-col { border-radius: var(--astryx-radius-lg); overflow: hidden; border: 1px solid var(--astryx-border-subtle); }
+  .compare-head { font-family: var(--astryx-font-mono); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; padding: 8px 14px; }
+  .compare-head.before { background: var(--semantic-critical-bg); color: var(--semantic-critical-fg); }
+  .compare-head.after { background: var(--semantic-ok-bg); color: var(--semantic-ok-fg); }
+  .compare-body { padding: 18px; }
+  .legacy-card { background: #0f172a; border: 1px solid rgba(255,255,255,.1); border-radius: 8px; padding: 16px; }
+  .legacy-card h3 { color: #f1f5f9; font-size: 14px; margin: 0 0 6px; }
+  .legacy-card p { color: #94a3b8; font-size: 12.5px; margin: 0 0 12px; }
+  .legacy-badge { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: rgba(20,184,166,.15); color: #2dd4bf; border: 1px solid rgba(45,212,191,.3); }
+  .token-card { background: var(--astryx-surface-primary); border: 1px solid var(--astryx-border-subtle); border-radius: var(--astryx-radius-md); padding: 16px; box-shadow: var(--astryx-shadow-card); }
+  .token-card h3 { color: var(--astryx-text-primary); font-size: 14px; margin: 0 0 6px; }
+  .token-card p { color: var(--astryx-text-secondary); font-size: 12.5px; margin: 0 0 12px; }
+  .token-badge { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 999px; background: var(--astryx-color-brand-light); color: var(--astryx-color-brand-hover); border: 1px solid var(--astryx-color-brand); }
+  .diff-note { font-family: var(--astryx-font-mono); font-size: 10.5px; color: var(--astryx-text-muted); padding: 10px 18px 16px; border-top: 1px dashed var(--astryx-border-subtle); }
+  table.status { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.status th { text-align: left; font-family: var(--astryx-font-mono); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--astryx-text-muted); padding: 0 12px 8px; border-bottom: 1px solid var(--astryx-border-subtle); }
+  table.status td { padding: 11px 12px; border-bottom: 1px solid var(--astryx-border-subtle); vertical-align: top; }
+  table.status tr:last-child td { border-bottom: none; }
+  .route { font-family: var(--astryx-font-mono); font-size: 12px; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px; }
+  .pill.critical { background: var(--semantic-critical-bg); color: var(--semantic-critical-fg); }
+  .pill.warn { background: var(--semantic-warn-bg); color: var(--semantic-warn-fg); }
+  footer { margin-top: 64px; padding-top: 20px; border-top: 1px solid var(--astryx-border-subtle); font-size: 12px; color: var(--astryx-text-muted); font-family: var(--astryx-font-mono); }
+  footer a { color: var(--astryx-color-brand-hover); }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+<div class="wrap">
+  <header class="page-head">
+    <div>
+      <p class="eyebrow">AI-DRAKON &middot; feature/genspark-astryx-redesign</p>
+      <h1>Astryx Consistency Spec</h1>
+      <p class="sub">Reference for finishing the Astryx token migration &mdash; not a new design system. Every value below is read from the live <code>src/styles/astryx.css</code>, not invented for this page.</p>
+    </div>
+    <div class="theme-toggle" role="group" aria-label="Theme preview">
+      <button type="button" data-theme-btn="light" aria-pressed="false">Light</button>
+      <button type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+      <button type="button" data-theme-btn="system" aria-pressed="true">System</button>
+    </div>
+  </header>
+  <section>
+    <h2><span class="n">01</span>Color tokens</h2>
+    <p class="lede">Both themes already exist in code. Genspark's job is applying these consistently, not choosing new ones.</p>
+    <div class="token-grid">
+      <div class="swatch"><div class="swatch-fill" style="background:var(--astryx-color-brand)"></div><div class="swatch-label"><span class="swatch-name">--astryx-color-brand</span><span class="swatch-hex">amber, both themes</span></div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--astryx-surface-page)"></div><div class="swatch-label"><span class="swatch-name">--astryx-surface-page</span><span class="swatch-hex">page ground</span></div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--astryx-surface-primary)"></div><div class="swatch-label"><span class="swatch-name">--astryx-surface-primary</span><span class="swatch-hex">card surface</span></div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--astryx-surface-secondary)"></div><div class="swatch-label"><span class="swatch-name">--astryx-surface-secondary</span><span class="swatch-hex">recessed surface</span></div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--astryx-text-primary)"></div><div class="swatch-label"><span class="swatch-name">--astryx-text-primary</span><span class="swatch-hex">headings, body</span></div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--astryx-text-secondary)"></div><div class="swatch-label"><span class="swatch-name">--astryx-text-secondary</span><span class="swatch-hex">supporting text</span></div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--astryx-border-subtle)"></div><div class="swatch-label"><span class="swatch-name">--astryx-border-subtle</span><span class="swatch-hex">dividers, card edges</span></div></div>
+      <div class="swatch"><div class="swatch-fill" style="background:var(--astryx-color-brand-light)"></div><div class="swatch-label"><span class="swatch-name">--astryx-color-brand-light</span><span class="swatch-hex">tinted fills</span></div></div>
+    </div>
+  </section>
+  <section>
+    <h2><span class="n">02</span>Radius &amp; elevation</h2>
+    <p class="lede">No new scale proposed &mdash; the existing three-step radius and two-step shadow are sufficient for every page audited so far.</p>
+    <div class="scale-row">
+      <div class="scale-item"><div class="radius-demo" style="border-radius:var(--astryx-radius-sm)"></div><span class="caption">sm &middot; 6px</span></div>
+      <div class="scale-item"><div class="radius-demo" style="border-radius:var(--astryx-radius-md)"></div><span class="caption">md &middot; 10px</span></div>
+      <div class="scale-item"><div class="radius-demo" style="border-radius:var(--astryx-radius-lg)"></div><span class="caption">lg &middot; 16px</span></div>
+      <div class="shadow-item" style="box-shadow:var(--astryx-shadow-card); display:flex; align-items:center; justify-content:center;">card</div>
+      <div class="shadow-item" style="box-shadow:var(--astryx-shadow-dropdown); display:flex; align-items:center; justify-content:center;">dropdown</div>
+    </div>
+  </section>
+  <section>
+    <h2><span class="n">03</span>The actual problem: migration, not missing design</h2>
+    <p class="lede">Same component, same content &mdash; left is what an unmigrated page still renders (hardcoded Tailwind, fixed dark regardless of site theme); right is the same card through Astryx tokens. This is the transformation Genspark should replicate across every flagged page, not redesign from scratch.</p>
+    <div class="compare">
+      <div class="compare-col">
+        <div class="compare-head before">Before &middot; hardcoded, no .astryx-migrated</div>
+        <div class="compare-body">
+          <div class="legacy-card">
+            <h3>sonate-solidaire-agent</h3>
+            <p>Pipeline config &middot; docs Q&amp;A, wiki, architect chat</p>
+            <span class="legacy-badge">Live</span>
+          </div>
+        </div>
+        <div class="diff-note">bg-slate-900 &middot; text-slate-400 &middot; bg-teal-500/15 &middot; ignores site theme toggle</div>
+      </div>
+      <div class="compare-col">
+        <div class="compare-head after">After &middot; astryx tokens</div>
+        <div class="compare-body">
+          <div class="token-card">
+            <h3>sonate-solidaire-agent</h3>
+            <p>Pipeline config &middot; docs Q&amp;A, wiki, architect chat</p>
+            <span class="token-badge">Live</span>
+          </div>
+        </div>
+        <div class="diff-note">--astryx-surface-primary &middot; --astryx-text-secondary &middot; --astryx-color-brand-light &middot; follows theme toggle above</div>
+      </div>
+    </div>
+  </section>
+  <section>
+    <h2><span class="n">04</span>Confirmed inconsistencies (2026-08-28 audit)</h2>
+    <p class="lede">Not the full list &mdash; Genspark should extend this via the linked GitHub repo, not stop here.</p>
+    <table class="status">
+      <thead><tr><th>Route</th><th>Issue</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td class="route">/architect</td><td>Fully English UI inside an otherwise Ukrainian interface</td><td><span class="pill warn">i18n &middot; out of scope here</span></td></tr>
+        <tr><td class="route">/notebooks</td><td>Mixed-language form under a Ukrainian heading</td><td><span class="pill warn">i18n &middot; out of scope here</span></td></tr>
+        <tr><td class="route">/trace</td><td>Dev jargon in the markup itself (&ldquo;4-Gate Control Plane&rdquo;)</td><td><span class="pill warn">Role-gate, not a reskin</span></td></tr>
+        <tr><td class="route">unmigrated pages (TBD)</td><td>Hardcoded Tailwind color classes bypassing astryx tokens</td><td><span class="pill critical">Must build now</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+  <footer>
+    Generated from <code>PLAN.md</code> + <code>GENSPARK-PROMPTS.md</code> + <code>REDESIGN-BRIEF.md</code> on <code>feature/genspark-astryx-redesign</code>. Token values read from <code>src/styles/astryx.css</code>, HEAD <code>1eccbb14</code>.
+  </footer>
+</div>
+<script>
+  (function () {
+    var root = document.documentElement;
+    var buttons = document.querySelectorAll('[data-theme-btn]');
+    function setTheme(mode) {
+      if (mode === 'system') {
+        root.removeAttribute('data-theme');
+      } else {
+        root.setAttribute('data-theme', mode);
+      }
+      buttons.forEach(function (b) {
+        var pressed = b.getAttribute('data-theme-btn') == mode;
+        b.setAttribute('aria-pressed', String(pressed));
+      });
+      try {
+        localStorage.setItem('astryx-spec-theme', mode);
+      } catch (e) {}
+    }
+    buttons.forEach(function (b) {
+      b.addEventListener('click', function () {
+        setTheme(b.getAttribute('data-theme-btn'));
+      });
+    });
+    var saved = null;
+    try {
+      saved = localStorage.getItem('astryx-spec-theme');
+    } catch (e) {}
+    setTheme(saved || 'system');
+  })();
+</script>

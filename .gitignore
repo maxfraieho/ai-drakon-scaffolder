@@ -57,6 +57,7 @@ qwen_mcp_config.json
 development/
 *.png
 *.html
+!docs/plans/genspark-astryx-redesign/astryx-consistency-spec.html
 *.py
 !scripts/sdd_llm_judge.py
 !update_plan.py
