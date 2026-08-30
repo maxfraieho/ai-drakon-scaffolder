@@ -13,7 +13,7 @@ source-позначення, що вже застосований для /agents
 
 ## Інваріанти
 
-- ASTRYX_NAV_ITEMS (src/config/astryx-nav-config.ts або еквівалент,
+- ASTRYX_NAV_ITEMS (src/components/astryx/astryx-nav-config.ts або еквівалент,
   перевір точний шлях через GitNexus/grep перед правкою) -- єдине
   джерело правди для ВСІХ nav-поверхонь, що показують список route-ів.
   Жоден компонент не має власного hardcoded масиву пунктів меню.
