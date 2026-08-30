@@ -23,6 +23,10 @@ interface StudioToolbarProps {
   rightSlot?: ReactNode;
 }
 
+// Astryx-migrated version: replaces the legacy custom-var references
+// (--bg-base, --border-subtle, --text-primary, --accent-amber) with
+// canonical --astryx-* tokens, and the emerald-600 Run button with the
+// brand amber. Business logic (props, handlers) untouched.
 export function StudioToolbar({
   isRunning,
   isSaving,
@@ -47,9 +51,9 @@ export function StudioToolbar({
     <div
       className="flex h-10 shrink-0 items-center justify-between border-b px-3"
       style={{
-        backgroundColor: "var(--bg-base)",
-        borderColor: "var(--border-subtle)",
-        color: "var(--text-primary)",
+        backgroundColor: "var(--astryx-surface-primary)",
+        borderColor: "var(--astryx-border-subtle)",
+        color: "var(--astryx-text-primary)",
       }}
     >
       <div className="flex items-center gap-2">
@@ -57,7 +61,7 @@ export function StudioToolbar({
           <Button
             size="sm"
             onClick={onRun}
-            className="flex items-center gap-1.5 h-7 px-2 bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="flex items-center gap-1.5 h-7 px-2 bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] hover:bg-[var(--astryx-color-brand-hover)]"
             title={runTitle}
           >
             <Play className="h-3.5 w-3.5" />
@@ -68,8 +72,11 @@ export function StudioToolbar({
             <Button
               size="sm"
               onClick={onResume}
-              className="flex items-center gap-1.5 h-7 px-2 text-white"
-              style={{ backgroundColor: "var(--astryx-color-brand)", color: "var(--astryx-color-on-brand)" }}
+              className="flex items-center gap-1.5 h-7 px-2"
+              style={{
+                backgroundColor: "var(--astryx-color-brand)",
+                color: "var(--astryx-color-on-brand)",
+              }}
               title="Продовжити"
             >
               <RefreshCw className="h-3.5 w-3.5 animate-spin" />
@@ -130,9 +137,9 @@ export function StudioToolbar({
           disabled={isSaving}
           className="flex items-center gap-1.5 h-7 px-2 relative border"
           style={{
-            borderColor: "var(--border-subtle)",
-            backgroundColor: "var(--bg-base)",
-            color: "var(--text-primary)",
+            borderColor: "var(--astryx-border-subtle)",
+            backgroundColor: "var(--astryx-surface-primary)",
+            color: "var(--astryx-text-primary)",
           }}
           title="Зберегти пайплайн"
         >
@@ -141,7 +148,7 @@ export function StudioToolbar({
           {isDirty && (
             <span
               className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: "var(--accent-amber)" }}
+              style={{ backgroundColor: "var(--astryx-color-brand)" }}
             />
           )}
         </Button>
@@ -152,9 +159,9 @@ export function StudioToolbar({
           onClick={onExport}
           className="flex items-center gap-1.5 h-7 px-2 border"
           style={{
-            borderColor: "var(--border-subtle)",
-            backgroundColor: "var(--bg-base)",
-            color: "var(--text-primary)",
+            borderColor: "var(--astryx-border-subtle)",
+            backgroundColor: "var(--astryx-surface-primary)",
+            color: "var(--astryx-text-primary)",
           }}
           title="Експортувати конфігурацію JSON"
         >
