@@ -324,6 +324,24 @@ return (
     <p className="text-sm text-[var(--astryx-text-secondary)]">DRAKON-схеми та алгоритмічні потоки вашого проекту</p>
   </div>
 
+  {/* ADR-0028: this page lists MinIO/localStorage-backed schemas only.
+      Schemas committed to git (.drakon files, browsable in Workspace)
+      are a separate source and are intentionally NOT silently merged
+      here -- see spec 007. Point users at Workspace instead of hiding
+      the gap. */}
+  <button
+    type="button"
+    onClick={() => navigate({ to: "/workspace" } as never)}
+    className="mx-6 mt-3 flex shrink-0 items-center gap-2 rounded-[var(--astryx-radius-sm)] border border-[color-mix(in_srgb,var(--astryx-semantic-info-fg)_30%,transparent)] bg-[var(--astryx-semantic-info-bg)] px-3 py-2 text-left text-xs text-[var(--astryx-semantic-info-fg)] transition-colors hover:brightness-95"
+    data-testid="diagrams-git-source-hint"
+  >
+    <FileCode2 className="h-3.5 w-3.5 shrink-0" />
+    <span>
+      Схеми, закомічені в Git (.drakon-файли), тут не показані -- перегляньте їх у{" "}
+      <span className="font-semibold">Робочій області</span>.
+    </span>
+  </button>
+
   <div className="flex flex-1 min-h-0 w-full flex-col md:flex-row overflow-hidden">
 <div className="flex shrink-0 border-b border-[var(--border-subtle)] md:hidden">
 <button
