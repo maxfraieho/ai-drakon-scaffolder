@@ -213,22 +213,26 @@ export function NewAgentWizard({
 
   const openStudio = (agentName: string) => {
     onOpenChange(false);
-    navigate({ 
+    navigate({
       to: "/p/$slug/agents/$agentId/studio",
-      params: { slug, agentId: agentName }
+      params: { slug, agentId: agentName },
     } as any);
   };
 
   const values = form.getValues();
 
   const content = (
-    <div className="relative overflow-hidden rounded-xl border border-white/10 bg-slate-950/75 text-slate-100 shadow-[0_30px_100px_rgba(76,29,149,0.45)] backdrop-blur-xl">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(99,102,241,0.23),transparent_45%),radial-gradient(circle_at_90%_20%,rgba(139,92,246,0.25),transparent_50%)]" />
+    <div className="astryx-migrated relative overflow-hidden rounded-[var(--astryx-radius-lg)] border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] text-[var(--astryx-text-primary)] shadow-[var(--astryx-shadow-dropdown)]">
+      {/* Astryx: flat surfaces only. Radial gradient decoration removed. */}
       <div className="relative z-10 space-y-6 p-5 md:p-6">
         <div className="space-y-2">
-          <p className="font-[Outfit] text-xs uppercase tracking-[0.2em] text-slate-400">New Agent Wizard</p>
-          <h2 className="font-[Outfit] text-2xl">Create and launch an AI agent</h2>
-          <p className="text-sm text-slate-300">Define behavior, generate DRAKON IR, review and save.</p>
+          <p className="font-mono text-xs uppercase tracking-[0.08em] text-[var(--astryx-color-brand-hover)]">
+            New Agent Wizard
+          </p>
+          <h2 className="text-2xl font-bold tracking-tight">Create and launch an AI agent</h2>
+          <p className="text-sm text-[var(--astryx-text-secondary)]">
+            Define behavior, generate DRAKON IR, review and save.
+          </p>
         </div>
 
         <div className="grid grid-cols-4 gap-2">
@@ -236,15 +240,17 @@ export function NewAgentWizard({
             <div
               key={index}
               className={cn(
-                "h-1.5 rounded-full transition-all",
-                step >= index ? "bg-indigo-400 shadow-[0_0_12px_rgba(129,140,248,0.8)]" : "bg-white/10",
+                "h-1.5 rounded-full transition-colors",
+                step >= index
+                  ? "bg-[var(--astryx-color-brand)]"
+                  : "bg-[var(--astryx-border-subtle)]",
               )}
             />
           ))}
         </div>
 
         {stepError ? (
-          <div className="rounded-lg border border-rose-500/45 bg-rose-500/10 px-3 py-2 text-sm text-rose-200">
+          <div className="rounded-[var(--astryx-radius-md)] border border-[color-mix(in_srgb,var(--astryx-semantic-critical-fg)_45%,transparent)] bg-[var(--astryx-semantic-critical-bg)] px-3 py-2 text-sm text-[var(--astryx-semantic-critical-fg)]">
             {stepError}
           </div>
         ) : null}
@@ -252,32 +258,36 @@ export function NewAgentWizard({
         {step === 1 ? (
           <div className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="agent-name" className="text-slate-200">
+              <Label htmlFor="agent-name" className="text-[var(--astryx-text-primary)]">
                 Agent Name
               </Label>
               <Input
                 id="agent-name"
                 placeholder="support-assistant"
-                className="border-white/15 bg-white/5"
+                className="border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-secondary)]"
                 {...form.register("agentName")}
               />
               {form.formState.errors.agentName ? (
-                <p className="text-xs text-rose-300">{form.formState.errors.agentName.message}</p>
+                <p className="text-xs text-[var(--astryx-semantic-critical-fg)]">
+                  {form.formState.errors.agentName.message}
+                </p>
               ) : null}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="agent-description" className="text-slate-200">
+              <Label htmlFor="agent-description" className="text-[var(--astryx-text-primary)]">
                 Description & Directives
               </Label>
               <Textarea
                 id="agent-description"
                 placeholder="Describe responsibilities, communication style, constraints, and expected actions..."
-                className="min-h-40 border-white/15 bg-white/5"
+                className="min-h-40 border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-secondary)]"
                 {...form.register("description")}
               />
               {form.formState.errors.description ? (
-                <p className="text-xs text-rose-300">{form.formState.errors.description.message}</p>
+                <p className="text-xs text-[var(--astryx-semantic-critical-fg)]">
+                  {form.formState.errors.description.message}
+                </p>
               ) : null}
             </div>
 
@@ -286,7 +296,7 @@ export function NewAgentWizard({
                 id="generate-agent-schema-btn"
                 disabled={!isStepOneValid || generateMutation.isPending}
                 onClick={() => void handleGenerate()}
-                className="bg-indigo-600 text-white hover:bg-indigo-500"
+                className="bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] hover:bg-[var(--astryx-color-brand-hover)]"
               >
                 {generateMutation.isPending ? <Loader2 className="animate-spin" /> : <Sparkles />}
                 Generate Agent Schema
@@ -298,24 +308,24 @@ export function NewAgentWizard({
 
         {step === 2 ? (
           <div className="space-y-5 py-2">
-            <div className="flex items-center justify-center rounded-lg border border-white/10 bg-white/5 px-4 py-4 text-indigo-200">
+            <div className="flex items-center justify-center rounded-[var(--astryx-radius-md)] border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-secondary)] px-4 py-4 text-[var(--astryx-color-brand-hover)]">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               {processingMessages[messageIndex]}
             </div>
             <div className="space-y-3">
-              <Skeleton className="h-12 w-full bg-white/10" />
-              <Skeleton className="h-12 w-[86%] bg-white/10" />
-              <Skeleton className="h-12 w-[92%] bg-white/10" />
-              <Skeleton className="h-12 w-[72%] bg-white/10" />
+              <Skeleton className="h-12 w-full bg-[var(--astryx-surface-secondary)]" />
+              <Skeleton className="h-12 w-[86%] bg-[var(--astryx-surface-secondary)]" />
+              <Skeleton className="h-12 w-[92%] bg-[var(--astryx-surface-secondary)]" />
+              <Skeleton className="h-12 w-[72%] bg-[var(--astryx-surface-secondary)]" />
             </div>
           </div>
         ) : null}
 
         {step === 3 ? (
           <div className="space-y-5">
-            <div className="rounded-lg border border-white/10 bg-white/5 p-4">
-              <div className="mb-3 flex items-center gap-2 text-sm text-slate-200">
-                <Bot className="h-4 w-4 text-indigo-300" />
+            <div className="rounded-[var(--astryx-radius-md)] border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-secondary)] p-4">
+              <div className="mb-3 flex items-center gap-2 text-sm text-[var(--astryx-text-primary)]">
+                <Bot className="h-4 w-4 text-[var(--astryx-color-brand-hover)]" />
                 Generated schema outline
               </div>
               <div className="space-y-2">
@@ -323,16 +333,18 @@ export function NewAgentWizard({
                   schemaNodes.map((node) => (
                     <div
                       key={node.id}
-                      className="flex items-start justify-between gap-3 rounded-md border border-white/10 bg-black/20 px-3 py-2"
+                      className="flex items-start justify-between gap-3 rounded-[var(--astryx-radius-sm)] border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] px-3 py-2"
                     >
-                      <p className="text-sm text-slate-200">{node.content}</p>
-                      <span className="rounded-full border border-indigo-400/30 bg-indigo-500/10 px-2 py-0.5 text-xs text-indigo-200">
+                      <p className="text-sm text-[var(--astryx-text-primary)]">{node.content}</p>
+                      <span className="rounded-full border border-[color-mix(in_srgb,var(--astryx-color-brand)_30%,transparent)] bg-[var(--astryx-color-brand-light)] px-2 py-0.5 text-xs text-[var(--astryx-color-brand-hover)]">
                         {node.type}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-300">Schema generated successfully.</p>
+                  <p className="text-sm text-[var(--astryx-text-secondary)]">
+                    Schema generated successfully.
+                  </p>
                 )}
               </div>
             </div>
@@ -340,7 +352,6 @@ export function NewAgentWizard({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Button
                 variant="outline"
-                className="border-white/20 bg-white/5"
                 onClick={() => {
                   setStepError(null);
                   setStep(1);
@@ -351,18 +362,14 @@ export function NewAgentWizard({
               </Button>
 
               <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  className="border-white/20 bg-white/5"
-                  onClick={() => openStudio(values.agentName)}
-                >
+                <Button variant="outline" onClick={() => openStudio(values.agentName)}>
                   <Edit2 />
                   Edit Manually
                 </Button>
                 <Button
                   id="save-agent-btn"
                   disabled={saveMutation.isPending}
-                  className="bg-emerald-600 text-white hover:bg-emerald-500"
+                  className="bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] hover:bg-[var(--astryx-color-brand-hover)]"
                   onClick={() => void saveMutation.mutateAsync()}
                 >
                   {saveMutation.isPending ? <Loader2 className="animate-spin" /> : <CheckCircle2 />}
@@ -375,14 +382,21 @@ export function NewAgentWizard({
 
         {step === 4 ? (
           <div className="flex flex-col items-center justify-center space-y-5 py-6 text-center">
-            <div className="rounded-full bg-emerald-500/15 p-5 shadow-[0_0_60px_rgba(16,185,129,0.45)]">
-              <CheckCircle2 className="h-14 w-14 text-emerald-300" />
+            <div className="rounded-full bg-[var(--astryx-semantic-ok-bg)] p-5">
+              <CheckCircle2 className="h-14 w-14 text-[var(--astryx-semantic-ok-fg)]" />
             </div>
             <div className="space-y-1">
-              <h3 className="font-[Outfit] text-2xl">Agent created and saved successfully!</h3>
-              <p className="text-sm text-slate-300">Your agent is ready in studio.</p>
+              <h3 className="text-2xl font-bold tracking-tight">
+                Agent created and saved successfully!
+              </h3>
+              <p className="text-sm text-[var(--astryx-text-secondary)]">
+                Your agent is ready in studio.
+              </p>
             </div>
-            <Button className="bg-indigo-600 text-white hover:bg-indigo-500" onClick={() => openStudio(values.agentName)}>
+            <Button
+              className="bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] hover:bg-[var(--astryx-color-brand-hover)]"
+              onClick={() => openStudio(values.agentName)}
+            >
               <Play />
               Open in Studio
             </Button>
@@ -395,7 +409,7 @@ export function NewAgentWizard({
   if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="max-h-[90vh] border-white/10 bg-transparent p-0">
+        <DrawerContent className="max-h-[90vh] border-[var(--astryx-border-subtle)] bg-transparent p-0">
           <DrawerHeader className="sr-only">
             <DrawerTitle>New Agent Wizard</DrawerTitle>
             <DrawerDescription>Generate and save a new AI agent.</DrawerDescription>
