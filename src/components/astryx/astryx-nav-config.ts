@@ -20,6 +20,7 @@ export interface AstryxNavItem {
   icon: LucideIcon;
   section: "workspace" | "system";
   headerVisible?: boolean;
+  iconRail?: boolean;
 }
 
 export const ASTRYX_NAV_ITEMS: AstryxNavItem[] = [
@@ -38,6 +39,7 @@ export const ASTRYX_NAV_ITEMS: AstryxNavItem[] = [
     icon: LayoutDashboard,
     section: "workspace",
     headerVisible: true,
+    iconRail: true,
   },
   {
     id: "tutorial",
@@ -70,6 +72,7 @@ export const ASTRYX_NAV_ITEMS: AstryxNavItem[] = [
     icon: GitPullRequest,
     section: "workspace",
     headerVisible: true,
+    iconRail: true,
   },
   {
     id: "codegen",
@@ -88,12 +91,22 @@ export const ASTRYX_NAV_ITEMS: AstryxNavItem[] = [
     headerVisible: false,
   },
   {
+    id: "knowledge",
+    label: "Знання",
+    path: "/knowledge",
+    icon: BookOpen,
+    section: "workspace",
+    headerVisible: true,
+    iconRail: true,
+  },
+  {
     id: "agents",
     label: "Агенти",
     path: "/agents",
     icon: Cpu,
     section: "system",
     headerVisible: true,
+    iconRail: true,
   },
   {
     id: "settings",

@@ -5,11 +5,6 @@ import {
   ChevronRight,
   ChevronUp,
   ChevronDown,
-  Cpu,
-  BookOpen,
-  GitBranch,
-  FileCode2,
-  Braces,
   Terminal,
   Sun,
   Moon,
@@ -53,6 +48,7 @@ import { buildDiffContext, formatDiffAnalysis } from "@/lib/understand/diff";
 import { getGithubConfig } from "@/lib/settings-storage";
 import { AstryxHeader } from "@/components/astryx/AstryxHeader";
 import { AstryxSideNav } from "@/components/astryx/AstryxSideNav";
+import { ASTRYX_NAV_ITEMS } from "@/components/astryx/astryx-nav-config";
 
 interface WorkspaceShellProps {
   children: ReactNode;
@@ -121,13 +117,7 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
     }
   };
 
-  const iconRailItems = [
-    { id: "logic", to: "/diagrams", label: "Logic", icon: GitBranch, enabled: true },
-    { id: "mrna", to: "#", label: "mRNA", icon: FileCode2, enabled: false, tooltip: "Sprint 3" },
-    { id: "ribosome", to: "/agents", label: "Ribosome", icon: Cpu, enabled: true },
-    { id: "protein", to: "/pipelines", label: "Protein", icon: Braces, enabled: true },
-    { id: "knowledge", to: "/knowledge", label: "Knowledge", icon: BookOpen, enabled: true },
-  ];
+  const iconRailItems = ASTRYX_NAV_ITEMS.filter((item) => item.iconRail);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -355,37 +345,13 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
           <div className="flex flex-col items-center gap-5 w-full">
             {iconRailItems.map((item) => {
               const Icon = item.icon;
-              const active = item.enabled && isActive(item.to);
-              
-              if (!item.enabled) {
-                return (
-                  <Tooltip key={item.id} delayDuration={300}>
-                    <TooltipTrigger asChild>
-                      <div
-                        title={item.tooltip}
-                        role="button"
-                        aria-disabled="true"
-                        tabIndex={-1}
-                        data-variant="ghost"
-                        data-size="sm"
-                        data-testid={`iconrail-item-${item.id}-disabled`}
-                        className="flex h-7 w-7 cursor-not-allowed items-center justify-center opacity-40 select-none rounded-[var(--astryx-radius-sm)] text-[var(--astryx-text-muted)]"
-                      >
-                        <Icon className="h-4 w-4" />
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="font-mono text-[11px]">
-                      {item.label} ({item.tooltip})
-                    </TooltipContent>
-                  </Tooltip>
-                );
-              }
+              const active = isActive(item.path);
 
               return (
                 <Tooltip key={item.id} delayDuration={300}>
                   <TooltipTrigger asChild>
                     <Link
-                      to={item.to}
+                      to={item.path}
                       data-variant="ghost"
                       data-size="sm"
                       data-testid={`iconrail-item-${item.id}`}
