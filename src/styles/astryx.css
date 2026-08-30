@@ -79,6 +79,18 @@
   --astryx-border-subtle: #e4e6eb;
   --astryx-border-focus: #f59e0b;
 
+  /* Semantic status tokens — added 2026-08-30 for /agents migration.
+     Pair a low-chroma tinted background with a high-contrast foreground.
+     Never use raw Tailwind red-500/green-500 in components; use these. */
+  --astryx-semantic-critical-bg: #fce8e9;
+  --astryx-semantic-critical-fg: #b3261e;
+  --astryx-semantic-warn-bg: #fdf0e0;
+  --astryx-semantic-warn-fg: #a15c00;
+  --astryx-semantic-ok-bg: #e6f4ea;
+  --astryx-semantic-ok-fg: #1e7d34;
+  --astryx-semantic-info-bg: #e7f0fd;
+  --astryx-semantic-info-fg: #1c56b8;
+
   --astryx-radius-sm: 6px;
   --astryx-radius-md: 10px;
   --astryx-radius-lg: 16px;
@@ -108,6 +120,16 @@
 
   --astryx-border-subtle: #393a3b;
   --astryx-border-focus: #fbbf24;
+
+  /* Semantic status tokens — dark variants */
+  --astryx-semantic-critical-bg: #3a1f1f;
+  --astryx-semantic-critical-fg: #f5a3a0;
+  --astryx-semantic-warn-bg: #3a2f18;
+  --astryx-semantic-warn-fg: #f0c674;
+  --astryx-semantic-ok-bg: #1c3324;
+  --astryx-semantic-ok-fg: #7ed99a;
+  --astryx-semantic-info-bg: #1a2b47;
+  --astryx-semantic-info-fg: #90b8ee;
 
   --astryx-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
   --astryx-shadow-dropdown: 0 4px 20px rgba(0, 0, 0, 0.4);
@@ -230,8 +252,8 @@
 }
 
 .astryx-badge.success {
-  background-color: rgba(46, 160, 67, 0.15);
-  color: #2ea043;
+  background-color: var(--astryx-semantic-ok-bg);
+  color: var(--astryx-semantic-ok-fg);
 }
 
 /* ── Astryx Focus Ring Accessibility ── */
