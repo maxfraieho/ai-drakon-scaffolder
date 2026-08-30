@@ -49,7 +49,7 @@ export const AstryxHeader: React.FC<AstryxHeaderProps> = ({
       </div>
 
       {/* Top Nav Items */}
-      <nav aria-label="Верхня навігація" className="hidden md:flex items-center gap-1">
+      <nav aria-label="Верхня навігація" className="hidden md:flex lg:hidden items-center gap-1">
         {ASTRYX_NAV_ITEMS.filter((item) => item.headerVisible !== false).map(
           (item) => (
             <Link

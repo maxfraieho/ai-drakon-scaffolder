@@ -341,7 +341,11 @@ export function WorkspaceShell({ children }: WorkspaceShellProps) {
       {/* WORKSPACE BODY */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Left IconRail */}
-        <div className="hidden lg:flex w-10 h-full shrink-0 flex-col items-center py-4 select-none border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]">
+        <div className={cn(
+          "w-10 h-full shrink-0 flex-col items-center py-4 select-none border-r border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-elevated)]",
+          navCollapsed ? "hidden lg:flex" : "hidden",
+        )}>
+
           <div className="flex flex-col items-center gap-5 w-full">
             {iconRailItems.map((item) => {
               const Icon = item.icon;
