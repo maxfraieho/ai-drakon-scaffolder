@@ -65,6 +65,15 @@ success: boolean;
 entries: GithubTreeEntry[];
 };
 
+type GithubDrakonFilesResponse = {
+  success: boolean;
+  owner: string;
+  repo: string;
+  branch: string;
+  files: { path: string; name: string; sha: string; size: number }[];
+  truncated: boolean;
+};
+
 type GithubFileResponse = {
 success: boolean;
 path: string;
@@ -548,6 +557,17 @@ export const api = {
   ): Promise<GithubTreeResponse> =>
     fetch(
       `${resolveApiBase()}/v1/github/tree?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&path=${encodeURIComponent(path)}&branch=${encodeURIComponent(branch)}`,
+      { headers: githubRequestHeaders(owner, token) },
+    ).then((r) => r.json()),
+
+  listDrakonFiles: (
+    owner: string,
+    repo: string,
+    branch = "main",
+    token?: string,
+  ): Promise<GithubDrakonFilesResponse> =>
+    fetch(
+      `${resolveApiBase()}/v1/github/drakon-files?owner=${encodeURIComponent(owner)}&repo=${encodeURIComponent(repo)}&branch=${encodeURIComponent(branch)}`,
       { headers: githubRequestHeaders(owner, token) },
     ).then((r) => r.json()),
 
