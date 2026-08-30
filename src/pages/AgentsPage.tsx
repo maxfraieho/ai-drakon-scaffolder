@@ -20,10 +20,24 @@ function inferStatus(name: string, index: number): AgentCardStatus {
   return "draft";
 }
 
+// Astryx-migrated status meta: uses semantic tokens instead of raw Tailwind
+// palettes. Border uses color-mix to derive a 30% tint of the semantic-fg.
 const statusMeta: Record<AgentCardStatus, { label: string; className: string }> = {
-  live: { label: "Live", className: "border-emerald-400/30 bg-emerald-500/10 text-emerald-200" },
-  draft: { label: "Draft", className: "border-amber-400/30 bg-amber-500/10 text-amber-200" },
-  error: { label: "Error", className: "border-rose-400/30 bg-rose-500/10 text-rose-200" },
+  live: {
+    label: "Live",
+    className:
+      "border-[color-mix(in_srgb,var(--astryx-semantic-ok-fg)_30%,transparent)] bg-[var(--astryx-semantic-ok-bg)] text-[var(--astryx-semantic-ok-fg)]",
+  },
+  draft: {
+    label: "Draft",
+    className:
+      "border-[color-mix(in_srgb,var(--astryx-semantic-warn-fg)_30%,transparent)] bg-[var(--astryx-semantic-warn-bg)] text-[var(--astryx-semantic-warn-fg)]",
+  },
+  error: {
+    label: "Error",
+    className:
+      "border-[color-mix(in_srgb,var(--astryx-semantic-critical-fg)_30%,transparent)] bg-[var(--astryx-semantic-critical-bg)] text-[var(--astryx-semantic-critical-fg)]",
+  },
 };
 
 function studioPath(slug: string, agentName: string) {
@@ -136,19 +150,22 @@ export function AgentsPage({ slug }: AgentsPageProps) {
   };
 
   return (
-    <section className="astryx-migrated relative min-h-[calc(100vh-8rem)] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]" data-testid="agents-page">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_10%,rgba(99,102,241,0.2),transparent_38%),radial-gradient(circle_at_90%_12%,rgba(168,85,247,0.23),transparent_42%),radial-gradient(circle_at_60%_100%,rgba(79,70,229,0.2),transparent_38%)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:28px_28px]" />
+    <section
+      className="astryx-migrated relative min-h-[calc(100vh-8rem)] overflow-hidden bg-[var(--astryx-surface-page)] text-[var(--astryx-text-primary)]"
+      data-testid="agents-page"
+    >
+      {/* Astryx: flat surfaces only. Radial gradient + grid-overlay decorations
+          removed per design system rules ("No gradients, no textures"). */}
 
       <div className="relative z-10 space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-[Outfit] text-3xl text-slate-100">
+            <h1 className="text-3xl font-bold tracking-tight text-[var(--astryx-text-primary)]">
               {slug ? "Project Agents" : "All Platform Agents"}
             </h1>
-            <p className="mt-1 text-sm text-slate-300">
-              {slug 
-                ? "Manage agent definitions, prompts, and execution settings." 
+            <p className="mt-1 text-sm text-[var(--astryx-text-secondary)]">
+              {slug
+                ? "Manage agent definitions, prompts, and execution settings."
                 : "Overview of all agents across all registered projects."}
             </p>
           </div>
@@ -156,7 +173,7 @@ export function AgentsPage({ slug }: AgentsPageProps) {
           {slug && (
             <Button
               id="new-agent-btn"
-              className="bg-indigo-600 text-white shadow-[0_0_30px_rgba(99,102,241,0.45)] hover:bg-indigo-500"
+              className="bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] hover:bg-[var(--astryx-color-brand-hover)]"
               onClick={() => setWizardOpen(true)}
             >
               <Plus className="h-4 w-4" />
@@ -166,8 +183,8 @@ export function AgentsPage({ slug }: AgentsPageProps) {
         </header>
 
         {isLoading ? (
-          <div className="flex min-h-[320px] items-center justify-center rounded-xl border border-white/10 bg-slate-900/35 backdrop-blur-xl">
-            <div className="flex items-center gap-2 text-slate-200">
+          <div className="flex min-h-[320px] items-center justify-center rounded-[var(--astryx-radius-lg)] border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] shadow-[var(--astryx-shadow-card)]">
+            <div className="flex items-center gap-2 text-[var(--astryx-text-primary)]">
               <Loader2 className="h-5 w-5 animate-spin" />
               Loading agents...
             </div>
@@ -175,8 +192,8 @@ export function AgentsPage({ slug }: AgentsPageProps) {
         ) : null}
 
         {isError ? (
-          <Card className="border-rose-500/30 bg-rose-500/10 backdrop-blur-xl">
-            <CardContent className="flex items-center gap-3 p-5 text-rose-100">
+          <Card className="border-[color-mix(in_srgb,var(--astryx-semantic-critical-fg)_30%,transparent)] bg-[var(--astryx-semantic-critical-bg)]">
+            <CardContent className="flex items-center gap-3 p-5 text-[var(--astryx-semantic-critical-fg)]">
               <AlertCircle className="h-5 w-5" />
               <p>{error instanceof Error ? error.message : "Failed to load agents"}</p>
             </CardContent>
@@ -184,21 +201,21 @@ export function AgentsPage({ slug }: AgentsPageProps) {
         ) : null}
 
         {!isLoading && !isError && agents.length === 0 ? (
-          <div className="flex min-h-[360px] flex-col items-center justify-center rounded-xl border border-white/10 bg-slate-900/30 p-6 text-center backdrop-blur-xl">
-            <div className="mb-4 rounded-full bg-indigo-500/15 p-5 shadow-[0_0_60px_rgba(99,102,241,0.45)]">
-              <Bot className="h-10 w-10 text-indigo-200" />
+          <div className="flex min-h-[360px] flex-col items-center justify-center rounded-[var(--astryx-radius-lg)] border border-dashed border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] p-6 text-center">
+            <div className="mb-4 rounded-full bg-[var(--astryx-color-brand-light)] p-5">
+              <Bot className="h-10 w-10 text-[var(--astryx-color-brand-hover)]" />
             </div>
-            <h2 className="font-[Outfit] text-2xl text-slate-100">
+            <h2 className="text-2xl font-bold tracking-tight text-[var(--astryx-text-primary)]">
               {slug ? "No agents created yet" : "No agents found on the platform"}
             </h2>
-            <p className="mt-2 max-w-md text-sm text-slate-300">
+            <p className="mt-2 max-w-md text-sm text-[var(--astryx-text-secondary)]">
               {slug
                 ? "Generate your first DRAKON-powered agent and start building AI execution flows."
                 : "No active agents found in any of the registered projects."}
             </p>
             {slug && (
               <Button
-                className="mt-6 bg-indigo-600 text-white hover:bg-indigo-500"
+                className="mt-6 bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] hover:bg-[var(--astryx-color-brand-hover)]"
                 onClick={() => setWizardOpen(true)}
               >
                 <Plus className="h-4 w-4" />
@@ -222,37 +239,43 @@ export function AgentsPage({ slug }: AgentsPageProps) {
               return (
                 <Card
                   key={`${agent.source}:${agent.slug}:${agent.name}`}
-                  className="group relative cursor-pointer overflow-hidden border-white/10 bg-slate-900/40 transition-all duration-300 hover:-translate-y-0.5 hover:border-white/20 hover:bg-slate-900/60"
+                  className="group relative cursor-pointer overflow-hidden border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-primary)] shadow-[var(--astryx-shadow-card)] transition-colors duration-150 hover:border-[var(--astryx-color-brand)]"
                   onClick={openCard}
                 >
                   <CardHeader className="space-y-3">
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex min-w-0 items-center gap-2">
-                        <div className="rounded-md border border-white/15 bg-black/20 p-2">
-                          <Bot className="h-4 w-4 text-indigo-200" />
+                        <div className="rounded-[var(--astryx-radius-sm)] border border-[var(--astryx-border-subtle)] bg-[var(--astryx-surface-secondary)] p-2">
+                          <Bot className="h-4 w-4 text-[var(--astryx-color-brand-hover)]" />
                         </div>
                         <div>
-                          <h3 className="truncate font-medium text-slate-100">{agent.name}</h3>
+                          <h3 className="truncate font-mono font-medium text-[var(--astryx-text-primary)]">
+                            {agent.name}
+                          </h3>
                           {!slug && !isPipeline && (
-                            <p className="text-xs text-slate-400 font-mono mt-0.5">Project: {agent.slug}</p>
+                            <p className="text-xs text-[var(--astryx-text-muted)] font-mono mt-0.5">
+                              Project: {agent.slug}
+                            </p>
                           )}
                           {isPipeline && (
-                            <p className="text-xs text-slate-400 font-mono mt-0.5">Pipeline config</p>
+                            <p className="text-xs text-[var(--astryx-text-muted)] font-mono mt-0.5">
+                              Pipeline config
+                            </p>
                           )}
                         </div>
                       </div>
                       <Badge className={status.className}>{status.label}</Badge>
                     </div>
-                    <Badge className="w-fit border-indigo-400/30 bg-indigo-500/10 text-indigo-200">
+                    <Badge className="w-fit border-[color-mix(in_srgb,var(--astryx-color-brand)_30%,transparent)] bg-[var(--astryx-color-brand-light)] text-[var(--astryx-color-brand-hover)]">
                       {isPipeline ? "Pipeline" : "Agent"}
                     </Badge>
                   </CardHeader>
 
                   <CardContent>
-                    <div className="pointer-events-none flex items-center gap-2 opacity-0 transition-all duration-300 group-hover:pointer-events-auto group-hover:opacity-100">
+                    <div className="pointer-events-none flex items-center gap-2 opacity-0 transition-all duration-150 group-hover:pointer-events-auto group-hover:opacity-100">
                       <Button
                         size="sm"
-                        className="pointer-events-auto bg-indigo-600 text-white hover:bg-indigo-500"
+                        className="pointer-events-auto bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] hover:bg-[var(--astryx-color-brand-hover)]"
                         onClick={(event) => {
                           event.stopPropagation();
                           openCard();
@@ -264,7 +287,7 @@ export function AgentsPage({ slug }: AgentsPageProps) {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="pointer-events-auto border-white/20 bg-transparent text-slate-100 hover:bg-white/10"
+                          className="pointer-events-auto"
                           onClick={(event) => {
                             event.stopPropagation();
                             handleDelete(agent.slug, agent.name);
@@ -279,7 +302,7 @@ export function AgentsPage({ slug }: AgentsPageProps) {
                         <Button
                           size="icon"
                           variant="ghost"
-                          className="pointer-events-auto ml-auto text-slate-300 hover:text-white"
+                          className="pointer-events-auto ml-auto"
                           onClick={(event) => {
                             event.stopPropagation();
                             handleOpenStudio(agent.slug, agent.name);
