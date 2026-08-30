@@ -13,12 +13,17 @@ SelectItem,
 SelectTrigger,
 SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import type { AgentId } from "@/types/agent-chat";
 
 interface AgentLlmCardProps {
 agentId: AgentId;
 agentLabel: string;
+// `agentColor` is retained in the prop shape so parent call sites don't
+// break, but under Astryx it no longer drives visual differentiation —
+// the design system mandates a single amber accent (see
+// design-system/README §Color: "Amber is the ONLY accent"). All three
+// values now resolve to the same brand token pair; parents may keep
+// passing "blue" / "violet" / "emerald" — it will render identically.
 agentColor: "blue" | "violet" | "emerald";
 agentDescription: string;
 agentIcon?: string;
@@ -87,29 +92,15 @@ agy: [
 ],
 };
 
-const COLOR_STYLES: Record<
-AgentLlmCardProps["agentColor"],
-{ border: string; dot: string; chipBg: string; chipText: string }
-> = {
-blue: {
-border: "border-l-blue-500",
-dot: "bg-blue-500",
-chipBg: "bg-blue-500/10",
-chipText: "text-blue-600 dark:text-blue-400",
-},
-violet: {
-border: "border-l-violet-500",
-dot: "bg-violet-500",
-chipBg: "bg-violet-500/10",
-chipText: "text-violet-600 dark:text-violet-400",
-},
-emerald: {
-border: "border-l-emerald-500",
-dot: "bg-emerald-500",
-chipBg: "bg-emerald-500/10",
-chipText: "text-emerald-600 dark:text-emerald-400",
-},
-};
+// Astryx-unified: all three agent colors now resolve to the single brand
+// amber. Border / dot / chip use the same token set regardless of input.
+// See prop-shape comment above.
+const BRAND_STYLES = {
+  border: "border-l-[var(--astryx-color-brand)]",
+  dot: "bg-[var(--astryx-color-brand)]",
+  chipBg: "bg-[var(--astryx-color-brand-light)]",
+  chipText: "text-[var(--astryx-color-brand-hover)]",
+} as const;
 
 function readFromStorage(agentId: string) {
   if (typeof window === "undefined") return null;
@@ -130,7 +121,8 @@ function readFromStorage(agentId: string) {
 export function AgentLlmCard({
   agentId,
   agentLabel,
-  agentColor,
+  // agentColor — see interface comment; intentionally unused under Astryx
+  agentColor: _agentColor,
   agentDescription,
   agentIcon,
 }: AgentLlmCardProps) {
@@ -159,7 +151,7 @@ return () => {
 cancelled = true;
 };
 }, [agentId]);
-const styles = COLOR_STYLES[agentColor];
+const styles = BRAND_STYLES;
 
 const handleProtocolChange = (p: "openai" | "anthropic" | "agy") => {
 setProtocol(p);
@@ -213,46 +205,46 @@ toast.success(`${agentLabel}: налаштування збережено`);
 
 return (
 <div
-className={`rounded-lg border border-border border-l-4 ${styles.border} bg-card p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-sm`}
+className={`rounded-[var(--astryx-radius-md)] border border-[var(--astryx-border-subtle)] border-l-4 ${styles.border} bg-[var(--astryx-surface-primary)] p-3 sm:p-4 space-y-3 sm:space-y-4 shadow-[var(--astryx-shadow-card)]`}
 >
 {/* Header */}
 <div className="flex items-start justify-between gap-2">
 <div className="flex items-start gap-2 min-w-0">
 {agentIcon && (
 <div
-className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${styles.chipBg} ${styles.chipText} text-base font-semibold`}
+className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-[var(--astryx-radius-sm)] ${styles.chipBg} ${styles.chipText} text-base font-semibold`}
 aria-hidden
 >
 {agentIcon}
 </div>
 )}
 <div className="min-w-0">
-<p className="font-semibold text-sm leading-tight truncate">{agentLabel}</p>
-<p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 line-clamp-2">
+<p className="font-semibold text-sm leading-tight truncate text-[var(--astryx-text-primary)]">{agentLabel}</p>
+<p className="text-[11px] sm:text-xs text-[var(--astryx-text-secondary)] mt-0.5 line-clamp-2">
 {agentDescription}
 </p>
 </div>
 </div>
 <div className="flex items-center gap-1.5 shrink-0">
-{/* Agent service health */}
+{/* Agent service health — semantic tokens */}
 <span
 title={agentAlive === null ? "Перевірка..." : agentAlive ? "Агент онлайн" : "Агент офлайн"}
 className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px] font-medium
 ${
 agentAlive === null
-? "bg-muted text-muted-foreground"
+? "bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-muted)]"
 : agentAlive
-? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-: "bg-red-500/10 text-red-600 dark:text-red-400"
+? "bg-[var(--astryx-semantic-ok-bg)] text-[var(--astryx-semantic-ok-fg)]"
+: "bg-[var(--astryx-semantic-critical-bg)] text-[var(--astryx-semantic-critical-fg)]"
 }`}
 >
 <span
 className={`h-1.5 w-1.5 rounded-full ${
 agentAlive === null
-? "bg-muted-foreground/40"
+? "bg-[var(--astryx-text-muted)] opacity-40"
 : agentAlive
-? "bg-emerald-500"
-: "bg-red-500"
+? "bg-[var(--astryx-semantic-ok-fg)]"
+: "bg-[var(--astryx-semantic-critical-fg)]"
 }`}
 />
 {agentAlive === null ? "…" : agentAlive ? "Online" : "Offline"}
@@ -263,11 +255,11 @@ className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[10px
 ${
 connected
 ? `${styles.chipBg} ${styles.chipText}`
-: "bg-muted text-muted-foreground"
+: "bg-[var(--astryx-surface-secondary)] text-[var(--astryx-text-muted)]"
 }`}
 >
 <span
-className={`h-1.5 w-1.5 rounded-full ${connected ? styles.dot : "bg-muted-foreground/50"}`}
+className={`h-1.5 w-1.5 rounded-full ${connected ? styles.dot : "bg-[var(--astryx-text-muted)] opacity-50"}`}
 />
 {connected ? "LLM ок" : "LLM ?"}
 </span>
@@ -291,7 +283,7 @@ onValueChange={(v) => handleProtocolChange(v as "openai" | "anthropic")}
               <SelectItem value="agy">AGY (Gemini+Claude)</SelectItem>
 </SelectContent>
 </Select>
-<p className="text-[10px] text-muted-foreground">
+<p className="text-[10px] text-[var(--astryx-text-muted)]">
 {PROTOCOL_PRESETS[protocol].hint}
 </p>
 </div>
@@ -308,7 +300,7 @@ placeholder="freecc"
 />
 <button
 type="button"
-className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground"
+className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--astryx-text-muted)]"
 onClick={() => setShowKey((p) => !p)}
 aria-label="Toggle key"
 >
@@ -351,7 +343,7 @@ disabled={connecting}
 <Label className="text-xs">Модель / Слот</Label>
 <button
 type="button"
-className="text-[10px] text-muted-foreground inline-flex items-center gap-1 hover:text-foreground disabled:opacity-50"
+className="text-[10px] text-[var(--astryx-text-muted)] inline-flex items-center gap-1 hover:text-[var(--astryx-text-primary)] disabled:opacity-50"
 onClick={handleConnect}
 disabled={connecting}
 >
@@ -375,7 +367,7 @@ disabled={connecting}
 value={model}
 onChange={(e) => setModel(e.target.value)}
 placeholder="...або вкажи власну назву"
-className="h-7 text-[11px] text-muted-foreground"
+className="h-7 text-[11px] text-[var(--astryx-text-muted)]"
 />
 </div>
 
@@ -383,7 +375,7 @@ className="h-7 text-[11px] text-muted-foreground"
 <div>
 <button
 type="button"
-className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+className="flex items-center gap-1 text-xs text-[var(--astryx-text-muted)] hover:text-[var(--astryx-text-primary)]"
 onClick={() => setShowAdvanced((p) => !p)}
 >
 {showAdvanced ? (
@@ -406,7 +398,7 @@ min={256}
 max={32000}
 step={256}
 />
-<p className="text-[10px] text-muted-foreground">
+<p className="text-[10px] text-[var(--astryx-text-muted)]">
 Обмеження відповіді моделі. Менше = дешевше та швидше.
 </p>
 </div>
@@ -425,4 +417,3 @@ onClick={handleSave}
 </div>
 );
 }
-
