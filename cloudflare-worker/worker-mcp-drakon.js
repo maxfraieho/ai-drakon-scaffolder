@@ -1411,6 +1411,48 @@ async function handleGithubListTree(args, env, requestToken = '') {
   };
 }
 
+async function handleGithubListDrakonFiles(args, env, requestToken = '') {
+  const owner = String(args?.owner || '').trim();
+  const repo = String(args?.repo || '').trim();
+  const branch = String(args?.branch || 'main').trim();
+
+  if (!owner || !repo) {
+    return { success: false, error: 'owner and repo required' };
+  }
+
+  const branchData = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches/${encodeURIComponent(branch)}`,
+    {},
+    requestToken,
+  );
+  const sha = branchData?.commit?.commit?.tree?.sha;
+  if (!sha) {
+    return { success: false, error: 'no tree sha in branch response' };
+  }
+
+  const treeData = await githubFetch(
+    env,
+    `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/git/trees/${sha}?recursive=1`,
+    {},
+    requestToken,
+  );
+
+  const files = (treeData.tree || [])
+    .filter((item) => item.type === 'blob' && item.path.endsWith('.drakon'))
+    .map((item) => ({
+      path: item.path,
+      name: item.path.split('/').pop(),
+      sha: item.sha,
+      size: item.size || 0,
+    }));
+
+  // GitHub truncates the recursive tree response past 100k entries / 7MB --
+  // surface this instead of silently showing a partial list as complete
+  // (ADR-0028: do not hide the gap).
+  return { success: true, owner, repo, branch, files, truncated: !!treeData.truncated };
+}
+
 async function handleGithubGetFile(args, env, requestToken = '') {
   const owner = String(args?.owner || '').trim();
   const repo = String(args?.repo || '').trim();
@@ -2298,6 +2340,11 @@ async function handleMcp(request, env, ctx) {
 
     if (name === 'github.listtree') {
       const result = await handleGithubListTree(args, env);
+      return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
+    }
+
+    if (name === 'github.listdrakonfiles') {
+      const result = await handleGithubListDrakonFiles(args, env);
       return jsonResponse({ jsonrpc: '2.0', id, result: toolResultJson(result) });
     }
 
@@ -3192,6 +3239,14 @@ export default {
         const branch = url.searchParams.get('branch') || 'main';
         const requestToken = request.headers.get('X-Github-Token') || '';
         return jsonResponse(await handleGithubListTree({ owner, repo, path: treePath, branch }, env, requestToken));
+      }
+
+      if (method === 'GET' && path === '/v1/github/drakon-files') {
+        const owner = url.searchParams.get('owner') || '';
+        const repo = url.searchParams.get('repo') || '';
+        const branch = url.searchParams.get('branch') || 'main';
+        const requestToken = request.headers.get('X-Github-Token') || '';
+        return jsonResponse(await handleGithubListDrakonFiles({ owner, repo, branch }, env, requestToken));
       }
 
       if (method === 'GET' && path === '/v1/github/file') {
