@@ -72,14 +72,14 @@ export function NodePropertiesForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1.5">
-        <Label htmlFor="node-id" className="text-[10px] font-mono uppercase text-muted-foreground">
+        <Label htmlFor="node-id" className="text-[10px] font-mono uppercase text-[var(--astryx-text-muted)]">
           ID Вузла
         </Label>
         <Input id="node-id" value={nodeId} disabled className="h-8 font-mono text-xs" />
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="node-type" className="text-[10px] font-mono uppercase text-muted-foreground">
+        <Label htmlFor="node-type" className="text-[10px] font-mono uppercase text-[var(--astryx-text-muted)]">
           Тип Вузла
         </Label>
         <Select value={type} onValueChange={setType}>
@@ -100,21 +100,21 @@ export function NodePropertiesForm({
 
       <div className="space-y-1.5">
         <div className="flex justify-between items-center">
-          <Label htmlFor="node-content" className="text-[10px] font-mono uppercase text-muted-foreground">
+          <Label htmlFor="node-content" className="text-[10px] font-mono uppercase text-[var(--astryx-text-muted)]">
             Функція / Вміст (Content)
           </Label>
           {(type === "action" || type === "question") && (
             <button
               type="button"
               onClick={() => setIsCustomContent(!isCustomContent)}
-              className="text-[10px] text-amber-500 hover:underline"
+              className="text-[10px] text-[var(--astryx-color-brand-hover)] hover:underline"
             >
               {isCustomContent ? "Обрати зі списку" : "Ввести вручну"}
             </button>
           )}
         </div>
         {isLoadingTools ? (
-          <div className="flex items-center gap-2 text-xs text-muted-foreground h-8">
+          <div className="flex items-center gap-2 text-xs text-[var(--astryx-text-muted)] h-8">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             <span>Завантаження інструментів...</span>
           </div>
@@ -143,7 +143,7 @@ export function NodePropertiesForm({
                   {t.name}
                 </SelectItem>
               ))}
-              <SelectItem value="__custom__" className="text-xs italic text-amber-500">
+              <SelectItem value="__custom__" className="text-xs italic text-[var(--astryx-color-brand-hover)]">
                 -- Власна дія --
               </SelectItem>
             </SelectContent>
@@ -160,7 +160,7 @@ export function NodePropertiesForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="node-secondary" className="text-[10px] font-mono uppercase text-muted-foreground">
+        <Label htmlFor="node-secondary" className="text-[10px] font-mono uppercase text-[var(--astryx-text-muted)]">
           Промпт / Опис (Secondary)
         </Label>
         <Textarea
@@ -176,7 +176,7 @@ export function NodePropertiesForm({
       <Button
         type="submit"
         size="sm"
-        className="w-full text-xs h-8 bg-emerald-600 hover:bg-emerald-700 text-white"
+        className="w-full text-xs h-8 bg-[var(--astryx-color-brand)] text-[var(--astryx-color-on-brand)] hover:bg-[var(--astryx-color-brand-hover)]"
       >
         Оновити властивості
       </Button>
