@@ -1,10 +1,15 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight, FileCode2, FolderClosed, FolderOpen, Plus, Search } from
+import { ChevronDown, ChevronRight, FileCode2, FolderClosed, FolderOpen, GitBranch, Plus, Search } from
 "lucide-react";
 
 import { cn } from "@/lib/utils";
 import type { Diagram } from "@/types/drakon";
 import type { Folder } from "@/lib/folder-storage";
+
+// ADR-0028: git-committed .drakon files are a separate source from
+// MinIO/localStorage schemas. They carry only {path, name, sha, size} --
+// no diagram payload -- and open in Workspace, not in the Drakon editor.
+export type GitDrakonFile = { path: string; name: string; sha: string; size: number };
 
 interface DiagramsLeftPanelProps {
 folders: Folder[];
@@ -15,6 +20,9 @@ onSelectFolder: (slug: string) => void;
 onSelectDiagram: (diagram: Diagram) => void;
 onNewDiagram: () => void;
 onNewFolder: () => void;
+gitFiles?: GitDrakonFile[];
+gitTruncated?: boolean;
+onOpenGitFile?: (file: GitDrakonFile) => void;
 }
 
 type Tab = "files" | "explorer" | "history";
@@ -28,6 +36,9 @@ onSelectFolder,
 onSelectDiagram,
 onNewDiagram,
 onNewFolder,
+gitFiles,
+gitTruncated,
+onOpenGitFile,
 }: DiagramsLeftPanelProps) {
 const [tab, setTab] = useState<Tab>("files");
 const [search, setSearch] = useState("");
@@ -105,6 +116,7 @@ className="h-6 w-full rounded-sm border border-[var(--border-subtle)] bg-[var(--
 {/* Tree */}
 <div className="flex-1 overflow-y-auto">
 {tab === "files" || tab === "explorer" ? (
+<>
 <ul className="text-sm">
 {folders.map((folder) => {
 const isOpen = openFolders[folder.slug] ?? false;
@@ -184,6 +196,38 @@ className="absolute left-0 top-0 bottom-0 w-[2px] bg-[var(--accent-amber)]"
 );
 })}
 </ul>
+{/* ADR-0028: git-committed .drakon files, source=git */}
+{gitFiles && gitFiles.length > 0 && (
+  <div className="border-t border-[var(--border-subtle)]/70 mt-1">
+    <div className="flex h-6 items-center gap-1.5 px-2 font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--text-muted)]">
+      <GitBranch className="h-3 w-3" />
+      <span className="truncate">Git (.drakon)</span>
+      <span className="ml-auto font-mono text-[9px]">{gitFiles.length}</span>
+    </div>
+    <ul>
+      {gitFiles.map((f) => (
+        <li key={f.sha}>
+          <button
+            type="button"
+            onClick={() => onOpenGitFile?.(f)}
+            className="flex h-7 w-full items-center gap-1.5 pl-7 pr-2 font-mono text-[11px] text-[var(--text-secondary)] hover:bg-white/[0.03] hover:text-[var(--text-primary)]"
+            title={`${f.path} — відкрити в Workspace`}
+          >
+            <FileCode2 className="h-3 w-3 shrink-0 text-[var(--accent-amber)]" />
+            <span className="truncate flex-1 text-left">{f.name}</span>
+            <span className="rounded-sm border border-[var(--border-subtle)] px-1 font-mono text-[8px] uppercase text-[var(--text-muted)]">git</span>
+          </button>
+        </li>
+      ))}
+    </ul>
+    {gitTruncated && (
+      <div className="px-3 py-1 font-mono text-[9px] italic text-[var(--text-muted)]">
+        Показано {gitFiles.length} файлів — список обрізаний GitHub
+      </div>
+    )}
+  </div>
+)}
+</>
 ):(
 <div className="px-3 py-3 font-mono text-[10px] text-[var(--text-muted)]">
 History — coming soon

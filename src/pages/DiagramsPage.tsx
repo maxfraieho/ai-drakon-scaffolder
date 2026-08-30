@@ -5,7 +5,8 @@ import { ChevronLeft, ChevronRight, FileCode2, LayoutDashboard } from "lucide-re
 
 import { CodeAnalysisPanel } from "@/components/pipeline/CodeAnalysisPanel";
 import { CodeGenerationPanel } from "@/components/pipeline/CodeGenerationPanel";
-import { DiagramsLeftPanel } from "@/components/workspace/DiagramsLeftPanel";
+import { DiagramsLeftPanel, type GitDrakonFile } from "@/components/workspace/DiagramsLeftPanel";
+import { useProject } from "@/context/ProjectContext";
 import { DrakonIrPanel } from "@/components/workspace/DrakonIrPanel";
 import { cn } from "@/lib/utils";
 import { CanvasToolbar } from "@/components/workspace/CanvasToolbar";
@@ -37,6 +38,7 @@ slugifyFolderName,
 writeFoldersToStorage,
 type Folder,
 } from "@/lib/folder-storage";
+import { getGithubConfig } from "@/lib/settings-storage";
 import type { Diagram } from "@/types/drakon";
 import type { DrakonItem } from "@/types/drakon";
 import type { IrDiagram } from "@/lib/graph-pipeline-api";
@@ -54,6 +56,16 @@ export function DiagramsPage() {
 const navigate = useNavigate();
 const importInputRef = useRef<HTMLInputElement | null>(null);
 const isMobile = useIsMobile();
+
+// ADR-0028: git-committed .drakon files come from GitHub, not MinIO/localStorage.
+// Same config resolution as ProjectFileManager: project overrides settings.
+const { activeProject } = useProject();
+const ghCfg = getGithubConfig();
+const owner = activeProject?.github?.owner || ghCfg.owner || "";
+const repo = activeProject?.github?.repo || ghCfg.repo || "";
+const branch = activeProject?.github?.branch || ghCfg.branch || "main";
+const token = ghCfg.token || "";
+const githubConfigured = !!(owner && repo && token);
 
 type ViewMode = "local" | "ir";
 const [viewMode, setViewMode] = useState<ViewMode>("local");
@@ -78,6 +90,12 @@ const [irSheetIr, setIrSheetIr] = useState<IrDiagram | null>(null);
 const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
 const [newFolderName, setNewFolderName] = useState("");
 const [mobileSearch, setMobileSearch] = useState("");
+
+// ADR-0028: git .drakon files (source=git) shown alongside MinIO schemas
+// (source=storage). Read-only here -- open them in Workspace, not in the
+// Drakon editor, which expects the MinIO/localStorage payload format.
+const [gitFiles, setGitFiles] = useState<GitDrakonFile[]>([]);
+const [gitTruncated, setGitTruncated] = useState(false);
 
 const selectedFolder =
 folders.find((f) => f.slug === selectedFolderSlug) ?? DEFAULT_FOLDER;
@@ -123,9 +141,32 @@ setDiagrams(refreshed);
 }
 };
 
+const loadGitFiles = useCallback(async () => {
+if (!githubConfigured) {
+setGitFiles([]);
+setGitTruncated(false);
+return;
+}
+try {
+const res = await api.listDrakonFiles(owner, repo, branch, token);
+if (res.success) {
+setGitFiles(res.files);
+setGitTruncated(res.truncated);
+}
+} catch {
+/ offline /
+}
+}, [githubConfigured, owner, repo, branch, token]);
+
 useEffect(() => {
 void loadDiagrams(selectedFolder.slug);
 }, [selectedFolder.slug]);
+
+// ADR-0028: git .drakon files are repo-level (not folder-scoped) -- load once
+// when GitHub config is present, after the storage schemas are loaded.
+useEffect(() => {
+void loadGitFiles();
+}, [loadGitFiles]);
 // Auto-select first diagram in folder when changing folder
 useEffect(() => {
 if (viewMode === "ir") return;
@@ -324,23 +365,24 @@ return (
     <p className="text-sm text-[var(--astryx-text-secondary)]">DRAKON-схеми та алгоритмічні потоки вашого проекту</p>
   </div>
 
-  {/* ADR-0028: this page lists MinIO/localStorage-backed schemas only.
-      Schemas committed to git (.drakon files, browsable in Workspace)
-      are a separate source and are intentionally NOT silently merged
-      here -- see spec 007. Point users at Workspace instead of hiding
-      the gap. */}
-  <button
-    type="button"
-    onClick={() => navigate({ to: "/workspace" } as never)}
-    className="mx-6 mt-3 flex shrink-0 items-center gap-2 rounded-[var(--astryx-radius-sm)] border border-[color-mix(in_srgb,var(--astryx-semantic-info-fg)_30%,transparent)] bg-[var(--astryx-semantic-info-bg)] px-3 py-2 text-left text-xs text-[var(--astryx-semantic-info-fg)] transition-colors hover:brightness-95"
-    data-testid="diagrams-git-source-hint"
-  >
-    <FileCode2 className="h-3.5 w-3.5 shrink-0" />
-    <span>
-      Схеми, закомічені в Git (.drakon-файли), тут не показані -- перегляньте їх у{" "}
-      <span className="font-semibold">Робочій області</span>.
-    </span>
-  </button>
+  {/* ADR-0028: git .drakon files now render in the left panel list (source=git)
+      when GitHub is configured. This banner stays only as a fallback when
+      GitHub integration is NOT configured -- point users at Settings instead
+      of hiding the gap. */}
+  {!githubConfigured && (
+    <button
+      type="button"
+      onClick={() => navigate({ to: "/settings" } as never)}
+      className="mx-6 mt-3 flex shrink-0 items-center gap-2 rounded-[var(--astryx-radius-sm)] border border-[color-mix(in_srgb,var(--astryx-semantic-info-fg)_30%,transparent)] bg-[var(--astryx-semantic-info-bg)] px-3 py-2 text-left text-xs text-[var(--astryx-semantic-info-fg)] transition-colors hover:brightness-95"
+      data-testid="diagrams-git-source-hint"
+    >
+      <FileCode2 className="h-3.5 w-3.5 shrink-0" />
+      <span>
+        Налаштуйте GitHub-інтеграцію, щоб бачити .drakon-файли з репозиторію.{" "}
+        <span className="font-semibold">Налаштування</span>.
+      </span>
+    </button>
+  )}
 
   <div className="flex flex-1 min-h-0 w-full flex-col md:flex-row overflow-hidden">
 <div className="flex shrink-0 border-b border-[var(--border-subtle)] md:hidden">
@@ -463,6 +505,32 @@ isMobile ? (
           );
         })
       )}
+      {/* ADR-0028: git .drakon files (source=git) */}
+      {gitFiles.length > 0 && (
+        <div className="border-t border-[var(--border-subtle)]/70 pt-1">
+          <div className="flex h-7 items-center justify-between px-3 font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--text-muted)]">
+            <span>Git (.drakon)</span>
+            <span className="text-[9px]">{gitFiles.length}</span>
+          </div>
+          {gitFiles.map((f) => (
+            <button
+              key={f.sha}
+              type="button"
+              onClick={() => navigate({ to: "/workspace" } as never)}
+              className="flex h-8 w-full items-center gap-2 px-3 text-left font-mono text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+            >
+              <FileCode2 className="h-3 w-3 shrink-0 text-[var(--accent-amber)]" />
+              <span className="truncate flex-1">{f.name}</span>
+              <span className="rounded-sm border border-[var(--border-subtle)] px-1 font-mono text-[9px] text-[var(--text-muted)]">git</span>
+            </button>
+          ))}
+          {gitTruncated && (
+            <div className="px-3 py-1 font-mono text-[9px] italic text-[var(--text-muted)]">
+              Показано {gitFiles.length} файлів — список обрізаний GitHub
+            </div>
+          )}
+        </div>
+      )}
     </div>
     <div className="border-t border-[var(--border-subtle)] p-2">
       <Button type="button" variant="outline" className="h-7 w-full font-mono text-[10px] uppercase" onClick={() => setIsCreateFolderOpen(true)}>
@@ -484,6 +552,9 @@ isMobile ? (
     }}
     onNewDiagram={openNewDiagram}
     onNewFolder={() => setIsCreateFolderOpen(true)}
+    gitFiles={gitFiles}
+    gitTruncated={gitTruncated}
+    onOpenGitFile={() => navigate({ to: "/workspace" } as never)}
   />
 )
 ):(
