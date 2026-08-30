@@ -194,7 +194,9 @@ export function AgentChatPanel({ className }: Props) {
                 <span
                   className={cn(
                     "inline-block h-2 w-2 rounded-full",
-                    health[id] ? "bg-emerald-500" : "bg-red-500",
+                    health[id]
+                      ? "bg-[var(--astryx-semantic-ok-fg)]"
+                      : "bg-[var(--astryx-semantic-critical-fg)]",
                   )}
                   aria-hidden
                 />
@@ -203,14 +205,14 @@ export function AgentChatPanel({ className }: Props) {
             ))}
           </TabsList>
           {!hasLlmConfig(activeAgent) && (
-            <div className="flex items-center gap-2 border-b border-yellow-500/20 bg-yellow-500/10 px-3 py-2 shrink-0">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-yellow-400" />
-              <span className="flex-1 font-mono text-[10px] text-yellow-300">
+            <div className="flex items-center gap-2 border-b border-[color-mix(in_srgb,var(--astryx-semantic-warn-fg)_35%,transparent)] bg-[var(--astryx-semantic-warn-bg)] px-3 py-2 shrink-0">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 text-[var(--astryx-semantic-warn-fg)]" />
+              <span className="flex-1 font-mono text-[10px] text-[var(--astryx-semantic-warn-fg)]">
                 LLM не налаштовано — агент може не відповідати
               </span>
               <a
                 href="/settings"
-                className="font-mono text-[10px] text-yellow-400 underline hover:text-yellow-300 shrink-0"
+                className="font-mono text-[10px] text-[var(--astryx-semantic-warn-fg)] underline hover:opacity-80 shrink-0"
               >
                 Налаштувати
               </a>
@@ -266,7 +268,7 @@ export function AgentChatPanel({ className }: Props) {
           <span className="opacity-50">…</span>
         ) : slotInfo?.active_model || slotInfo?.top_candidate ? (
           <span
-            className="font-mono text-emerald-600 dark:text-emerald-400"
+            className="font-mono text-[var(--astryx-semantic-ok-fg)]"
             title={
               slotInfo.active_model
                 ? `Active: ${slotInfo.active_model}`
@@ -279,7 +281,7 @@ export function AgentChatPanel({ className }: Props) {
           </span>
         ) : llmProtocol === "anthropic" ? (
           <span
-            className="font-mono text-emerald-600 dark:text-emerald-400"
+            className="font-mono text-[var(--astryx-semantic-ok-fg)]"
             title={`Direct Anthropic model: ${llmModel}`}
           >
             {llmModel}
