@@ -181,22 +181,6 @@ export function LoginPage() {
     setIsSubmitting(true);
     setErrorMsg(null);
 
-    // Direct Bearer token login bypass
-    if (password === "drakon-mcp-2026" || username === "token") {
-      setAccessToken(password || username);
-      navigate({ to: "/diagrams", replace: true });
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Owner credential bypass mapped to the static bypass token
-    if (username === "owner" && (password === "805235io" || password === "805235io.")) {
-      setAccessToken("drakon-mcp-2026");
-      navigate({ to: "/diagrams", replace: true });
-      setIsSubmitting(false);
-      return;
-    }
-
     if (username.includes("@")) {
       try {
         await withTimeout(appwriteLogin(username, password));

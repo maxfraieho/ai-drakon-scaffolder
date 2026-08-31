@@ -23,7 +23,7 @@ The platform lets users describe algorithms in natural language → LLM generate
 | **drakon-codegen** | Appwrite Function that calls an LLM gateway to generate `.drakon` JSON from a natural-language description. |
 | **semantic-graph** | Appwrite Function that builds semantic relationships between DRAKON diagrams. |
 | **llm-gateway** | Appwrite Function that proxies LLM calls (NVIDIA NIM / OpenAI compatible). |
-| **CF Worker** | `drakon-antigravity-worker` — Cloudflare Worker. Auth layer + proxy to Appwrite functions. Auth: `MCP_API_KEY` (bypass) or Appwrite JWT. |
+| **CF Worker** | `drakon-antigravity-worker` — Cloudflare Worker. Auth layer + proxy to Appwrite functions. Auth: `MCP_API_KEY` (server-side secret, see ADR-004) or Appwrite JWT. |
 | **CF Pages** | Frontend deployment. Builds from `.lovable/` directory. Route: `ai-drakon.pages.dev`. |
 | **Bloom** | Knowledge gateway — `/knowledge` route shows Gateway zones + `/notebooks` shows NotebookLM notebooks. |
 | **Garden MCP** | `garden-mcp.exodus.pp.ua` — serves Knowledge Base notes. |
@@ -34,7 +34,7 @@ The platform lets users describe algorithms in natural language → LLM generate
 ```
 User Browser
   └── CF Pages (ai-drakon.pages.dev) — React + TanStack Router
-        ├── /login          — Appwrite auth OR bypass token "drakon-mcp-2026"
+        ├── /login          — Appwrite auth
         ├── /codegen        — DRAKON JSON generation flow (SEE BELOW)
         ├── /diagrams       — DRAKON diagram editor (drakonwidget embed — PLANNED)
         ├── /knowledge      — Bloom gateway zones
@@ -44,7 +44,7 @@ CF Worker (drakon-antigravity-worker.maxfraieho.workers.dev)
   ├── POST /v1/codegen        → calls Appwrite drakon-codegen function
   ├── GET  /v1/codegen-status → polls execution result from logs
   ├── POST /v1/analyze        → code analysis
-  └── verifyOwnerAuth()       — MCP_API_KEY | Worker JWT | Appwrite JWT
+  └── verifyOwnerAuth()       — MCP_API_KEY (secret) | Worker JWT | Appwrite JWT
 
 Appwrite Cloud (fra.cloud.appwrite.io, project: 6a23420a003a04b4997b)
   ├── drakon-codegen function  — LLM → .drakon JSON
@@ -113,8 +113,8 @@ Appwrite JWTs expire in 15 min. `codegenApi.ts` calls `account.createJWT()` befo
 ### ADR-003: Lovable Sync Rule
 CF Pages builds from `.lovable/` directory. All `src/` changes must be mirrored to `.lovable/src/`.
 
-### ADR-004: MCP_API_KEY Bypass
-Static bypass token `"drakon-mcp-2026"` stored in `localStorage["jwt"]` on login. CF Worker checks `env.MCP_API_KEY === token`.
+### ADR-004: MCP_API_KEY Bypass — REMOVED 2026-08-31
+Static client-side bypass token in `LoginPage.tsx` (and its plaintext copy in this doc) was a live credential leak — removed from `LoginPage.tsx`, secret rotated on `drakon-antigravity-worker`. The orphaned `drakon-mcp-worker` (undocumented second holder of the same secret, no routes/callers found) was rotated then deleted. `MCP_API_KEY` is now a Worker secret only, never checked into source or shipped to the client.
 
 ## Agents Working on This Project
 
